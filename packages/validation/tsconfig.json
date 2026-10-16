@@ -1,0 +1,4 @@
+{
+  "extends": "@codexveil/config/tsconfig/base.json",
+  "include": ["src"]
+}

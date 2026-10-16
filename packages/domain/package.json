@@ -1,0 +1,22 @@
+{
+  "name": "@codexveil/domain",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Regras de negócio do Codexveil, independentes de interface e infraestrutura.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@codexveil/config": "workspace:*",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

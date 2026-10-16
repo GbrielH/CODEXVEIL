@@ -1,0 +1,31 @@
+{
+  "name": "@codexveil/database",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Tipos do banco, acesso a dados e testes de RLS do Codexveil (Supabase/Postgres).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "db:types": "node scripts/generate-types.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@codexveil/domain": "workspace:*",
+    "@codexveil/validation": "workspace:*",
+    "@supabase/supabase-js": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@codexveil/config": "workspace:*",
+    "@electric-sql/pglite": "^0.5.0",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

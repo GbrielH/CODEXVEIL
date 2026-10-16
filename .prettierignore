@@ -1,0 +1,15 @@
+node_modules
+pnpm-lock.yaml
+.next
+.turbo
+.expo
+dist
+coverage
+.vitest
+supabase/.temp
+supabase/.branches
+packages/database/src/types.gen.ts
+packages/ui/css/tokens.css
+apps/mobile/android
+apps/mobile/ios
+*.png

@@ -1,0 +1,27 @@
+{
+  "name": "@codexveil/rpg-systems",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Arquitetura de sistemas de RPG do Codexveil e módulos de cada sistema (D&D 5e SRD 5.2).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./dnd5e": "./src/dnd5e/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@codexveil/domain": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@codexveil/config": "workspace:*",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

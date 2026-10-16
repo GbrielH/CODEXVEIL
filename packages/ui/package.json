@@ -1,0 +1,28 @@
+{
+  "name": "@codexveil/ui",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Design system do Codexveil: tokens, emblema e glifos compartilhados entre web e mobile.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens": "./src/tokens.ts",
+    "./brand": "./src/brand.ts",
+    "./glyphs": "./src/glyphs.ts",
+    "./tokens.css": "./css/tokens.css"
+  },
+  "scripts": {
+    "build:css": "node scripts/build-css.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@codexveil/config": "workspace:*",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

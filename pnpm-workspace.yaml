@@ -1,0 +1,28 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Versões compartilhadas entre os pacotes do monorepo (usadas via protocolo "catalog:").
+# Dependências gerenciadas pelo Expo (expo, react-native, expo-*) ficam com versões explícitas
+# em apps/mobile/package.json para que `expo install --check` consiga validá-las.
+catalog:
+  '@eslint/js': ^9.39.5
+  '@supabase/supabase-js': ^2.118.0
+  '@types/node': ^24.19.2
+  eslint: ^9.39.5
+  globals: ^16.5.0
+  typescript: ~6.0.3
+  typescript-eslint: ^8.71.2
+  vite: ^8.3.4
+  vitest: ^5.0.0
+  zod: ^4.6.7
+
+# Proteção da cadeia de suprimentos: não instala versões publicadas há menos de 24 horas.
+minimumReleaseAge: 1440
+
+# Desde o pnpm 11, scripts de instalação de dependências só rodam com aprovação explícita.
+allowBuilds:
+  esbuild: true
+  sharp: true
+  # Apenas confere o binário nativo, que já vem como dependência opcional por plataforma.
+  unrs-resolver: false
