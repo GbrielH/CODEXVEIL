@@ -23,7 +23,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   backgroundColor: charcoal,
   android: {
     package: process.env.ANDROID_PACKAGE ?? 'app.codexveil.mobile',
-    versionCode: 1,
+    versionCode: 2,
     adaptiveIcon: {
       backgroundColor: charcoal,
       foregroundImage: './assets/images/adaptive-icon-foreground.png',
@@ -34,6 +34,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     bundleIdentifier: process.env.IOS_BUNDLE_IDENTIFIER ?? 'app.codexveil.mobile',
     supportsTablet: true,
+  },
+  // Atualizações OTA (EAS Update): o APK instalado baixa o JavaScript novo ao abrir. O runtime
+  // por fingerprint garante que uma atualização só chegue a builds com o mesmo código nativo;
+  // mudanças nativas exigem um APK novo (o workflow do EAS decide sozinho).
+  runtimeVersion: { policy: 'fingerprint' },
+  updates: {
+    url: `https://u.expo.dev/${easProjectId}`,
   },
   plugins: [
     'expo-router',

@@ -189,9 +189,10 @@ implementados, conforme o prompt. Nenhuma tela promete essas funções.
   senha pedida pelo app não funciona** e só membros da organização do Supabase recebem e-mails.
   Isso se resolve com o SMTP da Brevo e o envio dos templates (veja
   [DEPLOY](DEPLOY.md#2-autenticação)).
-- **Deploy da web não é automático:** o projeto da Vercel não está ligado ao GitHub. Cada
-  publicação hoje é feita com `npx vercel@latest deploy --prod` (veja
-  [DEPLOY](DEPLOY.md#4-site-nextjs)).
+- **Deploy automático ainda não ligado:** o workflow do EAS (`atualizar-app.yml`) e o
+  `expo-updates` estão prontos, mas falta ligar o GitHub `GbrielH` à Vercel e ao Expo (veja
+  [DEPLOY](DEPLOY.md#4-site-nextjs) e [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md)). Até lá, o site é
+  publicado com `npx vercel@latest deploy --prod` e o app com `eas workflow:run`.
 - **Resolvidos em 2026-10-16:** os scripts `build:apk` e `build:aab` agora usam
   `npx eas-cli`, o perfil `development` (que dependia de `expo-dev-client`) foi removido e as
   chaves `channel` sem `expo-updates` saíram do `eas.json`.

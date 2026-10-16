@@ -7,13 +7,13 @@
 
 ## Onde estamos
 
-| Área        | Situação                                                                                                                                                                                                                                                                                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Site        | **No ar** em <https://codexveil.vercel.app> (Vercel, projeto `codexveil`). Publicado pela CLI; o deploy automático pelo GitHub ainda não está ligado.                                                                                                                                                                          |
-| Backend     | **No ar:** Supabase `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`, us-east-2), com as 6 migrações, Site URL e Redirect URLs (`deploy/supabase/config.toml`).                                                                                                                                                                             |
-| App Android | **APK gerado** pelo EAS (`@gabriel.xxtth/codexveil`): [página do build](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/d6880918-4b91-44be-9a5f-7318170fe242), [download](https://expo.dev/artifacts/eas/X385AqVeUJhcPICnGQ-Oo6sFogibAMXKSxSpus48mGA.apk). Esse build é **anterior à correção do Realtime**. |
-| Validação   | API validada ao vivo: `packages/database/test/live` passou 10/10 contra o Supabase real. `pnpm check` passa 20/20 (318 testes) e `pnpm build` passa 2/2. **Ninguém usou ainda as telas com duas contas.**                                                                                                                      |
-| E-mail      | **Adiado:** o SMTP próprio (Brevo) será configurado com um e-mail exclusivo do sistema. Até lá, valem os e-mails padrão do Supabase, em inglês, com as limitações abaixo.                                                                                                                                                      |
+| Área        | Situação                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Site        | **No ar** em <https://codexveil.vercel.app> (Vercel, projeto `codexveil`). Hoje publicado pela CLI; o deploy automático pelo GitHub depende do passo 1.                                                                                                                                                                                                                                                                                                                                             |
+| Backend     | **No ar:** Supabase `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`, us-east-2), com as 6 migrações, Site URL e Redirect URLs (`deploy/supabase/config.toml`).                                                                                                                                                                                                                                                                                                                                                  |
+| App Android | **APK-base com atualização automática** (OTA) em geração pelo workflow do EAS: [build `de6ceb5c`](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/de6ceb5c-3d68-4be9-ad97-e19e2725b56b). APK reserva, com a correção do Realtime mas **sem** OTA: [download](https://expo.dev/artifacts/eas/OZvl6Lk0rZtf9G-IwxtKQMX7BM-HEj9KNdZ428o85PU.apk). O primeiro APK (versionCode 1) está obsoleto. Todos os builds: <https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds>. |
+| Validação   | API validada ao vivo: `packages/database/test/live` passou 10/10 contra o Supabase real. `pnpm check` passa 20/20 (318 testes) e `pnpm build` passa 2/2. **Ninguém usou ainda as telas com duas contas.**                                                                                                                                                                                                                                                                                           |
+| E-mail      | **Adiado:** o SMTP próprio (Brevo) será configurado com um e-mail exclusivo do sistema. Até lá, valem os e-mails padrão do Supabase, em inglês, com as limitações abaixo.                                                                                                                                                                                                                                                                                                                           |
 
 ### Limitações enquanto não houver SMTP próprio
 
@@ -26,18 +26,29 @@
 
 ## Próximos passos (em ordem)
 
-### 1. Gerar um APK novo — Claude
+### 1. Atualização automática do site e do app a cada commit — você e Claude
 
-O APK atual perde eventos do Realtime logo após abrir a ficha (defeito já corrigido no código e
-no site). Gerar um build novo usa uma unidade da cota mensal gratuita do EAS e leva cerca de
-20 min:
+Objetivo: um push em `main` publica o site e atualiza o app sozinho.
 
-```bash
-pnpm --filter @codexveil/mobile build:apk
-```
+- **Feito (Claude):** `expo-updates` instalado; runtime por fingerprint e canais `preview` e
+  `production` configurados; workflow `apps/mobile/.eas/workflows/atualizar-app.yml` validado.
+  Ele gera um APK novo quando o código nativo muda e, nos outros casos, publica uma atualização
+  OTA. A primeira execução foi disparada daqui para gerar o APK-base com atualização
+  automática.
+- **Você (uma vez):**
+  1. Vercel: <https://vercel.com/henrique0limah-6628/codexveil/settings/git> → **Connect Git
+     Repository** → GitHub → instale o app da Vercel na conta `GbrielH` (se ela não aparecer,
+     use **Add GitHub Account**) → escolha `GbrielH/CODEXVEIL`.
+  2. Expo: <https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/github> → instale o app
+     da Expo no GitHub `GbrielH` → conecte `GbrielH/CODEXVEIL` → **Base directory =
+     `apps/mobile`**.
+  3. Instale no celular o APK gerado pelo workflow (link no README). Os anteriores não recebem
+     atualizações automáticas.
+- **Claude (depois):** faz um push de teste e confirma que o site foi publicado e que o app
+  recebeu a atualização.
 
-**Pronto quando:** houver um novo link de download na página do projeto no expo.dev, e este
-relatório e o README apontarem para ele.
+**Pronto quando:** um push em `main` publicar o site e a atualização aparecer no app sem
+reinstalar.
 
 ### 2. Usar o site e o app com duas contas — você
 
@@ -78,16 +89,7 @@ marcados e os critérios "Validado na API" e "Falta validar ao vivo" de
 **Pronto quando:** um e-mail de fora da organização receber a confirmação em português e a
 recuperação de senha funcionar a partir do app.
 
-### 4. Deploy automático do site — você e Claude
-
-1. **Você:** no projeto `codexveil` da Vercel, vá em Settings → Git → Connect Git Repository →
-   GitHub e instale o app da Vercel na conta `GbrielH`, com acesso ao repositório `CODEXVEIL`.
-2. **Claude:** liga o repositório (`npx vercel@latest git connect`) e confirma que um push em
-   `main` gera um deploy.
-
-**Pronto quando:** um push em `main` publicar o site sozinho.
-
-### 5. Funcionalidades e qualidade pendentes — Claude
+### 4. Funcionalidades e qualidade pendentes — Claude
 
 A ordem detalhada está em
 [`PENDENCIAS.md`](PENDENCIAS.md#5-próximos-passos-sugeridos-em-ordem):
@@ -130,6 +132,13 @@ de segurança).
 - Teste ao vivo da API criado (10/10). Ele revelou que o Realtime perdia eventos logo após a
   inscrição; a correção está em `packages/database/src/realtime.ts`, e o site foi republicado
   com ela.
+
+### 2026-10-16 — atualização automática (em andamento)
+
+- `expo-updates` instalado, runtime por fingerprint, canais `preview` e `production` e versionCode 2.
+- Workflow do EAS `apps/mobile/.eas/workflows/atualizar-app.yml` validado e executado pela primeira vez daqui: o fingerprint não tinha APK compatível, então o workflow gerou o APK-base com OTA.
+- APK reserva gerado antes do `expo-updates` (com a correção do Realtime, sem OTA).
+- Pendente: ligar o GitHub `GbrielH` à Vercel e ao Expo (passo 1) e testar com um push.
 
 ## Como manter a documentação
 

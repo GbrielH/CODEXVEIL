@@ -101,11 +101,16 @@ A CLI envia a **pasta local**, não o Git. O `.vercelignore` espelha o `.gitigno
 builds locais, caches e arquivos `.env` nunca sejam enviados. Se o `vercel link` acrescentar
 `.env*` ao fim do `.gitignore`, remova a linha, porque ela anula a exceção `!.env.example`.
 
-**Deploy automático a cada push:** o vínculo com o GitHub ainda não existe, porque o app da
-Vercel não está instalado na conta `GbrielH`. Para ativar, vá em Project → Settings → Git →
-Connect Git Repository → GitHub, instale o app na conta `GbrielH` com acesso a `CODEXVEIL` e
-escolha a branch `main`. Pela CLI, rode `npx vercel@latest git connect` depois de instalar o
-app.
+**Deploy automático a cada push (integração Git da Vercel):** com o repositório ligado, cada
+push em `main` publica em produção e cada branch ou pull request ganha um deploy de preview.
+Os builds partem do GitHub; o `.vercelignore` só vale para deploys pela CLI.
+
+Para ligar (uma vez): abra <https://vercel.com/henrique0limah-6628/codexveil/settings/git>,
+clique em **Connect Git Repository** → **GitHub**. Se a conta `GbrielH` não aparecer na lista,
+use **Add GitHub Account** (ou "Adjust GitHub App Permissions") e instale o app da Vercel na
+conta `GbrielH` com acesso ao repositório `CODEXVEIL`. Depois escolha `GbrielH/CODEXVEIL`. O
+Root Directory continua `apps/web`, e a branch de produção é `main`. Hoje o app da Vercel desta
+conta só está instalado na organização `FinFlowA`.
 
 **Domínio:** ao trocar `codexveil.vercel.app` por um domínio próprio, atualize
 `NEXT_PUBLIC_SITE_URL` e `EXPO_PUBLIC_SITE_URL`, o `site_url` e as `additional_redirect_urls`
@@ -137,7 +142,12 @@ globalmente (`npm install -g eas-cli`). Rode os comandos dentro de `apps/mobile`
   públicos. Para criar o projeto em outra conta, rode `eas init --account <conta>` e atualize
   as duas constantes.
 - `eas.json` tem um perfil `base` (Node 24.15.0, pnpm 12.14.0) estendido por `preview` (APK,
-  distribuição interna, ambiente `preview`) e `production` (AAB, ambiente `production`).
+  distribuição interna, ambiente e canal `preview`) e `production` (AAB, ambiente e canal
+  `production`).
+- **Atualizações OTA (EAS Update):** `expo-updates` está instalado, e o `app.config.ts` define
+  `updates.url` e `runtimeVersion: { policy: 'fingerprint' }`. O APK baixa o JavaScript novo do
+  seu canal ao abrir. Uma atualização só chega a builds com o **mesmo fingerprint nativo**:
+  mudar dependências nativas, plugins ou campos nativos do `app.config.ts` exige um APK novo.
 - As variáveis `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` e
   `EXPO_PUBLIC_SITE_URL` ficam no EAS, nos ambientes `preview` e `production`. O
   `apps/mobile/.env.local` **não** vai para o build.
@@ -152,14 +162,34 @@ globalmente (`npm install -g eas-cli`). Rode os comandos dentro de `apps/mobile`
 - A chave de assinatura Android (keystore) foi gerada e é guardada pelo EAS. Não a coloque no
   repositório. Para fazer uma cópia: `eas credentials --platform android`.
 
-**Gerar o APK de teste:**
+**Atualização automática a cada push (EAS Workflows):** o workflow
+`apps/mobile/.eas/workflows/atualizar-app.yml` roda em cada push em `main`:
+
+1. calcula o fingerprint nativo (`fingerprint`);
+2. procura um APK `preview` com o mesmo fingerprint (`get-build`);
+3. se existir, publica uma atualização OTA no canal `preview` (`update`); se não existir, gera
+   um APK novo (`build`), que aparece na página de builds do projeto.
+
+Para ligar (uma vez): abra <https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/github>,
+instale o app da Expo no GitHub (conta `GbrielH`), conecte o repositório `GbrielH/CODEXVEIL`
+e defina **Base directory = `apps/mobile`**. A conta Expo precisa ter o GitHub vinculado nas
+configurações do usuário. Para rodar o workflow sem push (envia a pasta local):
+
+```bash
+eas workflow:validate .eas/workflows/atualizar-app.yml
+eas workflow:run .eas/workflows/atualizar-app.yml
+```
+
+**Gerar um APK manualmente:**
 
 ```bash
 eas build --platform android --profile preview
 ```
 
 No fim, a página do build no expo.dev mostra um link e um QR code para baixar o APK no
-aparelho (permita a instalação de fontes desconhecidas).
+aparelho (permita a instalação de fontes desconhecidas). APKs gerados antes do
+`expo-updates` (versionCode 1 e o primeiro build do versionCode 2) **não** recebem
+atualizações OTA; instale um APK gerado depois dele.
 
 **Para a Play Store** (Android App Bundle): `eas build --platform android --profile
 production`. Antes de cada envio, aumente `version` e `android.versionCode` em
@@ -167,9 +197,8 @@ production`. Antes de cada envio, aumente `version` e `android.versionCode` em
 
 Observações:
 
-- Não há perfil `development`. Para criar um, instale `expo-dev-client` (`pnpm --filter
-@codexveil/mobile exec expo install expo-dev-client`) e adicione um perfil com
-  `"developmentClient": true`.
+- Não há perfil `development`. Para criar um, rode, dentro de `apps/mobile`,
+  `pnpm exec expo install expo-dev-client` e adicione um perfil com `"developmentClient": true`.
 - Para testar localmente sem build: `pnpm dev:mobile` e abra no Expo Go.
 
 ## 6. Migrações e backups em produção
