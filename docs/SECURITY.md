@@ -1,0 +1,142 @@
+# Segurança e autorização
+
+## Princípios
+
+1. **O banco é a barreira de segurança.** Toda leitura e escrita passa pelo RLS do Postgres.
+   Esconder botões na interface é só conveniência.
+2. **Os clientes só usam a publishable key.** Web e mobile recusam iniciar se receberem uma
+   chave secreta (`service_role` ou `sb_secret_…`), conforme
+   `packages/database/src/config.ts` (com testes). Nenhum fluxo do app precisa da chave
+   secreta.
+3. **Não confiar em IDs do cliente.** O dono, o autor e o criador vêm de `auth.uid()` (defaults
+   e gatilhos). Colunas de controle não têm GRANT de escrita. Trocar um UUID na URL ou na
+   requisição só devolve "não encontrado".
+4. **O papel pertence à participação na campanha** (`campaign_members.role`), nunca ao perfil.
+5. **Segredos ficam em linhas ou tabelas que o jogador não pode ler**, em vez de colunas
+   escondidas: `creature_gm_data`, blocos com `visibility = 'gm'`, sessões não publicadas.
+
+## Funções de autorização (`private`)
+
+| Função                         | Verdadeira quando o usuário atual…                                                          |
+| ------------------------------ | ------------------------------------------------------------------------------------------- |
+| `is_campaign_member(c)`        | participa da campanha `c`                                                                   |
+| `is_campaign_gm(c)`            | é mestre de `c` (mesmo arquivada, para leitura)                                             |
+| `can_manage_campaign(c)`       | é mestre de `c` **e** `c` está ativa                                                        |
+| `can_participate(c)`           | participa de `c` **e** `c` está ativa                                                       |
+| `can_view_character(id)`       | é dono, ou é mestre da campanha, ou a campanha tem `party_sheets_visible`                   |
+| `can_edit_character_sheet(id)` | é dono (se `players_can_edit_sheets`) ou mestre, em campanha ativa; sem campanha, só o dono |
+| `can_edit_character_play(id)`  | é dono ou mestre, em campanha ativa (vida, recursos, condições, inventário)                 |
+
+Elas são `SECURITY DEFINER` com `search_path = ''`, o que evita recursão de RLS e
+sequestro de `search_path`. O esquema `private` não é exposto pela API.
+
+## Matriz de acesso
+
+| Recurso                             | Ler                                                                     | Criar / alterar / remover                                                                                  |
+| ----------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Perfil                              | O próprio e o de quem divide campanha com você                          | Só o próprio; o avatar precisa estar na pasta do usuário                                                   |
+| Campanha                            | Participantes                                                           | Criar: qualquer usuário (como dono). Alterar: mestres, se ativa. Excluir, arquivar e transferir: só o dono |
+| Participantes                       | Participantes                                                           | Só por RPC: aceitar convite, remover (mestre; só o dono remove mestres), sair, alterar papel (dono)        |
+| Convites                            | Mestres                                                                 | Mestres, em campanha ativa. Código, papel, usos e criador são definidos pelo banco                         |
+| Personagem                          | Dono, mestres e o grupo (se `party_sheets_visible`)                     | Criar: o dono. Ficha: `can_edit_character_sheet`. Excluir: só o dono                                       |
+| Vida, recursos, condições, itens    | Quem vê o personagem                                                    | `can_edit_character_play`                                                                                  |
+| Habilidades e magias                | Quem vê o personagem                                                    | `can_edit_character_sheet`                                                                                 |
+| Histórico                           | Quem vê o personagem                                                    | Inserir: `can_edit_character_play`, sempre em nome próprio. Imutável                                       |
+| Cópias de segurança                 | Quem edita a ficha                                                      | Só por gatilho                                                                                             |
+| NPCs e monstros (`creatures`)       | Mestres; jogadores só os revelados (`members`)                          | Mestres, em campanha ativa                                                                                 |
+| Dados secretos (`creature_gm_data`) | **Só mestres**                                                          | Só mestres                                                                                                 |
+| Sessões                             | Mestres; jogadores só as publicadas                                     | Mestres, em campanha ativa                                                                                 |
+| Blocos de roteiro                   | Mestres; jogadores só os blocos `members` de sessões publicadas         | Mestres                                                                                                    |
+| Cena, encontros e combatentes       | **Só mestres**                                                          | Só mestres                                                                                                 |
+| Anotações                           | `members`: participantes. `gm`: mestres e o autor. `author`: só o autor | Criar e editar: o autor. Remover: o autor, ou um mestre se a nota for `members`                            |
+| Planos                              | Usuários autenticados (o próprio plano)                                 | Só `service_role`                                                                                          |
+
+Usuários anônimos (`anon`) só leem `rpg_systems`. Nenhuma outra tabela tem GRANT para `anon`.
+
+## Convites
+
+- O código tem 12 caracteres de um alfabeto de 32 símbolos (60 bits de aleatoriedade
+  criptográfica). É gerado e regenerado pelo banco, e o cliente nunca o escolhe.
+- A validade é de no máximo 30 dias, com limite de 1 a 50 usos ou ilimitado. Convites pessoais
+  (`invited_email`) são sempre de uso único.
+- `accept_campaign_invite` trava a linha do convite (`for update`), o que serializa aceites
+  simultâneos e impede ultrapassar `max_uses`. Convites pessoais só valem para o **e-mail
+  confirmado** da conta.
+- A prévia só revela detalhes da campanha quando o convite é utilizável. Arquivar a campanha
+  revoga os convites pendentes.
+
+## Conteúdo secreto do mestre
+
+- `gm_note` é obrigatoriamente `visibility = 'gm'` (restrição `CHECK`).
+- Sessões não publicadas são invisíveis aos jogadores, incluindo os blocos públicos delas.
+- O Realtime (Postgres Changes) aplica as mesmas policies a cada assinante. Os segredos não são
+  publicados: `creature_gm_data` e `session_blocks` nem fazem parte da publicação, e a cena e o
+  combate só chegam aos mestres.
+- As imagens de roteiro e de NPCs só podem ser lidas quando o registro que as referencia pode
+  ser lido (veja Storage abaixo).
+
+## Storage
+
+| Bucket                               | Acesso                                                     | Caminhos                                                                                                          |
+| ------------------------------------ | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `avatars` (público, até 2 MB)        | Leitura pública pela URL. Escrita só na pasta `{user_id}/` | `{user_id}/{arquivo}`                                                                                             |
+| `campaign-media` (privado, até 5 MB) | URLs assinadas de curta duração                            | `campaigns/{id}/cover/…`, `campaigns/{id}/creatures/…`, `campaigns/{id}/sessions/{sessão}/…`, `characters/{id}/…` |
+
+- Só PNG, JPEG e WebP são aceitos, verificando o MIME no bucket e a extensão do nome. SVG é
+  recusado porque pode conter scripts. Os nomes de arquivo seguem um padrão restrito.
+- **Leitura da mídia privada:** mestres leem toda a mídia da campanha. Os demais participantes
+  leem a capa, imagens de NPCs revelados e imagens de blocos públicos de sessões publicadas.
+  Retratos seguem `can_view_character`.
+- **Escrita:** quem pode editar o registro de destino. As colunas `cover_path`, `image_path` e
+  `portrait_path` têm `CHECK` exigindo que o caminho esteja na pasta do próprio registro.
+
+## Autenticação
+
+- Supabase Auth com confirmação de e-mail obrigatória (`enable_confirmations = true`), senha
+  mínima de 8 caracteres e `secure_password_change`.
+- Web: sessão em cookies via `@supabase/ssr`, renovada pelo `proxy.ts` a cada requisição. As
+  rotas privadas redirecionam para `/entrar` com o motivo (sessão expirada ou não autenticado),
+  e esses redirecionamentos são enviados com `Cache-Control: private, no-store`.
+- Mobile: sessão no SQLite privado do app, com renovação pausada em segundo plano.
+
+## Cabeçalhos HTTP (web)
+
+`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` restritiva e
+`Cross-Origin-Opener-Policy: same-origin` (`apps/web/next.config.ts`).
+
+## Testes de segurança
+
+Os testes ficam em `packages/database/test/rls/` e rodam com PGlite, com o papel e o JWT
+reais de cada usuário:
+
+- `campaigns.test.ts`: perfis, acesso anônimo (nenhum dado privado nem RPC), campanha alheia
+  por troca de UUID, edição sem ser mestre, arquivamento, gestão de participantes e papéis,
+  transferência, limites de plano e isolamento entre campanhas do mesmo mestre.
+- `characters.test.ts`: ficha de outro jogador (mesmo com o UUID correto), visibilidade do
+  grupo, fichas travadas, versão e dono imutáveis, controle otimista, alterações simultâneas
+  de mestre e jogador, histórico imutável e isolamento.
+- `invites.test.ts`: código gerado no servidor, validade máxima, uso único dos convites
+  pessoais, limite de usos, convites expirados e revogados, prévia que não revela a campanha,
+  campanha arquivada e e-mail não confirmado ou diferente.
+- `sessions.test.ts`: blocos `gm`, sessões não publicadas, blocos malformados ou com HTML,
+  bloco apontando para outra campanha, `creature_gm_data`, cena e combate exclusivos do mestre,
+  anotações por visibilidade e referências de blocos públicos que não vazam segredos.
+- `storage.test.ts`: tipo e tamanho por bucket, avatar só na própria pasta, capas, imagem de
+  NPC oculto, imagem de roteiro, caminhos fora do padrão e retratos.
+
+## Limitações conhecidas
+
+- **Não há Content-Security-Policy.** Ela deve ser adicionada depois da validação ao vivo, para
+  não bloquear as conexões com o Supabase e o Realtime.
+- **Limite de tentativas em RPCs:** o Supabase limita as tentativas de Auth, mas não as chamadas
+  a `get_invite_preview` e `accept_campaign_invite`. Com 60 bits de entropia, adivinhar um
+  código por força bruta não é viável, mas um limite por IP (WAF ou Edge Function) é
+  recomendado em produção.
+- O que falta validar contra o Supabase real está em
+  [`PENDENCIAS.md`](PENDENCIAS.md#16-testes).
+
+## Como reportar uma vulnerabilidade
+
+Não abra uma issue pública. Entre em contato com o mantenedor do repositório por um canal
+privado (por exemplo, GitHub Security Advisories).
