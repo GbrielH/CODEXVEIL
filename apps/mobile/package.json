@@ -11,8 +11,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "doctor": "expo-doctor",
-    "build:apk": "eas build --platform android --profile preview",
-    "build:aab": "eas build --platform android --profile production"
+    "build:apk": "npx --yes eas-cli@latest build --platform android --profile preview",
+    "build:aab": "npx --yes eas-cli@latest build --platform android --profile production"
   },
   "dependencies": {
     "@codexveil/database": "workspace:*",

@@ -1,0 +1,44 @@
+# =============================================================================
+# Codexveil — configuração de PRODUÇÃO do Supabase Auth (projeto ityfhobhpjzhlkgvjhfb)
+#
+# Só as propriedades declaradas aqui são enviadas; o resto do projeto fica como está.
+# O supabase/config.toml da raiz é do ambiente LOCAL e não deve ser enviado à produção
+# (ele reduz o intervalo entre e-mails, desliga o MFA etc.).
+#
+#   pnpm exec supabase config diff --workdir deploy --project-ref ityfhobhpjzhlkgvjhfb
+#   pnpm exec supabase config push --workdir deploy --project-ref ityfhobhpjzhlkgvjhfb
+#
+# O SMTP (Brevo) é configurado no painel: Authentication → Emails → SMTP Settings.
+# A senha do SMTP é segredo e por isso não fica neste arquivo.
+# =============================================================================
+project_id = "codexveil"
+
+[auth]
+site_url = "https://codexveil.vercel.app"
+additional_redirect_urls = [
+  "https://codexveil.vercel.app/**",
+  # Deploys de preview da Vercel.
+  "https://codexveil-*-henrique0limah-6628.vercel.app/**",
+  # Desenvolvimento local apontando para este projeto.
+  "http://localhost:3000/**",
+  "codexveil://**",
+]
+minimum_password_length = 8
+password_requirements = "letters_digits"
+
+[auth.email]
+secure_password_change = true
+
+# Templates em português. No plano gratuito, o Supabase só aceita templates personalizados
+# com SMTP próprio configurado; sem ele, o envio desta seção é recusado.
+[auth.email.template.confirmation]
+subject = "Confirme seu e-mail no Codexveil"
+content_path = "../supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Redefina sua senha do Codexveil"
+content_path = "../supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Confirme seu novo e-mail no Codexveil"
+content_path = "../supabase/templates/email_change.html"

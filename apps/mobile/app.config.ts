@@ -6,10 +6,15 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
  */
 const charcoal = '#171719';
 
+/** Projeto no EAS (expo.dev). Identificadores públicos: não são segredos. */
+const easOwner = 'gabriel.xxtth';
+const easProjectId = '577acbce-c1fa-4729-b1f9-1f94f5b95569';
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'Codexveil',
   slug: 'codexveil',
+  owner: easOwner,
   version: '0.1.0',
   scheme: 'codexveil',
   orientation: 'default',
@@ -48,6 +53,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     reactCompiler: true,
   },
   extra: {
-    eas: process.env.EAS_PROJECT_ID ? { projectId: process.env.EAS_PROJECT_ID } : undefined,
+    eas: { projectId: easProjectId },
   },
 });

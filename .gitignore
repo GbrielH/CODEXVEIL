@@ -27,9 +27,12 @@ expo-env.d.ts
 *.apk
 *.aab
 
+# Vercel CLI (vínculo local do projeto)
+.vercel/
+
 # Supabase CLI (estado local)
-supabase/.branches/
-supabase/.temp/
+**/supabase/.branches/
+**/supabase/.temp/
 supabase/.env
 
 # Variáveis de ambiente — nunca versionar segredos

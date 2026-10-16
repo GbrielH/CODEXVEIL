@@ -109,8 +109,12 @@ Apenas tabelas que mudam durante uma partida são publicadas: participantes, per
 recursos, condições, cena, encontros e combatentes. O Realtime (Postgres Changes) aplica o RLS
 a cada assinante. Mesmo assim, os clientes usam os eventos **apenas como sinal** para
 recarregar os dados pelas consultas normais (`packages/database/src/realtime.ts`), com
-agrupamento de rajadas e nova sincronização ao reconectar. O status (`live`, `connecting`,
-`offline`) aparece na interface.
+agrupamento de rajadas. O status (`live`, `connecting`, `offline`) aparece na interface.
+
+O canal fica `SUBSCRIBED` antes de o servidor terminar de assinar o Postgres, e mudanças nesse
+intervalo não geram eventos (verificado contra o Supabase real). Por isso o estado só vira
+`live` quando chega a mensagem de sistema do Postgres Changes (`status: ok`), com uma
+salvaguarda de 5 s. Nesse momento, e a cada reconexão, os dados são recarregados uma vez.
 
 ## Erros
 

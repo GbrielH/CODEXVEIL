@@ -7,6 +7,8 @@
 **Legenda de status**
 
 - **Atendido**: implementado e coberto por testes automatizados.
+- **Validado na API**: as consultas reais dos apps passaram contra o Supabase real (teste ao vivo,
+  2026-10-16), mas a tela ainda não foi usada por uma pessoa no navegador ou no aparelho.
 - **Falta validar ao vivo**: implementado e testado no banco (PGlite), mas ainda não exercitado
   contra um Supabase real, num navegador ou num aparelho Android.
 - **Parcial**: parte do requisito existe; o que falta está descrito.
@@ -16,48 +18,53 @@
 ## Resumo
 
 O código do MVP está completo na web, o app mobile cobre os fluxos prioritários e o banco
-tem RLS testado. Em 2026-10-16, `pnpm check` passou em 20 de 20 tarefas (315 testes) e
+tem RLS testado. Em 2026-10-16, `pnpm check` passou em 20 de 20 tarefas (318 testes) e
 `pnpm build` passou em 2 de 2 tarefas (web e bundle Android).
 
-**A principal lacuna é a validação ao vivo.** A máquina de desenvolvimento não tem Docker e
-ainda não existe um projeto Supabase do Codexveil. Por isso o projeto nunca rodou contra um
-Supabase real: cadastro com e-mail, Storage, Realtime e os fluxos completos no navegador e
-no aparelho não foram exercitados. O APK também ainda não foi gerado. Pela regra da seção 22
-("não marque um item como concluído apenas porque existe uma tela para ele"), os critérios
-marcados como "Falta validar ao vivo" só contam como concluídos depois dessa validação.
+**Publicado e validado na API.** O site está em <https://codexveil.vercel.app>, o backend no
+projeto Supabase `CODEXVEIL` e o primeiro APK foi gerado pelo EAS. Um teste de integração com
+as consultas reais dos apps passou em 10 de 10 contra o Supabase real (Auth, PostgREST, Storage
+e Realtime) e revelou um defeito no Realtime, já corrigido.
+
+**A lacuna agora é o uso real das telas.** Ninguém usou ainda o site no navegador nem o app
+no aparelho com duas contas, e os e-mails em português dependem do SMTP próprio (adiado). Pela
+regra da seção 22 ("não marque um item como concluído apenas porque existe uma tela para
+ele"), os critérios "Validado na API" e "Falta validar ao vivo" só contam como concluídos
+depois desse uso.
 
 ## 1. O que depende de você (configuração externa)
 
-| Item                                                                           | Para quê                                                                         | Onde está documentado                       |
-| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- | ------------------------------------------- |
-| Projeto Supabase exclusivo (nuvem) **ou** Docker para rodar localmente         | Executar o app de verdade                                                        | [README](../README.md), [DEPLOY](DEPLOY.md) |
-| Site URL, URLs de redirecionamento e templates de e-mail no painel do Supabase | Confirmação de conta, recuperação de senha e links de convite                    | [DEPLOY](DEPLOY.md#2-autenticação)          |
-| SMTP próprio (Resend, SES, Postmark etc.)                                      | O SMTP embutido do Supabase tem limite baixo de envios e não serve para produção | [DEPLOY](DEPLOY.md#2-autenticação)          |
-| Conta Expo e projeto EAS (`EAS_PROJECT_ID`)                                    | Gerar o APK                                                                      | [DEPLOY](DEPLOY.md#5-app-android-apk-e-aab) |
-| Hospedagem da web (Vercel ou outro host Node) e domínio                        | Publicar o site e servir os links de e-mail                                      | [DEPLOY](DEPLOY.md#4-site-nextjs)           |
+| Item                                          | Situação (2026-10-16)                                                                                               | Onde está documentado                              |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Projeto Supabase exclusivo                    | **Feito:** `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`), com as migrações aplicadas                                         | [DEPLOY](DEPLOY.md#1-supabase-projeto-e-migrações) |
+| Site URL e URLs de redirecionamento           | **Feito:** `deploy/supabase/config.toml`                                                                            | [DEPLOY](DEPLOY.md#2-autenticação)                 |
+| SMTP próprio (Brevo) e templates em português | **Pendente:** conta Brevo e SMTP no painel do Supabase; depois, `config push` dos templates                         | [DEPLOY](DEPLOY.md#2-autenticação)                 |
+| Hospedagem da web                             | **Feito:** <https://codexveil.vercel.app>; falta o deploy automático pelo GitHub (app da Vercel na conta `GbrielH`) | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
+| Conta Expo e projeto EAS                      | **Feito:** `@gabriel.xxtth/codexveil`                                                                               | [DEPLOY](DEPLOY.md#5-app-android-apk-e-aab)        |
+| Domínio próprio                               | Opcional                                                                                                            | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
 
 ## 2. Critérios de aceitação do MVP (seção 22)
 
-| #   | Critério                                       | Status                | Como foi verificado / o que falta                                                                                                                                                                          |
-| --- | ---------------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Criar conta e entrar                           | Falta validar ao vivo | Fluxos de cadastro, login, logout, recuperação e redefinição na web e no mobile; perfil criado por gatilho. Falta testar com e-mail de confirmação real.                                                   |
-| 2   | Mestre cria campanha                           | Falta validar ao vivo | `test/rls/campaigns.test.ts`: o dono vira mestre por gatilho e o limite do plano é aplicado no banco.                                                                                                      |
-| 3   | Mestre convida jogador                         | Falta validar ao vivo | Convites por código ou link e convites pessoais por e-mail, com expiração, limite de usos e revogação (`test/rls/invites.test.ts`). O e-mail de convite **não é enviado** automaticamente: veja a seção 3. |
-| 4   | Jogador entra após validar o convite           | Falta validar ao vivo | `accept_campaign_invite` trava o convite (sem corrida em `max_uses`) e valida e-mail verificado, expiração e arquivamento.                                                                                 |
-| 5   | Papéis e permissões                            | Atendido              | Papel por campanha (`campaign_members`), RLS e testes de troca de UUID, campanha alheia e usuário anônimo.                                                                                                 |
-| 6   | Criar personagem e associar à campanha         | Falta validar ao vivo | `create_character` (web e mobile usam `buildDnd5eCharacter`); o gatilho exige o mesmo sistema e a participação do dono.                                                                                    |
-| 7   | Consultar e editar a ficha                     | Falta validar ao vivo | Ficha em abas na web e no mobile; autosave com versão otimista e conflito explícito (`autosave.test.ts`).                                                                                                  |
-| 8   | Cálculos iniciais corretos                     | Atendido              | 74 testes em `@codexveil/rpg-systems` (modificadores, proficiência, perícias, CA, iniciativa, progressão e espaços de magia).                                                                              |
-| 9   | Gerenciar inventário                           | Falta validar ao vivo | Itens, categorias, peso, itens equipados e moedas como trilhas; `adjust_item_quantity` é atômico.                                                                                                          |
-| 10  | Organizar NPCs e monstros para a sessão        | Falta validar ao vivo | Biblioteca, cena com instâncias independentes e combate. **Somente na web.**                                                                                                                               |
-| 11  | Criar e organizar roteiro por blocos           | Falta validar ao vivo | Editor com 13 tipos de bloco, arrastar e soltar e botões de mover. **Somente na web**; o mobile só lê.                                                                                                     |
-| 12  | Jogadores não leem conteúdo privado            | Atendido              | `test/rls/sessions.test.ts` e `test/rls/storage.test.ts`: blocos `gm`, sessões não publicadas, dados secretos de NPCs e imagens privadas.                                                                  |
-| 13  | Dados persistem no banco                       | Falta validar ao vivo | Restrições, gatilhos e testes de migração no PGlite.                                                                                                                                                       |
-| 14  | Telas no navegador e adaptadas ao celular      | Falta validar ao vivo | Layout responsivo (sidebar no desktop, navegação inferior no celular). Ninguém revisou as telas num navegador com dados reais.                                                                             |
-| 15  | Fluxos prioritários no mobile                  | Falta validar ao vivo | O bundle Android é gerado com `expo export`, mas o app nunca foi aberto num emulador ou aparelho.                                                                                                          |
-| 16  | Tipos, lint, testes e build passam             | Atendido              | `pnpm check` (20/20) e `pnpm build` (2/2) em 2026-10-16.                                                                                                                                                   |
-| 17  | Configuração documentada                       | Atendido              | README, `.env.example` e os documentos em `docs/`.                                                                                                                                                         |
-| 18  | Nenhuma função central só com botão decorativo | Atendido              | Revisão de `href="#"`, handlers vazios e TODOs; a rota declarada sem página foi removida.                                                                                                                  |
+| #   | Critério                                       | Status                | Como foi verificado / o que falta                                                                                                                                                                                                                   |
+| --- | ---------------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Criar conta e entrar                           | Falta validar ao vivo | Fluxos de cadastro, login, logout, recuperação e redefinição na web e no mobile; perfil criado por gatilho. Falta testar com e-mail de confirmação real.                                                                                            |
+| 2   | Mestre cria campanha                           | Validado na API       | `test/rls/campaigns.test.ts`: o dono vira mestre por gatilho e o limite do plano é aplicado no banco. Ao vivo: criação e papel gm confirmados.                                                                                                      |
+| 3   | Mestre convida jogador                         | Validado na API       | Convites por código ou link e convites pessoais por e-mail, com expiração, limite de usos e revogação (`test/rls/invites.test.ts`). O e-mail de convite **não é enviado** automaticamente: veja a seção 3. Ao vivo: convite criado e prévia válida. |
+| 4   | Jogador entra após validar o convite           | Validado na API       | `accept_campaign_invite` trava o convite (sem corrida em `max_uses`) e valida e-mail verificado, expiração e arquivamento. Ao vivo: aceite pelo código e participantes corretos.                                                                    |
+| 5   | Papéis e permissões                            | Atendido              | Papel por campanha (`campaign_members`), RLS e testes de troca de UUID, campanha alheia e usuário anônimo.                                                                                                                                          |
+| 6   | Criar personagem e associar à campanha         | Validado na API       | `create_character` (web e mobile usam `buildDnd5eCharacter`); o gatilho exige o mesmo sistema e a participação do dono. Ao vivo: criação com trilha de vida; estranho não vê.                                                                       |
+| 7   | Consultar e editar a ficha                     | Validado na API       | Ficha em abas na web e no mobile; autosave com versão otimista e conflito explícito (`autosave.test.ts`). Ao vivo: gravação com versão e conflito explícito.                                                                                        |
+| 8   | Cálculos iniciais corretos                     | Atendido              | 74 testes em `@codexveil/rpg-systems` (modificadores, proficiência, perícias, CA, iniciativa, progressão e espaços de magia).                                                                                                                       |
+| 9   | Gerenciar inventário                           | Falta validar ao vivo | Itens, categorias, peso, itens equipados e moedas como trilhas; `adjust_item_quantity` é atômico.                                                                                                                                                   |
+| 10  | Organizar NPCs e monstros para a sessão        | Validado na API       | Biblioteca, cena com instâncias independentes e combate. **Somente na web.** Ao vivo: segredos só para o mestre; cena invisível ao jogador.                                                                                                         |
+| 11  | Criar e organizar roteiro por blocos           | Validado na API       | Editor com 13 tipos de bloco, arrastar e soltar e botões de mover. **Somente na web**; o mobile só lê. Ao vivo: blocos públicos e privados; só o público chega ao jogador.                                                                          |
+| 12  | Jogadores não leem conteúdo privado            | Atendido              | `test/rls/sessions.test.ts` e `test/rls/storage.test.ts`: blocos `gm`, sessões não publicadas, dados secretos de NPCs e imagens privadas. Ao vivo: os mesmos cenários passaram contra o Supabase real.                                              |
+| 13  | Dados persistem no banco                       | Validado na API       | Restrições, gatilhos e testes de migração no PGlite. Ao vivo: todos os fluxos acima persistiram no Supabase real.                                                                                                                                   |
+| 14  | Telas no navegador e adaptadas ao celular      | Falta validar ao vivo | Layout responsivo (sidebar no desktop, navegação inferior no celular). Ninguém revisou as telas num navegador com dados reais.                                                                                                                      |
+| 15  | Fluxos prioritários no mobile                  | Falta validar ao vivo | O bundle Android é gerado com `expo export`, mas o app nunca foi aberto num emulador ou aparelho.                                                                                                                                                   |
+| 16  | Tipos, lint, testes e build passam             | Atendido              | `pnpm check` (20/20) e `pnpm build` (2/2) em 2026-10-16.                                                                                                                                                                                            |
+| 17  | Configuração documentada                       | Atendido              | README, `.env.example` e os documentos em `docs/`.                                                                                                                                                                                                  |
+| 18  | Nenhuma função central só com botão decorativo | Atendido              | Revisão de `href="#"`, handlers vazios e TODOs; a rota declarada sem página foi removida.                                                                                                                                                           |
 
 ## 3. Pendências por seção do prompt
 
@@ -143,9 +150,10 @@ Esta seção lista só o que falta ou está parcial. O que já foi atendido est�
 
 - **Pendente: testes ponta a ponta** dos fluxos críticos (por exemplo, Playwright) contra um
   Supabase local ou de homologação.
-- **Pendente: testes de integração com o Supabase real** (Auth, Storage, Realtime). Os testes
-  de RLS usam PGlite com um shim mínimo do Supabase. Eles cobrem as policies, mas não os
-  serviços.
+- **Atendido em parte: integração com o Supabase real.** `test/live/supabase.live.test.ts`
+  passa pelos serviços reais (10/10 em 2026-10-16), mas só roda manualmente, com
+  credenciais. Falta rodá-lo na CI contra um projeto de homologação e cobrir inventário,
+  combate, reordenação e e-mails.
 - **Pendente: testes do app mobile.** Hoje o mobile só passa por typecheck, lint e bundle.
 
 ### §17 Desempenho e acessibilidade
@@ -175,26 +183,29 @@ implementados, conforme o prompt. Nenhuma tela promete essas funções.
 
 ## 4. Problemas conhecidos
 
-- **CLI do EAS não instalada:** os scripts `build:apk` e `build:aab` chamam `eas`, mas o
-  `eas-cli` não é dependência do projeto. Instale-o globalmente antes
-  (`npm install -g eas-cli`), como descrito em [DEPLOY](DEPLOY.md#5-app-android-apk-e-aab).
-- **Perfil `development` do EAS:** `apps/mobile/eas.json` usa `developmentClient: true`, mas o
-  pacote `expo-dev-client` não está instalado. Para gerar o APK de teste, use o perfil
-  `preview` (`build:apk`). Para usar o perfil `development`, rode antes
-  `pnpm --filter @codexveil/mobile exec expo install expo-dev-client`.
-- **`channel` sem `expo-updates`:** os perfis `preview` e `production` definem `channel`, que só
-  tem efeito com o EAS Update. Confira o aviso do EAS no primeiro build. Se ele incomodar,
-  instale o `expo-updates` ou remova a chave.
+- **E-mails padrão do Supabase enquanto não houver SMTP próprio:** os templates em português
+  são recusados no plano gratuito. Com os e-mails padrão, a confirmação e a recuperação de
+  senha pelo site só funcionam no mesmo navegador em que foram pedidas, a **recuperação de
+  senha pedida pelo app não funciona** e só membros da organização do Supabase recebem e-mails.
+  Isso se resolve com o SMTP da Brevo e o envio dos templates (veja
+  [DEPLOY](DEPLOY.md#2-autenticação)).
+- **Deploy da web não é automático:** o projeto da Vercel não está ligado ao GitHub. Cada
+  publicação hoje é feita com `npx vercel@latest deploy --prod` (veja
+  [DEPLOY](DEPLOY.md#4-site-nextjs)).
+- **Resolvidos em 2026-10-16:** os scripts `build:apk` e `build:aab` agora usam
+  `npx eas-cli`, o perfil `development` (que dependia de `expo-dev-client`) foi removido e as
+  chaves `channel` sem `expo-updates` saíram do `eas.json`.
 - **README:** a resolução do conflito de merge de 2026-10-16 tinha removido a formatação
   Markdown (títulos, blocos de código, tabelas e links). A formatação foi restaurada sem
   alterar o texto revisado.
 
 ## 5. Próximos passos sugeridos (em ordem)
 
-1. **Validar ao vivo.** Crie o projeto Supabase, rode `supabase db push` e configure o Auth
-   (veja [DEPLOY](DEPLOY.md)). Depois rode `pnpm dev:web` contra ele e percorra os critérios de
-   1 a 15 com duas contas (mestre e jogador) em navegadores separados. Corrija o que aparecer.
-2. **Gerar o APK** (`build:apk`) e repetir os fluxos do mobile num aparelho Android.
+1. **Usar o site publicado e o APK** com duas contas (mestre e jogador), seguindo as etapas 4
+   e 6 de [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md), e corrigir o que aparecer. Gere antes um APK
+   novo, para incluir a correção do Realtime.
+2. **SMTP próprio** (Brevo, com o e-mail exclusivo do sistema) e envio dos templates em
+   português.
 3. **Capa da campanha**: tela de envio e exibição (o backend está pronto).
 4. **Referências a sessões** na página de NPCs e monstros.
 5. **Testes ponta a ponta** (Playwright) dos critérios 1 a 12, rodando contra o Supabase local

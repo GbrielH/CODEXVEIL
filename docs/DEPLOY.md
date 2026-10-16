@@ -3,20 +3,26 @@
 Este guia assume um projeto Supabase **novo e exclusivo** para o Codexveil. Os comandos rodam
 na raiz do repositório.
 
-> **Situação em 2026-10-16:** nenhum destes passos foi executado ainda (não há projeto
-> Supabase nem conta EAS configurados). Ao seguir o guia pela primeira vez, registre o que
-> precisar de ajuste.
+> **Ambientes em uso (2026-10-16):**
+>
+> | Serviço    | Recurso                                                                            |
+> | ---------- | ---------------------------------------------------------------------------------- |
+> | Supabase   | Projeto `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`, us-east-2), organização CODEXVEIL     |
+> | Vercel     | Projeto `codexveil` (conta `henrique0limah-6628`) → <https://codexveil.vercel.app> |
+> | Expo / EAS | Projeto `@gabriel.xxtth/codexveil`                                                 |
 
 ## 1. Supabase: projeto e migrações
 
 1. Crie o projeto em <https://supabase.com/dashboard> e escolha a região mais próxima dos
    jogadores (por exemplo, `sa-east-1`).
-2. Vincule e aplique as migrações:
+2. Vincule e aplique as migrações. A CLI usa um papel de login temporário, então a senha do
+   banco não é necessária:
 
    ```bash
    pnpm exec supabase login
    pnpm exec supabase link --project-ref <ref-do-projeto>
-   pnpm exec supabase db push        # aplica supabase/migrations (o seed NÃO é aplicado)
+   pnpm exec supabase db push --dry-run   # confere a lista antes
+   pnpm exec supabase db push             # aplica supabase/migrations (o seed NÃO é aplicado)
    ```
 
 3. Confira no painel: **Database → Tables** deve listar as tabelas de `public`, todas com RLS,
@@ -26,19 +32,39 @@ na raiz do repositório.
 
 ## 2. Autenticação
 
-No painel do projeto:
+A configuração de produção do Auth está versionada em `deploy/supabase/config.toml`: Site URL,
+Redirect URLs, regras de senha, `secure_password_change` e os templates em português. Ela é
+enviada pela CLI, que mostra o diff e só altera o que o arquivo declara:
 
-| Onde                                                   | Valor                                                                                                                                                      |
-| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Authentication → URL Configuration → **Site URL**      | URL pública do site, ex.: `https://codexveil.app`                                                                                                          |
-| Authentication → URL Configuration → **Redirect URLs** | `https://codexveil.app/**` e `codexveil://**` (para o app no futuro). Em homologação, inclua também a URL de preview.                                      |
-| Authentication → Sign In / Providers → Email           | **Confirm email** ligado, senha mínima de 8 caracteres e **Secure password change** ligado (igual ao `supabase/config.toml`)                               |
-| Authentication → Email Templates                       | Copie o HTML e o assunto de `supabase/templates/confirmation.html`, `recovery.html` e `email_change.html`. Os assuntos estão em `supabase/config.toml`.    |
-| Authentication → SMTP Settings                         | Configure um provedor próprio (Resend, Amazon SES, Postmark etc.). O SMTP embutido do Supabase tem limite muito baixo de envios e não serve para produção. |
+```bash
+pnpm exec supabase config diff --workdir deploy --project-ref ityfhobhpjzhlkgvjhfb
+pnpm exec supabase config push --workdir deploy --project-ref ityfhobhpjzhlkgvjhfb
+```
+
+**Nunca envie o `supabase/config.toml` da raiz para a produção.** Ele é do ambiente local e
+reduziria o intervalo entre e-mails para 1 s, desligaria o MFA e mudaria o pooler.
+
+**SMTP próprio (Brevo):** no plano gratuito, o Supabase **recusa templates personalizados**
+com o provedor de e-mail padrão. O provedor padrão também só entrega para membros da
+organização. Configure o SMTP no painel (Authentication → Emails → SMTP Settings), porque a
+senha é segredo e não fica no repositório:
+
+| Campo        | Valor                                                                       |
+| ------------ | --------------------------------------------------------------------------- |
+| Sender email | Remetente verificado na Brevo (Senders, Domains & Dedicated IPs → Senders)  |
+| Sender name  | `Codexveil`                                                                 |
+| Host         | `smtp-relay.brevo.com`                                                      |
+| Port         | `587`                                                                       |
+| Username     | O "Login" exibido em Brevo → SMTP & API → SMTP (formato `…@smtp-brevo.com`) |
+| Password     | Uma SMTP key gerada nessa mesma tela (não é a senha da conta Brevo)         |
+
+Depois do SMTP, rode o `config push` acima para enviar os templates.
 
 Os templates montam o link como `{{ .SiteURL }}/auth/confirmar?token_hash=…&type=…`, então a
 **Site URL precisa ser exatamente a URL do site**. A rota `/auth/confirmar` valida o token e só
-redireciona para caminhos internos.
+redireciona para caminhos internos. Ela também aceita o `?code=` dos e-mails padrão (fluxo
+PKCE), mas esse fluxo só funciona no mesmo navegador em que o pedido foi feito e não serve para
+a recuperação de senha iniciada pelo app.
 
 ## 3. Variáveis de ambiente
 
@@ -51,23 +77,39 @@ São todas públicas: só a URL do projeto e a **publishable key** (Project Sett
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` / `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | ✓   | ✓      |
 | `NEXT_PUBLIC_SITE_URL` / `EXPO_PUBLIC_SITE_URL` (sem barra no final)            | ✓   | ✓      |
 | `ANDROID_PACKAGE` (opcional, padrão `app.codexveil.mobile`)                     |     | build  |
-| `EAS_PROJECT_ID`                                                                |     | build  |
 
 As variáveis `NEXT_PUBLIC_*` e `EXPO_PUBLIC_*` entram no bundle **no momento do build**.
 Depois de alterá-las, gere o build de novo.
 
 ## 4. Site (Next.js)
 
-### Vercel (recomendado)
+### Vercel (em uso)
 
-1. Importe o repositório e defina **Root Directory = `apps/web`**. A Vercel detecta o workspace
-   pnpm pela raiz e instala todos os pacotes.
-2. Em Settings → General, use **Node.js 24.x**.
-3. O projeto usa pnpm 12 (`packageManager` no `package.json` raiz). Se a instalação falhar por
-   causa da versão do pnpm, adicione a variável `ENABLE_EXPERIMENTAL_COREPACK=1`.
-4. Cadastre as três variáveis `NEXT_PUBLIC_*` (seção 3) nos ambientes Production e Preview.
-5. Faça o deploy e atualize a **Site URL** e as **Redirect URLs** do Supabase com o domínio
-   final.
+O projeto `codexveil` tem Framework **Next.js**, **Root Directory = `apps/web`**, **Node.js
+24.x** e as três variáveis `NEXT_PUBLIC_*` (seção 3) em Production, Preview e Development. A
+Vercel lê o `packageManager` e usa o pnpm 12.14 sem configuração extra (confirmado no log do
+primeiro build: instalação em 12 s, build em 53 s).
+
+**Deploy pela CLI** (na raiz do repositório):
+
+```bash
+npx vercel@latest link --yes --project codexveil   # uma vez por máquina; cria .vercel/
+npx vercel@latest deploy --prod
+```
+
+A CLI envia a **pasta local**, não o Git. O `.vercelignore` espelha o `.gitignore` para que
+builds locais, caches e arquivos `.env` nunca sejam enviados. Se o `vercel link` acrescentar
+`.env*` ao fim do `.gitignore`, remova a linha, porque ela anula a exceção `!.env.example`.
+
+**Deploy automático a cada push:** o vínculo com o GitHub ainda não existe, porque o app da
+Vercel não está instalado na conta `GbrielH`. Para ativar, vá em Project → Settings → Git →
+Connect Git Repository → GitHub, instale o app na conta `GbrielH` com acesso a `CODEXVEIL` e
+escolha a branch `main`. Pela CLI, rode `npx vercel@latest git connect` depois de instalar o
+app.
+
+**Domínio:** ao trocar `codexveil.vercel.app` por um domínio próprio, atualize
+`NEXT_PUBLIC_SITE_URL` e `EXPO_PUBLIC_SITE_URL`, o `site_url` e as `additional_redirect_urls`
+de `deploy/supabase/config.toml` (e rode o `config push`) e gere novos builds.
 
 ### Outro host Node
 
@@ -85,49 +127,50 @@ disso.
 
 Não é preciso ter o Android Studio: o build roda nos servidores do EAS.
 
-1. Instale a CLI do EAS (ela não é dependência do projeto; a Expo recomenda a instalação
-   global), crie uma conta em <https://expo.dev> e entre:
+A CLI do EAS não é dependência do projeto. Use-a com `npx --yes eas-cli@latest …` ou instale-a
+globalmente (`npm install -g eas-cli`). Rode os comandos dentro de `apps/mobile`, onde está o
+`eas.json`. Ela usa a mesma sessão da CLI do Expo (`npx expo whoami`).
 
-   ```bash
-   npm install -g eas-cli
-   cd apps/mobile
-   eas login
-   eas init
-   ```
+**Configuração em uso:**
 
-   Como a configuração é dinâmica (`app.config.ts`), o `eas init` mostra o **project ID** em
-   vez de gravá-lo. Guarde-o como `EAS_PROJECT_ID`.
+- `app.config.ts` fixa `owner` (`gabriel.xxtth`) e `extra.eas.projectId`. São identificadores
+  públicos. Para criar o projeto em outra conta, rode `eas init --account <conta>` e atualize
+  as duas constantes.
+- `eas.json` tem um perfil `base` (Node 24.15.0, pnpm 12.14.0) estendido por `preview` (APK,
+  distribuição interna, ambiente `preview`) e `production` (AAB, ambiente `production`).
+- As variáveis `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` e
+  `EXPO_PUBLIC_SITE_URL` ficam no EAS, nos ambientes `preview` e `production`. O
+  `apps/mobile/.env.local` **não** vai para o build.
 
-2. Cadastre as variáveis no EAS (painel do projeto em expo.dev → Environment variables, ou
-   `eas env:create`): `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
-   `EXPO_PUBLIC_SITE_URL` e `EAS_PROJECT_ID`, no ambiente usado pelo perfil (`preview` ou
-   `production`). O arquivo `apps/mobile/.env.local` **não** vai para o build, porque está no
-   `.gitignore`.
-3. Para gerar o APK de teste (perfil `preview`, distribuição interna):
+  ```bash
+  eas env:set --name EXPO_PUBLIC_SITE_URL --value https://codexveil.vercel.app \
+    --visibility plaintext --environment preview --environment production --non-interactive
+  eas env:list preview
+  eas config --platform android --profile preview   # confere o perfil e as variáveis
+  ```
 
-   ```bash
-   pnpm --filter @codexveil/mobile build:apk
-   ```
+- A chave de assinatura Android (keystore) foi gerada e é guardada pelo EAS. Não a coloque no
+  repositório. Para fazer uma cópia: `eas credentials --platform android`.
 
-   Ao terminar, o EAS mostra um link ou QR code para baixar e instalar o APK no aparelho
-   (permita a instalação de fontes desconhecidas).
+**Gerar o APK de teste:**
 
-4. Para a Play Store (perfil `production`, Android App Bundle):
+```bash
+eas build --platform android --profile preview
+```
 
-   ```bash
-   pnpm --filter @codexveil/mobile build:aab
-   ```
+No fim, a página do build no expo.dev mostra um link e um QR code para baixar o APK no
+aparelho (permita a instalação de fontes desconhecidas).
 
-   Antes de cada envio, aumente `version` e `android.versionCode` em
-   `apps/mobile/app.config.ts`. A chave de assinatura é gerada e guardada pelo EAS: não a
-   coloque no repositório.
+**Para a Play Store** (Android App Bundle): `eas build --platform android --profile
+production`. Antes de cada envio, aumente `version` e `android.versionCode` em
+`apps/mobile/app.config.ts`.
 
 Observações:
 
-- O perfil `development` exige o pacote `expo-dev-client`, que não está instalado (veja
-  [`PENDENCIAS.md`](PENDENCIAS.md#4-problemas-conhecidos)).
-- Para testar localmente sem build: `pnpm dev:mobile` e abra no Expo Go. No emulador Android, o
-  Supabase local fica em `http://10.0.2.2:54321`.
+- Não há perfil `development`. Para criar um, instale `expo-dev-client` (`pnpm --filter
+@codexveil/mobile exec expo install expo-dev-client`) e adicione um perfil com
+  `"developmentClient": true`.
+- Para testar localmente sem build: `pnpm dev:mobile` e abra no Expo Go.
 
 ## 6. Migrações e backups em produção
 

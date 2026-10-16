@@ -107,6 +107,11 @@ Usuários anônimos (`anon`) só leem `rpg_systems`. Nenhuma outra tabela tem GR
 
 ## Testes de segurança
 
+Além dos testes abaixo, `packages/database/test/live/supabase.live.test.ts` repete os cenários
+principais (anônimo, estranho com UUID, segredos de NPCs, blocos `gm`, cena, anotações e
+Storage) contra o Supabase real, pelas mesmas consultas dos apps (veja
+[`PROGRESS.md`](PROGRESS.md#teste-ao-vivo-contra-o-supabase-real)).
+
 Os testes ficam em `packages/database/test/rls/` e rodam com PGlite, com o papel e o JWT
 reais de cada usuário:
 

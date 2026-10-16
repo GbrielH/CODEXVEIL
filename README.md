@@ -10,7 +10,9 @@ O projeto começa com D&D 5e (SRD 5.2) e foi projetado para receber outros siste
 - **Mobile:** Expo/React Native para Android, com conta, painel, campanhas, convites, criação de personagens, ficha jogável com sincronização em tempo real e leitura de sessões.
 - **Backend:** Supabase (Postgres, Auth, Storage e Realtime). A autorização é feita por políticas RLS no banco de dados; a interface não é considerada uma barreira de segurança.
 
-O estado atual do projeto e os próximos passos estão documentados em [`docs/PROGRESS.md`](docs/PROGRESS.md). O que ainda falta em relação ao escopo inicial está em [`docs/PENDENCIAS.md`](docs/PENDENCIAS.md).
+**Em produção:** site em <https://codexveil.vercel.app>; APK Android gerado pelo EAS (projeto `@gabriel.xxtth/codexveil`).
+
+O estado atual do projeto está documentado em [`docs/PROGRESS.md`](docs/PROGRESS.md), os próximos passos em [`docs/PROXIMOS_PASSOS.md`](docs/PROXIMOS_PASSOS.md) e o que ainda falta em relação ao escopo inicial em [`docs/PENDENCIAS.md`](docs/PENDENCIAS.md).
 
 ## Estrutura do projeto
 
@@ -50,7 +52,7 @@ docs/             Arquitetura, banco, segurança, licenças, deploy, progresso e
 
 - Node.js 24 e pnpm 12. O comando `corepack enable` habilita o Corepack para gerenciar a versão do gerenciador de pacotes definida no projeto.
 - Um projeto Supabase **novo e exclusivo** para o Codexveil na nuvem **ou** Docker para executar o Supabase localmente com a CLI. Não reutilize o banco de outro projeto: as migrações criam esquema, funções, buckets e políticas próprios.
-- Para gerar o APK, uma conta Expo com acesso ao EAS Build e a CLI do EAS (`npm install -g eas-cli`). Não é necessário instalar o Android Studio na máquina.
+- Para gerar o APK, uma conta Expo com acesso ao EAS Build. A CLI do EAS é executada via `npx`, e não é necessário instalar o Android Studio na máquina.
 
 ## Instalação
 
@@ -144,7 +146,7 @@ Execute os comandos na raiz do projeto.
 | `pnpm format`                               | Formata os arquivos com Prettier                                            |
 | `pnpm db:types`                             | Regenera os tipos do banco a partir das migrações, sem Docker               |
 | `pnpm brand:assets`                         | Regenera ícones e splash a partir do emblema vetorial                       |
-| `pnpm --filter @codexveil/mobile build:apk` | Gera um APK de teste usando EAS Build (requer `eas-cli`)                    |
+| `pnpm --filter @codexveil/mobile build:apk` | Gera um APK de teste usando EAS Build                                       |
 
 Consulte [`docs/DEPLOY.md`](docs/DEPLOY.md) para obter instruções de build, publicação e backups.
 
@@ -163,3 +165,5 @@ As consultas são executadas com o papel e o JWT do usuário para testar as pol�
 - [Deploy, APK e backups](docs/DEPLOY.md)
 - [Progresso do projeto](docs/PROGRESS.md)
 - [Pendências em relação ao escopo inicial](docs/PENDENCIAS.md)
+- [Próximos passos](docs/PROXIMOS_PASSOS.md)
+- [Instruções para agentes e regra de documentação](AGENTS.md)

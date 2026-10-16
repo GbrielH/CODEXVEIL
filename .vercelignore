@@ -1,0 +1,57 @@
+# Deploys pela Vercel CLI enviam a pasta local, não o Git. Este arquivo espelha o .gitignore
+# para que builds locais, caches e arquivos .env nunca sejam enviados.
+
+.git/
+.vercel/
+docs/
+
+# Dependências
+node_modules/
+
+# Builds e caches
+.next/
+out/
+dist/
+build/
+.turbo/
+.vitest/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Expo / React Native
+.expo/
+web-build/
+expo-env.d.ts
+.metro-health-check*
+/apps/mobile/android/
+/apps/mobile/ios/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.apk
+*.aab
+
+# Supabase CLI (estado local)
+**/supabase/.branches/
+**/supabase/.temp/
+supabase/.env
+
+# Variáveis de ambiente — nunca versionar segredos
+.env
+.env.*
+!.env.example
+*.pem
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+*.log
+
+# Sistema operacional / editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
