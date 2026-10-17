@@ -1,19 +1,9 @@
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from 'react';
 import { cx } from '@/lib/cx';
+import { controlClasses } from './control-classes';
+import { Select, type SelectProps } from './select';
 
-const controlBase =
-  'w-full rounded-md border bg-sunken px-3 text-fg placeholder:text-fg-subtle ' +
-  'transition-[border-color,box-shadow] duration-150 ease-codex ' +
-  'hover:border-silver-400/50 focus-visible:border-parchment-300 focus-visible:outline-none ' +
-  'focus-visible:shadow-[0_0_0_3px_rgb(228_216_189/0.18)] disabled:cursor-not-allowed disabled:opacity-60';
-
-export function controlClasses(invalid: boolean, extra?: string) {
-  return cx(
-    controlBase,
-    invalid ? 'border-ember-400/80' : 'border-line-strong',
-    extra,
-  );
-}
+export { controlClasses };
 
 interface FieldShellProps {
   id: string;
@@ -115,38 +105,27 @@ export function TextareaField({
   );
 }
 
-interface SelectFieldProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'id'> {
+interface SelectFieldProps extends Omit<SelectProps, 'id' | 'invalid'> {
   id: string;
   label: string;
   hint?: ReactNode;
   error?: string | undefined;
   fieldClassName?: string;
-  children: ReactNode;
 }
 
-export function SelectField({
-  id,
-  label,
-  hint,
-  error,
-  required,
-  fieldClassName,
-  className,
-  children,
-  ...props
-}: SelectFieldProps) {
+/** Seletor com rótulo: lista com a identidade visual do sistema e busca por digitação. */
+export function SelectField({ id, label, hint, error, required, fieldClassName, children, ...props }: SelectFieldProps) {
   return (
     <FieldShell id={id} label={label} hint={hint} error={error} required={required} className={fieldClassName}>
-      <select
+      <Select
         id={id}
         required={required}
-        aria-invalid={error ? true : undefined}
+        invalid={Boolean(error)}
         aria-describedby={describedBy(id, hint, error)}
-        className={controlClasses(Boolean(error), cx('h-11 pr-8', className))}
         {...props}
       >
         {children}
-      </select>
+      </Select>
     </FieldShell>
   );
 }

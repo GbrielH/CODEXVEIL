@@ -179,7 +179,7 @@ export default async function HomePage() {
 
       <footer className="border-t border-line">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-8 text-xs text-fg-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p>© {new Date().getFullYear()} Codexveil. Conteúdo de regras sob CC-BY-4.0 (SRD 5.2).</p>
+          <p>© {new Date().getFullYear()} Codexveil. Conteúdo de regras sob CC-BY-4.0 (SRD 5.2.1).</p>
           <a href={routes.licenses} className="underline decoration-line-strong underline-offset-4 hover:text-fg">
             Licenças e atribuições
           </a>

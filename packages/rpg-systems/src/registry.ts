@@ -39,6 +39,33 @@ export function conditionLabel(systemId: string, key: string, level: number | nu
 }
 
 /**
+ * Condições que continuam quando outras terminam, conforme o sistema (no D&D, Inconsciente
+ * deixa a criatura Caída). Não repete as que já estão em `remainingKeys`.
+ */
+export function conditionsLeftAfter(
+  systemId: string,
+  removedKeys: readonly string[],
+  remainingKeys: readonly string[],
+): string[] {
+  const definitions = findSystem(systemId)?.conditions ?? [];
+  const result: string[] = [];
+  for (const key of removedKeys) {
+    for (const left of definitions.find((condition) => condition.key === key)?.leaves ?? []) {
+      if (!remainingKeys.includes(left) && !result.includes(left)) result.push(left);
+    }
+  }
+  return result;
+}
+
+/** Duração de uma condição em texto, conforme o sistema (ex.: "10 rodadas (1 min)"). */
+export function conditionRoundsLabel(systemId: string, rounds: number | null): string {
+  const system = findSystem(systemId);
+  if (system) return system.formatConditionRounds(rounds);
+  if (rounds === null) return 'até ser removida';
+  return rounds === 1 ? '1 rodada' : `${rounds} rodadas`;
+}
+
+/**
  * Resumo de uma ficha vinda do banco para listas e cartões. Nunca lança: fichas de
  * sistemas desconhecidos ou com dados inválidos recebem um aviso no lugar do resumo.
  */

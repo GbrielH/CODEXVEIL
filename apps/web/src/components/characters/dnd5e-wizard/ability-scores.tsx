@@ -24,6 +24,7 @@ import {
 import { Dices, Minus, Plus, Sparkles } from 'lucide-react';
 import { useId } from 'react';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import { cx } from '@/lib/cx';
 
 export interface RollState {
@@ -152,11 +153,10 @@ function StandardArray({ scores, classDef, onScores }: { scores: Scores; classDe
         {ABILITIES.map((ability) => (
           <label key={ability} htmlFor={`${id}-${ability}`} className="flex flex-col gap-1.5 text-sm">
             <span className="font-medium text-fg">{abilityLabels[ability].name}</span>
-            <select
+            <Select
               id={`${id}-${ability}`}
               value={scores[ability] ?? ''}
               onChange={(event) => onScores({ ...scores, [ability]: event.target.value ? Number(event.target.value) : null })}
-              className="h-11 rounded-md border border-line-strong bg-sunken px-3 text-fg"
             >
               <option value="">—</option>
               {STANDARD_ARRAY.map((value, index) => {
@@ -168,7 +168,7 @@ function StandardArray({ scores, classDef, onScores }: { scores: Scores; classDe
                   </option>
                 );
               })}
-            </select>
+            </Select>
           </label>
         ))}
       </div>
@@ -282,11 +282,10 @@ function RandomScores({
         {ABILITIES.map((ability) => (
           <label key={ability} htmlFor={`${id}-${ability}`} className="flex flex-col gap-1.5 text-sm">
             <span className="font-medium text-fg">{abilityLabels[ability].name}</span>
-            <select
+            <Select
               id={`${id}-${ability}`}
               value={rolls.assignment[ability] ?? ''}
               onChange={(event) => assign(ability, event.target.value)}
-              className="h-11 rounded-md border border-line-strong bg-sunken px-3 text-fg"
             >
               <option value="">—</option>
               {rolls.pool.map((value, index) =>
@@ -296,7 +295,7 @@ function RandomScores({
                   </option>
                 ),
               )}
-            </select>
+            </Select>
           </label>
         ))}
       </div>

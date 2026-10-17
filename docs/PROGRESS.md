@@ -20,6 +20,18 @@ enviado ao `main`. O app tem um APK novo com essas mudanças (o fingerprint nati
 README). **O site publicado ainda não as tem:** o deploy automático depende de ligar o GitHub à
 Vercel e ao Expo (veja [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md), etapas 0 e 1).
 
+**Em 2026-10-17, segunda rodada:** condições com as regras do SRD 5.2.1
+(efeitos aplicados na ficha, duração em rodadas que diminui no fim do turno, contagem
+automática no combate e botão "Passar rodada"; Exaustão cai 1 nível no descanso longo), listas
+com a identidade visual e busca no site e no app, confirmações do app no visual do Codexveil,
+crônica do personagem em pergaminho legível, área logada na largura toda da tela e a correção
+de um defeito antigo que espremia os nomes das perícias. A migração
+`20261017120000_condition_durations.sql` foi **aplicada em produção** e testada de ponta a ponta;
+o GitHub foi ligado à Vercel e ao Expo pelo responsável, e o push desta rodada é o primeiro
+publicado automaticamente. A resposta sobre
+o conteúdo de D&D (o que do SRD está no sistema e o que não pode estar) está em
+[`PENDENCIAS.md`](PENDENCIAS.md#cobertura-do-conteúdo-de-dd-srd-521).
+
 | Fase                                                                            | Situação                                                                              |
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | 1. Fundação (monorepo, TS, lint, testes, design system, apps)                   | Concluída                                                                             |
@@ -82,8 +94,8 @@ cópias de segurança) e Ajustes (retrato, campanha e exclusão; só para quem p
 
 ### Banco (`supabase/`)
 
-Sete migrações versionadas (fundação, campanhas, personagens, sessões e biblioteca, storage,
-realtime e criação guiada; a sétima ainda não foi aplicada em produção), um seed de
+Oito migrações versionadas (fundação, campanhas, personagens, sessões e biblioteca, storage,
+realtime, criação guiada e duração das condições; todas aplicadas em produção), um seed de
 demonstração **somente local** e templates de e-mail em português.
 Os detalhes estão em [`DATABASE.md`](DATABASE.md) e [`SECURITY.md`](SECURITY.md).
 
@@ -98,14 +110,14 @@ Execução em 2026-10-17, Windows 11, Node 24.20 e pnpm 12.14:
 
 | Pacote                                                                                 | Arquivos de teste | Testes  |
 | -------------------------------------------------------------------------------------- | ----------------- | ------- |
-| `@codexveil/database` (RLS, migrações, seed, tipos, autosave, realtime, erros, config) | 12                | 151     |
+| `@codexveil/database` (RLS, migrações, seed, tipos, autosave, realtime, erros, config) | 12                | 158     |
 | `@codexveil/database` — teste ao vivo (só com credenciais; veja abaixo)                | 1                 | 11      |
-| `@codexveil/rpg-systems` (regras, ficha, registro, dados do SRD e criação guiada)      | 5                 | 108     |
+| `@codexveil/rpg-systems` (regras, ficha, registro, SRD, criação guiada e condições)    | 6                 | 123     |
 | `@codexveil/domain`                                                                    | 7                 | 58      |
 | `@codexveil/ui` (marca, contraste, CSS)                                                | 3                 | 22      |
 | `@codexveil/validation`                                                                | 1                 | 15      |
 | `@codexveil/web` (rotas, formatação de datas)                                          | 2                 | 12      |
-| **Total (sem o teste ao vivo)**                                                        | **30**            | **366** |
+| **Total (sem o teste ao vivo)**                                                        | **31**            | **388** |
 
 Os testes de RLS aplicam as migrações reais num Postgres 17 em WebAssembly (PGlite) e
 executam as consultas com o papel e o JWT de cada usuário. Eles cobrem: jogador tentando ler
@@ -170,6 +182,36 @@ referências entre dados) e montam personagens válidos de todas as classes nos 
 talento repetido, aumentos do antecedente, compra de pontos, nível e alinhamento da
 campanha, CA sem armadura, deslocamento do monge, Iniciativa com Alerta e com o bardo.
 
+**Condições, listas e diálogos (2026-10-17, segunda rodada):** 15 testes novos de regras
+(`conditions.test.ts` e `registry.test.ts`) conferem as 15 condições do glossário do SRD 5.2.1
+e as combinações: Paralisado impõe Incapacitado; Inconsciente impõe Incapacitado e Caído e
+deixa Caído ao terminar; Petrificado anula Envenenado; vantagem e desvantagem se anulam;
+Exaustão dá −2 por nível nos testes de d20 e −1,5 m por nível no deslocamento; valores
+passivos mudam ±5. Sete testes novos de RLS cobrem a duração em rodadas: contagem, término,
+várias rodadas de uma vez, permissões (jogador, mestre, outro jogador e estranho), valores
+inválidos e o mapa de rodadas das instâncias da cena.
+
+No navegador, numa vitrine temporária com dados de exemplo (já removida): o seletor novo abre
+por clique e por teclado, filtra ao digitar ("env" → Envenenado), escolhe com Enter, devolve o
+foco e fecha com Esc; o valor chega ao `<select>` nativo. Com Paralisado, Exaustão 2,
+Envenenado e Invisível, a aba Jogo mostra iniciativa −2 (−4 da Exaustão; vantagem e
+desvantagem se anulando), deslocamento 0, Percepção passiva 8 (base 13) e o aviso
+"Incapacitado (por Paralisado)"; a aba Atributos mostra os selos Falha, Desv. e −4; a crônica
+aparece em pergaminho com tinta escura. Esse teste revelou um defeito antigo: os campos
+numéricos ignoravam a largura pedida (a classe `w-full` vence pela ordem do CSS) e espremiam
+os nomes das perícias; agora a largura padrão só entra quando nenhuma outra é pedida. Com uma
+conta temporária no site local: a área logada ocupa 1.344 px numa tela de 1.600 px (antes, no
+máximo 1.152 px); no app (Expo web), "Sair da conta" abre o diálogo do Codexveil e "Cancelar"
+o fecha sem sair. Nenhum erro no console.
+
+**Condições contra o banco real (2026-10-17, depois da migração):** com contas temporárias, o
+jogador criou um guerreiro numa campanha, aplicou Envenenado por 1 minuto pelo seletor novo da
+ficha (o banco gravou 10 rodadas e a ficha mostrou os efeitos), usou "Passar rodada" (9) e o
+mestre passou o turno no combate da mesa, que mostrava "9 rod." (8). A página da campanha,
+que dava erro no site local antes da migração, abriu normalmente. Teste ao vivo: 11/11. As
+contas foram apagadas no fim. **Não testado ainda:** a seção de condições do app num
+aparelho.
+
 ### Teste ao vivo contra o Supabase real
 
 `packages/database/test/live/supabase.live.test.ts` exercita as mesmas consultas de
@@ -222,8 +264,9 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
-1. **Responsável:** ligar o GitHub à Vercel e ao Expo (links em
-   [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md), etapa 1). O push seguinte publica o site.
+1. **Claude:** confirmar que o push desta rodada publicou o site (Vercel) e a atualização do
+   app (EAS) sozinho, e seguir com os pedidos de 2026-10-17 registrados em
+   [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md).
 2. **Responsável:** instalar o APK novo ([build `420f6c37`](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/420f6c37-279c-4e92-b865-de9bdcb0b7f4), link no README).
 3. **Claude:** depois da ligação, confirmar o site publicado e o primeiro push automático.
 4. Usar o site e o app com duas contas.

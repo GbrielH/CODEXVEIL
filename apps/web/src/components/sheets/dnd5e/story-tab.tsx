@@ -129,13 +129,17 @@ function DetailsCard() {
     { key: 'notes', label: 'Anotações', rows: 6, max: 20000 },
   ] as const;
   return (
-    <Card className="parchment border-0">
-      <h2 className="font-display text-xl text-ink">Crônica do personagem</h2>
+    // Superfície de pergaminho (registro escrito): fundo claro e tinta escura. Não usa <Card>,
+    // cujo fundo escuro anularia o do pergaminho e deixaria os rótulos ilegíveis.
+    <section aria-labelledby={`${id}-cronica`} className="parchment rounded-lg p-5 sm:p-6">
+      <h2 id={`${id}-cronica`} className="font-display text-xl text-ink">
+        Crônica do personagem
+      </h2>
       <p className="mt-1 text-sm text-ink-muted">Registro de quem o personagem é. Tudo é salvo automaticamente.</p>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         {fields.map((field) => (
           <div key={field.key} className={field.rows >= 6 ? 'md:col-span-2' : undefined}>
-            <label htmlFor={`${id}-${field.key}`} className="mb-1 block font-display text-sm text-ink">
+            <label htmlFor={`${id}-${field.key}`} className="mb-1 block font-display text-sm font-semibold tracking-wide text-ink">
               {field.label}
             </label>
             <textarea
@@ -147,12 +151,12 @@ function DetailsCard() {
               onChange={(event) =>
                 updateSheet((current) => ({ ...current, details: { ...current.details, [field.key]: event.target.value } }))
               }
-              className="w-full rounded-md border border-parchment-500/50 bg-parchment-50/70 px-3 py-2 font-serif leading-relaxed text-ink placeholder:text-ink-muted focus-visible:border-wine-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wine-400/40"
+              className="w-full rounded-md border border-parchment-500/60 bg-parchment-50/80 px-3 py-2 font-serif text-base leading-relaxed text-ink shadow-[inset_0_1px_2px_rgb(43_36_32/0.12)] placeholder:text-ink-muted focus-visible:border-wine-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wine-400/40 read-only:bg-parchment-100/60"
             />
           </div>
         ))}
       </div>
-    </Card>
+    </section>
   );
 }
 

@@ -11,8 +11,9 @@ import { CURRENCIES, currencyLabels, currencyResource, currencyResourceKey, tota
 import { fieldErrorsFrom, inventoryItemSchema, type FieldErrors } from '@codexveil/validation';
 import { Minus, Plus, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert as NativeAlert, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Button, IconButton } from '@/components/ui/button';
+import { useConfirm } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
 import { AppText, Badge, Card } from '@/components/ui/primitives';
 import { getSupabase } from '@/lib/supabase';
@@ -116,6 +117,7 @@ function NewItem({ onClose }: { onClose: () => void }) {
 
 function ItemRow({ item }: { item: CharacterItem }) {
   const { canEditPlay, setItems, run } = useSheet();
+  const confirm = useConfirm();
 
   const change = async (delta: number) => {
     setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, quantity: Math.max(0, entry.quantity + delta) } : entry)));
@@ -128,18 +130,12 @@ function ItemRow({ item }: { item: CharacterItem }) {
     if (ok !== undefined) setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, isEquipped: !item.isEquipped } : entry)));
   };
 
-  const remove = () =>
-    NativeAlert.alert(`Excluir “${item.name}”?`, 'O item sai do inventário.', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Excluir',
-        style: 'destructive',
-        onPress: () =>
-          void run(() => deleteCharacterItem(getSupabase(), item.id), 'O item não foi removido').then((ok) => {
-            if (ok !== undefined) setItems((current) => current.filter((entry) => entry.id !== item.id));
-          }),
-      },
-    ]);
+  const remove = async () => {
+    const confirmed = await confirm({ title: `Excluir “${item.name}”?`, message: 'O item sai do inventário.', confirmLabel: 'Excluir', tone: 'danger' });
+    if (!confirmed) return;
+    const ok = await run(() => deleteCharacterItem(getSupabase(), item.id), 'O item não foi removido');
+    if (ok !== undefined) setItems((current) => current.filter((entry) => entry.id !== item.id));
+  };
 
   return (
     <View style={styles.item}>
@@ -163,7 +159,7 @@ function ItemRow({ item }: { item: CharacterItem }) {
       {canEditPlay ? (
         <>
           <IconButton icon={<Plus size={14} color={colors.fg} />} accessibilityLabel={`Aumentar ${item.name}`} onPress={() => void change(1)} />
-          <IconButton icon={<Trash2 size={14} color={colors.fgMuted} />} accessibilityLabel={`Excluir ${item.name}`} onPress={remove} />
+          <IconButton icon={<Trash2 size={14} color={colors.fgMuted} />} accessibilityLabel={`Excluir ${item.name}`} onPress={() => void remove()} />
         </>
       ) : null}
     </View>

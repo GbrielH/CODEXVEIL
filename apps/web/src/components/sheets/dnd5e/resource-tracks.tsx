@@ -3,13 +3,15 @@
 import {
   createCharacterResource,
   deleteCharacterResource,
+  removeCharacterCondition,
+  setCharacterConditionLevel,
   takeCharacterRest,
   updateCharacterResource,
   type CharacterResource,
   type ResourceDisplay,
 } from '@codexveil/database';
 import { RESOURCE_RECOVERIES, resourceRecoveryLabels, type ResourceRecovery } from '@codexveil/domain';
-import { isDedicatedResourceKey } from '@codexveil/rpg-systems/dnd5e';
+import { dnd5eLongRestConditionChanges, isDedicatedResourceKey } from '@codexveil/rpg-systems/dnd5e';
 import { fieldErrorsFrom, resourceSchema, type FieldErrors } from '@codexveil/validation';
 import { BedDouble, Coffee, Minus, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useId, useState } from 'react';
@@ -130,13 +132,24 @@ function ResourceRow({ resource, onEdit }: { resource: CharacterResource; onEdit
 }
 
 function RestControls() {
-  const { character, run, reloadResources } = useSheet();
+  const { character, run, reloadResources, reloadConditions, conditions } = useSheet();
   const rest = async (kind: 'short_rest' | 'long_rest') => {
-    const restored = await run(() => takeCharacterRest(getSupabaseBrowserClient(), character.id, kind), {
-      failure: 'O descanso não foi registrado',
-    });
+    const restored = await run(
+      async () => {
+        const client = getSupabaseBrowserClient();
+        const count = await takeCharacterRest(client, character.id, kind);
+        // SRD 5.2.1: terminar um Descanso Longo remove 1 nível de Exaustão.
+        if (kind === 'long_rest') {
+          const changes = dnd5eLongRestConditionChanges(conditions);
+          for (const entry of changes.update) await setCharacterConditionLevel(client, entry.id, entry.level);
+          for (const conditionId of changes.remove) await removeCharacterCondition(client, conditionId);
+        }
+        return count;
+      },
+      { failure: 'O descanso não foi registrado' },
+    );
     if (restored === undefined) throw new Error('O descanso não foi registrado. Tente novamente.');
-    await reloadResources();
+    await Promise.all([reloadResources(), reloadConditions()]);
   };
   return (
     <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
@@ -159,7 +172,7 @@ function RestControls() {
           </Button>
         )}
         title="Fazer um descanso longo?"
-        description="Restaura vida, espaços de magia e todos os recursos de descanso curto e longo. Pontos de vida temporários se encerram."
+        description="Restaura vida, espaços de magia e todos os recursos de descanso curto e longo. Pontos de vida temporários se encerram, e a Exaustão cai 1 nível."
         confirmLabel="Descansar"
         tone="primary"
         onConfirm={() => rest('long_rest')}

@@ -357,6 +357,63 @@ describe('cena e combate', () => {
     );
   });
 
+  it('as durações das condições acompanham a lista e terminam ao passar rodadas', async () => {
+    const { gm, goblinA } = await setupScene();
+    const state = () =>
+      db.as(gm, (s) =>
+        s.one<{ conditions: string[]; condition_rounds: Record<string, number> }>(
+          `select conditions, condition_rounds from public.session_entities where id = $1`,
+          [goblinA],
+        ),
+      );
+    const tick = async (rounds = 1) => {
+      const rows = await db.as(gm, (s) =>
+        s.query<{ key: string }>(`select key from public.tick_session_entity_conditions($1, $2) as key`, [goblinA, rounds]),
+      );
+      return rows.map((row) => row.key);
+    };
+
+    // Durações de condições fora da lista são descartadas.
+    await db.as(gm, (s) =>
+      s.query(
+        `update public.session_entities set conditions = $2, condition_rounds = $3 where id = $1`,
+        [goblinA, ['poisoned', 'prone'], JSON.stringify({ poisoned: 2, blinded: 3 })],
+      ),
+    );
+    expect(await state()).toEqual({ conditions: ['poisoned', 'prone'], condition_rounds: { poisoned: 2 } });
+
+    expect(await tick()).toEqual([]);
+    expect(await state()).toEqual({ conditions: ['poisoned', 'prone'], condition_rounds: { poisoned: 1 } });
+    expect(await tick()).toEqual(['poisoned']);
+    expect(await state()).toEqual({ conditions: ['prone'], condition_rounds: {} });
+
+    // Remover a condição da lista remove também a duração.
+    await db.as(gm, (s) =>
+      s.query(`update public.session_entities set conditions = '{blinded}', condition_rounds = '{"blinded": 5}' where id = $1`, [goblinA]),
+    );
+    await db.as(gm, (s) => s.query(`update public.session_entities set conditions = '{}' where id = $1`, [goblinA]));
+    expect(await state()).toEqual({ conditions: [], condition_rounds: {} });
+  });
+
+  it('rejeita mapas de rodadas inválidos e jogadores não passam rodadas da cena', async () => {
+    const { gm, player, goblinA } = await setupScene();
+    for (const value of ['{"poisoned": 0}', '{"poisoned": 1.5}', '{"poisoned": "2"}', '[]', '{"poisoned": 10001}']) {
+      await expectSqlError(
+        db.as(gm, (s) =>
+          s.query(`update public.session_entities set conditions = '{poisoned}', condition_rounds = $2::jsonb where id = $1`, [
+            goblinA,
+            value,
+          ]),
+        ),
+        '23514',
+      );
+    }
+    await expectSqlError(
+      db.as(player, (s) => s.query(`select * from public.tick_session_entity_conditions($1)`, [goblinA])),
+      'P0002',
+    );
+  });
+
   it('a versão do encontro sobe a cada mudança de turno', async () => {
     const { gm, session, campaign } = await setupScene();
     const encounter = await db.as(gm, (s) =>

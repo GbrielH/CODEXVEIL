@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { conditionLabel, findSystem, getSystem, isSystemId, listSystems } from './registry';
+import { conditionLabel, conditionRoundsLabel, conditionsLeftAfter, findSystem, getSystem, isSystemId, listSystems } from './registry';
 
 describe('registro de sistemas', () => {
   it('disponibiliza o D&D 5e', () => {
@@ -42,6 +42,22 @@ describe('conditionLabel', () => {
     expect(conditionLabel('dnd5e', 'exhaustion', 2)).toBe('Exaustão 2');
     expect(conditionLabel('dnd5e', 'Abençoado')).toBe('Abençoado');
     expect(conditionLabel('desconhecido', 'prone')).toBe('prone');
+  });
+});
+
+describe('conditionsLeftAfter', () => {
+  it('Inconsciente deixa a criatura Caída, sem repetir', () => {
+    expect(conditionsLeftAfter('dnd5e', ['unconscious', 'poisoned'], [])).toEqual(['prone']);
+    expect(conditionsLeftAfter('dnd5e', ['unconscious'], ['prone'])).toEqual([]);
+    expect(conditionsLeftAfter('desconhecido', ['unconscious'], [])).toEqual([]);
+  });
+});
+
+describe('conditionRoundsLabel', () => {
+  it('usa o formato do sistema e um padrão para sistemas desconhecidos', () => {
+    expect(conditionRoundsLabel('dnd5e', 10)).toBe('10 rodadas (1 min)');
+    expect(conditionRoundsLabel('dnd5e', null)).toBe('até ser removida');
+    expect(conditionRoundsLabel('desconhecido', 2)).toBe('2 rodadas');
   });
 });
 

@@ -21,6 +21,7 @@ import { useId, useRef, useState, type DragEvent, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SaveStatus } from '@/components/ui/save-status';
+import { Select } from '@/components/ui/select';
 import { cx } from '@/lib/cx';
 import { failureMessage } from '@/lib/client-errors';
 import { prepareImage } from '@/lib/images';
@@ -250,18 +251,17 @@ function ContentFields(props: ContentFieldsProps) {
         <div className="flex flex-col gap-3">
           <div className="grid gap-3 sm:grid-cols-[12rem_1fr]">
             <Labeled label="Estilo" htmlFor={`${id}-tone`}>
-              <select
+              <Select
                 id={`${id}-tone`}
                 value={content.data.tone}
                 onChange={(event) => onChange({ type: 'callout', data: { ...content.data, tone: event.target.value as CalloutTone } })}
-                className={cx(inputClass, 'h-11 text-sm')}
-              >
+                >
                 {CALLOUT_TONES.map((tone) => (
                   <option key={tone} value={tone}>
                     {calloutToneLabels[tone]}
                   </option>
                 ))}
-              </select>
+              </Select>
             </Labeled>
             <Labeled label="Título (opcional)" htmlFor={`${id}-title`}>
               <input
@@ -294,15 +294,14 @@ function ContentFields(props: ContentFieldsProps) {
       return (
         <div className="flex flex-col gap-3">
           <Labeled label="Estilo" htmlFor={`${id}-style`} className="sm:max-w-48">
-            <select
+            <Select
               id={`${id}-style`}
               value={content.data.style}
               onChange={(event) => onChange({ type: 'list', data: { ...content.data, style: event.target.value === 'numbered' ? 'numbered' : 'bulleted' } })}
-              className={cx(inputClass, 'h-11 text-sm')}
             >
               <option value="bulleted">Marcadores</option>
               <option value="numbered">Numerada</option>
-            </select>
+            </Select>
           </Labeled>
           <Labeled label="Itens (um por linha)" htmlFor={`${id}-items`}>
             <textarea
@@ -377,11 +376,10 @@ function ContentFields(props: ContentFieldsProps) {
       return (
         <div className="grid gap-3 sm:grid-cols-2">
           <Labeled label={kind === 'npc' ? 'NPC da biblioteca' : 'Monstro da biblioteca'} htmlFor={`${id}-target`}>
-            <select
+            <Select
               id={`${id}-target`}
               value={content.data.creatureId}
               onChange={(event) => onChange({ type: content.type, data: { ...content.data, creatureId: event.target.value } })}
-              className={cx(inputClass, 'h-11 text-sm')}
             >
               <option value="">Escolha…</option>
               {choices.map((creature) => (
@@ -390,7 +388,7 @@ function ContentFields(props: ContentFieldsProps) {
                   {creature.subtitle ? ` — ${creature.subtitle}` : ''}
                 </option>
               ))}
-            </select>
+            </Select>
             {choices.length === 0 ? <span className="text-xs text-fg-muted">Cadastre registros na Biblioteca da campanha.</span> : null}
           </Labeled>
           <Labeled label="Observação (opcional)" htmlFor={`${id}-note`}>
@@ -399,7 +397,6 @@ function ContentFields(props: ContentFieldsProps) {
               value={content.data.note ?? ''}
               maxLength={500}
               onChange={(event) => onChange({ type: content.type, data: { ...content.data, note: event.target.value || null } })}
-              className={cx(inputClass, 'h-11 text-sm')}
             />
           </Labeled>
         </div>
@@ -409,11 +406,10 @@ function ContentFields(props: ContentFieldsProps) {
       return (
         <div className="grid gap-3 sm:grid-cols-2">
           <Labeled label="Personagem" htmlFor={`${id}-target`}>
-            <select
+            <Select
               id={`${id}-target`}
               value={content.data.characterId}
               onChange={(event) => onChange({ type: 'character_ref', data: { ...content.data, characterId: event.target.value } })}
-              className={cx(inputClass, 'h-11 text-sm')}
             >
               <option value="">Escolha…</option>
               {options.characters.map((character) => (
@@ -421,7 +417,7 @@ function ContentFields(props: ContentFieldsProps) {
                   {character.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </Labeled>
           <Labeled label="Observação (opcional)" htmlFor={`${id}-note`}>
             <input
@@ -429,7 +425,6 @@ function ContentFields(props: ContentFieldsProps) {
               value={content.data.note ?? ''}
               maxLength={500}
               onChange={(event) => onChange({ type: 'character_ref', data: { ...content.data, note: event.target.value || null } })}
-              className={cx(inputClass, 'h-11 text-sm')}
             />
           </Labeled>
         </div>
@@ -442,22 +437,20 @@ function ContentFields(props: ContentFieldsProps) {
       return (
         <div className="grid gap-3 sm:grid-cols-[10rem_1fr_1fr]">
           <Labeled label="Tipo" htmlFor={`${id}-kind`}>
-            <select
+            <Select
               id={`${id}-kind`}
               value={content.data.kind}
               onChange={(event) => onChange({ type: 'content_ref', data: { ...content.data, kind: event.target.value === 'note' ? 'note' : 'session', targetId: '' } })}
-              className={cx(inputClass, 'h-11 text-sm')}
             >
               <option value="session">Sessão</option>
               <option value="note">Anotação</option>
-            </select>
+            </Select>
           </Labeled>
           <Labeled label="Conteúdo" htmlFor={`${id}-target`}>
-            <select
+            <Select
               id={`${id}-target`}
               value={content.data.targetId}
               onChange={(event) => onChange({ type: 'content_ref', data: { ...content.data, targetId: event.target.value } })}
-              className={cx(inputClass, 'h-11 text-sm')}
             >
               <option value="">Escolha…</option>
               {targets.map((target) => (
@@ -465,7 +458,7 @@ function ContentFields(props: ContentFieldsProps) {
                   {target.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </Labeled>
           <Labeled label="Observação (opcional)" htmlFor={`${id}-note`}>
             <input
@@ -473,7 +466,6 @@ function ContentFields(props: ContentFieldsProps) {
               value={content.data.note ?? ''}
               maxLength={500}
               onChange={(event) => onChange({ type: 'content_ref', data: { ...content.data, note: event.target.value || null } })}
-              className={cx(inputClass, 'h-11 text-sm')}
             />
           </Labeled>
         </div>
@@ -552,7 +544,6 @@ function ImageFields({ content, onChange, campaignId, sessionId, imageUrls, onIm
             value={content.data.alt}
             maxLength={300}
             onChange={(event) => onChange({ type: 'image', data: { ...content.data, alt: event.target.value } })}
-            className={cx(inputClass, 'h-11 text-sm')}
           />
         </Labeled>
         <Labeled label="Legenda (opcional)" htmlFor={`${id}-caption`}>
@@ -561,7 +552,6 @@ function ImageFields({ content, onChange, campaignId, sessionId, imageUrls, onIm
             value={content.data.caption ?? ''}
             maxLength={500}
             onChange={(event) => onChange({ type: 'image', data: { ...content.data, caption: event.target.value || null } })}
-            className={cx(inputClass, 'h-11 text-sm')}
           />
         </Labeled>
       </div>

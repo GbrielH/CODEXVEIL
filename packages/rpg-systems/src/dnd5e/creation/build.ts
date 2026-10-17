@@ -711,7 +711,7 @@ export function buildDnd5eCharacterFromDraft(draft: Dnd5eDraft): BuiltDnd5eChara
     abilities.push({
       kind: 'spell',
       name: spell.name,
-      source: clip(`${spell.source} · SRD 5.2`, 120),
+      source: clip(`${spell.source} · SRD 5.2.1`, 120),
       description: `${srd.level === 0 ? 'Truque' : `${srd.level}º círculo`} de ${spellSchoolLabels[srd.school].toLowerCase()}. ${spell.note}`.trim(),
       data: {
         circle: srd.level,

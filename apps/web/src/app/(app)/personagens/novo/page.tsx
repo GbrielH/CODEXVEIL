@@ -26,7 +26,7 @@ export default async function NewCharacterPage({ searchParams }: PageProps<'/per
       <PageHeader
         eyebrow="Personagens"
         title="Novo personagem"
-        description="Um passo a passo com as regras de D&D 5e (SRD 5.2): cada escolha mostra só as opções válidas para o personagem."
+        description="Um passo a passo com as regras de D&D 5e (SRD 5.2.1): cada escolha mostra só as opções válidas para o personagem."
       />
       <Card ornate>
         <Dnd5eCreationWizard

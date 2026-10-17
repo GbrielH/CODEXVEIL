@@ -33,9 +33,11 @@ export default function LicensesPage() {
             <p className="mt-2 text-sm text-fg-muted">
               Regras de referência: {system.license.work}, licenciado sob {system.license.licenseName}.
               A criação de personagens usa classes, espécies, antecedentes, talentos, equipamento e o
-              cabeçalho técnico das magias do SRD. Alterações feitas pelo Codexveil: nomes traduzidos
-              para o português (exceto os das magias), resumos próprios no lugar do texto das regras,
-              medidas em metros e quilos; as descrições completas das magias não são reproduzidas.
+              cabeçalho técnico das magias do SRD; as condições trazem as regras do glossário do SRD.
+              Alterações feitas pelo Codexveil: nomes traduzidos para o português (exceto os das
+              magias), regras das condições traduzidas e adaptadas, resumos próprios no lugar do texto
+              das demais regras, medidas em metros e quilos; as descrições completas das magias não
+              são reproduzidas.
             </p>
             <blockquote lang="en" className="mt-4 border-l-2 border-parchment-400/50 pl-4 font-serif text-sm italic text-fg-secondary">
               {system.license.attribution}

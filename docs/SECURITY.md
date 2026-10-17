@@ -128,13 +128,15 @@ reais de cada usuário:
   grupo, fichas travadas, versão e dono imutáveis, controle otimista, alterações simultâneas
   de mestre e jogador, histórico imutável, isolamento, mestre e co-mestre impedidos de criar ou
   vincular personagens na própria campanha, criação completa (inventário e habilidades) mesmo
-  com a ficha travada e listas grandes demais recusadas.
+  com a ficha travada, listas grandes demais recusadas e a duração das condições (quem pode
+  passar rodadas e valores fora do intervalo).
 - `invites.test.ts`: código gerado no servidor, validade máxima, uso único dos convites
   pessoais, limite de usos, convites expirados e revogados, prévia que não revela a campanha,
   campanha arquivada e e-mail não confirmado ou diferente.
 - `sessions.test.ts`: blocos `gm`, sessões não publicadas, blocos malformados ou com HTML,
   bloco apontando para outra campanha, `creature_gm_data`, cena e combate exclusivos do mestre,
-  anotações por visibilidade e referências de blocos públicos que não vazam segredos.
+  anotações por visibilidade, referências de blocos públicos que não vazam segredos e o mapa
+  de rodadas das condições da cena (formato inválido recusado; só o mestre passa rodadas).
 - `storage.test.ts`: tipo e tamanho por bucket, envio de avatar recusado (inclusive na
   própria pasta e pelo perfil), capas, imagem de NPC oculto, imagem de roteiro, caminhos fora do
   padrão e retratos.

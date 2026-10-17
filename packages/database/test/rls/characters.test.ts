@@ -466,6 +466,93 @@ describe('operações atômicas de recursos', () => {
   });
 });
 
+describe('duração das condições', () => {
+  async function applyCondition(user: TestUser, characterId: string, key: string, rounds: number | null) {
+    await db.as(user, (s) =>
+      s.query(
+        `insert into public.character_conditions (character_id, key, rounds_remaining) values ($1, $2, $3)`,
+        [characterId, key, rounds],
+      ),
+    );
+  }
+
+  async function conditionsOf(user: TestUser, characterId: string) {
+    return db.as(user, (s) =>
+      s.query<{ key: string; rounds_remaining: number | null }>(
+        `select key, rounds_remaining from public.character_conditions where character_id = $1 order by key`,
+        [characterId],
+      ),
+    );
+  }
+
+  async function tick(user: TestUser, characterId: string, rounds = 1) {
+    const rows = await db.as(user, (s) =>
+      s.query<{ key: string }>(`select key from public.tick_character_conditions($1, $2) as key order by key`, [
+        characterId,
+        rounds,
+      ]),
+    );
+    return rows.map((row) => row.key);
+  }
+
+  it('passar rodadas diminui as durações e remove as que terminam', async () => {
+    const { player, campaign } = await createTable(db);
+    const aria = await createCharacter(db, player, campaign.id, 'Aria');
+    await applyCondition(player, aria, 'poisoned', 2);
+    await applyCondition(player, aria, 'stunned', 1);
+    await applyCondition(player, aria, 'prone', null);
+
+    expect(await tick(player, aria)).toEqual(['stunned']);
+    expect(await conditionsOf(player, aria)).toEqual([
+      { key: 'poisoned', rounds_remaining: 1 },
+      { key: 'prone', rounds_remaining: null },
+    ]);
+    expect(await tick(player, aria)).toEqual(['poisoned']);
+    expect(await tick(player, aria, 50)).toEqual([]);
+    expect(await conditionsOf(player, aria)).toEqual([{ key: 'prone', rounds_remaining: null }]);
+  });
+
+  it('várias rodadas de uma vez encerram tudo o que dura menos', async () => {
+    const { player, campaign } = await createTable(db);
+    const aria = await createCharacter(db, player, campaign.id, 'Aria');
+    await applyCondition(player, aria, 'blinded', 3);
+    await applyCondition(player, aria, 'frightened', 10);
+    expect(await tick(player, aria, 5)).toEqual(['blinded']);
+    expect(await conditionsOf(player, aria)).toEqual([{ key: 'frightened', rounds_remaining: 5 }]);
+  });
+
+  it('o mestre passa rodadas; outro jogador e estranhos não', async () => {
+    const { gm, player, otherPlayer, outsider, campaign } = await createTable(db);
+    const aria = await createCharacter(db, player, campaign.id, 'Aria');
+    await applyCondition(player, aria, 'poisoned', 1);
+    await expectSqlError(tick(otherPlayer, aria), 'P0002');
+    await expectSqlError(tick(outsider, aria), 'P0002');
+    expect(await tick(gm, aria)).toEqual(['poisoned']);
+  });
+
+  it('rejeita durações e quantidades de rodadas inválidas', async () => {
+    const { player, campaign } = await createTable(db);
+    const aria = await createCharacter(db, player, campaign.id, 'Aria');
+    await expectSqlError(applyCondition(player, aria, 'poisoned', 0), '23514');
+    await expectSqlError(applyCondition(player, aria, 'poisoned', 10001), '23514');
+    await expectSqlError(tick(player, aria, 0), '22023');
+  });
+
+  it('o jogador altera a duração das condições do próprio personagem', async () => {
+    const { player, otherPlayer, campaign } = await createTable(db);
+    const aria = await createCharacter(db, player, campaign.id, 'Aria');
+    await applyCondition(player, aria, 'poisoned', null);
+    await db.as(player, (s) =>
+      s.query(`update public.character_conditions set rounds_remaining = 4 where character_id = $1`, [aria]),
+    );
+    const blocked = await db.as(otherPlayer, (s) =>
+      s.query(`update public.character_conditions set rounds_remaining = 1 where character_id = $1 returning id`, [aria]),
+    );
+    expect(blocked).toEqual([]);
+    expect(await conditionsOf(player, aria)).toEqual([{ key: 'poisoned', rounds_remaining: 4 }]);
+  });
+});
+
 describe('histórico e cópias de segurança', () => {
   it('guarda a versão anterior da ficha ao editar', async () => {
     const { player, campaign } = await createTable(db);

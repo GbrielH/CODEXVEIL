@@ -1,9 +1,43 @@
 import { ABILITIES, abilityLabels, spellSchoolLabels, type Ability, type ChoiceSpec, type Selection } from '@codexveil/rpg-systems/dnd5e';
-import { Check } from 'lucide-react-native';
+import { Check, Search } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { AppText, Badge } from '@/components/ui/primitives';
 import { colors, fonts, palette, radii, spacing } from '@/lib/theme';
+
+/** A partir de quantas opções a lista ganha um campo de busca. */
+const SEARCH_AT = 10;
+
+/** Comparação sem acentos e sem diferenciar maiúsculas. */
+function normalize(text: string): string {
+  return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+}
+
+/** Filtra opções pelo nome e pela descrição; as escolhidas continuam sempre visíveis. */
+function useOptionFilter<T extends { name: string; description?: string | undefined }>(options: readonly T[], keep: (option: T) => boolean) {
+  const [query, setQuery] = useState('');
+  const term = normalize(query.trim());
+  const visible = term ? options.filter((option) => keep(option) || normalize(`${option.name} ${option.description ?? ''}`).includes(term)) : options;
+  return { query, setQuery, visible, searchable: options.length > SEARCH_AT };
+}
+
+function OptionSearch({ label, query, onChange }: { label: string; query: string; onChange: (query: string) => void }) {
+  return (
+    <View style={styles.filter}>
+      <Search size={16} color={colors.fgSubtle} />
+      <TextInput
+        value={query}
+        onChangeText={onChange}
+        placeholder="Digite para filtrar…"
+        placeholderTextColor={colors.fgSubtle}
+        selectionColor={palette.wine[400]}
+        accessibilityLabel={`Buscar em ${label}`}
+        autoCorrect={false}
+        style={styles.filterInput}
+      />
+    </View>
+  );
+}
 
 interface ChoiceFieldProps {
   spec: ChoiceSpec;
@@ -73,9 +107,11 @@ export function OptionCard({
 }
 
 function OptionList({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { kind: 'option' }>; value: string; onChange: (value: string) => void }) {
+  const filter = useOptionFilter(spec.options, (option) => option.id === value);
   return (
     <View style={{ gap: spacing[2] }} accessibilityRole="radiogroup" accessibilityLabel={spec.label}>
-      {spec.options.map((option) => (
+      {filter.searchable ? <OptionSearch label={spec.label} query={filter.query} onChange={filter.setQuery} /> : null}
+      {filter.visible.map((option) => (
         <OptionCard
           key={option.id}
           selected={option.id === value}
@@ -110,10 +146,13 @@ function MultiList({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { kind
   const full = value.length >= spec.count;
   const detailed = spec.options.some((option) => option.description && option.description.length > 20);
   const toggle = (id: string) => onChange(value.includes(id) ? value.filter((entry) => entry !== id) : [...value, id]);
+  const filter = useOptionFilter(spec.options, (option) => value.includes(option.id));
+  const search = filter.searchable ? <OptionSearch label={spec.label} query={filter.query} onChange={filter.setQuery} /> : null;
   if (detailed) {
     return (
       <View style={{ gap: spacing[2] }}>
-        {spec.options.map((option) => {
+        {search}
+        {filter.visible.map((option) => {
           const selected = value.includes(option.id);
           return (
             <OptionCard
@@ -131,20 +170,23 @@ function MultiList({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { kind
     );
   }
   return (
-    <View style={styles.chips}>
-      {spec.options.map((option) => {
-        const selected = value.includes(option.id);
-        return (
-          <Chip
-            key={option.id}
-            label={option.name}
-            selected={selected}
-            disabled={!selected && (Boolean(option.disabledReason) || full)}
-            hint={option.disabledReason}
-            onPress={() => toggle(option.id)}
-          />
-        );
-      })}
+    <View style={{ gap: spacing[2] }}>
+      {search}
+      <View style={styles.chips}>
+        {filter.visible.map((option) => {
+          const selected = value.includes(option.id);
+          return (
+            <Chip
+              key={option.id}
+              label={option.name}
+              selected={selected}
+              disabled={!selected && (Boolean(option.disabledReason) || full)}
+              hint={option.disabledReason}
+              onPress={() => toggle(option.id)}
+            />
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -332,6 +374,17 @@ function IncreaseField({
 }
 
 const styles = StyleSheet.create({
+  filter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    paddingHorizontal: spacing[3],
+    borderWidth: 1,
+    borderColor: colors.lineStrong,
+    borderRadius: radii.md,
+    backgroundColor: colors.sunken,
+  },
+  filterInput: { flex: 1, height: 44, color: colors.fg, fontFamily: fonts.sans, fontSize: 16 },
   box: { gap: spacing[2], borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, padding: spacing[3], backgroundColor: 'rgba(255,255,255,0.01)' },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[2] },
   title: { fontFamily: fonts.sansMedium, fontSize: 15 },

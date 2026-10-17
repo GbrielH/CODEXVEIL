@@ -13,8 +13,9 @@ import { inviteCreateSchema } from '@codexveil/validation';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Share2, UserPlus } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert as NativeAlert, Share, View } from 'react-native';
+import { Share, View } from 'react-native';
 import { Button } from '@/components/ui/button';
+import { useConfirm } from '@/components/ui/dialog';
 import { HealthBar } from '@/components/ui/health-bar';
 import { ListRow } from '@/components/ui/list-row';
 import { AppText, Badge, Card } from '@/components/ui/primitives';
@@ -32,6 +33,7 @@ export default function CampaignScreen() {
   const userId = useUserId();
   const router = useRouter();
   const toast = useToast();
+  const confirm = useConfirm();
   const [inviteBusy, setInviteBusy] = useState(false);
 
   const { data, error, loading, refreshing, reload } = useAsyncData(async () => {
@@ -79,21 +81,22 @@ export default function CampaignScreen() {
     }
   };
 
-  const leave = () =>
-    NativeAlert.alert('Sair da campanha?', 'Você perderá o acesso ao conteúdo. Seus personagens continuam com você.', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: () =>
-          void leaveCampaign(getSupabase(), campaign.id)
-            .then(() => {
-              toast({ tone: 'info', title: 'Você saiu da campanha.' });
-              router.back();
-            })
-            .catch((cause: unknown) => toast({ tone: 'danger', title: 'Não foi possível sair', description: failureMessage(cause) })),
-      },
-    ]);
+  const leave = async () => {
+    const confirmed = await confirm({
+      title: 'Sair da campanha?',
+      message: 'Você perderá o acesso ao conteúdo. Seus personagens continuam com você.',
+      confirmLabel: 'Sair',
+      tone: 'danger',
+    });
+    if (!confirmed) return;
+    try {
+      await leaveCampaign(getSupabase(), campaign.id);
+      toast({ tone: 'info', title: 'Você saiu da campanha.' });
+      router.back();
+    } catch (cause) {
+      toast({ tone: 'danger', title: 'Não foi possível sair', description: failureMessage(cause) });
+    }
+  };
 
   return (
     <Screen
@@ -187,7 +190,7 @@ export default function CampaignScreen() {
             <Badge label={member.isOwner ? 'Mestre responsável' : campaignRoleLabels[member.role]} tone={member.role === 'gm' ? 'brand' : 'neutral'} />
           </View>
         ))}
-        {!campaign.isOwner ? <Button label="Sair da campanha" variant="danger" compact onPress={leave} /> : null}
+        {!campaign.isOwner ? <Button label="Sair da campanha" variant="danger" compact onPress={() => void leave()} /> : null}
       </Card>
     </Screen>
   );

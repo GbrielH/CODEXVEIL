@@ -7,7 +7,7 @@ import {
   parseDnd5eCampaignRules,
   type Dnd5eCampaignRules,
 } from './campaign-rules';
-import { dnd5eConditions } from './conditions';
+import { dnd5eConditionDurations, dnd5eConditions, formatDnd5eConditionRounds } from './conditions';
 import { computeDnd5eDerived, type Dnd5eDerived } from './derived';
 import { srd52License } from './license';
 import { dnd5eDefaultResources } from './resources';
@@ -43,10 +43,12 @@ export const dnd5eSystem: RpgSystem<Dnd5eSheet, Dnd5eDerived, Dnd5eStatBlock, Dn
   id: 'dnd5e',
   name: 'Dungeons & Dragons 5ª Edição',
   shortName: 'D&D 5e',
-  rulesReference: 'SRD 5.2',
+  rulesReference: 'SRD 5.2.1',
   sheetSchemaVersion: DND5E_SHEET_VERSION,
   license: srd52License,
   conditions: dnd5eConditions,
+  conditionDurations: dnd5eConditionDurations,
+  formatConditionRounds: formatDnd5eConditionRounds,
   sheetSchema: dnd5eSheetSchema,
   statBlockSchema: dnd5eStatBlockSchema,
   campaignRulesSchema: dnd5eCampaignRulesSchema,

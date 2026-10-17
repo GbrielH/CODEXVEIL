@@ -1,14 +1,26 @@
-import { applyCharacterCondition, removeCharacterCondition, takeCharacterRest, type CharacterResource } from '@codexveil/database';
+import { removeCharacterCondition, setCharacterConditionLevel, takeCharacterRest, type CharacterResource } from '@codexveil/database';
 import { healthStatus, resourceRecoveryLabels } from '@codexveil/domain';
-import { DND5E_RESOURCE_KEYS, dnd5eConditions, formatModifier, isDedicatedResourceKey } from '@codexveil/rpg-systems/dnd5e';
-import { Heart, HeartCrack, Minus, Plus, Shield, X } from 'lucide-react-native';
+import {
+  DND5E_RESOURCE_KEYS,
+  dnd5eLongRestConditionChanges,
+  effectiveSpeed,
+  formatModifier,
+  isDedicatedResourceKey,
+  netRollMode,
+  passiveWithConditions,
+  rollModeShortLabels,
+  type ConditionRollSource,
+} from '@codexveil/rpg-systems/dnd5e';
+import { Heart, HeartCrack, Minus, Plus, Shield } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert as NativeAlert, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Button, IconButton } from '@/components/ui/button';
+import { useConfirm } from '@/components/ui/dialog';
 import { HealthBar } from '@/components/ui/health-bar';
 import { AppText, Card } from '@/components/ui/primitives';
 import { getSupabase } from '@/lib/supabase';
 import { colors, radii, spacing } from '@/lib/theme';
+import { ConditionsSection } from './conditions-section';
 import { useSheet } from './context';
 
 function HitPoints() {
@@ -129,73 +141,33 @@ function DeathSaves() {
   );
 }
 
-function Conditions() {
-  const { conditions, canEditPlay, characterId, run, reloadPlayState } = useSheet();
-  const [picking, setPicking] = useState(false);
-  const labelOf = (key: string, level: number | null) => {
-    const label = dnd5eConditions.find((condition) => condition.key === key)?.label ?? key;
-    return level ? `${label} ${level}` : label;
-  };
-
-  return (
-    <Card>
-      <AppText variant="heading">Condições</AppText>
-      {conditions.length === 0 ? <AppText variant="muted">Nenhuma condição ativa.</AppText> : null}
-      {conditions.map((condition) => (
-        <View key={condition.id} style={styles.condition}>
-          <View style={{ flex: 1 }}>
-            <AppText style={{ color: '#E6BE74', fontWeight: '600' }}>{labelOf(condition.key, condition.level)}</AppText>
-            <AppText variant="small">{dnd5eConditions.find((item) => item.key === condition.key)?.summary ?? ''}</AppText>
-          </View>
-          {canEditPlay ? (
-            <IconButton
-              icon={<X size={16} color={colors.fgSecondary} />}
-              accessibilityLabel={`Remover ${labelOf(condition.key, condition.level)}`}
-              onPress={() => void run(() => removeCharacterCondition(getSupabase(), condition.id), 'A condição não foi removida').then(() => reloadPlayState())}
-            />
-          ) : null}
-        </View>
-      ))}
-      {canEditPlay ? (
-        picking ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-            {dnd5eConditions
-              .filter((condition) => !conditions.some((applied) => applied.key === condition.key))
-              .map((condition) => (
-                <Button
-                  key={condition.key}
-                  label={condition.label}
-                  compact
-                  variant="secondary"
-                  onPress={() => {
-                    setPicking(false);
-                    void run(() => applyCharacterCondition(getSupabase(), characterId, condition.key, 'maxLevel' in condition ? 1 : null), 'A condição não foi aplicada').then(() => reloadPlayState());
-                  }}
-                />
-              ))}
-            <Button label="Cancelar" compact variant="ghost" onPress={() => setPicking(false)} />
-          </View>
-        ) : (
-          <Button label="Aplicar condição" compact variant="secondary" icon={<Plus size={14} color={colors.fg} />} onPress={() => setPicking(true)} />
-        )
-      ) : null}
-    </Card>
-  );
-}
-
 function Resources() {
-  const { resources, adjustResource, canEditPlay, characterId, run, reloadPlayState } = useSheet();
+  const { resources, conditions, adjustResource, canEditPlay, characterId, run, reloadPlayState } = useSheet();
+  const confirm = useConfirm();
   const general = resources.filter((resource) => !isDedicatedResourceKey(resource.key));
 
-  const rest = (kind: 'short_rest' | 'long_rest') =>
-    NativeAlert.alert(
-      kind === 'short_rest' ? 'Descanso curto?' : 'Descanso longo?',
-      kind === 'short_rest' ? 'Restaura os recursos de descanso curto.' : 'Restaura vida, espaços de magia e recursos de descanso curto e longo.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Descansar', onPress: () => void run(() => takeCharacterRest(getSupabase(), characterId, kind), 'O descanso não foi registrado').then(() => reloadPlayState()) },
-      ],
-    );
+  const rest = async (kind: 'short_rest' | 'long_rest') => {
+    const confirmed = await confirm({
+      title: kind === 'short_rest' ? 'Descanso curto?' : 'Descanso longo?',
+      message:
+        kind === 'short_rest'
+          ? 'Restaura os recursos de descanso curto.'
+          : 'Restaura vida, espaços de magia e recursos de descanso curto e longo. A Exaustão cai 1 nível.',
+      confirmLabel: 'Descansar',
+    });
+    if (!confirmed) return;
+    await run(async () => {
+      const client = getSupabase();
+      await takeCharacterRest(client, characterId, kind);
+      // SRD 5.2.1: terminar um Descanso Longo remove 1 nível de Exaustão.
+      if (kind === 'long_rest') {
+        const changes = dnd5eLongRestConditionChanges(conditions);
+        for (const entry of changes.update) await setCharacterConditionLevel(client, entry.id, entry.level);
+        for (const conditionId of changes.remove) await removeCharacterCondition(client, conditionId);
+      }
+    }, 'O descanso não foi registrado');
+    await reloadPlayState();
+  };
 
   return (
     <Card>
@@ -228,30 +200,52 @@ function Resources() {
       ))}
       {canEditPlay ? (
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Button label="Descanso curto" compact variant="secondary" onPress={() => rest('short_rest')} style={{ flex: 1 }} />
-          <Button label="Descanso longo" compact variant="secondary" onPress={() => rest('long_rest')} style={{ flex: 1 }} />
+          <Button label="Descanso curto" compact variant="secondary" onPress={() => void rest('short_rest')} style={{ flex: 1 }} />
+          <Button label="Descanso longo" compact variant="secondary" onPress={() => void rest('long_rest')} style={{ flex: 1 }} />
         </View>
       ) : null}
     </Card>
   );
 }
 
+/** "Vant." / "Desv." quando as condições dão vantagem ou desvantagem direta. */
+function rollMark(sources: readonly ConditionRollSource[]): string | null {
+  const mode = netRollMode(sources);
+  return mode === 'advantage' || mode === 'disadvantage' ? rollModeShortLabels[mode] : null;
+}
+
 function CombatStats() {
-  const { sheet, derived } = useSheet();
+  const { sheet, derived, conditionEffects: effects } = useSheet();
+  const speed = effectiveSpeed(sheet.combat.speed, sheet.combat.speedUnit, effects);
+  const passive = passiveWithConditions(derived.passivePerception, effects);
+  const initiativeNotes = [rollMark(effects.initiative), effects.d20Penalty > 0 ? `−${effects.d20Penalty} Exaustão` : null].filter(Boolean);
+  const speedNote = effects.speedZero.length > 0 ? effects.speedZero.join(', ') : effects.speedReductionFeet > 0 ? `Exaustão ${effects.exhaustionLevel}` : null;
   const stats = [
-    { label: 'CA', value: String(sheet.combat.armorClass) },
-    { label: 'Iniciativa', value: formatModifier(derived.initiative) },
-    { label: 'Desloc.', value: `${sheet.combat.speed} ${sheet.combat.speedUnit}` },
-    { label: 'Percepção', value: String(derived.passivePerception) },
+    { label: 'CA', value: String(sheet.combat.armorClass), note: null, changed: false },
+    { label: 'Iniciativa', value: formatModifier(derived.initiative - effects.d20Penalty), note: initiativeNotes.join(' · ') || null, changed: initiativeNotes.length > 0 },
+    { label: 'Desloc.', value: `${speed.toLocaleString('pt-BR')} ${sheet.combat.speedUnit}`, note: speedNote, changed: speed !== sheet.combat.speed },
+    { label: 'Percepção', value: String(passive), note: passive !== derived.passivePerception ? `base ${derived.passivePerception}` : null, changed: passive !== derived.passivePerception },
   ];
   return (
     <View style={{ flexDirection: 'row', gap: 8 }}>
       {stats.map((stat) => (
-        <View key={stat.label} style={styles.stat} accessible accessibilityLabel={`${stat.label}: ${stat.value}`}>
-          <AppText variant="number">{stat.value}</AppText>
+        <View
+          key={stat.label}
+          style={[styles.stat, stat.changed && { borderColor: 'rgba(217, 165, 74, 0.45)' }]}
+          accessible
+          accessibilityLabel={`${stat.label}: ${stat.value}${stat.note ? ` (${stat.note})` : ''}`}
+        >
+          <AppText variant="number" style={stat.changed ? { color: '#E6BE74' } : undefined}>
+            {stat.value}
+          </AppText>
           <AppText variant="small" style={{ color: colors.fgMuted }}>
             {stat.label}
           </AppText>
+          {stat.note ? (
+            <AppText variant="small" style={{ color: '#E6BE74', fontSize: 10, lineHeight: 13, textAlign: 'center' }}>
+              {stat.note}
+            </AppText>
+          ) : null}
         </View>
       ))}
     </View>
@@ -265,7 +259,7 @@ export function PlaySection() {
     <View style={{ gap: spacing[4] }}>
       <HitPoints />
       <CombatStats />
-      <Conditions />
+      <ConditionsSection />
       <Resources />
     </View>
   );
@@ -274,7 +268,6 @@ export function PlaySection() {
 const styles = StyleSheet.create({
   amount: { width: 72, height: 44, textAlign: 'center', fontSize: 18, color: colors.fg, borderWidth: 1, borderColor: colors.lineStrong, borderRadius: radii.md, backgroundColor: colors.sunken },
   box: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, borderColor: colors.lineStrong, backgroundColor: colors.sunken },
-  condition: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderRadius: radii.md, borderWidth: 1, borderColor: 'rgba(217, 165, 74, 0.3)', backgroundColor: colors.warningBg },
   resource: { flexDirection: 'row', alignItems: 'center', gap: 4, borderBottomWidth: 1, borderBottomColor: colors.line, paddingVertical: 6 },
   stat: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.raised },
 });

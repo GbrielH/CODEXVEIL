@@ -7,7 +7,7 @@ import type {
   CharacterResource,
 } from '@codexveil/database';
 import type { CampaignStatus, TrackOperation } from '@codexveil/domain';
-import type { Dnd5eDerived, Dnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
+import type { Dnd5eConditionEffects, Dnd5eDerived, Dnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
 import { createContext, useContext, type Dispatch, type SetStateAction } from 'react';
 
 export interface SheetCharacter {
@@ -40,6 +40,8 @@ export interface SheetContextValue {
 
   resources: CharacterResource[];
   conditions: CharacterCondition[];
+  /** Efeitos combinados das condições ativas (vantagens, falhas automáticas, deslocamento…). */
+  conditionEffects: Dnd5eConditionEffects;
   items: CharacterItem[];
   abilities: CharacterAbility[];
   setResources: Dispatch<SetStateAction<CharacterResource[]>>;

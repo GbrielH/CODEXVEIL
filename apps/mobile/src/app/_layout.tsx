@@ -13,6 +13,7 @@ import { SplashScreen, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { DialogProvider } from '@/components/ui/dialog';
 import { ToastProvider } from '@/components/ui/toast';
 import { SessionProvider, useSession } from '@/lib/session';
 import { colors, fonts, navigationTheme } from '@/lib/theme';
@@ -77,8 +78,10 @@ export default function RootLayout() {
       <ThemeProvider value={navigationTheme}>
         <SessionProvider>
           <ToastProvider>
-            <StatusBar style="light" />
-            <RootNavigator />
+            <DialogProvider>
+              <StatusBar style="light" />
+              <RootNavigator />
+            </DialogProvider>
           </ToastProvider>
         </SessionProvider>
       </ThemeProvider>

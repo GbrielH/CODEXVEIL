@@ -7,8 +7,8 @@ import {
   type PartyCharacter,
 } from '@codexveil/database';
 import { applyTrackOperation } from '@codexveil/domain';
-import { conditionLabel, findSystem, summarizeSheet } from '@codexveil/rpg-systems';
-import { Users, X } from 'lucide-react';
+import { conditionLabel, conditionsLeftAfter, findSystem, summarizeSheet } from '@codexveil/rpg-systems';
+import { Users } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { HealthBar } from '@/components/characters/health-bar';
@@ -16,6 +16,7 @@ import { Portrait } from '@/components/characters/portrait';
 import { Card, CardHeader } from '@/components/ui/card';
 import { characterPath } from '@/lib/routes';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { ConditionApplier, ConditionChip } from './condition-applier';
 import type { GmTableContext } from './gm-table';
 import { HpQuickAdjust } from './hp-quick-adjust';
 
@@ -45,10 +46,13 @@ export function PartyStatus({ context, portraits, currentUserId }: { context: Gm
     }
   };
 
-  const addCondition = async (character: PartyCharacter, key: string) => {
-    if (!key) return;
+  const addCondition = async (character: PartyCharacter, key: string, rounds: number | null) => {
+    // Condições graduais (Exaustão) sobem 1 nível a cada aplicação.
+    const maxLevel = conditions.find((condition) => condition.key === key)?.maxLevel;
+    const current = character.conditions.find((condition) => condition.key === key)?.level ?? 0;
+    const level = maxLevel ? Math.min(current + 1, maxLevel) : null;
     try {
-      await applyCharacterCondition(getSupabaseBrowserClient(), character.id, key, key === 'exhaustion' ? 1 : null);
+      await applyCharacterCondition(getSupabaseBrowserClient(), character.id, key, level, rounds);
       await reload();
     } catch (error) {
       fail(`${character.name}: condição não aplicada`, error);
@@ -56,8 +60,15 @@ export function PartyStatus({ context, portraits, currentUserId }: { context: Gm
   };
 
   const removeCondition = async (character: PartyCharacter, conditionId: string) => {
+    const removed = character.conditions.find((condition) => condition.id === conditionId);
     try {
-      await removeCharacterCondition(getSupabaseBrowserClient(), conditionId);
+      const client = getSupabaseBrowserClient();
+      await removeCharacterCondition(client, conditionId);
+      const remaining = character.conditions.filter((condition) => condition.id !== conditionId).map((condition) => condition.key);
+      // Ex.: quem deixa de estar Inconsciente continua Caído.
+      for (const next of conditionsLeftAfter(systemId, removed ? [removed.key] : [], remaining)) {
+        await applyCharacterCondition(client, character.id, next);
+      }
       await reload();
     } catch (error) {
       fail(`${character.name}: condição não removida`, error);
@@ -91,36 +102,23 @@ export function PartyStatus({ context, portraits, currentUserId }: { context: Gm
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 pl-15">
                   {character.conditions.map((condition) => (
-                    <span key={condition.id} className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-warning-bg py-0.5 pr-1 pl-2.5 text-xs text-amber-300">
-                      {conditionLabel(systemId, condition.key, condition.level)}
-                      {canManage ? (
-                        <button
-                          type="button"
-                          onClick={() => void removeCondition(character, condition.id)}
-                          className="rounded-full p-0.5 hover:bg-amber-400/20"
-                          aria-label={`Remover ${conditionLabel(systemId, condition.key, condition.level)} de ${character.name}`}
-                        >
-                          <X className="h-3 w-3" aria-hidden="true" />
-                        </button>
-                      ) : null}
-                    </span>
+                    <ConditionChip
+                      key={condition.id}
+                      systemId={systemId}
+                      conditionKey={condition.key}
+                      label={conditionLabel(systemId, condition.key, condition.level)}
+                      rounds={condition.roundsRemaining}
+                      onRemove={canManage ? () => void removeCondition(character, condition.id) : undefined}
+                      removeLabel={`Remover ${conditionLabel(systemId, condition.key, condition.level)} de ${character.name}`}
+                    />
                   ))}
                   {canManage && conditions.length > 0 ? (
-                    <select
-                      aria-label={`Aplicar condição em ${character.name}`}
-                      value=""
-                      onChange={(event) => void addCondition(character, event.target.value)}
-                      className="h-8 rounded-md border border-line bg-sunken px-2 text-xs text-fg-secondary"
-                    >
-                      <option value="">+ condição</option>
-                      {conditions
-                        .filter((condition) => !character.conditions.some((applied) => applied.key === condition.key))
-                        .map((condition) => (
-                          <option key={condition.key} value={condition.key}>
-                            {condition.label}
-                          </option>
-                        ))}
-                    </select>
+                    <ConditionApplier
+                      systemId={systemId}
+                      targetName={character.name}
+                      appliedKeys={character.conditions.map((condition) => condition.key)}
+                      onApply={(key, rounds) => addCondition(character, key, rounds)}
+                    />
                   ) : null}
                 </div>
               </li>

@@ -228,6 +228,12 @@ versão anterior dos apps, o que muda é só o que foi decidido: o mestre não c
 personagem na própria campanha, o envio de avatar é recusado e imagens acima de 2 MB são
 recusadas (a versão nova reduz as imagens antes de enviar).
 
+**`20261017120000_condition_durations.sql` (duração das condições):** precisa estar aplicada
+antes de publicar o código que a acompanha, porque o site e o app passam a ler
+`character_conditions.rounds_remaining` e `session_entities.condition_rounds`; sem ela, a
+ficha e a mesa do mestre dão erro. A migração só acrescenta colunas, funções e um gatilho, e a
+versão anterior dos apps continua funcionando com ela.
+
 Nunca altere o banco de produção pelo SQL Editor sem registrar a mudança numa migração: os
 ambientes deixariam de ser reproduzíveis.
 

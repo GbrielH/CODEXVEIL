@@ -4,21 +4,22 @@ O Codexveil só usa conteúdo cuja reprodução é permitida. Nenhum texto, aven
 catálogo de livros comerciais foi copiado para o código ou para o banco. As atribuições também
 aparecem para os usuários na página `/licencas` do site.
 
-## Regras de jogo: D&D 5e (SRD 5.2)
+## Regras de jogo: D&D 5e (SRD 5.2.1)
 
-| Campo               | Valor                                                               |
-| ------------------- | ------------------------------------------------------------------- |
-| Obra                | System Reference Document 5.2 ("SRD 5.2"), Wizards of the Coast LLC |
-| Licença             | Creative Commons Attribution 4.0 International (CC-BY-4.0)          |
-| Texto da licença    | <https://creativecommons.org/licenses/by/4.0/legalcode>             |
-| Fonte               | <https://www.dndbeyond.com/srd>                                     |
-| Onde fica no código | `packages/rpg-systems/src/dnd5e/` (atribuição em `license.ts`)      |
+| Campo               | Valor                                                                   |
+| ------------------- | ----------------------------------------------------------------------- |
+| Obra                | System Reference Document 5.2.1 ("SRD 5.2.1"), Wizards of the Coast LLC |
+| Licença             | Creative Commons Attribution 4.0 International (CC-BY-4.0)              |
+| Texto da licença    | <https://creativecommons.org/licenses/by/4.0/legalcode>                 |
+| Fonte               | <https://www.dndbeyond.com/srd>                                         |
+| Onde fica no código | `packages/rpg-systems/src/dnd5e/` (atribuição em `license.ts`)          |
 
 **O que foi usado (SRD 5.2.1):**
 
 - Mecânicas: os seis atributos e a fórmula do modificador, o bônus de proficiência, as
-  perícias, as salvaguardas, os dados de vida, a tabela de XP, as tabelas de espaços de magia e
-  os nomes das condições.
+  perícias, as salvaguardas, os dados de vida, a tabela de XP e as tabelas de espaços de magia.
+- Condições (`packages/rpg-systems/src/dnd5e/conditions.ts`): as 15 condições do glossário de
+  regras, com o texto traduzido e adaptado e os efeitos transformados em dados para a ficha.
 - Criação de personagens (`packages/rpg-systems/src/dnd5e/srd/`): as 12 classes com as
   características básicas, as habilidades do 1º ao 20º nível e a subclasse do SRD de cada uma;
   as 9 espécies e seus traços; os 4 antecedentes; os talentos de origem, gerais, de estilo de
@@ -34,10 +35,11 @@ antecedentes, talentos, habilidades, armas e itens foram traduzidos para o portu
 descrições das habilidades são resumos escritos pelo projeto, não o texto do SRD; distâncias
 foram convertidas para metros (5 pés = 1,5 m) e pesos para quilos (1 lb = 0,5 kg); tempo de
 conjuração, alcance e duração das magias foram traduzidos e os componentes materiais foram
-resumidos para "M". Os nomes das magias seguem o original em inglês.
+resumidos para "M"; o texto das regras das condições foi traduzido para o português, com
+distâncias em metros. Os nomes das magias seguem o original em inglês.
 
-**O que foi escrito pelo projeto:** todos os textos de interface, os resumos das condições
-(`conditions.ts`) e os resumos das habilidades, traços e talentos. Eles não substituem o texto
+**O que foi escrito pelo projeto:** todos os textos de interface, os resumos curtos das
+condições (`conditions.ts`) e os resumos das habilidades, traços e talentos. Eles não substituem o texto
 das regras.
 
 **O que não está no projeto:** conteúdo de livros comerciais (subclasses, antecedentes,
@@ -46,8 +48,8 @@ qualquer ilustração. O usuário pode registrar o próprio conteúdo na ficha.
 
 Atribuição exigida pela licença (exibida em `/licencas`):
 
-> This work includes material from the System Reference Document 5.2 ("SRD 5.2") by Wizards
-> of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2 is licensed under
+> This work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by Wizards
+> of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under
 > the Creative Commons Attribution 4.0 International License, available at
 > https://creativecommons.org/licenses/by/4.0/legalcode.
 

@@ -21,13 +21,31 @@ export interface ContentLicense {
   attribution: string;
 }
 
+/** Um tópico das regras de uma condição: título curto e o efeito correspondente. */
+export interface ConditionRule {
+  title: string;
+  text: string;
+}
+
 export interface ConditionDefinition {
   key: string;
   label: string;
-  /** Resumo curto, escrito pelo Codexveil, para consulta rápida durante a sessão. */
+  /** Resumo curto, escrito pelo Codexveil, para listas e consulta rápida. */
   summary: string;
   /** Condições graduais (ex.: Exaustão 1–6). */
   maxLevel?: number;
+  /** Regras da condição, em tópicos (adaptadas da obra de referência). */
+  rules?: readonly ConditionRule[];
+  /** Condições impostas junto com esta (ex.: Paralisado → Incapacitado). */
+  includes?: readonly string[];
+  /** Condições que continuam quando esta termina (ex.: Inconsciente → Caído). */
+  leaves?: readonly string[];
+}
+
+/** Duração oferecida ao aplicar uma condição; `rounds: null` dura até ser removida. */
+export interface ConditionDurationPreset {
+  rounds: number | null;
+  label: string;
 }
 
 /** Como a interface deve apresentar uma trilha de recurso. */
@@ -93,6 +111,13 @@ export interface RpgSystem<TSheet = unknown, TDerived = unknown, TStatBlock = un
   readonly sheetSchemaVersion: number;
   readonly license: ContentLicense;
   readonly conditions: readonly ConditionDefinition[];
+  /**
+   * Durações oferecidas ao aplicar uma condição, em rodadas. A contagem diminui no fim de
+   * cada turno de quem tem a condição (no combate, ao passar o turno).
+   */
+  readonly conditionDurations: readonly ConditionDurationPreset[];
+  /** Texto de uma duração em rodadas (ex.: "10 rodadas (1 min)"); `null` = até ser removida. */
+  formatConditionRounds(rounds: number | null): string;
   readonly sheetSchema: z.ZodType<TSheet>;
   readonly statBlockSchema: z.ZodType<TStatBlock>;
   /**

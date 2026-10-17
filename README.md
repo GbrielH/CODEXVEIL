@@ -2,7 +2,7 @@
 
 Plataforma de gerenciamento de RPG de mesa: campanhas, convites, fichas digitais, sessões com roteiro por blocos, biblioteca de NPCs e monstros e mesa do mestre com combate e segredos protegidos no banco de dados.
 
-O projeto começa com D&D 5e (SRD 5.2) e foi projetado para receber outros sistemas sem exigir uma reescrita da aplicação.
+O projeto começa com D&D 5e (SRD 5.2.1) e foi projetado para receber outros sistemas sem exigir uma reescrita da aplicação.
 
 ## Aplicações
 

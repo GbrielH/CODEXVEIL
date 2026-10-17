@@ -2,8 +2,8 @@ import { getProfile, updateProfile } from '@codexveil/database';
 import { fieldErrorsFrom, profileUpdateSchema, type FieldErrors } from '@codexveil/validation';
 import { LogOut } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert as NativeAlert } from 'react-native';
 import { Button } from '@/components/ui/button';
+import { useConfirm } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
 import { AppText, Card } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
@@ -56,6 +56,7 @@ function ProfileForm({ profile, onSaved }: { profile: Profile; onSaved: () => vo
 export default function ProfileScreen() {
   const userId = useUserId();
   const { email, signOut } = useSession();
+  const confirm = useConfirm();
   const { data, error, loading, reload } = useAsyncData(() => getProfile(getSupabase(), userId), userId);
 
   if (loading) return <LoadingState />;
@@ -72,10 +73,11 @@ export default function ProfileScreen() {
           variant="danger"
           icon={<LogOut size={16} color="#EC9384" />}
           onPress={() =>
-            NativeAlert.alert('Sair da conta?', 'Você precisará entrar novamente neste aparelho.', [
-              { text: 'Cancelar', style: 'cancel' },
-              { text: 'Sair', style: 'destructive', onPress: () => void signOut() },
-            ])
+            void confirm({ title: 'Sair da conta?', message: 'Você precisará entrar novamente neste aparelho.', confirmLabel: 'Sair', tone: 'danger' }).then(
+              (confirmed) => {
+                if (confirmed) void signOut();
+              },
+            )
           }
         />
       </Card>

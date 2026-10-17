@@ -10,9 +10,9 @@
 | Área        | Situação                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Site        | **No ar** em <https://codexveil.vercel.app> (Vercel, projeto `codexveil`). Publicado pela CLI até 2026-10-16, **ainda sem as mudanças de 2026-10-17**. O próximo deploy depende do passo 1 (a CLI desta máquina está sem login).                                                                                                                                                                                                                                                                                                                                                  |
-| Backend     | **No ar:** Supabase `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`, us-east-2), com as 7 migrações (a da criação guiada aplicada em 2026-10-17), Site URL e Redirect URLs (`deploy/supabase/config.toml`).                                                                                                                                                                                                                                                                                                                                                                                   |
+| Backend     | **No ar:** Supabase `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`, us-east-2), com as 8 migrações (a da criação guiada e a da duração das condições aplicadas em 2026-10-17), Site URL e Redirect URLs (`deploy/supabase/config.toml`).                                                                                                                                                                                                                                                                                                                                                     |
 | App Android | **APK novo com a criação guiada e atualização automática (OTA):** [download](https://expo.dev/artifacts/eas/DaQ2lqX7sC0dDD5e5VEViyyqP5EzX9RADKaF8Cv21rk.apk) ([build `420f6c37`](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/420f6c37-279c-4e92-b865-de9bdcb0b7f4), gerado pelo workflow em 2026-10-17). As mudanças de 2026-10-17 alteraram o fingerprint nativo, então os APKs anteriores (inclusive o `de6ceb5c`) **não** recebem mais atualizações: instale este. Todos os builds: <https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds>. |
-| Validação   | API validada ao vivo (10/10 em 2026-10-16; 11/11 em 2026-10-17). Em 2026-10-17, `pnpm check` passa 20/20 (366 testes) e `pnpm build` passa 2/2, e um percurso automatizado logado no site local criou personagens pelo assistente contra o banco real e confirmou o tempo real na ficha. **Ninguém usou ainda as telas com duas contas.**                                                                                                                                                                                                                                         |
+| Validação   | API validada ao vivo (10/10 em 2026-10-16; 11/11 em 2026-10-17). Em 2026-10-17, `pnpm check` passa 20/20 (388 testes) e `pnpm build` passa 2/2, e um percurso automatizado logado no site local criou personagens pelo assistente contra o banco real e confirmou o tempo real na ficha. **Ninguém usou ainda as telas com duas contas.**                                                                                                                                                                                                                                         |
 | E-mail      | **Adiado:** o SMTP próprio (Brevo) será configurado com um e-mail exclusivo do sistema. Até lá, valem os e-mails padrão do Supabase, em inglês, com as limitações abaixo.                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 ### Limitações enquanto não houver SMTP próprio
@@ -48,6 +48,22 @@ regras de criação do mestre em cada campanha, mestres sem personagens nas pró
 **Pronto quando:** um jogador criar um personagem completo pelo assistente numa campanha cujo
 mestre definiu o nível inicial, e o mestre não conseguir criar personagem nessa campanha. No
 site local isso já foi confirmado pelo percurso automatizado; falta no site publicado e no app.
+
+### 0b. Condições, listas e diálogos — você autoriza, Claude executa
+
+Implementado em 2026-10-17, segunda rodada (veja o histórico): condições com as regras e os
+efeitos do SRD 5.2.1 e duração em rodadas, listas com a identidade visual e busca, diálogos do
+app no visual do Codexveil, crônica em pergaminho e a área logada na largura toda.
+
+- [x] **Claude:** `supabase db push --dry-run` e `supabase db push` (só a migração
+      `20261017120000_condition_durations.sql`, aplicada em 2026-10-17).
+- [x] **Claude:** condição aplicada com duração, "Passar rodada" e turno passado no combate
+      contra o banco real, com contas temporárias (10 → 9 → 8 rodadas).
+- [x] **Você:** autorizou o commit e o push ("Suba para main tudo que você fez"). O app não
+      muda o código nativo, então recebe uma atualização OTA (sem APK novo).
+
+**Pronto quando:** uma condição aplicada com duração mostrar os efeitos na ficha e terminar
+sozinha ao passar os turnos no combate do mestre.
 
 ### 1. Atualização automática do site e do app a cada commit — você e Claude
 
@@ -148,6 +164,29 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-17 — condições, listas, diálogos e cobertura do SRD (segunda rodada)
+
+- Condições: as 15 do glossário do SRD 5.2.1 com regras traduzidas, condições impostas
+  (Paralisado → Incapacitado) e as que ficam ao terminar (Inconsciente → Caído); efeitos
+  aplicados na ficha (vantagem e desvantagem, falha automática, deslocamento, penalidade de
+  Exaustão, incapacitação, valores passivos); duração em rodadas para personagens, NPCs e
+  monstros, que diminui no fim do turno (no combate, ao passar o turno; fora dele, pelo botão
+  "Passar rodada"); Exaustão cai 1 nível no descanso longo. Migração
+  `20261017120000_condition_durations.sql`, aplicada e testada contra o banco real.
+- GitHub ligado à Vercel (projeto `codexveil`) e ao Expo (base `apps/mobile`) pelo
+  responsável.
+- Site: seletor próprio com busca no lugar do `<select>` nativo em todas as listas; listas
+  longas do assistente com busca; crônica do personagem em pergaminho legível; área logada na
+  largura toda; campos numéricos respeitam a largura pedida (antes espremiam as perícias).
+- App: confirmações (sair da conta, sair da campanha, excluir item, descanso) num diálogo com
+  a identidade visual, no lugar do alerta do Android; lista de condições em painel com busca;
+  listas longas do assistente com busca.
+- Atribuição corrigida para "SRD 5.2.1", a versão de onde os dados vieram.
+- Resposta sobre o conteúdo de D&D: só o SRD 5.2.1 pode estar no sistema; o que falta dele
+  está em [`PENDENCIAS.md`](PENDENCIAS.md#cobertura-do-conteúdo-de-dd-srd-521).
+- `pnpm check` 20/20 (388 testes). Vitrine temporária e contas temporárias no navegador (veja
+  [`PROGRESS.md`](PROGRESS.md)).
 
 ### 2026-10-17 — criação guiada e correções pedidas pelo responsável
 

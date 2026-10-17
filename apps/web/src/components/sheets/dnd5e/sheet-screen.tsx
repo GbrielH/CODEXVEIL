@@ -14,6 +14,7 @@ import {
 import { applyTrackOperation, type TrackOperation } from '@codexveil/domain';
 import {
   computeDnd5eDerived,
+  dnd5eConditionEffects,
   dnd5eSheetSchema,
   parseDnd5eSheet,
   type Dnd5eSheet,
@@ -93,6 +94,7 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
   const { value: draft, update, reset, state: saveState } = autosave;
 
   const derived = useMemo(() => computeDnd5eDerived(draft.sheet), [draft.sheet]);
+  const conditionEffects = useMemo(() => dnd5eConditionEffects(conditions), [conditions]);
 
   const run = useCallback(
     async <T,>(action: () => Promise<T>, messages: { success?: string; failure: string }) => {
@@ -219,6 +221,7 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
     updateSheet: (updater) => update((current) => ({ ...current, sheet: updater(current.sheet) })),
     resources,
     conditions,
+    conditionEffects,
     items,
     abilities,
     setResources,

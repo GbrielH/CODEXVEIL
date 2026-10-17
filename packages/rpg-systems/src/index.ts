@@ -2,6 +2,8 @@ export type {
   CharacterSummary,
   CombatDefaults,
   ConditionDefinition,
+  ConditionDurationPreset,
+  ConditionRule,
   ContentLicense,
   ResourceDisplay,
   ResourceTemplate,
@@ -15,6 +17,8 @@ export {
   isSystemId,
   listSystems,
   conditionLabel,
+  conditionRoundsLabel,
+  conditionsLeftAfter,
   summarizeSheet,
   type SystemId,
 } from './registry';

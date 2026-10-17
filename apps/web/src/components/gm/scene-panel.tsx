@@ -8,9 +8,9 @@ import {
   type SceneEntity,
 } from '@codexveil/database';
 import { applyDamage, applyHealing } from '@codexveil/domain';
-import { conditionLabel, findSystem } from '@codexveil/rpg-systems';
+import { conditionLabel, conditionsLeftAfter, findSystem } from '@codexveil/rpg-systems';
 import { creatureKindLabels } from '@codexveil/validation';
-import { Plus, Shield, Skull, Trash2, UserRound, X, Zap } from 'lucide-react';
+import { Plus, Shield, Skull, Trash2, UserRound, Zap } from 'lucide-react';
 import { useId, useState } from 'react';
 import { HealthBar } from '@/components/characters/health-bar';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,7 @@ import { SelectField, TextField } from '@/components/ui/field';
 import { Modal } from '@/components/ui/modal';
 import { NumberInput } from '@/components/ui/number-input';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { ConditionApplier, ConditionChip } from './condition-applier';
 import type { GmTableContext, LibraryOption } from './gm-table';
 import { HpQuickAdjust } from './hp-quick-adjust';
 
@@ -49,14 +50,30 @@ export function ScenePanel({ context, library }: { context: GmTableContext; libr
     }
   };
 
-  const setConditions = async (entity: SceneEntity, nextConditions: string[]) => {
-    setEntities((current) => current.map((item) => (item.id === entity.id ? { ...item, conditions: nextConditions } : item)));
+  const setConditions = async (entity: SceneEntity, nextConditions: string[], nextRounds: Record<string, number>) => {
+    const conditionRounds = Object.fromEntries(Object.entries(nextRounds).filter(([key]) => nextConditions.includes(key)));
+    setEntities((current) => current.map((item) => (item.id === entity.id ? { ...item, conditions: nextConditions, conditionRounds } : item)));
     try {
-      const saved = await updateSceneEntity(getSupabaseBrowserClient(), entity.id, { conditions: nextConditions });
+      const saved = await updateSceneEntity(getSupabaseBrowserClient(), entity.id, { conditions: nextConditions, conditionRounds });
       setEntities((current) => current.map((item) => (item.id === saved.id ? saved : item)));
     } catch (error) {
       fail(`${entity.name}: condições não salvas`, error);
     }
+  };
+
+  const addCondition = (entity: SceneEntity, key: string, rounds: number | null) => {
+    const nextRounds = { ...entity.conditionRounds };
+    if (rounds === null) delete nextRounds[key];
+    else nextRounds[key] = rounds;
+    const nextConditions = entity.conditions.includes(key) ? entity.conditions : [...entity.conditions, key];
+    return setConditions(entity, nextConditions, nextRounds);
+  };
+
+  const removeCondition = (entity: SceneEntity, key: string) => {
+    const remaining = entity.conditions.filter((item) => item !== key);
+    // Ex.: quem deixa de estar Inconsciente continua Caído.
+    const left = conditionsLeftAfter(systemId, [key], remaining);
+    return setConditions(entity, [...remaining, ...left], entity.conditionRounds);
   };
 
   const remove = async (entity: SceneEntity) => {
@@ -130,38 +147,24 @@ export function ScenePanel({ context, library }: { context: GmTableContext; libr
               </div>
               <div className="flex flex-wrap items-center gap-1.5 pl-8">
                 {entity.conditions.map((key) => (
-                  <span key={key} className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-warning-bg py-0.5 pr-1 pl-2.5 text-xs text-amber-300">
-                    {conditionLabel(systemId, key)}
-                    {canManage ? (
-                      <button
-                        type="button"
-                        onClick={() => void setConditions(entity, entity.conditions.filter((item) => item !== key))}
-                        className="rounded-full p-0.5 hover:bg-amber-400/20"
-                        aria-label={`Remover ${conditionLabel(systemId, key)} de ${entity.name}`}
-                      >
-                        <X className="h-3 w-3" aria-hidden="true" />
-                      </button>
-                    ) : null}
-                  </span>
+                  <ConditionChip
+                    key={key}
+                    systemId={systemId}
+                    conditionKey={key}
+                    label={conditionLabel(systemId, key)}
+                    rounds={entity.conditionRounds[key] ?? null}
+                    onRemove={canManage ? () => void removeCondition(entity, key) : undefined}
+                    removeLabel={`Remover ${conditionLabel(systemId, key)} de ${entity.name}`}
+                  />
                 ))}
-                {canManage && entity.conditions.length < 20 ? (
-                  <select
-                    aria-label={`Aplicar condição em ${entity.name}`}
-                    value=""
-                    onChange={(event) => {
-                      if (event.target.value) void setConditions(entity, [...entity.conditions, event.target.value]);
-                    }}
-                    className="h-8 rounded-md border border-line bg-sunken px-2 text-xs text-fg-secondary"
-                  >
-                    <option value="">+ condição</option>
-                    {conditions
-                      .filter((condition) => !entity.conditions.includes(condition.key))
-                      .map((condition) => (
-                        <option key={condition.key} value={condition.key}>
-                          {condition.label}
-                        </option>
-                      ))}
-                  </select>
+                {canManage && entity.conditions.length < 20 && conditions.length > 0 ? (
+                  <ConditionApplier
+                    systemId={systemId}
+                    targetName={entity.name}
+                    appliedKeys={entity.conditions}
+                    allowLevels={false}
+                    onApply={(key, rounds) => addCondition(entity, key, rounds)}
+                  />
                 ) : null}
               </div>
               {entity.notes ? <p className="pl-8 text-xs text-fg-secondary">{entity.notes}</p> : null}

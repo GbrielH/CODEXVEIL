@@ -79,6 +79,43 @@ depois desse uso.
 | Reduzir o tamanho das imagens                                                                     | Implementado                   | O prompt pedia só validar tipo e tamanho (§15) e carregar imagens de forma otimizada (§17); não havia compressão. Agora o site reduz e regrava em WebP antes do envio, e o bucket aceita no máximo 2 MB (antes 5 MB).                                                                                                                                                                                        |
 | Site e app atualizados automaticamente a cada commit                                              | Parcial: depende de você       | Workflow do EAS e `expo-updates` prontos e conferidos; falta ligar o GitHub `GbrielH` à Vercel e ao Expo, o que só o dono da conta pode autorizar no navegador ([PROXIMOS_PASSOS](PROXIMOS_PASSOS.md), etapa 1).                                                                                                                                                                                             |
 
+| Mensagens de confirmação no visual do app | Implementado; falta publicar | O app usava o alerta nativo do Android em 4 lugares (sair da conta, sair da campanha, excluir item e descansar). Agora usa um diálogo com a identidade do Codexveil. O site já usava um diálogo próprio. |
+| Condições com os efeitos e a duração (turnos) do D&D | Implementado e testado no banco real | As 15 condições do SRD 5.2.1 com as regras traduzidas e os efeitos aplicados na ficha (vantagem e desvantagem, falha automática, deslocamento, Exaustão, incapacitação); duração em rodadas que diminui no fim de cada turno (automática no combate do mestre ou pelo botão "Passar rodada"); condições impostas e as que ficam ao terminar; Exaustão cai 1 nível no descanso longo. Vale para personagens, NPCs e monstros. |
+| Listas no visual do sistema, com busca | Implementado; falta publicar | Todas as listas de seleção do site trocaram o `<select>` nativo por um componente próprio com busca sem acentos, teclado e leitor de tela; listas longas do assistente ganharam busca; no app, a lista de condições abre em painel com busca. |
+| Crônica com as cores certas e página na largura da tela | Implementado; falta publicar | O cartão escuro anulava o fundo do pergaminho e deixava os rótulos ilegíveis; agora a crônica é um pergaminho com tinta escura. A área logada ocupa toda a largura. Corrigido também o defeito antigo que espremia os nomes das perícias. |
+| Confirmar que todo o conteúdo do livro de D&D está no sistema | Respondido | Não está, e nem pode estar todo: veja a cobertura abaixo. |
+
+### Cobertura do conteúdo de D&D (SRD 5.2.1)
+
+O sistema só pode trazer o **SRD 5.2.1**, a parte das regras de D&D 2024 que a Wizards of the
+Coast liberou sob CC-BY-4.0. O restante dos livros comerciais (Livro do Jogador, Guia do
+Mestre e Manual dos Monstros) é protegido por direitos autorais, e o prompt inicial proíbe
+copiá-lo (§8): por exemplo, as outras três subclasses de cada classe (o SRD traz uma por
+classe), 12 dos 16 antecedentes, a espécie Aasimar, a maior parte dos talentos e parte das
+magias. O usuário pode cadastrar conteúdo próprio (criaturas na biblioteca, itens, habilidades
+e magias na ficha).
+
+| Parte do SRD 5.2.1                                                                            | No Codexveil | Observação                                                                                                                                                              |
+| --------------------------------------------------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Classes (12), com a subclasse do SRD de cada uma                                              | Completo     | Habilidades do 1º ao 20º nível e tabelas de cada classe.                                                                                                                |
+| Espécies (9), antecedentes (4) e talentos (17)                                                | Completo     | Talentos de origem, gerais, de estilo de luta e dádivas épicas.                                                                                                         |
+| Idiomas, alinhamentos, armas (38), armaduras (13), ferramentas, pacotes e equipamento inicial | Completo     | Medidas em metros e quilos.                                                                                                                                             |
+| Invocações (28), metamagia (10) e opções do Círculo da Terra                                  | Completo     |                                                                                                                                                                         |
+| Magias (339)                                                                                  | Parcial      | Nome, círculo, escola, listas de classe e cabeçalho técnico. **Sem o texto da descrição.**                                                                              |
+| Condições (15)                                                                                | Completo     | Regras traduzidas, efeitos na ficha e duração (segunda rodada de 2026-10-17).                                                                                           |
+| Regras gerais e glossário                                                                     | Parcial      | A ficha calcula o que as regras definem (modificadores, proficiência, perícias, CA, iniciativa, espaços de magia, descansos); o texto do glossário não está no sistema. |
+| Multiclasse e subida de nível                                                                 | Parcial      | A ficha aceita até 4 classes, mas sem pré-requisitos de multiclasse e sem assistente de subida de nível.                                                                |
+| Itens mágicos (cerca de 250)                                                                  | Não incluído |                                                                                                                                                                         |
+| Monstros e animais (cerca de 330 blocos de estatísticas)                                      | Não incluído | O mestre cadastra criaturas na biblioteca.                                                                                                                              |
+| Montarias, veículos, serviços, estilo de vida, fabricação e bugigangas                        | Não incluído |                                                                                                                                                                         |
+| Caixa de ferramentas do mestre (armadilhas, venenos, maldições, ambiente e viagem)            | Não incluído |                                                                                                                                                                         |
+
+**Coerência conferida por testes automáticos:** as 339 magias foram lidas do PDF oficial sem
+nenhum problema de leitura; todas as classes montam personagens válidos nos níveis 1, 3, 5, 11
+e 20; as referências entre classes, espécies, talentos, magias e equipamento são conferidas; e
+as 15 condições foram conferidas contra o texto do glossário. Tudo o que está marcado como "não
+incluído" pode ser acrescentado, porque a licença permite (veja a seção 6).
+
 ## 4. Pendências por seção do prompt
 
 Esta seção lista só o que falta ou está parcial. O que já foi atendido está em
@@ -213,6 +250,10 @@ implementados, conforme o prompt. Nenhuma tela promete essas funções.
   `accessibilityState` (selecionado, marcado) em atributos `aria-*`. No Android isso funciona;
   só afeta a versão web do app, usada em desenvolvimento. Para corrigir, trocar por `aria-checked`
   e `aria-selected`, que o React Native também aceita.
+- **Resolvido em 2026-10-17 — largura dos campos numéricos:** os campos numéricos sempre
+  ocupavam a largura toda, mesmo quando a tela pedia outra (a classe `w-full` vencia pela ordem
+  do CSS). Na aba Atributos isso espremia os nomes das perícias. Agora a largura padrão só
+  entra quando nenhuma outra é pedida (`controlClasses` e `NumberInput`).
 - **Resolvido em 2026-10-17 — tempo real no navegador e no app:** a ficha ficava
   "Reconectando…" porque o canal entrava antes de a sessão ser carregada, e o Realtime
   assinava com o papel anônimo, que não lê as tabelas. Corrigido em
@@ -226,21 +267,25 @@ implementados, conforme o prompt. Nenhuma tela promete essas funções.
 
 ## 6. Próximos passos sugeridos (em ordem)
 
-1. **Publicar a criação guiada:** a migração já está aplicada (2026-10-17); falta ligar o
+1. **Confirmar a publicação automática** do push de 2026-10-17 (site e app).
+2. **Publicar a criação guiada:** a migração já está aplicada (2026-10-17); falta ligar o
    GitHub à Vercel e ao Expo para o deploy automático e instalar o APK novo (veja
    [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md)).
-2. **Usar o site publicado e o APK** com duas contas (mestre e jogador), seguindo as etapas de
+3. **Usar o site publicado e o APK** com duas contas (mestre e jogador), seguindo as etapas de
    [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md), inclusive a criação guiada, e corrigir o que
    aparecer.
-3. **Subida de nível guiada**, com as mesmas regras do SRD usadas na criação.
-4. **SMTP próprio** (Brevo, com o e-mail exclusivo do sistema) e envio dos templates em
+4. **Subida de nível guiada e multiclasse**, com as mesmas regras do SRD usadas na criação.
+5. **Completar o conteúdo do SRD 5.2.1:** descrições das magias, monstros e animais como
+   modelos na biblioteca do mestre, itens mágicos e o restante do equipamento (veja a
+   cobertura na seção 3).
+6. **SMTP próprio** (Brevo, com o e-mail exclusivo do sistema) e envio dos templates em
    português.
-5. **Capa da campanha**: tela de envio e exibição (o backend está pronto).
-6. **Referências a sessões** na página de NPCs e monstros.
-7. **Testes ponta a ponta** (Playwright) dos critérios 1 a 12, rodando contra o Supabase local
+7. **Capa da campanha**: tela de envio e exibição (o backend está pronto).
+8. **Referências a sessões** na página de NPCs e monstros.
+9. **Testes ponta a ponta** (Playwright) dos critérios 1 a 12, rodando contra o Supabase local
    na CI.
-8. **Auditoria de acessibilidade e desempenho** e cabeçalho CSP.
-9. **Rotinas de backend:** limite de armazenamento, limpeza de órfãos e e-mail de convite
-   (Edge Functions).
-10. **Mobile:** retrato do personagem (com a mesma redução de imagem da web), redefinição de
+10. **Auditoria de acessibilidade e desempenho** e cabeçalho CSP.
+11. **Rotinas de backend:** limite de armazenamento, limpeza de órfãos e e-mail de convite
+    (Edge Functions).
+12. **Mobile:** retrato do personagem (com a mesma redução de imagem da web), redefinição de
     senha no app e, se fizer sentido, a mesa do mestre em modo consulta.

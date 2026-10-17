@@ -69,6 +69,8 @@ export interface CharacterCondition {
   key: string;
   level: number | null;
   note: string;
+  /** Rodadas restantes; `null` = dura até ser removida. */
+  roundsRemaining: number | null;
 }
 
 export interface CharacterItem {
@@ -175,10 +177,21 @@ function byResourceOrder(a: CharacterResource, b: CharacterResource): number {
   return a.sortOrder - b.sortOrder || a.label.localeCompare(b.label, 'pt-BR');
 }
 
-type ConditionRow = Pick<Tables<'character_conditions'>, 'id' | 'key' | 'level' | 'note'>;
+const CONDITION_COLUMNS = 'id, key, level, note, rounds_remaining' as const;
+
+type ConditionRow = Pick<
+  Tables<'character_conditions'>,
+  'id' | 'key' | 'level' | 'note' | 'rounds_remaining'
+>;
 
 function toCharacterCondition(row: ConditionRow): CharacterCondition {
-  return { id: row.id, key: row.key, level: row.level, note: row.note };
+  return {
+    id: row.id,
+    key: row.key,
+    level: row.level,
+    note: row.note,
+    roundsRemaining: row.rounds_remaining,
+  };
 }
 
 const ITEM_COLUMNS =
@@ -486,7 +499,7 @@ export async function listCampaignCharacters(
   const { data, error } = await client
     .from('characters')
     .select(
-      `id, name, owner_id, system_id, portrait_path, sheet, live_updated_at, owner:profiles!characters_owner_id_fkey(display_name), resources:character_resources(${RESOURCE_COLUMNS}), conditions:character_conditions(id, key, level, note)`,
+      `id, name, owner_id, system_id, portrait_path, sheet, live_updated_at, owner:profiles!characters_owner_id_fkey(display_name), resources:character_resources(${RESOURCE_COLUMNS}), conditions:character_conditions(${CONDITION_COLUMNS})`,
     )
     .eq('campaign_id', campaignId)
     .order('name', { ascending: true });
@@ -639,7 +652,7 @@ export async function listCharacterConditions(
 ): Promise<CharacterCondition[]> {
   const { data, error } = await client
     .from('character_conditions')
-    .select('id, key, level, note')
+    .select(CONDITION_COLUMNS)
     .eq('character_id', characterId)
     .order('created_at', { ascending: true });
   if (error) throw toAppError(error);
@@ -647,7 +660,8 @@ export async function listCharacterConditions(
 }
 
 /**
- * Aplica uma condição. Se já estiver aplicada, atualiza o nível (condições graduais).
+ * Aplica uma condição. Se já estiver aplicada, atualiza o nível (condições graduais) e a
+ * duração. `rounds` é a duração em rodadas; `null` dura até ser removida.
  * Upsert não é usado porque exigiria permissão de UPDATE nas colunas da chave.
  */
 export async function applyCharacterCondition(
@@ -655,21 +669,69 @@ export async function applyCharacterCondition(
   characterId: string,
   key: string,
   level: number | null = null,
+  rounds: number | null = null,
 ): Promise<void> {
   const { error } = await client
     .from('character_conditions')
-    .insert({ character_id: characterId, key, level });
+    .insert({ character_id: characterId, key, level, rounds_remaining: rounds });
   if (!error) return;
   if (error.code !== '23505') throw toAppError(error);
 
   const { data, error: updateError } = await client
     .from('character_conditions')
-    .update({ level })
+    .update({ level, rounds_remaining: rounds })
     .eq('character_id', characterId)
     .eq('key', key)
     .select('id');
   if (updateError) throw toAppError(updateError);
   assertChanged(data);
+}
+
+/** Altera o nível de uma condição gradual (ex.: Exaustão depois de um Descanso Longo). */
+export async function setCharacterConditionLevel(
+  client: CodexveilClient,
+  conditionId: string,
+  level: number,
+): Promise<void> {
+  const { data, error } = await client
+    .from('character_conditions')
+    .update({ level })
+    .eq('id', conditionId)
+    .select('id');
+  if (error) throw toAppError(error);
+  assertChanged(data);
+}
+
+/** Altera a duração de uma condição aplicada; `null` passa a durar até ser removida. */
+export async function setCharacterConditionRounds(
+  client: CodexveilClient,
+  conditionId: string,
+  rounds: number | null,
+): Promise<void> {
+  const { data, error } = await client
+    .from('character_conditions')
+    .update({ rounds_remaining: rounds })
+    .eq('id', conditionId)
+    .select('id');
+  if (error) throw toAppError(error);
+  assertChanged(data);
+}
+
+/**
+ * Passa rodadas nas condições do personagem (no fim do turno dele): diminui as durações e
+ * remove as que terminam. Devolve as chaves das condições que terminaram.
+ */
+export async function tickCharacterConditions(
+  client: CodexveilClient,
+  characterId: string,
+  rounds = 1,
+): Promise<string[]> {
+  const { data, error } = await client.rpc('tick_character_conditions', {
+    p_character_id: characterId,
+    p_rounds: rounds,
+  });
+  if (error) throw toAppError(error);
+  return data ?? [];
 }
 
 export async function removeCharacterCondition(

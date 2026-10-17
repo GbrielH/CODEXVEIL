@@ -24,12 +24,14 @@ export interface SceneEntity {
   armorClass: number | null;
   initiativeBonus: number;
   conditions: string[];
+  /** Rodadas restantes por condição; as que não aparecem duram até serem removidas. */
+  conditionRounds: Record<string, number>;
   notes: string;
   sortOrder: number;
 }
 
 const ENTITY_COLUMNS =
-  'id, session_id, creature_id, kind, name, hp_current, hp_max, hp_temp, armor_class, initiative_bonus, conditions, notes, sort_order' as const;
+  'id, session_id, creature_id, kind, name, hp_current, hp_max, hp_temp, armor_class, initiative_bonus, conditions, condition_rounds, notes, sort_order' as const;
 
 type EntityRow = Pick<
   Tables<'session_entities'>,
@@ -44,9 +46,20 @@ type EntityRow = Pick<
   | 'armor_class'
   | 'initiative_bonus'
   | 'conditions'
+  | 'condition_rounds'
   | 'notes'
   | 'sort_order'
 >;
+
+/** Lê o mapa de rodadas gravado (jsonb), ignorando valores fora do formato. */
+function parseConditionRounds(value: unknown): Record<string, number> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const result: Record<string, number> = {};
+  for (const [key, rounds] of Object.entries(value)) {
+    if (typeof rounds === 'number' && Number.isInteger(rounds) && rounds > 0) result[key] = rounds;
+  }
+  return result;
+}
 
 function toSceneEntity(row: EntityRow): SceneEntity {
   return {
@@ -61,6 +74,7 @@ function toSceneEntity(row: EntityRow): SceneEntity {
     armorClass: row.armor_class,
     initiativeBonus: row.initiative_bonus,
     conditions: row.conditions,
+    conditionRounds: parseConditionRounds(row.condition_rounds),
     notes: row.notes,
     sortOrder: row.sort_order,
   };
@@ -124,6 +138,8 @@ export interface SceneEntityPatch {
   armorClass?: number | null;
   initiativeBonus?: number;
   conditions?: string[];
+  /** Rodadas por condição; chaves fora de `conditions` são descartadas pelo banco. */
+  conditionRounds?: Record<string, number>;
   notes?: string;
   sortOrder?: number;
 }
@@ -141,6 +157,7 @@ export async function updateSceneEntity(
       ...(patch.armorClass === undefined ? {} : { armor_class: patch.armorClass }),
       ...(patch.initiativeBonus === undefined ? {} : { initiative_bonus: patch.initiativeBonus }),
       ...(patch.conditions === undefined ? {} : { conditions: patch.conditions }),
+      ...(patch.conditionRounds === undefined ? {} : { condition_rounds: patch.conditionRounds }),
       ...(patch.notes === undefined ? {} : { notes: patch.notes }),
       ...(patch.sortOrder === undefined ? {} : { sort_order: patch.sortOrder }),
     })
@@ -168,6 +185,23 @@ export async function adjustSceneEntityHp(
   });
   if (error) throw toAppError(error);
   return toSceneEntity(data);
+}
+
+/**
+ * Passa rodadas nas condições de uma instância da cena (no fim do turno dela). Devolve as
+ * chaves das condições que terminaram.
+ */
+export async function tickSceneEntityConditions(
+  client: CodexveilClient,
+  entityId: string,
+  rounds = 1,
+): Promise<string[]> {
+  const { data, error } = await client.rpc('tick_session_entity_conditions', {
+    p_entity_id: entityId,
+    p_rounds: rounds,
+  });
+  if (error) throw toAppError(error);
+  return data ?? [];
 }
 
 export async function removeSceneEntity(client: CodexveilClient, entityId: string): Promise<void> {

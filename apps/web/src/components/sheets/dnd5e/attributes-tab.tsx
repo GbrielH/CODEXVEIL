@@ -9,6 +9,7 @@ import {
   SPELLCASTING_ABILITIES,
   abilityLabels,
   formatModifier,
+  passiveWithConditions,
   proficiencyLevelLabels,
   skillDefinitions,
   type Ability,
@@ -16,9 +17,11 @@ import {
 } from '@codexveil/rpg-systems/dnd5e';
 import { useId } from 'react';
 import { Card, CardHeader } from '@/components/ui/card';
+import { Select } from '@/components/ui/select';
 import { TextareaField } from '@/components/ui/field';
 import { NumberInput } from '@/components/ui/number-input';
 import { cx } from '@/lib/cx';
+import { PenaltyBadge, RollEffectBadge } from './condition-badges';
 import { useSheet } from './context';
 
 const proficiencyMarks: Record<ProficiencyLevel, string> = {
@@ -77,7 +80,8 @@ function AbilityScores() {
 }
 
 function SavingThrows() {
-  const { sheet, derived, updateSheet, permissions } = useSheet();
+  const { sheet, derived, updateSheet, permissions, conditionEffects: effects } = useSheet();
+  const penalty = effects.d20Penalty;
   const id = useId();
   const setSave = (ability: Ability, patch: Partial<{ proficient: boolean; bonus: number }>) =>
     updateSheet((current) => ({
@@ -111,22 +115,31 @@ function SavingThrows() {
               onCommit={(value) => setSave(ability, { bonus: value ?? 0 })}
               className="h-9 w-14 text-sm"
             />
-            <span className="tabular w-10 text-right font-display text-lg text-fg-accent">{formatModifier(derived.savingThrows[ability])}</span>
+            <span className="flex w-24 shrink-0 items-center justify-end gap-1">
+              <RollEffectBadge sources={effects.savingThrows[ability].rolls} autoFail={effects.savingThrows[ability].autoFail} />
+              <PenaltyBadge penalty={penalty} source={`Exaustão ${effects.exhaustionLevel}`} />
+              <span className={cx('tabular w-10 text-right font-display text-lg', penalty > 0 ? 'text-amber-300' : 'text-fg-accent')}>
+                {formatModifier(derived.savingThrows[ability] - penalty)}
+              </span>
+            </span>
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-xs text-fg-muted">Marque as proficiências. O campo do meio soma bônus de itens ou magias.</p>
+      <p className="mt-3 text-xs text-fg-muted">
+        Marque as proficiências. O campo do meio soma bônus de itens ou magias. Selos indicam efeitos de condições ativas.
+      </p>
     </Card>
   );
 }
 
 function SkillsTable() {
-  const { sheet, derived, updateSheet, permissions } = useSheet();
+  const { sheet, derived, updateSheet, permissions, conditionEffects: effects } = useSheet();
+  const penalty = effects.d20Penalty;
   return (
     <Card>
       <CardHeader
         title="Perícias"
-        description={`Percepção passiva ${derived.passivePerception} · Intuição passiva ${derived.passiveInsight} · Investigação passiva ${derived.passiveInvestigation}`}
+        description={`Percepção passiva ${passiveWithConditions(derived.passivePerception, effects)} · Intuição passiva ${passiveWithConditions(derived.passiveInsight, effects)} · Investigação passiva ${passiveWithConditions(derived.passiveInvestigation, effects)}`}
       />
       <ul className="flex flex-col divide-y divide-line">
         {SKILLS.map((skill) => {
@@ -141,7 +154,7 @@ function SkillsTable() {
                 {definition.label}
                 <span className="ml-1 text-xs text-fg-muted">({abilityLabels[definition.ability].abbreviation})</span>
               </span>
-              <select
+              <Select
                 aria-label={`Proficiência em ${definition.label}`}
                 value={entry.proficiency}
                 disabled={!permissions.canEditSheet}
@@ -151,14 +164,15 @@ function SkillsTable() {
                     skills: { ...current.skills, [skill]: { ...current.skills[skill], proficiency: event.target.value as ProficiencyLevel } },
                   }))
                 }
-                className="h-9 w-32 rounded-md border border-line-strong bg-sunken px-2 text-xs text-fg disabled:opacity-60 sm:w-40"
+                size="sm"
+                className="w-32 sm:w-40"
               >
                 {PROFICIENCY_LEVELS.map((level) => (
                   <option key={level} value={level}>
                     {proficiencyLevelLabels[level]}
                   </option>
                 ))}
-              </select>
+              </Select>
               <NumberInput
                 aria-label={`Bônus adicional em ${definition.label}`}
                 value={entry.bonus}
@@ -173,7 +187,13 @@ function SkillsTable() {
                 }
                 className="h-9 w-12 text-xs"
               />
-              <span className="tabular w-10 text-right font-display text-lg text-fg-accent">{formatModifier(derived.skills[skill].bonus)}</span>
+              <span className="flex w-24 shrink-0 items-center justify-end gap-1">
+                <RollEffectBadge sources={effects.abilityChecks} />
+                <PenaltyBadge penalty={penalty} source={`Exaustão ${effects.exhaustionLevel}`} />
+                <span className={cx('tabular w-10 text-right font-display text-lg', penalty > 0 ? 'text-amber-300' : 'text-fg-accent')}>
+                  {formatModifier(derived.skills[skill].bonus - penalty)}
+                </span>
+              </span>
             </li>
           );
         })}
@@ -213,16 +233,15 @@ function CombatBasics() {
           <label htmlFor={`${id}-unit`} className="text-sm font-medium">
             Unidade
           </label>
-          <select
+          <Select
             id={`${id}-unit`}
             value={sheet.combat.speedUnit}
             disabled={!permissions.canEditSheet}
             onChange={(event) => setCombat({ speedUnit: event.target.value === 'ft' ? 'ft' : 'm' })}
-            className="h-11 rounded-md border border-line-strong bg-sunken px-3 text-sm text-fg disabled:opacity-60"
           >
             <option value="m">metros</option>
             <option value="ft">pés</option>
-          </select>
+          </Select>
         </div>
       </div>
     </Card>
@@ -249,14 +268,13 @@ function Spellcasting() {
           <label htmlFor={`${id}-ability`} className="text-sm font-medium">
             Atributo
           </label>
-          <select
+          <Select
             id={`${id}-ability`}
             value={sheet.spellcasting.ability ?? ''}
             disabled={!permissions.canEditSheet}
             onChange={(event) =>
               setCasting({ ability: event.target.value ? (event.target.value as (typeof SPELLCASTING_ABILITIES)[number]) : null })
             }
-            className="h-11 rounded-md border border-line-strong bg-sunken px-3 text-sm text-fg disabled:opacity-60"
           >
             <option value="">Nenhum</option>
             {SPELLCASTING_ABILITIES.map((ability) => (
@@ -264,7 +282,7 @@ function Spellcasting() {
                 {abilityLabels[ability].name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor={`${id}-dc`} className="text-sm font-medium">

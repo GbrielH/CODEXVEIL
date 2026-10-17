@@ -75,7 +75,8 @@ nenhum sistema. Um personagem guarda:
 
 O contrato está em `packages/rpg-systems/src/types.ts`. Cada sistema define o esquema e a
 versão da ficha, a ficha padrão, os cálculos derivados, o resumo para listas, as trilhas
-iniciais, as condições, a ficha de estatísticas de criaturas, os valores de combate para a cena,
+iniciais, as condições (com as regras, as condições impostas e as que ficam ao terminar) e as
+durações oferecidas, a ficha de estatísticas de criaturas, os valores de combate para a cena,
 as **regras de criação da campanha** (`campaignRulesSchema`, `parseCampaignRules`,
 `describeCampaignRules`; gravadas em `campaigns.character_rules`) e a licença do conteúdo de
 referência.
@@ -106,6 +107,25 @@ As interfaces (`apps/web/src/components/characters/dnd5e-wizard/` e
 `apps/mobile/src/app/(app)/personagem/novo.tsx`) só desenham as escolhas. Na web, a Server
 Action repete a validação com as regras da campanha lidas do banco antes de gravar. A gravação
 usa `create_character`, que cria ficha, trilhas, inventário e habilidades numa transação.
+
+### Condições (D&D 5e)
+
+`packages/rpg-systems/src/dnd5e/conditions.ts` traz as 15 condições do glossário do SRD
+5.2.1 com as regras traduzidas e os efeitos em dados estruturados (vantagem e desvantagem por
+tipo de jogada, falha automática em resistências, deslocamento 0, incapacitação, críticos a até
+1,5 m, resistência a dano, imunidades, condições impostas e as que ficam). `dnd5eConditionEffects`
+junta as condições ativas, inclusive as impostas por outras, e a ficha (web e app) aplica o
+resultado aos números: iniciativa, ataques, testes de resistência e perícias perdem a
+penalidade de Exaustão e ganham selos de vantagem, desvantagem ou falha; o deslocamento
+respeita zero e reduções; valores passivos mudam ±5. Efeitos que só valem numa situação (com a
+fonte do medo à vista, contra quem não o agarra) aparecem como lembrete, sem mudar o número.
+
+Condições não têm duração própria no SRD: ela vem do efeito que as impôs. A duração é
+informada ao aplicar, em rodadas, e fica no banco (`rounds_remaining` nos personagens,
+`condition_rounds` nas instâncias da cena). A contagem diminui no fim do turno de quem tem a
+condição: no combate, quando o mestre passa o turno; fora dele, pelo botão "Passar rodada" da
+ficha. As funções `tick_*` fazem isso de forma atômica e devolvem o que terminou; regras
+seguintes (Inconsciente deixa Caído) ficam no código do sistema, e o banco continua genérico.
 
 **Para adicionar um sistema:**
 
@@ -183,19 +203,22 @@ limites (`null` = ilimitado), e não há cobrança, preço nem assinatura simula
 
 ## Decisões registradas
 
-| Decisão                                                     | Motivo                                                                                                                |
-| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Supabase sem servidor próprio                               | RLS cobre a autorização. Edge Functions ficam para operações privilegiadas reais (e-mails, rotinas agendadas).        |
-| Papel por campanha (`campaign_members.role`)                | O mesmo usuário é mestre numa campanha e jogador em outra.                                                            |
-| Ficha como JSON validado mais tabelas de estado de jogo     | Os sistemas variam na estrutura da ficha. Vida e recursos precisam de atualizações atômicas e de Realtime por linha.  |
-| Segredos de NPCs numa tabela separada (`creature_gm_data`)  | O RLS é por linha. Separar a tabela garante que jogadores nunca recebam a coluna secreta, nem pelo Realtime.          |
-| Roteiro em blocos JSON tipados (nunca HTML)                 | Validação no cliente (zod) e no banco (`is_valid_block_data`), sem XSS armazenado, e `schema_version` para evolução.  |
-| Posição dos blocos em `double precision`                    | Permite inserir entre dois blocos sem renumerar. `reorder_session_blocks` renumera quando necessário.                 |
-| Mídia privada com URLs assinadas                            | Capas, retratos e imagens de roteiro seguem a visibilidade do registro.                                               |
-| Sem foto de perfil                                          | O usuário é identificado pelas iniciais. Menos dados pessoais e menos uso de armazenamento.                           |
-| Imagens reduzidas no navegador                              | Redimensionar e regravar em WebP antes do envio poupa o armazenamento do Supabase; o bucket limita a 2 MB.            |
-| Criação de personagem guiada por regras compartilhadas      | Web, mobile e servidor usam o mesmo motor (`listDnd5eChoices`, `validateDnd5eDraft`, `buildDnd5eCharacterFromDraft`). |
-| Mestres não são donos de personagens das próprias campanhas | O mestre conduz com NPCs e monstros; a regra fica no banco (`CVGMC`), não só na interface.                            |
-| Só conteúdo do SRD 5.2.1 na criação                         | É o conteúdo oficial que a licença CC-BY-4.0 permite reproduzir; livros comerciais ficam de fora (prompt, §8).        |
-| Testes de RLS com PGlite                                    | Testam as policies reais sem Docker nem banco externo, na CI e em qualquer máquina.                                   |
-| Pacotes sem build                                           | Menos configuração, e o mesmo código é usado pelos dois apps.                                                         |
+| Decisão                                                     | Motivo                                                                                                                                         |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Supabase sem servidor próprio                               | RLS cobre a autorização. Edge Functions ficam para operações privilegiadas reais (e-mails, rotinas agendadas).                                 |
+| Papel por campanha (`campaign_members.role`)                | O mesmo usuário é mestre numa campanha e jogador em outra.                                                                                     |
+| Ficha como JSON validado mais tabelas de estado de jogo     | Os sistemas variam na estrutura da ficha. Vida e recursos precisam de atualizações atômicas e de Realtime por linha.                           |
+| Segredos de NPCs numa tabela separada (`creature_gm_data`)  | O RLS é por linha. Separar a tabela garante que jogadores nunca recebam a coluna secreta, nem pelo Realtime.                                   |
+| Roteiro em blocos JSON tipados (nunca HTML)                 | Validação no cliente (zod) e no banco (`is_valid_block_data`), sem XSS armazenado, e `schema_version` para evolução.                           |
+| Posição dos blocos em `double precision`                    | Permite inserir entre dois blocos sem renumerar. `reorder_session_blocks` renumera quando necessário.                                          |
+| Mídia privada com URLs assinadas                            | Capas, retratos e imagens de roteiro seguem a visibilidade do registro.                                                                        |
+| Sem foto de perfil                                          | O usuário é identificado pelas iniciais. Menos dados pessoais e menos uso de armazenamento.                                                    |
+| Imagens reduzidas no navegador                              | Redimensionar e regravar em WebP antes do envio poupa o armazenamento do Supabase; o bucket limita a 2 MB.                                     |
+| Criação de personagem guiada por regras compartilhadas      | Web, mobile e servidor usam o mesmo motor (`listDnd5eChoices`, `validateDnd5eDraft`, `buildDnd5eCharacterFromDraft`).                          |
+| Mestres não são donos de personagens das próprias campanhas | O mestre conduz com NPCs e monstros; a regra fica no banco (`CVGMC`), não só na interface.                                                     |
+| Só conteúdo do SRD 5.2.1 na criação                         | É o conteúdo oficial que a licença CC-BY-4.0 permite reproduzir; livros comerciais ficam de fora (prompt, §8).                                 |
+| Seletor próprio com `<select>` nativo oculto                | Lista com o visual do sistema e busca, sem mudar a API dos formulários: o `<select>` oculto guarda o valor e recebe um evento de mudança real. |
+| Diálogos do app no visual do Codexveil                      | O alerta nativo do Android segue o tema do aparelho; o diálogo próprio usa a identidade e os botões do app.                                    |
+| Largura padrão dos controles só sem outra largura           | Duas classes de largura não se resolvem pela ordem das classes (vale a ordem do CSS); `w-full` só entra sem outra.                             |
+| Testes de RLS com PGlite                                    | Testam as policies reais sem Docker nem banco externo, na CI e em qualquer máquina.                                                            |
+| Pacotes sem build                                           | Menos configuração, e o mesmo código é usado pelos dois apps.                                                                                  |

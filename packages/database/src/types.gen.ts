@@ -293,6 +293,7 @@ export type Database = {
           key: string;
           level: number | null;
           note: string;
+          rounds_remaining: number | null;
         };
         Insert: {
           character_id: string;
@@ -301,6 +302,7 @@ export type Database = {
           key: string;
           level?: number | null;
           note?: string;
+          rounds_remaining?: number | null;
         };
         Update: {
           character_id?: string;
@@ -309,6 +311,7 @@ export type Database = {
           key?: string;
           level?: number | null;
           note?: string;
+          rounds_remaining?: number | null;
         };
         Relationships: [
           {
@@ -932,6 +935,7 @@ export type Database = {
         Row: {
           armor_class: number | null;
           campaign_id: string;
+          condition_rounds: Json;
           conditions: string[];
           created_at: string;
           creature_id: string | null;
@@ -950,6 +954,7 @@ export type Database = {
         Insert: {
           armor_class?: number | null;
           campaign_id: string;
+          condition_rounds?: Json;
           conditions?: string[];
           created_at?: string;
           creature_id?: string | null;
@@ -968,6 +973,7 @@ export type Database = {
         Update: {
           armor_class?: number | null;
           campaign_id?: string;
+          condition_rounds?: Json;
           conditions?: string[];
           created_at?: string;
           creature_id?: string | null;
@@ -1225,6 +1231,20 @@ export type Database = {
           p_rest: Database['public']['Enums']['resource_recovery'];
         };
         Returns: number;
+      };
+      tick_character_conditions: {
+        Args: {
+          p_character_id: string;
+          p_rounds?: number;
+        };
+        Returns: string[];
+      };
+      tick_session_entity_conditions: {
+        Args: {
+          p_entity_id: string;
+          p_rounds?: number;
+        };
+        Returns: string[];
       };
       transfer_campaign_ownership: {
         Args: {

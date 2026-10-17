@@ -2,15 +2,19 @@
 
 import {
   addCombatants,
+  applyCharacterCondition,
   createEncounter,
   encounterStatusLabels,
   removeCombatant,
   saveEncounterTurn,
+  tickCharacterConditions,
+  tickSceneEntityConditions,
   updateCombatant,
+  updateSceneEntity,
   type EncounterCombatant,
 } from '@codexveil/database';
 import { advanceTurn, orderCombatants, rewindTurn, startCombat, type Combatant } from '@codexveil/domain';
-import { findSystem } from '@codexveil/rpg-systems';
+import { conditionLabel, conditionsLeftAfter, findSystem } from '@codexveil/rpg-systems';
 import { ChevronLeft, ChevronRight, Flag, Play, Plus, Swords, X } from 'lucide-react';
 import { useState } from 'react';
 import { HealthBar } from '@/components/characters/health-bar';
@@ -19,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { NumberInput } from '@/components/ui/number-input';
+import { useToast } from '@/components/ui/toast';
 import { cx } from '@/lib/cx';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import type { GmTableContext } from './gm-table';
@@ -28,12 +33,15 @@ interface RosterEntry extends Combatant {
   kind: 'character' | 'npc' | 'monster';
   hp: { current: number | null; max: number | null; temp: number } | null;
   armorClass: number | null;
+  /** Condições com as rodadas restantes (`null` = até ser removida). */
+  conditions: { key: string; label: string; rounds: number | null }[];
 }
 
 /** Ordem de iniciativa e controle de turnos (estrutura inicial, expansível). */
 export function CombatTracker({ context }: { context: GmTableContext }) {
   const { encounter, entities, party, canManage, fail, reload, session, campaignId, systemId } = context;
   const [busy, setBusy] = useState(false);
+  const { toast } = useToast();
   const system = findSystem(systemId);
 
   const characterTiebreaker = (characterId: string): number => {
@@ -61,6 +69,7 @@ export function CombatTracker({ context }: { context: GmTableContext }) {
           kind: entity.kind,
           hp: entity.hpMax === null && entity.hpCurrent === null ? null : { current: entity.hpCurrent, max: entity.hpMax, temp: entity.hpTemp },
           armorClass: entity.armorClass,
+          conditions: entity.conditions.map((key) => ({ key, label: conditionLabel(systemId, key), rounds: entity.conditionRounds[key] ?? null })),
         };
       }
       const character = party.find((entry) => entry.id === combatant.characterId);
@@ -76,6 +85,11 @@ export function CombatTracker({ context }: { context: GmTableContext }) {
         kind: 'character',
         hp: hp ? { current: hp.current, max: hp.max, temp: hp.temp } : null,
         armorClass: null,
+        conditions: character.conditions.map((condition) => ({
+          key: condition.key,
+          label: conditionLabel(systemId, condition.key, condition.level),
+          rounds: condition.roundsRemaining,
+        })),
       };
     })
     .filter((entry): entry is RosterEntry => entry !== null);
@@ -107,6 +121,49 @@ export function CombatTracker({ context }: { context: GmTableContext }) {
     run(title, async () => {
       if (!encounter) return;
       await saveEncounterTurn(getSupabaseBrowserClient(), encounter.id, encounter.version, state);
+    });
+
+  /**
+   * Fim do turno de um combatente: as condições dele perdem 1 rodada e as que chegam a zero
+   * terminam (com as que continuam depois, como Caído após Inconsciente).
+   */
+  const tickConditions = async (entry: RosterEntry): Promise<string[]> => {
+    const client = getSupabaseBrowserClient();
+    const characterId = entry.source.characterId;
+    if (characterId) {
+      const ended = await tickCharacterConditions(client, characterId);
+      const remaining = entry.conditions.map((condition) => condition.key).filter((key) => !ended.includes(key));
+      for (const next of conditionsLeftAfter(systemId, ended, remaining)) await applyCharacterCondition(client, characterId, next);
+      return ended;
+    }
+    const entityId = entry.source.sessionEntityId;
+    if (entityId) {
+      const ended = await tickSceneEntityConditions(client, entityId);
+      const remaining = entry.conditions.map((condition) => condition.key).filter((key) => !ended.includes(key));
+      const left = conditionsLeftAfter(systemId, ended, remaining);
+      if (left.length > 0) await updateSceneEntity(client, entityId, { conditions: [...remaining, ...left] });
+      return ended;
+    }
+    return [];
+  };
+
+  const nextTurn = () =>
+    run('O turno não foi alterado', async () => {
+      if (!encounter) return;
+      const ending = ordered.find((entry) => entry.id === encounter.activeCombatantId);
+      await saveEncounterTurn(getSupabaseBrowserClient(), encounter.id, encounter.version, {
+        status: 'active',
+        ...advanceTurn(ordered, { round: encounter.round, activeCombatantId: encounter.activeCombatantId }),
+      });
+      if (!ending || !ending.conditions.some((condition) => condition.rounds !== null)) return;
+      try {
+        const ended = await tickConditions(ending);
+        if (ended.length > 0) {
+          toast({ tone: 'info', title: `${ending.name}: terminou ${ended.map((key) => conditionLabel(systemId, key)).join(', ')}.` });
+        }
+      } catch (error) {
+        fail(`${ending.name}: o turno passou, mas a duração das condições não foi atualizada`, error);
+      }
     });
 
   const missingEntities = entities.filter((entity) => !encounter?.combatants.some((combatant) => combatant.sessionEntityId === entity.id));
@@ -150,11 +207,7 @@ export function CombatTracker({ context }: { context: GmTableContext }) {
               >
                 Anterior
               </Button>
-              <Button
-                loading={busy}
-                onClick={() => void saveTurn('O turno não foi alterado', { status: 'active', ...advanceTurn(ordered, { round: encounter.round, activeCombatantId: encounter.activeCombatantId }) })}
-                icon={<ChevronRight className="h-4 w-4" aria-hidden="true" />}
-              >
+              <Button loading={busy} onClick={() => void nextTurn()} icon={<ChevronRight className="h-4 w-4" aria-hidden="true" />}>
                 Próximo turno
               </Button>
             </>
@@ -170,7 +223,7 @@ export function CombatTracker({ context }: { context: GmTableContext }) {
               </Button>
             )}
             title="Encerrar o combate?"
-            description="A ordem de iniciativa é arquivada. Vida e condições continuam como estão."
+            description="A ordem de iniciativa é arquivada. Vida e condições continuam como estão; as durações restantes passam a contar pelo botão “Passar rodada” da ficha."
             confirmLabel="Encerrar combate"
             tone="primary"
             onConfirm={async () => {
@@ -218,6 +271,11 @@ export function CombatTracker({ context }: { context: GmTableContext }) {
                   {entry.armorClass !== null ? ` · CA ${entry.armorClass}` : ''}
                   {` · desempate ${entry.tiebreaker >= 0 ? '+' : '−'}${Math.abs(entry.tiebreaker)}`}
                 </p>
+                {entry.conditions.length > 0 ? (
+                  <p className="text-xs text-amber-300">
+                    {entry.conditions.map((condition) => (condition.rounds === null ? condition.label : `${condition.label} (${condition.rounds} rod.)`)).join(' · ')}
+                  </p>
+                ) : null}
                 {entry.hp ? <HealthBar current={entry.hp.current} max={entry.hp.max} temp={entry.hp.temp} showValues={false} className="mt-1" /> : null}
               </div>
               {canManage ? (

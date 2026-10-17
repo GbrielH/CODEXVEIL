@@ -222,7 +222,7 @@ function Wizard({ campaigns, defaultCampaignId, loadError }: { campaigns: Playab
           )}
           {errorFor('level') ? <Notice tone="danger" message={errorFor('level')!} /> : null}
           <AppText variant="muted">
-            O passo a passo segue a criação do SRD 5.2: classe, origem (antecedente, espécie e idiomas), atributos, alinhamento e detalhes.
+            O passo a passo segue a criação do SRD 5.2.1: classe, origem (antecedente, espécie e idiomas), atributos, alinhamento e detalhes.
           </AppText>
         </View>
       ) : null}

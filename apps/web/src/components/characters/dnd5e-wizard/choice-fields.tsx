@@ -4,7 +4,47 @@ import { ABILITIES, abilityLabels, spellSchoolLabels, type Ability, type ChoiceS
 import { Check, Search } from 'lucide-react';
 import { useId, useMemo, useState, type ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Select } from '@/components/ui/select';
 import { cx } from '@/lib/cx';
+
+/** A partir de quantas opções a lista ganha um campo de busca. */
+const SEARCH_AT = 10;
+
+/** Comparação sem acentos e sem diferenciar maiúsculas. */
+function normalize(text: string): string {
+  return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+}
+
+/** Filtra opções pelo nome e pela descrição; as escolhidas continuam sempre visíveis. */
+function useOptionFilter<T extends { name: string; description?: string | undefined }>(options: readonly T[], keep: (option: T) => boolean) {
+  const [query, setQuery] = useState('');
+  const term = normalize(query.trim());
+  const visible = term ? options.filter((option) => keep(option) || normalize(`${option.name} ${option.description ?? ''}`).includes(term)) : options;
+  return { query, setQuery, visible, searchable: options.length > SEARCH_AT };
+}
+
+function OptionSearch({ label, query, onChange, shown, total }: { label: string; query: string; onChange: (query: string) => void; shown: number; total: number }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <label className="relative min-w-0 flex-1 sm:max-w-sm">
+        <span className="sr-only">Buscar em {label}</span>
+        <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-fg-subtle" aria-hidden="true" />
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="Digite para filtrar…"
+          className="h-10 w-full rounded-md border border-line-strong bg-sunken pr-3 pl-9 text-sm text-fg placeholder:text-fg-subtle focus-visible:border-parchment-300 focus-visible:outline-none"
+        />
+      </label>
+      {query ? (
+        <span className="text-xs text-fg-muted" role="status">
+          {shown} de {total}
+        </span>
+      ) : null}
+    </div>
+  );
+}
 
 interface ChoiceFieldProps {
   spec: ChoiceSpec;
@@ -49,38 +89,42 @@ export function ChoiceField({ spec, value, error, onChange }: ChoiceFieldProps) 
 
 function OptionList({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { kind: 'option' }>; value: string; onChange: (value: string) => void }) {
   const name = useId();
+  const filter = useOptionFilter(spec.options, (option) => option.id === value);
   return (
-    <div role="radiogroup" aria-label={spec.label} className="grid gap-2 sm:grid-cols-2">
-      {spec.options.map((option) => {
-        const selected = option.id === value;
-        const disabled = Boolean(option.disabledReason) && !selected;
-        return (
-          <label
-            key={option.id}
-            className={cx(
-              'flex cursor-pointer gap-3 rounded-md border p-3 text-sm transition-colors',
-              selected ? 'border-parchment-300/70 bg-parchment-200/10' : 'border-line hover:border-line-strong hover:bg-hover',
-              disabled && 'cursor-not-allowed opacity-55 hover:bg-transparent',
-            )}
-          >
-            <input
-              type="radio"
-              name={name}
-              value={option.id}
-              checked={selected}
-              disabled={disabled}
-              onChange={() => onChange(option.id)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-wine-500"
-            />
-            <span className="flex min-w-0 flex-col gap-0.5">
-              <span className="font-medium text-fg">{option.name}</span>
-              {option.description ? <span className="text-xs leading-relaxed text-fg-muted">{option.description}</span> : null}
-              {option.disabledReason ? <span className="text-xs text-warning">{option.disabledReason}</span> : null}
-            </span>
-          </label>
-        );
-      })}
-    </div>
+    <>
+      {filter.searchable ? <OptionSearch label={spec.label} query={filter.query} onChange={filter.setQuery} shown={filter.visible.length} total={spec.options.length} /> : null}
+      <div role="radiogroup" aria-label={spec.label} className="grid gap-2 sm:grid-cols-2">
+        {filter.visible.map((option) => {
+          const selected = option.id === value;
+          const disabled = Boolean(option.disabledReason) && !selected;
+          return (
+            <label
+              key={option.id}
+              className={cx(
+                'flex cursor-pointer gap-3 rounded-md border p-3 text-sm transition-colors',
+                selected ? 'border-parchment-300/70 bg-parchment-200/10' : 'border-line hover:border-line-strong hover:bg-hover',
+                disabled && 'cursor-not-allowed opacity-55 hover:bg-transparent',
+              )}
+            >
+              <input
+                type="radio"
+                name={name}
+                value={option.id}
+                checked={selected}
+                disabled={disabled}
+                onChange={() => onChange(option.id)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-wine-500"
+              />
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="font-medium text-fg">{option.name}</span>
+                {option.description ? <span className="text-xs leading-relaxed text-fg-muted">{option.description}</span> : null}
+                {option.disabledReason ? <span className="text-xs text-warning">{option.disabledReason}</span> : null}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -88,44 +132,48 @@ function MultiList({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { kind
   const full = value.length >= spec.count;
   const toggle = (id: string) => onChange(value.includes(id) ? value.filter((entry) => entry !== id) : [...value, id]);
   const detailed = spec.options.some((option) => option.description && option.description.length > 20);
+  const filter = useOptionFilter(spec.options, (option) => value.includes(option.id));
   return (
-    <div className={cx('grid gap-2', detailed ? 'sm:grid-cols-2' : 'grid-cols-2 sm:grid-cols-3')}>
-      {spec.options.map((option) => {
-        const selected = value.includes(option.id);
-        const disabled = !selected && (Boolean(option.disabledReason) || full);
-        return (
-          <button
-            key={option.id}
-            type="button"
-            role="checkbox"
-            aria-checked={selected}
-            disabled={disabled}
-            title={option.disabledReason}
-            onClick={() => toggle(option.id)}
-            className={cx(
-              'flex items-start gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors',
-              selected ? 'border-parchment-300/70 bg-parchment-200/10 text-fg' : 'border-line text-fg-secondary hover:border-line-strong hover:bg-hover',
-              disabled && 'cursor-not-allowed opacity-50 hover:bg-transparent',
-            )}
-          >
-            <span
-              aria-hidden="true"
+    <>
+      {filter.searchable ? <OptionSearch label={spec.label} query={filter.query} onChange={filter.setQuery} shown={filter.visible.length} total={spec.options.length} /> : null}
+      <div className={cx('grid gap-2', detailed ? 'sm:grid-cols-2' : 'grid-cols-2 sm:grid-cols-3')}>
+        {filter.visible.map((option) => {
+          const selected = value.includes(option.id);
+          const disabled = !selected && (Boolean(option.disabledReason) || full);
+          return (
+            <button
+              key={option.id}
+              type="button"
+              role="checkbox"
+              aria-checked={selected}
+              disabled={disabled}
+              title={option.disabledReason}
+              onClick={() => toggle(option.id)}
               className={cx(
-                'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border',
-                selected ? 'border-parchment-300 bg-parchment-300 text-canvas' : 'border-line-strong',
+                'flex items-start gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors',
+                selected ? 'border-parchment-300/70 bg-parchment-200/10 text-fg' : 'border-line text-fg-secondary hover:border-line-strong hover:bg-hover',
+                disabled && 'cursor-not-allowed opacity-50 hover:bg-transparent',
               )}
             >
-              {selected ? <Check className="h-3 w-3" /> : null}
-            </span>
-            <span className="flex min-w-0 flex-col">
-              <span>{option.name}</span>
-              {option.description && detailed ? <span className="text-xs leading-relaxed text-fg-muted">{option.description}</span> : null}
-              {option.disabledReason && !selected ? <span className="text-xs text-fg-subtle">{option.disabledReason}</span> : null}
-            </span>
-          </button>
-        );
-      })}
-    </div>
+              <span
+                aria-hidden="true"
+                className={cx(
+                  'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border',
+                  selected ? 'border-parchment-300 bg-parchment-300 text-canvas' : 'border-line-strong',
+                )}
+              >
+                {selected ? <Check className="h-3 w-3" /> : null}
+              </span>
+              <span className="flex min-w-0 flex-col">
+                <span>{option.name}</span>
+                {option.description && detailed ? <span className="text-xs leading-relaxed text-fg-muted">{option.description}</span> : null}
+                {option.disabledReason && !selected ? <span className="text-xs text-fg-subtle">{option.disabledReason}</span> : null}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -176,10 +224,10 @@ function SpellPicker({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { ki
         {levels.length > 1 ? (
           <label className="flex items-center gap-2 text-sm text-fg-muted">
             <span>Círculo</span>
-            <select
+            <Select
               value={String(level)}
               onChange={(event) => setLevel(event.target.value === 'all' ? 'all' : Number(event.target.value))}
-              className="h-10 rounded-md border border-line-strong bg-sunken px-2 text-sm text-fg"
+              className="w-40"
             >
               <option value="all">Todos</option>
               {levels.map((entry) => (
@@ -187,7 +235,7 @@ function SpellPicker({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { ki
                   {LEVEL_LABEL(entry)}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         ) : null}
       </div>
@@ -356,11 +404,10 @@ function AbilitySelect({
       <label htmlFor={id} className="text-sm font-medium text-fg">
         {label}
       </label>
-      <select
+      <Select
         id={id}
         value={value}
         onChange={(event) => onChange(event.target.value as Ability | '')}
-        className="h-11 rounded-md border border-line-strong bg-sunken px-3 text-sm text-fg"
       >
         <option value="">Escolha…</option>
         {abilities.map((ability) => (
@@ -368,7 +415,7 @@ function AbilitySelect({
             {abilityLabels[ability].name}
           </option>
         ))}
-      </select>
+      </Select>
     </div>
   );
 }

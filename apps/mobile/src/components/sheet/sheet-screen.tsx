@@ -12,7 +12,7 @@ import {
   type CharacterResource,
 } from '@codexveil/database';
 import { applyTrackOperation, type TrackOperation } from '@codexveil/domain';
-import { computeDnd5eDerived, dnd5eSheetSchema, dnd5eSystem, parseDnd5eSheet, type Dnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
+import { computeDnd5eDerived, dnd5eConditionEffects, dnd5eSheetSchema, dnd5eSystem, parseDnd5eSheet, type Dnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
 import { useRef, useState } from 'react';
 import { View } from 'react-native';
 import { Button } from '@/components/ui/button';
@@ -74,6 +74,7 @@ export function SheetScreen(props: SheetScreenProps) {
   });
   const sheet = autosave.value;
   const derived = computeDnd5eDerived(sheet);
+  const conditionEffects = dnd5eConditionEffects(conditions);
 
   const reloadPlayState = async () => {
     try {
@@ -161,6 +162,7 @@ export function SheetScreen(props: SheetScreenProps) {
     updateSheet: autosave.update,
     resources,
     conditions,
+    conditionEffects,
     items,
     abilities: props.abilities,
     setResources,
