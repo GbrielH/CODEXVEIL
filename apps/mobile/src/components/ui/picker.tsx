@@ -21,6 +21,8 @@ function normalize(text: string): string {
 interface PickerSheetProps {
   visible: boolean;
   title: string;
+  /** Texto curto abaixo do título (ex.: por que a lista está limitada). */
+  hint?: string | undefined;
   options: readonly PickerOption[];
   selected?: string | undefined;
   onSelect: (value: string) => void;
@@ -33,7 +35,7 @@ interface PickerSheetProps {
  * Lista de opções em painel inferior, com a identidade visual do app e busca por digitação
  * (sem acentos). Substitui o seletor nativo, que segue o tema do aparelho.
  */
-export function PickerSheet({ visible, title, options, selected, onSelect, onClose, searchThreshold = 6 }: PickerSheetProps) {
+export function PickerSheet({ visible, title, hint, options, selected, onSelect, onClose, searchThreshold = 6 }: PickerSheetProps) {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const searchable = options.length > searchThreshold;
@@ -60,6 +62,11 @@ export function PickerSheet({ visible, title, options, selected, onSelect, onClo
             </AppText>
             <IconButton icon={<X size={18} color={colors.fgSecondary} />} accessibilityLabel="Fechar" onPress={close} />
           </View>
+          {hint ? (
+            <AppText variant="small" style={{ color: colors.fgMuted }}>
+              {hint}
+            </AppText>
+          ) : null}
           {searchable ? (
             <View style={styles.search}>
               <Search size={16} color={colors.fgSubtle} />

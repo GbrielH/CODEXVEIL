@@ -4,6 +4,7 @@ import {
   listCampaignNotes,
   listCreatureStats,
   listCreatures,
+  listDiceRolls,
   listSceneEntities,
   listSessionBlocks,
   listSessions,
@@ -49,12 +50,13 @@ export default async function GmTablePage({ params }: PageProps<'/campanhas/[cam
     );
   }
 
-  const [entities, encounter, blocks, stats, portraits] = await Promise.all([
+  const [entities, encounter, blocks, stats, portraits, rolls] = await Promise.all([
     listSceneEntities(supabase, session.id),
     getOpenEncounter(supabase, session.id),
     listSessionBlocks(supabase, session.id),
     listCreatureStats(supabase, creatures.map((creature) => creature.id)),
     signedMediaUrls(supabase, party.map((character) => character.portraitPath)),
+    listDiceRolls(supabase, campaign.id, 30),
   ]);
 
   // Valores iniciais da instância na cena, calculados pelo módulo do sistema da campanha.
@@ -93,6 +95,8 @@ export default async function GmTablePage({ params }: PageProps<'/campanhas/[cam
       library={library}
       outline={outline}
       notes={notes.filter((note) => note.isPinned || note.visibility === 'gm').slice(0, 6)}
+      turnSettings={campaign.turnSettings}
+      rolls={rolls}
     />
   );
 }

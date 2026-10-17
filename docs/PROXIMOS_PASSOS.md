@@ -26,6 +26,17 @@
 
 ## Próximos passos (em ordem)
 
+### 0c. Notificações de sessão agendada — você e Claude
+
+- [ ] **Você:** Firebase → criar projeto `Codexveil` → app Android `app.codexveil.mobile` →
+      baixar o `google-services.json` para `apps/mobile/` (ignorado pelo Git).
+- [ ] **Você:** Firebase → Configurações do projeto → Contas de serviço → Gerar nova chave
+      privada; no expo.dev → Credentials → Android → FCM V1 service account key → enviar.
+- [ ] **Claude:** `eas env:create --name GOOGLE_SERVICES_JSON --type file` (preview e
+      production) e push: o workflow gera o APK com notificações.
+- [x] **Claude:** tabelas `push_tokens` e `session_notifications`, Edge Function
+      `notify-session` publicada, registro do aparelho no app e opção no Perfil.
+
 ### 0. Publicar a criação guiada — em andamento
 
 Implementado em 2026-10-17 (veja o histórico): assistente de criação com as regras do SRD 5.2.1,
@@ -253,3 +264,18 @@ documentação no mesmo commit.**
 - `docs/PENDENCIAS.md`: status dos critérios e das pendências em relação ao escopo inicial.
 - `docs/DEPLOY.md`, `DATABASE.md`, `SECURITY.md`, `ARCHITECTURE.md`: sempre que mudar a forma
   de publicar, o esquema, as regras de acesso ou uma decisão de arquitetura.
+
+### 2026-10-17 — terceira rodada (itens, SRD, dados, turnos, notificações e app completo)
+
+- Biblioteca: itens da campanha, Bestiário SRD (330), Itens mágicos SRD (258), ocultar/liberar
+  direto na lista. Detalhes de magias e habilidades ao passar o mouse (site) e ao tocar (app).
+- Condições: o jogador vê só as que o personagem pode se aplicar; o mestre vê todas.
+- Dados rolados no servidor, mural ao vivo do mestre e rolagens secretas; rolar tocando nos
+  bônus da ficha (com vantagem/desvantagem das condições).
+- Turnos com modos, ordem manual, ocultos, economia de ações e a vez visível aos jogadores;
+  padrões nas configurações da campanha.
+- Aviso de sessão agendada (backend publicado; falta o Firebase).
+- App: mesa do mestre, sessões e roteiro, biblioteca, SRD, convites, anotações,
+  configurações, habilidades, classes/níveis, recursos.
+- Migrações `20261017140000`–`20261017140300` aplicadas; análise de espaço em
+  [`ARMAZENAMENTO.md`](ARMAZENAMENTO.md).

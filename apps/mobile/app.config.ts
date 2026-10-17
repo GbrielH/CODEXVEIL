@@ -5,6 +5,15 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
  * para que cada organização publique com o próprio domínio reverso.
  */
 const charcoal = '#171719';
+const wine = '#853244';
+
+/**
+ * Notificações push no Android passam pelo Firebase (FCM). O `google-services.json` não fica
+ * no repositório: no EAS ele é a variável de ambiente GOOGLE_SERVICES_JSON (tipo arquivo), que
+ * o gancho `eas-build-pre-install` copia para cá antes do build. Sem a variável (ex.: no
+ * computador), o app funciona sem push.
+ */
+const googleServicesFile = process.env.GOOGLE_SERVICES_JSON ? './google-services.json' : undefined;
 
 /** Projeto no EAS (expo.dev). Identificadores públicos: não são segredos. */
 const easOwner = 'gabriel.xxtth';
@@ -30,6 +39,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       monochromeImage: './assets/images/adaptive-icon-monochrome.png',
     },
     predictiveBackGestureEnabled: false,
+    ...(googleServicesFile ? { googleServicesFile } : {}),
   },
   ios: {
     bundleIdentifier: process.env.IOS_BUNDLE_IDENTIFIER ?? 'app.codexveil.mobile',
@@ -46,6 +56,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-router',
     'expo-sqlite',
     'expo-font',
+    [
+      'expo-notifications',
+      {
+        icon: './assets/images/notification-icon.png',
+        color: wine,
+        defaultChannel: 'sessoes',
+      },
+    ],
     [
       'expo-splash-screen',
       {

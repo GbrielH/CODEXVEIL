@@ -1,5 +1,5 @@
-import { removeCharacterCondition, setCharacterConditionLevel, takeCharacterRest, type CharacterResource } from '@codexveil/database';
-import { healthStatus, resourceRecoveryLabels } from '@codexveil/domain';
+import { createCharacterResource, removeCharacterCondition, setCharacterConditionLevel, takeCharacterRest, type CharacterResource } from '@codexveil/database';
+import { RESOURCE_RECOVERIES, d20Expression, healthStatus, resourceRecoveryLabels, type ResourceRecovery } from '@codexveil/domain';
 import {
   DND5E_RESOURCE_KEYS,
   dnd5eLongRestConditionChanges,
@@ -14,7 +14,10 @@ import {
 import { Heart, HeartCrack, Minus, Plus, Shield } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { RollButton } from '@/components/dice/dice';
 import { Button, IconButton } from '@/components/ui/button';
+import { Chip, ChipRow, NumberField } from '@/components/ui/controls';
+import { Field } from '@/components/ui/field';
 import { useConfirm } from '@/components/ui/dialog';
 import { HealthBar } from '@/components/ui/health-bar';
 import { AppText, Card } from '@/components/ui/primitives';
@@ -142,9 +145,24 @@ function DeathSaves() {
 }
 
 function Resources() {
-  const { resources, conditions, adjustResource, canEditPlay, characterId, run, reloadPlayState } = useSheet();
+  const { resources, conditions, adjustResource, canEditPlay, characterId, run, reloadPlayState, setResources } = useSheet();
   const confirm = useConfirm();
   const general = resources.filter((resource) => !isDedicatedResourceKey(resource.key));
+  const [creating, setCreating] = useState(false);
+  const [draft, setDraft] = useState<{ label: string; max: number | null; recovery: ResourceRecovery }>({ label: '', max: 1, recovery: 'long_rest' });
+
+  const create = async () => {
+    const label = draft.label.trim();
+    if (!label) return;
+    const created = await run(
+      () => createCharacterResource(getSupabase(), characterId, { label: label.slice(0, 60), current: draft.max ?? 0, max: draft.max, recovery: draft.recovery }),
+      'O recurso não foi criado',
+    );
+    if (!created) return;
+    setResources((current) => [...current, created]);
+    setCreating(false);
+    setDraft({ label: '', max: 1, recovery: 'long_rest' });
+  };
 
   const rest = async (kind: 'short_rest' | 'long_rest') => {
     const confirmed = await confirm({
@@ -172,7 +190,7 @@ function Resources() {
   return (
     <Card>
       <AppText variant="heading">Recursos</AppText>
-      {general.length === 0 ? <AppText variant="muted">Nenhum recurso registrado. Crie-os pelo site.</AppText> : null}
+      {general.length === 0 ? <AppText variant="muted">Nenhum recurso registrado (ex.: usos de Fúria, Canalizar Divindade).</AppText> : null}
       {general.map((resource) => (
         <View key={resource.id} style={styles.resource}>
           <View style={{ flex: 1 }}>
@@ -199,6 +217,25 @@ function Resources() {
         </View>
       ))}
       {canEditPlay ? (
+        creating ? (
+          <View style={{ gap: spacing[2], padding: spacing[3], borderRadius: radii.md, borderWidth: 1, borderColor: colors.lineStrong }}>
+            <Field label="Nome do recurso" value={draft.label} maxLength={60} onChangeText={(label) => setDraft((current) => ({ ...current, label }))} placeholder="Ex.: Fúria" />
+            <NumberField label="Máximo (vazio = sem limite)" value={draft.max} allowEmpty onChange={(max) => setDraft((current) => ({ ...current, max: max === null ? null : Math.max(0, Math.min(99_999, max)) }))} />
+            <ChipRow>
+              {RESOURCE_RECOVERIES.map((recovery) => (
+                <Chip key={recovery} label={resourceRecoveryLabels[recovery]} selected={draft.recovery === recovery} onPress={() => setDraft((current) => ({ ...current, recovery }))} />
+              ))}
+            </ChipRow>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Button label="Cancelar" compact variant="ghost" onPress={() => setCreating(false)} style={{ flex: 1 }} />
+              <Button label="Criar" compact disabled={!draft.label.trim()} onPress={() => void create()} style={{ flex: 1 }} />
+            </View>
+          </View>
+        ) : (
+          <Button label="Novo recurso" compact variant="ghost" icon={<Plus size={14} color={colors.fgSecondary} />} onPress={() => setCreating(true)} />
+        )
+      ) : null}
+      {canEditPlay ? (
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Button label="Descanso curto" compact variant="secondary" onPress={() => void rest('short_rest')} style={{ flex: 1 }} />
           <Button label="Descanso longo" compact variant="secondary" onPress={() => void rest('long_rest')} style={{ flex: 1 }} />
@@ -220,9 +257,16 @@ function CombatStats() {
   const passive = passiveWithConditions(derived.passivePerception, effects);
   const initiativeNotes = [rollMark(effects.initiative), effects.d20Penalty > 0 ? `−${effects.d20Penalty} Exaustão` : null].filter(Boolean);
   const speedNote = effects.speedZero.length > 0 ? effects.speedZero.join(', ') : effects.speedReductionFeet > 0 ? `Exaustão ${effects.exhaustionLevel}` : null;
+  const initiativeMode = netRollMode(effects.initiative);
   const stats = [
     { label: 'CA', value: String(sheet.combat.armorClass), note: null, changed: false },
-    { label: 'Iniciativa', value: formatModifier(derived.initiative - effects.d20Penalty), note: initiativeNotes.join(' · ') || null, changed: initiativeNotes.length > 0 },
+    {
+      label: 'Iniciativa',
+      value: formatModifier(derived.initiative - effects.d20Penalty),
+      note: initiativeNotes.join(' · ') || null,
+      changed: initiativeNotes.length > 0,
+      roll: { expression: d20Expression(derived.initiative - effects.d20Penalty), mode: initiativeMode === 'advantage' || initiativeMode === 'disadvantage' ? initiativeMode : 'normal' } as const,
+    },
     { label: 'Desloc.', value: `${speed.toLocaleString('pt-BR')} ${sheet.combat.speedUnit}`, note: speedNote, changed: speed !== sheet.combat.speed },
     { label: 'Percepção', value: String(passive), note: passive !== derived.passivePerception ? `base ${derived.passivePerception}` : null, changed: passive !== derived.passivePerception },
   ];
@@ -235,9 +279,17 @@ function CombatStats() {
           accessible
           accessibilityLabel={`${stat.label}: ${stat.value}${stat.note ? ` (${stat.note})` : ''}`}
         >
-          <AppText variant="number" style={stat.changed ? { color: '#E6BE74' } : undefined}>
-            {stat.value}
-          </AppText>
+          {'roll' in stat && stat.roll ? (
+            <RollButton expression={stat.roll.expression} label={stat.label} mode={stat.roll.mode} style={{ paddingHorizontal: 6 }}>
+              <AppText variant="number" style={stat.changed ? { color: '#E6BE74' } : undefined}>
+                {stat.value}
+              </AppText>
+            </RollButton>
+          ) : (
+            <AppText variant="number" style={stat.changed ? { color: '#E6BE74' } : undefined}>
+              {stat.value}
+            </AppText>
+          )}
           <AppText variant="small" style={{ color: colors.fgMuted }}>
             {stat.label}
           </AppText>

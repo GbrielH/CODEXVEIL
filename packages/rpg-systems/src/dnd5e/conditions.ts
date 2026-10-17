@@ -709,3 +709,55 @@ export function dnd5eConditionsLeftAfter(
   }
   return result;
 }
+
+/** Condição que o próprio personagem pode se aplicar, com a origem nas regras ou na ficha. */
+export interface Dnd5eSelfConditionOption {
+  key: Dnd5eConditionKey;
+  label: string;
+  /** Ação, habilidade ou magia que causa a condição (ex.: "Ação Esconder", "Invisibility"). */
+  sources: string[];
+}
+
+/** Disponíveis a qualquer criatura pelas regras do SRD 5.2.1. */
+const SELF_CONDITIONS_FOR_EVERYONE: readonly (readonly [Dnd5eConditionKey, string])[] = [
+  ['prone', 'Deitar-se no chão'],
+  ['invisible', 'Ação Esconder'],
+  ['unconscious', 'Cair a 0 pontos de vida'],
+];
+
+/**
+ * Habilidades e magias do SRD 5.2.1 que impõem uma condição a quem as usa (nomes como ficam
+ * na ficha: habilidades em português, magias com o nome original).
+ */
+const SELF_CONDITIONS_BY_ABILITY: Readonly<Record<string, readonly Dnd5eConditionKey[]>> = {
+  'véu da natureza': ['invisible'],
+  'um com as sombras': ['invisible'],
+  'dádiva do espírito da noite': ['invisible'],
+  invisibility: ['invisible'],
+  'greater invisibility': ['invisible'],
+  mislead: ['invisible'],
+  'contact other plane': ['incapacitated'],
+  'meld into stone': ['prone'],
+};
+
+/**
+ * Condições que o jogador pode aplicar ao próprio personagem: as que qualquer criatura pode
+ * ter por conta própria (Caído, Invisível pela ação Esconder, Inconsciente a 0 PV) e as que
+ * vêm das habilidades e magias da ficha. As demais são aplicadas pelo mestre.
+ */
+export function dnd5eSelfConditionOptions(abilityNames: readonly string[]): Dnd5eSelfConditionOption[] {
+  const sources = new Map<Dnd5eConditionKey, string[]>();
+  const add = (key: Dnd5eConditionKey, source: string) => {
+    const list = sources.get(key) ?? [];
+    if (!list.includes(source)) list.push(source);
+    sources.set(key, list);
+  };
+  for (const [key, source] of SELF_CONDITIONS_FOR_EVERYONE) add(key, source);
+  for (const name of abilityNames) {
+    const trimmed = name.trim();
+    for (const key of SELF_CONDITIONS_BY_ABILITY[trimmed.toLowerCase()] ?? []) add(key, trimmed);
+  }
+  return dnd5eConditions
+    .filter((condition) => sources.has(condition.key))
+    .map((condition) => ({ key: condition.key, label: condition.label, sources: sources.get(condition.key) ?? [] }));
+}

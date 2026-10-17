@@ -1,8 +1,9 @@
-import { listCampaignCharacters, listCampaignMembers, signedMediaUrls } from '@codexveil/database';
+import { getCampaignTurn, listCampaignCharacters, listCampaignMembers, signedMediaUrls } from '@codexveil/database';
 import { findSystem } from '@codexveil/rpg-systems';
 import { Eye, EyeOff, Lock, PenLine, ScrollText, Swords, Users } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import { MemberList } from '@/components/campaigns/member-list';
+import { TurnStatus } from '@/components/campaigns/turn-status';
 import { PartyList } from '@/components/campaigns/party-list';
 import { ButtonLink } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -22,9 +23,10 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
   const [{ campaignId }, query] = await Promise.all([params, searchParams]);
   const { user, campaign } = await loadCampaignOrNotFound(campaignId);
   const supabase = await createSupabaseServerClient();
-  const [members, party] = await Promise.all([
+  const [members, party, turn] = await Promise.all([
     listCampaignMembers(supabase, campaign.id, campaign.ownerId),
     listCampaignCharacters(supabase, campaign.id),
+    getCampaignTurn(supabase, campaign.id),
   ]);
   const portraits = await signedMediaUrls(supabase, party.map((character) => character.portraitPath));
   const system = findSystem(campaign.systemId);
@@ -38,6 +40,12 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
       <Notice value={query.aviso} />
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="flex flex-col gap-6">
+        <TurnStatus
+          campaignId={campaign.id}
+          initialTurn={turn}
+          ownCharacterId={party.find((character) => character.ownerId === user.id)?.id ?? null}
+          systemId={campaign.systemId}
+        />
         <Card ornate>
           <CardHeader
             icon={<Swords className="h-5 w-5" aria-hidden="true" />}

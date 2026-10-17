@@ -222,3 +222,16 @@ limites (`null` = ilimitado), e não há cobrança, preço nem assinatura simula
 | Largura padrão dos controles só sem outra largura           | Duas classes de largura não se resolvem pela ordem das classes (vale a ordem do CSS); `w-full` só entra sem outra.                             |
 | Testes de RLS com PGlite                                    | Testam as policies reais sem Docker nem banco externo, na CI e em qualquer máquina.                                                            |
 | Pacotes sem build                                           | Menos configuração, e o mesmo código é usado pelos dois apps.                                                                                  |
+
+## Catálogo do SRD, dados e turnos (2026-10-17)
+
+- **SRD como dados estáticos:** `packages/rpg-systems/src/dnd5e/srd/data/*.json` (gerados por
+  `scripts/srd/extract_srd.py` a partir do PDF oficial) carregados sob demanda por
+  `loadSrdSpellTexts`, `loadSrdMonsters` e `loadSrdMagicItems`. Não ocupam o banco; o mestre
+  copia o que usar para a campanha. Campos técnicos são traduzidos no código (`srd/catalog.ts`).
+- **Dados:** expressões e rolagem local em `@codexveil/domain` (`combat/dice.ts`); nas campanhas
+  a rolagem é do servidor. A ficha rola com vantagem/desvantagem vinda das condições.
+- **Turnos:** `orderTurns` e `moveInTurnOrder` no domínio; regras de ações por modo em
+  `dnd5e/turns.ts`; o resumo dos jogadores é mantido no banco por gatilhos.
+- **Notificações:** app registra o token do Expo; o site e o app chamam a Edge Function depois
+  de agendar/publicar uma sessão.

@@ -1,10 +1,23 @@
 'use client';
 
-import { ABILITIES, abilityLabels, spellSchoolLabels, type Ability, type ChoiceSpec, type Selection, type SpellOption } from '@codexveil/rpg-systems/dnd5e';
+import {
+  ABILITIES,
+  SRD_SPELLS,
+  abilityLabels,
+  dnd5eSpellDataSchema,
+  spellSchoolLabels,
+  type Ability,
+  type ChoiceSpec,
+  type Dnd5eSpellData,
+  type Selection,
+  type SpellOption,
+} from '@codexveil/rpg-systems/dnd5e';
 import { Check, Search } from 'lucide-react';
 import { useId, useMemo, useState, type ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { HoverCard } from '@/components/ui/hover-card';
 import { Select } from '@/components/ui/select';
+import { SpellDetails } from '@/components/sheets/dnd5e/ability-details';
 import { cx } from '@/lib/cx';
 
 /** A partir de quantas opções a lista ganha um campo de busca. */
@@ -179,6 +192,21 @@ function MultiList({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { kind
 
 const LEVEL_LABEL = (level: number) => (level === 0 ? 'Truque' : `${level}º círculo`);
 
+/** Dados técnicos da magia do SRD no formato da ficha (para o cartão de detalhes). */
+function srdSpellData(option: SpellOption): Dnd5eSpellData {
+  const srd = SRD_SPELLS.find((spell) => spell.name === option.name);
+  return dnd5eSpellDataSchema.parse({
+    circle: option.level,
+    school: option.school,
+    castingTime: srd?.castingTime ?? '',
+    range: srd?.range ?? '',
+    components: srd?.components ?? '',
+    duration: srd?.duration ?? '',
+    concentration: option.concentration,
+    ritual: option.ritual,
+  });
+}
+
 function SpellPicker({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { kind: 'spells' }>; value: string[]; onChange: (value: string[]) => void }) {
   const [query, setQuery] = useState('');
   const [level, setLevel] = useState<number | 'all'>('all');
@@ -245,30 +273,32 @@ function SpellPicker({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { ki
           const disabled = !selected && (Boolean(option.disabledReason) || full);
           return (
             <li key={option.id}>
-              <button
-                type="button"
-                role="checkbox"
-                aria-checked={selected}
-                disabled={disabled}
-                title={option.disabledReason}
-                onClick={() => toggle(option)}
-                className={cx(
-                  'flex w-full items-start justify-between gap-2 rounded px-2 py-1.5 text-left text-sm',
-                  selected ? 'bg-parchment-200/10 text-fg' : 'text-fg-secondary hover:bg-hover',
-                  disabled && 'cursor-not-allowed opacity-45 hover:bg-transparent',
-                )}
-              >
-                <span className="flex min-w-0 flex-col">
-                  <span className="truncate">{option.name}</span>
-                  <span className="text-xs text-fg-subtle">
-                    {LEVEL_LABEL(option.level)} · {spellSchoolLabels[option.school]}
-                    {option.concentration ? ' · C' : ''}
-                    {option.ritual ? ' · R' : ''}
-                    {option.disabledReason && !selected ? ` · ${option.disabledReason}` : ''}
+              <HoverCard className="block" content={() => <SpellDetails name={option.name} data={srdSpellData(option)} description="" />}>
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={selected}
+                  disabled={disabled}
+                  title={option.disabledReason}
+                  onClick={() => toggle(option)}
+                  className={cx(
+                    'flex w-full items-start justify-between gap-2 rounded px-2 py-1.5 text-left text-sm',
+                    selected ? 'bg-parchment-200/10 text-fg' : 'text-fg-secondary hover:bg-hover',
+                    disabled && 'cursor-not-allowed opacity-45 hover:bg-transparent',
+                  )}
+                >
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate">{option.name}</span>
+                    <span className="text-xs text-fg-subtle">
+                      {LEVEL_LABEL(option.level)} · {spellSchoolLabels[option.school]}
+                      {option.concentration ? ' · C' : ''}
+                      {option.ritual ? ' · R' : ''}
+                      {option.disabledReason && !selected ? ` · ${option.disabledReason}` : ''}
+                    </span>
                   </span>
-                </span>
-                {selected ? <Check className="mt-0.5 h-4 w-4 shrink-0 text-fg-accent" aria-hidden="true" /> : null}
-              </button>
+                  {selected ? <Check className="mt-0.5 h-4 w-4 shrink-0 text-fg-accent" aria-hidden="true" /> : null}
+                </button>
+              </HoverCard>
             </li>
           );
         })}

@@ -91,3 +91,11 @@ deles por `pnpm brand:assets`. Nenhuma imagem externa é usada.
 | PGlite (só nos testes e na geração de tipos) | Apache-2.0                |
 
 As licenças completas das dependências estão nos pacotes instalados (`node_modules/*/LICENSE`).
+
+## Textos do SRD incluídos (2026-10-17)
+
+Desde a terceira rodada, o Codexveil inclui o texto das 339 magias, os 330 blocos de
+estatísticas de monstros e animais e os 258 itens mágicos do SRD 5.2.1 (CC-BY-4.0), no
+original em inglês. Alterações do Codexveil: campos técnicos traduzidos para o português e
+distâncias convertidas para metros. A atribuição exigida pela licença aparece nas telas do
+catálogo e em `/licencas`.

@@ -101,12 +101,12 @@ e magias na ficha).
 | Espécies (9), antecedentes (4) e talentos (17)                                                | Completo     | Talentos de origem, gerais, de estilo de luta e dádivas épicas.                                                                                                         |
 | Idiomas, alinhamentos, armas (38), armaduras (13), ferramentas, pacotes e equipamento inicial | Completo     | Medidas em metros e quilos.                                                                                                                                             |
 | Invocações (28), metamagia (10) e opções do Círculo da Terra                                  | Completo     |                                                                                                                                                                         |
-| Magias (339)                                                                                  | Parcial      | Nome, círculo, escola, listas de classe e cabeçalho técnico. **Sem o texto da descrição.**                                                                              |
+| Magias (339)                                                                                  | Completo     | Cabeçalho técnico em português; descrição no original em inglês, com dano, resistência e área resumidos em português.                                                   |
 | Condições (15)                                                                                | Completo     | Regras traduzidas, efeitos na ficha e duração (segunda rodada de 2026-10-17).                                                                                           |
 | Regras gerais e glossário                                                                     | Parcial      | A ficha calcula o que as regras definem (modificadores, proficiência, perícias, CA, iniciativa, espaços de magia, descansos); o texto do glossário não está no sistema. |
 | Multiclasse e subida de nível                                                                 | Parcial      | A ficha aceita até 4 classes, mas sem pré-requisitos de multiclasse e sem assistente de subida de nível.                                                                |
-| Itens mágicos (cerca de 250)                                                                  | Não incluído |                                                                                                                                                                         |
-| Monstros e animais (cerca de 330 blocos de estatísticas)                                      | Não incluído | O mestre cadastra criaturas na biblioteca.                                                                                                                              |
+| Itens mágicos (258)                                                                           | Completo     | Catálogo para o mestre copiar à campanha; texto no original em inglês.                                                                                                  |
+| Monstros e animais (330 blocos de estatísticas)                                               | Completo     | Bestiário para copiar à biblioteca; campos técnicos em português, ações e traços em inglês.                                                                             |
 | Montarias, veículos, serviços, estilo de vida, fabricação e bugigangas                        | Não incluído |                                                                                                                                                                         |
 | Caixa de ferramentas do mestre (armadilhas, venenos, maldições, ambiente e viagem)            | Não incluído |                                                                                                                                                                         |
 
@@ -289,3 +289,21 @@ implementados, conforme o prompt. Nenhuma tela promete essas funções.
     (Edge Functions).
 12. **Mobile:** retrato do personagem (com a mesma redução de imagem da web), redefinição de
     senha no app e, se fizer sentido, a mesa do mestre em modo consulta.
+
+## 7. Pedidos de 2026-10-17 (terceira rodada)
+
+| Pedido                                              | Situação                                                                                                                                  |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Erro ao abrir campanhas e personagens no site local | Corrigido (faltava a migração das condições)                                                                                              |
+| Jogador vê só as condições das próprias habilidades | Implementado (site e app)                                                                                                                 |
+| Detalhes de magias e habilidades ao passar o mouse  | Implementado (site; no app, ao tocar)                                                                                                     |
+| Monstros e itens do SRD                             | Implementado (Bestiário e Itens mágicos SRD)                                                                                              |
+| Itens criados pelo mestre                           | Implementado, com entrega ao inventário                                                                                                   |
+| Aba Links com fontes oficiais                       | Implementado (site e app)                                                                                                                 |
+| Análise do espaço do Supabase                       | [`ARMAZENAMENTO.md`](ARMAZENAMENTO.md)                                                                                                    |
+| Rolagem de dados com mural do mestre                | Implementado (site e app)                                                                                                                 |
+| Turnos com modos e ordem definida pelo mestre       | Implementado (site e app)                                                                                                                 |
+| Ocultar/liberar NPC e monstro direto no painel      | Implementado (site e app)                                                                                                                 |
+| Notificação de sessão agendada com o app fechado    | Backend no ar; **falta o Firebase** (etapa 0c dos próximos passos)                                                                        |
+| App faz tudo o que o site faz                       | Quase: no app ainda não há envio de imagens, blocos de imagem/referência no roteiro, troca de senha, transferência e exclusão de campanha |
+| Telas pequenas no site e no app                     | **Revisão pendente** (precisa do percurso automatizado a 360 px)                                                                          |

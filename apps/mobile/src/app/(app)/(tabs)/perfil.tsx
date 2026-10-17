@@ -1,8 +1,10 @@
 import { getProfile, updateProfile } from '@codexveil/database';
 import { fieldErrorsFrom, profileUpdateSchema, type FieldErrors } from '@codexveil/validation';
 import { LogOut } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { Button } from '@/components/ui/button';
+import { CheckRow } from '@/components/ui/controls';
 import { useConfirm } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
 import { AppText, Card } from '@/components/ui/primitives';
@@ -11,6 +13,7 @@ import { ErrorState, LoadingState } from '@/components/ui/states';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/errors';
 import { useAsyncData } from '@/lib/hooks';
+import { isPushEnabled, setPushEnabled, type PushSetupResult } from '@/lib/notifications';
 import { useSession, useUserId } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
@@ -53,6 +56,58 @@ function ProfileForm({ profile, onSaved }: { profile: Profile; onSaved: () => vo
   );
 }
 
+const pushMessages: Record<PushSetupResult, string> = {
+  registered: 'Este aparelho recebe os avisos de sessões agendadas.',
+  disabled: 'Avisos desligados neste aparelho.',
+  denied: 'O Android bloqueou as notificações do Codexveil. Libere-as nas configurações do aparelho.',
+  unsupported: 'Avisos só funcionam no app instalado no celular.',
+  unavailable: 'Não foi possível ativar os avisos agora (verifique a conexão ou atualize o app).',
+};
+
+/** Liga ou desliga os avisos de sessão agendada neste aparelho. */
+function PushCard() {
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    isPushEnabled()
+      .then((value) => {
+        if (active) setEnabled(value);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (enabled === null) return null;
+  return (
+    <Card>
+      <AppText variant="heading">Notificações</AppText>
+      <CheckRow
+        label="Avisos de sessões agendadas"
+        description="Quando o mestre agenda ou remarca uma sessão das suas campanhas, mesmo com o app fechado."
+        checked={enabled}
+        disabled={busy || Platform.OS === 'web'}
+        onChange={async (next) => {
+          setBusy(true);
+          setEnabled(next);
+          const result = await setPushEnabled(next);
+          setStatus(pushMessages[result]);
+          setBusy(false);
+        }}
+      />
+      {status ? (
+        <AppText variant="small" style={{ color: colors.fgMuted }}>
+          {status}
+        </AppText>
+      ) : null}
+    </Card>
+  );
+}
+
 export default function ProfileScreen() {
   const userId = useUserId();
   const { email, signOut } = useSession();
@@ -65,6 +120,7 @@ export default function ProfileScreen() {
     <Screen title="Perfil" subtitle={email ?? undefined}>
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
       {data ? <ProfileForm key={data.displayName + data.bio} profile={data} onSaved={reload} /> : null}
+      <PushCard />
       <Card>
         <AppText variant="heading">Conta</AppText>
         <AppText variant="muted">Para trocar a senha, use o site do Codexveil.</AppText>

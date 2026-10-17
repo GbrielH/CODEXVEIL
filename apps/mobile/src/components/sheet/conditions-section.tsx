@@ -10,6 +10,7 @@ import {
   dnd5eConditionDurations,
   dnd5eConditions,
   dnd5eConditionsLeftAfter,
+  dnd5eSelfConditionOptions,
   findDnd5eCondition,
   formatDnd5eConditionRounds,
   type Dnd5eActiveCondition,
@@ -77,7 +78,7 @@ function Rules({ condition }: { condition: Dnd5eActiveCondition }) {
  * por outras e os efeitos que a ficha aplica sozinha.
  */
 export function ConditionsSection() {
-  const { conditions, conditionEffects, canEditPlay, characterId, run, reloadPlayState } = useSheet();
+  const { conditions, conditionEffects, canEditPlay, fullConditionList, abilities, characterId, run, reloadPlayState } = useSheet();
   const toast = useToast();
   const [picking, setPicking] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
@@ -96,11 +97,16 @@ export function ConditionsSection() {
   const rounds = duration === 'custom' ? parseRounds(customRounds) : duration;
   const roundsInvalid = duration === 'custom' && rounds === null;
 
+  // O jogador vê só as condições que o personagem pode se aplicar; o mestre vê todas.
+  const available = fullConditionList
+    ? dnd5eConditions.map((condition) => ({ key: condition.key, label: condition.label, sources: [] as string[] }))
+    : dnd5eSelfConditionOptions(abilities.map((ability) => ability.name));
   const options: PickerOption[] = [
-    ...dnd5eConditions.map((condition) => ({
+    ...available.map((condition) => ({
       value: condition.key,
       label: byKey.has(condition.key) ? `${condition.label} (já aplicada)` : condition.label,
-      description: condition.summary,
+      description:
+        (findDnd5eCondition(condition.key)?.summary ?? '') + (condition.sources.length > 0 ? ` Origem: ${condition.sources.join(', ')}.` : ''),
     })),
     { value: CUSTOM_CONDITION, label: 'Outra (personalizada)', description: 'Sem efeitos automáticos.' },
   ];
@@ -322,6 +328,7 @@ export function ConditionsSection() {
       <PickerSheet
         visible={picking}
         title="Aplicar condição"
+        hint={fullConditionList ? undefined : 'Condições que o personagem pode se aplicar (ações comuns, habilidades e magias da ficha). As demais são aplicadas pelo mestre.'}
         options={options}
         onClose={() => setPicking(false)}
         onSelect={(value) => {

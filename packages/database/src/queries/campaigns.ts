@@ -1,5 +1,5 @@
-import type { CampaignRole, CampaignSettings, CampaignStatus } from '@codexveil/domain';
-import { AppError } from '@codexveil/domain';
+import type { CampaignRole, CampaignSettings, CampaignStatus, TurnMode, TurnOrderMode } from '@codexveil/domain';
+import { AppError, TURN_MODES } from '@codexveil/domain';
 import type { CampaignCreate, CampaignUpdate } from '@codexveil/validation';
 import type { CodexveilClient } from '../client';
 import { toAppError } from '../errors';
@@ -21,10 +21,19 @@ export interface CampaignSummary {
   characterRules: unknown;
 }
 
+/** Como os encontros novos da campanha começam (modo e ordem) e o que os jogadores veem. */
+export interface CampaignTurnSettings {
+  defaultMode: TurnMode;
+  defaultOrder: TurnOrderMode;
+  /** Jogadores veem a ordem completa dos turnos (senão, só de quem é a vez). */
+  playersSeeOrder: boolean;
+}
+
 export interface CampaignDetail extends CampaignSummary {
   ownerId: string;
   ownerName: string;
   settings: CampaignSettings;
+  turnSettings: CampaignTurnSettings;
   createdAt: string;
 }
 
@@ -73,7 +82,7 @@ export async function getCampaign(
   const { data, error } = await client
     .from('campaigns')
     .select(
-      'id, name, description, system_id, status, cover_path, owner_id, party_sheets_visible, players_can_edit_sheets, character_rules, created_at, updated_at, archived_at, owner:profiles!campaigns_owner_id_fkey(display_name), members:campaign_members(count), membership:campaign_members!inner(role, user_id)',
+      'id, name, description, system_id, status, cover_path, owner_id, party_sheets_visible, players_can_edit_sheets, default_turn_mode, default_turn_order, players_see_turn_order, character_rules, created_at, updated_at, archived_at, owner:profiles!campaigns_owner_id_fkey(display_name), members:campaign_members(count), membership:campaign_members!inner(role, user_id)',
     )
     .eq('id', campaignId)
     .eq('membership.user_id', userId)
@@ -99,6 +108,11 @@ export async function getCampaign(
     settings: {
       partySheetsVisible: data.party_sheets_visible,
       playersCanEditSheets: data.players_can_edit_sheets,
+    },
+    turnSettings: {
+      defaultMode: (TURN_MODES as readonly string[]).includes(data.default_turn_mode) ? (data.default_turn_mode as TurnMode) : 'combat',
+      defaultOrder: data.default_turn_order === 'manual' ? 'manual' : 'initiative',
+      playersSeeOrder: data.players_see_turn_order,
     },
     createdAt: data.created_at,
   };
@@ -160,6 +174,25 @@ export async function updateCampaign(
     .select('id');
   if (error) throw toAppError(error);
   // O RLS filtra silenciosamente: nenhuma linha alterada = sem permissão (ou arquivada).
+  if (data.length === 0) throw new AppError('forbidden');
+}
+
+/** Modo e ordem padrão dos encontros e se os jogadores veem a ordem completa dos turnos. */
+export async function updateCampaignTurnSettings(
+  client: CodexveilClient,
+  campaignId: string,
+  settings: CampaignTurnSettings,
+): Promise<void> {
+  const { data, error } = await client
+    .from('campaigns')
+    .update({
+      default_turn_mode: settings.defaultMode,
+      default_turn_order: settings.defaultOrder,
+      players_see_turn_order: settings.playersSeeOrder,
+    })
+    .eq('id', campaignId)
+    .select('id');
+  if (error) throw toAppError(error);
   if (data.length === 0) throw new AppError('forbidden');
 }
 

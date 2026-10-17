@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advanceTurn, orderCombatants, rewindTurn, startCombat, type Combatant } from './initiative';
+import { advanceTurn, moveInTurnOrder, orderCombatants, orderTurns, parseTurnEconomy, rewindTurn, startCombat, type Combatant } from './initiative';
 
 const make = (id: string, initiative: number | null, tiebreaker = 0, isDefeated = false) =>
   ({ id, name: id, initiative, tiebreaker, isDefeated }) satisfies Combatant;
@@ -53,5 +53,33 @@ describe('controle de turnos', () => {
   it('sem combatentes ativos não há turno', () => {
     const allDown = [make('A', 20, 0, true)];
     expect(advanceTurn(allDown, { round: 3, activeCombatantId: 'A' }).activeCombatantId).toBeNull();
+  });
+});
+
+describe('ordem dos turnos', () => {
+  const people = [
+    { id: 'a', name: 'Bruna', initiative: 10, tiebreaker: 0, isDefeated: false, sortOrder: 20 },
+    { id: 'b', name: 'Aldo', initiative: 18, tiebreaker: 0, isDefeated: false, sortOrder: 30 },
+    { id: 'c', name: 'Caio', initiative: 5, tiebreaker: 0, isDefeated: false, sortOrder: 10 },
+  ];
+
+  it('segue a iniciativa ou a ordem do mestre', () => {
+    expect(orderTurns(people, 'initiative').map((entry) => entry.id)).toEqual(['b', 'a', 'c']);
+    expect(orderTurns(people, 'manual').map((entry) => entry.id)).toEqual(['c', 'a', 'b']);
+  });
+
+  it('move um participante e renumera a ordem manual', () => {
+    const ordered = orderTurns(people, 'manual');
+    expect(moveInTurnOrder(ordered, 'b', -1)).toEqual([
+      { id: 'c', sortOrder: 10 },
+      { id: 'b', sortOrder: 20 },
+      { id: 'a', sortOrder: 30 },
+    ]);
+    expect(moveInTurnOrder(ordered, 'c', -1)).toEqual([]);
+  });
+
+  it('lê o que já foi usado no turno', () => {
+    expect(parseTurnEconomy({ action: true, reaction: 'sim' })).toEqual({ action: true, bonusAction: false, reaction: false, movement: false });
+    expect(parseTurnEconomy(null)).toEqual({ action: false, bonusAction: false, reaction: false, movement: false });
   });
 });

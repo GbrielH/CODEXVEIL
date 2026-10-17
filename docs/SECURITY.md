@@ -162,3 +162,15 @@ reais de cada usuário:
 
 Não abra uma issue pública. Entre em contato com o mantenedor do repositório por um canal
 privado (por exemplo, GitHub Security Advisories).
+
+## Terceira rodada (2026-10-17)
+
+- **Dados:** os clientes não gravam resultados. `roll_dice` (SECURITY DEFINER) confere a
+  participação, o personagem (dono ou mestre) e os limites da expressão, sorteia e grava; não há
+  policy de insert/update. Rolagens secretas só para quem rolou e mestres (RLS e Realtime).
+- **Turnos:** os encontros seguem exclusivos do mestre; os jogadores leem `campaign_turns`, sem
+  participantes ocultos e, se o mestre quiser, sem a ordem completa.
+- **Itens da campanha:** mesmo modelo das criaturas (mestre vê tudo; jogadores, os revelados).
+- **Notificações:** tokens de aparelho só são lidos pelo dono e pela Edge Function (chave
+  secreta). A função confere o JWT, exige o papel de mestre e não repete a mesma data. O
+  `google-services.json` fica no EAS (variável de ambiente), nunca no repositório público.

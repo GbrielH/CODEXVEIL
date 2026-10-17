@@ -76,3 +76,72 @@ export function rewindTurn(ordered: readonly Combatant[], state: TurnState): Tur
   }
   return state;
 }
+
+/** Modos de um encontro (o que a mesa está fazendo em turnos). */
+export const TURN_MODES = ['combat', 'exploration', 'investigation', 'social'] as const;
+export type TurnMode = (typeof TURN_MODES)[number];
+
+export const turnModeLabels: Record<TurnMode, string> = {
+  combat: 'Combate',
+  exploration: 'Exploração',
+  investigation: 'Investigação',
+  social: 'Interação social',
+};
+
+/** Como a ordem dos turnos é definida: pela iniciativa ou pelo mestre. */
+export const TURN_ORDER_MODES = ['initiative', 'manual'] as const;
+export type TurnOrderMode = (typeof TURN_ORDER_MODES)[number];
+
+export const turnOrderModeLabels: Record<TurnOrderMode, string> = {
+  initiative: 'Pela iniciativa',
+  manual: 'Definida pelo mestre',
+};
+
+/**
+ * Ordem dos turnos conforme o modo: pela iniciativa (como `orderCombatants`) ou na ordem
+ * manual do mestre (`sortOrder` crescente; empates pelo nome).
+ */
+export function orderTurns<T extends Combatant & { sortOrder?: number }>(combatants: readonly T[], mode: TurnOrderMode): T[] {
+  if (mode === 'initiative') return orderCombatants(combatants);
+  return [...combatants].sort(
+    (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name, 'pt-BR') || a.id.localeCompare(b.id),
+  );
+}
+
+/** Nova ordem manual depois de mover um participante para cima (-1) ou para baixo (+1). */
+export function moveInTurnOrder<T extends { id: string }>(ordered: readonly T[], id: string, direction: -1 | 1): { id: string; sortOrder: number }[] {
+  const list = [...ordered];
+  const index = list.findIndex((entry) => entry.id === id);
+  const target = index + direction;
+  if (index < 0 || target < 0 || target >= list.length) return [];
+  const [moved] = list.splice(index, 1);
+  if (moved) list.splice(target, 0, moved);
+  return list.map((entry, position) => ({ id: entry.id, sortOrder: (position + 1) * 10 }));
+}
+
+/** O que o participante já usou no turno atual. */
+export interface TurnEconomy {
+  action: boolean;
+  bonusAction: boolean;
+  reaction: boolean;
+  movement: boolean;
+}
+
+export const TURN_ECONOMY_KEYS = ['action', 'bonusAction', 'movement', 'reaction'] as const;
+
+export const turnEconomyLabels: Record<keyof TurnEconomy, string> = {
+  action: 'Ação',
+  bonusAction: 'Ação bônus',
+  movement: 'Movimento',
+  reaction: 'Reação',
+};
+
+export function parseTurnEconomy(value: unknown): TurnEconomy {
+  const source = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+  return {
+    action: source.action === true,
+    bonusAction: source.bonusAction === true,
+    reaction: source.reaction === true,
+    movement: source.movement === true,
+  };
+}

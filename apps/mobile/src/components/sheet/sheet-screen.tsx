@@ -25,6 +25,8 @@ import { failureMessage } from '@/lib/errors';
 import { useAutosave, useRealtimeRefresh } from '@/lib/hooks';
 import { getSupabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
+import { TurnStatus } from '@/components/campaign/turn-status';
+import { DiceProvider } from '@/components/dice/dice';
 import { AttributesSection } from './attributes-section';
 import { SheetContext, type MobileSheetContext } from './context';
 import { FeaturesSection } from './features-section';
@@ -52,6 +54,7 @@ interface SheetScreenProps {
   abilities: CharacterAbility[];
   canEditSheet: boolean;
   canEditPlay: boolean;
+  fullConditionList: boolean;
 }
 
 export function SheetScreen(props: SheetScreenProps) {
@@ -61,6 +64,7 @@ export function SheetScreen(props: SheetScreenProps) {
   const [resources, setResources] = useState(props.resources);
   const [conditions, setConditions] = useState(props.conditions);
   const [items, setItems] = useState(props.items);
+  const [abilities, setAbilities] = useState(props.abilities);
   const inFlight = useRef(new Map<string, number>());
 
   const autosave = useAutosave<Dnd5eSheet>({
@@ -157,6 +161,7 @@ export function SheetScreen(props: SheetScreenProps) {
     characterId: character.id,
     canEditSheet: props.canEditSheet,
     canEditPlay: props.canEditPlay,
+    fullConditionList: props.fullConditionList,
     sheet,
     derived,
     updateSheet: autosave.update,
@@ -164,9 +169,10 @@ export function SheetScreen(props: SheetScreenProps) {
     conditions,
     conditionEffects,
     items,
-    abilities: props.abilities,
+    abilities,
     setResources,
     setItems,
+    setAbilities,
     adjustResource,
     reloadPlayState,
     run,
@@ -176,6 +182,7 @@ export function SheetScreen(props: SheetScreenProps) {
 
   return (
     <SheetContext.Provider value={context}>
+      <DiceProvider campaignId={character.campaign?.id ?? null} characterId={character.id} enabled={props.canEditPlay}>
       <Screen eyebrow={character.campaign?.name ?? 'Sem campanha'} title={character.name} subtitle={`${summary.subtitle} · ${character.ownerName}`}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
           <Badge label={`Nível ${derived.level}`} tone="parchment" />
@@ -209,6 +216,10 @@ export function SheetScreen(props: SheetScreenProps) {
           <Notice message="O mestre travou a construção das fichas. Vida, recursos e inventário seguem editáveis." />
         ) : null}
 
+        {character.campaign && character.campaign.status === 'active' && tab === 'jogo' ? (
+          <TurnStatus campaignId={character.campaign.id} ownCharacterId={character.id} systemId="dnd5e" />
+        ) : null}
+
         <Segmented<Tab>
           accessibilityLabel="Seções da ficha"
           value={tab}
@@ -227,6 +238,7 @@ export function SheetScreen(props: SheetScreenProps) {
         {tab === 'habilidades' ? <FeaturesSection /> : null}
         {tab === 'personagem' ? <StorySection /> : null}
       </Screen>
+      </DiceProvider>
     </SheetContext.Provider>
   );
 }

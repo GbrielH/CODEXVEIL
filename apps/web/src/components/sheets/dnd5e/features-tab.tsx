@@ -1,5 +1,6 @@
 'use client';
 
+import { d20Expression } from '@codexveil/domain';
 import {
   createCharacterAbility,
   createCharacterResource,
@@ -30,9 +31,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { CheckboxField, SelectField, TextareaField, TextField } from '@/components/ui/field';
+import { HoverCard } from '@/components/ui/hover-card';
+import { RollButton } from '@/components/dice/dice-roller';
 import { Modal } from '@/components/ui/modal';
 import { NumberInput } from '@/components/ui/number-input';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { AttackDetails, FeatureDetails, SpellDetails } from './ability-details';
 import { useSheet } from './context';
 import { parseAttack } from './play-tab';
 
@@ -118,17 +122,22 @@ export function FeaturesTab() {
 function AttackRow({ attack, onEdit }: { attack: CharacterAbility; onEdit: () => void }) {
   const { derived, permissions } = useSheet();
   const data = parseAttack(attack.data);
+  const bonus = formatModifier(attackRollBonus(data, derived));
   return (
     <li className="flex items-center gap-3 py-2">
-      <span className="tabular w-12 rounded-md border border-line-strong bg-raised py-1 text-center font-display text-lg text-fg-accent">
-        {formatModifier(attackRollBonus(data, derived))}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{attack.name}</p>
-        <p className="truncate text-xs text-fg-muted">
-          {[data.damage ? `${data.damage} ${data.damageType}`.trim() : null, data.range, data.ability ? abilityLabels[data.ability].abbreviation : 'bônus fixo'].filter(Boolean).join(' · ')}
-        </p>
-      </div>
+      <RollButton expression={d20Expression(attackRollBonus(data, derived))} label={`Ataque: ${attack.name}`}>
+        <span className="tabular block w-12 rounded-md border border-line-strong bg-raised py-1 text-center font-display text-lg text-fg-accent">
+          {bonus}
+        </span>
+      </RollButton>
+      <HoverCard className="block flex-1" content={() => <AttackDetails attack={attack} data={data} bonus={bonus} />}>
+        <span className="block min-w-0">
+          <span className="block truncate text-sm font-medium">{attack.name}</span>
+          <span className="block truncate text-xs text-fg-muted">
+            {[data.damage ? `${data.damage} ${data.damageType}`.trim() : null, data.range, data.ability ? abilityLabels[data.ability].abbreviation : 'bônus fixo'].filter(Boolean).join(' · ')}
+          </span>
+        </span>
+      </HoverCard>
       {permissions.canEditSheet ? (
         <Button size="icon" variant="ghost" onClick={onEdit} aria-label={`Editar ${attack.name}`}>
           <Pencil className="h-4 w-4" aria-hidden="true" />
@@ -173,12 +182,14 @@ function SpellRow({ spell, onEdit }: { spell: CharacterAbility; onEdit: () => vo
             className="h-5 w-5 accent-wine-500"
           />
         ) : null}
-        <button type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} className="flex min-w-0 flex-1 items-center gap-2 text-left">
-          <span className="truncate text-sm font-medium">{spell.name}</span>
-          {data.concentration ? <Badge tone="info">Concentração</Badge> : null}
-          {data.ritual ? <Badge tone="neutral">Ritual</Badge> : null}
-          <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-fg-muted transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
-        </button>
+        <HoverCard className="flex flex-1" content={() => <SpellDetails name={spell.name} data={data} description={spell.description} />}>
+          <button type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+            <span className="truncate text-sm font-medium">{spell.name}</span>
+            {data.concentration ? <Badge tone="info">Concentração</Badge> : null}
+            {data.ritual ? <Badge tone="neutral">Ritual</Badge> : null}
+            <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-fg-muted transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
+          </button>
+        </HoverCard>
         {permissions.canEditSheet ? (
           <Button size="icon" variant="ghost" onClick={onEdit} aria-label={`Editar ${spell.name}`}>
             <Pencil className="h-4 w-4" aria-hidden="true" />
@@ -186,22 +197,8 @@ function SpellRow({ spell, onEdit }: { spell: CharacterAbility; onEdit: () => vo
         ) : null}
       </div>
       {open ? (
-        <div className="mt-2 flex flex-col gap-2 pl-7 text-sm">
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-4">
-            {[
-              ['Escola', data.school ? spellSchoolLabels[data.school] : '—'],
-              ['Conjuração', data.castingTime || '—'],
-              ['Alcance', data.range || '—'],
-              ['Duração', data.duration || '—'],
-            ].map(([label, value]) => (
-              <div key={label}>
-                <dt className="text-fg-muted">{label}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
-          {data.components ? <p className="text-xs text-fg-secondary">Componentes: {data.components}</p> : null}
-          {spell.description ? <p className="whitespace-pre-line font-serif leading-relaxed text-fg-secondary">{spell.description}</p> : null}
+        <div className="mt-2 pl-7 text-sm">
+          <SpellDetails name={spell.name} data={data} description={spell.description} full />
         </div>
       ) : null}
     </li>
@@ -215,11 +212,13 @@ function FeatureRow({ feature, onEdit }: { feature: CharacterAbility; onEdit: ()
   return (
     <li className="rounded-md border border-line px-3 py-2">
       <div className="flex items-center gap-2">
-        <button type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} className="flex min-w-0 flex-1 items-center gap-2 text-left">
-          <span className="truncate text-sm font-medium">{feature.name}</span>
-          <Badge tone="neutral">{abilityEntryKindLabels[feature.kind]}</Badge>
-          <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-fg-muted transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
-        </button>
+        <HoverCard className="flex flex-1" content={() => <FeatureDetails feature={feature} resource={resource} />}>
+          <button type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+            <span className="truncate text-sm font-medium">{feature.name}</span>
+            <Badge tone="neutral">{abilityEntryKindLabels[feature.kind]}</Badge>
+            <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-fg-muted transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
+          </button>
+        </HoverCard>
         {resource ? (
           <span className="flex items-center gap-1">
             <span className="tabular text-sm text-fg-accent">

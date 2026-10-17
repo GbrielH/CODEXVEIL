@@ -6,6 +6,7 @@ import {
   dnd5eConditions,
   dnd5eConditionsLeftAfter,
   dnd5eLongRestConditionChanges,
+  dnd5eSelfConditionOptions,
   effectiveSpeed,
   formatDnd5eConditionRounds,
   netRollMode,
@@ -143,6 +144,14 @@ describe('condições do SRD 5.2.1', () => {
       ]),
     ).toEqual({ update: [{ id: 'a', level: 1 }], remove: [] });
     expect(dnd5eLongRestConditionChanges([{ id: 'a', key: 'exhaustion', level: 1 }])).toEqual({ update: [], remove: ['a'] });
+  });
+
+  it('o jogador só aplica as condições das próprias habilidades', () => {
+    expect(dnd5eSelfConditionOptions([]).map((option) => option.key)).toEqual(['invisible', 'prone', 'unconscious']);
+    const ranger = dnd5eSelfConditionOptions(['Véu da Natureza', 'Ataque Extra', 'Contact Other Plane', 'Invisibility']);
+    expect(ranger.map((option) => option.key)).toEqual(['incapacitated', 'invisible', 'prone', 'unconscious']);
+    expect(ranger.find((option) => option.key === 'invisible')?.sources).toEqual(['Ação Esconder', 'Véu da Natureza', 'Invisibility']);
+    expect(ranger.find((option) => option.key === 'incapacitated')).toMatchObject({ label: 'Incapacitado', sources: ['Contact Other Plane'] });
   });
 
   it('durações em rodadas', () => {

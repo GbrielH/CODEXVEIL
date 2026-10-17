@@ -143,3 +143,12 @@ seed. Um teste (`packages/database/test/seed.test.ts`) garante que ele continua 
    O mesmo vale para `schema_version` dos blocos de roteiro.
 
 Para backups e restauração, veja [`DEPLOY.md`](DEPLOY.md#6-migrações-e-backups-em-produção).
+
+## Terceira rodada (2026-10-17)
+
+| Migração                            | O que cria                                                                                                                                                                                         |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `20261017140000_campaign_items`     | `campaign_items`: itens do mestre (ou copiados do SRD, `srd_name`), revelados com `visibility`; até 500 por campanha.                                                                              |
+| `20261017140100_dice_rolls`         | `dice_rolls` + `roll_dice()` (SECURITY DEFINER): o servidor sorteia; 200 rolagens por campanha; Realtime.                                                                                          |
+| `20261017140200_turns`              | Modo e ordem em `encounters`; `sort_order`, `is_hidden`, `turn_state` em `encounter_combatants`; padrões em `campaigns`; `campaign_turns` (resumo para jogadores, mantido por gatilhos; Realtime). |
+| `20261017140300_push_notifications` | `push_tokens` + `register_push_token()`; `session_notifications` (gravada só pela Edge Function `notify-session`).                                                                                 |

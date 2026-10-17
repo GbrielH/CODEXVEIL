@@ -70,6 +70,7 @@ export default function CharacterScreen() {
         abilities={data.abilities}
         canEditSheet={canEditCharacterSheet(access)}
         canEditPlay={canEditCharacterPlayState(access)}
+        fullConditionList={data.character.viewer.membership?.role === 'gm' || data.character.campaign === null}
       />
     </>
   );

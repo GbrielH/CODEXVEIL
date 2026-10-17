@@ -8,6 +8,7 @@ import {
   type Dnd5eCampaignRules,
 } from './campaign-rules';
 import { dnd5eConditionDurations, dnd5eConditions, formatDnd5eConditionRounds } from './conditions';
+import { dnd5eOfficialLinks } from './links';
 import { computeDnd5eDerived, type Dnd5eDerived } from './derived';
 import { srd52License } from './license';
 import { dnd5eDefaultResources } from './resources';
@@ -47,6 +48,7 @@ export const dnd5eSystem: RpgSystem<Dnd5eSheet, Dnd5eDerived, Dnd5eStatBlock, Dn
   sheetSchemaVersion: DND5E_SHEET_VERSION,
   license: srd52License,
   conditions: dnd5eConditions,
+  officialLinks: dnd5eOfficialLinks,
   conditionDurations: dnd5eConditionDurations,
   formatConditionRounds: formatDnd5eConditionRounds,
   sheetSchema: dnd5eSheetSchema,
@@ -74,6 +76,8 @@ export * from './abilities';
 export * from './skills';
 export * from './progression';
 export * from './conditions';
+export * from './links';
+export * from './turns';
 export * from './sheet';
 export * from './derived';
 export * from './resources';

@@ -75,6 +75,75 @@ export type Database = {
           },
         ];
       };
+      campaign_items: {
+        Row: {
+          campaign_id: string;
+          category: Database['public']['Enums']['item_category'];
+          created_at: string;
+          created_by: string | null;
+          data: Json;
+          description: string;
+          id: string;
+          name: string;
+          rarity: string;
+          requires_attunement: boolean;
+          srd_name: string | null;
+          updated_at: string;
+          value: string;
+          visibility: Database['public']['Enums']['content_visibility'];
+          weight: number | null;
+        };
+        Insert: {
+          campaign_id: string;
+          category?: Database['public']['Enums']['item_category'];
+          created_at?: string;
+          created_by?: string | null;
+          data?: Json;
+          description?: string;
+          id?: string;
+          name: string;
+          rarity?: string;
+          requires_attunement?: boolean;
+          srd_name?: string | null;
+          updated_at?: string;
+          value?: string;
+          visibility?: Database['public']['Enums']['content_visibility'];
+          weight?: number | null;
+        };
+        Update: {
+          campaign_id?: string;
+          category?: Database['public']['Enums']['item_category'];
+          created_at?: string;
+          created_by?: string | null;
+          data?: Json;
+          description?: string;
+          id?: string;
+          name?: string;
+          rarity?: string;
+          requires_attunement?: boolean;
+          srd_name?: string | null;
+          updated_at?: string;
+          value?: string;
+          visibility?: Database['public']['Enums']['content_visibility'];
+          weight?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'campaign_items_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'campaign_items_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       campaign_members: {
         Row: {
           campaign_id: string;
@@ -165,18 +234,78 @@ export type Database = {
           },
         ];
       };
+      campaign_turns: {
+        Row: {
+          active_character_id: string | null;
+          active_name: string | null;
+          campaign_id: string;
+          encounter_id: string;
+          mode: string;
+          name: string;
+          round: number;
+          session_id: string;
+          status: Database['public']['Enums']['encounter_status'];
+          turn_order: Json;
+          updated_at: string;
+        };
+        Insert: {
+          active_character_id?: string | null;
+          active_name?: string | null;
+          campaign_id: string;
+          encounter_id: string;
+          mode: string;
+          name: string;
+          round: number;
+          session_id: string;
+          status: Database['public']['Enums']['encounter_status'];
+          turn_order?: Json;
+          updated_at?: string;
+        };
+        Update: {
+          active_character_id?: string | null;
+          active_name?: string | null;
+          campaign_id?: string;
+          encounter_id?: string;
+          mode?: string;
+          name?: string;
+          round?: number;
+          session_id?: string;
+          status?: Database['public']['Enums']['encounter_status'];
+          turn_order?: Json;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'campaign_turns_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: true;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'campaign_turns_encounter_id_fkey';
+            columns: ['encounter_id'];
+            isOneToOne: false;
+            referencedRelation: 'encounters';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       campaigns: {
         Row: {
           archived_at: string | null;
           character_rules: Json;
           cover_path: string | null;
           created_at: string;
+          default_turn_mode: string;
+          default_turn_order: string;
           description: string;
           id: string;
           name: string;
           owner_id: string;
           party_sheets_visible: boolean;
           players_can_edit_sheets: boolean;
+          players_see_turn_order: boolean;
           status: Database['public']['Enums']['campaign_status'];
           system_id: string;
           updated_at: string;
@@ -186,12 +315,15 @@ export type Database = {
           character_rules?: Json;
           cover_path?: string | null;
           created_at?: string;
+          default_turn_mode?: string;
+          default_turn_order?: string;
           description?: string;
           id?: string;
           name: string;
           owner_id?: string;
           party_sheets_visible?: boolean;
           players_can_edit_sheets?: boolean;
+          players_see_turn_order?: boolean;
           status?: Database['public']['Enums']['campaign_status'];
           system_id: string;
           updated_at?: string;
@@ -201,12 +333,15 @@ export type Database = {
           character_rules?: Json;
           cover_path?: string | null;
           created_at?: string;
+          default_turn_mode?: string;
+          default_turn_order?: string;
           description?: string;
           id?: string;
           name?: string;
           owner_id?: string;
           party_sheets_visible?: boolean;
           players_can_edit_sheets?: boolean;
+          players_see_turn_order?: boolean;
           status?: Database['public']['Enums']['campaign_status'];
           system_id?: string;
           updated_at?: string;
@@ -678,6 +813,76 @@ export type Database = {
           },
         ];
       };
+      dice_rolls: {
+        Row: {
+          campaign_id: string;
+          character_id: string | null;
+          created_at: string;
+          dice: Json;
+          expression: string;
+          id: string;
+          label: string;
+          mode: string;
+          modifier: number;
+          roller_name: string;
+          total: number;
+          user_id: string;
+          visibility: Database['public']['Enums']['content_visibility'];
+        };
+        Insert: {
+          campaign_id: string;
+          character_id?: string | null;
+          created_at?: string;
+          dice: Json;
+          expression: string;
+          id?: string;
+          label?: string;
+          mode?: string;
+          modifier?: number;
+          roller_name: string;
+          total: number;
+          user_id: string;
+          visibility?: Database['public']['Enums']['content_visibility'];
+        };
+        Update: {
+          campaign_id?: string;
+          character_id?: string | null;
+          created_at?: string;
+          dice?: Json;
+          expression?: string;
+          id?: string;
+          label?: string;
+          mode?: string;
+          modifier?: number;
+          roller_name?: string;
+          total?: number;
+          user_id?: string;
+          visibility?: Database['public']['Enums']['content_visibility'];
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'dice_rolls_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'dice_rolls_character_id_fkey';
+            columns: ['character_id'];
+            isOneToOne: false;
+            referencedRelation: 'characters';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'dice_rolls_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       encounter_combatants: {
         Row: {
           campaign_id: string;
@@ -687,8 +892,11 @@ export type Database = {
           id: string;
           initiative: number | null;
           is_defeated: boolean;
+          is_hidden: boolean;
           session_entity_id: string | null;
+          sort_order: number;
           tiebreaker: number;
+          turn_state: Json;
         };
         Insert: {
           campaign_id: string;
@@ -698,8 +906,11 @@ export type Database = {
           id?: string;
           initiative?: number | null;
           is_defeated?: boolean;
+          is_hidden?: boolean;
           session_entity_id?: string | null;
+          sort_order?: number;
           tiebreaker?: number;
+          turn_state?: Json;
         };
         Update: {
           campaign_id?: string;
@@ -709,8 +920,11 @@ export type Database = {
           id?: string;
           initiative?: number | null;
           is_defeated?: boolean;
+          is_hidden?: boolean;
           session_entity_id?: string | null;
+          sort_order?: number;
           tiebreaker?: number;
+          turn_state?: Json;
         };
         Relationships: [
           {
@@ -742,7 +956,9 @@ export type Database = {
           campaign_id: string;
           created_at: string;
           id: string;
+          mode: string;
           name: string;
+          order_mode: string;
           round: number;
           session_id: string;
           status: Database['public']['Enums']['encounter_status'];
@@ -754,7 +970,9 @@ export type Database = {
           campaign_id: string;
           created_at?: string;
           id?: string;
+          mode?: string;
           name?: string;
+          order_mode?: string;
           round?: number;
           session_id: string;
           status?: Database['public']['Enums']['encounter_status'];
@@ -766,7 +984,9 @@ export type Database = {
           campaign_id?: string;
           created_at?: string;
           id?: string;
+          mode?: string;
           name?: string;
+          order_mode?: string;
           round?: number;
           session_id?: string;
           status?: Database['public']['Enums']['encounter_status'];
@@ -849,6 +1069,38 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      push_tokens: {
+        Row: {
+          created_at: string;
+          platform: string;
+          token: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          platform: string;
+          token: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          platform?: string;
+          token?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'push_tokens_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       rpg_systems: {
         Row: {
@@ -1003,6 +1255,35 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'sessions';
             referencedColumns: ['id', 'campaign_id'];
+          },
+        ];
+      };
+      session_notifications: {
+        Row: {
+          recipients: number;
+          scheduled_for: string;
+          sent_at: string;
+          session_id: string;
+        };
+        Insert: {
+          recipients?: number;
+          scheduled_for: string;
+          sent_at?: string;
+          session_id: string;
+        };
+        Update: {
+          recipients?: number;
+          scheduled_for?: string;
+          sent_at?: string;
+          session_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'session_notifications_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: true;
+            referencedRelation: 'sessions';
+            referencedColumns: ['id'];
           },
         ];
       };
@@ -1190,6 +1471,13 @@ export type Database = {
         };
         Returns: undefined;
       };
+      register_push_token: {
+        Args: {
+          p_token: string;
+          p_platform: string;
+        };
+        Returns: undefined;
+      };
       remove_campaign_member: {
         Args: {
           p_campaign_id: string;
@@ -1209,6 +1497,23 @@ export type Database = {
           p_invite_id: string;
         };
         Returns: undefined;
+      };
+      roll_dice: {
+        Args: {
+          p_campaign_id: string;
+          p_expression: string;
+          p_label?: string;
+          p_mode?: string;
+          p_visibility?: string;
+          p_character_id?: string;
+        };
+        Returns: Database['public']['Tables']['dice_rolls']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'dice_rolls';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       set_campaign_member_role: {
         Args: {

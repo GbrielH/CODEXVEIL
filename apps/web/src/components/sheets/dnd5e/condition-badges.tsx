@@ -1,3 +1,4 @@
+import type { DiceRollMode } from '@codexveil/domain';
 import {
   describeRollSources,
   netRollMode,
@@ -75,4 +76,10 @@ export function PenaltyBadge({ penalty, source, className }: { penalty: number; 
       <span className="sr-only">{description}</span>
     </span>
   );
+}
+
+/** Vantagem ou desvantagem que as condições ativas impõem à rolagem (anuladas = normal). */
+export function rollModeFrom(sources: Parameters<typeof netRollMode>[0]): DiceRollMode {
+  const net = netRollMode(sources);
+  return net === 'advantage' || net === 'disadvantage' ? net : 'normal';
 }

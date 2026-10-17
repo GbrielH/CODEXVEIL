@@ -293,3 +293,13 @@ Settings → Database. Teste a restauração periodicamente num projeto separado
 - [ ] APK instalado e testado num aparelho Android.
 - [ ] Backup manual feito e restauração testada.
 - [ ] Itens pendentes de [`PENDENCIAS.md`](PENDENCIAS.md) revisados e aceitos ou resolvidos.
+
+## 8. Edge Functions e notificações (2026-10-17)
+
+- Publicar a função: `pnpm exec supabase functions deploy notify-session --project-ref
+ityfhobhpjzhlkgvjhfb --no-verify-jwt --use-api` (o JWT é conferido dentro da função).
+- Firebase (FCM): o `google-services.json` vai para o EAS como variável `GOOGLE_SERVICES_JSON`
+  (tipo arquivo, ambientes preview e production). O gancho `eas-build-pre-install` copia o
+  arquivo; `apps/mobile/.fingerprintignore` evita que ele mude o fingerprint. A chave da conta
+  de serviço (FCM V1) é enviada pelo expo.dev → Credentials.
+- Sem a variável, o APK funciona sem notificações.

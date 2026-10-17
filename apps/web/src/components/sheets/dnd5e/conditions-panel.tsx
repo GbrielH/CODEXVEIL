@@ -12,6 +12,7 @@ import {
   dnd5eConditionDurations,
   dnd5eConditions,
   dnd5eConditionsLeftAfter,
+  dnd5eSelfConditionOptions,
   findDnd5eCondition,
   formatDnd5eConditionRounds,
   type Dnd5eActiveCondition,
@@ -59,7 +60,7 @@ function ConditionRules({ condition }: { condition: Dnd5eActiveCondition }) {
  * por outras (ex.: Paralisado → Incapacitado) e os efeitos que a ficha aplica sozinha.
  */
 export function ConditionsPanel() {
-  const { conditions, conditionEffects, permissions, character, run, reloadConditions } = useSheet();
+  const { conditions, conditionEffects, permissions, character, abilities, run, reloadConditions } = useSheet();
   const { toast } = useToast();
   const id = useId();
   const [selected, setSelected] = useState('');
@@ -151,6 +152,13 @@ export function ConditionsPanel() {
   };
 
   const implied = conditionEffects.conditions.filter((condition) => condition.impliedBy && !byKey.has(condition.key));
+  // O mestre (ou o dono de um personagem fora de campanha) vê todas as condições; o jogador,
+  // só as que o personagem pode se aplicar pelas regras e pelas próprias habilidades.
+  const fullList = permissions.isGm || character.campaign === null;
+  const options = fullList
+    ? dnd5eConditions.map((condition) => ({ key: condition.key, label: condition.label, sources: [] as string[] }))
+    : dnd5eSelfConditionOptions(abilities.map((ability) => ability.name));
+  const selectedSources = options.find((option) => option.key === selected)?.sources ?? [];
 
   return (
     <Card>
@@ -278,7 +286,7 @@ export function ConditionsPanel() {
                 }}
               >
                 <option value="">Escolha…</option>
-                {dnd5eConditions.map((condition) => (
+                {options.map((condition) => (
                   <option key={condition.key} value={condition.key}>
                     {condition.label}
                     {byKey.has(condition.key) ? ' (já aplicada)' : ''}
@@ -342,8 +350,15 @@ export function ConditionsPanel() {
           {definition ? (
             <p className="text-xs text-fg-muted">
               <span className="font-medium text-fg-secondary">{definition.label}:</span> {definition.summary}
+              {selectedSources.length > 0 ? <> Origem: {selectedSources.join(', ')}.</> : null}
             </p>
           ) : null}
+          {fullList ? null : (
+            <p className="text-xs text-fg-muted">
+              A lista mostra as condições que o personagem pode se aplicar (ações comuns, habilidades e magias da ficha). As
+              demais condições são aplicadas pelo mestre.
+            </p>
+          )}
           <div>
             <Button type="submit" variant="secondary" loading={busy} disabled={!key || roundsInvalid} icon={<Plus className="h-4 w-4" aria-hidden="true" />}>
               Aplicar

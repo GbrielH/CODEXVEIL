@@ -13,3 +13,5 @@ packages/ui/css/tokens.css
 apps/mobile/android
 apps/mobile/ios
 *.png
+# Dados gerados do SRD 5.2.1 (scripts/srd/extract_srd.py)
+packages/rpg-systems/src/dnd5e/srd/data

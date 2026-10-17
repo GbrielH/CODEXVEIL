@@ -1,6 +1,6 @@
 'use server';
 
-import { createSession, deleteSession, duplicateSession, setSessionStatus } from '@codexveil/database';
+import { createSession, deleteSession, duplicateSession, notifySessionScheduled, setSessionStatus } from '@codexveil/database';
 import { fieldErrorsFrom, sessionCreateSchema, uuidSchema } from '@codexveil/validation';
 import type { Route } from 'next';
 import { revalidatePath } from 'next/cache';
@@ -41,6 +41,8 @@ export async function createSessionAction(
   try {
     const supabase = await createSupabaseServerClient();
     sessionId = await createSession(supabase, campaignId, parsed.data);
+    // Sessão publicada com data: avisa os jogadores no app (falhas não impedem a criação).
+    if (parsed.data.isPublished && parsed.data.scheduledAt) await notifySessionScheduled(supabase, sessionId);
   } catch (error) {
     return { status: 'error', message: failureMessage(error), values: { title: raw.title } };
   }

@@ -5,6 +5,7 @@ export type {
   ConditionDurationPreset,
   ConditionRule,
   ContentLicense,
+  OfficialLink,
   ResourceDisplay,
   ResourceTemplate,
   RpgSystem,

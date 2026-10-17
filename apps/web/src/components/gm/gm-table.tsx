@@ -6,12 +6,14 @@ import {
   listSceneEntities,
   sessionStatusLabels,
   type CampaignNote,
+  type CampaignTurnSettings,
+  type DiceRoll,
   type Encounter,
   type PartyCharacter,
   type SceneEntity,
   type SessionStatus,
 } from '@codexveil/database';
-import { BookOpen, Lock, NotebookPen, ScrollText } from 'lucide-react';
+import { BookOpen, Dices, Lock, NotebookPen, ScrollText } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useCallback, useState } from 'react';
@@ -25,6 +27,8 @@ import { formatDateTime } from '@/lib/format';
 import { campaignPath, sessionPath } from '@/lib/routes';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
+import { DicePanel, DiceProvider } from '@/components/dice/dice-roller';
+import { RollFeed } from '@/components/dice/roll-feed';
 import { CombatTracker } from './combat-tracker';
 import { PartyStatus } from './party-status';
 import { ScenePanel } from './scene-panel';
@@ -60,12 +64,16 @@ interface GmTableProps {
   library: LibraryOption[];
   outline: { id: string; type: string; text: string }[];
   notes: CampaignNote[];
+  turnSettings: CampaignTurnSettings;
+  rolls: DiceRoll[];
 }
 
 export interface GmTableContext {
   campaignId: string;
   systemId: string;
   session: GmSession;
+  /** Modo e ordem padrão dos encontros novos (configurações da campanha). */
+  turnSettings: CampaignTurnSettings;
   canManage: boolean;
   party: PartyCharacter[];
   entities: SceneEntity[];
@@ -123,6 +131,7 @@ export function GmTable(props: GmTableProps) {
     campaignId,
     systemId,
     session,
+    turnSettings: props.turnSettings,
     canManage: props.isActive,
     party,
     entities,
@@ -167,6 +176,24 @@ export function GmTable(props: GmTableProps) {
           <PartyStatus context={context} portraits={props.portraits} currentUserId={props.currentUserId} />
         </div>
         <div className="flex flex-col gap-6">
+          <Card>
+            <CardHeader
+              icon={<Dices className="h-5 w-5" aria-hidden="true" />}
+              title="Mural de rolagens"
+              description="Rolagens dos jogadores e as suas, ao vivo (as secretas só aparecem para os mestres)."
+            />
+            {props.isActive ? (
+              <details className="mb-3 rounded-md border border-line bg-sunken/50 px-3 py-2">
+                <summary className="cursor-pointer text-sm font-medium text-fg-secondary">Rolar dados</summary>
+                <div className="mt-3">
+                  <DiceProvider campaignId={campaignId}>
+                    <DicePanel isGm />
+                  </DiceProvider>
+                </div>
+              </details>
+            ) : null}
+            <RollFeed campaignId={campaignId} initialRolls={props.rolls} canClear={props.isActive} limit={30} compact />
+          </Card>
           <ScenePanel context={context} library={props.library} />
           <Card>
             <CardHeader icon={<BookOpen className="h-5 w-5" aria-hidden="true" />} title="Atalhos do roteiro" />

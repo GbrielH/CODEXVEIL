@@ -32,6 +32,22 @@ publicado automaticamente. A resposta sobre
 o conteúdo de D&D (o que do SRD está no sistema e o que não pode estar) está em
 [`PENDENCIAS.md`](PENDENCIAS.md#cobertura-do-conteúdo-de-dd-srd-521).
 
+**Em 2026-10-17, terceira rodada:** biblioteca com **itens da campanha** (criados pelo mestre
+ou copiados do SRD e entregues aos personagens), **Bestiário SRD** (330 monstros e animais) e
+**Itens mágicos SRD** (258) para copiar à campanha, botão de **ocultar/liberar** direto nas
+listas, **detalhes ao passar o mouse** em magias, ataques e habilidades (no app, ao tocar), com
+dano, resistência, área e círculo maior tirados do texto do SRD; lista de condições do jogador
+limitada às que o personagem pode se aplicar (o mestre vê todas); **rolagem de dados** no
+servidor com mural ao vivo do mestre e rolagens secretas; **turnos** com modos (combate,
+exploração, investigação, interação social), ordem pela iniciativa ou definida pelo mestre,
+participantes ocultos, ação/ação bônus/movimento/reação e a vez visível aos jogadores;
+**aviso de sessão agendada** por notificação no app (falta o Firebase, veja o próximo passo); e
+o app passou a fazer o que o site faz (mesa do mestre, sessões e roteiro, biblioteca, SRD,
+convites, anotações, configurações, cadastro de habilidades, classes/níveis e recursos). As
+migrações `20261017140000` a `20261017140300` foram **aplicadas em produção** e a Edge Function
+`notify-session` foi publicada. Análise de espaço do Supabase em
+[`ARMAZENAMENTO.md`](ARMAZENAMENTO.md).
+
 | Fase                                                                            | Situação                                                                              |
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | 1. Fundação (monorepo, TS, lint, testes, design system, apps)                   | Concluída                                                                             |
@@ -264,12 +280,25 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
-1. **Claude:** confirmar que o push desta rodada publicou o site (Vercel) e a atualização do
-   app (EAS) sozinho, e seguir com os pedidos de 2026-10-17 registrados em
-   [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md).
-2. **Responsável:** instalar o APK novo ([build `420f6c37`](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/420f6c37-279c-4e92-b865-de9bdcb0b7f4), link no README).
-3. **Claude:** depois da ligação, confirmar o site publicado e o primeiro push automático.
+1. **Responsável:** criar o projeto no Firebase e enviar a chave FCM V1 ao Expo
+   ([`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md), etapa 0c). **Claude:** enviar o
+   `google-services.json` ao EAS (variável `GOOGLE_SERVICES_JSON`, tipo arquivo) e gerar o APK
+   com notificações.
+2. **Responsável:** instalar o APK novo gerado pelo push da terceira rodada (módulos nativos de
+   notificação e imagens mudaram o fingerprint; o link aparece em expo.dev → Builds).
+3. **Claude:** percurso automatizado no site e no app com as telas novas (itens, SRD, dados,
+   turnos) contra o banco real e revisão de telas pequenas (360 px).
 4. Usar o site e o app com duas contas.
 
 A lista completa e priorizada está em
 [`PENDENCIAS.md`](PENDENCIAS.md#6-próximos-passos-sugeridos-em-ordem).
+
+### Terceira rodada (2026-10-17): verificações
+
+- `pnpm check`: 20/20 tarefas (lint, tipos e testes; inclui 13 testes novos de RLS para itens,
+  rolagens, turnos e notificações, 6 do catálogo do SRD, 4 de dados e 3 de turnos no domínio).
+- `pnpm build`: 2/2.
+- Migrações `20261017140000`–`20261017140300`: `db push --dry-run` e `db push` no CODEXVEIL.
+- Edge Function `notify-session` publicada; chamada sem login responde 401.
+- **Não testado ainda:** as telas novas contra o banco real (site e app), o envio real de
+  notificações (depende do Firebase) e a revisão visual em telas pequenas.

@@ -1,6 +1,8 @@
 'use client';
 
+import { d20Expression, withBonus, type DiceRollMode } from '@codexveil/domain';
 import {
+  attackDamageModifier,
   attackRollBonus,
   dnd5eAttackDataSchema,
   effectiveSpeed,
@@ -12,18 +14,52 @@ import { Crosshair, Footprints, Shield, Swords, Zap } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Card, CardHeader } from '@/components/ui/card';
-import { PenaltyBadge, RollEffectBadge } from './condition-badges';
+import { HoverCard } from '@/components/ui/hover-card';
+import { RollButton } from '@/components/dice/dice-roller';
+import { TurnStatus } from '@/components/campaigns/turn-status';
+import { AttackDetails } from './ability-details';
+import { PenaltyBadge, RollEffectBadge, rollModeFrom } from './condition-badges';
 import { useSheet } from './context';
 import { ConditionsPanel } from './conditions-panel';
 import { HpTracker } from './hp-tracker';
 import { ResourceTracks } from './resource-tracks';
 
-function Stat({ icon, label, value, hint, badge, changed = false }: { icon: ReactNode; label: string; value: string; hint?: string | undefined; badge?: ReactNode; changed?: boolean }) {
+interface StatRoll {
+  expression: string;
+  label: string;
+  mode: DiceRollMode;
+}
+
+function Stat({
+  icon,
+  label,
+  value,
+  hint,
+  badge,
+  changed = false,
+  roll,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  hint?: string | undefined;
+  badge?: ReactNode;
+  changed?: boolean;
+  /** Clicar no valor rola o teste (quando a ficha permite rolar). */
+  roll?: StatRoll;
+}) {
+  const number = <span className={`tabular font-display text-2xl leading-none ${changed ? 'text-amber-300' : 'text-fg-accent'}`}>{value}</span>;
   return (
     <div className={`flex flex-col items-center gap-1 rounded-md border bg-raised px-2 py-3 text-center ${changed ? 'border-amber-400/40' : 'border-line'}`}>
       <span className="text-fg-brand">{icon}</span>
       <span className="flex items-center gap-1">
-        <span className={`tabular font-display text-2xl leading-none ${changed ? 'text-amber-300' : 'text-fg-accent'}`}>{value}</span>
+        {roll ? (
+          <RollButton expression={roll.expression} label={roll.label} mode={roll.mode} className="px-1.5 py-0.5">
+            {number}
+          </RollButton>
+        ) : (
+          number
+        )}
         {badge}
       </span>
       <span className="text-[11px] uppercase tracking-wider text-fg-muted">{label}</span>
@@ -39,7 +75,7 @@ export function parseAttack(data: unknown): Dnd5eAttackData {
 
 /** Tudo o que se consulta e altera com frequência durante uma partida, numa só tela. */
 export function PlayTab() {
-  const { sheet, derived, abilities, conditionEffects: effects } = useSheet();
+  const { sheet, derived, abilities, character, conditionEffects: effects } = useSheet();
   const attacks = abilities.filter((entry) => entry.kind === 'attack');
   const speedValue = effectiveSpeed(sheet.combat.speed, sheet.combat.speedUnit, effects);
   const speed = `${speedValue.toLocaleString('pt-BR')} ${sheet.combat.speedUnit}`;
@@ -52,6 +88,9 @@ export function PlayTab() {
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
       <div className="flex flex-col gap-5">
+        {character.campaign && character.campaign.status === 'active' ? (
+          <TurnStatus campaignId={character.campaign.id} ownCharacterId={character.id} systemId="dnd5e" />
+        ) : null}
         {effects.dead ? (
           <Alert tone="danger" title="Exaustão 6">
             O personagem morre ao chegar ao nível 6 de Exaustão.
@@ -69,6 +108,7 @@ export function PlayTab() {
             label="Iniciativa"
             value={formatModifier(derived.initiative - penalty)}
             changed={penalty > 0}
+            roll={{ expression: d20Expression(derived.initiative - penalty), label: 'Iniciativa', mode: rollModeFrom(effects.initiative) }}
             badge={
               <>
                 <RollEffectBadge sources={effects.initiative} />
@@ -111,22 +151,32 @@ export function PlayTab() {
               {attacks.map((attack) => {
                 const data = parseAttack(attack.data);
                 const bonus = attackRollBonus(data, derived) - penalty;
+                const damage = data.damage ? withBonus(data.damage, attackDamageModifier(data.ability, sheet.abilities)) : null;
                 return (
                   <li key={attack.id} className="flex items-center gap-3 py-2">
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-fg">{attack.name}</span>
-                      <span className="block truncate text-xs text-fg-muted">
-                        {[data.damage && `${data.damage} ${data.damageType}`.trim(), data.range].filter(Boolean).join(' · ')}
+                    <HoverCard className="block flex-1" content={() => <AttackDetails attack={attack} data={data} bonus={formatModifier(bonus)} />}>
+                      <span className="block min-w-0">
+                        <span className="block truncate text-sm font-medium text-fg">{attack.name}</span>
+                        <span className="block truncate text-xs text-fg-muted">
+                          {[data.damage && `${data.damage} ${data.damageType}`.trim(), data.range].filter(Boolean).join(' · ')}
+                        </span>
+                        {damage ? (
+                          <RollButton expression={damage} label={`Dano: ${attack.name}`} className="mt-1 inline-flex px-1.5 py-0.5 text-xs text-ember-300">
+                            Rolar dano ({damage})
+                          </RollButton>
+                        ) : null}
                       </span>
-                    </span>
+                    </HoverCard>
                     <RollEffectBadge sources={effects.attackRolls} />
                     <PenaltyBadge penalty={penalty} source={penaltySource} />
-                    <span
-                      className={`tabular rounded-md border border-line-strong bg-raised px-2 py-1 font-display text-lg ${penalty > 0 ? 'text-amber-300' : 'text-fg-accent'}`}
-                      aria-label={`Bônus de ataque ${formatModifier(bonus)}`}
-                    >
-                      {formatModifier(bonus)}
-                    </span>
+                    <RollButton expression={d20Expression(bonus)} label={`Ataque: ${attack.name}`} mode={rollModeFrom(effects.attackRolls)}>
+                      <span
+                        className={`tabular block rounded-md border border-line-strong bg-raised px-2 py-1 font-display text-lg ${penalty > 0 ? 'text-amber-300' : 'text-fg-accent'}`}
+                        aria-label={`Bônus de ataque ${formatModifier(bonus)}`}
+                      >
+                        {formatModifier(bonus)}
+                      </span>
+                    </RollButton>
                   </li>
                 );
               })}

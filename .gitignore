@@ -26,6 +26,10 @@ expo-env.d.ts
 *.mobileprovision
 *.apk
 *.aab
+# Firebase (notificações push): ficam no EAS, nunca no repositório público
+google-services.json
+GoogleService-Info.plist
+*firebase-adminsdk*.json
 
 # Vercel CLI (vínculo local do projeto)
 .vercel/

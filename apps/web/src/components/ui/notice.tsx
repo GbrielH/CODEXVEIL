@@ -17,6 +17,7 @@ const notices = {
   'personagem-excluido': { tone: 'success', text: 'O personagem foi excluído definitivamente.' },
   'sessao-excluida': { tone: 'success', text: 'A sessão e o roteiro foram excluídos.' },
   'registro-excluido': { tone: 'success', text: 'O registro foi removido da biblioteca.' },
+  'item-excluido': { tone: 'success', text: 'O item foi removido da biblioteca.' },
 } satisfies Record<string, { tone: AlertTone; text: string }>;
 
 export type NoticeKey = keyof typeof notices;

@@ -20,8 +20,10 @@ export default async function CampaignLayout({ children, params }: LayoutProps<'
   if (isGm) tabs.push({ href: `${base}/mesa` as Route, label: 'Mesa do mestre' });
   tabs.push(
     { href: `${base}/sessoes` as Route, label: 'Sessões' },
-    { href: `${base}/biblioteca` as Route, label: isGm ? 'Biblioteca' : 'NPCs e criaturas' },
+    { href: `${base}/dados` as Route, label: 'Dados' },
+    { href: `${base}/biblioteca` as Route, label: 'Biblioteca' },
     { href: `${base}/anotacoes` as Route, label: 'Anotações' },
+    { href: `${base}/links` as Route, label: 'Links' },
   );
   if (isGm) {
     tabs.push(

@@ -13,6 +13,7 @@ import { SplashScreen, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { PushBridge } from '@/components/push-bridge';
 import { DialogProvider } from '@/components/ui/dialog';
 import { ToastProvider } from '@/components/ui/toast';
 import { SessionProvider, useSession } from '@/lib/session';
@@ -22,7 +23,7 @@ configureValidationLocale();
 void SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
-  const { status } = useSession();
+  const { status, userId } = useSession();
   const signedIn = status === 'signed-in';
 
   useEffect(() => {
@@ -32,30 +33,47 @@ function RootNavigator() {
   if (status === 'loading') return null;
 
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: colors.raised },
-        headerTintColor: colors.fgAccent,
-        headerTitleStyle: { fontFamily: fonts.display },
-        contentStyle: { backgroundColor: colors.canvas },
-        headerBackButtonDisplayMode: 'minimal',
-      }}
-    >
-      <Stack.Protected guard={signedIn}>
-        <Stack.Screen name="(app)/(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(app)/campanha/[id]" options={{ title: 'Campanha' }} />
-        <Stack.Screen name="(app)/campanha/nova" options={{ title: 'Nova campanha', presentation: 'modal' }} />
-        <Stack.Screen name="(app)/convite" options={{ title: 'Convite' }} />
-        <Stack.Screen name="(app)/personagem/[id]" options={{ title: 'Ficha' }} />
-        <Stack.Screen name="(app)/personagem/novo" options={{ title: 'Novo personagem', presentation: 'modal' }} />
-        <Stack.Screen name="(app)/sessao/[id]" options={{ title: 'Sessão' }} />
-      </Stack.Protected>
-      <Stack.Protected guard={!signedIn}>
-        <Stack.Screen name="(auth)/entrar" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)/cadastro" options={{ title: 'Criar conta' }} />
-        <Stack.Screen name="(auth)/recuperar-senha" options={{ title: 'Recuperar senha' }} />
-      </Stack.Protected>
-    </Stack>
+    <>
+      {signedIn && userId ? <PushBridge userId={userId} /> : null}
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: colors.raised },
+          headerTintColor: colors.fgAccent,
+          headerTitleStyle: { fontFamily: fonts.display },
+          contentStyle: { backgroundColor: colors.canvas },
+          headerBackButtonDisplayMode: 'minimal',
+        }}
+      >
+        <Stack.Protected guard={signedIn}>
+          <Stack.Screen name="(app)/(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(app)/campanha/[id]/index" options={{ title: 'Campanha' }} />
+          <Stack.Screen name="(app)/campanha/[id]/dados" options={{ title: 'Dados' }} />
+          <Stack.Screen name="(app)/campanha/[id]/biblioteca" options={{ title: 'Biblioteca' }} />
+          <Stack.Screen name="(app)/campanha/[id]/criatura/[creatureId]" options={{ title: 'Registro' }} />
+          <Stack.Screen name="(app)/campanha/[id]/item/[itemId]" options={{ title: 'Item' }} />
+          <Stack.Screen name="(app)/campanha/[id]/srd" options={{ title: 'Bestiário SRD' }} />
+          <Stack.Screen name="(app)/campanha/[id]/srd-monstro/[slug]" options={{ title: 'Criatura do SRD' }} />
+          <Stack.Screen name="(app)/campanha/[id]/srd-itens" options={{ title: 'Itens mágicos SRD' }} />
+          <Stack.Screen name="(app)/campanha/[id]/srd-item/[slug]" options={{ title: 'Item do SRD' }} />
+          <Stack.Screen name="(app)/campanha/[id]/mesa" options={{ title: 'Mesa do mestre' }} />
+          <Stack.Screen name="(app)/campanha/[id]/anotacoes" options={{ title: 'Anotações' }} />
+          <Stack.Screen name="(app)/campanha/[id]/convites" options={{ title: 'Convites' }} />
+          <Stack.Screen name="(app)/campanha/[id]/configuracoes" options={{ title: 'Configurações' }} />
+          <Stack.Screen name="(app)/campanha/[id]/nova-sessao" options={{ title: 'Nova sessão', presentation: 'modal' }} />
+          <Stack.Screen name="(app)/campanha/nova" options={{ title: 'Nova campanha', presentation: 'modal' }} />
+          <Stack.Screen name="(app)/convite" options={{ title: 'Convite' }} />
+          <Stack.Screen name="(app)/personagem/[id]" options={{ title: 'Ficha' }} />
+          <Stack.Screen name="(app)/personagem/novo" options={{ title: 'Novo personagem', presentation: 'modal' }} />
+          <Stack.Screen name="(app)/sessao/[id]/index" options={{ title: 'Sessão' }} />
+          <Stack.Screen name="(app)/sessao/[id]/editar" options={{ title: 'Editar sessão' }} />
+        </Stack.Protected>
+        <Stack.Protected guard={!signedIn}>
+          <Stack.Screen name="(auth)/entrar" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)/cadastro" options={{ title: 'Criar conta' }} />
+          <Stack.Screen name="(auth)/recuperar-senha" options={{ title: 'Recuperar senha' }} />
+        </Stack.Protected>
+      </Stack>
+    </>
   );
 }
 

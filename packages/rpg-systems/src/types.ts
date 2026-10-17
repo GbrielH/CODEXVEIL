@@ -42,6 +42,15 @@ export interface ConditionDefinition {
   leaves?: readonly string[];
 }
 
+/** Link para uma fonte oficial do sistema (regras gratuitas, livros). */
+export interface OfficialLink {
+  label: string;
+  description: string;
+  url: string;
+  /** `free`: leitura gratuita; `paid`: livro vendido pela editora. */
+  access: 'free' | 'paid';
+}
+
 /** Duração oferecida ao aplicar uma condição; `rounds: null` dura até ser removida. */
 export interface ConditionDurationPreset {
   rounds: number | null;
@@ -111,6 +120,8 @@ export interface RpgSystem<TSheet = unknown, TDerived = unknown, TStatBlock = un
   readonly sheetSchemaVersion: number;
   readonly license: ContentLicense;
   readonly conditions: readonly ConditionDefinition[];
+  /** Fontes oficiais do sistema, exibidas na aba "Links" das campanhas. */
+  readonly officialLinks: readonly OfficialLink[];
   /**
    * Durações oferecidas ao aplicar uma condição, em rodadas. A contagem diminui no fim de
    * cada turno de quem tem a condição (no combate, ao passar o turno).

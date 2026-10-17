@@ -14,8 +14,10 @@ import {
   type ConditionRollSource,
   type ProficiencyLevel,
 } from '@codexveil/rpg-systems/dnd5e';
+import { d20Expression, type DiceRollMode } from '@codexveil/domain';
 import { Minus, Plus } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { RollButton } from '@/components/dice/dice';
 import { IconButton } from '@/components/ui/button';
 import { AppText, Card } from '@/components/ui/primitives';
 import { colors, radii, spacing } from '@/lib/theme';
@@ -30,6 +32,12 @@ function effectMark(sources: readonly ConditionRollSource[], autoFail: readonly 
   if (autoFail.length > 0) return 'Falha';
   const mode = netRollMode(sources);
   return mode === 'advantage' || mode === 'disadvantage' ? rollModeShortLabels[mode] : null;
+}
+
+/** Vantagem ou desvantagem que as condições impõem à rolagem. */
+function rollModeOf(sources: readonly ConditionRollSource[]): DiceRollMode {
+  const mode = netRollMode(sources);
+  return mode === 'advantage' || mode === 'disadvantage' ? mode : 'normal';
 }
 
 function EffectMark({ label }: { label: string | null }) {
@@ -99,9 +107,11 @@ export function AttributesSection() {
               <AppText style={{ width: 22, color: proficient ? colors.fgBrand : colors.fgSubtle }}>{proficient ? '●' : '○'}</AppText>
               <AppText style={{ flex: 1 }}>{abilityLabels[ability].name}</AppText>
               <EffectMark label={mark} />
-              <AppText variant="number" style={valueStyle}>
-                {formatModifier(total)}
-              </AppText>
+              <RollButton expression={d20Expression(total)} label={`Resistência de ${abilityLabels[ability].name}`} mode={rollModeOf(effects.savingThrows[ability].rolls)} style={{ paddingHorizontal: 6 }}>
+                <AppText variant="number" style={valueStyle}>
+                  {formatModifier(total)}
+                </AppText>
+              </RollButton>
             </Pressable>
           );
         })}
@@ -137,9 +147,11 @@ export function AttributesSection() {
                 {definition.label} <AppText variant="small">({abilityLabels[definition.ability].abbreviation})</AppText>
               </AppText>
               <EffectMark label={checkMark} />
-              <AppText variant="number" style={valueStyle}>
-                {formatModifier(derived.skills[skill].bonus - penalty)}
-              </AppText>
+              <RollButton expression={d20Expression(derived.skills[skill].bonus - penalty)} label={definition.label} mode={rollModeOf(effects.abilityChecks)} style={{ paddingHorizontal: 6 }}>
+                <AppText variant="number" style={valueStyle}>
+                  {formatModifier(derived.skills[skill].bonus - penalty)}
+                </AppText>
+              </RollButton>
             </Pressable>
           );
         })}

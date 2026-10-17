@@ -1,10 +1,11 @@
-import { Settings, ShieldAlert } from 'lucide-react';
+import { Settings, ShieldAlert, Swords } from 'lucide-react';
 import type { Metadata } from 'next';
 import { Card, CardHeader } from '@/components/ui/card';
 import { ForbiddenState } from '@/components/ui/states';
 import { loadCampaignOrNotFound } from '@/lib/campaigns';
 import { DangerZone } from './danger-zone';
 import { CampaignSettingsForm } from './settings-form';
+import { TurnSettingsForm } from './turn-settings-form';
 
 export const metadata: Metadata = { title: 'Configurações da campanha' };
 
@@ -38,6 +39,15 @@ export default async function CampaignSettingsPage({ params }: PageProps<'/campa
             characterRules: campaign.characterRules,
           }}
         />
+      </Card>
+
+      <Card>
+        <CardHeader
+          icon={<Swords className="h-5 w-5" aria-hidden="true" />}
+          title="Turnos"
+          description="Como a mesa do mestre começa os turnos (combate, exploração, investigação ou interação social)."
+        />
+        <TurnSettingsForm campaignId={campaign.id} initial={campaign.turnSettings} disabled={archived} />
       </Card>
 
       {campaign.isOwner ? (

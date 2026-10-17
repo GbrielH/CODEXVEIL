@@ -1,5 +1,6 @@
 'use client';
 
+import { d20Expression } from '@codexveil/domain';
 import {
   ABILITIES,
   ABILITY_SCORE_MAX,
@@ -21,7 +22,8 @@ import { Select } from '@/components/ui/select';
 import { TextareaField } from '@/components/ui/field';
 import { NumberInput } from '@/components/ui/number-input';
 import { cx } from '@/lib/cx';
-import { PenaltyBadge, RollEffectBadge } from './condition-badges';
+import { RollButton } from '@/components/dice/dice-roller';
+import { PenaltyBadge, RollEffectBadge, rollModeFrom } from './condition-badges';
 import { useSheet } from './context';
 
 const proficiencyMarks: Record<ProficiencyLevel, string> = {
@@ -118,9 +120,15 @@ function SavingThrows() {
             <span className="flex w-24 shrink-0 items-center justify-end gap-1">
               <RollEffectBadge sources={effects.savingThrows[ability].rolls} autoFail={effects.savingThrows[ability].autoFail} />
               <PenaltyBadge penalty={penalty} source={`Exaustão ${effects.exhaustionLevel}`} />
-              <span className={cx('tabular w-10 text-right font-display text-lg', penalty > 0 ? 'text-amber-300' : 'text-fg-accent')}>
-                {formatModifier(derived.savingThrows[ability] - penalty)}
-              </span>
+              <RollButton
+                expression={d20Expression(derived.savingThrows[ability] - penalty)}
+                label={`Resistência de ${abilityLabels[ability].name}`}
+                mode={rollModeFrom(effects.savingThrows[ability].rolls)}
+              >
+                <span className={cx('tabular block w-10 text-right font-display text-lg', penalty > 0 ? 'text-amber-300' : 'text-fg-accent')}>
+                  {formatModifier(derived.savingThrows[ability] - penalty)}
+                </span>
+              </RollButton>
             </span>
           </li>
         ))}
@@ -190,9 +198,15 @@ function SkillsTable() {
               <span className="flex w-24 shrink-0 items-center justify-end gap-1">
                 <RollEffectBadge sources={effects.abilityChecks} />
                 <PenaltyBadge penalty={penalty} source={`Exaustão ${effects.exhaustionLevel}`} />
-                <span className={cx('tabular w-10 text-right font-display text-lg', penalty > 0 ? 'text-amber-300' : 'text-fg-accent')}>
-                  {formatModifier(derived.skills[skill].bonus - penalty)}
-                </span>
+                <RollButton
+                  expression={d20Expression(derived.skills[skill].bonus - penalty)}
+                  label={skillDefinitions[skill].label}
+                  mode={rollModeFrom(effects.abilityChecks)}
+                >
+                  <span className={cx('tabular block w-10 text-right font-display text-lg', penalty > 0 ? 'text-amber-300' : 'text-fg-accent')}>
+                    {formatModifier(derived.skills[skill].bonus - penalty)}
+                  </span>
+                </RollButton>
               </span>
             </li>
           );

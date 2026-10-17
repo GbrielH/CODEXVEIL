@@ -1,4 +1,4 @@
-import { CONTENT_VISIBILITIES, SHARED_VISIBILITIES } from '@codexveil/domain';
+import { CONTENT_VISIBILITIES, ITEM_CATEGORIES, SHARED_VISIBILITIES } from '@codexveil/domain';
 import { z } from 'zod';
 import { optionalText, requiredText } from './common';
 
@@ -36,3 +36,17 @@ export const noteSchema = z.object({
 });
 export type NoteInput = z.input<typeof noteSchema>;
 export type NoteData = z.output<typeof noteSchema>;
+
+/** Item da biblioteca do mestre (criado por ele ou copiado do SRD). */
+export const campaignItemSchema = z.object({
+  name: requiredText('o nome do item', 1, 120),
+  category: z.enum(ITEM_CATEGORIES).default('gear'),
+  rarity: optionalText(60),
+  requiresAttunement: z.boolean().default(false),
+  weight: z.number().min(0, 'O peso não pode ser negativo.').max(100_000, 'Peso alto demais.').nullable().default(null),
+  value: optionalText(60),
+  description: optionalText(8000),
+  visibility: z.enum(SHARED_VISIBILITIES).default('gm'),
+});
+export type CampaignItemInput = z.input<typeof campaignItemSchema>;
+export type CampaignItemData = z.output<typeof campaignItemSchema>;

@@ -12,6 +12,8 @@ export interface MobileSheetContext {
   characterId: string;
   canEditSheet: boolean;
   canEditPlay: boolean;
+  /** Mestre da campanha (ou personagem sem campanha): vê todas as condições ao aplicar. */
+  fullConditionList: boolean;
   sheet: Dnd5eSheet;
   derived: Dnd5eDerived;
   updateSheet: (updater: (sheet: Dnd5eSheet) => Dnd5eSheet) => void;
@@ -23,6 +25,7 @@ export interface MobileSheetContext {
   abilities: CharacterAbility[];
   setResources: Dispatch<SetStateAction<CharacterResource[]>>;
   setItems: Dispatch<SetStateAction<CharacterItem[]>>;
+  setAbilities: Dispatch<SetStateAction<CharacterAbility[]>>;
   adjustResource: (resource: CharacterResource, operation: TrackOperation, amount: number) => void;
   reloadPlayState: () => Promise<void>;
   /** Executa uma alteração e mostra a falha (nada é dado como salvo sem confirmação). */

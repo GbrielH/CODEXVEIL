@@ -3,6 +3,7 @@
 import {
   createSessionBlock,
   deleteSessionBlock,
+  notifySessionScheduled,
   reorderSessionBlocks,
   updateSession,
   updateSessionBlock,
@@ -39,7 +40,7 @@ import {
   Swords,
   UserRound,
 } from 'lucide-react';
-import { Fragment, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -130,6 +131,31 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
 
   const fail = (title: string, error: unknown) =>
     toast({ tone: 'danger', title, description: failureMessage(error, 'Tente novamente.') });
+
+  // Aviso no app dos jogadores: quando a sessão publicada ganha (ou muda de) data e fica salva,
+  // o aviso sai depois de alguns segundos sem novas mudanças. O servidor não repete a mesma data.
+  const notifyKey = meta.state.status === 'saved' && meta.value.isPublished && meta.value.scheduledAt ? meta.value.scheduledAt : null;
+  const initialNotifyKey = useRef(notifyKey);
+  const pendingNotify = useRef(false);
+  useEffect(() => {
+    if (!notifyKey || notifyKey === initialNotifyKey.current) return;
+    pendingNotify.current = true;
+    const timer = window.setTimeout(() => {
+      pendingNotify.current = false;
+      void notifySessionScheduled(getSupabaseBrowserClient(), session.id).then((result) => {
+        if (result && result.sent > 0) {
+          toast({ tone: 'success', title: `Aviso da sessão enviado a ${result.sent} ${result.sent === 1 ? 'aparelho' : 'aparelhos'} da mesa.` });
+        }
+      });
+    }, 8000);
+    return () => window.clearTimeout(timer);
+  }, [notifyKey, session.id, toast]);
+  useEffect(
+    () => () => {
+      if (pendingNotify.current) void notifySessionScheduled(getSupabaseBrowserClient(), session.id);
+    },
+    [session.id],
+  );
 
   const insertBlock = async (type: SessionBlockType, index: number) => {
     setInsertAt(null);
@@ -247,7 +273,7 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
             <CheckboxField
               id="session-published"
               label="Publicada para os jogadores"
-              description="Jogadores veem o resumo e os blocos públicos. Blocos privados nunca são enviados a eles."
+              description="Jogadores veem o resumo e os blocos públicos. Blocos privados nunca são enviados a eles. Com data marcada, quem usa o app recebe um aviso."
               checked={meta.value.isPublished}
               onChange={(event) => meta.update((current) => ({ ...current, isPublished: event.target.checked }))}
             />

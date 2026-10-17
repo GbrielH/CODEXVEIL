@@ -33,6 +33,12 @@ const targets: Target[] = [
     svg: emblemSvg({ scale: 0.56, monochrome: '#FFFFFF' }),
   },
   { file: 'apps/mobile/assets/images/splash-icon.png', size: 1024, svg: emblemSvg({ scale: 0.9 }) },
+  // Ícone das notificações no Android: silhueta branca com fundo transparente.
+  {
+    file: 'apps/mobile/assets/images/notification-icon.png',
+    size: 96,
+    svg: emblemSvg({ scale: 0.86, monochrome: '#FFFFFF' }),
+  },
 ];
 
 for (const target of targets) {

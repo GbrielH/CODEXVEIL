@@ -6,7 +6,14 @@
  * O encontro guarda a ordem de iniciativa e o turno, com controle otimista de versão
  * para que dois mestres não avancem o turno ao mesmo tempo sem perceber.
  */
-import { AppError } from '@codexveil/domain';
+import {
+  AppError,
+  TURN_MODES,
+  parseTurnEconomy,
+  type TurnEconomy,
+  type TurnMode,
+  type TurnOrderMode,
+} from '@codexveil/domain';
 import type { CodexveilClient } from '../client';
 import { toAppError } from '../errors';
 import type { CreatureKind, EncounterStatus } from '../types';
@@ -225,6 +232,12 @@ export interface EncounterCombatant {
   initiative: number | null;
   tiebreaker: number;
   isDefeated: boolean;
+  /** Posição na ordem manual (quando o mestre define a ordem). */
+  sortOrder: number;
+  /** Oculto dos jogadores no resumo do turno. */
+  isHidden: boolean;
+  /** O que já usou no turno atual (ação, ação bônus, movimento, reação). */
+  turnState: TurnEconomy;
 }
 
 export interface Encounter {
@@ -233,6 +246,8 @@ export interface Encounter {
   campaignId: string;
   name: string;
   status: EncounterStatus;
+  mode: TurnMode;
+  orderMode: TurnOrderMode;
   round: number;
   activeCombatantId: string | null;
   version: number;
@@ -241,18 +256,26 @@ export interface Encounter {
 
 export const encounterStatusLabels: Record<EncounterStatus, string> = {
   preparing: 'Preparando',
-  active: 'Em combate',
+  active: 'Em andamento',
   ended: 'Encerrado',
 };
 
 const ENCOUNTER_COLUMNS =
-  'id, session_id, campaign_id, name, status, round, active_combatant_id, version' as const;
+  'id, session_id, campaign_id, name, status, mode, order_mode, round, active_combatant_id, version' as const;
 const COMBATANT_COLUMNS =
-  'id, session_entity_id, character_id, initiative, tiebreaker, is_defeated' as const;
+  'id, session_entity_id, character_id, initiative, tiebreaker, is_defeated, sort_order, is_hidden, turn_state' as const;
 
 type CombatantRow = Pick<
   Tables<'encounter_combatants'>,
-  'id' | 'session_entity_id' | 'character_id' | 'initiative' | 'tiebreaker' | 'is_defeated'
+  | 'id'
+  | 'session_entity_id'
+  | 'character_id'
+  | 'initiative'
+  | 'tiebreaker'
+  | 'is_defeated'
+  | 'sort_order'
+  | 'is_hidden'
+  | 'turn_state'
 >;
 
 function toCombatant(row: CombatantRow): EncounterCombatant {
@@ -263,7 +286,18 @@ function toCombatant(row: CombatantRow): EncounterCombatant {
     initiative: row.initiative,
     tiebreaker: row.tiebreaker,
     isDefeated: row.is_defeated,
+    sortOrder: row.sort_order,
+    isHidden: row.is_hidden,
+    turnState: parseTurnEconomy(row.turn_state),
   };
+}
+
+function asTurnMode(value: string): TurnMode {
+  return (TURN_MODES as readonly string[]).includes(value) ? (value as TurnMode) : 'combat';
+}
+
+function asTurnOrderMode(value: string): TurnOrderMode {
+  return value === 'manual' ? 'manual' : 'initiative';
 }
 
 /** Encontro mais recente ainda não encerrado da sessão (ou `null`). */
@@ -295,6 +329,8 @@ export async function getOpenEncounter(
     campaignId: data.campaign_id,
     name: data.name,
     status: data.status,
+    mode: asTurnMode(data.mode),
+    orderMode: asTurnOrderMode(data.order_mode),
     round: data.round,
     activeCombatantId: data.active_combatant_id,
     version: data.version,
@@ -304,15 +340,40 @@ export async function getOpenEncounter(
 
 export async function createEncounter(
   client: CodexveilClient,
-  params: { sessionId: string; campaignId: string; name: string },
+  params: { sessionId: string; campaignId: string; name: string; mode?: TurnMode; orderMode?: TurnOrderMode },
 ): Promise<string> {
   const { data, error } = await client
     .from('encounters')
-    .insert({ session_id: params.sessionId, campaign_id: params.campaignId, name: params.name })
+    .insert({
+      session_id: params.sessionId,
+      campaign_id: params.campaignId,
+      name: params.name,
+      mode: params.mode ?? 'combat',
+      order_mode: params.orderMode ?? 'initiative',
+    })
     .select('id')
     .single();
   if (error) throw toAppError(error);
   return data.id;
+}
+
+/** Muda o modo (combate, investigação…), a forma de ordenar os turnos ou o nome do encontro. */
+export async function updateEncounterSettings(
+  client: CodexveilClient,
+  encounterId: string,
+  patch: { mode?: TurnMode; orderMode?: TurnOrderMode; name?: string },
+): Promise<void> {
+  const { data, error } = await client
+    .from('encounters')
+    .update({
+      ...(patch.mode === undefined ? {} : { mode: patch.mode }),
+      ...(patch.orderMode === undefined ? {} : { order_mode: patch.orderMode }),
+      ...(patch.name === undefined ? {} : { name: patch.name }),
+    })
+    .eq('id', encounterId)
+    .select('id');
+  if (error) throw toAppError(error);
+  if (data.length === 0) throw new AppError('forbidden');
 }
 
 export interface CombatantInput {
@@ -320,6 +381,8 @@ export interface CombatantInput {
   characterId?: string;
   initiative: number | null;
   tiebreaker: number;
+  sortOrder?: number;
+  isHidden?: boolean;
 }
 
 export async function addCombatants(
@@ -337,6 +400,8 @@ export async function addCombatants(
       character_id: combatant.characterId ?? null,
       initiative: combatant.initiative,
       tiebreaker: combatant.tiebreaker,
+      sort_order: combatant.sortOrder ?? 0,
+      is_hidden: combatant.isHidden ?? false,
     })),
   );
   if (error) throw toAppError(error);
@@ -345,7 +410,14 @@ export async function addCombatants(
 export async function updateCombatant(
   client: CodexveilClient,
   combatantId: string,
-  patch: { initiative?: number | null; tiebreaker?: number; isDefeated?: boolean },
+  patch: {
+    initiative?: number | null;
+    tiebreaker?: number;
+    isDefeated?: boolean;
+    sortOrder?: number;
+    isHidden?: boolean;
+    turnState?: TurnEconomy;
+  },
 ): Promise<void> {
   const { data, error } = await client
     .from('encounter_combatants')
@@ -353,6 +425,9 @@ export async function updateCombatant(
       ...(patch.initiative === undefined ? {} : { initiative: patch.initiative }),
       ...(patch.tiebreaker === undefined ? {} : { tiebreaker: patch.tiebreaker }),
       ...(patch.isDefeated === undefined ? {} : { is_defeated: patch.isDefeated }),
+      ...(patch.sortOrder === undefined ? {} : { sort_order: patch.sortOrder }),
+      ...(patch.isHidden === undefined ? {} : { is_hidden: patch.isHidden }),
+      ...(patch.turnState === undefined ? {} : { turn_state: { ...patch.turnState } }),
     })
     .eq('id', combatantId)
     .select('id');

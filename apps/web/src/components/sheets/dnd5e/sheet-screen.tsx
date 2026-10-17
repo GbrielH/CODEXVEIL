@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
+import { DiceProvider } from '@/components/dice/dice-roller';
 import { useAutosave } from '@/lib/use-autosave';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
@@ -245,60 +246,62 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
 
   return (
     <SheetContext.Provider value={context}>
-      <div className="flex flex-col gap-5">
-        <SheetHeader saveStatus={saveState.status} liveStatus={liveStatus} />
+      <DiceProvider campaignId={character.campaign?.id ?? null} characterId={character.id} enabled={permissions.canEditPlay}>
+        <div className="flex flex-col gap-5">
+          <SheetHeader saveStatus={saveState.status} liveStatus={liveStatus} />
 
-        {saveState.status === 'conflict' ? (
-          <Alert
-            tone="warning"
-            title="Esta ficha foi alterada em outro lugar"
-            action={
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button size="sm" variant="secondary" onClick={() => void resolveConflict(false)}>
-                  Usar a versão salva
+          {saveState.status === 'conflict' ? (
+            <Alert
+              tone="warning"
+              title="Esta ficha foi alterada em outro lugar"
+              action={
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button size="sm" variant="secondary" onClick={() => void resolveConflict(false)}>
+                    Usar a versão salva
+                  </Button>
+                  <Button size="sm" onClick={() => void resolveConflict(true)}>
+                    Manter as minhas
+                  </Button>
+                </div>
+              }
+            >
+              Suas últimas alterações ainda não foram gravadas. Escolha qual versão manter.
+            </Alert>
+          ) : null}
+          {saveState.status === 'error' ? (
+            <Alert
+              tone="danger"
+              title="Alterações não salvas"
+              action={
+                <Button size="sm" variant="secondary" onClick={() => void autosave.retry()}>
+                  Tentar de novo
                 </Button>
-                <Button size="sm" onClick={() => void resolveConflict(true)}>
-                  Manter as minhas
-                </Button>
-              </div>
-            }
-          >
-            Suas últimas alterações ainda não foram gravadas. Escolha qual versão manter.
-          </Alert>
-        ) : null}
-        {saveState.status === 'error' ? (
-          <Alert
-            tone="danger"
-            title="Alterações não salvas"
-            action={
-              <Button size="sm" variant="secondary" onClick={() => void autosave.retry()}>
-                Tentar de novo
-              </Button>
-            }
-          >
-            {saveState.message} Suas alterações continuam nesta tela.
-          </Alert>
-        ) : null}
-        {saveState.status === 'invalid' ? <Alert tone="warning">{saveState.message}</Alert> : null}
-        {readOnlyReason ? <Alert tone="info">{readOnlyReason}</Alert> : null}
+              }
+            >
+              {saveState.message} Suas alterações continuam nesta tela.
+            </Alert>
+          ) : null}
+          {saveState.status === 'invalid' ? <Alert tone="warning">{saveState.message}</Alert> : null}
+          {readOnlyReason ? <Alert tone="info">{readOnlyReason}</Alert> : null}
 
-        <Tabs
-          label="Seções da ficha"
-          value={tab}
-          onValueChange={setTab}
-          items={[
-            { value: 'jogo', label: 'Jogo', icon: <Swords className="h-4 w-4" aria-hidden="true" />, content: <PlayTab /> },
-            { value: 'atributos', label: 'Atributos', icon: <BookOpen className="h-4 w-4" aria-hidden="true" />, content: <AttributesTab /> },
-            { value: 'inventario', label: 'Inventário', icon: <Backpack className="h-4 w-4" aria-hidden="true" />, content: <InventoryTab /> },
-            { value: 'habilidades', label: 'Habilidades e magias', icon: <Sparkles className="h-4 w-4" aria-hidden="true" />, content: <FeaturesTab /> },
-            { value: 'historia', label: 'Personagem', icon: <Feather className="h-4 w-4" aria-hidden="true" />, content: <StoryTab /> },
-            { value: 'evolucao', label: 'Evolução', icon: <Hourglass className="h-4 w-4" aria-hidden="true" />, content: <ProgressTab /> },
-            ...(permissions.isOwner || permissions.canEditSheet
-              ? [{ value: 'ajustes', label: 'Ajustes', icon: <Settings className="h-4 w-4" aria-hidden="true" />, content: <SettingsTab campaigns={props.campaigns} /> }]
-              : []),
-          ]}
-        />
-      </div>
+          <Tabs
+            label="Seções da ficha"
+            value={tab}
+            onValueChange={setTab}
+            items={[
+              { value: 'jogo', label: 'Jogo', icon: <Swords className="h-4 w-4" aria-hidden="true" />, content: <PlayTab /> },
+              { value: 'atributos', label: 'Atributos', icon: <BookOpen className="h-4 w-4" aria-hidden="true" />, content: <AttributesTab /> },
+              { value: 'inventario', label: 'Inventário', icon: <Backpack className="h-4 w-4" aria-hidden="true" />, content: <InventoryTab /> },
+              { value: 'habilidades', label: 'Habilidades e magias', icon: <Sparkles className="h-4 w-4" aria-hidden="true" />, content: <FeaturesTab /> },
+              { value: 'historia', label: 'Personagem', icon: <Feather className="h-4 w-4" aria-hidden="true" />, content: <StoryTab /> },
+              { value: 'evolucao', label: 'Evolução', icon: <Hourglass className="h-4 w-4" aria-hidden="true" />, content: <ProgressTab /> },
+              ...(permissions.isOwner || permissions.canEditSheet
+                ? [{ value: 'ajustes', label: 'Ajustes', icon: <Settings className="h-4 w-4" aria-hidden="true" />, content: <SettingsTab campaigns={props.campaigns} /> }]
+                : []),
+            ]}
+          />
+        </div>
+      </DiceProvider>
     </SheetContext.Provider>
   );
 }

@@ -5,6 +5,7 @@
  */
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { unregisterFromPush } from './notifications';
 import { bindAuthRefreshToAppState, getSupabase, supabaseConfig } from './supabase';
 
 interface SessionState {
@@ -61,6 +62,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     if (!supabaseConfig.ok) return;
     signingOut.current = true;
+    // O aparelho deixa de receber avisos desta conta (precisa da sessão ainda válida).
+    await unregisterFromPush();
     await getSupabase().auth.signOut();
   };
 

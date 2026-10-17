@@ -47,7 +47,7 @@ export default function CampaignsScreen() {
       ))}
       {data && data.length > 0 ? (
         <AppText variant="small" style={{ color: colors.fgMuted, textAlign: 'center' }}>
-          Ferramentas completas do mestre (editor de roteiro, biblioteca e combate) estão no site.
+          Mestres também conduzem a mesa pelo app: sessões, biblioteca, turnos e rolagens ficam na página da campanha.
         </AppText>
       ) : null}
     </Screen>
