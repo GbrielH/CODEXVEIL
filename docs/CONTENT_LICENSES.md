@@ -14,17 +14,35 @@ aparecem para os usuários na página `/licencas` do site.
 | Fonte               | <https://www.dndbeyond.com/srd>                                     |
 | Onde fica no código | `packages/rpg-systems/src/dnd5e/` (atribuição em `license.ts`)      |
 
-**O que foi usado:** apenas mecânicas, que são os seis atributos e a fórmula do modificador, o
-bônus de proficiência por nível, as perícias e os atributos de cada uma, as salvaguardas, os
-dados de vida, a tabela de XP por nível, a tabela de espaços de magia e os nomes das
-condições.
+**O que foi usado (SRD 5.2.1):**
 
-**O que foi escrito pelo projeto:** todos os textos de interface e os resumos das condições
-(`conditions.ts`), redigidos em português para consulta rápida. Eles não substituem o texto
+- Mecânicas: os seis atributos e a fórmula do modificador, o bônus de proficiência, as
+  perícias, as salvaguardas, os dados de vida, a tabela de XP, as tabelas de espaços de magia e
+  os nomes das condições.
+- Criação de personagens (`packages/rpg-systems/src/dnd5e/srd/`): as 12 classes com as
+  características básicas, as habilidades do 1º ao 20º nível e a subclasse do SRD de cada uma;
+  as 9 espécies e seus traços; os 4 antecedentes; os talentos de origem, gerais, de estilo de
+  luta e as dádivas épicas; idiomas e alinhamentos; armas, armaduras, ferramentas, pacotes e o
+  equipamento inicial; invocações místicas e opções de metamagia; os métodos de geração de
+  atributos.
+- Magias (`srd/spells.ts`): nome, círculo, escola, listas de classe e o cabeçalho técnico
+  (tempo de conjuração, alcance, componentes e duração) das 339 magias. **O texto das
+  descrições não é reproduzido.**
+
+**Alterações feitas pelo Codexveil (exigidas pela licença):** os nomes de classes, espécies,
+antecedentes, talentos, habilidades, armas e itens foram traduzidos para o português; as
+descrições das habilidades são resumos escritos pelo projeto, não o texto do SRD; distâncias
+foram convertidas para metros (5 pés = 1,5 m) e pesos para quilos (1 lb = 0,5 kg); tempo de
+conjuração, alcance e duração das magias foram traduzidos e os componentes materiais foram
+resumidos para "M". Os nomes das magias seguem o original em inglês.
+
+**O que foi escrito pelo projeto:** todos os textos de interface, os resumos das condições
+(`conditions.ts`) e os resumos das habilidades, traços e talentos. Eles não substituem o texto
 das regras.
 
-**O que não está no projeto:** descrições de magias, monstros, itens, classes ou espécies
-copiadas do SRD ou de livros. O usuário cadastra o próprio conteúdo.
+**O que não está no projeto:** conteúdo de livros comerciais (subclasses, antecedentes,
+espécies ou magias que não estão no SRD), descrições completas de magias e monstros e
+qualquer ilustração. O usuário pode registrar o próprio conteúdo na ficha.
 
 Atribuição exigida pela licença (exibida em `/licencas`):
 

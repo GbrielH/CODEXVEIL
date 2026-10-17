@@ -1,5 +1,12 @@
 import type { RpgSystem } from '../types';
 import { abilityModifier } from './abilities';
+import {
+  defaultDnd5eCampaignRules,
+  describeDnd5eCampaignRules,
+  dnd5eCampaignRulesSchema,
+  parseDnd5eCampaignRules,
+  type Dnd5eCampaignRules,
+} from './campaign-rules';
 import { dnd5eConditions } from './conditions';
 import { computeDnd5eDerived, type Dnd5eDerived } from './derived';
 import { srd52License } from './license';
@@ -32,7 +39,7 @@ function summarize(sheet: Dnd5eSheet) {
   };
 }
 
-export const dnd5eSystem: RpgSystem<Dnd5eSheet, Dnd5eDerived, Dnd5eStatBlock> = {
+export const dnd5eSystem: RpgSystem<Dnd5eSheet, Dnd5eDerived, Dnd5eStatBlock, Dnd5eCampaignRules> = {
   id: 'dnd5e',
   name: 'Dungeons & Dragons 5ª Edição',
   shortName: 'D&D 5e',
@@ -42,6 +49,10 @@ export const dnd5eSystem: RpgSystem<Dnd5eSheet, Dnd5eDerived, Dnd5eStatBlock> = 
   conditions: dnd5eConditions,
   sheetSchema: dnd5eSheetSchema,
   statBlockSchema: dnd5eStatBlockSchema,
+  campaignRulesSchema: dnd5eCampaignRulesSchema,
+  defaultCampaignRules: defaultDnd5eCampaignRules,
+  parseCampaignRules: parseDnd5eCampaignRules,
+  describeCampaignRules: describeDnd5eCampaignRules,
   createDefaultSheet: createDefaultDnd5eSheet,
   parseSheet: parseDnd5eSheet,
   computeDerived: computeDnd5eDerived,
@@ -67,4 +78,6 @@ export * from './resources';
 export * from './entries';
 export * from './stat-block';
 export * from './creation';
+export * from './campaign-rules';
+export * from './srd';
 export { srd52License } from './license';

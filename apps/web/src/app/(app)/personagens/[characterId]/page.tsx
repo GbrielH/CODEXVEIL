@@ -80,7 +80,8 @@ export default async function CharacterSheetPage({ params, searchParams }: PageP
         abilities={abilities}
         permissions={permissions}
         campaigns={campaigns
-          .filter((campaign) => campaign.status === 'active' && campaign.systemId === character.systemId)
+          // Só campanhas em que o dono é jogador: mestres não vinculam personagens às próprias mesas.
+          .filter((campaign) => campaign.status === 'active' && campaign.role === 'player' && campaign.systemId === character.systemId)
           .map((campaign) => ({ id: campaign.id, name: campaign.name }))}
       />
     ) : (

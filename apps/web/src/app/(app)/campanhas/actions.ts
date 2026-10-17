@@ -28,6 +28,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { failureMessage, readText, type ActionResult, type FormState } from '@/lib/actions';
 import { requireSessionUser } from '@/lib/auth';
+import { readCampaignRules } from '@/lib/campaign-rules';
 import { siteUrl } from '@/lib/env';
 import { routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -46,9 +47,14 @@ export async function createCampaignAction(_previous: FormState, formData: FormD
     description: readText(formData, 'description'),
     systemId: readText(formData, 'systemId'),
   };
-  const parsed = campaignCreateSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { status: 'error', fieldErrors: fieldErrorsFrom(parsed.error), values: raw };
+  const rules = readCampaignRules(raw.systemId, formData);
+  const parsed = campaignCreateSchema.safeParse({ ...raw, characterRules: rules.ok ? rules.rules : {} });
+  if (!parsed.success || !rules.ok) {
+    return {
+      status: 'error',
+      fieldErrors: { ...(parsed.success ? {} : fieldErrorsFrom(parsed.error)), ...(rules.ok ? {} : rules.fieldErrors) },
+      values: raw,
+    };
   }
 
   let campaignId: string;
@@ -75,11 +81,13 @@ export async function updateCampaignAction(
     partySheetsVisible: formData.get('partySheetsVisible') === 'on',
     playersCanEditSheets: formData.get('playersCanEditSheets') === 'on',
   };
-  const parsed = campaignUpdateSchema.safeParse(raw);
-  if (!parsed.success) {
+  // O sistema só escolhe o leitor dos campos; o banco guarda as regras como JSON opaco.
+  const rules = readCampaignRules(readText(formData, 'systemId'), formData);
+  const parsed = campaignUpdateSchema.safeParse({ ...raw, ...(rules.ok ? { characterRules: rules.rules } : {}) });
+  if (!parsed.success || !rules.ok) {
     return {
       status: 'error',
-      fieldErrors: fieldErrorsFrom(parsed.error),
+      fieldErrors: { ...(parsed.success ? {} : fieldErrorsFrom(parsed.error)), ...(rules.ok ? {} : rules.fieldErrors) },
       values: { name: raw.name, description: raw.description },
     };
   }

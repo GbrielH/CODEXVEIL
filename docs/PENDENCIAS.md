@@ -18,13 +18,14 @@
 ## Resumo
 
 O código do MVP está completo na web, o app mobile cobre os fluxos prioritários e o banco
-tem RLS testado. Em 2026-10-16, `pnpm check` passou em 20 de 20 tarefas (318 testes) e
+tem RLS testado. Em 2026-10-17, `pnpm check` passou em 20 de 20 tarefas (366 testes) e
 `pnpm build` passou em 2 de 2 tarefas (web e bundle Android).
 
 **Publicado e validado na API.** O site está em <https://codexveil.vercel.app>, o backend no
 projeto Supabase `CODEXVEIL` e o primeiro APK foi gerado pelo EAS. Um teste de integração com
 as consultas reais dos apps passou em 10 de 10 contra o Supabase real (Auth, PostgREST, Storage
-e Realtime) e revelou um defeito no Realtime, já corrigido.
+e Realtime) e revelou um defeito no Realtime, já corrigido. Em 2026-10-17 passou em 11 de 11, e
+um percurso logado no navegador achou e corrigiu outra falha do Realtime (veja a seção 5).
 
 **A lacuna agora é o uso real das telas.** Ninguém usou ainda o site no navegador nem o app
 no aparelho com duas contas, e os e-mails em português dependem do SMTP próprio (adiado). Pela
@@ -40,33 +41,45 @@ depois desse uso.
 | Site URL e URLs de redirecionamento           | **Feito:** `deploy/supabase/config.toml`                                                                            | [DEPLOY](DEPLOY.md#2-autenticação)                 |
 | SMTP próprio (Brevo) e templates em português | **Pendente:** conta Brevo e SMTP no painel do Supabase; depois, `config push` dos templates                         | [DEPLOY](DEPLOY.md#2-autenticação)                 |
 | Hospedagem da web                             | **Feito:** <https://codexveil.vercel.app>; falta o deploy automático pelo GitHub (app da Vercel na conta `GbrielH`) | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
-| Conta Expo e projeto EAS                      | **Feito:** `@gabriel.xxtth/codexveil`                                                                               | [DEPLOY](DEPLOY.md#5-app-android-apk-e-aab)        |
+| Conta Expo e projeto EAS                      | **Feito:** `@gabriel.xxtth/codexveil`; falta ligar o GitHub para o workflow rodar a cada push                       | [DEPLOY](DEPLOY.md#5-app-android-apk-e-aab)        |
 | Domínio próprio                               | Opcional                                                                                                            | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
 
 ## 2. Critérios de aceitação do MVP (seção 22)
 
-| #   | Critério                                       | Status                | Como foi verificado / o que falta                                                                                                                                                                                                                   |
-| --- | ---------------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Criar conta e entrar                           | Falta validar ao vivo | Fluxos de cadastro, login, logout, recuperação e redefinição na web e no mobile; perfil criado por gatilho. Falta testar com e-mail de confirmação real.                                                                                            |
-| 2   | Mestre cria campanha                           | Validado na API       | `test/rls/campaigns.test.ts`: o dono vira mestre por gatilho e o limite do plano é aplicado no banco. Ao vivo: criação e papel gm confirmados.                                                                                                      |
-| 3   | Mestre convida jogador                         | Validado na API       | Convites por código ou link e convites pessoais por e-mail, com expiração, limite de usos e revogação (`test/rls/invites.test.ts`). O e-mail de convite **não é enviado** automaticamente: veja a seção 3. Ao vivo: convite criado e prévia válida. |
-| 4   | Jogador entra após validar o convite           | Validado na API       | `accept_campaign_invite` trava o convite (sem corrida em `max_uses`) e valida e-mail verificado, expiração e arquivamento. Ao vivo: aceite pelo código e participantes corretos.                                                                    |
-| 5   | Papéis e permissões                            | Atendido              | Papel por campanha (`campaign_members`), RLS e testes de troca de UUID, campanha alheia e usuário anônimo.                                                                                                                                          |
-| 6   | Criar personagem e associar à campanha         | Validado na API       | `create_character` (web e mobile usam `buildDnd5eCharacter`); o gatilho exige o mesmo sistema e a participação do dono. Ao vivo: criação com trilha de vida; estranho não vê.                                                                       |
-| 7   | Consultar e editar a ficha                     | Validado na API       | Ficha em abas na web e no mobile; autosave com versão otimista e conflito explícito (`autosave.test.ts`). Ao vivo: gravação com versão e conflito explícito.                                                                                        |
-| 8   | Cálculos iniciais corretos                     | Atendido              | 74 testes em `@codexveil/rpg-systems` (modificadores, proficiência, perícias, CA, iniciativa, progressão e espaços de magia).                                                                                                                       |
-| 9   | Gerenciar inventário                           | Falta validar ao vivo | Itens, categorias, peso, itens equipados e moedas como trilhas; `adjust_item_quantity` é atômico.                                                                                                                                                   |
-| 10  | Organizar NPCs e monstros para a sessão        | Validado na API       | Biblioteca, cena com instâncias independentes e combate. **Somente na web.** Ao vivo: segredos só para o mestre; cena invisível ao jogador.                                                                                                         |
-| 11  | Criar e organizar roteiro por blocos           | Validado na API       | Editor com 13 tipos de bloco, arrastar e soltar e botões de mover. **Somente na web**; o mobile só lê. Ao vivo: blocos públicos e privados; só o público chega ao jogador.                                                                          |
-| 12  | Jogadores não leem conteúdo privado            | Atendido              | `test/rls/sessions.test.ts` e `test/rls/storage.test.ts`: blocos `gm`, sessões não publicadas, dados secretos de NPCs e imagens privadas. Ao vivo: os mesmos cenários passaram contra o Supabase real.                                              |
-| 13  | Dados persistem no banco                       | Validado na API       | Restrições, gatilhos e testes de migração no PGlite. Ao vivo: todos os fluxos acima persistiram no Supabase real.                                                                                                                                   |
-| 14  | Telas no navegador e adaptadas ao celular      | Falta validar ao vivo | Layout responsivo (sidebar no desktop, navegação inferior no celular). Ninguém revisou as telas num navegador com dados reais.                                                                                                                      |
-| 15  | Fluxos prioritários no mobile                  | Falta validar ao vivo | O bundle Android é gerado com `expo export`, mas o app nunca foi aberto num emulador ou aparelho.                                                                                                                                                   |
-| 16  | Tipos, lint, testes e build passam             | Atendido              | `pnpm check` (20/20) e `pnpm build` (2/2) em 2026-10-16.                                                                                                                                                                                            |
-| 17  | Configuração documentada                       | Atendido              | README, `.env.example` e os documentos em `docs/`.                                                                                                                                                                                                  |
-| 18  | Nenhuma função central só com botão decorativo | Atendido              | Revisão de `href="#"`, handlers vazios e TODOs; a rota declarada sem página foi removida.                                                                                                                                                           |
+| #   | Critério                                       | Status                | Como foi verificado / o que falta                                                                                                                                                                                                                                                                                                                       |
+| --- | ---------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Criar conta e entrar                           | Falta validar ao vivo | Fluxos de cadastro, login, logout, recuperação e redefinição na web e no mobile; perfil criado por gatilho. Falta testar com e-mail de confirmação real.                                                                                                                                                                                                |
+| 2   | Mestre cria campanha                           | Validado na API       | `test/rls/campaigns.test.ts`: o dono vira mestre por gatilho e o limite do plano é aplicado no banco. Ao vivo: criação e papel gm confirmados.                                                                                                                                                                                                          |
+| 3   | Mestre convida jogador                         | Validado na API       | Convites por código ou link e convites pessoais por e-mail, com expiração, limite de usos e revogação (`test/rls/invites.test.ts`). O e-mail de convite **não é enviado** automaticamente: veja a seção 3. Ao vivo: convite criado e prévia válida.                                                                                                     |
+| 4   | Jogador entra após validar o convite           | Validado na API       | `accept_campaign_invite` trava o convite (sem corrida em `max_uses`) e valida e-mail verificado, expiração e arquivamento. Ao vivo: aceite pelo código e participantes corretos.                                                                                                                                                                        |
+| 5   | Papéis e permissões                            | Atendido              | Papel por campanha (`campaign_members`), RLS e testes de troca de UUID, campanha alheia e usuário anônimo.                                                                                                                                                                                                                                              |
+| 6   | Criar personagem e associar à campanha         | Validado na API       | `create_character` com inventário e habilidades iniciais (web e mobile usam `buildDnd5eCharacterFromDraft`); o gatilho exige o mesmo sistema e a participação do dono, e o mestre não cria personagem na própria campanha. Ao vivo: criação completa; estranho não vê. No navegador (2026-10-17): criação pelo assistente, logado, contra o banco real. |
+| 7   | Consultar e editar a ficha                     | Validado na API       | Ficha em abas na web e no mobile; autosave com versão otimista e conflito explícito (`autosave.test.ts`). Ao vivo: gravação com versão e conflito explícito.                                                                                                                                                                                            |
+| 8   | Cálculos iniciais corretos                     | Atendido              | 74 testes em `@codexveil/rpg-systems` (modificadores, proficiência, perícias, CA, iniciativa, progressão e espaços de magia).                                                                                                                                                                                                                           |
+| 9   | Gerenciar inventário                           | Falta validar ao vivo | Itens, categorias, peso, itens equipados e moedas como trilhas; `adjust_item_quantity` é atômico.                                                                                                                                                                                                                                                       |
+| 10  | Organizar NPCs e monstros para a sessão        | Validado na API       | Biblioteca, cena com instâncias independentes e combate. **Somente na web.** Ao vivo: segredos só para o mestre; cena invisível ao jogador.                                                                                                                                                                                                             |
+| 11  | Criar e organizar roteiro por blocos           | Validado na API       | Editor com 13 tipos de bloco, arrastar e soltar e botões de mover. **Somente na web**; o mobile só lê. Ao vivo: blocos públicos e privados; só o público chega ao jogador.                                                                                                                                                                              |
+| 12  | Jogadores não leem conteúdo privado            | Atendido              | `test/rls/sessions.test.ts` e `test/rls/storage.test.ts`: blocos `gm`, sessões não publicadas, dados secretos de NPCs e imagens privadas. Ao vivo: os mesmos cenários passaram contra o Supabase real.                                                                                                                                                  |
+| 13  | Dados persistem no banco                       | Validado na API       | Restrições, gatilhos e testes de migração no PGlite. Ao vivo: todos os fluxos acima persistiram no Supabase real.                                                                                                                                                                                                                                       |
+| 14  | Telas no navegador e adaptadas ao celular      | Falta validar ao vivo | Layout responsivo (sidebar no desktop, navegação inferior no celular). Ninguém revisou as telas num navegador com dados reais.                                                                                                                                                                                                                          |
+| 15  | Fluxos prioritários no mobile                  | Falta validar ao vivo | O bundle Android é gerado com `expo export`, mas o app nunca foi aberto num emulador ou aparelho.                                                                                                                                                                                                                                                       |
+| 16  | Tipos, lint, testes e build passam             | Atendido              | `pnpm check` (20/20, 366 testes) e `pnpm build` (2/2) em 2026-10-17.                                                                                                                                                                                                                                                                                    |
+| 17  | Configuração documentada                       | Atendido              | README, `.env.example` e os documentos em `docs/`.                                                                                                                                                                                                                                                                                                      |
+| 18  | Nenhuma função central só com botão decorativo | Atendido              | Revisão de `href="#"`, handlers vazios e TODOs; a rota declarada sem página foi removida.                                                                                                                                                                                                                                                               |
 
-## 3. Pendências por seção do prompt
+## 3. Pedidos do responsável depois do prompt (2026-10-16)
+
+| Pedido                                                                                            | Status                         | Onde está / o que falta                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Criação de personagem passo a passo, conforme o sistema, com todas as opções e as regras do livro | Migrado; falta publicar e usar | Assistente na web e no app com as regras do SRD 5.2.1 (o conteúdo oficial que a licença permite reproduzir): classe, subclasse (3º nível), antecedente, espécie, idiomas, perícias, atributos (3 métodos), talentos, magias, equipamento, alinhamento e detalhes. Testado em 108 testes de regras e percorrido no navegador, logado, contra o banco real; falta publicar o site e o APK e o uso por pessoas. |
+| Nível inicial definido pelo mestre                                                                | Migrado; falta publicar        | Regras de criação na campanha (`campaigns.character_rules`): nível inicial, métodos de atributo e alinhamentos malignos, editáveis na criação e nas configurações (web) e na criação (app).                                                                                                                                                                                                                  |
+| O mestre não cria personagens para a campanha, só NPCs e monstros                                 | Migrado; falta publicar        | Regra no banco (gatilho, `CVGMC`), com testes de RLS, e nas telas (botões e listas de campanhas).                                                                                                                                                                                                                                                                                                            |
+| "Olho" para mostrar a senha                                                                       | Implementado                   | Todos os campos de senha da web (entrar, cadastro e redefinição) e do app (entrar e cadastro).                                                                                                                                                                                                                                                                                                               |
+| Usuário sem foto de perfil                                                                        | Migrado; falta publicar        | Envio e exibição removidos da web; o banco passa a recusar novos avatares. A coluna `profiles.avatar_path` e o bucket `avatars` continuam, sem uso, para não apagar dados sem confirmação.                                                                                                                                                                                                                   |
+| Reduzir o tamanho das imagens                                                                     | Implementado                   | O prompt pedia só validar tipo e tamanho (§15) e carregar imagens de forma otimizada (§17); não havia compressão. Agora o site reduz e regrava em WebP antes do envio, e o bucket aceita no máximo 2 MB (antes 5 MB).                                                                                                                                                                                        |
+| Site e app atualizados automaticamente a cada commit                                              | Parcial: depende de você       | Workflow do EAS e `expo-updates` prontos e conferidos; falta ligar o GitHub `GbrielH` à Vercel e ao Expo, o que só o dono da conta pode autorizar no navegador ([PROXIMOS_PASSOS](PROXIMOS_PASSOS.md), etapa 1).                                                                                                                                                                                             |
+
+## 4. Pendências por seção do prompt
 
 Esta seção lista só o que falta ou está parcial. O que já foi atendido está em
 [`PROGRESS.md`](PROGRESS.md).
@@ -87,7 +100,8 @@ Esta seção lista só o que falta ou está parcial. O que já foi atendido est�
 
 ### §5 Usuários, autenticação e permissões
 
-- **Parcial no mobile:** não é possível trocar o avatar nem redefinir a senha dentro do app.
+- **Parcial no mobile:** não é possível redefinir a senha dentro do app. (O avatar deixou de
+  existir no produto em 2026-10-16.)
   O link de recuperação abre no site. O esquema `codexveil://` já está em
   `additional_redirect_urls`, então dá para tratar o link dentro do app depois.
 - **Recomendado (não exigido pelo prompt):** permitir que o usuário exclua a própria conta,
@@ -107,9 +121,10 @@ Esta seção lista só o que falta ou está parcial. O que já foi atendido est�
 
 ### §7 Fichas
 
-- **Parcial: catálogos de conteúdo.** Magias, itens e talentos são cadastrados manualmente.
-  Nenhum catálogo do SRD 5.2 foi importado. A importação é possível com atribuição CC-BY-4.0
-  (veja [CONTENT_LICENSES](CONTENT_LICENSES.md)), mas não foi priorizada.
+- **Parcial: catálogos de conteúdo.** A criação de personagens já usa o SRD 5.2.1 (classes,
+  espécies, antecedentes, talentos, equipamento e o cabeçalho das 339 magias). Depois da
+  criação, magias, itens e talentos novos ainda são cadastrados manualmente na ficha, e a
+  subida de nível não é guiada.
 - **Mobile:** o app não exibe nem envia o retrato do personagem. Isso só é possível na web.
 
 ### §9 Painel do mestre
@@ -181,7 +196,7 @@ implementados, conforme o prompt. Nenhuma tela promete essas funções.
 - **Pendente:** validação ao vivo, auditorias de acessibilidade e desempenho e revisão da
   configuração de produção num projeto real.
 
-## 4. Problemas conhecidos
+## 5. Problemas conhecidos
 
 - **E-mails padrão do Supabase enquanto não houver SMTP próprio:** os templates em português
   são recusados no plano gratuito. Com os e-mails padrão, a confirmação e a recuperação de
@@ -192,7 +207,12 @@ implementados, conforme o prompt. Nenhuma tela promete essas funções.
 - **Deploy automático ainda não ligado:** o workflow do EAS (`atualizar-app.yml`) e o
   `expo-updates` estão prontos, mas falta ligar o GitHub `GbrielH` à Vercel e ao Expo (veja
   [DEPLOY](DEPLOY.md#4-site-nextjs) e [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md)). Até lá, o site é
-  publicado com `npx vercel@latest deploy --prod` e o app com `eas workflow:run`.
+  publicado com `npx vercel@latest deploy --prod` (exige login na CLI da Vercel, hoje ausente
+  nesta máquina) e o app com `eas workflow:run`.
+- **Resolvido em 2026-10-17 — tempo real no navegador e no app:** a ficha ficava
+  "Reconectando…" porque o canal entrava antes de a sessão ser carregada, e o Realtime
+  assinava com o papel anônimo, que não lê as tabelas. Corrigido em
+  `packages/database/src/realtime.ts`, com testes, e confirmado no navegador.
 - **Resolvidos em 2026-10-16:** os scripts `build:apk` e `build:aab` agora usam
   `npx eas-cli`, o perfil `development` (que dependia de `expo-dev-client`) foi removido e as
   chaves `channel` sem `expo-updates` saíram do `eas.json`.
@@ -200,19 +220,23 @@ implementados, conforme o prompt. Nenhuma tela promete essas funções.
   Markdown (títulos, blocos de código, tabelas e links). A formatação foi restaurada sem
   alterar o texto revisado.
 
-## 5. Próximos passos sugeridos (em ordem)
+## 6. Próximos passos sugeridos (em ordem)
 
-1. **Usar o site publicado e o APK** com duas contas (mestre e jogador), seguindo as etapas 4
-   e 6 de [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md), e corrigir o que aparecer. Gere antes um APK
-   novo, para incluir a correção do Realtime.
-2. **SMTP próprio** (Brevo, com o e-mail exclusivo do sistema) e envio dos templates em
+1. **Publicar a criação guiada:** a migração já está aplicada (2026-10-17); falta ligar o
+   GitHub à Vercel e ao Expo para o deploy automático e instalar o APK novo (veja
+   [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md)).
+2. **Usar o site publicado e o APK** com duas contas (mestre e jogador), seguindo as etapas de
+   [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md), inclusive a criação guiada, e corrigir o que
+   aparecer.
+3. **Subida de nível guiada**, com as mesmas regras do SRD usadas na criação.
+4. **SMTP próprio** (Brevo, com o e-mail exclusivo do sistema) e envio dos templates em
    português.
-3. **Capa da campanha**: tela de envio e exibição (o backend está pronto).
-4. **Referências a sessões** na página de NPCs e monstros.
-5. **Testes ponta a ponta** (Playwright) dos critérios 1 a 12, rodando contra o Supabase local
+5. **Capa da campanha**: tela de envio e exibição (o backend está pronto).
+6. **Referências a sessões** na página de NPCs e monstros.
+7. **Testes ponta a ponta** (Playwright) dos critérios 1 a 12, rodando contra o Supabase local
    na CI.
-6. **Auditoria de acessibilidade e desempenho** e cabeçalho CSP.
-7. **Rotinas de backend:** limite de armazenamento, limpeza de órfãos e e-mail de convite
+8. **Auditoria de acessibilidade e desempenho** e cabeçalho CSP.
+9. **Rotinas de backend:** limite de armazenamento, limpeza de órfãos e e-mail de convite
    (Edge Functions).
-8. **Mobile:** avatar, retrato do personagem, redefinição de senha no app e, se fizer sentido,
-   a mesa do mestre em modo consulta.
+10. **Mobile:** retrato do personagem (com a mesma redução de imagem da web), redefinição de
+    senha no app e, se fizer sentido, a mesa do mestre em modo consulta.

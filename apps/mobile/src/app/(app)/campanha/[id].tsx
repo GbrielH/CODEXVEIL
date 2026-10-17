@@ -60,6 +60,8 @@ export default function CampaignScreen() {
   const isGm = campaign.role === 'gm';
   const isActive = campaign.status === 'active';
   const hasOwnCharacter = party.some((character) => character.ownerId === userId);
+  const system = findSystem(campaign.systemId);
+  const creationRules = system ? system.describeCampaignRules(system.parseCampaignRules(campaign.characterRules)) : [];
 
   const invite = async () => {
     setInviteBusy(true);
@@ -108,6 +110,16 @@ export default function CampaignScreen() {
           <AppText variant="serif">{campaign.description}</AppText>
         </Card>
       ) : null}
+      {creationRules.length > 0 ? (
+        <Card>
+          <AppText variant="eyebrow">Criação de personagens</AppText>
+          {creationRules.map((rule) => (
+            <AppText key={rule} variant="muted">
+              • {rule}
+            </AppText>
+          ))}
+        </Card>
+      ) : null}
 
       {isGm && isActive ? (
         <Button label="Convidar jogador" variant="secondary" icon={<Share2 size={16} color={colors.fg} />} onPress={() => void invite()} loading={inviteBusy} />
@@ -115,7 +127,11 @@ export default function CampaignScreen() {
 
       <Card ornate>
         <AppText variant="heading">Grupo</AppText>
-        {party.length === 0 ? <AppText variant="muted">Nenhum personagem vinculado ainda.</AppText> : null}
+        {party.length === 0 ? (
+          <AppText variant="muted">
+            {isGm ? 'Nenhum personagem ainda. Os jogadores criam os personagens; o mestre usa NPCs e monstros.' : 'Nenhum personagem vinculado ainda.'}
+          </AppText>
+        ) : null}
         {party.map((character) => {
           const hp = character.resources.find((resource) => resource.display === 'health');
           return (
@@ -137,7 +153,7 @@ export default function CampaignScreen() {
             </View>
           );
         })}
-        {isActive && !hasOwnCharacter ? (
+        {isActive && !isGm && !hasOwnCharacter ? (
           <Button
             label="Criar personagem nesta campanha"
             variant="secondary"

@@ -6,6 +6,7 @@ describe('toAppError', () => {
   it.each([
     ['42501', 'forbidden'],
     ['CVARC', 'forbidden'],
+    ['CVGMC', 'forbidden'],
     ['P0002', 'not_found'],
     ['PGRST116', 'not_found'],
     ['23505', 'conflict'],
@@ -14,6 +15,10 @@ describe('toAppError', () => {
     ['XX000', 'unknown'],
   ])('SQLSTATE %s → %s', (code, expected) => {
     expect(toAppError({ code, message: 'erro', details: null, hint: null }).code).toBe(expected);
+  });
+
+  it('explica que mestres usam NPCs e monstros em vez de personagens', () => {
+    expect(toAppError({ code: 'CVGMC', message: 'x' }).message).toContain('NPCs e monstros');
   });
 
   it('usa a mensagem do recurso limitado', () => {

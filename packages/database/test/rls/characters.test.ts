@@ -1,6 +1,6 @@
 import { applyDamage, applyHealing, type TrackValue } from '@codexveil/domain';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createCampaign, createCharacter, createTable, resourceId } from '../support/fixtures';
+import { addMember, createCampaign, createCharacter, createTable, resourceId } from '../support/fixtures';
 import { TestDatabase, admin, expectSqlError, type TestUser } from '../support/pglite';
 
 let db: TestDatabase;
@@ -84,6 +84,116 @@ describe('criação', () => {
       ),
       '42501',
     );
+  });
+});
+
+describe('criação guiada (inventário e habilidades iniciais)', () => {
+  const items = [
+    { name: 'Cota de malha', category: 'armor', quantity: 1, weight: 27.5, description: '', notes: '', isEquipped: true, sortOrder: 0 },
+    { name: 'Azagaia', category: 'weapon', quantity: 8, weight: 1, description: '', notes: '', isEquipped: false, sortOrder: 1 },
+  ];
+  const abilities = [
+    { kind: 'class_feature', name: 'Fúria', source: 'Bárbaro 1º nível', description: 'Resumo', data: {}, resourceKey: 'ki', sortOrder: 0 },
+    { kind: 'spell', name: 'Bless', source: 'Clérigo · SRD 5.2', description: '', data: { circle: 1 }, sortOrder: 1 },
+    { kind: 'attack', name: 'Espada grande', source: 'Arma marcial', description: '', data: { damage: '2d6' }, sortOrder: 2 },
+  ];
+
+  function createFull(owner: TestUser, campaignId: string | null) {
+    return db.as(owner, (s) =>
+      s.one<{ id: string }>(
+        `select public.create_character('Brienne', 'dnd5e', $1, $2::jsonb, $3::jsonb, $4::jsonb, $5::jsonb) as id`,
+        [
+          campaignId,
+          JSON.stringify({ schemaVersion: 1 }),
+          JSON.stringify([{ key: 'ki', label: 'Fúria', current: 2, max: 2, recovery: 'long_rest', display: 'pool', sortOrder: 100 }]),
+          JSON.stringify(items),
+          JSON.stringify(abilities),
+        ],
+      ),
+    );
+  }
+
+  it('grava inventário e habilidades na mesma transação, ligando a trilha pela chave', async () => {
+    const { player, campaign } = await createTable(db);
+    const { id } = await createFull(player, campaign.id);
+    const savedItems = await db.as(player, (s) =>
+      s.query<{ name: string; quantity: number; weight: string; is_equipped: boolean }>(
+        `select name, quantity, weight::text, is_equipped from public.character_items where character_id = $1 order by sort_order`,
+        [id],
+      ),
+    );
+    expect(savedItems).toEqual([
+      { name: 'Cota de malha', quantity: 1, weight: '27.50', is_equipped: true },
+      { name: 'Azagaia', quantity: 8, weight: '1.00', is_equipped: false },
+    ]);
+    const savedAbilities = await db.as(player, (s) =>
+      s.query<{ name: string; kind: string; linked: boolean }>(
+        `select a.name, a.kind::text as kind, (a.resource_id = r.id) as linked
+         from public.character_abilities a left join public.character_resources r on r.character_id = a.character_id and r.key = 'ki'
+         where a.character_id = $1 order by a.sort_order`,
+        [id],
+      ),
+    );
+    expect(savedAbilities.map((row) => [row.name, row.kind])).toEqual([
+      ['Fúria', 'class_feature'],
+      ['Bless', 'spell'],
+      ['Espada grande', 'attack'],
+    ]);
+    expect(savedAbilities[0]?.linked).toBe(true);
+  });
+
+  it('com a ficha travada pelo mestre, o jogador ainda cria o personagem completo', async () => {
+    const { player, campaign } = await createTable(db);
+    await setCampaignFlags(campaign.id, { players_can_edit_sheets: false });
+    const { id } = await createFull(player, campaign.id);
+    const count = await db.as(player, (s) =>
+      s.one<{ total: number }>(`select count(*)::int as total from public.character_abilities where character_id = $1`, [id]),
+    );
+    expect(count.total).toBe(3);
+    // Depois da criação, a construção volta a ser exclusiva do mestre.
+    await expectSqlError(
+      db.as(player, (s) =>
+        s.query(`insert into public.character_abilities (character_id, kind, name) values ($1, 'feat', 'Sortudo')`, [id]),
+      ),
+      '42501',
+    );
+  });
+
+  it('rejeita listas grandes demais', async () => {
+    const { player } = await createTable(db);
+    await expectSqlError(
+      db.as(player, (s) =>
+        s.query(`select public.create_character('X', 'dnd5e', null, '{}'::jsonb, '[]'::jsonb, $1::jsonb)`, [
+          JSON.stringify(Array.from({ length: 201 }, (_, index) => ({ name: `Item ${index}` }))),
+        ]),
+      ),
+      '22023',
+    );
+  });
+});
+
+describe('mestres e personagens', () => {
+  it('mestre e co-mestre não criam personagens na própria campanha', async () => {
+    const { gm, coGm, campaign } = await createTable(db);
+    await expectSqlError(createCharacter(db, gm, campaign.id), 'CVGMC');
+    await expectSqlError(createCharacter(db, coGm, campaign.id), 'CVGMC');
+  });
+
+  it('mestre não vincula uma ficha pessoal à própria campanha', async () => {
+    const { gm, campaign } = await createTable(db);
+    const personal = await createCharacter(db, gm, null, 'Ficha pessoal');
+    await expectSqlError(
+      db.as(gm, (s) => s.query(`select public.set_character_campaign($1, $2)`, [personal, campaign.id])),
+      'CVGMC',
+    );
+  });
+
+  it('mestre de uma campanha pode jogar em outra', async () => {
+    const { gm } = await createTable(db);
+    const other = await createTable(db);
+    await addMember(db, other.campaign.id, gm);
+    const id = await createCharacter(db, gm, other.campaign.id, 'Convidado');
+    expect(id).toMatch(/^[0-9a-f-]{36}$/);
   });
 });
 

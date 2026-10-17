@@ -8,7 +8,7 @@
  * Para adicionar um sistema: crie `src/<id>/`, implemente `RpgSystem`, registre-o em
  * `registry.ts` e adicione a linha correspondente na tabela `rpg_systems` via migração.
  */
-import type { ResourceRecovery } from '@codexveil/domain';
+import type { ItemCategory, ResourceRecovery } from '@codexveil/domain';
 import type { z } from 'zod';
 
 export interface ContentLicense {
@@ -43,13 +43,49 @@ export interface ResourceTemplate {
   sortOrder: number;
 }
 
+/** Tipos de entrada de `character_abilities` (mesmos valores do enum do banco). */
+export type AbilityEntryKind =
+  | 'class_feature'
+  | 'species_trait'
+  | 'feat'
+  | 'background_feature'
+  | 'spell'
+  | 'attack'
+  | 'other';
+
+/** Habilidade, magia ou ataque criado junto com um novo personagem. */
+export interface AbilityEntryTemplate {
+  kind: AbilityEntryKind;
+  name: string;
+  source: string;
+  description: string;
+  /** Dados específicos do sistema (ex.: círculo da magia, bônus do ataque). */
+  data: Record<string, unknown>;
+  /** Liga a entrada a uma trilha criada junto (pela chave da trilha). */
+  resourceKey?: string;
+  sortOrder: number;
+}
+
+/** Item do inventário inicial de um novo personagem. */
+export interface ItemTemplate {
+  name: string;
+  category: ItemCategory;
+  quantity: number;
+  /** Peso unitário na unidade da ficha. */
+  weight: number | null;
+  description: string;
+  notes: string;
+  isEquipped: boolean;
+  sortOrder: number;
+}
+
 export interface CharacterSummary {
   /** Linha descritiva curta, ex.: "Elfo · Mago 5". */
   subtitle: string;
   level: number | null;
 }
 
-export interface RpgSystem<TSheet = unknown, TDerived = unknown, TStatBlock = unknown> {
+export interface RpgSystem<TSheet = unknown, TDerived = unknown, TStatBlock = unknown, TRules = unknown> {
   readonly id: string;
   readonly name: string;
   readonly shortName: string;
@@ -59,6 +95,16 @@ export interface RpgSystem<TSheet = unknown, TDerived = unknown, TStatBlock = un
   readonly conditions: readonly ConditionDefinition[];
   readonly sheetSchema: z.ZodType<TSheet>;
   readonly statBlockSchema: z.ZodType<TStatBlock>;
+  /**
+   * Regras de criação de personagens que o mestre define na campanha (ex.: nível inicial).
+   * Ficam em `campaigns.character_rules`; a camada central não interpreta o conteúdo.
+   */
+  readonly campaignRulesSchema: z.ZodType<TRules>;
+  defaultCampaignRules(): TRules;
+  /** Lê as regras gravadas; dados ausentes ou inválidos voltam ao padrão, sem lançar. */
+  parseCampaignRules(data: unknown): TRules;
+  /** Frases curtas para mostrar as regras aos participantes. */
+  describeCampaignRules(rules: TRules): string[];
 
   createDefaultSheet(): TSheet;
   /** Valida e atualiza para a versão atual uma ficha lida do banco. */

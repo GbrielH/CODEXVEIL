@@ -1,7 +1,6 @@
 import type { CodexveilClient } from '../client';
 
 export const CAMPAIGN_MEDIA_BUCKET = 'campaign-media';
-export const AVATARS_BUCKET = 'avatars';
 
 /** Validade das URLs assinadas da mídia privada (curta: o link não deve circular). */
 export const SIGNED_URL_TTL_SECONDS = 60 * 60;

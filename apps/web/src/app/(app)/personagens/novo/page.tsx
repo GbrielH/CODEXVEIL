@@ -1,12 +1,12 @@
 import { listMyCampaigns } from '@codexveil/database';
-import { listSystems } from '@codexveil/rpg-systems';
+import { parseDnd5eCampaignRules } from '@codexveil/rpg-systems/dnd5e';
 import type { Metadata } from 'next';
+import { Dnd5eCreationWizard } from '@/components/characters/dnd5e-wizard/wizard';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { requireSessionUser } from '@/lib/auth';
 import { routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { CreateCharacterForm } from './form';
 
 export const metadata: Metadata = { title: 'Novo personagem' };
 
@@ -16,23 +16,23 @@ export default async function NewCharacterPage({ searchParams }: PageProps<'/per
   const [campaigns, params] = await Promise.all([listMyCampaigns(supabase, user.id), searchParams]);
   const preselected = typeof params.campanha === 'string' ? params.campanha : '';
 
-  const activeCampaigns = campaigns
-    .filter((campaign) => campaign.status === 'active')
-    .map((campaign) => ({ id: campaign.id, name: campaign.name, systemId: campaign.systemId }));
-  const systems = listSystems().map((system) => ({ id: system.id, name: system.name }));
+  // Personagens de campanha são dos jogadores; o mestre cria NPCs e monstros na biblioteca.
+  const playable = campaigns
+    .filter((campaign) => campaign.status === 'active' && campaign.role === 'player' && campaign.systemId === 'dnd5e')
+    .map((campaign) => ({ id: campaign.id, name: campaign.name, rules: parseDnd5eCampaignRules(campaign.characterRules) }));
 
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
         eyebrow="Personagens"
         title="Novo personagem"
-        description="Comece pelo essencial. Perícias, magias, inventário e história são preenchidos depois, na ficha."
+        description="Um passo a passo com as regras de D&D 5e (SRD 5.2): cada escolha mostra só as opções válidas para o personagem."
       />
-      <Card ornate className="max-w-3xl">
-        <CreateCharacterForm
-          campaigns={activeCampaigns}
-          systems={systems}
-          defaultCampaignId={activeCampaigns.some((campaign) => campaign.id === preselected) ? preselected : ''}
+      <Card ornate>
+        <Dnd5eCreationWizard
+          campaigns={playable}
+          defaultCampaignId={playable.some((campaign) => campaign.id === preselected) ? preselected : ''}
+          storageKey={`codexveil:criacao-dnd5e:${user.id}`}
         />
       </Card>
     </div>

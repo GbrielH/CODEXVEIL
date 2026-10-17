@@ -7,7 +7,7 @@ import {
   setCharacterCampaign,
   setCharacterPortrait,
 } from '@codexveil/database';
-import { IMAGE_EXTENSIONS, validateImageFile } from '@codexveil/validation';
+import { IMAGE_EXTENSIONS } from '@codexveil/validation';
 import { ImageUp, Link2, Trash2, Unlink } from 'lucide-react';
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
@@ -19,6 +19,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SelectField } from '@/components/ui/field';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
+import { prepareImage } from '@/lib/images';
 import { routes } from '@/lib/routes';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useSheet } from './context';
@@ -43,20 +44,20 @@ function PortraitCard() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const upload = async (file: File) => {
+  const upload = async (original: File) => {
     setError(null);
-    const check = validateImageFile(file, 'media');
-    if (!check.ok) {
-      setError(check.message);
-      return;
-    }
     setBusy(true);
     const client = getSupabaseBrowserClient();
-    const path = characterPortraitPath(character.id, `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[check.mimeType]}`);
     try {
+      const prepared = await prepareImage(original, 'portrait');
+      if (!prepared.ok) {
+        setError(prepared.message);
+        return;
+      }
+      const path = characterPortraitPath(character.id, `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`);
       const { error: uploadError } = await client.storage
         .from(CAMPAIGN_MEDIA_BUCKET)
-        .upload(path, file, { contentType: check.mimeType, upsert: false });
+        .upload(path, prepared.file, { contentType: prepared.mimeType, upsert: false });
       if (uploadError) throw uploadError;
       try {
         adoptVersion(await setCharacterPortrait(client, character.id, path));

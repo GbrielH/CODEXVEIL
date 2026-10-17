@@ -103,7 +103,10 @@ export function computeDnd5eDerived(sheet: Dnd5eSheet): Dnd5eDerived {
     abilityModifiers,
     savingThrows,
     skills,
-    initiative: abilityModifiers.dex + sheet.combat.initiativeBonus,
+    initiative:
+      abilityModifiers.dex +
+      proficiencyContribution(sheet.combat.initiativeProficiency, proficiencyBonus) +
+      sheet.combat.initiativeBonus,
     passivePerception: 10 + skills.perception.bonus,
     passiveInsight: 10 + skills.insight.bonus,
     passiveInvestigation: 10 + skills.investigation.bonus,

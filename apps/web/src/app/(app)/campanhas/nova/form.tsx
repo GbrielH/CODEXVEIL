@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
+import { CampaignRulesFields } from '@/components/campaigns/campaign-rules-fields';
 import { Alert } from '@/components/ui/alert';
 import { ButtonLink } from '@/components/ui/button';
 import { SelectField, TextareaField, TextField } from '@/components/ui/field';
@@ -17,6 +18,7 @@ interface SystemOption {
 
 export function CreateCampaignForm({ systems }: { systems: SystemOption[] }) {
   const [state, action] = useActionState(createCampaignAction, idleFormState);
+  const [systemId, setSystemId] = useState(state.values?.systemId ?? systems[0]?.id ?? 'dnd5e');
   return (
     <form action={action} noValidate className="flex flex-col gap-5">
       {state.message ? <Alert tone="danger">{state.message}</Alert> : null}
@@ -45,7 +47,8 @@ export function CreateCampaignForm({ systems }: { systems: SystemOption[] }) {
         label="Sistema de RPG"
         hint="O sistema define as fichas e não pode ser trocado depois."
         required
-        defaultValue={state.values?.systemId ?? systems[0]?.id}
+        value={systemId}
+        onChange={(event) => setSystemId(event.target.value)}
         error={state.fieldErrors?.systemId}
       >
         {systems.map((system) => (
@@ -54,6 +57,7 @@ export function CreateCampaignForm({ systems }: { systems: SystemOption[] }) {
           </option>
         ))}
       </SelectField>
+      <CampaignRulesFields systemId={systemId} errors={state.fieldErrors} />
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <ButtonLink href={routes.campaigns} variant="ghost">
           Cancelar

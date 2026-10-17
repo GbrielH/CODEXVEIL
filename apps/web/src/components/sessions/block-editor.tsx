@@ -15,7 +15,7 @@ import {
   type SessionBlockContent,
   type SharedVisibility,
 } from '@codexveil/domain';
-import { IMAGE_EXTENSIONS, sessionBlockSchema, validateImageFile } from '@codexveil/validation';
+import { IMAGE_EXTENSIONS, sessionBlockSchema } from '@codexveil/validation';
 import { ArrowDown, ArrowUp, GripVertical, ImageUp, Plus, Trash2, X } from 'lucide-react';
 import { useId, useRef, useState, type DragEvent, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SaveStatus } from '@/components/ui/save-status';
 import { cx } from '@/lib/cx';
 import { failureMessage } from '@/lib/client-errors';
+import { prepareImage } from '@/lib/images';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useAutosave } from '@/lib/use-autosave';
 import { calloutToneLabels } from './block-renderer';
@@ -488,18 +489,20 @@ function ImageFields({ content, onChange, campaignId, sessionId, imageUrls, onIm
   const [error, setError] = useState<string | null>(null);
   const url = content.data.path ? imageUrls[content.data.path] : undefined;
 
-  const upload = async (file: File) => {
+  const upload = async (original: File) => {
     setError(null);
-    const check = validateImageFile(file, 'media');
-    if (!check.ok) {
-      setError(check.message);
-      return;
-    }
     setBusy(true);
     const client = getSupabaseBrowserClient();
-    const path = sessionImagePath(campaignId, sessionId, `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[check.mimeType]}`);
     try {
-      const { error: uploadError } = await client.storage.from(CAMPAIGN_MEDIA_BUCKET).upload(path, file, { contentType: check.mimeType, upsert: false });
+      const prepared = await prepareImage(original, 'scene');
+      if (!prepared.ok) {
+        setError(prepared.message);
+        return;
+      }
+      const path = sessionImagePath(campaignId, sessionId, `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`);
+      const { error: uploadError } = await client.storage
+        .from(CAMPAIGN_MEDIA_BUCKET)
+        .upload(path, prepared.file, { contentType: prepared.mimeType, upsert: false });
       if (uploadError) throw uploadError;
       const signed = await signedMediaUrls(client, [path]);
       if (signed[path]) onImageUrl(path, signed[path]);

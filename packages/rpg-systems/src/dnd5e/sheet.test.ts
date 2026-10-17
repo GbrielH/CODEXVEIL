@@ -14,7 +14,6 @@ import {
 import { createDefaultDnd5eSheet, parseDnd5eSheet, totalLevel, type Dnd5eSheetInput } from './sheet';
 import { createDefaultDnd5eStatBlock, parseDnd5eStatBlock } from './stat-block';
 import { dnd5eSystem } from './index';
-import { STANDARD_ARRAY, buildDnd5eCharacter, dnd5eCreationSchema } from './creation';
 import { summarizeSheet } from '../registry';
 
 function sheet(input: Dnd5eSheetInput) {
@@ -227,50 +226,6 @@ describe('resumo do personagem', () => {
 
   it('usa o nível quando não há espécie nem classe', () => {
     expect(dnd5eSystem.summarize(createDefaultDnd5eSheet()).subtitle).toBe('Nível 1');
-  });
-});
-
-describe('criação rápida de personagem', () => {
-  it('monta ficha e trilhas a partir dos dados mínimos', () => {
-    const { sheet: built, resources } = buildDnd5eCharacter(
-      dnd5eCreationSchema.parse({
-        species: 'Anã',
-        className: 'Clériga',
-        level: 3,
-        hitDie: 'd8',
-        abilities: { wis: 16, con: 14 },
-      }),
-    );
-    expect(built.identity.classes).toEqual([
-      { name: 'Clériga', subclass: '', level: 3, hitDie: 'd8' },
-    ]);
-    expect(built.abilities.wis).toBe(16);
-    const hp = resources.find((resource) => resource.key === 'hp');
-    // 8 + 2 (1º nível) + 2 × (5 + 2) = 24
-    expect(hp).toMatchObject({ current: 24, max: 24 });
-    expect(resources.find((resource) => resource.key === 'hit_dice_d8')?.max).toBe(3);
-  });
-
-  it('respeita os pontos de vida informados pelo jogador', () => {
-    const { resources } = buildDnd5eCharacter(
-      dnd5eCreationSchema.parse({ className: 'Guerreiro', hitDie: 'd10', hitPointMax: 13 }),
-    );
-    expect(resources.find((resource) => resource.key === 'hp')).toMatchObject({
-      current: 13,
-      max: 13,
-    });
-  });
-
-  it('valida os limites com mensagens em português', () => {
-    const result = dnd5eCreationSchema.safeParse({ level: 25, abilities: { str: 40 } });
-    expect(result.success).toBe(false);
-    const messages = result.error?.issues.map((issue) => issue.message) ?? [];
-    expect(messages).toContain('O nível máximo é 20.');
-    expect(messages).toContain('O máximo é 30.');
-  });
-
-  it('o conjunto padrão soma 72 pontos', () => {
-    expect(STANDARD_ARRAY.reduce((sum, value) => sum + value, 0)).toBe(72);
   });
 });
 

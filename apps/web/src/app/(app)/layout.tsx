@@ -1,4 +1,4 @@
-import { avatarUrl, getProfile } from '@codexveil/database';
+import { getProfile } from '@codexveil/database';
 import type { ReactNode } from 'react';
 import { AppShell } from '@/components/layout/app-shell';
 import { requireSessionUser } from '@/lib/auth';
@@ -16,7 +16,6 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
   return (
     <AppShell
       displayName={profile?.displayName ?? 'Aventureiro'}
-      avatarUrl={avatarUrl(supabase, profile?.avatarPath ?? null)}
       motion={profile?.preferences.motion ?? 'system'}
     >
       {children}

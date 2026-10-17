@@ -273,9 +273,33 @@ export interface CharacterCreateParams {
     display: ResourceDisplay;
     sortOrder: number;
   }[];
+  /** Inventário inicial (peso unitário na unidade da ficha). */
+  items?: readonly {
+    name: string;
+    category: ItemCategory;
+    quantity: number;
+    weight: number | null;
+    description: string;
+    notes: string;
+    isEquipped: boolean;
+    sortOrder: number;
+  }[];
+  /** Habilidades, magias e ataques iniciais; `resourceKey` liga a entrada a uma trilha criada junto. */
+  abilities?: readonly {
+    kind: AbilityEntryKind;
+    name: string;
+    source: string;
+    description: string;
+    data: Record<string, unknown>;
+    resourceKey?: string;
+    sortOrder: number;
+  }[];
 }
 
-/** Cria o personagem e suas trilhas iniciais numa única transação (função do banco). */
+/**
+ * Cria o personagem com trilhas, inventário e habilidades iniciais numa única transação
+ * (função do banco).
+ */
 export async function createCharacter(
   client: CodexveilClient,
   params: CharacterCreateParams,
@@ -286,6 +310,8 @@ export async function createCharacter(
     ...(params.campaignId ? { p_campaign_id: params.campaignId } : {}),
     p_sheet: params.sheet as Json,
     p_resources: params.resources as unknown as Json,
+    ...(params.items?.length ? { p_items: params.items as unknown as Json } : {}),
+    ...(params.abilities?.length ? { p_abilities: params.abilities as unknown as Json } : {}),
   });
   if (error) throw toAppError(error);
   return data;

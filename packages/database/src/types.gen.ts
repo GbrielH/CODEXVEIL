@@ -168,6 +168,7 @@ export type Database = {
       campaigns: {
         Row: {
           archived_at: string | null;
+          character_rules: Json;
           cover_path: string | null;
           created_at: string;
           description: string;
@@ -182,6 +183,7 @@ export type Database = {
         };
         Insert: {
           archived_at?: string | null;
+          character_rules?: Json;
           cover_path?: string | null;
           created_at?: string;
           description?: string;
@@ -196,6 +198,7 @@ export type Database = {
         };
         Update: {
           archived_at?: string | null;
+          character_rules?: Json;
           cover_path?: string | null;
           created_at?: string;
           description?: string;
@@ -1148,6 +1151,8 @@ export type Database = {
           p_campaign_id?: string;
           p_sheet?: Json;
           p_resources?: Json;
+          p_items?: Json;
+          p_abilities?: Json;
         };
         Returns: string;
       };

@@ -87,6 +87,8 @@ export const dnd5eSheetSchema = z.object({
     .object({
       armorClass: z.number().int().min(0).max(50).default(10),
       initiativeBonus: bonus,
+      /** Proficiência na Iniciativa (talento Alerta; meia proficiência do bardo). */
+      initiativeProficiency: z.enum(PROFICIENCY_LEVELS).default('none'),
       speed: z.number().min(0).max(1000).default(9),
       speedUnit: z.enum(SPEED_UNITS).default('m'),
     })

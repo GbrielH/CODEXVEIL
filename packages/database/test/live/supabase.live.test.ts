@@ -22,8 +22,6 @@ import {
   acceptCampaignInvite,
   addSceneEntity,
   adjustCharacterResource,
-  AVATARS_BUCKET,
-  avatarUrl,
   CAMPAIGN_MEDIA_BUCKET,
   characterPortraitPath,
   createCampaign,
@@ -164,9 +162,11 @@ describe.skipIf(!live)('Supabase real (integração)', () => {
       name: `[TESTE] Campanha ${runId}`,
       description: '',
       systemId: 'dnd5e',
+      characterRules: { startingLevel: 3, abilityScoreMethods: ['point_buy'], allowEvilAlignments: false },
     });
     const campaign = await getCampaign(gm.client, campaignId, gm.id);
     expect(campaign?.role).toBe('gm');
+    expect(campaign?.characterRules).toEqual({ startingLevel: 3, abilityScoreMethods: ['point_buy'], allowEvilAlignments: false });
     expect(campaign?.isOwner).toBe(true);
     expect((await listMyCampaigns(gm.client, gm.id)).map((c) => c.id)).toContain(campaignId);
   });
@@ -200,7 +200,14 @@ describe.skipIf(!live)('Supabase real (integração)', () => {
     expect(members.find((m) => m.userId === player.id)?.displayName).toBe('[TESTE] jogador');
   });
 
-  it('jogador cria o personagem; ficha com controle otimista', async () => {
+  it('mestre não cria personagem na própria campanha', async () => {
+    await expectAppError(
+      createCharacter(gm.client, { name: '[TESTE] Do mestre', systemId: 'dnd5e', campaignId, sheet: {}, resources: [] }),
+      'forbidden',
+    );
+  });
+
+  it('jogador cria o personagem completo; ficha com controle otimista', async () => {
     characterId = await createCharacter(player.client, {
       name: '[TESTE] Personagem',
       systemId: 'dnd5e',
@@ -216,10 +223,31 @@ describe.skipIf(!live)('Supabase real (integração)', () => {
           display: 'health',
           sortOrder: 0,
         },
+        {
+          key: 'class_rage',
+          label: 'Fúria',
+          current: 2,
+          max: 2,
+          recovery: 'long_rest',
+          display: 'pool',
+          sortOrder: 100,
+        },
+      ],
+      items: [
+        { name: '[TESTE] Machado grande', category: 'weapon', quantity: 1, weight: 3.5, description: '', notes: '', isEquipped: false, sortOrder: 0 },
+      ],
+      abilities: [
+        { kind: 'class_feature', name: '[TESTE] Fúria', source: 'Bárbaro 1º nível', description: '', data: {}, resourceKey: 'class_rage', sortOrder: 0 },
       ],
     });
     const mine = await getCharacter(player.client, characterId, player.id);
     expect(mine?.version).toBe(1);
+    const { data: features } = await player.client
+      .from('character_abilities')
+      .select('name, resource_id')
+      .eq('character_id', characterId);
+    expect(features).toHaveLength(1);
+    expect(features?.[0]?.resource_id).not.toBeNull();
     expect(await getCharacter(gm.client, characterId, gm.id)).not.toBeNull();
     expect(await getCharacter(stranger.client, characterId, stranger.id)).toBeNull();
 
@@ -386,7 +414,7 @@ describe.skipIf(!live)('Supabase real (integração)', () => {
     ]);
   });
 
-  it('Storage: retratos, imagens ocultas e avatares', async () => {
+  it('Storage: retratos, imagens ocultas e avatares desativados', async () => {
     const portrait = characterPortraitPath(characterId, 'retrato.png');
     expect((await upload(player, CAMPAIGN_MEDIA_BUCKET, portrait)).error).toBeNull();
     await setCharacterPortrait(player.client, characterId, portrait);
@@ -414,9 +442,7 @@ describe.skipIf(!live)('Supabase real (integração)', () => {
       ).error,
     ).not.toBeNull();
 
-    const avatar = `${player.id}/avatar.png`;
-    expect((await upload(player, AVATARS_BUCKET, avatar)).error).toBeNull();
-    expect((await fetch(avatarUrl(player.client, avatar) ?? '')).status).toBe(200);
-    expect((await upload(player, AVATARS_BUCKET, `${gm.id}/avatar.png`)).error).not.toBeNull();
+    // Fotos de perfil foram removidas do produto: o envio é recusado até na própria pasta.
+    expect((await upload(player, 'avatars', `${player.id}/avatar.png`)).error).not.toBeNull();
   });
 });

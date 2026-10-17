@@ -1,6 +1,6 @@
-import { avatarUrl, listCampaignCharacters, listCampaignMembers, signedMediaUrls } from '@codexveil/database';
+import { listCampaignCharacters, listCampaignMembers, signedMediaUrls } from '@codexveil/database';
 import { findSystem } from '@codexveil/rpg-systems';
-import { Eye, EyeOff, Lock, PenLine, Swords, Users } from 'lucide-react';
+import { Eye, EyeOff, Lock, PenLine, ScrollText, Swords, Users } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import { MemberList } from '@/components/campaigns/member-list';
 import { PartyList } from '@/components/campaigns/party-list';
@@ -31,6 +31,7 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
   const isGm = campaign.role === 'gm';
   const isActive = campaign.status === 'active';
   const hasOwnCharacter = party.some((character) => character.ownerId === user.id);
+  const creationRules = system ? system.describeCampaignRules(system.parseCampaignRules(campaign.characterRules)) : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -47,7 +48,7 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
                 : 'Você vê apenas o seu personagem nesta campanha.'
             }
             action={
-              isActive && !hasOwnCharacter ? (
+              isActive && !isGm && !hasOwnCharacter ? (
                 <ButtonLink href={`${routes.newCharacter}?campanha=${campaign.id}` as Route} size="sm" variant="secondary">
                   Criar personagem
                 </ButtonLink>
@@ -56,7 +57,9 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
           />
           {party.length === 0 ? (
             <p className="text-sm text-fg-muted">
-              Nenhum personagem vinculado ainda. Jogadores criam o personagem aqui ou vinculam um existente pela ficha.
+              {isGm
+                ? 'Nenhum personagem vinculado ainda. Os jogadores criam os personagens; o mestre usa NPCs e monstros da biblioteca.'
+                : 'Nenhum personagem vinculado ainda. Crie o seu aqui ou vincule um existente pela ficha.'}
             </p>
           ) : (
             <PartyList characters={party} portraits={portraits} currentUserId={user.id} />
@@ -78,7 +81,7 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
           <MemberList
             campaignId={campaign.id}
             campaignName={campaign.name}
-            members={members.map((member) => ({ ...member, avatarUrl: avatarUrl(supabase, member.avatarPath) }))}
+            members={members}
             currentUserId={user.id}
             viewerIsOwner={campaign.isOwner}
             viewerIsGm={isGm}
@@ -134,6 +137,12 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
                     : 'Fichas travadas pelo mestre (vida, recursos e inventário seguem editáveis).'}
                 </span>
               </li>
+              {creationRules.map((rule) => (
+                <li key={rule} className="flex gap-3">
+                  <ScrollText className="mt-0.5 h-4 w-4 shrink-0 text-fg-brand" aria-hidden="true" />
+                  <span>{rule}</span>
+                </li>
+              ))}
             </ul>
           </Card>
         </div>

@@ -110,7 +110,8 @@ clique em **Connect Git Repository** → **GitHub**. Se a conta `GbrielH` não a
 use **Add GitHub Account** (ou "Adjust GitHub App Permissions") e instale o app da Vercel na
 conta `GbrielH` com acesso ao repositório `CODEXVEIL`. Depois escolha `GbrielH/CODEXVEIL`. O
 Root Directory continua `apps/web`, e a branch de produção é `main`. Hoje o app da Vercel desta
-conta só está instalado na organização `FinFlowA`.
+conta só está instalado na organização `FinFlowA`. Em 2026-10-17 o repositório ainda não tinha
+nenhum deploy da Vercel, e a CLI desta máquina estava sem login (`npx vercel@latest whoami`).
 
 **Domínio:** ao trocar `codexveil.vercel.app` por um domínio próprio, atualize
 `NEXT_PUBLIC_SITE_URL` e `EXPO_PUBLIC_SITE_URL`, o `site_url` e as `additional_redirect_urls`
@@ -148,6 +149,14 @@ globalmente (`npm install -g eas-cli`). Rode os comandos dentro de `apps/mobile`
   `updates.url` e `runtimeVersion: { policy: 'fingerprint' }`. O APK baixa o JavaScript novo do
   seu canal ao abrir. Uma atualização só chega a builds com o **mesmo fingerprint nativo**:
   mudar dependências nativas, plugins ou campos nativos do `app.config.ts` exige um APK novo.
+- O fingerprint inclui os caminhos do pnpm dos módulos nativos. Uma dependência nova que mude
+  as dependências pares (peer) de `expo`, `expo-router` ou `expo-system-ui` muda esses caminhos
+  e exige um APK novo, mesmo sem código nativo novo: foi o caso do `react-native-web` em
+  2026-10-17. O `apps/mobile/.gitignore`, gerado pelo Expo, também entra no fingerprint e por
+  isso é versionado. Para conferir antes:
+  `eas fingerprint:compare --build-id <id> --environment preview`. No Windows o pnpm encurta os
+  nomes das pastas, então a comparação local sempre acusa diferença; use-a só para ver o que
+  mudou.
 - As variáveis `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` e
   `EXPO_PUBLIC_SITE_URL` ficam no EAS, nos ambientes `preview` e `production`. O
   `apps/mobile/.env.local` **não** vai para o build.
@@ -212,6 +221,13 @@ Observações:
 4. Publique a web e o app **depois** da migração. Como as migrações são aditivas, a versão
    anterior dos apps continua funcionando durante a transição.
 
+**`20261016130000_character_creation_rules.sql` (criação guiada):** precisa estar aplicada
+antes de publicar o código que a acompanha, porque o site e o app passam a ler
+`campaigns.character_rules` e a enviar inventário e habilidades para `create_character`. Com a
+versão anterior dos apps, o que muda é só o que foi decidido: o mestre não cria mais
+personagem na própria campanha, o envio de avatar é recusado e imagens acima de 2 MB são
+recusadas (a versão nova reduz as imagens antes de enviar).
+
 Nunca altere o banco de produção pelo SQL Editor sem registrar a mudança numa migração: os
 ambientes deixariam de ser reproduzíveis.
 
@@ -265,7 +281,8 @@ Settings → Database. Teste a restauração periodicamente num projeto separado
 - [ ] Jogador **não** vê notas `gm`, blocos privados, sessões não publicadas nem dados secretos
       de NPCs (repita os cenários de [`SECURITY.md`](SECURITY.md#testes-de-segurança) na
       prática).
-- [ ] Upload de avatar, retrato, imagem de NPC e imagem de roteiro funcionando.
+- [ ] Upload de retrato, imagem de NPC e imagem de roteiro funcionando (imagens reduzidas antes
+      do envio, até 2 MB).
 - [ ] Realtime: vida alterada pelo mestre aparece na ficha do jogador (e o contrário).
 - [ ] APK instalado e testado num aparelho Android.
 - [ ] Backup manual feito e restauração testada.

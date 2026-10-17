@@ -75,8 +75,37 @@ nenhum sistema. Um personagem guarda:
 
 O contrato está em `packages/rpg-systems/src/types.ts`. Cada sistema define o esquema e a
 versão da ficha, a ficha padrão, os cálculos derivados, o resumo para listas, as trilhas
-iniciais, as condições, a ficha de estatísticas de criaturas, os valores de combate para a cena
-e a licença do conteúdo de referência.
+iniciais, as condições, a ficha de estatísticas de criaturas, os valores de combate para a cena,
+as **regras de criação da campanha** (`campaignRulesSchema`, `parseCampaignRules`,
+`describeCampaignRules`; gravadas em `campaigns.character_rules`) e a licença do conteúdo de
+referência.
+
+### Criação guiada de personagens (D&D 5e)
+
+A criação segue os passos do SRD 5.2.1 (classe → origem: antecedente, espécie e idiomas →
+atributos → alinhamento → detalhes) e só oferece opções válidas para o personagem. A lógica
+fica toda em `packages/rpg-systems/src/dnd5e/`, compartilhada por web, mobile e servidor:
+
+- `srd/`: dados do SRD 5.2.1 (12 classes com habilidades do 1º ao 20º nível e a subclasse do
+  SRD, 9 espécies, 4 antecedentes, talentos, idiomas, armas, armaduras, ferramentas,
+  equipamento inicial, invocações, metamagia e as 339 magias com o cabeçalho técnico).
+- `creation/draft.ts`: o rascunho (`Dnd5eDraft`), os métodos de atributo (conjunto padrão,
+  compra de pontos e rolagem 4d6) e o esquema zod usado no servidor.
+- `creation/choices.ts`: `listDnd5eChoices(draft)` devolve as escolhas que as regras exigem
+  agora (perícias, ordens, estilo de luta, maestria, especializações, linhagem, talentos e as
+  escolhas aninhadas deles, magias, equipamento), cada uma com o passo do assistente e as
+  opções indisponíveis já marcadas com o motivo. `validateDnd5eDraft(draft, contexto)` confere
+  tudo, inclusive regras que cruzam passos (perícia repetida, talento não repetível, listas do
+  Iniciado em Magia, limites de 20 e 30, nível e métodos definidos pelo mestre).
+- `creation/build.ts`: monta a ficha, as trilhas (PV, dados de vida, espaços de magia ou de
+  pacto e usos de habilidades), as habilidades de classe, espécie e talentos, as magias, os
+  ataques das armas iniciais e o inventário. CA, deslocamento, PV, salvaguardas, perícias e
+  proficiência em Iniciativa seguem as regras do SRD.
+
+As interfaces (`apps/web/src/components/characters/dnd5e-wizard/` e
+`apps/mobile/src/app/(app)/personagem/novo.tsx`) só desenham as escolhas. Na web, a Server
+Action repete a validação com as regras da campanha lidas do banco antes de gravar. A gravação
+usa `create_character`, que cria ficha, trilhas, inventário e habilidades numa transação.
 
 **Para adicionar um sistema:**
 
@@ -116,6 +145,13 @@ intervalo não geram eventos (verificado contra o Supabase real). Por isso o est
 `live` quando chega a mensagem de sistema do Postgres Changes (`status: ok`), com uma
 salvaguarda de 5 s. Nesse momento, e a cada reconexão, os dados são recarregados uma vez.
 
+O canal entra com o token que o cliente do Realtime tiver naquele instante. No navegador e no
+app a sessão é carregada de forma assíncrona; se a tela assinasse antes, o Realtime criaria as
+assinaturas com o papel anônimo e recusaria todas. Por isso `subscribeToChanges` chama
+`realtime.setAuth()` antes de entrar no canal. Cada assinatura também usa um tópico próprio,
+porque o supabase-js reaproveita o canal de mesmo tópico e a remoção é assíncrona. Os dois
+problemas foram vistos no navegador em 2026-10-17.
+
 ## Erros
 
 - `AppError` (`packages/domain/src/errors.ts`) tem códigos estáveis (`forbidden`, `conflict`,
@@ -147,14 +183,19 @@ limites (`null` = ilimitado), e não há cobrança, preço nem assinatura simula
 
 ## Decisões registradas
 
-| Decisão                                                    | Motivo                                                                                                               |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Supabase sem servidor próprio                              | RLS cobre a autorização. Edge Functions ficam para operações privilegiadas reais (e-mails, rotinas agendadas).       |
-| Papel por campanha (`campaign_members.role`)               | O mesmo usuário é mestre numa campanha e jogador em outra.                                                           |
-| Ficha como JSON validado mais tabelas de estado de jogo    | Os sistemas variam na estrutura da ficha. Vida e recursos precisam de atualizações atômicas e de Realtime por linha. |
-| Segredos de NPCs numa tabela separada (`creature_gm_data`) | O RLS é por linha. Separar a tabela garante que jogadores nunca recebam a coluna secreta, nem pelo Realtime.         |
-| Roteiro em blocos JSON tipados (nunca HTML)                | Validação no cliente (zod) e no banco (`is_valid_block_data`), sem XSS armazenado, e `schema_version` para evolução. |
-| Posição dos blocos em `double precision`                   | Permite inserir entre dois blocos sem renumerar. `reorder_session_blocks` renumera quando necessário.                |
-| Mídia privada com URLs assinadas                           | Capas, retratos e imagens de roteiro seguem a visibilidade do registro. Avatares são públicos.                       |
-| Testes de RLS com PGlite                                   | Testam as policies reais sem Docker nem banco externo, na CI e em qualquer máquina.                                  |
-| Pacotes sem build                                          | Menos configuração, e o mesmo código é usado pelos dois apps.                                                        |
+| Decisão                                                     | Motivo                                                                                                                |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Supabase sem servidor próprio                               | RLS cobre a autorização. Edge Functions ficam para operações privilegiadas reais (e-mails, rotinas agendadas).        |
+| Papel por campanha (`campaign_members.role`)                | O mesmo usuário é mestre numa campanha e jogador em outra.                                                            |
+| Ficha como JSON validado mais tabelas de estado de jogo     | Os sistemas variam na estrutura da ficha. Vida e recursos precisam de atualizações atômicas e de Realtime por linha.  |
+| Segredos de NPCs numa tabela separada (`creature_gm_data`)  | O RLS é por linha. Separar a tabela garante que jogadores nunca recebam a coluna secreta, nem pelo Realtime.          |
+| Roteiro em blocos JSON tipados (nunca HTML)                 | Validação no cliente (zod) e no banco (`is_valid_block_data`), sem XSS armazenado, e `schema_version` para evolução.  |
+| Posição dos blocos em `double precision`                    | Permite inserir entre dois blocos sem renumerar. `reorder_session_blocks` renumera quando necessário.                 |
+| Mídia privada com URLs assinadas                            | Capas, retratos e imagens de roteiro seguem a visibilidade do registro.                                               |
+| Sem foto de perfil                                          | O usuário é identificado pelas iniciais. Menos dados pessoais e menos uso de armazenamento.                           |
+| Imagens reduzidas no navegador                              | Redimensionar e regravar em WebP antes do envio poupa o armazenamento do Supabase; o bucket limita a 2 MB.            |
+| Criação de personagem guiada por regras compartilhadas      | Web, mobile e servidor usam o mesmo motor (`listDnd5eChoices`, `validateDnd5eDraft`, `buildDnd5eCharacterFromDraft`). |
+| Mestres não são donos de personagens das próprias campanhas | O mestre conduz com NPCs e monstros; a regra fica no banco (`CVGMC`), não só na interface.                            |
+| Só conteúdo do SRD 5.2.1 na criação                         | É o conteúdo oficial que a licença CC-BY-4.0 permite reproduzir; livros comerciais ficam de fora (prompt, §8).        |
+| Testes de RLS com PGlite                                    | Testam as policies reais sem Docker nem banco externo, na CI e em qualquer máquina.                                   |
+| Pacotes sem build                                           | Menos configuração, e o mesmo código é usado pelos dois apps.                                                         |

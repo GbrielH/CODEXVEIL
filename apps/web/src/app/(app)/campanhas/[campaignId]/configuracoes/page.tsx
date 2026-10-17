@@ -28,12 +28,14 @@ export default async function CampaignSettingsPage({ params }: PageProps<'/campa
         />
         <CampaignSettingsForm
           campaignId={campaign.id}
+          systemId={campaign.systemId}
           disabled={archived}
           initial={{
             name: campaign.name,
             description: campaign.description,
             partySheetsVisible: campaign.settings.partySheetsVisible,
             playersCanEditSheets: campaign.settings.playersCanEditSheets,
+            characterRules: campaign.characterRules,
           }}
         />
       </Card>

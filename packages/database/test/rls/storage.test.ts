@@ -48,7 +48,7 @@ describe('buckets', () => {
       {
         id: 'campaign-media',
         public: false,
-        file_size_limit: '5242880',
+        file_size_limit: '2097152',
         allowed_mime_types: ['image/png', 'image/jpeg', 'image/webp'],
       },
     ]);
@@ -56,12 +56,18 @@ describe('buckets', () => {
 });
 
 describe('avatares', () => {
-  it('cada usuário envia apenas na própria pasta, com nomes de arquivo seguros', async () => {
+  it('o envio de fotos de perfil foi desativado, inclusive na própria pasta', async () => {
     const { player, otherPlayer } = await createTable(db);
-    await upload(player, 'avatars', `${player.id}/retrato.webp`);
+    await expectSqlError(upload(player, 'avatars', `${player.id}/retrato.webp`), '42501');
     await expectSqlError(upload(player, 'avatars', `${otherPlayer.id}/retrato.webp`), '42501');
-    await expectSqlError(upload(player, 'avatars', `${player.id}/pagina.html`), '42501');
-    await expectSqlError(upload(player, 'avatars', `${player.id}/../x.png`), '42501');
+  });
+
+  it('o perfil não aceita mais caminho de avatar', async () => {
+    const { player } = await createTable(db);
+    await expectSqlError(
+      db.as(player, (s) => s.query(`update public.profiles set avatar_path = $1 where id = $2`, [`${player.id}/a.webp`, player.id])),
+      '42501',
+    );
   });
 });
 

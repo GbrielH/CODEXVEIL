@@ -1,19 +1,19 @@
 # Próximos passos
 
-> Relatório atualizado em **2026-10-16**. Mantenha este arquivo em dia a cada etapa concluída
+> Relatório atualizado em **2026-10-17**. Mantenha este arquivo em dia a cada etapa concluída
 > (veja [Como manter a documentação](#como-manter-a-documentação)). O inventário completo do
 > que falta em relação ao escopo inicial está em [`PENDENCIAS.md`](PENDENCIAS.md), e os
 > procedimentos de publicação em [`DEPLOY.md`](DEPLOY.md).
 
 ## Onde estamos
 
-| Área        | Situação                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Site        | **No ar** em <https://codexveil.vercel.app> (Vercel, projeto `codexveil`). Hoje publicado pela CLI; o deploy automático pelo GitHub depende do passo 1.                                                                                                                                                                                                                                                                                                                                             |
-| Backend     | **No ar:** Supabase `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`, us-east-2), com as 6 migrações, Site URL e Redirect URLs (`deploy/supabase/config.toml`).                                                                                                                                                                                                                                                                                                                                                  |
-| App Android | **APK-base com atualização automática** (OTA) em geração pelo workflow do EAS: [build `de6ceb5c`](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/de6ceb5c-3d68-4be9-ad97-e19e2725b56b). APK reserva, com a correção do Realtime mas **sem** OTA: [download](https://expo.dev/artifacts/eas/OZvl6Lk0rZtf9G-IwxtKQMX7BM-HEj9KNdZ428o85PU.apk). O primeiro APK (versionCode 1) está obsoleto. Todos os builds: <https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds>. |
-| Validação   | API validada ao vivo: `packages/database/test/live` passou 10/10 contra o Supabase real. `pnpm check` passa 20/20 (318 testes) e `pnpm build` passa 2/2. **Ninguém usou ainda as telas com duas contas.**                                                                                                                                                                                                                                                                                           |
-| E-mail      | **Adiado:** o SMTP próprio (Brevo) será configurado com um e-mail exclusivo do sistema. Até lá, valem os e-mails padrão do Supabase, em inglês, com as limitações abaixo.                                                                                                                                                                                                                                                                                                                           |
+| Área        | Situação                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Site        | **No ar** em <https://codexveil.vercel.app> (Vercel, projeto `codexveil`). Publicado pela CLI até 2026-10-16, **ainda sem as mudanças de 2026-10-17**. O próximo deploy depende do passo 1 (a CLI desta máquina está sem login).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Backend     | **No ar:** Supabase `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`, us-east-2), com as 7 migrações (a da criação guiada aplicada em 2026-10-17), Site URL e Redirect URLs (`deploy/supabase/config.toml`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| App Android | **APK-base com atualização automática** (OTA) pronto: [download](https://expo.dev/artifacts/eas/biJnmUweuBVeBI7xSMpxQH3lQMN7hZPfDJPklJ-Ay_0.apk) ([build `de6ceb5c`](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/de6ceb5c-3d68-4be9-ad97-e19e2725b56b)). APK reserva, com a correção do Realtime mas **sem** OTA: [download](https://expo.dev/artifacts/eas/OZvl6Lk0rZtf9G-IwxtKQMX7BM-HEj9KNdZ428o85PU.apk). O primeiro APK (versionCode 1) está obsoleto. Todos os builds: <https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds>. **As mudanças de 2026-10-17 alteram o fingerprint nativo:** o app precisa de um APK novo, e os APKs atuais não recebem essa atualização. |
+| Validação   | API validada ao vivo (10/10 em 2026-10-16; 11/11 em 2026-10-17). Em 2026-10-17, `pnpm check` passa 20/20 (366 testes) e `pnpm build` passa 2/2, e um percurso automatizado logado no site local criou personagens pelo assistente contra o banco real e confirmou o tempo real na ficha. **Ninguém usou ainda as telas com duas contas.**                                                                                                                                                                                                                                                                                                                                                                        |
+| E-mail      | **Adiado:** o SMTP próprio (Brevo) será configurado com um e-mail exclusivo do sistema. Até lá, valem os e-mails padrão do Supabase, em inglês, com as limitações abaixo.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
 ### Limitações enquanto não houver SMTP próprio
 
@@ -26,6 +26,26 @@
 
 ## Próximos passos (em ordem)
 
+### 0. Publicar a criação guiada — em andamento
+
+Implementado em 2026-10-17 (veja o histórico): assistente de criação com as regras do SRD 5.2.1,
+regras de criação do mestre em cada campanha, mestres sem personagens nas próprias campanhas,
+"olho" nas senhas, fim da foto de perfil e imagens reduzidas antes do envio.
+
+- [x] **Claude:** `supabase db push --dry-run` e `supabase db push`, só com a migração
+      `20261016130000_character_creation_rules.sql` (aplicada em 2026-10-17).
+- [x] **Claude:** teste ao vivo (11/11) e percurso logado no site local contra o banco real
+      (veja [`PROGRESS.md`](PROGRESS.md#testes-e-verificações-executados)). O percurso achou
+      e corrigiu uma falha do tempo real no navegador.
+- [x] **Você:** autorizou o commit e o push em `main` ("Pode subir").
+- [ ] **Site:** publicar o `main` na Vercel. Depende do passo 1 (ou de um login na CLI da
+      Vercel nesta máquina).
+- [ ] **App:** gerar o APK novo pelo workflow do EAS e instalá-lo no celular.
+
+**Pronto quando:** um jogador criar um personagem completo pelo assistente numa campanha cujo
+mestre definiu o nível inicial, e o mestre não conseguir criar personagem nessa campanha. No
+site local isso já foi confirmado pelo percurso automatizado; falta no site publicado e no app.
+
 ### 1. Atualização automática do site e do app a cada commit — você e Claude
 
 Objetivo: um push em `main` publica o site e atualiza o app sozinho.
@@ -35,6 +55,10 @@ Objetivo: um push em `main` publica o site e atualiza o app sozinho.
   Ele gera um APK novo quando o código nativo muda e, nos outros casos, publica uma atualização
   OTA. A primeira execução foi disparada daqui para gerar o APK-base com atualização
   automática.
+- **Conferido em 2026-10-17 (Claude):** as duas integrações ainda não estão ligadas. O EAS só
+  tem uma execução do workflow, manual (o push de 2026-10-16 não disparou nada), e o
+  repositório não tem nenhum deploy da Vercel. A ligação exige instalar os apps da Vercel e da
+  Expo no GitHub `GbrielH`, o que só o dono da conta pode autorizar no navegador.
 - **Você (uma vez):**
   1. Vercel: <https://vercel.com/henrique0limah-6628/codexveil/settings/git> → **Connect Git
      Repository** → GitHub → instale o app da Vercel na conta `GbrielH` (se ela não aparecer,
@@ -61,7 +85,9 @@ Mestre e jogador, em navegadores diferentes, no site publicado:
       jogador atualiza sozinha.
 - [ ] O mestre cria uma sessão com uma nota privada e publica a sessão; o jogador **não** vê a
       nota.
-- [ ] Upload de avatar e de retrato do personagem.
+- [ ] Criação guiada: classe, antecedente, espécie, perícias, atributos, magias e equipamento,
+      com o nível definido pelo mestre.
+- [ ] Upload de retrato do personagem (a imagem é reduzida antes do envio).
 - [ ] O layout funciona no navegador do celular.
 
 No APK, instalado num Android:
@@ -92,7 +118,7 @@ recuperação de senha funcionar a partir do app.
 ### 4. Funcionalidades e qualidade pendentes — Claude
 
 A ordem detalhada está em
-[`PENDENCIAS.md`](PENDENCIAS.md#5-próximos-passos-sugeridos-em-ordem):
+[`PENDENCIAS.md`](PENDENCIAS.md#6-próximos-passos-sugeridos-em-ordem):
 
 1. Capa da campanha: tela de envio e exibição (o backend está pronto).
 2. Referências a sessões na página de NPCs e monstros.
@@ -100,8 +126,9 @@ A ordem detalhada está em
    homologação.
 4. Auditoria de acessibilidade e desempenho e cabeçalho CSP.
 5. Rotinas de backend: limite de armazenamento, limpeza de arquivos órfãos e e-mail de convite.
-6. Mobile: avatar, retrato do personagem, redefinição de senha no app e mesa do mestre em modo
+6. Mobile: retrato do personagem, redefinição de senha no app e mesa do mestre em modo
    consulta.
+7. Subida de nível guiada com as mesmas regras do SRD.
 
 Antes de abrir para outras pessoas, siga o checklist de
 [`DEPLOY.md`](DEPLOY.md#7-checklist-antes-de-abrir-para-usuários) (SMTP próprio, backup e revisão
@@ -118,6 +145,35 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-17 — criação guiada e correções pedidas pelo responsável
+
+- Dados do SRD 5.2.1 conferidos no PDF oficial e adicionados ao módulo D&D 5e: 12 classes
+  (habilidades do 1º ao 20º nível e subclasse do SRD), 9 espécies, 4 antecedentes, talentos,
+  idiomas, armas, armaduras, ferramentas, equipamento inicial, invocações, metamagia e as 339
+  magias (nome e cabeçalho técnico; sem o texto das descrições).
+- Motor da criação guiada compartilhado por web, app e servidor (`listDnd5eChoices`,
+  `validateDnd5eDraft`, `buildDnd5eCharacterFromDraft`) e assistente em 10 passos na web e no
+  app.
+- Regras de criação por campanha (`campaigns.character_rules`): nível inicial, métodos de
+  atributo e alinhamentos malignos.
+- Mestres não criam nem vinculam personagens nas próprias campanhas (banco e telas).
+- "Olho" nos campos de senha (web e app), fim da foto de perfil, imagens reduzidas no navegador
+  e limite de 2 MB no bucket de mídia. O prompt inicial só pedia validar tipo e tamanho.
+- Máquina local: Node 24.20 e pnpm 12.14 instalados; site local em `localhost:3000` e o app no
+  navegador em `localhost:8081` (`react-native-web`).
+- `pnpm check` 20/20 (366 testes) e `pnpm build` 2/2.
+- Migração `20261016130000_character_creation_rules.sql` aplicada em produção, sem backup (o
+  plano gratuito não oferece, e a máquina não tem Docker nem `pg_dump`). Teste ao vivo: 11/11.
+- Percurso logado no site local contra o banco real: criação guiada (ficha pessoal e campanha
+  com nível 3), regras do mestre e mestre sem botão de criar personagem. Ele revelou que o
+  tempo real não funcionava no navegador (assinatura com o papel anônimo); a correção em
+  `realtime.ts` vale para o site e o app.
+- O fingerprint nativo mudou: o `react-native-web` alterou os caminhos do pnpm de `expo`,
+  `expo-router` e `expo-system-ui`, e o Expo gera o `apps/mobile/.gitignore`, agora versionado.
+  O app precisa de um APK novo.
+- Deploy automático conferido: a Vercel e o Expo ainda não estão ligados ao GitHub, e a CLI da
+  Vercel desta máquina está sem login.
 
 ### 2026-10-16 — publicação
 

@@ -1,103 +1,76 @@
 'use server';
 
 import { createCharacter, getCampaign } from '@codexveil/database';
-import { findSystem } from '@codexveil/rpg-systems';
-import { buildDnd5eCharacter, dnd5eCreationSchema } from '@codexveil/rpg-systems/dnd5e';
-import { characterCreateSchema, fieldErrorsFrom } from '@codexveil/validation';
-import type { Route } from 'next';
+import {
+  PERSONAL_SHEET_CONTEXT,
+  buildDnd5eCharacterFromDraft,
+  dnd5eDraftSchema,
+  parseDnd5eCampaignRules,
+  validateDnd5eDraft,
+  type DraftIssue,
+  type Dnd5eCreationContext,
+} from '@codexveil/rpg-systems/dnd5e';
+import { characterCreateSchema, uuidSchema } from '@codexveil/validation';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
-import { failureMessage, readText, type FormState } from '@/lib/actions';
+import { z } from 'zod';
+import { failureMessage } from '@/lib/actions';
 import { requireSessionUser } from '@/lib/auth';
-import { characterPath, routes } from '@/lib/routes';
+import { routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-/** Número informado no formulário; vazio vira `undefined` (usa o padrão) ou `null`. */
-function numberField(formData: FormData, key: string, empty: undefined | null = undefined) {
-  const text = readText(formData, key).trim();
-  if (text === '') return empty;
-  const value = Number(text.replace(',', '.'));
-  return Number.isNaN(value) ? text : value;
-}
+export type CreateCharacterResult =
+  | { ok: true; characterId: string }
+  | { ok: false; message: string; issues?: DraftIssue[] };
 
-const DND5E_FIELDS = [
-  'species',
-  'background',
-  'className',
-  'level',
-  'hitDie',
-  'hitPointMax',
-  'abilities.str',
-  'abilities.dex',
-  'abilities.con',
-  'abilities.int',
-  'abilities.wis',
-  'abilities.cha',
-] as const;
+const inputSchema = z.object({
+  campaignId: uuidSchema.nullable(),
+  draft: z.unknown(),
+});
 
-export async function createCharacterAction(_previous: FormState, formData: FormData): Promise<FormState> {
+/**
+ * Cria um personagem de D&D 5e a partir do rascunho do assistente. O servidor repete toda a
+ * validação das regras (SRD 5.2 e regras da campanha) antes de montar e gravar a ficha.
+ */
+export async function createDnd5eCharacterAction(input: unknown): Promise<CreateCharacterResult> {
   const user = await requireSessionUser(routes.newCharacter);
-  const values = Object.fromEntries(
-    ['name', 'campaignId', 'systemId', ...DND5E_FIELDS].map((key) => [key, readText(formData, key)]),
-  );
-
-  const campaignId = values.campaignId ? values.campaignId : null;
-  let systemId = values.systemId ?? '';
+  const parsedInput = inputSchema.safeParse(input);
+  if (!parsedInput.success) return { ok: false, message: 'Requisição inválida.' };
+  const draft = dnd5eDraftSchema.safeParse(parsedInput.data.draft);
+  if (!draft.success) return { ok: false, message: 'Os dados do personagem estão incompletos ou inválidos.' };
+  const campaignId = parsedInput.data.campaignId;
 
   let supabase;
+  let context: Dnd5eCreationContext = PERSONAL_SHEET_CONTEXT;
   try {
     supabase = await createSupabaseServerClient();
-    // Com campanha, o sistema é sempre o da campanha (o banco também exige isso).
     if (campaignId) {
       const campaign = await getCampaign(supabase, campaignId, user.id);
       if (!campaign || campaign.status !== 'active') {
-        return {
-          status: 'error',
-          fieldErrors: { campaignId: 'Escolha uma campanha ativa da qual você participa.' },
-          values,
-        };
+        return { ok: false, message: 'Escolha uma campanha ativa da qual você participa.' };
       }
-      systemId = campaign.systemId;
+      if (campaign.role !== 'player') {
+        return { ok: false, message: 'Mestres não criam personagens na própria campanha: use os NPCs e monstros da biblioteca.' };
+      }
+      if (campaign.systemId !== 'dnd5e') return { ok: false, message: 'Esta campanha usa outro sistema de RPG.' };
+      const rules = parseDnd5eCampaignRules(campaign.characterRules);
+      context = {
+        lockedLevel: rules.startingLevel,
+        abilityScoreMethods: rules.abilityScoreMethods,
+        allowEvilAlignments: rules.allowEvilAlignments,
+      };
     }
   } catch (error) {
-    return { status: 'error', message: failureMessage(error), values };
+    return { ok: false, message: failureMessage(error) };
   }
 
-  const base = characterCreateSchema.safeParse({ name: values.name, systemId, campaignId });
-  const system = findSystem(systemId);
-  if (!base.success || !system) {
-    return {
-      status: 'error',
-      fieldErrors: base.success ? { systemId: 'Sistema não suportado.' } : fieldErrorsFrom(base.error),
-      values,
-    };
+  const issues = validateDnd5eDraft(draft.data, context);
+  if (issues.length > 0) {
+    return { ok: false, message: 'Ainda há escolhas pendentes. Revise os passos indicados.', issues };
   }
+  const base = characterCreateSchema.safeParse({ name: draft.data.name, systemId: 'dnd5e', campaignId });
+  if (!base.success) return { ok: false, message: base.error.issues[0]?.message ?? 'Dados inválidos.' };
 
-  let built: { sheet: unknown; resources: ReturnType<typeof system.defaultResources> };
-  switch (base.data.systemId) {
-    case 'dnd5e': {
-      const creation = dnd5eCreationSchema.safeParse({
-        species: values.species,
-        background: values.background,
-        className: values.className,
-        level: numberField(formData, 'level'),
-        hitDie: values.hitDie || undefined,
-        hitPointMax: numberField(formData, 'hitPointMax', null),
-        abilities: Object.fromEntries(
-          (['str', 'dex', 'con', 'int', 'wis', 'cha'] as const).map((ability) => [
-            ability,
-            numberField(formData, `abilities.${ability}`),
-          ]),
-        ),
-      });
-      if (!creation.success) {
-        return { status: 'error', fieldErrors: fieldErrorsFrom(creation.error), values };
-      }
-      built = buildDnd5eCharacter(creation.data);
-      break;
-    }
-  }
-
+  const built = buildDnd5eCharacterFromDraft(draft.data);
   let characterId: string;
   try {
     characterId = await createCharacter(supabase, {
@@ -106,12 +79,14 @@ export async function createCharacterAction(_previous: FormState, formData: Form
       campaignId: base.data.campaignId,
       sheet: built.sheet,
       resources: built.resources,
+      items: built.items,
+      abilities: built.abilities,
     });
   } catch (error) {
-    return { status: 'error', message: failureMessage(error), values };
+    return { ok: false, message: failureMessage(error) };
   }
 
   revalidatePath(routes.characters);
   if (campaignId) revalidatePath(`/campanhas/${campaignId}`, 'layout');
-  redirect(`${characterPath(characterId)}?aviso=personagem-criado` as Route);
+  return { ok: true, characterId };
 }

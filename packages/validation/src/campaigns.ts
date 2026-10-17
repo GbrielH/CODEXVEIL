@@ -11,10 +11,17 @@ import { emailSchema, optionalText, requiredText } from './common';
 
 export const systemIdSchema = z.enum(SYSTEM_IDS, { error: 'Escolha um sistema de RPG suportado.' });
 
+/**
+ * Regras de criação de personagens definidas pelo mestre. O conteúdo é validado pelo módulo
+ * do sistema escolhido (`findSystem(id).campaignRulesSchema`); aqui só se exige um objeto.
+ */
+export const characterRulesSchema = z.record(z.string(), z.unknown());
+
 export const campaignCreateSchema = z.object({
   name: requiredText('o nome da campanha', 2, 80),
   description: optionalText(2000),
   systemId: systemIdSchema,
+  characterRules: characterRulesSchema.default({}),
 });
 export type CampaignCreateInput = z.input<typeof campaignCreateSchema>;
 export type CampaignCreate = z.output<typeof campaignCreateSchema>;
@@ -24,6 +31,8 @@ export const campaignUpdateSchema = z.object({
   description: optionalText(2000),
   partySheetsVisible: z.boolean(),
   playersCanEditSheets: z.boolean(),
+  /** Ausente = mantém as regras atuais. */
+  characterRules: characterRulesSchema.optional(),
 });
 export type CampaignUpdate = z.output<typeof campaignUpdateSchema>;
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { CampaignRulesFields } from '@/components/campaigns/campaign-rules-fields';
 import { Alert } from '@/components/ui/alert';
 import { CheckboxField, TextareaField, TextField } from '@/components/ui/field';
 import { SubmitButton } from '@/components/ui/submit-button';
@@ -9,16 +10,18 @@ import { updateCampaignAction } from '../../actions';
 
 interface SettingsFormProps {
   campaignId: string;
+  systemId: string;
   disabled: boolean;
   initial: {
     name: string;
     description: string;
     partySheetsVisible: boolean;
     playersCanEditSheets: boolean;
+    characterRules: unknown;
   };
 }
 
-export function CampaignSettingsForm({ campaignId, disabled, initial }: SettingsFormProps) {
+export function CampaignSettingsForm({ campaignId, systemId, disabled, initial }: SettingsFormProps) {
   const [state, action] = useActionState<FormState, FormData>(updateCampaignAction.bind(null, campaignId), {
     status: 'idle',
   });
@@ -27,6 +30,7 @@ export function CampaignSettingsForm({ campaignId, disabled, initial }: Settings
     <form action={action} noValidate className="flex flex-col gap-5">
       {state.message ? <Alert tone={state.status === 'success' ? 'success' : 'danger'}>{state.message}</Alert> : null}
       <fieldset disabled={disabled} className="flex flex-col gap-5 disabled:opacity-70">
+        <input type="hidden" name="systemId" value={systemId} />
         <TextField
           id="name"
           name="name"
@@ -59,6 +63,7 @@ export function CampaignSettingsForm({ campaignId, disabled, initial }: Settings
           description="Desmarcado, só mestres alteram atributos, perícias e dados básicos. Vida, recursos e inventário continuam editáveis pelo jogador."
           defaultChecked={initial.playersCanEditSheets}
         />
+        <CampaignRulesFields systemId={systemId} initial={initial.characterRules} errors={state.fieldErrors} />
         <div>
           <SubmitButton pendingLabel="Salvando…">Salvar alterações</SubmitButton>
         </div>

@@ -66,7 +66,7 @@ export default function ProfileScreen() {
       {data ? <ProfileForm key={data.displayName + data.bio} profile={data} onSaved={reload} /> : null}
       <Card>
         <AppText variant="heading">Conta</AppText>
-        <AppText variant="muted">Para trocar a senha ou o avatar, use o site do Codexveil.</AppText>
+        <AppText variant="muted">Para trocar a senha, use o site do Codexveil.</AppText>
         <Button
           label="Sair da conta"
           variant="danger"

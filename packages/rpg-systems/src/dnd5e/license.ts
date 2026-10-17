@@ -1,10 +1,11 @@
 import type { ContentLicense } from '../types';
 
 /**
- * As regras usadas pelo módulo D&D 5e vêm do SRD 5.2, publicado sob CC-BY-4.0.
- * O Codexveil usa apenas mecânicas (atributos, perícias, tabelas de progressão e nomes
- * de condições); os resumos e textos de interface foram escritos para o projeto.
- * Nenhum conteúdo de livros comerciais é reproduzido. Ver docs/CONTENT_LICENSES.md.
+ * As regras usadas pelo módulo D&D 5e vêm do SRD 5.2.1, publicado sob CC-BY-4.0: mecânicas,
+ * e, na criação de personagens, classes, espécies, antecedentes, talentos, equipamento e o
+ * cabeçalho técnico das magias (pasta `srd/`). Nomes traduzidos, resumos próprios e medidas
+ * convertidas são alterações do Codexveil. Nenhum conteúdo de livros comerciais é reproduzido.
+ * Ver docs/CONTENT_LICENSES.md.
  */
 export const srd52License: ContentLicense = {
   work: 'System Reference Document 5.2',

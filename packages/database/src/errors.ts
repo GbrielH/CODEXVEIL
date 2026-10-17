@@ -1,6 +1,6 @@
 /**
  * Converte erros do Supabase (PostgREST, Auth, rede) em `AppError` com códigos estáveis.
- * Os SQLSTATEs próprios (CVLIM, CVARC) são definidos nas migrações.
+ * Os SQLSTATEs próprios (CVLIM, CVARC, CVGMC) são definidos nas migrações.
  */
 import { AppError, limitReachedMessages, type LimitedResource } from '@codexveil/domain';
 
@@ -44,6 +44,12 @@ export function toAppError(error: unknown): AppError {
         return new AppError('forbidden', 'A campanha está arquivada e é somente leitura.', {
           cause: error,
         });
+      case 'CVGMC':
+        return new AppError(
+          'forbidden',
+          'Mestres não criam personagens na própria campanha: use os NPCs e monstros da biblioteca.',
+          { cause: error },
+        );
       case 'CVLIM': {
         const resource = isLimitedResource(hint) ? hint : undefined;
         return new AppError(

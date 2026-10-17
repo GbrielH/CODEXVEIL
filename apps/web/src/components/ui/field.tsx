@@ -7,7 +7,7 @@ const controlBase =
   'hover:border-silver-400/50 focus-visible:border-parchment-300 focus-visible:outline-none ' +
   'focus-visible:shadow-[0_0_0_3px_rgb(228_216_189/0.18)] disabled:cursor-not-allowed disabled:opacity-60';
 
-function controlClasses(invalid: boolean, extra?: string) {
+export function controlClasses(invalid: boolean, extra?: string) {
   return cx(
     controlBase,
     invalid ? 'border-ember-400/80' : 'border-line-strong',
@@ -52,7 +52,7 @@ export function FieldShell({ id, label, hint, error, required, children, classNa
   );
 }
 
-function describedBy(id: string, hint: unknown, error: unknown): string | undefined {
+export function describedBy(id: string, hint: unknown, error: unknown): string | undefined {
   if (error) return `${id}-error`;
   if (hint) return `${id}-hint`;
   return undefined;

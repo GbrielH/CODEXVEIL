@@ -32,24 +32,24 @@ sequestro de `search_path`. O esquema `private` não é exposto pela API.
 
 ## Matriz de acesso
 
-| Recurso                             | Ler                                                                     | Criar / alterar / remover                                                                                  |
-| ----------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Perfil                              | O próprio e o de quem divide campanha com você                          | Só o próprio; o avatar precisa estar na pasta do usuário                                                   |
-| Campanha                            | Participantes                                                           | Criar: qualquer usuário (como dono). Alterar: mestres, se ativa. Excluir, arquivar e transferir: só o dono |
-| Participantes                       | Participantes                                                           | Só por RPC: aceitar convite, remover (mestre; só o dono remove mestres), sair, alterar papel (dono)        |
-| Convites                            | Mestres                                                                 | Mestres, em campanha ativa. Código, papel, usos e criador são definidos pelo banco                         |
-| Personagem                          | Dono, mestres e o grupo (se `party_sheets_visible`)                     | Criar: o dono. Ficha: `can_edit_character_sheet`. Excluir: só o dono                                       |
-| Vida, recursos, condições, itens    | Quem vê o personagem                                                    | `can_edit_character_play`                                                                                  |
-| Habilidades e magias                | Quem vê o personagem                                                    | `can_edit_character_sheet`                                                                                 |
-| Histórico                           | Quem vê o personagem                                                    | Inserir: `can_edit_character_play`, sempre em nome próprio. Imutável                                       |
-| Cópias de segurança                 | Quem edita a ficha                                                      | Só por gatilho                                                                                             |
-| NPCs e monstros (`creatures`)       | Mestres; jogadores só os revelados (`members`)                          | Mestres, em campanha ativa                                                                                 |
-| Dados secretos (`creature_gm_data`) | **Só mestres**                                                          | Só mestres                                                                                                 |
-| Sessões                             | Mestres; jogadores só as publicadas                                     | Mestres, em campanha ativa                                                                                 |
-| Blocos de roteiro                   | Mestres; jogadores só os blocos `members` de sessões publicadas         | Mestres                                                                                                    |
-| Cena, encontros e combatentes       | **Só mestres**                                                          | Só mestres                                                                                                 |
-| Anotações                           | `members`: participantes. `gm`: mestres e o autor. `author`: só o autor | Criar e editar: o autor. Remover: o autor, ou um mestre se a nota for `members`                            |
-| Planos                              | Usuários autenticados (o próprio plano)                                 | Só `service_role`                                                                                          |
+| Recurso                             | Ler                                                                     | Criar / alterar / remover                                                                                                                                                    |
+| ----------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Perfil                              | O próprio e o de quem divide campanha com você                          | Só o próprio (nome, bio e preferências; o avatar foi removido do produto)                                                                                                    |
+| Campanha                            | Participantes                                                           | Criar: qualquer usuário (como dono). Alterar (inclusive as regras de criação): mestres, se ativa. Excluir, arquivar e transferir: só o dono                                  |
+| Participantes                       | Participantes                                                           | Só por RPC: aceitar convite, remover (mestre; só o dono remove mestres), sair, alterar papel (dono)                                                                          |
+| Convites                            | Mestres                                                                 | Mestres, em campanha ativa. Código, papel, usos e criador são definidos pelo banco                                                                                           |
+| Personagem                          | Dono, mestres e o grupo (se `party_sheets_visible`)                     | Criar: o dono, que precisa ser **jogador** da campanha (mestres não criam nem vinculam personagens às próprias mesas). Ficha: `can_edit_character_sheet`. Excluir: só o dono |
+| Vida, recursos, condições, itens    | Quem vê o personagem                                                    | `can_edit_character_play`                                                                                                                                                    |
+| Habilidades e magias                | Quem vê o personagem                                                    | `can_edit_character_sheet`, ou o dono dentro da transação que cria o personagem (`is_character_being_created`)                                                               |
+| Histórico                           | Quem vê o personagem                                                    | Inserir: `can_edit_character_play`, sempre em nome próprio. Imutável                                                                                                         |
+| Cópias de segurança                 | Quem edita a ficha                                                      | Só por gatilho                                                                                                                                                               |
+| NPCs e monstros (`creatures`)       | Mestres; jogadores só os revelados (`members`)                          | Mestres, em campanha ativa                                                                                                                                                   |
+| Dados secretos (`creature_gm_data`) | **Só mestres**                                                          | Só mestres                                                                                                                                                                   |
+| Sessões                             | Mestres; jogadores só as publicadas                                     | Mestres, em campanha ativa                                                                                                                                                   |
+| Blocos de roteiro                   | Mestres; jogadores só os blocos `members` de sessões publicadas         | Mestres                                                                                                                                                                      |
+| Cena, encontros e combatentes       | **Só mestres**                                                          | Só mestres                                                                                                                                                                   |
+| Anotações                           | `members`: participantes. `gm`: mestres e o autor. `author`: só o autor | Criar e editar: o autor. Remover: o autor, ou um mestre se a nota for `members`                                                                                              |
+| Planos                              | Usuários autenticados (o próprio plano)                                 | Só `service_role`                                                                                                                                                            |
 
 Usuários anônimos (`anon`) só leem `rpg_systems`. Nenhuma outra tabela tem GRANT para `anon`.
 
@@ -71,19 +71,25 @@ Usuários anônimos (`anon`) só leem `rpg_systems`. Nenhuma outra tabela tem GR
 - Sessões não publicadas são invisíveis aos jogadores, incluindo os blocos públicos delas.
 - O Realtime (Postgres Changes) aplica as mesmas policies a cada assinante. Os segredos não são
   publicados: `creature_gm_data` e `session_blocks` nem fazem parte da publicação, e a cena e o
-  combate só chegam aos mestres.
+  combate só chegam aos mestres. Uma assinatura sem o token do usuário cai no papel anônimo,
+  que não tem acesso às tabelas: o Realtime recusa a assinatura (confirmado em produção em
+  2026-10-17).
 - As imagens de roteiro e de NPCs só podem ser lidas quando o registro que as referencia pode
   ser lido (veja Storage abaixo).
 
 ## Storage
 
-| Bucket                               | Acesso                                                     | Caminhos                                                                                                          |
-| ------------------------------------ | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `avatars` (público, até 2 MB)        | Leitura pública pela URL. Escrita só na pasta `{user_id}/` | `{user_id}/{arquivo}`                                                                                             |
-| `campaign-media` (privado, até 5 MB) | URLs assinadas de curta duração                            | `campaigns/{id}/cover/…`, `campaigns/{id}/creatures/…`, `campaigns/{id}/sessions/{sessão}/…`, `characters/{id}/…` |
+| Bucket                               | Acesso                                                                                                                                     | Caminhos                                                                                                          |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `avatars` (público, desativado)      | Leitura pública e remoção na própria pasta. **Envio e troca bloqueados** desde a migração de 2026-10-16 (o produto não tem foto de perfil) | `{user_id}/{arquivo}`                                                                                             |
+| `campaign-media` (privado, até 2 MB) | URLs assinadas de curta duração                                                                                                            | `campaigns/{id}/cover/…`, `campaigns/{id}/creatures/…`, `campaigns/{id}/sessions/{sessão}/…`, `characters/{id}/…` |
 
 - Só PNG, JPEG e WebP são aceitos, verificando o MIME no bucket e a extensão do nome. SVG é
   recusado porque pode conter scripts. Os nomes de arquivo seguem um padrão restrito.
+- **Tamanho:** o site reduz as imagens no navegador antes do envio (lado maior de 768 px para
+  retratos, 1024 px para NPCs e monstros e 1600 px para roteiros, regravadas em WebP;
+  `IMAGE_PRESETS` em `@codexveil/validation`). O limite de 2 MB do bucket vale no servidor
+  mesmo para quem chamar a API diretamente.
 - **Leitura da mídia privada:** mestres leem toda a mídia da campanha. Os demais participantes
   leem a capa, imagens de NPCs revelados e imagens de blocos públicos de sessões publicadas.
   Retratos seguem `can_view_character`.
@@ -120,17 +126,26 @@ reais de cada usuário:
   transferência, limites de plano e isolamento entre campanhas do mesmo mestre.
 - `characters.test.ts`: ficha de outro jogador (mesmo com o UUID correto), visibilidade do
   grupo, fichas travadas, versão e dono imutáveis, controle otimista, alterações simultâneas
-  de mestre e jogador, histórico imutável e isolamento.
+  de mestre e jogador, histórico imutável, isolamento, mestre e co-mestre impedidos de criar ou
+  vincular personagens na própria campanha, criação completa (inventário e habilidades) mesmo
+  com a ficha travada e listas grandes demais recusadas.
 - `invites.test.ts`: código gerado no servidor, validade máxima, uso único dos convites
   pessoais, limite de usos, convites expirados e revogados, prévia que não revela a campanha,
   campanha arquivada e e-mail não confirmado ou diferente.
 - `sessions.test.ts`: blocos `gm`, sessões não publicadas, blocos malformados ou com HTML,
   bloco apontando para outra campanha, `creature_gm_data`, cena e combate exclusivos do mestre,
   anotações por visibilidade e referências de blocos públicos que não vazam segredos.
-- `storage.test.ts`: tipo e tamanho por bucket, avatar só na própria pasta, capas, imagem de
-  NPC oculto, imagem de roteiro, caminhos fora do padrão e retratos.
+- `storage.test.ts`: tipo e tamanho por bucket, envio de avatar recusado (inclusive na
+  própria pasta e pelo perfil), capas, imagem de NPC oculto, imagem de roteiro, caminhos fora do
+  padrão e retratos.
 
 ## Limitações conhecidas
+
+- **Regras de jogo não são segurança.** O banco garante quem cria e edita cada personagem,
+  mas não confere se a ficha segue o SRD ou as regras do mestre (nível inicial, método de
+  atributos). O site valida no servidor; o app valida no aparelho. Quem chamar a API
+  diretamente pode gravar uma ficha fora das regras, e o mestre continua vendo e podendo
+  travar a edição das fichas da campanha.
 
 - **Não há Content-Security-Policy.** Ela deve ser adicionada depois da validação ao vivo, para
   não bloquear as conexões com o Supabase e o Realtime.

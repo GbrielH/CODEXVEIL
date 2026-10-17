@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useActionState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { TextField } from '@/components/ui/field';
+import { PasswordField } from '@/components/ui/password-field';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { routes } from '@/lib/routes';
 import {
@@ -41,10 +42,9 @@ export function SignInForm({ next, sessionExpired }: { next?: string; sessionExp
         defaultValue={state.values?.email}
         error={state.fieldErrors?.email}
       />
-      <TextField
+      <PasswordField
         id="password"
         name="password"
-        type="password"
         label="Senha"
         autoComplete="current-password"
         required
@@ -100,20 +100,18 @@ export function SignUpForm() {
         defaultValue={state.values?.email}
         error={state.fieldErrors?.email}
       />
-      <TextField
+      <PasswordField
         id="password"
         name="password"
-        type="password"
         label="Senha"
         hint="Pelo menos 8 caracteres, com letras e números."
         autoComplete="new-password"
         required
         error={state.fieldErrors?.password}
       />
-      <TextField
+      <PasswordField
         id="confirmPassword"
         name="confirmPassword"
-        type="password"
         label="Confirme a senha"
         autoComplete="new-password"
         required
@@ -155,20 +153,18 @@ export function ResetPasswordForm() {
   return (
     <form action={action} noValidate className="flex flex-col gap-4">
       <FormMessage state={state} />
-      <TextField
+      <PasswordField
         id="password"
         name="password"
-        type="password"
         label="Nova senha"
         hint="Pelo menos 8 caracteres, com letras e números."
         autoComplete="new-password"
         required
         error={state.fieldErrors?.password}
       />
-      <TextField
+      <PasswordField
         id="confirmPassword"
         name="confirmPassword"
-        type="password"
         label="Confirme a nova senha"
         autoComplete="new-password"
         required

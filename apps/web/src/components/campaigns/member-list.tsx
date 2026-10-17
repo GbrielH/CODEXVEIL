@@ -21,7 +21,7 @@ import type { ActionResult } from '@/lib/actions';
 interface MemberListProps {
   campaignId: string;
   campaignName: string;
-  members: (CampaignMember & { avatarUrl: string | null })[];
+  members: CampaignMember[];
   currentUserId: string;
   viewerIsOwner: boolean;
   viewerIsGm: boolean;
@@ -78,7 +78,7 @@ export function MemberList({
         return (
           <li key={member.userId} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-3">
-              <Avatar name={member.displayName} src={member.avatarUrl} />
+              <Avatar name={member.displayName} />
               <div className="min-w-0">
                 <p className="truncate font-medium text-fg">
                   {member.displayName}

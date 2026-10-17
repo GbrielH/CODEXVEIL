@@ -4,18 +4,23 @@ import Svg, { Path } from 'react-native-svg';
 import { colors, fonts } from '@/lib/theme';
 import { AppText } from '../ui/primitives';
 
-/** Emblema do Codexveil (mesmos caminhos SVG do site e dos ícones do app). */
+/**
+ * Emblema do Codexveil (mesmos caminhos SVG do site e dos ícones do app). É decorativo: o
+ * `aria-hidden` fica na View, que o React Native e o navegador (react-native-web) entendem.
+ */
 export function Emblem({ size = 40 }: { size?: number }) {
   const c = defaultEmblemColors;
   return (
-    <Svg width={size} height={size} viewBox={EMBLEM_VIEWBOX} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <Path d={emblemPaths.arch} fill={c.veil} stroke={c.outline} strokeWidth={2} strokeLinejoin="round" />
-      <Path d={emblemPaths.opening} fill={c.opening} />
-      <Path d={emblemPaths.star} fill={c.star} />
-      <Path d={emblemPaths.bookLeft} fill={c.pages} />
-      <Path d={emblemPaths.bookRight} fill={c.pages} />
-      <Path d={emblemPaths.spine} stroke={c.spine} strokeWidth={1.5} strokeLinecap="round" />
-    </Svg>
+    <View aria-hidden>
+      <Svg width={size} height={size} viewBox={EMBLEM_VIEWBOX}>
+        <Path d={emblemPaths.arch} fill={c.veil} stroke={c.outline} strokeWidth={2} strokeLinejoin="round" />
+        <Path d={emblemPaths.opening} fill={c.opening} />
+        <Path d={emblemPaths.star} fill={c.star} />
+        <Path d={emblemPaths.bookLeft} fill={c.pages} />
+        <Path d={emblemPaths.bookRight} fill={c.pages} />
+        <Path d={emblemPaths.spine} stroke={c.spine} strokeWidth={1.5} strokeLinecap="round" />
+      </Svg>
+    </View>
   );
 }
 

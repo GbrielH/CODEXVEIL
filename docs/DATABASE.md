@@ -18,45 +18,46 @@ em [`SECURITY.md`](SECURITY.md).
 
 ## Migrações
 
-| Arquivo                               | Conteúdo                                                                                                                                                         |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `20261016120000_foundation.sql`       | Esquema `private`, enums, utilitários, `rpg_systems`, `plans`, `user_plans`, `profiles` e criação do perfil no cadastro                                          |
-| `20261016120100_campaigns.sql`        | `campaigns`, `campaign_members`, `campaign_invites`, funções de autorização e RPCs de convite, participantes, transferência e arquivamento                       |
-| `20261016120200_characters.sql`       | `characters` e tabelas filhas, regras de visualização e edição, histórico, cópias de segurança e operações atômicas                                              |
-| `20261016120300_sessions_library.sql` | `creatures`, `creature_gm_data`, `sessions`, `session_blocks`, `session_entities`, `encounters`, `encounter_combatants`, `campaign_notes` e operações de roteiro |
-| `20261016120400_storage.sql`          | Buckets `avatars` e `campaign-media` e as policies de `storage.objects`                                                                                          |
-| `20261016120500_realtime.sql`         | Tabelas publicadas em `supabase_realtime`                                                                                                                        |
+| Arquivo                                       | Conteúdo                                                                                                                                                                                                     |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `20261016120000_foundation.sql`               | Esquema `private`, enums, utilitários, `rpg_systems`, `plans`, `user_plans`, `profiles` e criação do perfil no cadastro                                                                                      |
+| `20261016120100_campaigns.sql`                | `campaigns`, `campaign_members`, `campaign_invites`, funções de autorização e RPCs de convite, participantes, transferência e arquivamento                                                                   |
+| `20261016120200_characters.sql`               | `characters` e tabelas filhas, regras de visualização e edição, histórico, cópias de segurança e operações atômicas                                                                                          |
+| `20261016120300_sessions_library.sql`         | `creatures`, `creature_gm_data`, `sessions`, `session_blocks`, `session_entities`, `encounters`, `encounter_combatants`, `campaign_notes` e operações de roteiro                                             |
+| `20261016120400_storage.sql`                  | Buckets `avatars` e `campaign-media` e as policies de `storage.objects`                                                                                                                                      |
+| `20261016120500_realtime.sql`                 | Tabelas publicadas em `supabase_realtime`                                                                                                                                                                    |
+| `20261016130000_character_creation_rules.sql` | `campaigns.character_rules`; mestres não são donos de personagens das próprias campanhas (`CVGMC`); `create_character` com inventário e habilidades iniciais; envio de avatares bloqueado; mídia de até 2 MB |
 
 ## Entidades
 
 ### Contas e referência
 
-| Tabela                 | Descrição                                                                                                                               |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `profiles`             | Um por conta (`auth.users`), criado por gatilho. Guarda nome de exibição, avatar, bio e `preferences` (JSON). **Não tem papel global.** |
-| `rpg_systems`          | Sistemas suportados (hoje `dnd5e`). Cada id precisa existir em `@codexveil/rpg-systems`.                                                |
-| `plans` / `user_plans` | Limites configuráveis por plano (`null` = ilimitado). Sem linha em `user_plans`, vale o plano `free`.                                   |
+| Tabela                 | Descrição                                                                                                                                                                                                                                   |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `profiles`             | Um por conta (`auth.users`), criado por gatilho. Guarda nome de exibição, bio e `preferences` (JSON). **Não tem papel global.** A coluna `avatar_path` ficou sem uso: o produto não tem foto de perfil e o cliente não pode mais alterá-la. |
+| `rpg_systems`          | Sistemas suportados (hoje `dnd5e`). Cada id precisa existir em `@codexveil/rpg-systems`.                                                                                                                                                    |
+| `plans` / `user_plans` | Limites configuráveis por plano (`null` = ilimitado). Sem linha em `user_plans`, vale o plano `free`.                                                                                                                                       |
 
 ### Campanhas
 
-| Tabela             | Descrição                                                                                                                                                                                      |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `campaigns`        | Nome, descrição, capa, sistema, dono, `status` (`active`/`archived`), `archived_at` e as configurações `party_sheets_visible` e `players_can_edit_sheets`.                                     |
-| `campaign_members` | PK `(campaign_id, user_id)` e `role` (`gm`/`player`). Só é escrita por gatilho (o dono vira mestre) e por RPCs.                                                                                |
-| `campaign_invites` | Código de 12 caracteres gerado no banco, `invited_email` opcional (convite pessoal de uso único), `max_uses` (1 a 50), `uses_count`, `expires_at` (até 30 dias), `revoked_at` e `declined_at`. |
-| `campaign_notes`   | Anotações com `visibility`: `members` (todos), `gm` (mestres e o autor) ou `author` (só o autor). Têm `is_pinned` e `version`.                                                                 |
+| Tabela             | Descrição                                                                                                                                                                                                                                                                                                                                |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `campaigns`        | Nome, descrição, capa, sistema, dono, `status` (`active`/`archived`), `archived_at`, as configurações `party_sheets_visible` e `players_can_edit_sheets` e `character_rules` (JSON de até 4 KB com as regras de criação do mestre, validado pelo módulo do sistema; em D&D: nível inicial, métodos de atributo e alinhamentos malignos). |
+| `campaign_members` | PK `(campaign_id, user_id)` e `role` (`gm`/`player`). Só é escrita por gatilho (o dono vira mestre) e por RPCs.                                                                                                                                                                                                                          |
+| `campaign_invites` | Código de 12 caracteres gerado no banco, `invited_email` opcional (convite pessoal de uso único), `max_uses` (1 a 50), `uses_count`, `expires_at` (até 30 dias), `revoked_at` e `declined_at`.                                                                                                                                           |
+| `campaign_notes`   | Anotações com `visibility`: `members` (todos), `gm` (mestres e o autor) ou `author` (só o autor). Têm `is_pinned` e `version`.                                                                                                                                                                                                           |
 
 ### Personagens
 
-| Tabela                 | Descrição                                                                                                                                                                                     |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `characters`           | Dono, campanha opcional, sistema, nome, retrato, `sheet` (JSON do sistema, até 256 KB), `version` (concorrência otimista) e `live_updated_at` (sinal para o Realtime).                        |
-| `character_resources`  | Trilhas como vida, dados de vida, espaços de magia, usos e moedas: `current`, `max`, `temp`, `recovery` (`manual`, `short_rest`, `long_rest`) e `display`. Chave única `(character_id, key)`. |
-| `character_conditions` | Uma linha por condição ativa, com `level` opcional (por exemplo, Exaustão).                                                                                                                   |
-| `character_items`      | Inventário: categoria, quantidade, peso, descrição, notas, `is_equipped` e `data` por sistema.                                                                                                |
-| `character_abilities`  | Traços de espécie, talentos, características de classe, magias e ataques (`kind`), com `data` por sistema e vínculo opcional a uma trilha de usos.                                            |
-| `character_events`     | Histórico de evolução imutável (subida de nível, XP, marcos, notas).                                                                                                                          |
-| `character_snapshots`  | Cópias automáticas da ficha: no máximo uma a cada 10 minutos, mantendo as 30 mais recentes.                                                                                                   |
+| Tabela                 | Descrição                                                                                                                                                                                                                                                                    |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `characters`           | Dono, campanha opcional, sistema, nome, retrato, `sheet` (JSON do sistema, até 256 KB), `version` (concorrência otimista) e `live_updated_at` (sinal para o Realtime). O dono precisa ser **jogador** da campanha: mestres usam NPCs e monstros (gatilho, SQLSTATE `CVGMC`). |
+| `character_resources`  | Trilhas como vida, dados de vida, espaços de magia, usos e moedas: `current`, `max`, `temp`, `recovery` (`manual`, `short_rest`, `long_rest`) e `display`. Chave única `(character_id, key)`.                                                                                |
+| `character_conditions` | Uma linha por condição ativa, com `level` opcional (por exemplo, Exaustão).                                                                                                                                                                                                  |
+| `character_items`      | Inventário: categoria, quantidade, peso, descrição, notas, `is_equipped` e `data` por sistema.                                                                                                                                                                               |
+| `character_abilities`  | Traços de espécie, talentos, características de classe, magias e ataques (`kind`), com `data` por sistema e vínculo opcional a uma trilha de usos.                                                                                                                           |
+| `character_events`     | Histórico de evolução imutável (subida de nível, XP, marcos, notas).                                                                                                                                                                                                         |
+| `character_snapshots`  | Cópias automáticas da ficha: no máximo uma a cada 10 minutos, mantendo as 30 mais recentes.                                                                                                                                                                                  |
 
 ### Biblioteca, sessões e combate
 
@@ -79,18 +80,18 @@ campanha.
 
 ## Funções expostas (RPC)
 
-| Função                                                                                                | Uso                                                                                 |
-| ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `get_invite_preview(code)`                                                                            | Prévia do convite. Os detalhes da campanha só aparecem se o convite for utilizável. |
-| `accept_campaign_invite(code)` / `decline_campaign_invite(code)`                                      | Aceitar (com trava e verificação de limite) ou recusar um convite.                  |
-| `revoke_campaign_invite(id)` / `get_my_pending_invites()`                                             | Revogar um convite / listar os convites pessoais pendentes do usuário.              |
-| `remove_campaign_member`, `leave_campaign`, `set_campaign_member_role`, `transfer_campaign_ownership` | Gestão de participantes.                                                            |
-| `archive_campaign` / `unarchive_campaign`                                                             | Arquivar (revoga os convites pendentes) e desarquivar.                              |
-| `create_character`                                                                                    | Cria o personagem e as trilhas iniciais numa transação.                             |
-| `set_character_campaign`                                                                              | Vincula ou desvincula um personagem de uma campanha (só o dono).                    |
-| `adjust_character_resource` / `take_character_rest` / `adjust_item_quantity`                          | Dano, cura, gasto e descanso, de forma atômica.                                     |
-| `adjust_session_entity_hp`                                                                            | Dano e cura de instâncias da cena.                                                  |
-| `duplicate_session` / `reorder_session_blocks`                                                        | Duplicar um roteiro e renumerar os blocos.                                          |
+| Função                                                                                                | Uso                                                                                                                                                                    |
+| ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_invite_preview(code)`                                                                            | Prévia do convite. Os detalhes da campanha só aparecem se o convite for utilizável.                                                                                    |
+| `accept_campaign_invite(code)` / `decline_campaign_invite(code)`                                      | Aceitar (com trava e verificação de limite) ou recusar um convite.                                                                                                     |
+| `revoke_campaign_invite(id)` / `get_my_pending_invites()`                                             | Revogar um convite / listar os convites pessoais pendentes do usuário.                                                                                                 |
+| `remove_campaign_member`, `leave_campaign`, `set_campaign_member_role`, `transfer_campaign_ownership` | Gestão de participantes.                                                                                                                                               |
+| `archive_campaign` / `unarchive_campaign`                                                             | Arquivar (revoga os convites pendentes) e desarquivar.                                                                                                                 |
+| `create_character`                                                                                    | Cria o personagem com trilhas, inventário (`p_items`, até 200) e habilidades, magias e ataques (`p_abilities`, até 300, ligados às trilhas pela chave) numa transação. |
+| `set_character_campaign`                                                                              | Vincula ou desvincula um personagem de uma campanha (só o dono).                                                                                                       |
+| `adjust_character_resource` / `take_character_rest` / `adjust_item_quantity`                          | Dano, cura, gasto e descanso, de forma atômica.                                                                                                                        |
+| `adjust_session_entity_hp`                                                                            | Dano e cura de instâncias da cena.                                                                                                                                     |
+| `duplicate_session` / `reorder_session_blocks`                                                        | Duplicar um roteiro e renumerar os blocos.                                                                                                                             |
 
 As funções de personagem, cena e roteiro são `SECURITY INVOKER`, então as policies continuam
 valendo. As de convite e participantes são `SECURITY DEFINER` e verificam o papel explicitamente.

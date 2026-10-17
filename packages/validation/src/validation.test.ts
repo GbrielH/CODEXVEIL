@@ -56,6 +56,7 @@ describe('campanhas e convites', () => {
       name: 'Mina Perdida',
       description: '',
       systemId: 'dnd5e',
+      characterRules: {},
     });
     expect(campaignCreateSchema.safeParse({ name: 'X', systemId: 'dnd5e' }).success).toBe(false);
     expect(campaignCreateSchema.safeParse({ name: 'Mina', systemId: 'gurps' }).success).toBe(
@@ -128,7 +129,7 @@ describe('blocos de roteiro', () => {
 
 describe('uploads', () => {
   it('aceita imagens comuns dentro do limite', () => {
-    expect(validateImageFile({ type: 'image/webp', size: 1024 }, 'avatar')).toEqual({
+    expect(validateImageFile({ type: 'image/webp', size: 1024 }, 'media')).toEqual({
       ok: true,
       mimeType: 'image/webp',
     });
@@ -137,9 +138,7 @@ describe('uploads', () => {
   it('rejeita SVG, arquivos vazios e grandes demais', () => {
     expect(validateImageFile({ type: 'image/svg+xml', size: 10 }, 'media').ok).toBe(false);
     expect(validateImageFile({ type: 'image/png', size: 0 }, 'media').ok).toBe(false);
-    expect(validateImageFile({ type: 'image/png', size: 3 * 1024 * 1024 }, 'avatar').ok).toBe(
-      false,
-    );
+    expect(validateImageFile({ type: 'image/png', size: 3 * 1024 * 1024 }, 'media').ok).toBe(false);
   });
 });
 

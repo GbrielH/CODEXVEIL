@@ -113,6 +113,36 @@ describe('campanhas', () => {
     expect(membership.role).toBe('gm');
   });
 
+  it('regras de criação: o mestre define, o jogador só lê, e precisam ser um objeto pequeno', async () => {
+    const { gm, player, campaign } = await createTable(db);
+    const initial = await db.as(player, (s) =>
+      s.one<{ character_rules: unknown }>(`select character_rules from public.campaigns where id = $1`, [campaign.id]),
+    );
+    expect(initial.character_rules).toEqual({});
+
+    const rules = { startingLevel: 3, abilityScoreMethods: ['point_buy'], allowEvilAlignments: false };
+    await db.as(gm, (s) =>
+      s.query(`update public.campaigns set character_rules = $1::jsonb where id = $2`, [JSON.stringify(rules), campaign.id]),
+    );
+    const updated = await db.as(player, (s) =>
+      s.one<{ character_rules: unknown }>(`select character_rules from public.campaigns where id = $1`, [campaign.id]),
+    );
+    expect(updated.character_rules).toEqual(rules);
+
+    // O jogador não altera (o RLS filtra a linha) e o banco recusa o que não é objeto.
+    await db.as(player, (s) =>
+      s.query(`update public.campaigns set character_rules = '{"startingLevel":20}'::jsonb where id = $1`, [campaign.id]),
+    );
+    const unchanged = await db.as(gm, (s) =>
+      s.one<{ character_rules: { startingLevel: number } }>(`select character_rules from public.campaigns where id = $1`, [campaign.id]),
+    );
+    expect(unchanged.character_rules.startingLevel).toBe(3);
+    await expectSqlError(
+      db.as(gm, (s) => s.query(`update public.campaigns set character_rules = '[1, 2]'::jsonb where id = $1`, [campaign.id])),
+      '23514',
+    );
+  });
+
   it('não permite criar campanha em nome de outra pessoa', async () => {
     const attacker = await db.createUser('Atacante');
     const victim = await db.createUser('Vítima');

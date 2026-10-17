@@ -12,13 +12,13 @@ O projeto começa com D&D 5e (SRD 5.2) e foi projetado para receber outros siste
 
 ## Links
 
-| O quê                                                | Link                                                                                                                                                 |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Site (produção)                                      | <https://codexveil.vercel.app>                                                                                                                       |
-| APK Android com atualização automática (recomendado) | Em geração pelo workflow: [build `de6ceb5c`](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/de6ceb5c-3d68-4be9-ad97-e19e2725b56b) |
-| APK Android reserva (sem atualização automática)     | <https://expo.dev/artifacts/eas/OZvl6Lk0rZtf9G-IwxtKQMX7BM-HEj9KNdZ428o85PU.apk>                                                                     |
-| Todos os builds do app (EAS)                         | <https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds>                                                                                  |
-| Repositório                                          | <https://github.com/GbrielH/CODEXVEIL>                                                                                                               |
+| O quê                                                | Link                                                                                                                                                                                                          |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Site (produção)                                      | <https://codexveil.vercel.app>                                                                                                                                                                                |
+| APK Android com atualização automática (recomendado) | <https://expo.dev/artifacts/eas/biJnmUweuBVeBI7xSMpxQH3lQMN7hZPfDJPklJ-Ay_0.apk> ([build `de6ceb5c`](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/de6ceb5c-3d68-4be9-ad97-e19e2725b56b)) |
+| APK Android reserva (sem atualização automática)     | <https://expo.dev/artifacts/eas/OZvl6Lk0rZtf9G-IwxtKQMX7BM-HEj9KNdZ428o85PU.apk>                                                                                                                              |
+| Todos os builds do app (EAS)                         | <https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds>                                                                                                                                           |
+| Repositório                                          | <https://github.com/GbrielH/CODEXVEIL>                                                                                                                                                                        |
 
 Para instalar o APK, abra o link no celular Android, baixe o arquivo e permita a instalação de fontes desconhecidas. A cada novo build, atualize esta tabela e [`docs/PROXIMOS_PASSOS.md`](docs/PROXIMOS_PASSOS.md).
 

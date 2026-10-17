@@ -18,7 +18,7 @@ import {
   type Dnd5eStatBlock,
   type StatBlockEntry,
 } from '@codexveil/rpg-systems/dnd5e';
-import { creatureGmDataSchema, creatureSchema, fieldErrorsFrom, IMAGE_EXTENSIONS, validateImageFile, type FieldErrors } from '@codexveil/validation';
+import { creatureGmDataSchema, creatureSchema, fieldErrorsFrom, IMAGE_EXTENSIONS, type FieldErrors } from '@codexveil/validation';
 import { ImageUp, Lock, Plus, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useId, useRef, useState } from 'react';
@@ -31,6 +31,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { NumberInput } from '@/components/ui/number-input';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
+import { prepareImage } from '@/lib/images';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { StatBlockView } from './stat-block-view';
 
@@ -98,18 +99,20 @@ function ProfileCard({ campaignId, creature }: Pick<CreatureEditorProps, 'campai
     }
   };
 
-  const upload = async (file: File) => {
+  const upload = async (original: File) => {
     setImageError(null);
-    const check = validateImageFile(file, 'media');
-    if (!check.ok) {
-      setImageError(check.message);
-      return;
-    }
     setImageBusy(true);
     const client = getSupabaseBrowserClient();
-    const path = creatureImagePath(campaignId, `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[check.mimeType]}`);
     try {
-      const { error } = await client.storage.from(CAMPAIGN_MEDIA_BUCKET).upload(path, file, { contentType: check.mimeType, upsert: false });
+      const prepared = await prepareImage(original, 'creature');
+      if (!prepared.ok) {
+        setImageError(prepared.message);
+        return;
+      }
+      const path = creatureImagePath(campaignId, `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`);
+      const { error } = await client.storage
+        .from(CAMPAIGN_MEDIA_BUCKET)
+        .upload(path, prepared.file, { contentType: prepared.mimeType, upsert: false });
       if (error) throw error;
       try {
         await setCreatureImage(client, creature.id, path);

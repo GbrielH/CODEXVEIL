@@ -3,6 +3,7 @@ import { AppError } from '@codexveil/domain';
 import type { CampaignCreate, CampaignUpdate } from '@codexveil/validation';
 import type { CodexveilClient } from '../client';
 import { toAppError } from '../errors';
+import type { Json } from '../types.gen';
 
 export interface CampaignSummary {
   id: string;
@@ -16,6 +17,8 @@ export interface CampaignSummary {
   memberCount: number;
   updatedAt: string;
   archivedAt: string | null;
+  /** Regras de criação de personagens (JSON do módulo do sistema; leia com `parseCampaignRules`). */
+  characterRules: unknown;
 }
 
 export interface CampaignDetail extends CampaignSummary {
@@ -31,7 +34,6 @@ export interface CampaignMember {
   isOwner: boolean;
   joinedAt: string;
   displayName: string;
-  avatarPath: string | null;
 }
 
 /** Campanhas das quais o usuário participa (ativas primeiro, mais recentes antes). */
@@ -39,7 +41,7 @@ export async function listMyCampaigns(client: CodexveilClient, userId: string): 
   const { data, error } = await client
     .from('campaigns')
     .select(
-      'id, name, description, system_id, status, cover_path, owner_id, updated_at, archived_at, members:campaign_members(count), membership:campaign_members!inner(role, user_id)',
+      'id, name, description, system_id, status, cover_path, owner_id, updated_at, archived_at, character_rules, members:campaign_members(count), membership:campaign_members!inner(role, user_id)',
     )
     .eq('membership.user_id', userId)
     .order('status', { ascending: true })
@@ -58,6 +60,7 @@ export async function listMyCampaigns(client: CodexveilClient, userId: string): 
     memberCount: row.members[0]?.count ?? 0,
     updatedAt: row.updated_at,
     archivedAt: row.archived_at,
+    characterRules: row.character_rules,
   }));
 }
 
@@ -70,7 +73,7 @@ export async function getCampaign(
   const { data, error } = await client
     .from('campaigns')
     .select(
-      'id, name, description, system_id, status, cover_path, owner_id, party_sheets_visible, players_can_edit_sheets, created_at, updated_at, archived_at, owner:profiles!campaigns_owner_id_fkey(display_name), members:campaign_members(count), membership:campaign_members!inner(role, user_id)',
+      'id, name, description, system_id, status, cover_path, owner_id, party_sheets_visible, players_can_edit_sheets, character_rules, created_at, updated_at, archived_at, owner:profiles!campaigns_owner_id_fkey(display_name), members:campaign_members(count), membership:campaign_members!inner(role, user_id)',
     )
     .eq('id', campaignId)
     .eq('membership.user_id', userId)
@@ -90,6 +93,7 @@ export async function getCampaign(
     memberCount: data.members[0]?.count ?? 0,
     updatedAt: data.updated_at,
     archivedAt: data.archived_at,
+    characterRules: data.character_rules,
     ownerId: data.owner_id,
     ownerName: data.owner?.display_name ?? 'Mestre',
     settings: {
@@ -107,7 +111,7 @@ export async function listCampaignMembers(
 ): Promise<CampaignMember[]> {
   const { data, error } = await client
     .from('campaign_members')
-    .select('user_id, role, joined_at, profile:profiles(display_name, avatar_path)')
+    .select('user_id, role, joined_at, profile:profiles(display_name)')
     .eq('campaign_id', campaignId)
     .order('joined_at', { ascending: true });
   if (error) throw toAppError(error);
@@ -119,7 +123,6 @@ export async function listCampaignMembers(
       isOwner: row.user_id === ownerId,
       joinedAt: row.joined_at,
       displayName: row.profile?.display_name ?? 'Participante',
-      avatarPath: row.profile?.avatar_path ?? null,
     }))
     .sort((a, b) => Number(b.isOwner) - Number(a.isOwner) || (a.role === b.role ? 0 : a.role === 'gm' ? -1 : 1));
 }
@@ -127,7 +130,12 @@ export async function listCampaignMembers(
 export async function createCampaign(client: CodexveilClient, input: CampaignCreate): Promise<string> {
   const { data, error } = await client
     .from('campaigns')
-    .insert({ name: input.name, description: input.description, system_id: input.systemId })
+    .insert({
+      name: input.name,
+      description: input.description,
+      system_id: input.systemId,
+      character_rules: input.characterRules as Json,
+    })
     .select('id')
     .single();
   if (error) throw toAppError(error);
@@ -146,6 +154,7 @@ export async function updateCampaign(
       description: input.description,
       party_sheets_visible: input.partySheetsVisible,
       players_can_edit_sheets: input.playersCanEditSheets,
+      ...(input.characterRules ? { character_rules: input.characterRules as Json } : {}),
     })
     .eq('id', campaignId)
     .select('id');

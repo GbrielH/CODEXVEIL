@@ -1,4 +1,4 @@
-import { avatarUrl, getProfile, listMyCampaigns } from '@codexveil/database';
+import { getProfile, listMyCampaigns } from '@codexveil/database';
 import { campaignRoleLabels } from '@codexveil/domain';
 import { ScrollText, ShieldCheck, UserRound } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -11,7 +11,6 @@ import { requireSessionUser } from '@/lib/auth';
 import { formatDate } from '@/lib/format';
 import { routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { AvatarUploader } from './avatar-uploader';
 import { PasswordReset } from './password-reset';
 import { ProfileForm } from './profile-form';
 
@@ -32,17 +31,9 @@ export default async function ProfilePage() {
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <Card ornate>
           <CardHeader icon={<UserRound className="h-5 w-5" aria-hidden="true" />} title="Dados públicos" />
-          <div className="flex flex-col gap-6">
-            <AvatarUploader
-              userId={user.id}
-              displayName={profile.displayName}
-              currentUrl={avatarUrl(supabase, profile.avatarPath)}
-              currentPath={profile.avatarPath}
-            />
-            <ProfileForm
-              initial={{ displayName: profile.displayName, bio: profile.bio, preferences: profile.preferences }}
-            />
-          </div>
+          <ProfileForm
+            initial={{ displayName: profile.displayName, bio: profile.bio, preferences: profile.preferences }}
+          />
         </Card>
 
         <div className="flex flex-col gap-6">

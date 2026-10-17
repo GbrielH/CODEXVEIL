@@ -32,8 +32,10 @@ export default function LicensesPage() {
             <h2 className="text-lg">{system.name}</h2>
             <p className="mt-2 text-sm text-fg-muted">
               Regras de referência: {system.license.work}, licenciado sob {system.license.licenseName}.
-              Usamos apenas mecânicas (atributos, perícias, tabelas e nomes de condições); os resumos
-              exibidos foram escritos para o Codexveil.
+              A criação de personagens usa classes, espécies, antecedentes, talentos, equipamento e o
+              cabeçalho técnico das magias do SRD. Alterações feitas pelo Codexveil: nomes traduzidos
+              para o português (exceto os das magias), resumos próprios no lugar do texto das regras,
+              medidas em metros e quilos; as descrições completas das magias não são reproduzidas.
             </p>
             <blockquote lang="en" className="mt-4 border-l-2 border-parchment-400/50 pl-4 font-serif text-sm italic text-fg-secondary">
               {system.license.attribution}

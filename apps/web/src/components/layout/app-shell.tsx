@@ -23,7 +23,6 @@ const navItems: NavItem[] = [
 
 interface AppShellProps {
   displayName: string;
-  avatarUrl: string | null;
   motion: 'system' | 'reduce';
   children: ReactNode;
 }
@@ -51,7 +50,7 @@ function SignOutButton({ compact = false }: { compact?: boolean }) {
  * Estrutura das áreas autenticadas: barra lateral no desktop e navegação inferior no
  * celular (alvos de toque de 56 px), com o conteúdo principal ao centro.
  */
-export function AppShell({ displayName, avatarUrl, motion, children }: AppShellProps) {
+export function AppShell({ displayName, motion, children }: AppShellProps) {
   return (
     <div data-motion={motion} className="min-h-dvh lg:grid lg:grid-cols-[16rem_1fr]">
       <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-raised/80 backdrop-blur lg:flex">
@@ -66,7 +65,7 @@ export function AppShell({ displayName, avatarUrl, motion, children }: AppShellP
           ))}
         </nav>
         <div className="flex items-center gap-3 border-t border-line px-4 py-4">
-          <Avatar name={displayName} src={avatarUrl} size="sm" />
+          <Avatar name={displayName} size="sm" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-fg">{displayName}</p>
           </div>
@@ -83,7 +82,7 @@ export function AppShell({ displayName, avatarUrl, motion, children }: AppShellP
             </span>
           </Link>
           <div className="flex items-center gap-1">
-            <Avatar name={displayName} src={avatarUrl} size="sm" />
+            <Avatar name={displayName} size="sm" />
             <SignOutButton compact />
           </div>
         </header>
