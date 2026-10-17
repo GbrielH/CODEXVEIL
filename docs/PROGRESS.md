@@ -16,9 +16,9 @@ regras de criação definidas pelo mestre em cada campanha, mestres impedidos de
 personagens nas próprias campanhas, "olho" nos campos de senha, remoção da foto de perfil,
 redução das imagens antes do envio e correção do tempo real no navegador e no app. A migração
 `20261016130000_character_creation_rules.sql` está **aplicada em produção** e o código foi
-enviado ao `main`. **O site publicado e o APK ainda não têm essas mudanças:** o deploy
-automático depende de ligar o GitHub à Vercel e ao Expo, e o app precisa de um APK novo (veja
-[`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md), etapas 0 e 1).
+enviado ao `main`. O app tem um APK novo com essas mudanças (o fingerprint nativo mudou; link no
+README). **O site publicado ainda não as tem:** o deploy automático depende de ligar o GitHub à
+Vercel e ao Expo (veja [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md), etapas 0 e 1).
 
 | Fase                                                                            | Situação                                                                              |
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
@@ -147,8 +147,14 @@ assinatura, porque o supabase-js reaproveitava o canal que estava sendo removido
 tela remontava. Depois dela, a ficha fica "Ao vivo" ao abrir, e um dano aplicado por outro
 cliente apareceu na tela em 1,9 s.
 
-**Não testado ainda:** o assistente no app (num aparelho ou no navegador) e o uso por pessoas
-com duas contas.
+**App no navegador (2026-10-17):** o mesmo percurso no app aberto no navegador (Expo web em
+`localhost:8081`, o mesmo código do APK) entrou com uma conta temporária e criou um guerreiro de
+1º nível (ficha pessoal) e um mago de 3º nível na campanha, com o nível travado pelo mestre e só
+os métodos de atributo permitidos. As duas fichas abriram "Ao vivo", e o banco gravou 12
+itens, 16 habilidades e 11 trilhas (guerreiro) e 9, 33 e 14 (mago). Nenhum erro no console, e
+as contas foram apagadas no fim.
+
+**Não testado ainda:** o APK num aparelho e o uso por pessoas com duas contas.
 
 **Migração:** `20261016130000_character_creation_rules.sql` foi aplicada em produção em
 2026-10-17 com `supabase db push`. Antes, o `--dry-run` listava só ela; depois, "Remote
@@ -218,9 +224,9 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 1. **Responsável:** ligar o GitHub à Vercel e ao Expo (links em
    [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md), etapa 1). O push seguinte publica o site.
-2. **Claude:** gerar o APK novo pelo workflow do EAS logo após este push (o fingerprint nativo
-   mudou), atualizar os links do APK e confirmar o site publicado.
-3. Instalar o APK novo e usar o site e o app com duas contas.
+2. **Responsável:** instalar o APK novo ([build `420f6c37`](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/420f6c37-279c-4e92-b865-de9bdcb0b7f4), link no README).
+3. **Claude:** depois da ligação, confirmar o site publicado e o primeiro push automático.
+4. Usar o site e o app com duas contas.
 
 A lista completa e priorizada está em
 [`PENDENCIAS.md`](PENDENCIAS.md#6-próximos-passos-sugeridos-em-ordem).

@@ -12,15 +12,14 @@ O projeto começa com D&D 5e (SRD 5.2) e foi projetado para receber outros siste
 
 ## Links
 
-| O quê                                                | Link                                                                                                                                                                                                          |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Site (produção)                                      | <https://codexveil.vercel.app>                                                                                                                                                                                |
-| APK Android com atualização automática (recomendado) | <https://expo.dev/artifacts/eas/biJnmUweuBVeBI7xSMpxQH3lQMN7hZPfDJPklJ-Ay_0.apk> ([build `de6ceb5c`](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/de6ceb5c-3d68-4be9-ad97-e19e2725b56b)) |
-| APK Android reserva (sem atualização automática)     | <https://expo.dev/artifacts/eas/OZvl6Lk0rZtf9G-IwxtKQMX7BM-HEj9KNdZ428o85PU.apk>                                                                                                                              |
-| Todos os builds do app (EAS)                         | <https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds>                                                                                                                                           |
-| Repositório                                          | <https://github.com/GbrielH/CODEXVEIL>                                                                                                                                                                        |
+| O quê                                                | Link                                                                                                                                                                                                                                            |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Site (produção)                                      | <https://codexveil.vercel.app>                                                                                                                                                                                                                  |
+| APK Android com atualização automática (recomendado) | <https://expo.dev/artifacts/eas/DaQ2lqX7sC0dDD5e5VEViyyqP5EzX9RADKaF8Cv21rk.apk> ([build `420f6c37`](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/420f6c37-279c-4e92-b865-de9bdcb0b7f4), 2026-10-17, com a criação guiada) |
+| Todos os builds do app (EAS)                         | <https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds>                                                                                                                                                                             |
+| Repositório                                          | <https://github.com/GbrielH/CODEXVEIL>                                                                                                                                                                                                          |
 
-Para instalar o APK, abra o link no celular Android, baixe o arquivo e permita a instalação de fontes desconhecidas. A cada novo build, atualize esta tabela e [`docs/PROXIMOS_PASSOS.md`](docs/PROXIMOS_PASSOS.md).
+Para instalar o APK, abra o link no celular Android, baixe o arquivo e permita a instalação de fontes desconhecidas. APKs anteriores ao de 2026-10-17 não recebem as atualizações novas: instale este por cima. A cada novo build, atualize esta tabela e [`docs/PROXIMOS_PASSOS.md`](docs/PROXIMOS_PASSOS.md).
 
 O estado atual do projeto está documentado em [`docs/PROGRESS.md`](docs/PROGRESS.md), os próximos passos em [`docs/PROXIMOS_PASSOS.md`](docs/PROXIMOS_PASSOS.md) e o que ainda falta em relação ao escopo inicial em [`docs/PENDENCIAS.md`](docs/PENDENCIAS.md).
 
