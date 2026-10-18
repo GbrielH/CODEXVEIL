@@ -17,6 +17,7 @@ import {
   attackRollBonus,
   dnd5eAttackDataSchema,
   dnd5eSpellDataSchema,
+  featureTurnCost,
   formatModifier,
   spellNamePt,
   spellSchoolLabels,
@@ -48,15 +49,23 @@ function parseSpell(data: unknown): Dnd5eSpellData {
 
 const FEATURE_KINDS: AbilityEntryKind[] = ['class_feature', 'species_trait', 'feat', 'background_feature', 'other'];
 
-/** `withoutAttacks`: na aba Jogo da campanha os ataques já aparecem acima. */
-export function FeaturesTab({ withoutAttacks = false }: { withoutAttacks?: boolean }) {
+/**
+ * Habilidades e magias. Na ficha da campanha a lista se divide: a aba Jogo mostra só o que se usa
+ * na mesa (`show="usable"`: custo de ação ou usos), e a aba Atributos, o restante (`show="passive"`).
+ */
+export function FeaturesTab({ withoutAttacks = false, show = 'all' }: { withoutAttacks?: boolean; show?: 'all' | 'usable' | 'passive' }) {
   const { abilities, permissions } = useSheet();
   const [editing, setEditing] = useState<{ entry: CharacterAbility | null; kind: AbilityEntryKind } | null>(null);
   const canEdit = permissions.canEditSheet;
 
   const attacks = abilities.filter((entry) => entry.kind === 'attack');
   const spells = abilities.filter((entry) => entry.kind === 'spell');
-  const features = abilities.filter((entry) => FEATURE_KINDS.includes(entry.kind));
+  const usable = (entry: CharacterAbility) => entry.resourceId !== null || featureTurnCost(entry.name) !== null;
+  const features = abilities
+    .filter((entry) => FEATURE_KINDS.includes(entry.kind))
+    .filter((entry) => (show === 'usable' ? usable(entry) : show === 'passive' ? !usable(entry) : true));
+  const showSpells = show !== 'passive';
+  const featureTitle = show === 'usable' ? 'Habilidades usáveis' : show === 'passive' ? 'Características' : 'Habilidades e características';
 
   const spellsByCircle = new Map<number, CharacterAbility[]>();
   for (const spell of spells) {
@@ -73,7 +82,7 @@ export function FeaturesTab({ withoutAttacks = false }: { withoutAttacks?: boole
 
   return (
     <div className="flex flex-col gap-5">
-      {withoutAttacks ? null : <Card>
+      {withoutAttacks || show === 'passive' ? null : <Card>
         <CardHeader icon={<Swords className="h-5 w-5" aria-hidden="true" />} title="Ataques" action={addButton('attack', 'Novo ataque')} />
         {attacks.length === 0 ? <p className="text-sm text-fg-muted">Nenhum ataque cadastrado.</p> : (
           <ul className="divide-y divide-line">
@@ -84,6 +93,7 @@ export function FeaturesTab({ withoutAttacks = false }: { withoutAttacks?: boole
         )}
       </Card>}
 
+      {showSpells ? (
       <Card>
         <CardHeader icon={<WandSparkles className="h-5 w-5" aria-hidden="true" />} title="Magias" action={addButton('spell', 'Nova magia')} />
         {canEdit ? <SpellSlotHelper /> : null}
@@ -104,10 +114,11 @@ export function FeaturesTab({ withoutAttacks = false }: { withoutAttacks?: boole
           </div>
         )}
       </Card>
+      ) : null}
 
       <Card>
-        <CardHeader icon={<Sparkles className="h-5 w-5" aria-hidden="true" />} title="Habilidades e características" action={addButton('class_feature', 'Nova habilidade')} />
-        {features.length === 0 ? <p className="text-sm text-fg-muted">Registre habilidades de classe, talentos e características de espécie.</p> : (
+        <CardHeader icon={<Sparkles className="h-5 w-5" aria-hidden="true" />} title={featureTitle} action={addButton('class_feature', 'Nova habilidade')} />
+        {features.length === 0 ? <p className="text-sm text-fg-muted">{show === 'usable' ? 'Nenhuma habilidade com uso ou custo de ação. As passivas ficam na aba Atributos.' : 'Registre habilidades de classe, talentos e características de espécie.'}</p> : (
           <ul className="flex flex-col gap-2">
             {features.map((feature) => (
               <FeatureRow key={feature.id} feature={feature} onEdit={() => setEditing({ entry: feature, kind: feature.kind })} />

@@ -1,6 +1,6 @@
 import type { CharacterAbility } from '@codexveil/database';
 import { d20Expression, withBonus } from '@codexveil/domain';
-import { attackDamageModifier, attackRollBonus, dnd5eAttackDataSchema, dnd5eSpellDataSchema, formatModifier, spellNamePt } from '@codexveil/rpg-systems/dnd5e';
+import { attackDamageModifier, attackRollBonus, dnd5eAttackDataSchema, dnd5eSpellDataSchema, featureTurnCost, formatModifier, spellNamePt } from '@codexveil/rpg-systems/dnd5e';
 import { abilityEntryKindLabels, type AbilityEntryKind } from '@codexveil/validation';
 import { Pencil, Plus } from 'lucide-react-native';
 import { useState } from 'react';
@@ -15,16 +15,20 @@ import { useSheet } from './context';
 
 /**
  * Ataques, magias e habilidades: consulta durante o jogo (toque para ver os detalhes, toque no
- * bônus para rolar) e cadastro completo, como no site.
+ * bônus para rolar) e cadastro completo, como no site. Na campanha, a aba Jogo mostra só o que se
+ * usa na mesa (`show="usable"`) e a aba Atributos, as características passivas (`show="passive"`).
  */
-export function FeaturesSection() {
-  const { abilities, resources, derived, sheet, adjustResource, canEditPlay, canEditSheet } = useSheet();
+export function FeaturesSection({ show = 'all' }: { show?: 'all' | 'usable' | 'passive' }) {
+  const { abilities: allAbilities, resources, derived, sheet, adjustResource, canEditPlay, canEditSheet } = useSheet();
+  const usable = (entry: CharacterAbility) => entry.kind === 'attack' || entry.kind === 'spell' || entry.resourceId !== null || featureTurnCost(entry.name) !== null;
+  const abilities = allAbilities.filter((entry) => (show === 'usable' ? usable(entry) : show === 'passive' ? !usable(entry) : true));
   const [open, setOpen] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ entry: CharacterAbility | null; kind: AbilityEntryKind } | null>(null);
 
   return (
     <View style={{ gap: spacing[3] }}>
-      {derived.spellcasting ? (
+      {show === 'passive' ? <AppText variant="heading">Características</AppText> : null}
+      {derived.spellcasting && show !== 'passive' ? (
         <Card>
           <AppText variant="heading">Conjuração</AppText>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
@@ -38,7 +42,7 @@ export function FeaturesSection() {
 
       {editing ? (
         <AbilityEditor key={editing.entry?.id ?? `nova-${editing.kind}`} entry={editing.entry} kind={editing.kind} onDone={() => setEditing(null)} />
-      ) : canEditSheet ? (
+      ) : canEditSheet && show !== 'passive' ? (
         <Button label="Nova entrada (ataque, magia ou habilidade)" variant="secondary" icon={<Plus size={16} color={colors.fg} />} onPress={() => setEditing({ entry: null, kind: 'attack' })} />
       ) : null}
 

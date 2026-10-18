@@ -104,7 +104,8 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
       try {
         const result = await action();
         if (messages.success) toast({ tone: 'success', title: messages.success });
-        return result;
+        // Ações sem retorno (excluir, equipar…) também precisam sinalizar sucesso: `undefined` é falha.
+        return result === undefined ? (true as T) : result;
       } catch (error) {
         toast({ tone: 'danger', title: messages.failure, description: failureMessage(error, 'Tente novamente.') });
         return undefined;
@@ -301,13 +302,26 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
                   props.variant === 'campaign' ? (
                     <div className="flex flex-col gap-5">
                       <PlayTab />
-                      <FeaturesTab withoutAttacks />
+                      <FeaturesTab withoutAttacks show="usable" />
                     </div>
                   ) : (
                     <PlayTab />
                   ),
               },
-              { value: 'atributos', label: 'Atributos', icon: <BookOpen className="h-4 w-4" aria-hidden="true" />, content: <AttributesTab /> },
+              {
+                value: 'atributos',
+                label: 'Atributos',
+                icon: <BookOpen className="h-4 w-4" aria-hidden="true" />,
+                content:
+                  props.variant === 'campaign' ? (
+                    <div className="flex flex-col gap-5">
+                      <AttributesTab />
+                      <FeaturesTab show="passive" />
+                    </div>
+                  ) : (
+                    <AttributesTab />
+                  ),
+              },
               { value: 'inventario', label: 'Inventário', icon: <Backpack className="h-4 w-4" aria-hidden="true" />, content: <InventoryTab /> },
               ...(props.variant === 'campaign' ? [] : [
               { value: 'habilidades', label: 'Habilidades e magias', icon: <Sparkles className="h-4 w-4" aria-hidden="true" />, content: <FeaturesTab /> },

@@ -361,3 +361,16 @@ domain 66; validation 15; web 12) e `pnpm build` passou. `supabase db push --dry
   QuickAction) e avatar de personagem com o ícone da classe; listas, cartões e abas mais legíveis.
 
 Verificações: `pnpm check` (20 tarefas) e build do app passaram. Não verificado no celular.
+
+### 2026-10-18 — equipar itens corrigido e habilidades usáveis na aba Jogo
+
+- **Correção:** equipar/desequipar itens (e excluir item, habilidade ou trilha, e registrar
+  evento) eram desfeitos logo após salvar: o auxiliar `run` da ficha devolvia `undefined` também
+  no sucesso de ações sem retorno, e a tela tratava isso como falha. Agora devolve `true` (site e
+  app). O banco estava correto; novo teste `test/rls/equip.test.ts` confirma que o dono equipa e
+  desequipa.
+- **Ficha na campanha (site e app):** a aba Jogo mostra só as habilidades usáveis (com usos ou
+  custo de ação, além de ataques e magias); as características passivas ficam na aba Atributos.
+
+Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verificado no navegador ou no
+celular.

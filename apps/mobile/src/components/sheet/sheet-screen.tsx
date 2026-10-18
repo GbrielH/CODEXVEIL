@@ -126,7 +126,9 @@ export function SheetScreen(props: SheetScreenProps) {
 
   const run = async <T,>(action: () => Promise<T>, failure: string) => {
     try {
-      return await action();
+      const result = await action();
+      // Ações sem retorno (excluir, equipar…) também precisam sinalizar sucesso: `undefined` é falha.
+      return result === undefined ? (true as T) : result;
     } catch (error) {
       toast({ tone: 'danger', title: failure, description: failureMessage(error) });
       return undefined;
@@ -185,6 +187,8 @@ export function SheetScreen(props: SheetScreenProps) {
   };
 
   const summary = dnd5eSystem.summarize(sheet);
+
+  const inCampaign = Boolean(character.campaign);
 
   return (
     <SheetContext.Provider value={context}>
@@ -258,14 +262,17 @@ export function SheetScreen(props: SheetScreenProps) {
             { value: 'jogo', label: 'Jogo' },
             { value: 'atributos', label: 'Atributos' },
             { value: 'inventario', label: 'Inventário' },
-            { value: 'habilidades', label: 'Habilidades' },
+            // Na campanha, as habilidades ficam divididas entre Jogo (usáveis) e Atributos (passivas).
+            ...(inCampaign ? [] : [{ value: 'habilidades' as const, label: 'Habilidades' }]),
             { value: 'personagem', label: 'Personagem' },
           ]}
         />
         {tab === 'jogo' ? <PlaySection /> : null}
+        {tab === 'jogo' && inCampaign ? <FeaturesSection show="usable" /> : null}
         {tab === 'atributos' ? <AttributesSection /> : null}
+        {tab === 'atributos' && inCampaign ? <FeaturesSection show="passive" /> : null}
         {tab === 'inventario' ? <InventorySection /> : null}
-        {tab === 'habilidades' ? <FeaturesSection /> : null}
+        {tab === 'habilidades' && !inCampaign ? <FeaturesSection /> : null}
         {tab === 'personagem' ? <StorySection /> : null}
       </Screen>
       </DiceProvider>
