@@ -57,7 +57,7 @@ export function describeDnd5eCampaignRules(rules: Dnd5eCampaignRules): string[] 
     rules.allowEvilAlignments ? 'Alinhamentos malignos permitidos.' : 'Sem alinhamentos malignos.',
     rules.sourcebooks.length === 0
       ? 'Sistema base: só o conteúdo do SRD 5.2.1.'
-      : `Livros liberados: ${rules.sourcebooks.map((id) => findSourcebook(id)?.name ?? id).join(', ')}. O conteúdo desses livros entra à mão na ficha.`,
+      : `Livros liberados: ${rules.sourcebooks.map((id) => findSourcebook(id)?.name ?? id).join(', ')}. São livros pagos, vendidos na página oficial; o conteúdo deles entra à mão na ficha.`,
   ];
 }
 

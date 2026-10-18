@@ -1,8 +1,18 @@
-import { ABILITY_SCORE_METHODS, DND5E_SOURCEBOOKS, SOURCEBOOK_CATEGORIES, abilityScoreMethodLabels, sourcebookCategoryLabels, type Dnd5eCampaignRules } from '@codexveil/rpg-systems/dnd5e';
+import {
+  ABILITY_SCORE_METHODS,
+  DND5E_SOURCEBOOKS,
+  SOURCEBOOK_CATEGORIES,
+  abilityScoreMethodLabels,
+  dnd5eOfficialLinks,
+  findSourcebook,
+  sourcebookCategoryLabels,
+  sourcebookUrl,
+  type Dnd5eCampaignRules,
+} from '@codexveil/rpg-systems/dnd5e';
 import { useState } from 'react';
 import { Chip, ChipRow } from '@/components/ui/controls';
-import { Minus, Plus } from 'lucide-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ExternalLink, Minus, Plus } from 'lucide-react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { IconButton } from '@/components/ui/button';
 import { AppText } from '@/components/ui/primitives';
 import { colors, fonts, radii, spacing } from '@/lib/theme';
@@ -83,9 +93,15 @@ function Sourcebooks({ value, onChange }: Props) {
       </ChipRow>
       <AppText variant="small">
         {expanded
-          ? 'Marque os livros que a mesa usa. Eles não vêm no Codexveil (direitos da Wizards): o conteúdo entra à mão.'
-          : 'Só o SRD 5.2.1, que já vem pronto. Sem nada para escolher.'}
+          ? 'Marque os livros que a mesa usa. São livros pagos, vendidos pela Wizards na página oficial: o conteúdo deles não vem no Codexveil e entra à mão.'
+          : 'Só o SRD 5.2.1, gratuito e já pronto. Sem nada para escolher.'}
       </AppText>
+      <AppText variant="small">Gratuitos:</AppText>
+      {dnd5eOfficialLinks
+        .filter((link) => link.access === 'free')
+        .map((link) => (
+          <OfficialLink key={link.url} label={link.label} url={link.url} />
+        ))}
       {expanded
         ? SOURCEBOOK_CATEGORIES.map((category) => (
             <View key={category} style={{ gap: 6 }}>
@@ -98,7 +114,30 @@ function Sourcebooks({ value, onChange }: Props) {
             </View>
           ))
         : null}
+      {expanded && value.sourcebooks.length > 0 ? (
+        <View style={{ gap: 2 }}>
+          <AppText variant="small">Livros marcados (pagos), na página oficial:</AppText>
+          {value.sourcebooks.map((id) => (
+            <OfficialLink key={id} label={findSourcebook(id)?.name ?? id} url={sourcebookUrl(id)} />
+          ))}
+        </View>
+      ) : null}
     </View>
+  );
+}
+
+/** Link que abre a página oficial no navegador. */
+function OfficialLink({ label, url }: { label: string; url: string }) {
+  return (
+    <Pressable
+      onPress={() => void Linking.openURL(url)}
+      accessibilityRole="link"
+      accessibilityHint="Abre o site oficial no navegador"
+      style={styles.link}
+    >
+      <AppText style={{ color: colors.fgAccent, flexShrink: 1 }}>{label}</AppText>
+      <ExternalLink size={14} color={colors.fgMuted} />
+    </Pressable>
   );
 }
 
@@ -107,4 +146,5 @@ const styles = StyleSheet.create({
   levelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   option: { borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, padding: spacing[3], gap: 2 },
   optionSelected: { borderColor: 'rgba(206, 191, 157, 0.7)', backgroundColor: 'rgba(228, 216, 189, 0.08)' },
+  link: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36 },
 });

@@ -10,7 +10,9 @@ import {
   dnd5eStepLabels,
   draftClass,
   finalAbilityScores,
+  findSourcebook,
   listDnd5eChoices,
+  sourcebookUrl,
   validateDnd5eDraft,
   type AbilityScoreMethod,
   type Dnd5eCampaignRules,
@@ -319,6 +321,19 @@ export function Dnd5eCreationWizard({ campaigns, defaultCampaignId, storageKey }
                       <li key={rule}>{rule}</li>
                     ))}
                   </ul>
+                  {campaign.rules.sourcebooks.length > 0 ? (
+                    <p className="mt-2 text-xs text-fg-muted">
+                      Livros pagos, na página oficial:{' '}
+                      {campaign.rules.sourcebooks.map((bookId, index) => (
+                        <span key={bookId}>
+                          {index > 0 ? ' · ' : ''}
+                          <a href={sourcebookUrl(bookId)} target="_blank" rel="noopener noreferrer" className="text-fg-brand underline-offset-2 hover:underline">
+                            {findSourcebook(bookId)?.name ?? bookId}
+                          </a>
+                        </span>
+                      ))}
+                    </p>
+                  ) : null}
                 </div>
               ) : (
                 <SelectField

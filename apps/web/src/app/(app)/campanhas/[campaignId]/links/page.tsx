@@ -58,14 +58,14 @@ export default async function LinksPage({ params }: PageProps<'/campanhas/[campa
       </p>
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
-          <CardHeader icon={<Gift className="h-5 w-5" aria-hidden="true" />} title="Gratuitos" description="Leitura livre no site oficial." />
+          <CardHeader icon={<Gift className="h-5 w-5" aria-hidden="true" />} title="Gratuitos" description="Leitura livre, direto no site oficial." />
           <LinkList links={free} />
         </Card>
         <Card>
           <CardHeader
             icon={<BookOpen className="h-5 w-5" aria-hidden="true" />}
             title="Livros da campanha"
-            description="Os livros que o mestre liberou, vendidos pela editora no site oficial."
+            description="Os livros que o mestre liberou. São pagos: compre ou leia na página oficial de cada um."
           />
           {paid.length > 0 ? <LinkList links={paid} /> : <p className="text-sm text-fg-muted">Campanha no sistema base: só o conteúdo gratuito (SRD).</p>}
         </Card>

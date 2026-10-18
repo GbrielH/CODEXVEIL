@@ -1,6 +1,6 @@
 # Próximos passos
 
-> Relatório atualizado em **2026-10-17**. Mantenha este arquivo em dia a cada etapa concluída
+> Relatório atualizado em **2026-10-18**. Mantenha este arquivo em dia a cada etapa concluída
 > (veja [Como manter a documentação](#como-manter-a-documentação)). O inventário completo do
 > que falta em relação ao escopo inicial está em [`PENDENCIAS.md`](PENDENCIAS.md), e os
 > procedimentos de publicação em [`DEPLOY.md`](DEPLOY.md).
@@ -403,3 +403,23 @@ verificado no navegador ou no celular.
   feito, por serem conteúdo protegido (o repositório é público). Alternativa proposta ao
   responsável: editor de conteúdo da mesa (cadastrado por ele, privado à campanha) e conteúdo de
   terceiros com licença aberta.
+
+### 2026-10-18 — livros pagos só com o link da página oficial
+
+- **Pedido do responsável:** os livros não precisam estar no Supabase. O trabalho em andamento de
+  importar o conteúdo dos livros para a conta (tabelas `book_packs` e `book_entries`, migração
+  `20261018140000_book_packs.sql`, página "Meus livros" e o conteúdo dos livros na criação e na
+  subida de nível) foi **descartado antes de publicar**: a migração nunca foi aplicada e nada
+  disso foi para o `main`. O código ficou guardado num `git stash` local desta máquina ("livros
+  importados no Supabase…"), caso volte a ser útil.
+- **Escolha dos livros** (criação e configurações da campanha, no site e no app): aviso de que são
+  livros pagos, vendidos pela Wizards na página oficial, com o link da página de cada livro; as
+  fontes gratuitas (regras gratuitas de 2024, SRD 5.2.1 e D&D Beyond) ficam com o link direto.
+- **Regras da campanha no assistente de criação:** o texto diz que os livros liberados são pagos e,
+  no site, traz o link oficial de cada um.
+- **Aba Links:** "Gratuitos" com leitura direta no site oficial; "Livros da campanha" avisa que são
+  pagos e leva à página oficial de cada um.
+
+Verificações: `pnpm check` 20/20 (rpg-systems 144 testes; banco 180, com 11 ao vivo pulados; domain
+66; ui 33; validation 15; web 12) e `pnpm build` 2/2. Sem migração. Não verificado no navegador
+nem no celular.

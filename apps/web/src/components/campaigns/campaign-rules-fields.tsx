@@ -5,11 +5,14 @@ import {
   DND5E_SOURCEBOOKS,
   SOURCEBOOK_CATEGORIES,
   abilityScoreMethodLabels,
+  dnd5eOfficialLinks,
   sourcebookCategoryLabels,
+  sourcebookUrl,
   parseDnd5eCampaignRules,
   type AbilityScoreMethod,
 } from '@codexveil/rpg-systems/dnd5e';
 import type { FieldErrors } from '@codexveil/validation';
+import { ExternalLink } from 'lucide-react';
 import { useId, useState } from 'react';
 import { CheckboxField, SelectField } from '@/components/ui/field';
 
@@ -116,12 +119,25 @@ function SourcebookFields({ selected, onChange }: { selected: string[]; onChange
             </span>
             <span className="text-xs text-fg-muted">
               {option === 'base'
-                ? 'Só o SRD 5.2.1, que já vem pronto no Codexveil. Sem nada para escolher.'
-                : 'Escolha os livros que a mesa usa. Eles não vêm no Codexveil (direitos da Wizards): o conteúdo entra à mão.'}
+                ? 'Só o SRD 5.2.1, gratuito e já pronto no Codexveil. Sem nada para escolher.'
+                : 'Escolha os livros que a mesa usa. São livros pagos, vendidos pela Wizards na página oficial: o conteúdo deles não vem no Codexveil e entra à mão.'}
             </span>
           </label>
         ))}
       </div>
+      <p className="text-xs text-fg-muted">
+        Gratuitos:{' '}
+        {dnd5eOfficialLinks
+          .filter((link) => link.access === 'free')
+          .map((link, index) => (
+            <span key={link.url}>
+              {index > 0 ? ' · ' : ''}
+              <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-fg-brand underline-offset-2 hover:underline">
+                {link.label}
+              </a>
+            </span>
+          ))}
+      </p>
       {mode === 'expanded' ? (
         <div className="flex flex-col gap-4">
           {SOURCEBOOK_CATEGORIES.map((category) => (
@@ -141,7 +157,22 @@ function SourcebookFields({ selected, onChange }: { selected: string[]; onChange
                     name="rules.sourcebooks"
                     value={book.id}
                     label={book.name}
-                    description={`${book.year}${book.edition === '2024' ? ' · regras de 2024' : ''}`}
+                    description={
+                      <>
+                        {book.year}
+                        {book.edition === '2024' ? ' · regras de 2024' : ''} · Pago ·{' '}
+                        <a
+                          href={sourcebookUrl(book.id)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-0.5 text-fg-brand underline-offset-2 hover:underline"
+                        >
+                          página oficial
+                          <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                          <span className="sr-only">(abre em outra aba)</span>
+                        </a>
+                      </>
+                    }
                     checked={selected.includes(book.id)}
                     onChange={(event) => toggle(book.id, event.target.checked)}
                   />
