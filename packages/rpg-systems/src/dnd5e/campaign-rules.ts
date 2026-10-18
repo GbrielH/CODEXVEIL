@@ -53,3 +53,29 @@ export function describeDnd5eCampaignRules(rules: Dnd5eCampaignRules): string[] 
     rules.allowEvilAlignments ? 'Alinhamentos malignos permitidos.' : 'Sem alinhamentos malignos.',
   ];
 }
+
+/**
+ * O que impede um personagem pronto de entrar numa campanha (regras do mestre e dados
+ * obrigatórios). Lista vazia = pode entrar. As mensagens dizem o que mudar na ficha.
+ */
+export function dnd5eCampaignIssues(
+  character: { name: string; sheet: { identity: { species: string; background: string; alignment: string; classes: { name: string; level: number }[] } } },
+  rules: Dnd5eCampaignRules,
+): string[] {
+  const issues: string[] = [];
+  const identity = character.sheet.identity;
+  if (!character.name.trim()) issues.push('Dê um nome ao personagem.');
+  if (!identity.species.trim()) issues.push('Escolha a espécie (aba Personagem).');
+  if (!identity.background.trim()) issues.push('Escolha o antecedente (aba Personagem).');
+  if (identity.classes.some((entry) => !entry.name.trim())) issues.push('Toda classe precisa de nome (aba Personagem).');
+  const level = Math.min(20, identity.classes.reduce((total, entry) => total + entry.level, 0));
+  if (level > rules.startingLevel) {
+    issues.push(`O personagem está no ${level}º nível e a campanha começa no ${rules.startingLevel}º: reduza os níveis das classes ou peça ao mestre para mudar a regra.`);
+  } else if (level < rules.startingLevel) {
+    issues.push(`A campanha começa no ${rules.startingLevel}º nível: suba o personagem do ${level}º para o ${rules.startingLevel}º antes de entrar.`);
+  }
+  if (!rules.allowEvilAlignments && /\b(mau|maligno|evil)\b/i.test(identity.alignment)) {
+    issues.push(`O mestre não permite alinhamentos malignos: troque o alinhamento (${identity.alignment}).`);
+  }
+  return issues;
+}

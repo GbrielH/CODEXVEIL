@@ -86,6 +86,7 @@ describe('migrações', () => {
       'encounter_combatants',
       'encounters',
       'session_entities',
+      'turn_actions',
     ]);
   });
 });

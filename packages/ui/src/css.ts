@@ -3,7 +3,16 @@
  * Executado por `scripts/build-css.ts`; um teste garante que o arquivo gerado
  * em `css/tokens.css` está sincronizado com `tokens.ts`.
  */
-import { colors, fontSizes, motion, palette, radii, shadows } from './tokens.ts';
+import {
+  colors,
+  fontSizes,
+  lightColors,
+  lightPaletteOverrides,
+  motion,
+  palette,
+  radii,
+  shadows,
+} from './tokens.ts';
 
 function kebab(name: string): string {
   return name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
@@ -59,6 +68,13 @@ export function buildTokensCss(): string {
     '/* `static`: todas as variáveis ficam disponíveis via var(), mesmo sem utilitário em uso. */',
     '@theme static {',
     ...lines,
+    '}',
+    '',
+    '/* Tema claro: `data-theme="light"` no <html> (escolha salva no navegador). */',
+    ":root[data-theme='light'] {",
+    '  color-scheme: light;',
+    ...Object.entries(lightPaletteOverrides).map(([name, value]) => `  --color-${name}: ${value};`),
+    ...Object.entries(lightColors).map(([name, value]) => `  --color-${kebab(name)}: ${value};`),
     '}',
     '',
   ].join('\n');

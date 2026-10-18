@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  createCharacterAbility,
   adjustCharacterItemQuantity,
   createCharacterItem,
   createCharacterResource,
@@ -10,7 +11,7 @@ import {
   type CharacterItem,
 } from '@codexveil/database';
 import { ITEM_CATEGORIES, groupByCategory, itemCategoryLabels, totalWeight, type ItemCategory } from '@codexveil/domain';
-import { CURRENCIES, currencyLabels, currencyResource, currencyResourceKey, totalInGold, type Currency } from '@codexveil/rpg-systems/dnd5e';
+import { CURRENCIES, currencyLabels, currencyResource, currencyResourceKey, findSrdWeaponByName, totalInGold, weaponAttackEntry, type Currency } from '@codexveil/rpg-systems/dnd5e';
 import { fieldErrorsFrom, inventoryItemSchema, type FieldErrors } from '@codexveil/validation';
 import { Backpack, Coins, Minus, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useId, useState } from 'react';
@@ -20,6 +21,7 @@ import { Card, CardHeader } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { CheckboxField, SelectField, TextareaField, TextField } from '@/components/ui/field';
 import { Modal } from '@/components/ui/modal';
+import { useToast } from '@/components/ui/toast';
 import { NumberInput } from '@/components/ui/number-input';
 import { EmptyState } from '@/components/ui/states';
 import { cx } from '@/lib/cx';
@@ -107,7 +109,8 @@ function LoadCard() {
 }
 
 function ItemsCard() {
-  const { items, permissions, setItems, run } = useSheet();
+  const { items, permissions, setItems, run, abilities, setAbilities, sheet, character } = useSheet();
+  const { toast } = useToast();
   const [editing, setEditing] = useState<CharacterItem | 'new' | null>(null);
   const groups = groupByCategory(items);
 
@@ -127,7 +130,21 @@ function ItemsCard() {
     });
     if (ok === undefined) {
       setItems((current) => current.map((entry) => (entry.id === item.id ? item : entry)));
+      return;
     }
+    // Arma do SRD equipada sem ataque na ficha: a ficha ganha o ataque.
+    const weapon = next ? findSrdWeaponByName(item.name) : undefined;
+    if (!weapon || abilities.some((entry) => entry.kind === 'attack' && entry.name.toLowerCase() === weapon.name.toLowerCase())) return;
+    if (!permissions.canEditSheet) {
+      toast({ tone: 'info', title: `${weapon.name} equipada`, description: 'Peça ao mestre para liberar a edição da ficha para criar o ataque.' });
+      return;
+    }
+    const attack = weaponAttackEntry(weapon, sheet);
+    const created = await run(
+      () => createCharacterAbility(getSupabaseBrowserClient(), character.id, { ...attack, data: { ...attack.data }, resourceId: null }),
+      { success: `Ataque com ${weapon.name} adicionado à ficha.`, failure: 'O ataque não foi criado' },
+    );
+    if (created) setAbilities((current) => [...current, created]);
   };
 
   return (

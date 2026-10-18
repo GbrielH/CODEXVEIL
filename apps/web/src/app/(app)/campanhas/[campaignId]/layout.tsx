@@ -17,6 +17,7 @@ export default async function CampaignLayout({ children, params }: LayoutProps<'
   const system = findSystem(campaign.systemId);
 
   const tabs: SectionTab[] = [{ href: base as Route, label: 'Visão geral', exact: true }];
+  if (!isGm) tabs.push({ href: `${base}/personagem` as Route, label: 'Meu personagem' });
   if (isGm) tabs.push({ href: `${base}/mesa` as Route, label: 'Mesa do mestre' });
   tabs.push(
     { href: `${base}/sessoes` as Route, label: 'Sessões' },

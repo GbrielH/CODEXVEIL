@@ -14,6 +14,7 @@ import { SKILLS, skillDefinitions, type Skill } from '../skills';
 import { findBackground } from '../srd/backgrounds';
 import { CIRCLE_OF_THE_LAND, SRD_INVOCATIONS, SRD_METAMAGIC } from '../srd/class-options';
 import { SORCERER_METAMAGIC, WARLOCK_INVOCATIONS, WARLOCK_SLOT_LEVEL, atLevel, findClass } from '../srd/classes';
+import { spellNamePt } from '../srd/spell-names-pt';
 import { ALL_TOOLS, ARTISAN_TOOLS, GAMING_SETS, MUSICAL_INSTRUMENTS, SRD_ITEMS, SRD_WEAPONS, findTool } from '../srd/equipment';
 import { SRD_FEATS, epicBoonAbilities, findFeat } from '../srd/feats';
 import { ALIGNMENTS, CLASS_ONLY_LANGUAGES, SRD_LANGUAGES, languageName } from '../srd/languages';
@@ -208,7 +209,8 @@ function spellOptions(filter: {
       (!allowed || allowed.has(spell.name)),
   ).map((spell) => ({
     id: spell.name,
-    name: spell.name,
+    name: spellNamePt(spell.name),
+    description: spell.name,
     level: spell.level,
     school: spell.school,
     concentration: Boolean(spell.concentration),

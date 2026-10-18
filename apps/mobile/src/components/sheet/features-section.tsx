@@ -1,6 +1,6 @@
 import type { CharacterAbility } from '@codexveil/database';
 import { d20Expression, withBonus } from '@codexveil/domain';
-import { attackDamageModifier, attackRollBonus, dnd5eAttackDataSchema, dnd5eSpellDataSchema, formatModifier } from '@codexveil/rpg-systems/dnd5e';
+import { attackDamageModifier, attackRollBonus, dnd5eAttackDataSchema, dnd5eSpellDataSchema, formatModifier, spellNamePt } from '@codexveil/rpg-systems/dnd5e';
 import { abilityEntryKindLabels, type AbilityEntryKind } from '@codexveil/validation';
 import { Pencil, Plus } from 'lucide-react-native';
 import { useState } from 'react';
@@ -54,7 +54,7 @@ export function FeaturesSection() {
           <Card key={entry.id}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Pressable onPress={() => setOpen(expanded ? null : entry.id)} accessibilityRole="button" accessibilityState={{ expanded }} style={{ flex: 1, gap: 4 }}>
-                <AppText style={{ fontFamily: fonts.display, color: colors.fgAccent }}>{entry.name}</AppText>
+                <AppText style={{ fontFamily: fonts.display, color: colors.fgAccent }}>{entry.kind === 'spell' ? spellNamePt(entry.name) : entry.name}</AppText>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
                   <Badge label={abilityEntryKindLabels[entry.kind]} />
                   {spell?.success ? <Badge label={spell.data.circle === 0 ? 'Truque' : `${spell.data.circle}º círculo`} tone="parchment" /> : null}
@@ -78,7 +78,7 @@ export function FeaturesSection() {
                 </AppText>
               </RollButton>
             ) : null}
-            {expanded && spell?.success ? <SpellDetails name={entry.name} data={spell.data} description={entry.description} /> : null}
+            {expanded && spell?.success ? <SpellDetails name={spellNamePt(entry.name)} data={spell.data} description={entry.description} /> : null}
             {expanded && attack?.success ? <AttackDetails attack={entry} data={attack.data} bonus={formatModifier(attackBonus ?? 0)} /> : null}
             {expanded && !spell?.success && !attack?.success ? (
               <View style={{ gap: 4 }}>

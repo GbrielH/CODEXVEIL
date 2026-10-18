@@ -1,5 +1,4 @@
 import {
-  createCampaignInvite,
   getCampaign,
   leaveCampaign,
   listCampaignCharacters,
@@ -7,24 +6,11 @@ import {
   listSessions,
   sessionStatusLabels,
 } from '@codexveil/database';
-import { campaignRoleLabels, formatInviteCode } from '@codexveil/domain';
+import { campaignRoleLabels } from '@codexveil/domain';
 import { conditionLabel, findSystem, summarizeSheet } from '@codexveil/rpg-systems';
-import { inviteCreateSchema } from '@codexveil/validation';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import {
-  BookOpen,
-  CalendarPlus,
-  Crown,
-  Dices,
-  ExternalLink,
-  NotebookPen,
-  Settings,
-  Share2,
-  Ticket,
-  UserPlus,
-} from 'lucide-react-native';
-import { useState } from 'react';
-import { Linking, Share, View } from 'react-native';
+import { BookOpen, Dices, ExternalLink, NotebookPen, UserPlus, UserRound } from 'lucide-react-native';
+import { Linking, View } from 'react-native';
 import { TurnStatus } from '@/components/campaign/turn-status';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/dialog';
@@ -38,7 +24,7 @@ import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/errors';
 import { useAsyncData } from '@/lib/hooks';
 import { useUserId } from '@/lib/session';
-import { getSupabase, siteUrl } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
 
 export default function CampaignScreen() {
@@ -47,7 +33,6 @@ export default function CampaignScreen() {
   const router = useRouter();
   const toast = useToast();
   const confirm = useConfirm();
-  const [inviteBusy, setInviteBusy] = useState(false);
 
   const { data, error, loading, refreshing, reload } = useAsyncData(async () => {
     const supabase = getSupabase();
@@ -74,25 +59,10 @@ export default function CampaignScreen() {
   const { campaign, members, party, sessions } = data;
   const isGm = campaign.role === 'gm';
   const isActive = campaign.status === 'active';
-  const hasOwnCharacter = party.some((character) => character.ownerId === userId);
+  const ownCharacter = party.find((character) => character.ownerId === userId) ?? null;
+  const hasOwnCharacter = ownCharacter !== null;
   const system = findSystem(campaign.systemId);
   const creationRules = system ? system.describeCampaignRules(system.parseCampaignRules(campaign.characterRules)) : [];
-
-  const invite = async () => {
-    setInviteBusy(true);
-    try {
-      const input = inviteCreateSchema.parse({ expiresInDays: 7, maxUses: 1, invitedEmail: null });
-      const created = await createCampaignInvite(getSupabase(), campaign.id, input);
-      const code = formatInviteCode(created.code);
-      await Share.share({
-        message: `Você foi convidado para a campanha “${campaign.name}” no Codexveil. Código: ${code}\n${siteUrl}/convite/${code}`,
-      });
-    } catch (cause) {
-      toast({ tone: 'danger', title: 'O convite não foi criado', description: failureMessage(cause) });
-    } finally {
-      setInviteBusy(false);
-    }
-  };
 
   const leave = async () => {
     const confirmed = await confirm({
@@ -137,22 +107,22 @@ export default function CampaignScreen() {
         </Card>
       ) : null}
 
-      <TurnStatus campaignId={campaign.id} ownCharacterId={party.find((character) => character.ownerId === userId)?.id ?? null} systemId={campaign.systemId} />
+      <TurnStatus campaignId={campaign.id} ownCharacterId={ownCharacter?.id ?? null} systemId={campaign.systemId} />
 
       <NavGrid>
-        {isGm ? (
+        {ownCharacter ? (
           <NavTile
-            icon={<Crown size={20} color={colors.fgAccent} />}
-            label="Mesa do mestre"
-            hint="Turnos, cena, grupo e rolagens"
-            onPress={() => router.push({ pathname: '/campanha/[id]/mesa', params: { id: campaign.id } })}
+            icon={<UserRound size={20} color={colors.fgAccent} />}
+            label="Meu personagem"
+            hint="Ficha, ações do turno e rolagens"
+            onPress={() => router.push({ pathname: '/personagem/[id]', params: { id: ownCharacter.id } })}
           />
         ) : null}
         <NavTile icon={<Dices size={20} color={colors.fgAccent} />} label="Dados" hint="Rolar e ver o mural" onPress={() => router.push({ pathname: '/campanha/[id]/dados', params: { id: campaign.id } })} />
         <NavTile
           icon={<BookOpen size={20} color={colors.fgAccent} />}
           label="Biblioteca"
-          hint="NPCs, monstros e itens"
+          hint="NPCs, monstros e itens revelados"
           onPress={() => router.push({ pathname: '/campanha/[id]/biblioteca', params: { id: campaign.id } })}
         />
         <NavTile
@@ -160,28 +130,9 @@ export default function CampaignScreen() {
           label="Anotações"
           onPress={() => router.push({ pathname: '/campanha/[id]/anotacoes', params: { id: campaign.id } })}
         />
-        {isGm && isActive ? (
-          <NavTile
-            icon={<CalendarPlus size={20} color={colors.fgAccent} />}
-            label="Nova sessão"
-            onPress={() => router.push({ pathname: '/campanha/[id]/nova-sessao', params: { id: campaign.id } })}
-          />
-        ) : null}
-        {isGm ? (
-          <NavTile icon={<Ticket size={20} color={colors.fgAccent} />} label="Convites" onPress={() => router.push({ pathname: '/campanha/[id]/convites', params: { id: campaign.id } })} />
-        ) : null}
-        {isGm ? (
-          <NavTile
-            icon={<Settings size={20} color={colors.fgAccent} />}
-            label="Configurações"
-            onPress={() => router.push({ pathname: '/campanha/[id]/configuracoes', params: { id: campaign.id } })}
-          />
-        ) : null}
       </NavGrid>
 
-      {isGm && isActive ? (
-        <Button label="Convidar jogador" variant="secondary" icon={<Share2 size={16} color={colors.fg} />} onPress={() => void invite()} loading={inviteBusy} />
-      ) : null}
+      {isGm ? <AppText variant="muted">Ferramentas do mestre (mesa, sessões, convites e biblioteca) ficam no site; o app é para jogar.</AppText> : null}
 
       <Card ornate>
         <AppText variant="heading">Grupo</AppText>

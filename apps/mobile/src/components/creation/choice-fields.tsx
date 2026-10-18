@@ -201,7 +201,7 @@ function SpellList({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { kind
   const full = value.length >= spec.count;
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
-    return spec.options.filter((option) => (level === null || option.level === level) && (!term || option.name.toLowerCase().includes(term)));
+    return spec.options.filter((option) => (level === null || option.level === level) && (!term || `${option.name} ${option.id}`.toLowerCase().includes(term)));
   }, [spec.options, query, level]);
   const toggle = (id: string) => onChange(value.includes(id) ? value.filter((entry) => entry !== id) : [...value, id]);
 

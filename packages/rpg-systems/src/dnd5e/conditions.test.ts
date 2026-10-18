@@ -163,3 +163,29 @@ describe('condições do SRD 5.2.1', () => {
     expect(formatDnd5eConditionRounds(1200)).toBe('1.200 rodadas (2 h)');
   });
 });
+
+describe('ataques de armas do inventário', () => {
+  it('acha a arma pelo nome do item e monta o ataque', async () => {
+    const { findSrdWeaponByName, weaponAttackEntry, createDefaultDnd5eSheet } = await import('./index');
+    expect(findSrdWeaponByName('Adaga')?.id).toBe('dagger');
+    expect(findSrdWeaponByName('Machadinhas (2)')?.id ?? findSrdWeaponByName('Machadinha')?.id).toBe('handaxe');
+    expect(findSrdWeaponByName('Pedra da sorte')).toBeUndefined();
+    const sheet = createDefaultDnd5eSheet();
+    sheet.abilities.dex = 16;
+    sheet.proficiencies.weapons = 'Armas simples';
+    const dagger = findSrdWeaponByName('Adaga');
+    expect(dagger && weaponAttackEntry(dagger, sheet).data).toMatchObject({ ability: 'dex', proficient: true, damage: '1d4' });
+  });
+});
+
+describe('personagem entrando numa campanha', () => {
+  it('lista o que impede a entrada', async () => {
+    const { dnd5eCampaignIssues, defaultDnd5eCampaignRules } = await import('./index');
+    const ok = { name: 'Lyra', sheet: { identity: { species: 'Elfo', background: 'Sábio', alignment: 'Neutro e Bom', classes: [{ name: 'Mago', level: 1 }] } } };
+    expect(dnd5eCampaignIssues(ok, defaultDnd5eCampaignRules())).toEqual([]);
+    const bad = { name: 'Vex', sheet: { identity: { species: '', background: 'Sábio', alignment: 'Caótico e Mau', classes: [{ name: 'Ladino', level: 3 }] } } };
+    const issues = dnd5eCampaignIssues(bad, defaultDnd5eCampaignRules());
+    expect(issues).toHaveLength(3);
+    expect(issues.join(' ')).toContain('3º nível');
+  });
+});

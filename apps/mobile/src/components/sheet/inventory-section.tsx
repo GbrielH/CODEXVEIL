@@ -1,4 +1,5 @@
 import {
+  createCharacterAbility,
   adjustCharacterItemQuantity,
   createCharacterItem,
   createCharacterResource,
@@ -7,7 +8,7 @@ import {
   type CharacterItem,
 } from '@codexveil/database';
 import { ITEM_CATEGORIES, groupByCategory, itemCategoryLabels, totalWeight, type ItemCategory } from '@codexveil/domain';
-import { CURRENCIES, currencyLabels, currencyResource, currencyResourceKey, totalInGold, type Currency } from '@codexveil/rpg-systems/dnd5e';
+import { CURRENCIES, currencyLabels, currencyResource, currencyResourceKey, findSrdWeaponByName, totalInGold, weaponAttackEntry, type Currency } from '@codexveil/rpg-systems/dnd5e';
 import { fieldErrorsFrom, inventoryItemSchema, type FieldErrors } from '@codexveil/validation';
 import { Minus, Plus, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
@@ -116,7 +117,7 @@ function NewItem({ onClose }: { onClose: () => void }) {
 }
 
 function ItemRow({ item }: { item: CharacterItem }) {
-  const { canEditPlay, setItems, run } = useSheet();
+  const { canEditPlay, canEditSheet, setItems, run, abilities, setAbilities, sheet, characterId } = useSheet();
   const confirm = useConfirm();
 
   const change = async (delta: number) => {
@@ -126,8 +127,16 @@ function ItemRow({ item }: { item: CharacterItem }) {
   };
 
   const toggleEquipped = async () => {
-    const ok = await run(() => setCharacterItemEquipped(getSupabase(), item.id, !item.isEquipped), `${item.name}: alteração não salva`);
-    if (ok !== undefined) setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, isEquipped: !item.isEquipped } : entry)));
+    const next = !item.isEquipped;
+    const ok = await run(() => setCharacterItemEquipped(getSupabase(), item.id, next), `${item.name}: alteração não salva`);
+    if (ok === undefined) return;
+    setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, isEquipped: next } : entry)));
+    // Arma do SRD equipada sem ataque na ficha: a ficha ganha o ataque.
+    const weapon = next ? findSrdWeaponByName(item.name) : undefined;
+    if (!weapon || !canEditSheet || abilities.some((entry) => entry.kind === 'attack' && entry.name.toLowerCase() === weapon.name.toLowerCase())) return;
+    const attack = weaponAttackEntry(weapon, sheet);
+    const created = await run(() => createCharacterAbility(getSupabase(), characterId, { ...attack, data: { ...attack.data }, resourceId: null }), 'O ataque não foi criado');
+    if (created) setAbilities((current) => [...current, created]);
   };
 
   const remove = async () => {

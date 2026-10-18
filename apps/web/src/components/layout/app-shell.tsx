@@ -7,6 +7,7 @@ import { Emblem, Wordmark } from '@/components/brand/emblem';
 import { Avatar } from '@/components/ui/avatar';
 import { routes } from '@/lib/routes';
 import { NavLink } from './nav-link';
+import { ThemeToggle } from './theme-toggle';
 
 interface NavItem {
   href: Route;
@@ -69,6 +70,7 @@ export function AppShell({ displayName, motion, children }: AppShellProps) {
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-fg">{displayName}</p>
           </div>
+          <ThemeToggle compact />
           <SignOutButton />
         </div>
       </aside>
@@ -82,6 +84,7 @@ export function AppShell({ displayName, motion, children }: AppShellProps) {
             </span>
           </Link>
           <div className="flex items-center gap-1">
+            <ThemeToggle compact />
             <Avatar name={displayName} size="sm" />
             <SignOutButton compact />
           </div>

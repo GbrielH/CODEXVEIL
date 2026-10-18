@@ -1,6 +1,6 @@
 /**
  * Converte erros do Supabase (PostgREST, Auth, rede) em `AppError` com códigos estáveis.
- * Os SQLSTATEs próprios (CVLIM, CVARC, CVGMC) são definidos nas migrações.
+ * Os SQLSTATEs próprios (CVLIM, CVARC, CVGMC, CVSES, CVTRN) são definidos nas migrações.
  */
 import { AppError, limitReachedMessages, type LimitedResource } from '@codexveil/domain';
 
@@ -61,7 +61,17 @@ export function toAppError(error: unknown): AppError {
       case 'P0002':
       case 'PGRST116':
         return new AppError('not_found', undefined, { cause: error });
+      case 'CVSES':
+      case 'CVTRN':
+        // Mensagens escritas nas próprias migrações (sessão não iniciada, ação já usada…).
+        return new AppError('forbidden', message, { cause: error });
       case '23505':
+        if (message.includes('characters_one_per_player')) {
+          return new AppError('conflict', 'Você já tem um personagem nesta campanha (um por jogador).', { cause: error });
+        }
+        if (message.includes('campaign_notes_one_pinned')) {
+          return new AppError('conflict', 'Você já tem uma anotação fixada nesta campanha.', { cause: error });
+        }
         return new AppError('conflict', 'Já existe um registro com esses dados.', { cause: error });
       case '23502':
       case '23514':

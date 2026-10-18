@@ -37,7 +37,8 @@ export type RealtimeTable =
   | 'encounters'
   | 'encounter_combatants'
   | 'dice_rolls'
-  | 'campaign_turns';
+  | 'campaign_turns'
+  | 'turn_actions';
 
 export interface RealtimeBinding {
   table: RealtimeTable;

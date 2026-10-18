@@ -279,3 +279,34 @@ documentação no mesmo commit.**
   configurações, habilidades, classes/níveis, recursos.
 - Migrações `20261017140000`–`20261017140300` aplicadas; análise de espaço em
   [`ARMAZENAMENTO.md`](ARMAZENAMENTO.md).
+
+### 2026-10-18 — quarta rodada (jogo em turnos, evolução, tema e magias em português)
+
+Feito:
+
+- **Jogo em turnos:** jogadores só rolam e agem com a sessão iniciada pelo mestre (o banco recusa
+  com `CVSES`; site e app mostram o aviso). Ações registradas em `turn_actions` com orçamento do
+  turno (1 ação + extras como Surto de Ação, 1 ação bônus, 1 movimento, 1 reação), alvo, rolagem e
+  "Ação de movimento"; reações fora da vez; o jogador da vez ou o mestre encerra o turno, sem tempo
+  limite. O mural de dados mostra ações e rolagens em ordem. O alvo de um ataque vê o aviso e as
+  opções de reação.
+- **Aba "Meu personagem" na campanha** (jogadores), ficha de jogo sem história; um personagem por
+  jogador por campanha (índice único); rolagens da ficha são locais (teste, fora do mural).
+- **Subida de nível** (site, aba Evolução): confirmação e painel com vida (média ou dado),
+  habilidades novas, subclasse, aumento de atributo/talento/dádiva épica, magias, invocações,
+  Metamagia e recursos recalculados (SRD 5.2.1).
+- **Anotações:** menu ⋮ (fixar, editar, excluir), 1 fixada por pessoa, selo Geral/Pessoal.
+- **Vincular à campanha:** lista o que precisa mudar para seguir as regras do mestre.
+- **Equipar arma do SRD** cria o ataque correspondente.
+- **Tema claro/escuro** no site (botão no menu; escolha salva no navegador). O app segue escuro.
+- **Magias em português:** nomes PT das 339 magias do SRD (original em inglês como chave) e
+  menções nas descrições de classes, espécies e invocações.
+- **App:** telas exclusivas do mestre removidas (o app é para jogar); painel de turno no app.
+
+Verificações (2026-10-18): `pnpm check` passou (20 tarefas; banco 178 testes, 11 ao vivo
+pulados; rpg-systems 143; ui 33) e `pnpm build` passou (web e mobile). `supabase db push
+--dry-run` listou só `20261018120000_gameplay_turns.sql`. Não verificado: uso real no navegador e
+no celular (não foi aberto nada local, a pedido).
+
+Pendente: aplicar a migração em produção antes do push; imagens oficiais (item 2); tema claro no
+app; subida de nível no app.

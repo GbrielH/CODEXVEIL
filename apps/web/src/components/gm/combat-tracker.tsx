@@ -15,14 +15,12 @@ import {
   type EncounterCombatant,
 } from '@codexveil/database';
 import {
-  TURN_ECONOMY_KEYS,
   TURN_MODES,
   advanceTurn,
   moveInTurnOrder,
   orderTurns,
   rewindTurn,
   startCombat,
-  turnEconomyLabels,
   turnModeLabels,
   turnOrderModeLabels,
   type Combatant,
@@ -45,6 +43,7 @@ import { useToast } from '@/components/ui/toast';
 import { cx } from '@/lib/cx';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import type { GmTableContext } from './gm-table';
+import { GmTurnActions } from './turn-actions';
 
 interface RosterEntry extends Combatant {
   source: EncounterCombatant;
@@ -399,26 +398,13 @@ export function CombatTracker({ context }: { context: GmTableContext }) {
       ) : null}
 
       {activeEntry && canManage ? (
-        <section aria-label={`Turno de ${activeEntry.name}`} className="mb-3 rounded-md border border-parchment-300/40 bg-wine-900/40 px-3 py-2">
-          <p className="text-sm font-medium text-fg-accent">Vez de {activeEntry.name}</p>
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2" role="group" aria-label="O que já foi usado neste turno">
-            {TURN_ECONOMY_KEYS.map((key) => (
-              <label key={key} className="flex items-center gap-1.5 text-sm text-fg-secondary">
-                <input
-                  type="checkbox"
-                  checked={activeEntry.source.turnState[key]}
-                  onChange={(event) =>
-                    void run('O turno não foi atualizado', () =>
-                      updateCombatant(getSupabaseBrowserClient(), activeEntry.id, { turnState: { ...activeEntry.source.turnState, [key]: event.target.checked } }),
-                    )
-                  }
-                  className="h-4 w-4 accent-wine-500"
-                />
-                {turnEconomyLabels[key]} usada
-              </label>
-            ))}
-          </div>
-        </section>
+        <GmTurnActions
+          campaignId={campaignId}
+          encounterId={encounter.id}
+          round={encounter.round}
+          actor={{ id: activeEntry.id, name: activeEntry.name }}
+          targets={ordered.filter((entry) => entry.id !== activeEntry.id && !entry.isDefeated).map((entry) => ({ id: entry.id, name: entry.name }))}
+        />
       ) : null}
 
       <ol className="flex flex-col gap-1.5" aria-label="Ordem dos turnos">

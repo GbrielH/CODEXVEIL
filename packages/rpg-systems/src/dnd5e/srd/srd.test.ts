@@ -7,6 +7,7 @@ import { listClasses } from './classes';
 import { SRD_ITEMS, findTool } from './equipment';
 import { SRD_FEATS } from './feats';
 import { SRD_SPECIES } from './species';
+import { SRD_SPELL_NAMES_PT, spellNameEn, spellNamePt } from './spell-names-pt';
 import { SRD_SPELLS } from './spells';
 
 const spellNames = new Set(SRD_SPELLS.map((spell) => spell.name));
@@ -36,6 +37,23 @@ describe('magias do SRD 5.2.1', () => {
     expect(SRD_SPELLS.find((spell) => spell.name === 'Bless')).toMatchObject({ level: 1, concentration: true });
     expect(SRD_SPELLS.find((spell) => spell.name === 'Detect Magic')).toMatchObject({ ritual: true, concentration: true });
     expect(SRD_SPELLS.find((spell) => spell.name === 'Fireball')).toMatchObject({ level: 3, range: '45 m', castingTime: 'Ação' });
+  });
+});
+
+describe('nomes das magias em português', () => {
+  it('toda magia do SRD tem nome em português, sem repetição', () => {
+    const missing = SRD_SPELLS.filter((spell) => !SRD_SPELL_NAMES_PT[spell.name]).map((spell) => spell.name);
+    expect(missing).toEqual([]);
+    const names = Object.values(SRD_SPELL_NAMES_PT);
+    expect(new Set(names).size).toBe(names.length);
+    expect(Object.keys(SRD_SPELL_NAMES_PT).every((name) => spellNames.has(name))).toBe(true);
+  });
+
+  it('converte nos dois sentidos e mantém nomes fora do SRD', () => {
+    expect(spellNamePt('Fireball')).toBe('Bola de Fogo');
+    expect(spellNamePt('Hunter’s Mark')).toBe('Marca do Caçador');
+    expect(spellNameEn('bola de fogo')).toBe('Fireball');
+    expect(spellNamePt('Magia da Casa')).toBe('Magia da Casa');
   });
 });
 

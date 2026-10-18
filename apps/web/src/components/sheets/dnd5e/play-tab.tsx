@@ -16,13 +16,13 @@ import { Alert } from '@/components/ui/alert';
 import { Card, CardHeader } from '@/components/ui/card';
 import { HoverCard } from '@/components/ui/hover-card';
 import { RollButton } from '@/components/dice/dice-roller';
-import { TurnStatus } from '@/components/campaigns/turn-status';
 import { AttackDetails } from './ability-details';
 import { PenaltyBadge, RollEffectBadge, rollModeFrom } from './condition-badges';
 import { useSheet } from './context';
 import { ConditionsPanel } from './conditions-panel';
 import { HpTracker } from './hp-tracker';
 import { ResourceTracks } from './resource-tracks';
+import { TurnPlay } from './turn-play';
 
 interface StatRoll {
   expression: string;
@@ -75,7 +75,7 @@ export function parseAttack(data: unknown): Dnd5eAttackData {
 
 /** Tudo o que se consulta e altera com frequência durante uma partida, numa só tela. */
 export function PlayTab() {
-  const { sheet, derived, abilities, character, conditionEffects: effects } = useSheet();
+  const { sheet, derived, abilities, conditionEffects: effects } = useSheet();
   const attacks = abilities.filter((entry) => entry.kind === 'attack');
   const speedValue = effectiveSpeed(sheet.combat.speed, sheet.combat.speedUnit, effects);
   const speed = `${speedValue.toLocaleString('pt-BR')} ${sheet.combat.speedUnit}`;
@@ -88,9 +88,7 @@ export function PlayTab() {
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
       <div className="flex flex-col gap-5">
-        {character.campaign && character.campaign.status === 'active' ? (
-          <TurnStatus campaignId={character.campaign.id} ownCharacterId={character.id} systemId="dnd5e" />
-        ) : null}
+        <TurnPlay />
         {effects.dead ? (
           <Alert tone="danger" title="Exaustão 6">
             O personagem morre ao chegar ao nível 6 de Exaustão.

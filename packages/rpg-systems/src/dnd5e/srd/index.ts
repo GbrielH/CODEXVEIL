@@ -8,3 +8,4 @@ export * from './equipment';
 export * from './class-options';
 export { SRD_SPELLS } from './spells';
 export * from './catalog';
+export * from './spell-names-pt';

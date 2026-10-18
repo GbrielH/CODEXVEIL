@@ -12,6 +12,15 @@ afterAll(async () => {
   await db.close();
 });
 
+/** Mesa com a sessão em andamento (jogadores só agem com a sessão iniciada). */
+async function playing() {
+  const table = await createTable(db);
+  await db.as(table.gm, (s) =>
+    s.query(`insert into public.sessions (campaign_id, title, is_published, status) values ($1, 'Em jogo', true, 'in_progress')`, [table.campaign.id]),
+  );
+  return table;
+}
+
 interface RollRow {
   id: string;
   total: number;
@@ -70,7 +79,7 @@ describe('itens da campanha', () => {
 
 describe('rolagens de dados', () => {
   it('o servidor rola, soma e grava; ninguém grava um resultado escolhido', async () => {
-    const { player, campaign } = await createTable(db);
+    const { player, campaign } = await playing();
     const roll = await db.as(player, (s) =>
       s.one<RollRow>(`select * from public.roll_dice($1, ' 2d6 + 1d4 + 3 ', 'Dano da espada')`, [campaign.id]),
     );
@@ -101,7 +110,7 @@ describe('rolagens de dados', () => {
   });
 
   it('vantagem rola dois d20 e fica com o maior; desvantagem, com o menor', async () => {
-    const { player, campaign } = await createTable(db);
+    const { player, campaign } = await playing();
     for (let attempt = 0; attempt < 5; attempt++) {
       const best = await db.as(player, (s) => s.one<RollRow>(`select * from public.roll_dice($1, '1d20+2', '', 'advantage')`, [campaign.id]));
       expect(best.mode).toBe('advantage');
@@ -118,7 +127,7 @@ describe('rolagens de dados', () => {
   });
 
   it('recusa expressões inválidas e quem não participa da campanha', async () => {
-    const { player, outsider, campaign } = await createTable(db);
+    const { player, outsider, campaign } = await playing();
     for (const expression of ['', 'abc', '1d1', '101d6', '1d20; drop table x', '5', '1d6+1d6+1d6+1d6+1d6+1d6+1d6+1d6+1d6+1d6+1d6']) {
       await expectSqlError(db.as(player, (s) => s.query(`select public.roll_dice($1, $2)`, [campaign.id, expression])), '22023');
     }
@@ -126,7 +135,7 @@ describe('rolagens de dados', () => {
   });
 
   it('rolagens secretas só aparecem para quem rolou e para os mestres', async () => {
-    const { gm, coGm, player, otherPlayer, outsider, campaign } = await createTable(db);
+    const { gm, coGm, player, otherPlayer, outsider, campaign } = await playing();
     const open = await db.as(player, (s) => s.one<RollRow>(`select * from public.roll_dice($1, '1d20', 'Percepção')`, [campaign.id]));
     const secret = await db.as(player, (s) =>
       s.one<RollRow>(`select * from public.roll_dice($1, '1d20', 'Furtividade', 'normal', 'gm')`, [campaign.id]),
@@ -143,7 +152,7 @@ describe('rolagens de dados', () => {
   });
 
   it('rola pelo personagem do jogador, mas não pelo de outro', async () => {
-    const { gm, player, otherPlayer, campaign } = await createTable(db);
+    const { gm, player, otherPlayer, campaign } = await playing();
     const lyra = await createCharacter(db, player, campaign.id, 'Lyra');
     const roll = await db.as(player, (s) =>
       s.one<RollRow>(`select * from public.roll_dice($1, '1d20+5', 'Ataque', 'normal', 'members', $2)`, [campaign.id, lyra]),
@@ -161,7 +170,7 @@ describe('rolagens de dados', () => {
   });
 
   it('guarda só as 200 rolagens mais recentes de cada campanha', async () => {
-    const { player, campaign } = await createTable(db);
+    const { player, campaign } = await playing();
     for (let index = 0; index < 205; index++) {
       await db.as(player, (s) => s.query(`select public.roll_dice($1, '1d4')`, [campaign.id]));
     }

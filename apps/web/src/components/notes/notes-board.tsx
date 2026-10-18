@@ -1,15 +1,15 @@
 'use client';
 
-import { createCampaignNote, deleteCampaignNote, updateCampaignNote, type CampaignNote } from '@codexveil/database';
+import { createCampaignNote, deleteCampaignNote, setCampaignNotePinned, updateCampaignNote, type CampaignNote } from '@codexveil/database';
 import { CONTENT_VISIBILITIES, visibilityDescriptions, visibilityLabels, type ContentVisibility } from '@codexveil/domain';
 import { fieldErrorsFrom, noteSchema, type FieldErrors } from '@codexveil/validation';
-import { Lock, NotebookPen, Pencil, Pin, Plus, Trash2, UserRound } from 'lucide-react';
+import { Globe, Lock, NotebookPen, Pencil, Pin, PinOff, Plus, Trash2, UserRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useId, useState, type ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { MenuButton } from '@/components/ui/menu';
 import { Button } from '@/components/ui/button';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { CheckboxField, SelectField, TextareaField, TextField } from '@/components/ui/field';
+import { SelectField, TextareaField, TextField } from '@/components/ui/field';
 import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/states';
 import { useToast } from '@/components/ui/toast';
@@ -27,7 +27,7 @@ interface NotesBoardProps {
 }
 
 const visibilityIcons: Record<ContentVisibility, ReactNode> = {
-  members: null,
+  members: <Globe className="h-3 w-3" aria-hidden="true" />,
   gm: <Lock className="h-3 w-3" aria-hidden="true" />,
   author: <UserRound className="h-3 w-3" aria-hidden="true" />,
 };
@@ -37,6 +37,18 @@ export function NotesBoard({ campaignId, notes, currentUserId, isGm, canWrite }:
   const router = useRouter();
   const { toast } = useToast();
   const [editing, setEditing] = useState<CampaignNote | 'new' | null>(null);
+
+  const [deleting, setDeleting] = useState<CampaignNote | null>(null);
+
+  const togglePin = async (note: CampaignNote) => {
+    try {
+      await setCampaignNotePinned(getSupabaseBrowserClient(), note, currentUserId, !note.isPinned);
+      toast({ tone: 'success', title: note.isPinned ? 'Anotação desafixada.' : 'Anotação fixada no topo.' });
+      router.refresh();
+    } catch (error) {
+      toast({ tone: 'danger', title: 'Não foi possível fixar', description: failureMessage(error, 'Tente novamente.') });
+    }
+  };
 
   const remove = async (note: CampaignNote) => {
     try {
@@ -76,22 +88,25 @@ export function NotesBoard({ campaignId, notes, currentUserId, isGm, canWrite }:
                     {note.isPinned ? <Pin className="mr-1 inline h-4 w-4 text-wine-700" aria-label="Fixada" /> : null}
                     {note.title}
                   </h3>
-                  {mine && canWrite ? (
-                    <Button size="icon" variant="ghost" className="text-ink-muted hover:bg-parchment-300/60 hover:text-ink" onClick={() => setEditing(note)} aria-label={`Editar ${note.title}`}>
-                      <Pencil className="h-4 w-4" aria-hidden="true" />
-                    </Button>
-                  ) : null}
-                  {canDelete ? (
-                    <ConfirmDialog
-                      trigger={(open) => (
-                        <Button size="icon" variant="ghost" className="text-ink-muted hover:bg-parchment-300/60 hover:text-ink" onClick={open} aria-label={`Excluir ${note.title}`}>
-                          <Trash2 className="h-4 w-4" aria-hidden="true" />
-                        </Button>
-                      )}
-                      title={`Excluir “${note.title}”?`}
-                      description="A anotação será apagada para todos."
-                      confirmLabel="Excluir"
-                      onConfirm={() => remove(note)}
+                  {canWrite && (mine || canDelete) ? (
+                    <MenuButton
+                      label={`Opções de ${note.title}`}
+                      className="text-ink"
+                      items={[
+                        ...(mine
+                          ? [
+                              {
+                                label: note.isPinned ? 'Desafixar' : 'Fixar no topo',
+                                icon: note.isPinned ? <PinOff className="h-4 w-4" aria-hidden="true" /> : <Pin className="h-4 w-4" aria-hidden="true" />,
+                                onSelect: () => void togglePin(note),
+                              },
+                              { label: 'Editar', icon: <Pencil className="h-4 w-4" aria-hidden="true" />, onSelect: () => setEditing(note) },
+                            ]
+                          : []),
+                        ...(canDelete
+                          ? [{ label: 'Excluir', tone: 'danger' as const, icon: <Trash2 className="h-4 w-4" aria-hidden="true" />, onSelect: () => setDeleting(note) }]
+                          : []),
+                      ]}
                     />
                   ) : null}
                 </div>
@@ -100,11 +115,9 @@ export function NotesBoard({ campaignId, notes, currentUserId, isGm, canWrite }:
                   <span>
                     {note.authorName} · {formatRelative(note.updatedAt)}
                   </span>
-                  {note.visibility !== 'members' ? (
-                    <Badge tone="brand" icon={visibilityIcons[note.visibility]}>
-                      {visibilityLabels[note.visibility]}
-                    </Badge>
-                  ) : null}
+                  <Badge tone={note.visibility === 'members' ? 'neutral' : 'brand'} icon={visibilityIcons[note.visibility]}>
+                    {note.visibility === 'members' ? 'Geral' : note.visibility === 'author' ? 'Pessoal' : visibilityLabels[note.visibility]}
+                  </Badge>
                 </p>
               </li>
             );
@@ -113,6 +126,24 @@ export function NotesBoard({ campaignId, notes, currentUserId, isGm, canWrite }:
       )}
 
       <NoteFormModal campaignId={campaignId} note={editing} onClose={() => setEditing(null)} />
+      <Modal open={deleting !== null} onClose={() => setDeleting(null)} title={deleting ? `Excluir “${deleting.title}”?` : 'Excluir'} size="md">
+        <p className="text-sm text-fg-secondary">A anotação será apagada para todos.</p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setDeleting(null)}>
+            Cancelar
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => {
+              const target = deleting;
+              setDeleting(null);
+              if (target) void remove(target).catch((error: unknown) => toast({ tone: 'danger', title: error instanceof Error ? error.message : 'A anotação não foi excluída.' }));
+            }}
+          >
+            Excluir
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -188,7 +219,6 @@ function NoteFormModal({ campaignId, note, onClose }: { campaignId: string; note
             </option>
           ))}
         </SelectField>
-        <CheckboxField id={`${id}-pinned`} label="Fixar no topo" checked={form.isPinned} onChange={(event) => setForm((current) => ({ ...current, isPinned: event.target.checked }))} />
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose} disabled={busy}>
             Cancelar

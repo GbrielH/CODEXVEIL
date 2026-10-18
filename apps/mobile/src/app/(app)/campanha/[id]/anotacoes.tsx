@@ -1,12 +1,12 @@
-import { createCampaignNote, deleteCampaignNote, getCampaign, listCampaignNotes, updateCampaignNote, type CampaignNote } from '@codexveil/database';
+import { createCampaignNote, deleteCampaignNote, getCampaign, listCampaignNotes, setCampaignNotePinned, updateCampaignNote, type CampaignNote } from '@codexveil/database';
 import { CONTENT_VISIBILITIES, visibilityLabels, type ContentVisibility } from '@codexveil/domain';
 import { fieldErrorsFrom, noteSchema, type FieldErrors } from '@codexveil/validation';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { Pencil, Pin, Plus, Trash2 } from 'lucide-react-native';
+import { Pencil, Pin, PinOff, Plus, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { Button, IconButton } from '@/components/ui/button';
-import { CheckRow, Chip, ChipRow } from '@/components/ui/controls';
+import { Chip, ChipRow } from '@/components/ui/controls';
 import { useConfirm } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
 import { AppText, Badge, Card } from '@/components/ui/primitives';
@@ -109,7 +109,6 @@ export default function NotesScreen() {
                 <Chip key={visibility} label={visibilityLabels[visibility]} selected={form.visibility === visibility} onPress={() => setForm({ ...form, visibility })} />
               ))}
             </ChipRow>
-            <CheckRow label="Fixar no topo" checked={form.isPinned} onChange={(isPinned) => setForm({ ...form, isPinned })} />
             <View style={{ flexDirection: 'row', gap: spacing[2] }}>
               <Button label="Cancelar" variant="ghost" onPress={() => setForm(null)} style={{ flex: 1 }} />
               <Button label="Salvar" loading={busy} onPress={() => void save()} style={{ flex: 1 }} />
@@ -130,6 +129,17 @@ export default function NotesScreen() {
               <AppText variant="heading" style={{ flex: 1 }}>
                 {note.title}
               </AppText>
+              {mine && canWrite ? (
+                <IconButton
+                  icon={note.isPinned ? <PinOff size={16} color={colors.fgAccent} /> : <Pin size={16} color={colors.fgSecondary} />}
+                  accessibilityLabel={note.isPinned ? `Desafixar ${note.title}` : `Fixar ${note.title} no topo`}
+                  onPress={() =>
+                    void setCampaignNotePinned(getSupabase(), note, userId, !note.isPinned)
+                      .then(reload)
+                      .catch((cause: unknown) => toast({ tone: 'danger', title: 'Não foi possível fixar', description: failureMessage(cause) }))
+                  }
+                />
+              ) : null}
               {canEdit ? (
                 <>
                   <IconButton
@@ -142,7 +152,7 @@ export default function NotesScreen() {
               ) : null}
             </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-              <Badge label={visibilityLabels[note.visibility]} tone={note.visibility === 'members' ? 'neutral' : 'brand'} />
+              <Badge label={note.visibility === 'members' ? 'Geral' : note.visibility === 'author' ? 'Pessoal' : visibilityLabels[note.visibility]} tone={note.visibility === 'members' ? 'neutral' : 'brand'} />
               <AppText variant="small">por {mine ? 'você' : note.authorName}</AppText>
             </View>
             {note.body ? <AppText variant="serif">{note.body}</AppText> : null}

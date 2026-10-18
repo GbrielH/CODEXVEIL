@@ -18,6 +18,7 @@ import {
   dnd5eAttackDataSchema,
   dnd5eSpellDataSchema,
   formatModifier,
+  spellNamePt,
   spellSchoolLabels,
   spellSlotResources,
   type Dnd5eAttackData,
@@ -177,14 +178,14 @@ function SpellRow({ spell, onEdit }: { spell: CharacterAbility; onEdit: () => vo
             checked={data.prepared}
             disabled={!permissions.canEditSheet}
             onChange={() => void togglePrepared()}
-            aria-label={`${spell.name} preparada`}
+            aria-label={`${spellNamePt(spell.name)} preparada`}
             title="Preparada"
             className="h-5 w-5 accent-wine-500"
           />
         ) : null}
-        <HoverCard className="flex flex-1" content={() => <SpellDetails name={spell.name} data={data} description={spell.description} />}>
+        <HoverCard className="flex flex-1" content={() => <SpellDetails name={spellNamePt(spell.name)} data={data} description={spell.description} />}>
           <button type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} className="flex min-w-0 flex-1 items-center gap-2 text-left">
-            <span className="truncate text-sm font-medium">{spell.name}</span>
+            <span className="truncate text-sm font-medium">{spellNamePt(spell.name)}</span>
             {data.concentration ? <Badge tone="info">Concentração</Badge> : null}
             {data.ritual ? <Badge tone="neutral">Ritual</Badge> : null}
             <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-fg-muted transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
@@ -198,7 +199,7 @@ function SpellRow({ spell, onEdit }: { spell: CharacterAbility; onEdit: () => vo
       </div>
       {open ? (
         <div className="mt-2 pl-7 text-sm">
-          <SpellDetails name={spell.name} data={data} description={spell.description} full />
+          <SpellDetails name={spellNamePt(spell.name)} data={data} description={spell.description} full />
         </div>
       ) : null}
     </li>

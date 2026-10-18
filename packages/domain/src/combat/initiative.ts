@@ -145,3 +145,27 @@ export function parseTurnEconomy(value: unknown): TurnEconomy {
     movement: source.movement === true,
   };
 }
+
+/** Tipos de ação registrados no turno. */
+export const TURN_ACTION_KINDS = ['action', 'bonus_action', 'movement', 'reaction', 'free'] as const;
+export type TurnActionKind = (typeof TURN_ACTION_KINDS)[number];
+
+export const turnActionKindLabels: Record<TurnActionKind, string> = {
+  action: 'Ação',
+  bonus_action: 'Ação bônus',
+  movement: 'Ação de movimento',
+  reaction: 'Reação',
+  free: 'Livre',
+};
+
+/** O que sobrou no turno do participante, a partir das ações registradas na rodada. */
+export function turnBudget(actions: readonly { kind: TurnActionKind; grantsAction: boolean }[]) {
+  const used = (kind: TurnActionKind) => actions.filter((action) => action.kind === kind).length;
+  const actionsAllowed = 1 + actions.filter((action) => action.grantsAction).length;
+  return {
+    action: Math.max(0, actionsAllowed - used('action')),
+    bonus_action: Math.max(0, 1 - used('bonus_action')),
+    movement: Math.max(0, 1 - used('movement')),
+    reaction: Math.max(0, 1 - used('reaction')),
+  };
+}

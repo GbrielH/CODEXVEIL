@@ -1347,6 +1347,119 @@ export type Database = {
           },
         ];
       };
+      turn_actions: {
+        Row: {
+          actor_name: string;
+          campaign_id: string;
+          combatant_id: string;
+          created_at: string;
+          created_by: string;
+          encounter_id: string;
+          grants_action: boolean;
+          hidden: boolean;
+          id: string;
+          kind: string;
+          label: string;
+          roll_detail: string | null;
+          roll_id: string | null;
+          roll_total: number | null;
+          round: number;
+          target_character_id: string | null;
+          target_combatant_id: string | null;
+          target_name: string | null;
+        };
+        Insert: {
+          actor_name: string;
+          campaign_id: string;
+          combatant_id: string;
+          created_at?: string;
+          created_by?: string;
+          encounter_id: string;
+          grants_action?: boolean;
+          hidden?: boolean;
+          id?: string;
+          kind: string;
+          label: string;
+          roll_detail?: string | null;
+          roll_id?: string | null;
+          roll_total?: number | null;
+          round: number;
+          target_character_id?: string | null;
+          target_combatant_id?: string | null;
+          target_name?: string | null;
+        };
+        Update: {
+          actor_name?: string;
+          campaign_id?: string;
+          combatant_id?: string;
+          created_at?: string;
+          created_by?: string;
+          encounter_id?: string;
+          grants_action?: boolean;
+          hidden?: boolean;
+          id?: string;
+          kind?: string;
+          label?: string;
+          roll_detail?: string | null;
+          roll_id?: string | null;
+          roll_total?: number | null;
+          round?: number;
+          target_character_id?: string | null;
+          target_combatant_id?: string | null;
+          target_name?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'turn_actions_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'turn_actions_combatant_id_fkey';
+            columns: ['combatant_id'];
+            isOneToOne: false;
+            referencedRelation: 'encounter_combatants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'turn_actions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'turn_actions_encounter_id_fkey';
+            columns: ['encounter_id'];
+            isOneToOne: false;
+            referencedRelation: 'encounters';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'turn_actions_roll_id_fkey';
+            columns: ['roll_id'];
+            isOneToOne: false;
+            referencedRelation: 'dice_rolls';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'turn_actions_target_character_id_fkey';
+            columns: ['target_character_id'];
+            isOneToOne: false;
+            referencedRelation: 'characters';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'turn_actions_target_combatant_id_fkey';
+            columns: ['target_combatant_id'];
+            isOneToOne: false;
+            referencedRelation: 'encounter_combatants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       user_plans: {
         Row: {
           plan_id: string;
@@ -1431,6 +1544,12 @@ export type Database = {
         };
         Returns: undefined;
       };
+      campaign_session_in_progress: {
+        Args: {
+          p_campaign_id: string;
+        };
+        Returns: boolean;
+      };
       create_character: {
         Args: {
           p_name: string;
@@ -1455,6 +1574,12 @@ export type Database = {
         };
         Returns: string;
       };
+      end_turn: {
+        Args: {
+          p_encounter_id: string;
+        };
+        Returns: unknown[];
+      };
       get_invite_preview: {
         Args: {
           p_code: string;
@@ -1470,6 +1595,24 @@ export type Database = {
           p_campaign_id: string;
         };
         Returns: undefined;
+      };
+      perform_turn_action: {
+        Args: {
+          p_combatant_id: string;
+          p_kind: string;
+          p_label: string;
+          p_target_combatant_id?: string;
+          p_grants_action?: boolean;
+          p_roll_expression?: string;
+          p_roll_mode?: string;
+        };
+        Returns: Database['public']['Tables']['turn_actions']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'turn_actions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       register_push_token: {
         Args: {

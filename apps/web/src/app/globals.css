@@ -26,6 +26,11 @@
     font-feature-settings: 'cv11', 'ss01';
   }
 
+  /* Tema claro: vinheta vinho mais suave sobre o papel. */
+  :root[data-theme='light'] body {
+    background-image: radial-gradient(1100px 520px at 50% -12%, rgb(87 31 43 / 0.08), transparent 62%);
+  }
+
   ::selection {
     background-color: var(--color-wine-600);
     color: var(--color-parchment-50);

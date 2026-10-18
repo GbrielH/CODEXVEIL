@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Alegreya, Cinzel, Inter } from 'next/font/google';
 import type { ReactNode } from 'react';
+import { themeBootScript } from '@/components/layout/theme-toggle';
 import { ToastProvider } from '@/components/ui/toast';
 import { siteUrl } from '@/lib/env';
 import './globals.css';
@@ -33,14 +34,18 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: '#171719',
-  colorScheme: 'dark',
+  colorScheme: 'dark light',
   width: 'device-width',
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${cinzel.variable} ${inter.variable} ${alegreya.variable}`}>
+    // `suppressHydrationWarning`: o script abaixo pode marcar o tema claro antes da hidratação.
+    <html lang="pt-BR" className={`${cinzel.variable} ${inter.variable} ${alegreya.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       <body>
         <a
           href="#conteudo"

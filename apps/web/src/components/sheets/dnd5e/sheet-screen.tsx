@@ -49,7 +49,9 @@ interface Dnd5eSheetScreenProps {
   abilities: CharacterAbility[];
   permissions: SheetPermissions;
   /** Campanhas ativas do dono com o mesmo sistema (para vincular o personagem). */
-  campaigns: { id: string; name: string }[];
+  campaigns: { id: string; name: string; characterRules?: unknown }[];
+  /** `campaign`: só o que se usa na mesa (jogo, atributos, inventário, habilidades e magias). */
+  variant?: 'full' | 'campaign';
 }
 
 interface Draft {
@@ -246,7 +248,8 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
 
   return (
     <SheetContext.Provider value={context}>
-      <DiceProvider campaignId={character.campaign?.id ?? null} characterId={character.id} enabled={permissions.canEditPlay}>
+      {/* Rolagens da ficha são testes do jogador: ficam no aparelho e não vão para o mural. */}
+      <DiceProvider campaignId={null} characterId={character.id} enabled={permissions.canEditPlay}>
         <div className="flex flex-col gap-5">
           <SheetHeader saveStatus={saveState.status} liveStatus={liveStatus} />
 
@@ -293,11 +296,13 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
               { value: 'atributos', label: 'Atributos', icon: <BookOpen className="h-4 w-4" aria-hidden="true" />, content: <AttributesTab /> },
               { value: 'inventario', label: 'Inventário', icon: <Backpack className="h-4 w-4" aria-hidden="true" />, content: <InventoryTab /> },
               { value: 'habilidades', label: 'Habilidades e magias', icon: <Sparkles className="h-4 w-4" aria-hidden="true" />, content: <FeaturesTab /> },
+              ...(props.variant === 'campaign' ? [] : [
               { value: 'historia', label: 'Personagem', icon: <Feather className="h-4 w-4" aria-hidden="true" />, content: <StoryTab /> },
               { value: 'evolucao', label: 'Evolução', icon: <Hourglass className="h-4 w-4" aria-hidden="true" />, content: <ProgressTab /> },
               ...(permissions.isOwner || permissions.canEditSheet
                 ? [{ value: 'ajustes', label: 'Ajustes', icon: <Settings className="h-4 w-4" aria-hidden="true" />, content: <SettingsTab campaigns={props.campaigns} /> }]
                 : []),
+              ]),
             ]}
           />
         </div>

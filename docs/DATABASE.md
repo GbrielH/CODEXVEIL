@@ -152,3 +152,14 @@ Para backups e restauração, veja [`DEPLOY.md`](DEPLOY.md#6-migrações-e-backu
 | `20261017140100_dice_rolls`         | `dice_rolls` + `roll_dice()` (SECURITY DEFINER): o servidor sorteia; 200 rolagens por campanha; Realtime.                                                                                          |
 | `20261017140200_turns`              | Modo e ordem em `encounters`; `sort_order`, `is_hidden`, `turn_state` em `encounter_combatants`; padrões em `campaigns`; `campaign_turns` (resumo para jogadores, mantido por gatilhos; Realtime). |
 | `20261017140300_push_notifications` | `push_tokens` + `register_push_token()`; `session_notifications` (gravada só pela Edge Function `notify-session`).                                                                                 |
+
+## Quarta rodada (2026-10-18)
+
+Migração `20261018120000_gameplay_turns.sql`:
+
+- `turn_actions` (ações do turno, com alvo e rolagem; ocultas só para o mestre; no Realtime).
+- `perform_turn_action`, `end_turn` e `campaign_session_in_progress` (RPC; membros sabem se a
+  sessão começou mesmo sem ela estar publicada).
+- Gatilho `dice_rolls_require_session`: jogadores só rolam com sessão em andamento (`CVSES`).
+- Índices únicos `characters_one_per_player_idx` e `campaign_notes_one_pinned_idx` (duplicatas
+  antigas são desvinculadas/desafixadas antes).

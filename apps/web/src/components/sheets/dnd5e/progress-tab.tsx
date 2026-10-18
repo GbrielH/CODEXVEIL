@@ -23,6 +23,7 @@ import { formatDateTime } from '@/lib/format';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useAsyncData } from '@/lib/use-async-data';
 import { useSheet } from './context';
+import { LevelUpButton } from './level-up-dialog';
 
 export function ProgressTab() {
   const { permissions } = useSheet();
@@ -43,7 +44,11 @@ function ExperienceCard() {
   const usesXp = sheet.identity.advancement === 'experience';
   return (
     <Card>
-      <CardHeader title="Progressão" description={usesXp ? 'Evolução por pontos de experiência.' : 'Evolução por marcos: o mestre indica quando subir de nível.'} />
+      <CardHeader
+        title="Progressão"
+        description={usesXp ? 'Evolução por pontos de experiência.' : 'Evolução por marcos: o mestre indica quando subir de nível.'}
+        action={<LevelUpButton />}
+      />
       <dl className="grid grid-cols-3 gap-3 text-center">
         <div className="rounded-md border border-line bg-raised p-3">
           <dt className="text-[11px] uppercase tracking-wider text-fg-muted">Nível</dt>
@@ -73,7 +78,7 @@ function ExperienceCard() {
           />
           {derived.experience.levelFromExperience > derived.level ? (
             <p className="text-xs text-amber-300">
-              A experiência já permite o nível {derived.experience.levelFromExperience}. Ajuste as classes na aba “Personagem”.
+              A experiência já permite o nível {derived.experience.levelFromExperience}. Use “Subir de nível”.
             </p>
           ) : null}
         </div>

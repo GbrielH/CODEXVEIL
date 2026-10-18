@@ -95,7 +95,7 @@ export const SRD_SPECIES: readonly SpeciesDefinition[] = [
         {
           id: 'drow',
           name: 'Drow',
-          description: 'Visão no escuro de 36 m e o truque Dancing Lights. Faerie Fire no 3º nível e Darkness no 5º.',
+          description: 'Visão no escuro de 36 m e o truque Globos de Luz. Fogo das Fadas no 3º nível e Escuridão no 5º.',
           cantrips: ['Dancing Lights'],
           spells: [
             { level: 3, spell: 'Faerie Fire' },
@@ -105,7 +105,7 @@ export const SRD_SPECIES: readonly SpeciesDefinition[] = [
         {
           id: 'high_elf',
           name: 'Alto Elfo',
-          description: 'O truque Prestidigitation (pode trocá-lo por outro truque de mago a cada descanso longo). Detect Magic no 3º nível e Misty Step no 5º.',
+          description: 'O truque Prestidigitação (pode trocá-lo por outro truque de mago a cada descanso longo). Detectar Magia no 3º nível e Passo Nebuloso no 5º.',
           cantrips: ['Prestidigitation'],
           spells: [
             { level: 3, spell: 'Detect Magic' },
@@ -115,7 +115,7 @@ export const SRD_SPECIES: readonly SpeciesDefinition[] = [
         {
           id: 'wood_elf',
           name: 'Elfo da Floresta',
-          description: 'Deslocamento de 10,5 m e o truque Druidcraft. Longstrider no 3º nível e Pass without Trace no 5º.',
+          description: 'Deslocamento de 10,5 m e o truque Arte Druídica. Passos Longos no 3º nível e Passos sem Pegadas no 5º.',
           cantrips: ['Druidcraft'],
           speed: 35,
           spells: [
@@ -152,14 +152,14 @@ export const SRD_SPECIES: readonly SpeciesDefinition[] = [
         {
           id: 'forest_gnome',
           name: 'Gnomo da Floresta',
-          description: 'O truque Minor Illusion e Speak with Animals sempre preparada, conjurável sem espaço de magia (usos iguais ao bônus de proficiência por descanso longo).',
+          description: 'O truque Ilusão Menor e Falar com Animais sempre preparada, conjurável sem espaço de magia (usos iguais ao bônus de proficiência por descanso longo).',
           cantrips: ['Minor Illusion'],
           spells: [{ level: 1, spell: 'Speak with Animals', uses: 'proficiency' }],
         },
         {
           id: 'rock_gnome',
           name: 'Gnomo das Rochas',
-          description: 'Os truques Mending e Prestidigitation; em 10 minutos cria pequenos dispositivos mecânicos (até três ao mesmo tempo, duram 8 horas).',
+          description: 'Os truques Consertar e Prestidigitação; em 10 minutos cria pequenos dispositivos mecânicos (até três ao mesmo tempo, duram 8 horas).',
           cantrips: ['Mending', 'Prestidigitation'],
         },
       ],
@@ -274,7 +274,7 @@ export const SRD_SPECIES: readonly SpeciesDefinition[] = [
         {
           id: 'abyssal',
           name: 'Abissal',
-          description: 'Resistência a veneno e o truque Poison Spray. Ray of Sickness no 3º nível e Hold Person no 5º.',
+          description: 'Resistência a veneno e o truque Rajada de Veneno. Raio Nauseante no 3º nível e Imobilizar Pessoa no 5º.',
           damageType: 'poison',
           cantrips: ['Poison Spray'],
           spells: [
@@ -285,7 +285,7 @@ export const SRD_SPECIES: readonly SpeciesDefinition[] = [
         {
           id: 'chthonic',
           name: 'Ctônico',
-          description: 'Resistência a necrótico e o truque Chill Touch. False Life no 3º nível e Ray of Enfeeblement no 5º.',
+          description: 'Resistência a necrótico e o truque Toque Arrepiante. Vida Falsa no 3º nível e Raio do Enfraquecimento no 5º.',
           damageType: 'necrotic',
           cantrips: ['Chill Touch'],
           spells: [
@@ -296,7 +296,7 @@ export const SRD_SPECIES: readonly SpeciesDefinition[] = [
         {
           id: 'infernal',
           name: 'Infernal',
-          description: 'Resistência a fogo e o truque Fire Bolt. Hellish Rebuke no 3º nível e Darkness no 5º.',
+          description: 'Resistência a fogo e o truque Raio de Fogo. Repreensão Infernal no 3º nível e Escuridão no 5º.',
           damageType: 'fire',
           cantrips: ['Fire Bolt'],
           spells: [
@@ -314,7 +314,7 @@ export const SRD_SPECIES: readonly SpeciesDefinition[] = [
         description:
           'Resistência e truque do legado escolhido; magias no 3º e 5º níveis, sempre preparadas, cada uma conjurável 1 vez sem espaço de magia por descanso longo.',
       },
-      { level: 1, name: 'Presença de Outro Mundo', description: 'Conhece o truque Thaumaturgy, que usa o mesmo atributo de conjuração do legado.' },
+      { level: 1, name: 'Presença de Outro Mundo', description: 'Conhece o truque Taumaturgia, que usa o mesmo atributo de conjuração do legado.' },
     ],
   },
 ];

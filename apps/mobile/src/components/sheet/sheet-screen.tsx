@@ -3,7 +3,9 @@ import {
   getCharacterSheetState,
   listCharacterConditions,
   listCharacterResources,
+  characterPortraitPath,
   saveCharacterSheet,
+  setCharacterPortrait,
   type AutosaveStatus,
   type CharacterAbility,
   type CharacterCondition,
@@ -14,8 +16,9 @@ import {
 import { applyTrackOperation, type TrackOperation } from '@codexveil/domain';
 import { computeDnd5eDerived, dnd5eConditionEffects, dnd5eSheetSchema, dnd5eSystem, parseDnd5eSheet, type Dnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
 import { useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 import { Button } from '@/components/ui/button';
+import { ImageUploadButtons } from '@/components/ui/image-upload';
 import { AppText, Badge } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
 import { Segmented } from '@/components/ui/segmented';
@@ -25,7 +28,6 @@ import { failureMessage } from '@/lib/errors';
 import { useAutosave, useRealtimeRefresh } from '@/lib/hooks';
 import { getSupabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
-import { TurnStatus } from '@/components/campaign/turn-status';
 import { DiceProvider } from '@/components/dice/dice';
 import { AttributesSection } from './attributes-section';
 import { SheetContext, type MobileSheetContext } from './context';
@@ -33,6 +35,7 @@ import { FeaturesSection } from './features-section';
 import { InventorySection } from './inventory-section';
 import { PlaySection } from './play-section';
 import { StorySection } from './story-section';
+import { TurnPlay } from './turn-play';
 
 type Tab = 'jogo' | 'atributos' | 'inventario' | 'habilidades' | 'personagem';
 
@@ -55,6 +58,9 @@ interface SheetScreenProps {
   canEditSheet: boolean;
   canEditPlay: boolean;
   fullConditionList: boolean;
+  /** Retrato assinado (URL temporária) e recarga após trocá-lo. */
+  portraitUrl: string | null;
+  onReload: () => void;
 }
 
 export function SheetScreen(props: SheetScreenProps) {
@@ -182,7 +188,8 @@ export function SheetScreen(props: SheetScreenProps) {
 
   return (
     <SheetContext.Provider value={context}>
-      <DiceProvider campaignId={character.campaign?.id ?? null} characterId={character.id} enabled={props.canEditPlay}>
+      {/* Rolagens da ficha são testes do jogador: ficam no aparelho e não vão para o mural. */}
+      <DiceProvider campaignId={null} characterId={character.id} enabled={props.canEditPlay}>
       <Screen eyebrow={character.campaign?.name ?? 'Sem campanha'} title={character.name} subtitle={`${summary.subtitle} · ${character.ownerName}`}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
           <Badge label={`Nível ${derived.level}`} tone="parchment" />
@@ -216,8 +223,31 @@ export function SheetScreen(props: SheetScreenProps) {
           <Notice message="O mestre travou a construção das fichas. Vida, recursos e inventário seguem editáveis." />
         ) : null}
 
+        {props.portraitUrl || props.canEditSheet ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            {props.portraitUrl ? (
+              <Image source={{ uri: props.portraitUrl }} accessibilityLabel={`Retrato de ${character.name}`} style={{ width: 72, height: 72, borderRadius: 36 }} />
+            ) : null}
+            {props.canEditSheet ? (
+              <View style={{ flex: 1 }}>
+                <ImageUploadButtons
+                  preset="portrait"
+                  label="Enviar retrato"
+                  currentPath={character.portraitPath}
+                  pathFor={(fileName) => characterPortraitPath(character.id, fileName)}
+                  apply={async (path) => autosave.adoptVersion(await setCharacterPortrait(getSupabase(), character.id, path))}
+                  onDone={() => {
+                    toast({ tone: 'success', title: 'Retrato atualizado.' });
+                    props.onReload();
+                  }}
+                />
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+
         {character.campaign && character.campaign.status === 'active' && tab === 'jogo' ? (
-          <TurnStatus campaignId={character.campaign.id} ownCharacterId={character.id} systemId="dnd5e" />
+          <TurnPlay campaignId={character.campaign.id} />
         ) : null}
 
         <Segmented<Tab>

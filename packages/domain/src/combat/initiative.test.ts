@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advanceTurn, moveInTurnOrder, orderCombatants, orderTurns, parseTurnEconomy, rewindTurn, startCombat, type Combatant } from './initiative';
+import { advanceTurn, moveInTurnOrder, orderCombatants, orderTurns, parseTurnEconomy, rewindTurn, startCombat, turnBudget, type Combatant } from './initiative';
 
 const make = (id: string, initiative: number | null, tiebreaker = 0, isDefeated = false) =>
   ({ id, name: id, initiative, tiebreaker, isDefeated }) satisfies Combatant;
@@ -81,5 +81,18 @@ describe('ordem dos turnos', () => {
   it('lê o que já foi usado no turno', () => {
     expect(parseTurnEconomy({ action: true, reaction: 'sim' })).toEqual({ action: true, bonusAction: false, reaction: false, movement: false });
     expect(parseTurnEconomy(null)).toEqual({ action: false, bonusAction: false, reaction: false, movement: false });
+  });
+});
+
+describe('orçamento do turno', () => {
+  it('conta ações usadas e as extras concedidas', () => {
+    expect(turnBudget([])).toEqual({ action: 1, bonus_action: 1, movement: 1, reaction: 1 });
+    expect(
+      turnBudget([
+        { kind: 'action', grantsAction: false },
+        { kind: 'free', grantsAction: true },
+        { kind: 'bonus_action', grantsAction: false },
+      ]),
+    ).toEqual({ action: 1, bonus_action: 0, movement: 1, reaction: 1 });
   });
 });

@@ -2,6 +2,7 @@ import { createCharacterAbility, deleteCharacterAbility, updateCharacterAbility,
 import {
   ABILITIES,
   SPELL_SCHOOLS,
+  spellNamePt,
   SRD_SPELLS,
   abilityLabels,
   dnd5eAttackDataSchema,
@@ -166,11 +167,11 @@ export function AbilityEditor({ entry, kind, onDone }: { entry: CharacterAbility
       <PickerSheet
         visible={pickingSpell}
         title="Magias do SRD"
-        hint="Nomes no original em inglês. Os dados técnicos são preenchidos sozinhos."
+        hint="Nomes em português, com o original em inglês. Os dados técnicos são preenchidos sozinhos."
         options={SRD_SPELLS.map((spell) => ({
           value: spell.name,
-          label: spell.name,
-          description: `${spell.level === 0 ? 'Truque' : `${spell.level}º círculo`} · ${spellSchoolLabels[spell.school]}`,
+          label: spellNamePt(spell.name),
+          description: `${spell.name} · ${spell.level === 0 ? 'Truque' : `${spell.level}º círculo`} · ${spellSchoolLabels[spell.school]}`,
         }))}
         onClose={() => setPickingSpell(false)}
         onSelect={(name) => {

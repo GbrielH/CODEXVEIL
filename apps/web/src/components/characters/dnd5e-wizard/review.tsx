@@ -13,6 +13,7 @@ import {
   proficiencyLevelLabels,
   skillDefinitions,
   SKILLS,
+  spellNamePt,
   type Dnd5eDraft,
 } from '@codexveil/rpg-systems/dnd5e';
 import { useMemo } from 'react';
@@ -191,7 +192,7 @@ export function CharacterReview({ draft }: { draft: Dnd5eDraft }) {
               const data = dnd5eSpellDataSchema.parse(spell.data);
               return (
                 <li key={spell.name} className="flex justify-between gap-2 border-b border-line py-1">
-                  <span className={data.prepared ? 'text-fg' : 'text-fg-muted'}>{spell.name}</span>
+                  <span className={data.prepared ? 'text-fg' : 'text-fg-muted'}>{spellNamePt(spell.name)}</span>
                   <span className="text-xs text-fg-subtle">{data.circle === 0 ? 'Truque' : `${data.circle}º`}</span>
                 </li>
               );

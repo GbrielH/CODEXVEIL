@@ -110,6 +110,7 @@ export function useAutosave<T>(options: {
     },
     retry: () => saver.retry(),
     overwrite: (version: number) => saver.overwrite(version),
+    adoptVersion: (version: number) => saver.adoptVersion(version),
     hasUnsavedChanges: () => saver.hasUnsavedChanges,
   };
 }

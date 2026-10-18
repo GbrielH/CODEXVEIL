@@ -8,10 +8,9 @@ import {
   type BlockReferences,
   type StoredSessionBlock,
 } from '@codexveil/database';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Lock, Pencil } from 'lucide-react-native';
+import { Stack, useLocalSearchParams } from 'expo-router';
+import { Lock } from 'lucide-react-native';
 import { Image, View } from 'react-native';
-import { Button } from '@/components/ui/button';
 import { AppText, Badge, Card, Divider } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states';
@@ -131,7 +130,6 @@ function BlockView({ block, references, imageUrls }: { block: StoredSessionBlock
 export default function SessionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const userId = useUserId();
-  const router = useRouter();
   const { data, error, loading, refreshing, reload } = useAsyncData(async () => {
     const supabase = getSupabase();
     const session = await getSession(supabase, id);
@@ -141,7 +139,7 @@ export default function SessionScreen() {
       resolveBlockReferences(supabase, blocks),
       signedMediaUrls(supabase, blocks.map((block) => (block.content?.type === 'image' ? block.content.data.path : null))),
     ]);
-    return { session, blocks, references, imageUrls, canEdit: campaign?.role === 'gm' && campaign.status === 'active' };
+    return { session, blocks, references, imageUrls, campaignName: campaign?.name ?? null };
   }, `${id}:${userId}`);
 
   if (loading) return <LoadingState />;
@@ -154,15 +152,12 @@ export default function SessionScreen() {
     );
   }
 
-  const { session, blocks, references, imageUrls, canEdit } = data;
+  const { session, blocks, references, imageUrls, campaignName } = data;
   return (
-    <Screen eyebrow={`Sessão ${session.number}`} title={session.title} refreshing={refreshing} onRefresh={reload}>
+    <Screen eyebrow={campaignName ? `${campaignName} · Sessão ${session.number}` : `Sessão ${session.number}`} title={session.title} refreshing={refreshing} onRefresh={reload}>
       <Stack.Screen options={{ title: `Sessão ${session.number}` }} />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Badge label={sessionStatusLabels[session.status]} tone={session.status === 'in_progress' ? 'brand' : 'neutral'} />
-        {canEdit ? (
-          <Button label="Editar" compact variant="ghost" icon={<Pencil size={14} color={colors.fgSecondary} />} onPress={() => router.push({ pathname: '/sessao/[id]/editar', params: { id: session.id } })} />
-        ) : null}
       </View>
       {session.recap ? (
         <View style={{ backgroundColor: colors.parchment, borderRadius: radii.lg, padding: 16, gap: 6 }}>

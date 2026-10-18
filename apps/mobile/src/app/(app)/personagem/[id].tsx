@@ -5,6 +5,7 @@ import {
   listCharacterConditions,
   listCharacterItems,
   listCharacterResources,
+  signedMediaUrls,
 } from '@codexveil/database';
 import { canEditCharacterPlayState, canEditCharacterSheet } from '@codexveil/domain';
 import { parseDnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
@@ -29,7 +30,8 @@ export default function CharacterScreen() {
       listCharacterItems(supabase, character.id),
       listCharacterAbilities(supabase, character.id),
     ]);
-    return { character, resources, conditions, items, abilities };
+    const images = await signedMediaUrls(supabase, [character.portraitPath]);
+    return { character, resources, conditions, items, abilities, portraitUrl: character.portraitPath ? (images[character.portraitPath] ?? null) : null };
   }, `${id}:${userId}`);
 
   if (loading) return <LoadingState label="Abrindo a ficha…" />;
@@ -71,6 +73,8 @@ export default function CharacterScreen() {
         canEditSheet={canEditCharacterSheet(access)}
         canEditPlay={canEditCharacterPlayState(access)}
         fullConditionList={data.character.viewer.membership?.role === 'gm' || data.character.campaign === null}
+        portraitUrl={data.portraitUrl}
+        onReload={reload}
       />
     </>
   );

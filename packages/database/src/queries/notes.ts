@@ -32,7 +32,8 @@ export async function listCampaignNotes(
     .select(NOTE_COLUMNS)
     .eq('campaign_id', campaignId)
     .order('is_pinned', { ascending: false })
-    .order('updated_at', { ascending: false })
+    // As demais seguem a ordem em que foram criadas.
+    .order('created_at', { ascending: true })
     .limit(200);
   if (error) throw toAppError(error);
   return data.map((row) => ({
@@ -104,6 +105,25 @@ export async function updateCampaignNote(
 
 export async function deleteCampaignNote(client: CodexveilClient, noteId: string): Promise<void> {
   const { data, error } = await client.from('campaign_notes').delete().eq('id', noteId).select('id');
+  if (error) throw toAppError(error);
+  if (data.length === 0) throw new AppError('forbidden');
+}
+
+/**
+ * Fixa (ou desfixa) a anotação. Cada pessoa fixa uma por campanha: a fixada antes por quem
+ * fixa é desfixada primeiro.
+ */
+export async function setCampaignNotePinned(client: CodexveilClient, note: CampaignNote, userId: string, pinned: boolean): Promise<void> {
+  if (pinned) {
+    const { error } = await client
+      .from('campaign_notes')
+      .update({ is_pinned: false })
+      .eq('campaign_id', note.campaignId)
+      .eq('author_id', userId)
+      .eq('is_pinned', true);
+    if (error) throw toAppError(error);
+  }
+  const { data, error } = await client.from('campaign_notes').update({ is_pinned: pinned }).eq('id', note.id).select('id');
   if (error) throw toAppError(error);
   if (data.length === 0) throw new AppError('forbidden');
 }

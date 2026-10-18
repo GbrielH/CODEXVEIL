@@ -1,7 +1,7 @@
 'use client';
 
-import { clearDiceRolls, listDiceRolls, type DiceRoll } from '@codexveil/database';
-import { describeDiceRoll, diceRollModeLabels, naturalD20 } from '@codexveil/domain';
+import { clearDiceRolls, listDiceRolls, listTurnActions, type DiceRoll, type TurnAction } from '@codexveil/database';
+import { describeDiceRoll, diceRollModeLabels, naturalD20, turnActionKindLabels } from '@codexveil/domain';
 import { EyeOff, Radio, Trash2 } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -34,18 +34,37 @@ export function RollFeed({
   compact?: boolean;
 }) {
   const [rolls, setRolls] = useState(initialRolls);
+  const [actions, setActions] = useState<TurnAction[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     try {
-      setRolls(await listDiceRolls(getSupabaseBrowserClient(), campaignId, limit));
+      const client = getSupabaseBrowserClient();
+      const [nextRolls, nextActions] = await Promise.all([listDiceRolls(client, campaignId, limit), listTurnActions(client, campaignId, limit)]);
+      setRolls(nextRolls);
+      setActions(nextActions);
       setError(null);
     } catch (cause) {
       setError(failureMessage(cause, 'Não foi possível atualizar o mural.'));
     }
   }, [campaignId, limit]);
 
-  const live = useRealtimeRefresh(`rolagens:${campaignId}`, [{ table: 'dice_rolls', filter: `campaign_id=eq.${campaignId}` }], () => void reload());
+  const live = useRealtimeRefresh(
+    `rolagens:${campaignId}`,
+    [
+      { table: 'dice_rolls', filter: `campaign_id=eq.${campaignId}` },
+      { table: 'turn_actions', filter: `campaign_id=eq.${campaignId}` },
+    ],
+    () => void reload(),
+  );
+
+  // Ações do turno e rolagens soltas, na ordem em que aconteceram (a rolagem de uma ação aparece nela).
+  const rollsById = new Map(rolls.map((roll) => [roll.id, roll]));
+  const linked = new Set(actions.map((action) => action.rollId).filter(Boolean));
+  const entries = [
+    ...actions.map((action) => ({ type: 'action' as const, at: action.createdAt, action })),
+    ...rolls.filter((roll) => !linked.has(roll.id)).map((roll) => ({ type: 'roll' as const, at: roll.createdAt, roll })),
+  ].sort((a, b) => b.at.localeCompare(a.at));
 
   return (
     <div className="flex flex-col gap-3">
@@ -74,11 +93,38 @@ export function RollFeed({
         ) : null}
       </div>
       {error ? <p className="text-sm text-ember-300">{error}</p> : null}
-      {rolls.length === 0 ? (
-        <p className="text-sm text-fg-muted">Nenhuma rolagem ainda. As rolagens da mesa aparecem aqui na hora.</p>
+      {entries.length === 0 ? (
+        <p className="text-sm text-fg-muted">Nada ainda. Ações dos turnos e rolagens da mesa aparecem aqui na hora.</p>
       ) : (
-        <ol className={cx('flex flex-col gap-1.5 overflow-y-auto pr-1', compact ? 'max-h-80' : 'max-h-[32rem]')} aria-label="Rolagens recentes">
-          {rolls.map((roll) => {
+        <ol className={cx('flex flex-col gap-1.5 overflow-y-auto pr-1', compact ? 'max-h-80' : 'max-h-[32rem]')} aria-label="Ações e rolagens recentes">
+          {entries.map((entry) => {
+            if (entry.type === 'action') {
+              const { action } = entry;
+              const roll = action.rollId ? rollsById.get(action.rollId) : undefined;
+              return (
+                <li key={action.id} className="flex items-start gap-3 rounded-md border border-parchment-400/30 bg-sunken px-3 py-2">
+                  <span className="tabular w-12 shrink-0 text-center font-display text-2xl text-fg-accent">{action.rollTotal ?? '·'}</span>
+                  <span className="min-w-0 flex-1 text-sm">
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                      <span className="font-medium text-fg">{action.actorName}</span>
+                      <Badge tone="parchment">{turnActionKindLabels[action.kind]}</Badge>
+                      <span className="text-fg-secondary">
+                        {action.label}
+                        {action.targetName ? ` → ${action.targetName}` : ''}
+                      </span>
+                    </span>
+                    <span className="block text-xs text-fg-muted">
+                      Rodada {action.round}
+                      {roll ? ` · ${roll.expression} → ${describeDiceRoll(roll)}` : ''}
+                    </span>
+                  </span>
+                  <time dateTime={action.createdAt} className="shrink-0 text-xs text-fg-subtle">
+                    {timeLabel(action.createdAt)}
+                  </time>
+                </li>
+              );
+            }
+            const { roll } = entry;
             const natural = naturalD20(roll);
             return (
               <li

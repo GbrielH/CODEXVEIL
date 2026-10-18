@@ -194,7 +194,7 @@ const LEVEL_LABEL = (level: number) => (level === 0 ? 'Truque' : `${level}º cí
 
 /** Dados técnicos da magia do SRD no formato da ficha (para o cartão de detalhes). */
 function srdSpellData(option: SpellOption): Dnd5eSpellData {
-  const srd = SRD_SPELLS.find((spell) => spell.name === option.name);
+  const srd = SRD_SPELLS.find((spell) => spell.name === option.id);
   return dnd5eSpellDataSchema.parse({
     circle: option.level,
     school: option.school,
@@ -214,7 +214,7 @@ function SpellPicker({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { ki
   const full = value.length >= spec.count;
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
-    return spec.options.filter((option) => (level === 'all' || option.level === level) && (!term || option.name.toLowerCase().includes(term)));
+    return spec.options.filter((option) => (level === 'all' || option.level === level) && (!term || `${option.name} ${option.id}`.toLowerCase().includes(term)));
   }, [spec.options, query, level]);
   const toggle = (option: SpellOption) =>
     onChange(value.includes(option.id) ? value.filter((entry) => entry !== option.id) : [...value, option.id]);

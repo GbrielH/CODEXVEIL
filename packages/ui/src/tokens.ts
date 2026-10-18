@@ -127,6 +127,80 @@ export const colors = {
 
 export type ColorToken = keyof typeof colors;
 
+/**
+ * Tema claro (opcional): mesmas cores semânticas sobre papel envelhecido, com o vinho como
+ * acento. Ativado no site por `data-theme="light"` no <html>.
+ */
+export const lightColors = {
+  canvas: '#F3EDE0',
+  sunken: '#E9E1CF',
+  raised: '#FAF6EE',
+  card: '#FFFCF5',
+  hover: '#ECE3D0',
+  overlay: 'rgba(23, 23, 25, 0.5)',
+
+  lineSubtle: 'rgba(43, 36, 32, 0.08)',
+  line: 'rgba(43, 36, 32, 0.16)',
+  lineStrong: 'rgba(43, 36, 32, 0.30)',
+
+  fg: '#231D19',
+  fgSecondary: '#4A4038',
+  fgMuted: '#5E5248',
+  fgSubtle: '#6A5E54',
+  fgAccent: palette.wine[700],
+  fgBrand: palette.wine[500],
+
+  primary: palette.wine[700],
+  primaryHover: palette.wine[600],
+  primaryPressed: palette.wine[800],
+  primaryFg: palette.parchment[50],
+
+  parchment: palette.parchment[200],
+  parchmentRaised: palette.parchment[100],
+  parchmentEdge: palette.parchment[400],
+  ink: palette.ink[900],
+  inkMuted: palette.ink[700],
+
+  focus: palette.wine[700],
+
+  success: '#2E6B47',
+  successBg: '#E1EFE6',
+  warning: '#7A500A',
+  warningBg: '#F6EBD3',
+  danger: '#A3321F',
+  dangerBg: '#F7E0DB',
+  info: '#2C5689',
+  infoBg: '#E0E9F5',
+
+  hpHealthy: '#3C8A5C',
+  hpBloodied: '#A87418',
+  hpCritical: '#C2442F',
+  hpTemp: '#3F72B5',
+} as const satisfies Record<ColorToken, string>;
+
+/**
+ * Tons da paleta usados diretamente como texto ou fundo tingido em telas escuras. No tema
+ * claro eles escurecem (texto) ou clareiam (fundos vinho) para manter o contraste.
+ */
+export const lightPaletteOverrides = {
+  'amber-300': '#7A500A',
+  'amber-400': '#9A6A14',
+  'ember-300': '#A3321F',
+  'ember-400': '#C2442F',
+  'verdigris-300': '#2E6B47',
+  'verdigris-400': '#3C8A5C',
+  'arcane-300': '#2C5689',
+  'arcane-400': '#3F72B5',
+  'wine-200': palette.wine[600],
+  'wine-300': palette.wine[500],
+  'wine-900': '#EBD3D8',
+  'wine-950': '#F3E1E4',
+  'parchment-100': palette.wine[700],
+  'parchment-200': '#6E5C3A',
+  'parchment-300': '#65512F',
+  'parchment-400': '#7A6440',
+} as const;
+
 /** Famílias tipográficas. Cada app carrega os arquivos de fonte do seu jeito. */
 export const fontFamilies = {
   /** Títulos, logotipo e cabeçalhos de seção (capitulares romanas). */

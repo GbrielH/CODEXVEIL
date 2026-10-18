@@ -51,21 +51,12 @@ function RootNavigator() {
           <Stack.Screen name="(app)/campanha/[id]/biblioteca" options={{ title: 'Biblioteca' }} />
           <Stack.Screen name="(app)/campanha/[id]/criatura/[creatureId]" options={{ title: 'Registro' }} />
           <Stack.Screen name="(app)/campanha/[id]/item/[itemId]" options={{ title: 'Item' }} />
-          <Stack.Screen name="(app)/campanha/[id]/srd" options={{ title: 'Bestiário SRD' }} />
-          <Stack.Screen name="(app)/campanha/[id]/srd-monstro/[slug]" options={{ title: 'Criatura do SRD' }} />
-          <Stack.Screen name="(app)/campanha/[id]/srd-itens" options={{ title: 'Itens mágicos SRD' }} />
-          <Stack.Screen name="(app)/campanha/[id]/srd-item/[slug]" options={{ title: 'Item do SRD' }} />
-          <Stack.Screen name="(app)/campanha/[id]/mesa" options={{ title: 'Mesa do mestre' }} />
           <Stack.Screen name="(app)/campanha/[id]/anotacoes" options={{ title: 'Anotações' }} />
-          <Stack.Screen name="(app)/campanha/[id]/convites" options={{ title: 'Convites' }} />
-          <Stack.Screen name="(app)/campanha/[id]/configuracoes" options={{ title: 'Configurações' }} />
-          <Stack.Screen name="(app)/campanha/[id]/nova-sessao" options={{ title: 'Nova sessão', presentation: 'modal' }} />
           <Stack.Screen name="(app)/campanha/nova" options={{ title: 'Nova campanha', presentation: 'modal' }} />
           <Stack.Screen name="(app)/convite" options={{ title: 'Convite' }} />
           <Stack.Screen name="(app)/personagem/[id]" options={{ title: 'Ficha' }} />
           <Stack.Screen name="(app)/personagem/novo" options={{ title: 'Novo personagem', presentation: 'modal' }} />
           <Stack.Screen name="(app)/sessao/[id]/index" options={{ title: 'Sessão' }} />
-          <Stack.Screen name="(app)/sessao/[id]/editar" options={{ title: 'Editar sessão' }} />
         </Stack.Protected>
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="(auth)/entrar" options={{ headerShown: false }} />

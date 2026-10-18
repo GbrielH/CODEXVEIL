@@ -1,0 +1,438 @@
+'use client';
+
+import {
+  addCharacterEvent,
+  adjustCharacterResource,
+  createCharacterAbility,
+  createCharacterResource,
+  updateCharacterResource,
+  type CharacterAbility,
+} from '@codexveil/database';
+import { rollDiceLocally } from '@codexveil/domain';
+import {
+  ABILITIES,
+  DND5E_RESOURCE_KEYS,
+  abilityLabels,
+  applyDnd5eLevelUp,
+  featAbilityIncrease,
+  planDnd5eLevelUp,
+  spellNamePt,
+  type Ability,
+  type AbilityImprovement,
+  type Dnd5eLevelUpChoices,
+  type SrdSpell,
+} from '@codexveil/rpg-systems/dnd5e';
+import { Dices, Sparkles, TrendingUp } from 'lucide-react';
+import { useId, useMemo, useState, type ReactNode } from 'react';
+import { Alert } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Modal } from '@/components/ui/modal';
+import { Select } from '@/components/ui/select';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { useSheet } from './context';
+
+type ImprovementMode = 'plus_two' | 'plus_one_each' | 'feat';
+
+/**
+ * Subida de nível: pede confirmação e abre o painel com o que muda pelas regras do SRD 5.2.1
+ * (vida, habilidades novas, subclasse, atributos ou talento, magias e opções da classe).
+ */
+export function LevelUpButton() {
+  const { derived, permissions, sheet } = useSheet();
+  const [open, setOpen] = useState(false);
+  if (!permissions.canEditSheet || derived.level >= 20 || sheet.identity.classes.length === 0) return null;
+  return (
+    <>
+      <ConfirmDialog
+        trigger={(show) => (
+          <Button icon={<TrendingUp className="h-4 w-4" aria-hidden="true" />} onClick={show}>
+            Subir de nível
+          </Button>
+        )}
+        title={`Subir para o nível ${derived.level + 1}?`}
+        description="Em seguida você escolhe a vida, as habilidades novas e as demais opções do nível, conforme as regras. Nada muda na ficha até aplicar."
+        confirmLabel="Continuar"
+        tone="primary"
+        onConfirm={() => {
+          setOpen(true);
+          return Promise.resolve();
+        }}
+      />
+      {open ? <LevelUpPanel onClose={() => setOpen(false)} /> : null}
+    </>
+  );
+}
+
+function LevelUpPanel({ onClose }: { onClose: () => void }) {
+  const { character, sheet, resources, abilities, updateSheet, setAbilities, reloadResources, run } = useSheet();
+  const id = useId();
+  const [classIndex, setClassIndex] = useState(0);
+  const knownNames = useMemo(() => abilities.map((entry) => entry.name), [abilities]);
+  const plan = useMemo(() => planDnd5eLevelUp(sheet, classIndex, knownNames), [sheet, classIndex, knownNames]);
+
+  const [hpMethod, setHpMethod] = useState<'average' | 'roll'>('average');
+  const [rolled, setRolled] = useState<number | null>(null);
+  const [mode, setMode] = useState<ImprovementMode>('plus_two');
+  const [first, setFirst] = useState<Ability>('str');
+  const [second, setSecond] = useState<Ability>('dex');
+  const [featId, setFeatId] = useState('');
+  const [featAbility, setFeatAbility] = useState<Ability | ''>('');
+  const [cantrips, setCantrips] = useState<string[]>([]);
+  const [spells, setSpells] = useState<string[]>([]);
+  const [invocations, setInvocations] = useState<string[]>([]);
+  const [metamagic, setMetamagic] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  const featOptions = plan.feats.filter((feat) => feat.id !== 'ability_score_improvement');
+  const featIncrease = featId ? featAbilityIncrease(featId) : null;
+  let improvement: AbilityImprovement | null = null;
+  if (plan.abilityScoreImprovement) {
+    if (mode === 'plus_two') improvement = { kind: 'plus_two', ability: first };
+    else if (mode === 'plus_one_each') improvement = { kind: 'plus_one_each', abilities: [first, second] };
+    else if (featId) improvement = { kind: 'feat', featId, ...(featAbility ? { ability: featAbility } : {}) };
+  }
+  const choices: Dnd5eLevelUpChoices = {
+    hitPoints: hpMethod === 'roll' ? { method: 'roll', die: rolled ?? 0 } : { method: 'average' },
+    improvement,
+    cantrips,
+    spells,
+    invocations,
+    metamagic,
+  };
+  const result = applyDnd5eLevelUp(sheet, plan, choices);
+
+  const resetChoices = (index: number) => {
+    setClassIndex(index);
+    setRolled(null);
+    setCantrips([]);
+    setSpells([]);
+    setInvocations([]);
+    setMetamagic([]);
+  };
+
+  const apply = async () => {
+    if (result.issues.length) return;
+    setBusy(true);
+    const supabase = getSupabaseBrowserClient();
+    const created = await run(
+      async () => {
+        const byKey = new Map(resources.map((resource) => [resource.key, resource]));
+        const resourceIds = new Map(resources.map((resource) => [resource.key, resource.id]));
+        for (const template of result.resources) {
+          const existing = byKey.get(template.key);
+          if (!existing) {
+            const saved = await createCharacterResource(supabase, character.id, template);
+            resourceIds.set(saved.key, saved.id);
+          } else if (existing.max !== template.max) {
+            // O máximo novo entra como usos disponíveis a mais (ou a menos), sem restaurar os gastos.
+            const difference = (template.max ?? 0) - (existing.max ?? 0);
+            await updateCharacterResource(supabase, existing.id, {
+              label: template.key.startsWith('pact_slots') ? template.label : existing.label,
+              current: Math.max(0, existing.current + difference),
+              max: template.max,
+              recovery: existing.recovery,
+            });
+          }
+        }
+        const hp = byKey.get(DND5E_RESOURCE_KEYS.hitPoints);
+        if (hp && hp.max !== null) {
+          await adjustCharacterResource(supabase, hp.id, 'set_max', hp.max + result.hitPointsGained);
+          await adjustCharacterResource(supabase, hp.id, 'heal', result.hitPointsGained);
+        }
+        const existingNames = new Set(abilities.map((entry) => `${entry.kind}:${entry.name}`));
+        const saved: CharacterAbility[] = [];
+        for (const entry of result.abilities) {
+          if (existingNames.has(`${entry.kind}:${entry.name}`)) continue;
+          saved.push(
+            await createCharacterAbility(supabase, character.id, {
+              kind: entry.kind,
+              name: entry.name,
+              source: entry.source,
+              description: entry.description,
+              data: entry.data as CharacterAbility['data'],
+              resourceId: entry.resourceKey ? (resourceIds.get(entry.resourceKey) ?? null) : null,
+            }),
+          );
+        }
+        await addCharacterEvent(supabase, character.id, { kind: 'level_up', summary: result.summary, data: { classIndex: plan.classIndex, level: plan.newTotalLevel } });
+        return saved;
+      },
+      { success: `${character.name} subiu para o nível ${plan.newTotalLevel}.`, failure: 'A subida de nível não foi concluída' },
+    );
+    setBusy(false);
+    if (!created) return;
+    updateSheet(() => result.sheet);
+    setAbilities((current) => [...current, ...created]);
+    await reloadResources();
+    onClose();
+  };
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      busy={busy}
+      size="lg"
+      title={`Nível ${plan.newTotalLevel}: ${plan.className || 'classe'} ${plan.newClassLevel}`}
+      description={plan.classDef ? 'Regras do SRD 5.2.1. Escolha o que o nível oferece e aplique.' : 'Esta classe não está no SRD: o nível sobe e a vida é calculada, mas habilidades e magias ficam por sua conta.'}
+    >
+      {sheet.identity.classes.length > 1 ? (
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor={`${id}-class`} className="text-sm font-medium">
+            Classe que sobe de nível
+          </label>
+          <Select id={`${id}-class`} value={String(classIndex)} onChange={(event) => resetChoices(Number(event.target.value))}>
+            {sheet.identity.classes.map((entry, index) => (
+              <option key={`${entry.name}-${index}`} value={index}>
+                {entry.name || 'Sem nome'} {entry.level} → {entry.level + 1}
+              </option>
+            ))}
+          </Select>
+        </div>
+      ) : null}
+
+      {plan.subclass ? (
+        <Alert tone="info" title={`Subclasse: ${plan.subclass.name}`}>
+          {plan.subclass.description} O SRD traz uma subclasse por classe; outras, de livros, podem ser registradas à mão na aba Personagem.
+        </Alert>
+      ) : null}
+
+      <Section title="Habilidades novas">
+        {plan.features.length === 0 ? (
+          <p className="text-sm text-fg-muted">Nenhuma habilidade nova neste nível.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {plan.features.map((feature) => (
+              <li key={feature.name} className="rounded-md border border-line bg-sunken p-3">
+                <p className="text-sm font-medium text-fg">{feature.name}</p>
+                <p className="mt-0.5 text-xs text-fg-muted">{feature.description}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      <Section title="Pontos de vida">
+        <div className="flex flex-wrap items-center gap-2">
+          <Choice name={`${id}-hp`} checked={hpMethod === 'average'} onChange={() => setHpMethod('average')} label={`Média: ${Math.floor(plan.hitDieSides / 2) + 1}`} />
+          <Choice name={`${id}-hp`} checked={hpMethod === 'roll'} onChange={() => setHpMethod('roll')} label={`Rolar 1d${plan.hitDieSides}`} />
+          {hpMethod === 'roll' ? (
+            <Button size="sm" variant="secondary" icon={<Dices className="h-4 w-4" aria-hidden="true" />} onClick={() => setRolled(rollDiceLocally(`1d${plan.hitDieSides}`)?.total ?? null)}>
+              {rolled === null ? 'Rolar' : `Rolou ${rolled} · rolar de novo`}
+            </Button>
+          ) : null}
+        </div>
+        <p className="mt-2 text-sm text-fg-secondary">
+          Máximo de PV <strong className="text-fg">+{result.hitPointsGained}</strong> (inclui o modificador de Constituição
+          {plan.conModifier !== 0 ? ` de ${plan.conModifier > 0 ? '+' : ''}${plan.conModifier}` : ''}).
+        </p>
+      </Section>
+
+      {plan.abilityScoreImprovement ? (
+        <Section title={plan.epicBoon ? 'Dádiva épica ou talento' : 'Aumento no Valor de Atributo ou talento'}>
+          <div className="flex flex-wrap gap-2">
+            <Choice name={`${id}-asi`} checked={mode === 'plus_two'} onChange={() => setMode('plus_two')} label="+2 em um atributo" />
+            <Choice name={`${id}-asi`} checked={mode === 'plus_one_each'} onChange={() => setMode('plus_one_each')} label="+1 em dois" />
+            <Choice name={`${id}-asi`} checked={mode === 'feat'} onChange={() => setMode('feat')} label="Talento" />
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {mode !== 'feat' ? (
+              <AbilitySelect label="Atributo" value={first} onChange={setFirst} scores={sheet.abilities} />
+            ) : null}
+            {mode === 'plus_one_each' ? <AbilitySelect label="Segundo atributo" value={second} onChange={setSecond} scores={sheet.abilities} /> : null}
+            {mode === 'feat' ? (
+              <Select
+                aria-label="Talento"
+                value={featId}
+                placeholder="Escolha o talento"
+                onChange={(event) => {
+                  setFeatId(event.target.value);
+                  setFeatAbility('');
+                }}
+              >
+                <option value="">Escolha o talento</option>
+                {featOptions.map((feat) => (
+                  <option key={feat.id} value={feat.id}>
+                    {feat.name}
+                  </option>
+                ))}
+              </Select>
+            ) : null}
+            {mode === 'feat' && featIncrease ? (
+              <Select aria-label="Atributo do talento" value={featAbility} placeholder="Atributo +1" onChange={(event) => setFeatAbility(event.target.value as Ability)}>
+                <option value="">Atributo +1</option>
+                {featIncrease.abilities.map((ability) => (
+                  <option key={ability} value={ability}>
+                    {abilityLabels[ability].name} ({sheet.abilities[ability]})
+                  </option>
+                ))}
+              </Select>
+            ) : null}
+          </div>
+          {mode === 'feat' && featId ? <p className="mt-2 text-xs text-fg-muted">{featOptions.find((feat) => feat.id === featId)?.description}</p> : null}
+        </Section>
+      ) : null}
+
+      {plan.newCantrips > 0 ? <SpellPicker title="Truques novos" count={plan.newCantrips} options={plan.cantripOptions} value={cantrips} onChange={setCantrips} /> : null}
+      {plan.newSpells > 0 ? (
+        <SpellPicker
+          title={plan.classDef?.spellcasting?.spellbook ? 'Magias para o grimório' : 'Magias preparadas a mais'}
+          hint={`Até o ${plan.maxSpellCircle}º círculo.`}
+          count={plan.newSpells}
+          options={plan.spellOptions}
+          value={spells}
+          onChange={setSpells}
+        />
+      ) : null}
+      {plan.newInvocations > 0 ? (
+        <OptionPicker
+          title="Invocações Místicas"
+          count={plan.newInvocations}
+          options={plan.invocationOptions.map((option) => ({ id: option.id, name: option.name, description: option.description }))}
+          value={invocations}
+          onChange={setInvocations}
+        />
+      ) : null}
+      {plan.newMetamagic > 0 ? (
+        <OptionPicker
+          title="Metamagia"
+          count={plan.newMetamagic}
+          options={plan.metamagicOptions.map((option) => ({ id: option.id, name: option.name, description: option.description }))}
+          value={metamagic}
+          onChange={setMetamagic}
+        />
+      ) : null}
+      {plan.newWeaponMasteries > 0 ? (
+        <Alert tone="info" title={`Maestria em mais ${plan.newWeaponMasteries} arma${plan.newWeaponMasteries > 1 ? 's' : ''}`}>
+          Registre a arma escolhida no ataque correspondente da aba Habilidades.
+        </Alert>
+      ) : null}
+
+      {plan.resources.length ? (
+        <Section title="Recursos no novo nível">
+          <ul className="flex flex-wrap gap-1.5">
+            {plan.resources.map((resource) => (
+              <li key={resource.key}>
+                <Badge tone="parchment">
+                  {resource.label}: {resource.max}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      ) : null}
+
+      {result.issues.length ? (
+        <Alert tone="warning" title="Falta escolher">
+          <ul className="list-disc pl-4">
+            {result.issues.map((issue) => (
+              <li key={issue}>{issue}</li>
+            ))}
+          </ul>
+        </Alert>
+      ) : null}
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" onClick={onClose} disabled={busy}>
+          Cancelar
+        </Button>
+        <Button icon={<Sparkles className="h-4 w-4" aria-hidden="true" />} loading={busy} disabled={result.issues.length > 0} onClick={() => void apply()}>
+          Aplicar nível {plan.newTotalLevel}
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="flex flex-col gap-2">
+      <h3 className="text-sm font-semibold uppercase tracking-wider text-fg-muted">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+function Choice({ name, checked, onChange, label }: { name: string; checked: boolean; onChange: () => void; label: string }) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2 rounded-md border border-line bg-sunken px-3 py-1.5 text-sm has-[:checked]:border-wine-500 has-[:checked]:text-fg">
+      <input type="radio" name={name} checked={checked} onChange={onChange} className="accent-wine-500" />
+      {label}
+    </label>
+  );
+}
+
+function AbilitySelect({ label, value, onChange, scores }: { label: string; value: Ability; onChange: (ability: Ability) => void; scores: Record<Ability, number> }) {
+  return (
+    <Select aria-label={label} value={value} onChange={(event) => onChange(event.target.value as Ability)}>
+      {ABILITIES.map((ability) => (
+        <option key={ability} value={ability} disabled={scores[ability] >= 20}>
+          {abilityLabels[ability].name} ({scores[ability]})
+        </option>
+      ))}
+    </Select>
+  );
+}
+
+function toggle(list: string[], value: string, limit: number): string[] {
+  if (list.includes(value)) return list.filter((entry) => entry !== value);
+  return list.length >= limit ? list : [...list, value];
+}
+
+function SpellPicker({ title, hint, count, options, value, onChange }: { title: string; hint?: string; count: number; options: readonly SrdSpell[]; value: string[]; onChange: (next: string[]) => void }) {
+  const [query, setQuery] = useState('');
+  const term = query.trim().toLowerCase();
+  const filtered = term ? options.filter((spell) => `${spellNamePt(spell.name)} ${spell.name}`.toLowerCase().includes(term)) : options;
+  return (
+    <Section title={`${title} (${value.length}/${count})`}>
+      {hint ? <p className="text-xs text-fg-muted">{hint}</p> : null}
+      <input
+        type="search"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        placeholder="Buscar magia…"
+        aria-label={`Buscar em ${title}`}
+        className="h-9 rounded-md border border-line bg-sunken px-3 text-sm text-fg placeholder:text-fg-muted"
+      />
+      <ul className="max-h-56 overflow-y-auto rounded-md border border-line">
+        {filtered.map((spell) => {
+          const checked = value.includes(spell.name);
+          return (
+            <li key={spell.name} className="border-b border-line last:border-b-0">
+              <label className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm">
+                <input type="checkbox" checked={checked} disabled={!checked && value.length >= count} onChange={() => onChange(toggle(value, spell.name, count))} className="accent-wine-500" />
+                <span className="flex-1">{spellNamePt(spell.name)}</span>
+                <span className="text-xs text-fg-muted">{spell.level === 0 ? 'Truque' : `${spell.level}º`} · {spell.castingTime}</span>
+              </label>
+            </li>
+          );
+        })}
+        {filtered.length === 0 ? <li className="px-3 py-2 text-sm text-fg-muted">Nenhuma magia encontrada.</li> : null}
+      </ul>
+    </Section>
+  );
+}
+
+function OptionPicker({ title, count, options, value, onChange }: { title: string; count: number; options: { id: string; name: string; description: string }[]; value: string[]; onChange: (next: string[]) => void }) {
+  return (
+    <Section title={`${title} (${value.length}/${count})`}>
+      <ul className="max-h-56 overflow-y-auto rounded-md border border-line">
+        {options.map((option) => {
+          const checked = value.includes(option.id);
+          return (
+            <li key={option.id} className="border-b border-line last:border-b-0">
+              <label className="flex cursor-pointer items-start gap-2 px-3 py-2 text-sm">
+                <input type="checkbox" checked={checked} disabled={!checked && value.length >= count} onChange={() => onChange(toggle(value, option.id, count))} className="mt-1 accent-wine-500" />
+                <span>
+                  <span className="font-medium text-fg">{option.name}</span>
+                  <span className="block text-xs text-fg-muted">{option.description}</span>
+                </span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  );
+}
