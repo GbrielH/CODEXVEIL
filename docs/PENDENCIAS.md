@@ -421,3 +421,13 @@ no celular.
 
 Verificações: `pnpm check` (20 tarefas; rpg-systems 144 testes) e `pnpm build` passaram. Não
 verificado no navegador ou no celular.
+
+### 2026-10-18 — links só dos livros liberados
+
+- A aba Links (site) e os links da campanha (app) mostram as fontes gratuitas e só os livros que o
+  mestre liberou (`dnd5eCampaignLinks`), cada um com a página dele no D&D Beyond (endereços
+  conferidos por HTTP; Theros leva ao catálogo). Sistema base: só o gratuito.
+- Pedido de transcrever os livros pagos (Xanathar, Tasha etc.) para automatizar a criação: não
+  feito, por serem conteúdo protegido (o repositório é público). Alternativa proposta ao
+  responsável: editor de conteúdo da mesa (cadastrado por ele, privado à campanha) e conteúdo de
+  terceiros com licença aberta.

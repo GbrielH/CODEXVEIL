@@ -1,4 +1,5 @@
 import { findSystem, type OfficialLink } from '@codexveil/rpg-systems';
+import { dnd5eCampaignLinks, parseDnd5eCampaignRules } from '@codexveil/rpg-systems/dnd5e';
 import { BookOpen, ExternalLink, Gift } from 'lucide-react';
 import type { Metadata } from 'next';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -37,7 +38,11 @@ export default async function LinksPage({ params }: PageProps<'/campanhas/[campa
   const { campaignId } = await params;
   const { campaign } = await loadCampaignOrNotFound(campaignId);
   const system = findSystem(campaign.systemId);
-  const links = system?.officialLinks ?? [];
+  // Gratuitos sempre; livros pagos só os que o mestre liberou nas regras da campanha.
+  const links =
+    campaign.systemId === 'dnd5e'
+      ? dnd5eCampaignLinks(system?.officialLinks ?? [], parseDnd5eCampaignRules(campaign.characterRules).sourcebooks)
+      : (system?.officialLinks ?? []);
   const free = links.filter((link) => link.access === 'free');
   const paid = links.filter((link) => link.access === 'paid');
 
@@ -59,10 +64,10 @@ export default async function LinksPage({ params }: PageProps<'/campanhas/[campa
         <Card>
           <CardHeader
             icon={<BookOpen className="h-5 w-5" aria-hidden="true" />}
-            title="Livros oficiais"
-            description="Livros completos, vendidos pela editora no site oficial."
+            title="Livros da campanha"
+            description="Os livros que o mestre liberou, vendidos pela editora no site oficial."
           />
-          <LinkList links={paid} />
+          {paid.length > 0 ? <LinkList links={paid} /> : <p className="text-sm text-fg-muted">Campanha no sistema base: só o conteúdo gratuito (SRD).</p>}
         </Card>
       </div>
     </div>

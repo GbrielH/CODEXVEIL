@@ -93,3 +93,53 @@ export function isSourcebookId(id: string): boolean {
 export function findSourcebook(id: string): Sourcebook | undefined {
   return DND5E_SOURCEBOOKS.find((book) => book.id === id);
 }
+
+/** Endereço do livro no D&D Beyond quando difere do id (conferidos por HTTP em 2026-10-18). */
+const DDB_SLUGS: Record<string, string | null> = {
+  'mm-2025': 'mm-2024',
+  bomt: 'tbomt',
+  hof: 'frhof',
+  efa: 'efota',
+  vgm: 'vgtm',
+  mpmm: 'motm',
+  bgg: 'gotg',
+  aif: 'fraif',
+  erlw: 'erftlw',
+  ggr: 'ggtr',
+  mot: null,
+  vrgr: 'vrgtr',
+  scc: 'sacoc',
+  pamv: 'paitm',
+  egw: 'egtw',
+  tdcsr: 'tcsr',
+  wdmm: 'wdotmm',
+  wbtw: 'twbtw',
+  dsotdq: 'sotdq',
+  pabtso: 'pbtso',
+};
+
+/** Página oficial do livro no D&D Beyond (ou o catálogo, quando o endereço não foi confirmado). */
+export function sourcebookUrl(id: string): string {
+  const slug = id in DDB_SLUGS ? DDB_SLUGS[id] : id;
+  return slug ? `https://www.dndbeyond.com/sources/dnd/${slug}` : 'https://www.dndbeyond.com/sources';
+}
+
+/**
+ * Links da campanha: as fontes gratuitas sempre, e os livros pagos só quando o mestre liberou
+ * cada um (sistema base = sem livros pagos na lista).
+ */
+export function dnd5eCampaignLinks(
+  freeLinks: readonly { label: string; description: string; url: string; access: 'free' | 'paid' }[],
+  sourcebookIds: readonly string[],
+): { label: string; description: string; url: string; access: 'free' | 'paid' }[] {
+  const books = sourcebookIds
+    .map((id) => findSourcebook(id))
+    .filter((book): book is Sourcebook => Boolean(book))
+    .map((book) => ({
+      label: book.name,
+      description: `${sourcebookCategoryLabels[book.category].name} · ${book.year}`,
+      url: sourcebookUrl(book.id),
+      access: 'paid' as const,
+    }));
+  return [...freeLinks.filter((link) => link.access === 'free'), ...books];
+}

@@ -8,7 +8,7 @@ import {
 } from '@codexveil/database';
 import { campaignRoleLabels } from '@codexveil/domain';
 import { conditionLabel, findSystem, summarizeSheet } from '@codexveil/rpg-systems';
-import { dnd5eCampaignIssues, parseDnd5eCampaignRules, parseDnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
+import { dnd5eCampaignIssues, dnd5eCampaignLinks, parseDnd5eCampaignRules, parseDnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { BookOpen, CalendarClock, Dices, ExternalLink, NotebookPen, Swords, UserPlus, Users } from 'lucide-react-native';
 import { Linking, StyleSheet, View } from 'react-native';
@@ -71,6 +71,10 @@ export default function CampaignScreen() {
   // O app é a ficha de jogo: as regras de criação só aparecem enquanto o personagem do jogador
   // não existe ou ainda não cumpre as regras do mestre (o mestre as vê no site).
   const ownIssues = ownCharacter && campaign.systemId === 'dnd5e' ? characterRuleIssues(ownCharacter.name, ownCharacter.sheet, campaign.characterRules) : [];
+  const campaignLinks =
+    campaign.systemId === 'dnd5e'
+      ? dnd5eCampaignLinks(system?.officialLinks ?? [], parseDnd5eCampaignRules(campaign.characterRules).sourcebooks)
+      : (system?.officialLinks ?? []);
   const showCreationRules = !isGm && creationRules.length > 0 && (!ownCharacter || ownIssues.length > 0);
 
   const leave = async () => {
@@ -220,11 +224,11 @@ export default function CampaignScreen() {
         ))}
       </Card>
 
-      {(findSystem(campaign.systemId)?.officialLinks.length ?? 0) > 0 ? (
+      {campaignLinks.length > 0 ? (
         <Card>
           <SectionHeader icon={<ExternalLink size={14} color={colors.fgAccent} />} title="Links oficiais" />
           <AppText variant="muted">Dúvidas de regras? Os sites oficiais do sistema (conteúdo da editora, em inglês).</AppText>
-          {findSystem(campaign.systemId)?.officialLinks.map((link) => (
+          {campaignLinks.map((link) => (
             <ListRow
               key={link.url}
               title={link.label}
