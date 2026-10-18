@@ -104,7 +104,7 @@ e magias na ficha).
 | Magias (339)                                                                                  | Completo     | Cabeçalho técnico em português; descrição no original em inglês, com dano, resistência e área resumidos em português.                                                   |
 | Condições (15)                                                                                | Completo     | Regras traduzidas, efeitos na ficha e duração (segunda rodada de 2026-10-17).                                                                                           |
 | Regras gerais e glossário                                                                     | Parcial      | A ficha calcula o que as regras definem (modificadores, proficiência, perícias, CA, iniciativa, espaços de magia, descansos); o texto do glossário não está no sistema. |
-| Multiclasse e subida de nível                                                                 | Completo     | Subida de nível guiada no site, com multiclasse (pré-requisitos, treinamentos, espaços de magia somados) e talentos; no app, ainda não.                                 |
+| Multiclasse e subida de nível                                                                 | Completo     | Subida de nível guiada no site, com multiclasse (pré-requisitos, treinamentos, espaços de magia somados) e talentos, no site e no app.                                  |
 | Itens mágicos (258)                                                                           | Completo     | Catálogo para o mestre copiar à campanha; texto no original em inglês.                                                                                                  |
 | Monstros e animais (330 blocos de estatísticas)                                               | Completo     | Bestiário para copiar à biblioteca; campos técnicos em português, ações e traços em inglês.                                                                             |
 | Montarias, veículos, serviços, estilo de vida, fabricação e bugigangas                        | Não incluído |                                                                                                                                                                         |
@@ -148,7 +148,7 @@ Esta seção lista só o que falta ou está parcial. O que já foi atendido est�
 
 - **Feito (2026-10-18): imagem de capa.** O mestre envia na criação da campanha ou nas
   configurações (site); a capa aparece nos cartões do painel e da lista de campanhas, no site e
-  no app. O envio pelo app ainda não existe.
+  no app. No app, o mestre envia ao criar a campanha e na central da campanha.
 - **Pendente: envio de e-mail do convite pessoal.** O convite fica vinculado ao e-mail e
   aparece no painel do convidado (`get_my_pending_invites`), mas o mestre ainda precisa
   compartilhar o link. Enviar o e-mail exige uma Edge Function e um SMTP ou provedor de e-mail.
@@ -274,13 +274,13 @@ implementados, conforme o prompt. Nenhuma tela promete essas funções.
 3. **Usar o site publicado e o APK** com duas contas (mestre e jogador), seguindo as etapas de
    [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md), inclusive a criação guiada, e corrigir o que
    aparecer.
-4. ~~**Subida de nível guiada e multiclasse**~~: feitas no site em 2026-10-18; falta a subida de nível no app.
+4. ~~**Subida de nível guiada e multiclasse**~~: feitas no site e no app em 2026-10-18.
 5. **Completar o conteúdo do SRD 5.2.1:** descrições das magias, monstros e animais como
    modelos na biblioteca do mestre, itens mágicos e o restante do equipamento (veja a
    cobertura na seção 3).
 6. **SMTP próprio** (Brevo, com o e-mail exclusivo do sistema) e envio dos templates em
    português.
-7. ~~**Capa da campanha**~~: feita em 2026-10-18 (envio pelo app pendente).
+7. ~~**Capa da campanha**~~: feita em 2026-10-18 (site e app).
 8. **Referências a sessões** na página de NPCs e monstros.
 9. **Testes ponta a ponta** (Playwright) dos critérios 1 a 12, rodando contra o Supabase local
    na CI.
@@ -503,3 +503,16 @@ multiclasse ainda não foram usados de verdade).
 
 Verificações: `pnpm check` 20/20 (rpg-systems 152 testes; banco 180, com 11 ao vivo pulados) e
 `pnpm build` 2/2. Sem migração. Não verificado no navegador nem no celular.
+
+### 2026-10-18 — subida de nível e capa da campanha no app
+
+- **Subida de nível no app** (aba Personagem da ficha, botão "Subir de nível"): as mesmas regras do
+  site, só com seletores: a classe que sobe ou uma classe nova (multiclasse, com os pré-requisitos e
+  o motivo de cada bloqueio), perícia e instrumento da classe nova, vida pela média ou pelo dado,
+  aumento de atributo ou talento (Habilidoso e Iniciado em Magia com as escolhas deles), magias,
+  invocações e Metamagia. Grava recursos, vida, habilidades e o marco, como o site.
+- **Capa da campanha no app:** o mestre escolhe a capa ao criar a campanha e troca ou remove na
+  central da campanha; a capa aparece no topo da central para todos.
+
+Verificações: `pnpm check` 20/20 e `pnpm build` 2/2. Sem migração e sem mudança nativa (o app
+recebe por atualização OTA). Não verificado no celular.

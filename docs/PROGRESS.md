@@ -498,3 +498,16 @@ multiclasse ainda não foram usados de verdade).
 
 Verificações: `pnpm check` 20/20 (rpg-systems 152 testes; banco 180, com 11 ao vivo pulados) e
 `pnpm build` 2/2. Sem migração. Não verificado no navegador nem no celular.
+
+### 2026-10-18 — subida de nível e capa da campanha no app
+
+- **Subida de nível no app** (aba Personagem da ficha, botão "Subir de nível"): as mesmas regras do
+  site, só com seletores: a classe que sobe ou uma classe nova (multiclasse, com os pré-requisitos e
+  o motivo de cada bloqueio), perícia e instrumento da classe nova, vida pela média ou pelo dado,
+  aumento de atributo ou talento (Habilidoso e Iniciado em Magia com as escolhas deles), magias,
+  invocações e Metamagia. Grava recursos, vida, habilidades e o marco, como o site.
+- **Capa da campanha no app:** o mestre escolhe a capa ao criar a campanha e troca ou remove na
+  central da campanha; a capa aparece no topo da central para todos.
+
+Verificações: `pnpm check` 20/20 e `pnpm build` 2/2. Sem migração e sem mudança nativa (o app
+recebe por atualização OTA). Não verificado no celular.

@@ -1,22 +1,26 @@
 import {
+  campaignCoverPath,
   getCampaign,
   leaveCampaign,
   listCampaignCharacters,
   listCampaignMembers,
   listSessions,
   sessionStatusLabels,
+  setCampaignCover,
+  signedMediaUrls,
 } from '@codexveil/database';
 import { campaignRoleLabels } from '@codexveil/domain';
 import { conditionLabel, findSystem, summarizeSheet } from '@codexveil/rpg-systems';
 import { dnd5eCampaignIssues, dnd5eCampaignLinks, parseDnd5eCampaignRules, parseDnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { BookOpen, CalendarClock, Dices, ExternalLink, NotebookPen, Swords, UserPlus, Users } from 'lucide-react-native';
-import { Linking, StyleSheet, View } from 'react-native';
+import { Image, Linking, StyleSheet, View } from 'react-native';
 import { TurnStatus } from '@/components/campaign/turn-status';
 import { CharacterAvatar } from '@/components/character-avatar';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/dialog';
 import { HealthBar } from '@/components/ui/health-bar';
+import { ImageUploadButtons } from '@/components/ui/image-upload';
 import { HeroCard, QuickAction, QuickActions, SectionHeader } from '@/components/ui/layout';
 import { ListRow } from '@/components/ui/list-row';
 import { NavGrid, NavTile } from '@/components/ui/nav-tile';
@@ -46,7 +50,8 @@ export default function CampaignScreen() {
       listCampaignCharacters(supabase, campaign.id),
       listSessions(supabase, campaign.id),
     ]);
-    return { campaign, members, party, sessions };
+    const covers = await signedMediaUrls(supabase, [campaign.coverPath]);
+    return { campaign, members, party, sessions, coverUrl: campaign.coverPath ? (covers[campaign.coverPath] ?? null) : null };
   }, `${id}:${userId}`);
 
   if (loading) return <LoadingState />;
@@ -59,7 +64,7 @@ export default function CampaignScreen() {
     );
   }
 
-  const { campaign, members, party, sessions } = data;
+  const { campaign, members, party, sessions, coverUrl } = data;
   const isGm = campaign.role === 'gm';
   const isActive = campaign.status === 'active';
   const ownCharacter = party.find((character) => character.ownerId === userId) ?? null;
@@ -103,6 +108,27 @@ export default function CampaignScreen() {
       onRefresh={reload}
     >
       <Stack.Screen options={{ title: campaign.name }} />
+      {coverUrl ? (
+        <Image source={{ uri: coverUrl }} accessibilityLabel={`Capa de ${campaign.name}`} style={styles.cover} resizeMode="cover" />
+      ) : null}
+      {/* Só o mestre troca a capa (o Storage confere); ela aparece no painel de todos. */}
+      {isGm && isActive ? (
+        <Card>
+          <AppText variant="eyebrow">Capa da campanha</AppText>
+          <AppText variant="small">Aparece no painel e na lista de campanhas de todos os participantes.</AppText>
+          <ImageUploadButtons
+            preset="scene"
+            label="Enviar capa"
+            currentPath={campaign.coverPath}
+            pathFor={(fileName) => campaignCoverPath(campaign.id, fileName)}
+            apply={(path) => setCampaignCover(getSupabase(), campaign.id, path)}
+            onDone={() => {
+              toast({ tone: 'success', title: 'Capa atualizada.' });
+              void reload();
+            }}
+          />
+        </Card>
+      ) : null}
       {!isActive ? <Notice tone="warning" title="Campanha arquivada" message="Os dados estão preservados, mas nada pode ser alterado." /> : null}
       {campaign.description ? (
         <Card>
@@ -260,6 +286,7 @@ export default function CampaignScreen() {
 
 const styles = StyleSheet.create({
   member: { gap: spacing[2], padding: 14, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.card },
+  cover: { width: '100%', aspectRatio: 16 / 9, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.line },
 });
 
 function characterRuleIssues(name: string, sheet: unknown, rules: unknown): string[] {

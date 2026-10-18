@@ -8,7 +8,8 @@ import { File } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 
-export type PickedImage = { ok: true; bytes: ArrayBuffer; mimeType: ImageMimeType; extension: string } | { ok: false; message: string };
+/** `uri`: arquivo local já reduzido, para pré-visualizar antes de enviar. */
+export type PickedImage = { ok: true; bytes: ArrayBuffer; mimeType: ImageMimeType; extension: string; uri: string } | { ok: false; message: string };
 
 /** Abre a galeria; devolve `null` se a pessoa desistir. */
 export async function pickImage(preset: ImagePreset): Promise<PickedImage | null> {
@@ -31,7 +32,7 @@ export async function pickImage(preset: ImagePreset): Promise<PickedImage | null
     const bytes = await new File(saved.uri).arrayBuffer();
     const check = validateImageFile({ type: 'image/webp', size: bytes.byteLength }, 'media');
     if (!check.ok) return { ok: false, message: check.message };
-    return { ok: true, bytes, mimeType: 'image/webp', extension: 'webp' };
+    return { ok: true, bytes, mimeType: 'image/webp', extension: 'webp', uri: saved.uri };
   } catch {
     return { ok: false, message: 'Não foi possível preparar a imagem. Tente outra.' };
   }

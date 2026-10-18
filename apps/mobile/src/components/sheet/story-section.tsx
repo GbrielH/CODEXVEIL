@@ -1,10 +1,14 @@
 import { findClassByName, listClasses, type Dnd5eClass } from '@codexveil/rpg-systems/dnd5e';
+import { TrendingUp } from 'lucide-react-native';
+import { useState } from 'react';
 import { View } from 'react-native';
+import { Button } from '@/components/ui/button';
 import { Chip, ChipRow } from '@/components/ui/controls';
 import { Field } from '@/components/ui/field';
 import { AppText, Badge, Card } from '@/components/ui/primitives';
 import { colors, fonts, spacing } from '@/lib/theme';
 import { useSheet } from './context';
+import { LevelUpModal } from './level-up';
 
 const detailFields = [
   { key: 'appearance', label: 'Descrição física', max: 4000 },
@@ -17,6 +21,7 @@ const detailFields = [
 /** Identidade e crônica do personagem (salvas automaticamente). */
 export function StorySection() {
   const { sheet, derived, updateSheet, canEditSheet } = useSheet();
+  const [levelUp, setLevelUp] = useState(false);
   const classes = sheet.identity.classes;
   const patchClass = (index: number, patch: Partial<Dnd5eClass>) =>
     updateSheet((current) => ({
@@ -87,10 +92,14 @@ export function StorySection() {
             </View>
           );
         })}
+        {canEditSheet && derived.level < 20 ? (
+          <Button label="Subir de nível" icon={<TrendingUp size={16} color={colors.primaryFg} />} onPress={() => setLevelUp(true)} />
+        ) : null}
         <AppText variant="small">
-          Para subir de nível ou entrar numa classe nova (multiclasse), use “Subir de nível” na ficha pelo site: a vida, as habilidades, as
+          Classe, nível e subclasse mudam pela subida de nível, que também abre classes novas (multiclasse): a vida, as habilidades, as
           magias e os recursos são recalculados pelas regras.
         </AppText>
+        <LevelUpModal visible={levelUp} onClose={() => setLevelUp(false)} />
       </Card>
       <Card>
         <AppText variant="heading">Crônica</AppText>
