@@ -13,6 +13,7 @@ function rawRules(systemId: string, formData: FormData): Record<string, unknown>
         startingLevel: Number(formData.get('rules.startingLevel') ?? 1),
         abilityScoreMethods: formData.getAll('rules.abilityScoreMethods').map(String),
         allowEvilAlignments: formData.get('rules.allowEvilAlignments') === 'on',
+        sourcebooks: formData.get('rules.sourcebookMode') === 'expanded' ? formData.getAll('rules.sourcebooks').map(String) : [],
       };
     default:
       return {};

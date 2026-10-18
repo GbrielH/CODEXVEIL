@@ -88,5 +88,6 @@ export * from './stat-block';
 export * from './creation';
 export * from './campaign-rules';
 export * from './level-up';
+export * from './sourcebooks';
 export * from './srd';
 export { srd52License } from './license';

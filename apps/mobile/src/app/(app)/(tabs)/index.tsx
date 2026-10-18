@@ -8,10 +8,9 @@ import {
 import { campaignRoleLabels, formatInviteCode } from '@codexveil/domain';
 import { summarizeSheet } from '@codexveil/rpg-systems';
 import { useRouter } from 'expo-router';
-import { CalendarClock, Dices, KeyRound, Mail, Plus, ScrollText, Swords, UserPlus } from 'lucide-react-native';
+import { CalendarClock, Dices, Mail, ScrollText, Swords } from 'lucide-react-native';
 import { View } from 'react-native';
 import { CharacterAvatar } from '@/components/character-avatar';
-import { Button } from '@/components/ui/button';
 import { HeroCard, IconBubble, QuickAction, QuickActions, SectionHeader } from '@/components/ui/layout';
 import { ListRow } from '@/components/ui/list-row';
 import { AppText, Badge } from '@/components/ui/primitives';
@@ -102,11 +101,6 @@ export default function DashboardScreen() {
             />
           ) : null}
 
-          <QuickActions>
-            <QuickAction icon={<UserPlus size={16} color={colors.fg} />} label="Novo personagem" onPress={() => router.push('/personagem/novo')} />
-            <QuickAction icon={<KeyRound size={16} color={colors.fg} />} label="Tenho um código" onPress={() => router.push('/convite')} />
-          </QuickActions>
-
           {data.invites.length > 0 ? (
             <>
               <SectionHeader icon={<Mail size={14} color={colors.fgBrand} />} title={`Convites (${data.invites.length})`} />
@@ -130,10 +124,9 @@ export default function DashboardScreen() {
           <SectionHeader
             icon={<ScrollText size={14} color={colors.fgAccent} />}
             title="Suas mesas"
-            action={<Button label="Nova" compact variant="ghost" icon={<Plus size={14} color={colors.fg} />} onPress={() => router.push('/campanha/nova')} />}
           />
           {active.length === 0 ? (
-            <EmptyState title="Nenhuma campanha em andamento" description="Use o código que o seu mestre enviou ou crie uma campanha para mestrar." />
+            <EmptyState title="Nenhuma campanha em andamento" description="Entre com o código do seu mestre ou crie uma campanha na aba Campanhas." />
           ) : (
             active.slice(0, 6).map((campaign) => (
               <ListRow
@@ -153,7 +146,7 @@ export default function DashboardScreen() {
 
           <SectionHeader icon={<Swords size={14} color={colors.fgAccent} />} title="Seus personagens" />
           {data.characters.length === 0 ? (
-            <EmptyState title="Nenhum personagem" description="A criação guiada leva poucos minutos." action={<Button label="Criar personagem" variant="secondary" onPress={() => router.push('/personagem/novo')} />} />
+            <EmptyState title="Nenhum personagem" description="Crie o seu na aba Personagens: a criação guiada leva poucos minutos." />
           ) : (
             data.characters
               .filter((character) => character.id !== current?.id)

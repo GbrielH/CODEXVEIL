@@ -8,6 +8,7 @@ import {
 } from '@codexveil/database';
 import { campaignRoleLabels } from '@codexveil/domain';
 import { conditionLabel, findSystem, summarizeSheet } from '@codexveil/rpg-systems';
+import { dnd5eCampaignIssues, parseDnd5eCampaignRules, parseDnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { BookOpen, CalendarClock, Dices, ExternalLink, NotebookPen, Swords, UserPlus, Users } from 'lucide-react-native';
 import { Linking, StyleSheet, View } from 'react-native';
@@ -67,6 +68,10 @@ export default function CampaignScreen() {
   const others = party.filter((character) => character.id !== ownCharacter?.id);
   const system = findSystem(campaign.systemId);
   const creationRules = system ? system.describeCampaignRules(system.parseCampaignRules(campaign.characterRules)) : [];
+  // O app é a ficha de jogo: as regras de criação só aparecem enquanto o personagem do jogador
+  // não existe ou ainda não cumpre as regras do mestre (o mestre as vê no site).
+  const ownIssues = ownCharacter && campaign.systemId === 'dnd5e' ? characterRuleIssues(ownCharacter.name, ownCharacter.sheet, campaign.characterRules) : [];
+  const showCreationRules = !isGm && creationRules.length > 0 && (!ownCharacter || ownIssues.length > 0);
 
   const leave = async () => {
     const confirmed = await confirm({
@@ -100,7 +105,7 @@ export default function CampaignScreen() {
           <AppText variant="serif">{campaign.description}</AppText>
         </Card>
       ) : null}
-      {creationRules.length > 0 ? (
+      {showCreationRules ? (
         <Card>
           <AppText variant="eyebrow">Criação de personagens</AppText>
           {creationRules.map((rule) => (
@@ -252,3 +257,11 @@ export default function CampaignScreen() {
 const styles = StyleSheet.create({
   member: { gap: spacing[2], padding: 14, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.card },
 });
+
+function characterRuleIssues(name: string, sheet: unknown, rules: unknown): string[] {
+  try {
+    return dnd5eCampaignIssues({ name, sheet: parseDnd5eSheet(sheet) }, parseDnd5eCampaignRules(rules));
+  } catch {
+    return ['A ficha não pôde ser lida.'];
+  }
+}

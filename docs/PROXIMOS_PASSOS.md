@@ -378,3 +378,18 @@ celular.
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram; um quadro do dragão foi
 renderizado para conferir a composição. A animação em si não foi vista rodando no navegador nem
 no celular.
+
+### 2026-10-18 — livros oficiais por campanha e app mais enxuto
+
+- **Conteúdo do sistema na campanha** (site e app, criação e configurações): "Sistema base" (só o
+  SRD 5.2.1) ou "Base + livros oficiais", com 50 livros de D&D 5e (2014 e 2024) em 6 categorias
+  (básicos, opções de personagem, monstros, mestre/itens, cenários, aventuras). Fica em
+  `character_rules.sourcebooks` (JSON, sem migração; ids validados). Os livros têm direitos da
+  Wizards: o Codexveil não traz o conteúdo deles, a escolha informa à mesa o que vale e aparece
+  nas regras da campanha.
+- **App:** menu inferior só com ícones; painel sem atalhos de criar (ficam nas abas Campanhas e
+  Personagens); regras de criação da campanha só aparecem para o jogador enquanto ele não tem
+  personagem ou o personagem ainda não cumpre as regras.
+
+Verificações: `pnpm check` (20 tarefas; rpg-systems 144 testes) e `pnpm build` passaram. Não
+verificado no navegador ou no celular.

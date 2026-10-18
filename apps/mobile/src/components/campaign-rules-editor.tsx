@@ -1,4 +1,6 @@
-import { ABILITY_SCORE_METHODS, abilityScoreMethodLabels, type Dnd5eCampaignRules } from '@codexveil/rpg-systems/dnd5e';
+import { ABILITY_SCORE_METHODS, DND5E_SOURCEBOOKS, SOURCEBOOK_CATEGORIES, abilityScoreMethodLabels, sourcebookCategoryLabels, type Dnd5eCampaignRules } from '@codexveil/rpg-systems/dnd5e';
+import { useState } from 'react';
+import { Chip, ChipRow } from '@/components/ui/controls';
 import { Minus, Plus } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { IconButton } from '@/components/ui/button';
@@ -62,6 +64,40 @@ export function Dnd5eRulesEditor({ value, onChange, error }: Props) {
         <AppText style={{ fontFamily: fonts.sansMedium }}>{value.allowEvilAlignments ? 'Alinhamentos malignos liberados' : 'Sem alinhamentos malignos'}</AppText>
         <AppText variant="small">O SRD pressupõe personagens que não são malignos. Toque para alternar.</AppText>
       </Pressable>
+      <Sourcebooks value={value} onChange={onChange} />
+    </View>
+  );
+}
+
+/** Sistema base (só o SRD) ou com livros oficiais escolhidos por categoria. */
+function Sourcebooks({ value, onChange }: Props) {
+  const [expanded, setExpanded] = useState(value.sourcebooks.length > 0);
+  const toggle = (id: string) =>
+    onChange({ ...value, sourcebooks: value.sourcebooks.includes(id) ? value.sourcebooks.filter((entry) => entry !== id) : [...value.sourcebooks, id] });
+  return (
+    <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
+      <AppText style={{ fontFamily: fonts.sansMedium }}>Conteúdo do sistema</AppText>
+      <ChipRow>
+        <Chip label="Sistema base" selected={!expanded} onPress={() => { setExpanded(false); onChange({ ...value, sourcebooks: [] }); }} />
+        <Chip label="Base + livros oficiais" selected={expanded} onPress={() => setExpanded(true)} />
+      </ChipRow>
+      <AppText variant="small">
+        {expanded
+          ? 'Marque os livros que a mesa usa. Eles não vêm no Codexveil (direitos da Wizards): o conteúdo entra à mão.'
+          : 'Só o SRD 5.2.1, que já vem pronto. Sem nada para escolher.'}
+      </AppText>
+      {expanded
+        ? SOURCEBOOK_CATEGORIES.map((category) => (
+            <View key={category} style={{ gap: 6 }}>
+              <AppText variant="eyebrow">{sourcebookCategoryLabels[category].name}</AppText>
+              <ChipRow>
+                {DND5E_SOURCEBOOKS.filter((book) => book.category === category).map((book) => (
+                  <Chip key={book.id} label={book.name} selected={value.sourcebooks.includes(book.id)} onPress={() => toggle(book.id)} />
+                ))}
+              </ChipRow>
+            </View>
+          ))
+        : null}
     </View>
   );
 }

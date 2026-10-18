@@ -2,7 +2,10 @@
 
 import {
   ABILITY_SCORE_METHODS,
+  DND5E_SOURCEBOOKS,
+  SOURCEBOOK_CATEGORIES,
   abilityScoreMethodLabels,
+  sourcebookCategoryLabels,
   parseDnd5eCampaignRules,
   type AbilityScoreMethod,
 } from '@codexveil/rpg-systems/dnd5e';
@@ -87,6 +90,67 @@ function Dnd5eRulesFields({ initial, errors }: { initial: unknown; errors?: Fiel
         checked={rules.allowEvilAlignments}
         onChange={(event) => setRules((current) => ({ ...current, allowEvilAlignments: event.target.checked }))}
       />
+      <SourcebookFields selected={rules.sourcebooks} onChange={(sourcebooks) => setRules((current) => ({ ...current, sourcebooks }))} />
     </fieldset>
+  );
+}
+
+/** Sistema base (só o SRD) ou com livros oficiais escolhidos por categoria. */
+function SourcebookFields({ selected, onChange }: { selected: string[]; onChange: (ids: string[]) => void }) {
+  const id = useId();
+  const [mode, setMode] = useState<'base' | 'expanded'>(selected.length > 0 ? 'expanded' : 'base');
+  const toggle = (bookId: string, checked: boolean) => onChange(checked ? [...selected, bookId] : selected.filter((entry) => entry !== bookId));
+  return (
+    <div className="flex flex-col gap-3 border-t border-line pt-4">
+      <p className="text-sm font-medium text-fg">Conteúdo do sistema</p>
+      <input type="hidden" name="rules.sourcebookMode" value={mode} />
+      <div className="grid gap-2 sm:grid-cols-2">
+        {(['base', 'expanded'] as const).map((option) => (
+          <label
+            key={option}
+            className="flex cursor-pointer flex-col gap-1 rounded-md border border-line p-3 text-sm has-[:checked]:border-parchment-300/70 has-[:checked]:bg-parchment-200/10"
+          >
+            <span className="flex items-center gap-2 font-medium text-fg">
+              <input type="radio" name={`${id}-mode`} checked={mode === option} onChange={() => setMode(option)} className="accent-wine-500" />
+              {option === 'base' ? 'Sistema base' : 'Base + livros oficiais'}
+            </span>
+            <span className="text-xs text-fg-muted">
+              {option === 'base'
+                ? 'Só o SRD 5.2.1, que já vem pronto no Codexveil. Sem nada para escolher.'
+                : 'Escolha os livros que a mesa usa. Eles não vêm no Codexveil (direitos da Wizards): o conteúdo entra à mão.'}
+            </span>
+          </label>
+        ))}
+      </div>
+      {mode === 'expanded' ? (
+        <div className="flex flex-col gap-4">
+          {SOURCEBOOK_CATEGORIES.map((category) => (
+            <details key={category} className="rounded-md border border-line px-3 py-2" open={category === 'core' || category === 'player'}>
+              <summary className="cursor-pointer text-sm font-medium text-fg">
+                {sourcebookCategoryLabels[category].name}
+                <span className="ml-2 text-xs text-fg-muted">
+                  {DND5E_SOURCEBOOKS.filter((book) => book.category === category && selected.includes(book.id)).length || ''}
+                </span>
+              </summary>
+              <p className="mt-1 text-xs text-fg-muted">{sourcebookCategoryLabels[category].description}</p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                {DND5E_SOURCEBOOKS.filter((book) => book.category === category).map((book) => (
+                  <CheckboxField
+                    key={book.id}
+                    id={`${id}-book-${book.id}`}
+                    name="rules.sourcebooks"
+                    value={book.id}
+                    label={book.name}
+                    description={`${book.year}${book.edition === '2024' ? ' · regras de 2024' : ''}`}
+                    checked={selected.includes(book.id)}
+                    onChange={(event) => toggle(book.id, event.target.checked)}
+                  />
+                ))}
+              </div>
+            </details>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }

@@ -337,12 +337,16 @@ describe('todas as classes em todos os níveis', () => {
 
 describe('regras da campanha', () => {
   it('usa o padrão quando não há dados e corrige campos inválidos', () => {
-    expect(parseDnd5eCampaignRules(null)).toEqual({ startingLevel: 1, abilityScoreMethods: ['standard_array', 'point_buy', 'random'], allowEvilAlignments: false });
+    expect(parseDnd5eCampaignRules(null)).toEqual({ startingLevel: 1, abilityScoreMethods: ['standard_array', 'point_buy', 'random'], allowEvilAlignments: false, sourcebooks: [] });
     expect(parseDnd5eCampaignRules({ startingLevel: 3, abilityScoreMethods: [], allowEvilAlignments: 'sim' })).toEqual({
       startingLevel: 3,
       abilityScoreMethods: ['standard_array', 'point_buy', 'random'],
       allowEvilAlignments: false,
+      sourcebooks: [],
     });
     expect(parseDnd5eCampaignRules({ startingLevel: 99 }).startingLevel).toBe(1);
+    // Livros: ids desconhecidos invalidam a lista; os válidos ficam.
+    expect(parseDnd5eCampaignRules({ sourcebooks: ['xgte', 'tcoe'] }).sourcebooks).toEqual(['xgte', 'tcoe']);
+    expect(parseDnd5eCampaignRules({ sourcebooks: ['livro-falso'] }).sourcebooks).toEqual([]);
   });
 });

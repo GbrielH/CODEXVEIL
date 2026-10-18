@@ -4,6 +4,7 @@
  */
 import { z } from 'zod';
 import { ABILITY_SCORE_METHODS, abilityScoreMethodLabels } from './creation/draft';
+import { findSourcebook, isSourcebookId } from './sourcebooks';
 
 export const dnd5eCampaignRulesSchema = z.object({
   /** Nível com que os personagens começam (o SRD recomenda o 1º, ou o 3º para grupos experientes). */
@@ -20,6 +21,8 @@ export const dnd5eCampaignRulesSchema = z.object({
     .default([...ABILITY_SCORE_METHODS]),
   /** O SRD pressupõe personagens não malignos; o mestre pode liberar. */
   allowEvilAlignments: z.boolean().default(false),
+  /** Livros oficiais liberados além do SRD (ids de `DND5E_SOURCEBOOKS`); vazio = sistema base. */
+  sourcebooks: z.array(z.string().refine(isSourcebookId, 'Livro desconhecido.')).max(80).default([]),
 });
 
 export type Dnd5eCampaignRules = z.output<typeof dnd5eCampaignRulesSchema>;
@@ -42,6 +45,7 @@ export function parseDnd5eCampaignRules(data: unknown): Dnd5eCampaignRules {
     startingLevel: pick('startingLevel'),
     abilityScoreMethods: [...new Set(pick('abilityScoreMethods'))],
     allowEvilAlignments: pick('allowEvilAlignments'),
+    sourcebooks: [...new Set(pick('sourcebooks'))],
   };
 }
 
@@ -51,6 +55,9 @@ export function describeDnd5eCampaignRules(rules: Dnd5eCampaignRules): string[] 
     `Personagens começam no ${rules.startingLevel}º nível.`,
     `Atributos: ${methods.join(', ')}.`,
     rules.allowEvilAlignments ? 'Alinhamentos malignos permitidos.' : 'Sem alinhamentos malignos.',
+    rules.sourcebooks.length === 0
+      ? 'Sistema base: só o conteúdo do SRD 5.2.1.'
+      : `Livros liberados: ${rules.sourcebooks.map((id) => findSourcebook(id)?.name ?? id).join(', ')}. O conteúdo desses livros entra à mão na ficha.`,
   ];
 }
 

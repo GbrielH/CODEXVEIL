@@ -16,6 +16,8 @@ export default function TabsLayout() {
         tabBarItemStyle: { borderRadius: 14, marginHorizontal: 6, marginVertical: 4 },
         tabBarActiveTintColor: colors.fgAccent,
         tabBarInactiveTintColor: colors.fgMuted,
+        // Só ícones: os nomes não cabem em telas estreitas (o leitor de tela ainda anuncia o título).
+        tabBarShowLabel: false,
         tabBarLabelStyle: { fontFamily: fonts.sansMedium, fontSize: 11 },
         sceneStyle: { backgroundColor: colors.canvas },
       }}
