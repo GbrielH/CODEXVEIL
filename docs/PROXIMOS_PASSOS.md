@@ -456,3 +456,22 @@ Verificações: `pnpm check` 20/20 (rpg-systems 150 testes, com 6 novos de multi
 banco 180, com 11 ao vivo pulados; domain 66; ui 33; validation 15; web 12) e `pnpm build` 2/2.
 Sem migração. Não verificado no navegador nem no celular (envio de capa, telas novas e
 multiclasse ainda não foram usados de verdade).
+
+### 2026-10-18 — livros na ficha, personagens com imagem e dados só com a sessão
+
+- **Livros na criação da ficha** (site e app): na ficha pessoal, o passo Início traz o seletor
+  "Sistema base" ou "Base + livros oficiais" (pagos, com link da página oficial); numa campanha,
+  aparecem os livros escolhidos pelo mestre, sem seleção. A escolha fica em
+  `sheet.identity.sourcebooks` (sem migração; valores inválidos viram lista vazia). No servidor e
+  no app, a ficha de campanha recebe os livros do mestre. Na aba Personagem, a ficha pessoal troca
+  os livros pelo mesmo seletor.
+- **Vincular à campanha:** a ficha não entra se usar livros que o mestre não liberou (a lista de
+  pendências diz quais). Fichas de outro sistema já não aparecem na lista e o banco recusa.
+- **Aba Personagens com imagem** (site e app): cartões com o retrato em destaque ou o ícone da
+  classe, como os de campanha.
+- **Dados em "Meu personagem"** (site): os botões continuam, mas só rolam com a sessão em
+  andamento (vão para o mural); antes disso, ou com dados presenciais, o clique avisa
+  "Rolagem indisponível". Na página da ficha, as rolagens de teste continuam locais.
+
+Verificações: `pnpm check` 20/20 (rpg-systems 152 testes; banco 180, com 11 ao vivo pulados) e
+`pnpm build` 2/2. Sem migração. Não verificado no navegador nem no celular.

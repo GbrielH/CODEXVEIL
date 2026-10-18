@@ -10,9 +10,7 @@ import {
   dnd5eStepLabels,
   draftClass,
   finalAbilityScores,
-  findSourcebook,
   listDnd5eChoices,
-  sourcebookUrl,
   validateDnd5eDraft,
   type AbilityScoreMethod,
   type Dnd5eCampaignRules,
@@ -27,6 +25,7 @@ import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from 'react';
 import { createDnd5eCharacterAction } from '@/app/(app)/personagens/actions';
+import { SourcebookLinks, SourcebookPicker } from '@/components/campaigns/sourcebook-picker';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -321,19 +320,9 @@ export function Dnd5eCreationWizard({ campaigns, defaultCampaignId, storageKey }
                       <li key={rule}>{rule}</li>
                     ))}
                   </ul>
-                  {campaign.rules.sourcebooks.length > 0 ? (
-                    <p className="mt-2 text-xs text-fg-muted">
-                      Livros pagos, na página oficial:{' '}
-                      {campaign.rules.sourcebooks.map((bookId, index) => (
-                        <span key={bookId}>
-                          {index > 0 ? ' · ' : ''}
-                          <a href={sourcebookUrl(bookId)} target="_blank" rel="noopener noreferrer" className="text-fg-brand underline-offset-2 hover:underline">
-                            {findSourcebook(bookId)?.name ?? bookId}
-                          </a>
-                        </span>
-                      ))}
-                    </p>
-                  ) : null}
+                  <div className="mt-3 border-t border-line pt-3">
+                    <SourcebookLinks ids={campaign.rules.sourcebooks} label="Livros escolhidos pelo mestre:" />
+                  </div>
                 </div>
               ) : (
                 <SelectField
@@ -352,6 +341,12 @@ export function Dnd5eCreationWizard({ campaigns, defaultCampaignId, storageKey }
                 </SelectField>
               )}
               {errorFor('level') ? <Alert tone="danger">{errorFor('level')}</Alert> : null}
+              {/* Ficha pessoal: o jogador escolhe os livros; numa campanha, valem os do mestre. */}
+              {campaign ? null : (
+                <div className="rounded-md border border-line bg-card/60 p-4">
+                  <SourcebookPicker audience="character" selected={draft.sourcebooks} onChange={(sourcebooks) => update({ sourcebooks })} />
+                </div>
+              )}
               <p className="text-sm text-fg-muted">
                 O passo a passo segue a criação de personagem do SRD 5.2: classe, origem (antecedente, espécie e idiomas), atributos,
                 alinhamento e detalhes. Só aparecem opções do conteúdo aberto do SRD.

@@ -249,8 +249,14 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
 
   return (
     <SheetContext.Provider value={context}>
-      {/* Rolagens da ficha são testes do jogador: ficam no aparelho e não vão para o mural. */}
-      <DiceProvider campaignId={null} characterId={character.id} enabled={permissions.canEditPlay}>
+      {/* Na página da ficha, as rolagens são testes locais (fora do mural). Em "Meu personagem", na
+          campanha, vão para o mural e só com a sessão em andamento. */}
+      <DiceProvider
+        campaignId={props.variant === 'campaign' ? (character.campaign?.id ?? null) : null}
+        characterId={character.id}
+        enabled={permissions.canEditPlay}
+        sessionGate={props.variant === 'campaign'}
+      >
         <div className="flex flex-col gap-5">
           <SheetHeader saveStatus={saveState.status} liveStatus={liveStatus} />
 

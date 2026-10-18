@@ -158,7 +158,14 @@ function CampaignCard({ campaigns }: { campaigns: { id: string; name: string; ch
       <div className="flex flex-col gap-3">
         {options.length > 0 ? (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <SelectField id={`${id}-campaign`} label="Vincular a" value={selected} onChange={(event) => setSelected(event.target.value)} fieldClassName="flex-1">
+            <SelectField
+              id={`${id}-campaign`}
+              label="Vincular a"
+              hint="Só aparecem campanhas do mesmo sistema da ficha. A ficha precisa seguir as regras e os livros escolhidos pelo mestre."
+              value={selected}
+              onChange={(event) => setSelected(event.target.value)}
+              fieldClassName="flex-1"
+            >
               <option value="">Escolha uma campanha…</option>
               {options.map((campaign) => (
                 <option key={campaign.id} value={campaign.id}>

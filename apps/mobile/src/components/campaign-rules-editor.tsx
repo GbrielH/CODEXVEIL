@@ -74,26 +74,25 @@ export function Dnd5eRulesEditor({ value, onChange, error }: Props) {
         <AppText style={{ fontFamily: fonts.sansMedium }}>{value.allowEvilAlignments ? 'Alinhamentos malignos liberados' : 'Sem alinhamentos malignos'}</AppText>
         <AppText variant="small">O SRD pressupõe personagens que não são malignos. Toque para alternar.</AppText>
       </Pressable>
-      <Sourcebooks value={value} onChange={onChange} />
+      <SourcebookChips audience="campaign" selected={value.sourcebooks} onChange={(sourcebooks) => onChange({ ...value, sourcebooks })} />
     </View>
   );
 }
 
-/** Sistema base (só o SRD) ou com livros oficiais escolhidos por categoria. */
-function Sourcebooks({ value, onChange }: Props) {
-  const [expanded, setExpanded] = useState(value.sourcebooks.length > 0);
-  const toggle = (id: string) =>
-    onChange({ ...value, sourcebooks: value.sourcebooks.includes(id) ? value.sourcebooks.filter((entry) => entry !== id) : [...value.sourcebooks, id] });
+/** Sistema base (só o SRD) ou com livros oficiais escolhidos por categoria (mesa ou ficha pessoal). */
+export function SourcebookChips({ selected, onChange, audience }: { selected: readonly string[]; onChange: (ids: string[]) => void; audience: 'campaign' | 'character' }) {
+  const [expanded, setExpanded] = useState(selected.length > 0);
+  const toggle = (id: string) => onChange(selected.includes(id) ? selected.filter((entry) => entry !== id) : [...selected, id]);
   return (
     <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
       <AppText style={{ fontFamily: fonts.sansMedium }}>Conteúdo do sistema</AppText>
       <ChipRow>
-        <Chip label="Sistema base" selected={!expanded} onPress={() => { setExpanded(false); onChange({ ...value, sourcebooks: [] }); }} />
+        <Chip label="Sistema base" selected={!expanded} onPress={() => { setExpanded(false); onChange([]); }} />
         <Chip label="Base + livros oficiais" selected={expanded} onPress={() => setExpanded(true)} />
       </ChipRow>
       <AppText variant="small">
         {expanded
-          ? 'Marque os livros que a mesa usa. São livros pagos, vendidos pela Wizards na página oficial: o conteúdo deles não vem no Codexveil e entra à mão.'
+          ? `Marque os livros que ${audience === 'campaign' ? 'a mesa usa' : 'este personagem usa'}. São livros pagos, vendidos pela Wizards na página oficial: o conteúdo deles não vem no Codexveil e entra à mão.`
           : 'Só o SRD 5.2.1, gratuito e já pronto. Sem nada para escolher.'}
       </AppText>
       <AppText variant="small">Gratuitos:</AppText>
@@ -108,16 +107,16 @@ function Sourcebooks({ value, onChange }: Props) {
               <AppText variant="eyebrow">{sourcebookCategoryLabels[category].name}</AppText>
               <ChipRow>
                 {DND5E_SOURCEBOOKS.filter((book) => book.category === category).map((book) => (
-                  <Chip key={book.id} label={book.name} selected={value.sourcebooks.includes(book.id)} onPress={() => toggle(book.id)} />
+                  <Chip key={book.id} label={book.name} selected={selected.includes(book.id)} onPress={() => toggle(book.id)} />
                 ))}
               </ChipRow>
             </View>
           ))
         : null}
-      {expanded && value.sourcebooks.length > 0 ? (
+      {expanded && selected.length > 0 ? (
         <View style={{ gap: 2 }}>
           <AppText variant="small">Livros marcados (pagos), na página oficial:</AppText>
-          {value.sourcebooks.map((id) => (
+          {selected.map((id) => (
             <OfficialLink key={id} label={findSourcebook(id)?.name ?? id} url={sourcebookUrl(id)} />
           ))}
         </View>

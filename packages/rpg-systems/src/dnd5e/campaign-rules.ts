@@ -66,7 +66,10 @@ export function describeDnd5eCampaignRules(rules: Dnd5eCampaignRules): string[] 
  * obrigatórios). Lista vazia = pode entrar. As mensagens dizem o que mudar na ficha.
  */
 export function dnd5eCampaignIssues(
-  character: { name: string; sheet: { identity: { species: string; background: string; alignment: string; classes: { name: string; level: number }[] } } },
+  character: {
+    name: string;
+    sheet: { identity: { species: string; background: string; alignment: string; classes: { name: string; level: number }[]; sourcebooks?: readonly string[] } };
+  },
   rules: Dnd5eCampaignRules,
 ): string[] {
   const issues: string[] = [];
@@ -83,6 +86,13 @@ export function dnd5eCampaignIssues(
   }
   if (!rules.allowEvilAlignments && /\b(mau|maligno|evil)\b/i.test(identity.alignment)) {
     issues.push(`O mestre não permite alinhamentos malignos: troque o alinhamento (${identity.alignment}).`);
+  }
+  // A ficha só pode usar livros que o mestre liberou (o sistema base não libera nenhum).
+  const extraBooks = (identity.sourcebooks ?? []).filter((book) => !rules.sourcebooks.includes(book));
+  if (extraBooks.length > 0) {
+    issues.push(
+      `A ficha usa livros que o mestre não liberou: ${extraBooks.map((book) => findSourcebook(book)?.name ?? book).join(', ')}. Tire esses livros da ficha (aba Personagem) ou peça ao mestre para liberá-los.`,
+    );
   }
   return issues;
 }

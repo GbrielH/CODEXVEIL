@@ -41,6 +41,8 @@ export async function createDnd5eCharacterAction(input: unknown): Promise<Create
 
   let supabase;
   let context: Dnd5eCreationContext = PERSONAL_SHEET_CONTEXT;
+  // Livros da ficha: os escolhidos na ficha pessoal ou, numa campanha, os do mestre.
+  let sourcebooks = draft.data.sourcebooks;
   try {
     supabase = await createSupabaseServerClient();
     if (campaignId) {
@@ -58,6 +60,7 @@ export async function createDnd5eCharacterAction(input: unknown): Promise<Create
         abilityScoreMethods: rules.abilityScoreMethods,
         allowEvilAlignments: rules.allowEvilAlignments,
       };
+      sourcebooks = rules.sourcebooks;
     }
   } catch (error) {
     return { ok: false, message: failureMessage(error) };
@@ -70,7 +73,7 @@ export async function createDnd5eCharacterAction(input: unknown): Promise<Create
   const base = characterCreateSchema.safeParse({ name: draft.data.name, systemId: 'dnd5e', campaignId });
   if (!base.success) return { ok: false, message: base.error.issues[0]?.message ?? 'Dados inválidos.' };
 
-  const built = buildDnd5eCharacterFromDraft(draft.data);
+  const built = buildDnd5eCharacterFromDraft({ ...draft.data, sourcebooks });
   let characterId: string;
   try {
     characterId = await createCharacter(supabase, {

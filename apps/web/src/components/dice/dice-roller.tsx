@@ -1,6 +1,6 @@
 'use client';
 
-import { rollDice, type DiceRoll } from '@codexveil/database';
+import { getSessionState, rollDice, type DiceRoll } from '@codexveil/database';
 import {
   COMMON_DICE,
   DICE_ROLL_MODES,
@@ -54,12 +54,18 @@ export function DiceProvider({
   campaignId,
   characterId = null,
   enabled = true,
+  sessionGate = false,
   children,
 }: {
   campaignId: string | null;
   characterId?: string | null;
   /** Desligado: os botões de rolar somem (ex.: ficha de outro jogador). */
   enabled?: boolean;
+  /**
+   * Ficha dentro da campanha ("Meu personagem"): os botões continuam, mas só rolam com a sessão
+   * em andamento (e sem dados presenciais); fora dela, o clique avisa que está indisponível.
+   */
+  sessionGate?: boolean;
   children: ReactNode;
 }) {
   const { toast } = useToast();
@@ -69,6 +75,19 @@ export function DiceProvider({
       const mode = request.mode ?? 'normal';
       let shown: ShownRoll | null = null;
       try {
+        if (campaignId && sessionGate) {
+          const session = await getSessionState(getSupabaseBrowserClient(), campaignId);
+          if (!session.playing || session.physicalDice) {
+            toast({
+              tone: 'warning',
+              title: 'Rolagem indisponível',
+              description: session.playing
+                ? 'Esta sessão usa dados presenciais: role na mesa.'
+                : 'A sessão ainda não começou. Para testar, role na página da ficha (Personagens).',
+            });
+            return null;
+          }
+        }
         if (campaignId) {
           shown = fromServer(
             await rollDice(getSupabaseBrowserClient(), {
@@ -97,7 +116,7 @@ export function DiceProvider({
       });
       return shown;
     },
-    [campaignId, characterId, toast],
+    [campaignId, characterId, sessionGate, toast],
   );
 
   const value = useMemo(() => (enabled ? { roll, campaignId } : null), [roll, campaignId, enabled]);

@@ -188,4 +188,14 @@ describe('personagem entrando numa campanha', () => {
     expect(issues).toHaveLength(3);
     expect(issues.join(' ')).toContain('3º nível');
   });
+
+  it('a ficha só entra com livros que o mestre liberou', async () => {
+    const { dnd5eCampaignIssues, parseDnd5eCampaignRules } = await import('./index');
+    const sheet = { identity: { species: 'Elfo', background: 'Sábio', alignment: 'Neutro e Bom', classes: [{ name: 'Mago', level: 1 }], sourcebooks: ['xgte', 'tcoe'] } };
+    expect(dnd5eCampaignIssues({ name: 'Lyra', sheet }, parseDnd5eCampaignRules({ sourcebooks: ['xgte', 'tcoe', 'ftod'] }))).toEqual([]);
+    const issues = dnd5eCampaignIssues({ name: 'Lyra', sheet }, parseDnd5eCampaignRules({ sourcebooks: ['xgte'] }));
+    expect(issues).toEqual([expect.stringContaining("livros que o mestre não liberou: Tasha's Cauldron of Everything")]);
+    // Sistema base: nenhum livro liberado.
+    expect(dnd5eCampaignIssues({ name: 'Lyra', sheet }, parseDnd5eCampaignRules({}))).toHaveLength(1);
+  });
 });

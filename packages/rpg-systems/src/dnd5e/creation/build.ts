@@ -16,6 +16,7 @@ import {
   spellSlotResources,
 } from '../resources';
 import { parseDnd5eSheet, type Dnd5eSheet } from '../sheet';
+import { isSourcebookId } from '../sourcebooks';
 import { SKILLS, skillDefinitions, type ProficiencyLevel, type Skill } from '../skills';
 import { CIRCLE_OF_THE_LAND, SRD_INVOCATIONS, SRD_METAMAGIC } from '../srd/class-options';
 import { MONK_MARTIAL_ARTS_DIE, MONK_UNARMORED_MOVEMENT, WARLOCK_PACT_SLOTS, WARLOCK_SLOT_LEVEL, atLevel } from '../srd/classes';
@@ -518,6 +519,7 @@ export function buildDnd5eCharacterFromDraft(draft: Dnd5eDraft): BuiltDnd5eChara
         },
       ],
       experience: EXPERIENCE_THRESHOLDS[level - 1] ?? 0,
+      sourcebooks: draft.sourcebooks.filter(isSourcebookId),
     },
     abilities: scores,
     savingThrows: Object.fromEntries(ABILITIES.map((ability) => [ability, { proficient: saves.has(ability), bonus: 0 }])),

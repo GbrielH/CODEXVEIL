@@ -78,6 +78,8 @@ export const dnd5eSheetSchema = z.object({
         .default([{ name: '', subclass: '', level: 1, hitDie: 'd8' }]),
       advancement: z.enum(ADVANCEMENT_MODES).default('milestone'),
       experience: z.number().int().min(0).max(1_000_000).default(0),
+      /** Livros oficiais usados pela ficha (ids de `DND5E_SOURCEBOOKS`); vazio = só o SRD. */
+      sourcebooks: z.array(z.string().max(40)).max(80).default([]).catch([]),
     })
     .prefault({}),
   abilities: recordOf(ABILITIES, abilityScore).prefault({}),

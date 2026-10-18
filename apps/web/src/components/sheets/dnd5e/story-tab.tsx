@@ -2,6 +2,7 @@
 
 import { ADVANCEMENT_MODES, findClassByName, listClasses, type Dnd5eClass } from '@codexveil/rpg-systems/dnd5e';
 import { useId } from 'react';
+import { SourcebookLinks, SourcebookPicker } from '@/components/campaigns/sourcebook-picker';
 import { CharacterIcon } from '@/components/characters/character-icon';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -27,7 +28,7 @@ export function StoryTab() {
 }
 
 function IdentityCard() {
-  const { sheet, updateSheet, permissions } = useSheet();
+  const { character, sheet, updateSheet, permissions } = useSheet();
   const id = useId();
   const readOnly = !permissions.canEditSheet;
   const setIdentity = (patch: Partial<typeof sheet.identity>) =>
@@ -52,6 +53,17 @@ function IdentityCard() {
             </option>
           ))}
         </SelectField>
+      </div>
+      {/* Ficha pessoal: os livros são escolhidos aqui; numa campanha, valem os liberados pelo mestre. */}
+      <div className="mt-4 border-t border-line pt-3">
+        {character.campaign || readOnly ? (
+          <SourcebookLinks
+            ids={sheet.identity.sourcebooks}
+            label={character.campaign ? 'Livros da ficha (na campanha, valem os liberados pelo mestre):' : 'Livros da ficha:'}
+          />
+        ) : (
+          <SourcebookPicker audience="character" selected={sheet.identity.sourcebooks} onChange={(sourcebooks) => setIdentity({ sourcebooks })} />
+        )}
       </div>
     </Card>
   );

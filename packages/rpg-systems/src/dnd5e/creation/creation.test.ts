@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ABILITIES, type Ability } from '../abilities';
 import { parseDnd5eCampaignRules } from '../campaign-rules';
 import { computeDnd5eDerived } from '../derived';
+import { parseDnd5eSheet } from '../sheet';
 import { findClass } from '../srd/classes';
 import { buildDnd5eCharacterFromDraft, combatSummary } from './build';
 import {
@@ -348,5 +349,14 @@ describe('regras da campanha', () => {
     // Livros: ids desconhecidos invalidam a lista; os válidos ficam.
     expect(parseDnd5eCampaignRules({ sourcebooks: ['xgte', 'tcoe'] }).sourcebooks).toEqual(['xgte', 'tcoe']);
     expect(parseDnd5eCampaignRules({ sourcebooks: ['livro-falso'] }).sourcebooks).toEqual([]);
+  });
+});
+
+describe('livros da ficha', () => {
+  it('a ficha guarda só os livros oficiais conhecidos e tolera valores inválidos', () => {
+    const built = buildDnd5eCharacterFromDraft(createDnd5eDraft({ classId: 'fighter', sourcebooks: ['xgte', 'livro-falso'] }));
+    expect(built.sheet.identity.sourcebooks).toEqual(['xgte']);
+    expect(parseDnd5eSheet({ identity: { sourcebooks: 'xgte' } }).identity.sourcebooks).toEqual([]);
+    expect(parseDnd5eSheet({}).identity.sourcebooks).toEqual([]);
   });
 });

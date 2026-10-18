@@ -1,10 +1,9 @@
-import { listMyCharacters } from '@codexveil/database';
+import { listMyCharacters, signedMediaUrls } from '@codexveil/database';
 import { summarizeSheet } from '@codexveil/rpg-systems';
 import { useRouter } from 'expo-router';
 import { Plus, Swords } from 'lucide-react-native';
-import { CharacterAvatar } from '@/components/character-avatar';
+import { CharacterCoverCard } from '@/components/character-cover-card';
 import { Button } from '@/components/ui/button';
-import { ListRow } from '@/components/ui/list-row';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states';
 import { useAsyncData } from '@/lib/hooks';
@@ -15,7 +14,12 @@ import { colors } from '@/lib/theme';
 export default function CharactersScreen() {
   const userId = useUserId();
   const router = useRouter();
-  const { data, error, loading, refreshing, reload } = useAsyncData(() => listMyCharacters(getSupabase(), userId), userId);
+  const { data, error, loading, refreshing, reload } = useAsyncData(async () => {
+    const supabase = getSupabase();
+    const characters = await listMyCharacters(supabase, userId);
+    const portraits = await signedMediaUrls(supabase, characters.map((character) => character.portraitPath));
+    return characters.map((character) => ({ character, portraitUrl: character.portraitPath ? (portraits[character.portraitPath] ?? null) : null }));
+  }, userId);
 
   if (loading) return <LoadingState />;
 
@@ -26,13 +30,15 @@ export default function CharactersScreen() {
       {data && data.length === 0 ? (
         <EmptyState icon={<Swords size={28} color={colors.fgSecondary} />} title="Nenhum personagem ainda" description="Crie seu primeiro personagem. Você pode vinculá-lo a uma campanha depois." />
       ) : null}
-      {data?.map((character) => (
-        <ListRow
+      {data?.map(({ character, portraitUrl }) => (
+        <CharacterCoverCard
           key={character.id}
-          leading={<CharacterAvatar name={character.name} systemId={character.systemId} sheet={character.sheet} />}
-          title={character.name}
+          name={character.name}
+          systemId={character.systemId}
+          sheet={character.sheet}
           subtitle={summarizeSheet(character.systemId, character.sheet).subtitle}
           meta={character.campaignName ?? 'Sem campanha'}
+          portraitUrl={portraitUrl}
           onPress={() => router.push({ pathname: '/personagem/[id]', params: { id: character.id } })}
         />
       ))}

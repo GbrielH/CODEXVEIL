@@ -34,6 +34,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AbilityScoresField, EMPTY_ROLLS, type RollState } from '@/components/creation/ability-scores';
+import { SourcebookChips } from '@/components/campaign-rules-editor';
 import { CharacterIcon } from '@/components/creation/character-icon';
 import { ChoiceField, OptionCard } from '@/components/creation/choice-fields';
 import { Button } from '@/components/ui/button';
@@ -148,7 +149,7 @@ function Wizard({ campaigns, defaultCampaignId, loadError }: { campaigns: Playab
     }
     setBusy(true);
     try {
-      const built = buildDnd5eCharacterFromDraft(draft);
+      const built = buildDnd5eCharacterFromDraft({ ...draft, sourcebooks: campaign ? campaign.rules.sourcebooks : draft.sourcebooks });
       const id = await createCharacter(getSupabase(), {
         name: base.data.name,
         systemId: base.data.systemId,
@@ -222,6 +223,8 @@ function Wizard({ campaigns, defaultCampaignId, loadError }: { campaigns: Playab
             </View>
           )}
           {errorFor('level') ? <Notice tone="danger" message={errorFor('level')!} /> : null}
+          {/* Ficha pessoal: o jogador escolhe os livros; numa campanha, valem os do mestre (na descrição acima). */}
+          {campaign ? null : <SourcebookChips audience="character" selected={draft.sourcebooks} onChange={(sourcebooks) => update({ sourcebooks })} />}
           <AppText variant="muted">
             O passo a passo segue a criação do SRD 5.2.1: classe, origem (antecedente, espécie e idiomas), atributos, alinhamento e detalhes.
           </AppText>

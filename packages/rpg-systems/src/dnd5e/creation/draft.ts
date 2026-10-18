@@ -82,6 +82,8 @@ export const dnd5eDraftSchema = z.object({
   /** Respostas das escolhas, indexadas pelo identificador de cada escolha. */
   selections: z.record(z.string().max(80), selectionSchema).default({}),
   alignment: z.string().max(40).default(''),
+  /** Livros oficiais que a ficha pessoal usa; numa campanha, valem os livros do mestre. */
+  sourcebooks: z.array(z.string().max(40)).max(80).default([]),
   details: z
     .object({
       appearance: text(4000),

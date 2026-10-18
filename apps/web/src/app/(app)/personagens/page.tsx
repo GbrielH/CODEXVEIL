@@ -1,8 +1,9 @@
 import { listMyCharacters, signedMediaUrls } from '@codexveil/database';
 import { findSystem, summarizeSheet } from '@codexveil/rpg-systems';
+import { findClassByName, parseDnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
 import { Plus, Swords } from 'lucide-react';
 import type { Metadata, Route } from 'next';
-import { CharacterCard } from '@/components/characters/character-card';
+import { CharacterCoverCard } from '@/components/characters/character-cover-card';
 import { ButtonLink } from '@/components/ui/button';
 import { Notice } from '@/components/ui/notice';
 import { PageHeader } from '@/components/ui/page-header';
@@ -12,6 +13,16 @@ import { characterPath, routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Personagens' };
+
+/** Classe principal do SRD (para o ícone do cartão sem retrato), em fichas de D&D 5e. */
+function mainClassId(systemId: string, sheet: unknown): string | null {
+  if (systemId !== 'dnd5e') return null;
+  try {
+    return findClassByName(parseDnd5eSheet(sheet).identity.classes[0]?.name ?? '')?.id ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export default async function CharactersPage({ searchParams }: PageProps<'/personagens'>) {
   const user = await requireSessionUser(routes.characters);
@@ -50,11 +61,12 @@ export default async function CharactersPage({ searchParams }: PageProps<'/perso
             const system = findSystem(character.systemId);
             return (
               <li key={character.id}>
-                <CharacterCard
+                <CharacterCoverCard
                   href={characterPath(character.id) as Route}
                   name={character.name}
                   subtitle={summary.subtitle}
                   portraitUrl={character.portraitPath ? (portraits[character.portraitPath] ?? null) : null}
+                  classId={mainClassId(character.systemId, character.sheet)}
                   meta={character.campaignName ?? `Sem campanha · ${system?.shortName ?? character.systemId}`}
                   updatedAt={character.updatedAt}
                 />
