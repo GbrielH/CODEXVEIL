@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { signOutAction } from '@/app/(auth)/actions';
 import { Emblem, Wordmark } from '@/components/brand/emblem';
+import { EmberField } from '@/components/brand/ember-field';
 import { Avatar } from '@/components/ui/avatar';
 import { routes } from '@/lib/routes';
 import { NavLink } from './nav-link';
@@ -56,6 +57,7 @@ function SignOutButton({ compact = false }: { compact?: boolean }) {
 export function AppShell({ displayName, motion, children }: AppShellProps) {
   return (
     <ShellFrame motion={motion}>
+      <EmberField />
       <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-raised/80 backdrop-blur lg:flex">
         <div className="flex items-center justify-between gap-2 px-5 py-6 group-data-[collapsed=true]/shell:flex-col group-data-[collapsed=true]/shell:px-2">
           <Link href={routes.dashboard} aria-label="Codexveil — painel">
@@ -101,7 +103,7 @@ export function AppShell({ displayName, motion, children }: AppShellProps) {
           </div>
         </header>
 
-        <main id="conteudo" className="w-full min-w-0 flex-1 px-4 pt-6 pb-28 sm:px-6 lg:px-10 lg:pt-10 lg:pb-12 2xl:px-14">
+        <main id="conteudo" className="animate-fade-up w-full min-w-0 flex-1 px-4 pt-6 pb-28 sm:px-6 lg:px-10 lg:pt-10 lg:pb-12 2xl:px-14">
           {children}
         </main>
 

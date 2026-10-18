@@ -13,6 +13,7 @@ import {
 import { Dices } from 'lucide-react-native';
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 import { Button } from '@/components/ui/button';
 import { CheckRow, Chip, ChipRow } from '@/components/ui/controls';
 import { Field } from '@/components/ui/field';
@@ -191,7 +192,9 @@ export function DicePanel({ isGm, characterName }: { isGm: boolean; characterNam
           accessibilityLiveRegion="polite"
           style={[styles.result, natural === 20 ? { borderColor: colors.success } : natural === 1 ? { borderColor: colors.danger } : null]}
         >
-          <AppText variant="display">{last.total}</AppText>
+          <Animated.View key={`${last.total}-${last.expression}-${last.dice.map((group) => group.values.join(',')).join('|')}`} entering={ZoomIn.springify().damping(12)}>
+            <AppText variant="display">{last.total}</AppText>
+          </Animated.View>
           <View style={{ flex: 1, gap: 2 }}>
             <AppText style={{ color: colors.fg }}>{last.label || last.expression}</AppText>
             <AppText variant="small">{describeDiceRoll(last)}</AppText>

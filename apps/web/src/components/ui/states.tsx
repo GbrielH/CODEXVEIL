@@ -1,7 +1,7 @@
 import { CircleAlert, Lock } from 'lucide-react';
+import { DragonLoader } from '@/components/brand/dragon-loader';
 import type { ReactNode } from 'react';
 import { cx } from '@/lib/cx';
-import { Spinner } from './spinner';
 
 interface StateProps {
   icon?: ReactNode;
@@ -58,14 +58,7 @@ export function ForbiddenState({ title = 'Acesso restrito', ...props }: Partial<
 }
 
 export function LoadingState({ label = 'Carregando…', className }: { label?: string; className?: string }) {
-  return (
-    <div className={cx('flex items-center justify-center gap-3 py-12 text-fg-secondary', className)}>
-      <Spinner label="" />
-      <span className="text-sm" role="status">
-        {label}
-      </span>
-    </div>
-  );
+  return <DragonLoader label={label} size="sm" className={className} />;
 }
 
 export function Skeleton({ className }: { className?: string }) {

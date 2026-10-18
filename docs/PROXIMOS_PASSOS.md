@@ -363,3 +363,18 @@ celular.
 
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verificado no navegador ou no
 celular.
+
+### 2026-10-18 — efeitos visuais (dragão do carregamento e brasas)
+
+- **Carregamento com dragão** (site e app): silhueta do dragão (game-icons.net, CC BY 3.0) soprando
+  chamas animadas que esfriam de âmbar para vinho; usado em `LoadingState` e nas telas de
+  carregamento das rotas do site. Com movimento reduzido (sistema ou perfil), fica parado.
+- **Site:** brasas subindo devagar no fundo, entrada suave do conteúdo, cartões de campanha e
+  personagem que sobem com brilho ao passar o mouse, resultado do dado "saltando" (verde no 20
+  natural, vermelho no 1) e brilho pulsante no cartão do turno quando é a sua vez.
+- **App** (Reanimated, já incluído no APK; sem build nativo): telas entram deslizando, filete do
+  cartão de destaque pulsa como brasa e o resultado do dado salta.
+
+Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram; um quadro do dragão foi
+renderizado para conferir a composição. A animação em si não foi vista rodando no navegador nem
+no celular.

@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import Animated, { interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { colors, fonts, palette, radii, spacing } from '@/lib/theme';
 import { AppText } from './primitives';
 
@@ -38,7 +39,7 @@ export function IconBubble({ children, size = 40, tone = 'neutral' }: { children
 export function HeroCard({ children, onPress, accessibilityLabel, style }: { children: ReactNode; onPress?: () => void; accessibilityLabel?: string; style?: StyleProp<ViewStyle> }) {
   const body = (
     <>
-      <View style={styles.heroAccent} />
+      <EmberAccent />
       <View style={{ flex: 1, gap: spacing[3] }}>{children}</View>
     </>
   );
@@ -53,6 +54,20 @@ export function HeroCard({ children, onPress, accessibilityLabel, style }: { chi
       {body}
     </Pressable>
   );
+}
+
+function EmberAccent() {
+  const reduced = useReducedMotion();
+  const glow = useSharedValue(0);
+  useEffect(() => {
+    if (!reduced) glow.value = withRepeat(withTiming(1, { duration: 2200 }), -1, true);
+  }, [glow, reduced]);
+  const style = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(glow.value, [0, 1], [palette.parchment[400], palette.amber[300]]),
+    opacity: 0.65 + 0.35 * glow.value,
+    shadowOpacity: 0.6 * glow.value,
+  }));
+  return <Animated.View style={[styles.heroAccent, { shadowColor: palette.amber[400], shadowRadius: 8, shadowOffset: { width: 0, height: 0 } }, style]} />;
 }
 
 /** Ação rápida em pílula (ícone + rótulo curto), para fileiras de atalhos. */

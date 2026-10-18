@@ -220,7 +220,7 @@ export function TurnPlay() {
   const reactions = options.filter((option) => option.kind === 'reaction');
 
   return (
-    <Card ornate className={cx(mine && 'border-parchment-300/70')}>
+    <Card ornate className={cx(mine && 'animate-turn-glow border-parchment-300/70')}>
       <CardHeader
         icon={<Hourglass className="h-5 w-5" aria-hidden="true" />}
         title={`${turnModeLabels[turn.mode]}${turn.status === 'active' ? ` · rodada ${turn.round}` : ''}`}

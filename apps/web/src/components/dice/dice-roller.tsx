@@ -260,7 +260,9 @@ export function DicePanel({ isGm, characterName }: { isGm: boolean; characterNam
             natural === 20 ? 'border-verdigris-400/60 bg-success-bg' : natural === 1 ? 'border-ember-400/60 bg-danger-bg' : 'border-line-strong bg-raised',
           )}
         >
-          <span className="tabular font-display text-4xl text-fg-accent">{last.total}</span>
+          <span key={`${last.total}-${last.expression}-${describeDiceRoll(last)}`} className={cx('tabular animate-pop font-display text-4xl', natural === 20 ? 'text-verdigris-300' : natural === 1 ? 'text-ember-300' : 'text-fg-accent')}>
+            {last.total}
+          </span>
           <span className="min-w-0 text-sm">
             <span className="block font-medium text-fg">{last.label || last.expression}</span>
             <span className="block text-fg-secondary">{describeDiceRoll(last)}</span>

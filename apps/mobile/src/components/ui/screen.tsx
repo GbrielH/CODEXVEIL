@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { colors, palette, spacing } from '@/lib/theme';
 import { AppText } from './primitives';
@@ -47,8 +48,10 @@ export function Screen({ children, title, eyebrow, subtitle, headerAction, refre
             keyboardShouldPersistTaps="handled"
             refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.fgAccent} colors={[palette.wine[500]]} progressBackgroundColor={colors.raised} /> : undefined}
           >
-            {header}
-            {children}
+            <Animated.View entering={FadeInDown.duration(320)} style={{ gap: spacing[4] }}>
+              {header}
+              {children}
+            </Animated.View>
           </ScrollView>
         ) : (
           <View style={[styles.content, { flex: 1 }]}>

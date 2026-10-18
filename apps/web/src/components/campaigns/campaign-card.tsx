@@ -14,8 +14,8 @@ export function CampaignCard({ campaign }: { campaign: CampaignSummary }) {
     <Link
       href={`/campanhas/${campaign.id}`}
       className={cx(
-        'group ornate flex h-full flex-col rounded-lg border border-line bg-card p-5 shadow-card transition-colors',
-        'hover:border-parchment-400/40 hover:bg-raised',
+        'group ornate flex h-full flex-col rounded-lg border border-line bg-card p-5 shadow-card transition-[transform,background-color,border-color,box-shadow] duration-200',
+        'hover:-translate-y-0.5 hover:border-parchment-400/40 hover:bg-raised hover:shadow-glow',
         archived && 'opacity-75',
       )}
     >

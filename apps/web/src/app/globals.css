@@ -171,3 +171,154 @@
   animation-duration: 0.01ms !important;
   transition-duration: 0.01ms !important;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Dragão do carregamento e brasas                                            */
+/* -------------------------------------------------------------------------- */
+@keyframes codex-flame {
+  0% {
+    transform: translate(0px, 0px) scale(0.2);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(var(--fx, 420px), var(--fy, 0px)) scale(2.1);
+    opacity: 0;
+  }
+}
+
+@keyframes codex-dragon-breathe {
+  0%,
+  100% {
+    transform: translate(0px, 0px) rotate(0deg);
+  }
+  45% {
+    transform: translate(-10px, 4px) rotate(-2deg);
+  }
+}
+
+@keyframes codex-glow {
+  0%,
+  100% {
+    opacity: 0.04;
+  }
+  50% {
+    opacity: 0.16;
+  }
+}
+
+@keyframes codex-label-glow {
+  0%,
+  100% {
+    color: var(--color-fg-secondary);
+  }
+  50% {
+    color: var(--color-fg-accent);
+  }
+}
+
+@keyframes codex-ember-rise {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0;
+  }
+  15% {
+    opacity: var(--ember-opacity, 0.5);
+  }
+  100% {
+    transform: translate(var(--ember-drift, 20px), -110vh) scale(0.4);
+    opacity: 0;
+  }
+}
+
+@keyframes codex-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes codex-turn-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(201 130 142 / 0);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgb(201 130 142 / 0.4),
+      0 0 28px -6px rgb(217 165 74 / 0.45);
+  }
+}
+
+.dragon-flame {
+  transform-box: fill-box;
+  transform-origin: 0% 50%;
+  opacity: 0;
+  animation: codex-flame 1.45s cubic-bezier(0.25, 0.1, 0.35, 1) infinite;
+  animation-delay: var(--delay, 0s);
+  mix-blend-mode: screen;
+}
+
+.dragon-head {
+  transform-box: fill-box;
+  transform-origin: 30% 85%;
+  animation: codex-dragon-breathe 1.45s ease-in-out infinite;
+}
+
+.dragon-glow {
+  animation: codex-glow 1.45s ease-in-out infinite;
+}
+
+.dragon-label {
+  animation: codex-label-glow 2.9s ease-in-out infinite;
+}
+
+.ember {
+  position: absolute;
+  bottom: -12px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, var(--color-amber-300), var(--color-ember-400) 55%, transparent 70%);
+  animation: codex-ember-rise var(--ember-duration, 14s) linear infinite;
+  animation-delay: var(--ember-delay, 0s);
+  opacity: 0;
+}
+
+@utility animate-pop {
+  animation: codex-pop 360ms var(--ease-codex) both;
+}
+
+@utility animate-turn-glow {
+  animation: codex-turn-glow 2.4s ease-in-out infinite;
+}
+
+/* Movimento reduzido: o dragão fica parado no meio do sopro e as brasas somem. */
+@media (prefers-reduced-motion: reduce) {
+  .dragon-flame {
+    animation: none !important;
+    opacity: 0.8;
+    transform: translate(calc(var(--fx, 420px) * 0.45), calc(var(--fy, 0px) * 0.35)) scale(1.2);
+  }
+  .ember {
+    display: none;
+  }
+}
+[data-motion='reduce'] .dragon-flame {
+  animation: none !important;
+  opacity: 0.8;
+  transform: translate(calc(var(--fx, 420px) * 0.45), calc(var(--fy, 0px) * 0.35)) scale(1.2);
+}
+[data-motion='reduce'] .ember {
+  display: none;
+}

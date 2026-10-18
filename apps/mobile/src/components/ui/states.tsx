@@ -1,15 +1,15 @@
 import { CircleAlert, Info, Lock, TriangleAlert, CircleCheck } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { DragonLoader } from '@/components/brand/dragon-loader';
 import { colors, radii, spacing } from '@/lib/theme';
 import { Button } from './button';
 import { AppText } from './primitives';
 
 export function LoadingState({ label = 'Carregando…' }: { label?: string }) {
   return (
-    <View style={styles.center} accessibilityRole="progressbar" accessibilityLabel={label}>
-      <ActivityIndicator color={colors.fgAccent} />
-      <AppText variant="muted">{label}</AppText>
+    <View style={[styles.center, { backgroundColor: colors.canvas }]}>
+      <DragonLoader label={label} />
     </View>
   );
 }

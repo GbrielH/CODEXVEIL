@@ -19,8 +19,8 @@ export function CharacterCard({ href, name, subtitle, portraitUrl, meta, updated
     <Link
       href={href}
       className={cx(
-        'group flex h-full items-center gap-4 rounded-lg border border-line bg-card p-4 shadow-card transition-colors',
-        'hover:border-parchment-400/40 hover:bg-raised',
+        'group flex h-full items-center gap-4 rounded-lg border border-line bg-card p-4 shadow-card transition-[transform,background-color,border-color,box-shadow] duration-200',
+        'hover:-translate-y-0.5 hover:border-parchment-400/40 hover:bg-raised hover:shadow-glow',
         className,
       )}
     >
