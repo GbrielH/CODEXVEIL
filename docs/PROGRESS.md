@@ -17,8 +17,7 @@ personagens nas próprias campanhas, "olho" nos campos de senha, remoção da fo
 redução das imagens antes do envio e correção do tempo real no navegador e no app. A migração
 `20261016130000_character_creation_rules.sql` está **aplicada em produção** e o código foi
 enviado ao `main`. O app tem um APK novo com essas mudanças (o fingerprint nativo mudou; link no
-README). **O site publicado ainda não as tem:** o deploy automático depende de ligar o GitHub à
-Vercel e ao Expo (veja [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md), etapas 0 e 1).
+README). O site recebeu essas mudanças com o deploy automático, ligado na rodada seguinte.
 
 **Em 2026-10-17, segunda rodada:** condições com as regras do SRD 5.2.1
 (efeitos aplicados na ficha, duração em rodadas que diminui no fim do turno, contagem
@@ -251,7 +250,8 @@ a inscrição. A correção está em `realtime.ts` (veja
 [`ARCHITECTURE.md`](ARCHITECTURE.md#tempo-real)). Em 2026-10-17, já com a migração da criação
 guiada e a correção do tempo real no navegador, passaram 11 de 11: o caso novo grava um
 personagem com inventário e habilidades e confirma que o mestre não cria personagem na própria
-campanha.
+campanha. Em 2026-10-18, com todas as 14 migrações aplicadas, passaram de novo 11 de 11 (contas
+temporárias criadas e apagadas pelo próprio teste).
 
 ### Não executado (limitações registradas)
 
@@ -264,17 +264,18 @@ campanha.
 ## Erros conhecidos
 
 Nenhum erro de tipo, lint, teste ou build. Os problemas conhecidos (limitações dos e-mails
-padrão do Supabase e deploy automático ainda não ligado ao GitHub) estão em
+padrão do Supabase, entre outros) estão em
 [`PENDENCIAS.md`](PENDENCIAS.md#5-problemas-conhecidos).
 
 ## Configurações externas pendentes
 
 1. SMTP próprio (Brevo, com o e-mail exclusivo do sistema) e, depois, o envio dos templates
    em português (`supabase config push --workdir deploy …`).
-2. Ligar o repositório `GbrielH/CODEXVEIL` à Vercel e ao Expo, para o deploy automático a cada
-   push. Sem isso, o site publicado continua na versão anterior (a CLI da Vercel desta máquina
-   está sem login).
+2. Firebase para as notificações de sessão (veja o próximo passo).
 3. Domínio próprio (opcional).
+
+O deploy automático está ligado: cada push em `main` publica o site e uma atualização OTA do
+app (conferido em 2026-10-18).
 
 O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
@@ -284,11 +285,13 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
    ([`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md), etapa 0c). **Claude:** enviar o
    `google-services.json` ao EAS (variável `GOOGLE_SERVICES_JSON`, tipo arquivo) e gerar o APK
    com notificações.
-2. **Responsável:** instalar o APK novo gerado pelo push da terceira rodada (módulos nativos de
-   notificação e imagens mudaram o fingerprint; o link aparece em expo.dev → Builds).
+2. **Responsável:** instalar o APK `e02e7079` (link no README), se ainda não instalou: é o
+   único que recebe as atualizações OTA atuais.
 3. **Claude:** percurso automatizado no site e no app com as telas novas (itens, SRD, dados,
-   turnos) contra o banco real e revisão de telas pequenas (360 px).
+   turnos e as de 2026-10-18: capa, multiclasse, talentos, livros, dados por sessão) contra o
+   banco real, com contas temporárias, e revisão de telas pequenas (360 px).
 4. Usar o site e o app com duas contas.
+5. SMTP próprio (Brevo) e templates em português.
 
 A lista completa e priorizada está em
 [`PENDENCIAS.md`](PENDENCIAS.md#6-próximos-passos-sugeridos-em-ordem).

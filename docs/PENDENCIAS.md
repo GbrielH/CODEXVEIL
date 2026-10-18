@@ -35,14 +35,15 @@ depois desse uso.
 
 ## 1. O que depende de você (configuração externa)
 
-| Item                                          | Situação (2026-10-16)                                                                                               | Onde está documentado                              |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Projeto Supabase exclusivo                    | **Feito:** `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`), com as migrações aplicadas                                         | [DEPLOY](DEPLOY.md#1-supabase-projeto-e-migrações) |
-| Site URL e URLs de redirecionamento           | **Feito:** `deploy/supabase/config.toml`                                                                            | [DEPLOY](DEPLOY.md#2-autenticação)                 |
-| SMTP próprio (Brevo) e templates em português | **Pendente:** conta Brevo e SMTP no painel do Supabase; depois, `config push` dos templates                         | [DEPLOY](DEPLOY.md#2-autenticação)                 |
-| Hospedagem da web                             | **Feito:** <https://codexveil.vercel.app>; falta o deploy automático pelo GitHub (app da Vercel na conta `GbrielH`) | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
-| Conta Expo e projeto EAS                      | **Feito:** `@gabriel.xxtth/codexveil`; falta ligar o GitHub para o workflow rodar a cada push                       | [DEPLOY](DEPLOY.md#5-app-android-apk-e-aab)        |
-| Domínio próprio                               | Opcional                                                                                                            | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
+| Item                                          | Situação (2026-10-16)                                                                                        | Onde está documentado                              |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| Projeto Supabase exclusivo                    | **Feito:** `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`), com as migrações aplicadas                                  | [DEPLOY](DEPLOY.md#1-supabase-projeto-e-migrações) |
+| Site URL e URLs de redirecionamento           | **Feito:** `deploy/supabase/config.toml`                                                                     | [DEPLOY](DEPLOY.md#2-autenticação)                 |
+| SMTP próprio (Brevo) e templates em português | **Pendente:** conta Brevo e SMTP no painel do Supabase; depois, `config push` dos templates                  | [DEPLOY](DEPLOY.md#2-autenticação)                 |
+| Hospedagem da web                             | **Feito:** <https://codexveil.vercel.app>, publicado sozinho a cada push em `main` (conferido em 2026-10-18) | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
+| Conta Expo e projeto EAS                      | **Feito:** `@gabriel.xxtth/codexveil`; o workflow roda a cada push (OTA; APK novo só com mudança nativa)     | [DEPLOY](DEPLOY.md#5-app-android-apk-e-aab)        |
+| Firebase (notificações de sessão)             | **Pendente:** projeto Firebase e chave FCM V1 no Expo (passo 0c de PROXIMOS_PASSOS)                          | [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md)              |
+| Domínio próprio                               | Opcional                                                                                                     | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
 
 ## 2. Critérios de aceitação do MVP (seção 22)
 
@@ -241,11 +242,6 @@ implementados, conforme o prompt. Nenhuma tela promete essas funções.
   senha pedida pelo app não funciona** e só membros da organização do Supabase recebem e-mails.
   Isso se resolve com o SMTP da Brevo e o envio dos templates (veja
   [DEPLOY](DEPLOY.md#2-autenticação)).
-- **Deploy automático ainda não ligado:** o workflow do EAS (`atualizar-app.yml`) e o
-  `expo-updates` estão prontos, mas falta ligar o GitHub `GbrielH` à Vercel e ao Expo (veja
-  [DEPLOY](DEPLOY.md#4-site-nextjs) e [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md)). Até lá, o site é
-  publicado com `npx vercel@latest deploy --prod` (exige login na CLI da Vercel, hoje ausente
-  nesta máquina) e o app com `eas workflow:run`.
 - **App no navegador sem estados de acessibilidade:** o react-native-web 0.21 não traduz
   `accessibilityState` (selecionado, marcado) em atributos `aria-*`. No Android isso funciona;
   só afeta a versão web do app, usada em desenvolvimento. Para corrigir, trocar por `aria-checked`
@@ -267,10 +263,9 @@ implementados, conforme o prompt. Nenhuma tela promete essas funções.
 
 ## 6. Próximos passos sugeridos (em ordem)
 
-1. **Confirmar a publicação automática** do push de 2026-10-17 (site e app).
-2. **Publicar a criação guiada:** a migração já está aplicada (2026-10-17); falta ligar o
-   GitHub à Vercel e ao Expo para o deploy automático e instalar o APK novo (veja
-   [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md)).
+1. ~~**Confirmar a publicação automática**~~: conferida em 2026-10-18 (Vercel e OTA a cada push).
+2. ~~**Publicar a criação guiada**~~: publicada; falta só instalar o APK atual (`e02e7079`, link
+   no README) no celular.
 3. **Usar o site publicado e o APK** com duas contas (mestre e jogador), seguindo as etapas de
    [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md), inclusive a criação guiada, e corrigir o que
    aparecer.

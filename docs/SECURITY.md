@@ -93,6 +93,9 @@ Usuários anônimos (`anon`) só leem `rpg_systems`. Nenhuma outra tabela tem GR
 - **Leitura da mídia privada:** mestres leem toda a mídia da campanha. Os demais participantes
   leem a capa, imagens de NPCs revelados e imagens de blocos públicos de sessões publicadas.
   Retratos seguem `can_view_character`.
+- **Capa na criação da campanha (site):** a imagem vai junto com o formulário (Server Action,
+  limite de 3 MB em `next.config.ts`), é conferida (tipo e 2 MB) e enviada com a sessão do
+  próprio usuário, então as policies do Storage valem igual ao envio pelo navegador.
 - **Escrita:** quem pode editar o registro de destino. As colunas `cover_path`, `image_path` e
   `portrait_path` têm `CHECK` exigindo que o caminho esteja na pasta do próprio registro.
 

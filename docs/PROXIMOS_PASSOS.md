@@ -7,13 +7,13 @@
 
 ## Onde estamos
 
-| Área        | Situação                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Site        | **No ar** em <https://codexveil.vercel.app> (Vercel, projeto `codexveil`). Publicado pela CLI até 2026-10-16, **ainda sem as mudanças de 2026-10-17**. O próximo deploy depende do passo 1 (a CLI desta máquina está sem login).                                                                                                                                                                                                                                                                                                                                                  |
-| Backend     | **No ar:** Supabase `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`, us-east-2), com as 8 migrações (a da criação guiada e a da duração das condições aplicadas em 2026-10-17), Site URL e Redirect URLs (`deploy/supabase/config.toml`).                                                                                                                                                                                                                                                                                                                                                     |
-| App Android | **APK novo com a criação guiada e atualização automática (OTA):** [download](https://expo.dev/artifacts/eas/DaQ2lqX7sC0dDD5e5VEViyyqP5EzX9RADKaF8Cv21rk.apk) ([build `420f6c37`](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/420f6c37-279c-4e92-b865-de9bdcb0b7f4), gerado pelo workflow em 2026-10-17). As mudanças de 2026-10-17 alteraram o fingerprint nativo, então os APKs anteriores (inclusive o `de6ceb5c`) **não** recebem mais atualizações: instale este. Todos os builds: <https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds>. |
-| Validação   | API validada ao vivo (10/10 em 2026-10-16; 11/11 em 2026-10-17). Em 2026-10-17, `pnpm check` passa 20/20 (388 testes) e `pnpm build` passa 2/2, e um percurso automatizado logado no site local criou personagens pelo assistente contra o banco real e confirmou o tempo real na ficha. **Ninguém usou ainda as telas com duas contas.**                                                                                                                                                                                                                                         |
-| E-mail      | **Adiado:** o SMTP próprio (Brevo) será configurado com um e-mail exclusivo do sistema. Até lá, valem os e-mails padrão do Supabase, em inglês, com as limitações abaixo.                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Área        | Situação                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Site        | **No ar** em <https://codexveil.vercel.app> (Vercel, projeto `codexveil`), **publicado sozinho a cada push em `main`** pela integração com o GitHub. Conferido em 2026-10-18: os quatro commits do dia aparecem como "Deployment has completed" no GitHub.                                                                                                                                                                                                                                                                              |
+| Backend     | **No ar:** Supabase `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`, us-east-2), com as **14 migrações aplicadas** (`supabase db push --dry-run` em 2026-10-18: nada pendente), Site URL e Redirect URLs (`deploy/supabase/config.toml`).                                                                                                                                                                                                                                                                                                           |
+| App Android | **APK atual:** [download](https://expo.dev/artifacts/eas/m0Px-_WnwK0q8a6BOSANOEa1oIJUvajr8DDOeJ279Sk.apk) ([build `e02e7079`](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/e02e7079-2f5c-4da6-b225-2e78522d084a), 2026-10-17, com notificações e imagens). Cada push publica uma **atualização OTA** pelo workflow do EAS (conferido em 2026-10-18); APKs anteriores (`420f6c37`, `de6ceb5c`) não recebem mais atualizações. Todos os builds: <https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds>. |
+| Validação   | Teste ao vivo da API contra o banco real: **11/11 em 2026-10-18** (também 10/10 em 2026-10-16 e 11/11 em 2026-10-17). `pnpm check` 20/20 e `pnpm build` 2/2 em 2026-10-18. **Ninguém usou ainda as telas com duas contas**, e as telas de 2026-10-18 (capa, multiclasse, talentos, livros, dados por sessão) não foram abertas no navegador nem no celular.                                                                                                                                                                             |
+| E-mail      | **Adiado:** o SMTP próprio (Brevo) será configurado com um e-mail exclusivo do sistema. Até lá, valem os e-mails padrão do Supabase, em inglês, com as limitações abaixo.                                                                                                                                                                                                                                                                                                                                                               |
 
 ### Limitações enquanto não houver SMTP próprio
 
@@ -49,8 +49,7 @@ regras de criação do mestre em cada campanha, mestres sem personagens nas pró
       (veja [`PROGRESS.md`](PROGRESS.md#testes-e-verificações-executados)). O percurso achou
       e corrigiu uma falha do tempo real no navegador.
 - [x] **Você:** autorizou o commit e o push em `main` ("Pode subir").
-- [ ] **Site:** publicar o `main` na Vercel. Depende do passo 1 (ou de um login na CLI da
-      Vercel nesta máquina).
+- [x] **Site:** publicado pela integração da Vercel com o GitHub (conferido em 2026-10-18).
 - [x] **Claude:** APK novo gerado pelo workflow do EAS ([execução](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/workflows/01a148df-de0f-7af9-a35a-8c24798df51d), build
       `420f6c37`). O app também foi percorrido no navegador (Expo web), logado, contra o banco
       real.
@@ -76,7 +75,10 @@ app no visual do Codexveil, crônica em pergaminho e a área logada na largura t
 **Pronto quando:** uma condição aplicada com duração mostrar os efeitos na ficha e terminar
 sozinha ao passar os turnos no combate do mestre.
 
-### 1. Atualização automática do site e do app a cada commit — você e Claude
+### 1. Atualização automática do site e do app a cada commit — concluída
+
+Conferido em 2026-10-18 (Claude): cada push em `main` gerou o deploy da Vercel e a atualização
+OTA do workflow do EAS (status dos commits no GitHub). O registro abaixo fica como histórico.
 
 Objetivo: um push em `main` publica o site e atualiza o app sozinho.
 
@@ -488,3 +490,13 @@ Verificações: `pnpm check` 20/20 (rpg-systems 152 testes; banco 180, com 11 ao
 
 Verificações: `pnpm check` 20/20 e `pnpm build` 2/2. Sem migração e sem mudança nativa (o app
 recebe por atualização OTA). Não verificado no celular.
+
+### 2026-10-18 — conferência da publicação e da documentação
+
+- Banco de produção em dia: `supabase db push --dry-run` não lista nada pendente (14 migrações).
+- Deploy automático funcionando: os quatro commits do dia publicaram o site (Vercel) e o app
+  (OTA do workflow do EAS; nenhum APK novo, porque o código nativo não mudou).
+- Teste ao vivo da API contra o banco real: 11/11.
+- Documentação de estado corrigida: APK atual `e02e7079` no README e aqui, deploy automático
+  dado como ligado (DEPLOY, PENDENCIAS, PROGRESS), decisões de livros, arte oficial e classes na
+  ARCHITECTURE, `sourcebooks` e capa na DATABASE, envio da capa pela Server Action na SECURITY.

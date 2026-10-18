@@ -109,9 +109,9 @@ Para ligar (uma vez): abra <https://vercel.com/henrique0limah-6628/codexveil/set
 clique em **Connect Git Repository** → **GitHub**. Se a conta `GbrielH` não aparecer na lista,
 use **Add GitHub Account** (ou "Adjust GitHub App Permissions") e instale o app da Vercel na
 conta `GbrielH` com acesso ao repositório `CODEXVEIL`. Depois escolha `GbrielH/CODEXVEIL`. O
-Root Directory continua `apps/web`, e a branch de produção é `main`. Hoje o app da Vercel desta
-conta só está instalado na organização `FinFlowA`. Em 2026-10-17 o repositório ainda não tinha
-nenhum deploy da Vercel, e a CLI desta máquina estava sem login (`npx vercel@latest whoami`).
+Root Directory continua `apps/web`, e a branch de produção é `main`. **Ligado** pelo responsável
+em 2026-10-17; em 2026-10-18 cada push em `main` aparece no GitHub com o status "Vercel:
+Deployment has completed".
 
 **Domínio:** ao trocar `codexveil.vercel.app` por um domínio próprio, atualize
 `NEXT_PUBLIC_SITE_URL` e `EXPO_PUBLIC_SITE_URL`, o `site_url` e as `additional_redirect_urls`
