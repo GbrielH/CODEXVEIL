@@ -34,10 +34,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     padding: spacing[2],
-    borderRadius: radii.lg,
+    borderRadius: radii.xl,
     borderWidth: 1,
     borderColor: colors.line,
     backgroundColor: colors.card,
   },
-  icon: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: radii.full, backgroundColor: colors.raised },
+  icon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: radii.full, backgroundColor: 'rgba(87, 31, 43, 0.45)', borderWidth: 1, borderColor: 'rgba(187, 167, 125, 0.3)' },
 });

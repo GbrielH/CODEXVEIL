@@ -9,12 +9,14 @@ import {
 import { campaignRoleLabels } from '@codexveil/domain';
 import { conditionLabel, findSystem, summarizeSheet } from '@codexveil/rpg-systems';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { BookOpen, Dices, ExternalLink, NotebookPen, UserPlus, UserRound } from 'lucide-react-native';
-import { Linking, View } from 'react-native';
+import { BookOpen, CalendarClock, Dices, ExternalLink, NotebookPen, Swords, UserPlus, Users } from 'lucide-react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 import { TurnStatus } from '@/components/campaign/turn-status';
+import { CharacterAvatar } from '@/components/character-avatar';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/dialog';
 import { HealthBar } from '@/components/ui/health-bar';
+import { HeroCard, QuickAction, QuickActions, SectionHeader } from '@/components/ui/layout';
 import { ListRow } from '@/components/ui/list-row';
 import { NavGrid, NavTile } from '@/components/ui/nav-tile';
 import { AppText, Badge, Card } from '@/components/ui/primitives';
@@ -25,7 +27,7 @@ import { failureMessage } from '@/lib/errors';
 import { useAsyncData } from '@/lib/hooks';
 import { useUserId } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase';
-import { colors } from '@/lib/theme';
+import { colors, fonts, radii, spacing } from '@/lib/theme';
 
 export default function CampaignScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -60,7 +62,9 @@ export default function CampaignScreen() {
   const isGm = campaign.role === 'gm';
   const isActive = campaign.status === 'active';
   const ownCharacter = party.find((character) => character.ownerId === userId) ?? null;
-  const hasOwnCharacter = ownCharacter !== null;
+  const ownHp = ownCharacter?.resources.find((resource) => resource.display === 'health') ?? null;
+  // O próprio personagem fica no destaque; a lista mostra os outros (se o mestre liberar as fichas).
+  const others = party.filter((character) => character.id !== ownCharacter?.id);
   const system = findSystem(campaign.systemId);
   const creationRules = system ? system.describeCampaignRules(system.parseCampaignRules(campaign.characterRules)) : [];
 
@@ -107,17 +111,46 @@ export default function CampaignScreen() {
         </Card>
       ) : null}
 
+      {ownCharacter ? (
+        <HeroCard onPress={() => router.push({ pathname: '/personagem/[id]', params: { id: ownCharacter.id } })} accessibilityLabel={`Abrir a ficha de ${ownCharacter.name}`}>
+          <AppText variant="eyebrow" style={{ color: colors.fgBrand }}>
+            Meu personagem
+          </AppText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <CharacterAvatar name={ownCharacter.name} systemId={ownCharacter.systemId} sheet={ownCharacter.sheet} size={56} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <AppText variant="title" numberOfLines={1}>
+                {ownCharacter.name}
+              </AppText>
+              <AppText variant="muted" numberOfLines={1}>
+                {summarizeSheet(ownCharacter.systemId, ownCharacter.sheet).subtitle}
+              </AppText>
+            </View>
+          </View>
+          {ownHp ? <HealthBar current={ownHp.current} max={ownHp.max} temp={ownHp.temp} /> : null}
+          {ownCharacter.conditions.length > 0 ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+              {ownCharacter.conditions.map((condition) => (
+                <Badge key={condition.id} label={conditionLabel(ownCharacter.systemId, condition.key, condition.level)} tone="warning" />
+              ))}
+            </View>
+          ) : null}
+          <QuickActions>
+            <QuickAction primary icon={<Swords size={16} color={colors.primaryFg} />} label="Ficha e turno" onPress={() => router.push({ pathname: '/personagem/[id]', params: { id: ownCharacter.id } })} />
+            <QuickAction icon={<Dices size={16} color={colors.fg} />} label="Dados" onPress={() => router.push({ pathname: '/campanha/[id]/dados', params: { id: campaign.id } })} />
+          </QuickActions>
+        </HeroCard>
+      ) : isActive && !isGm ? (
+        <HeroCard>
+          <AppText variant="heading">Você ainda não tem personagem aqui</AppText>
+          <AppText variant="muted">Crie um seguindo as regras da mesa ou vincule um existente pela ficha.</AppText>
+          <Button label="Criar personagem" icon={<UserPlus size={16} color={colors.primaryFg} />} onPress={() => router.push({ pathname: '/personagem/novo', params: { campanha: campaign.id } })} />
+        </HeroCard>
+      ) : null}
+
       <TurnStatus campaignId={campaign.id} ownCharacterId={ownCharacter?.id ?? null} systemId={campaign.systemId} />
 
       <NavGrid>
-        {ownCharacter ? (
-          <NavTile
-            icon={<UserRound size={20} color={colors.fgAccent} />}
-            label="Meu personagem"
-            hint="Ficha, ações do turno e rolagens"
-            onPress={() => router.push({ pathname: '/personagem/[id]', params: { id: ownCharacter.id } })}
-          />
-        ) : null}
         <NavTile icon={<Dices size={20} color={colors.fgAccent} />} label="Dados" hint="Rolar e ver o mural" onPress={() => router.push({ pathname: '/campanha/[id]/dados', params: { id: campaign.id } })} />
         <NavTile
           icon={<BookOpen size={20} color={colors.fgAccent} />}
@@ -132,48 +165,45 @@ export default function CampaignScreen() {
         />
       </NavGrid>
 
-      {isGm ? <AppText variant="muted">Ferramentas do mestre (mesa, sessões, convites e biblioteca) ficam no site; o app é para jogar.</AppText> : null}
+      {isGm ? <Notice tone="info" message="Ferramentas do mestre (mesa, sessões, convites e biblioteca) ficam no site; o app é para jogar." /> : null}
 
-      <Card ornate>
-        <AppText variant="heading">Grupo</AppText>
-        {party.length === 0 ? (
-          <AppText variant="muted">
-            {isGm ? 'Nenhum personagem ainda. Os jogadores criam os personagens; o mestre usa NPCs e monstros.' : 'Nenhum personagem vinculado ainda.'}
-          </AppText>
-        ) : null}
-        {party.map((character) => {
-          const hp = character.resources.find((resource) => resource.display === 'health');
-          return (
-            <View key={character.id} style={{ gap: 6 }}>
-              <ListRow
-                title={character.name}
-                subtitle={`${summarizeSheet(character.systemId, character.sheet).subtitle} · ${character.ownerName}`}
-                trailing={character.ownerId === userId ? <Badge label="Seu" tone="brand" /> : undefined}
-                onPress={() => router.push({ pathname: '/personagem/[id]', params: { id: character.id } })}
-              />
-              {hp ? <HealthBar current={hp.current} max={hp.max} temp={hp.temp} /> : null}
-              {character.conditions.length > 0 ? (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
-                  {character.conditions.map((condition) => (
-                    <Badge key={condition.id} label={conditionLabel(character.systemId, condition.key, condition.level)} tone="warning" />
-                  ))}
+      {isGm || others.length > 0 || campaign.settings.partySheetsVisible ? (
+        <>
+          <SectionHeader icon={<Users size={14} color={colors.fgAccent} />} title={isGm ? `Grupo (${party.length})` : 'Companheiros'} />
+          {others.length === 0 ? (
+            <AppText variant="muted">{isGm ? 'Nenhum personagem ainda. Os jogadores criam os personagens.' : 'Ainda não há personagens de outros jogadores.'}</AppText>
+          ) : null}
+          {others.map((character) => {
+            const hp = character.resources.find((resource) => resource.display === 'health');
+            return (
+              <View key={character.id} style={styles.member}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <CharacterAvatar name={character.name} systemId={character.systemId} sheet={character.sheet} />
+                  <View style={{ flex: 1 }}>
+                    <AppText style={{ fontFamily: fonts.sansSemiBold, fontSize: 16, color: colors.fg }} numberOfLines={1}>
+                      {character.name}
+                    </AppText>
+                    <AppText variant="small" numberOfLines={1}>
+                      {summarizeSheet(character.systemId, character.sheet).subtitle} · {character.ownerName}
+                    </AppText>
+                  </View>
                 </View>
-              ) : null}
-            </View>
-          );
-        })}
-        {isActive && !isGm && !hasOwnCharacter ? (
-          <Button
-            label="Criar personagem nesta campanha"
-            variant="secondary"
-            icon={<UserPlus size={16} color={colors.fg} />}
-            onPress={() => router.push({ pathname: '/personagem/novo', params: { campanha: campaign.id } })}
-          />
-        ) : null}
-      </Card>
+                {hp ? <HealthBar current={hp.current} max={hp.max} temp={hp.temp} /> : null}
+                {character.conditions.length > 0 ? (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+                    {character.conditions.map((condition) => (
+                      <Badge key={condition.id} label={conditionLabel(character.systemId, condition.key, condition.level)} tone="warning" />
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            );
+          })}
+        </>
+      ) : null}
 
+      <SectionHeader icon={<CalendarClock size={14} color={colors.fgAccent} />} title="Sessões" />
       <Card>
-        <AppText variant="heading">Sessões</AppText>
         {sessions.length === 0 ? <AppText variant="muted">{isGm ? 'Nenhuma sessão criada.' : 'Nenhuma sessão publicada ainda.'}</AppText> : null}
         {sessions.map((session) => (
           <ListRow
@@ -187,7 +217,7 @@ export default function CampaignScreen() {
 
       {(findSystem(campaign.systemId)?.officialLinks.length ?? 0) > 0 ? (
         <Card>
-          <AppText variant="heading">Links oficiais</AppText>
+          <SectionHeader icon={<ExternalLink size={14} color={colors.fgAccent} />} title="Links oficiais" />
           <AppText variant="muted">Dúvidas de regras? Os sites oficiais do sistema (conteúdo da editora, em inglês).</AppText>
           {findSystem(campaign.systemId)?.officialLinks.map((link) => (
             <ListRow
@@ -203,7 +233,7 @@ export default function CampaignScreen() {
       ) : null}
 
       <Card>
-        <AppText variant="heading">Participantes</AppText>
+        <SectionHeader icon={<Users size={14} color={colors.fgAccent} />} title="Participantes" />
         {members.map((member) => (
           <View key={member.userId} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 }}>
             <AppText>
@@ -218,3 +248,7 @@ export default function CampaignScreen() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  member: { gap: spacing[2], padding: 14, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.card },
+});

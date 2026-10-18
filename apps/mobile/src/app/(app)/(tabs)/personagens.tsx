@@ -2,6 +2,7 @@ import { listMyCharacters } from '@codexveil/database';
 import { summarizeSheet } from '@codexveil/rpg-systems';
 import { useRouter } from 'expo-router';
 import { Plus, Swords } from 'lucide-react-native';
+import { CharacterAvatar } from '@/components/character-avatar';
 import { Button } from '@/components/ui/button';
 import { ListRow } from '@/components/ui/list-row';
 import { Screen } from '@/components/ui/screen';
@@ -28,6 +29,7 @@ export default function CharactersScreen() {
       {data?.map((character) => (
         <ListRow
           key={character.id}
+          leading={<CharacterAvatar name={character.name} systemId={character.systemId} sheet={character.sheet} />}
           title={character.name}
           subtitle={summarizeSheet(character.systemId, character.sheet).subtitle}
           meta={character.campaignName ?? 'Sem campanha'}

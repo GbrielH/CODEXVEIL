@@ -7,10 +7,13 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: colors.raised },
+        headerStyle: { backgroundColor: colors.canvas },
+        headerShadowVisible: false,
         headerTintColor: colors.fgAccent,
         headerTitleStyle: { fontFamily: fonts.display },
-        tabBarStyle: { backgroundColor: colors.raised, borderTopColor: colors.line, minHeight: 60 },
+        tabBarStyle: { backgroundColor: colors.raised, borderTopColor: colors.line, minHeight: 64, paddingTop: 6 },
+        tabBarActiveBackgroundColor: 'rgba(87, 31, 43, 0.35)',
+        tabBarItemStyle: { borderRadius: 14, marginHorizontal: 6, marginVertical: 4 },
         tabBarActiveTintColor: colors.fgAccent,
         tabBarInactiveTintColor: colors.fgMuted,
         tabBarLabelStyle: { fontFamily: fonts.sansMedium, fontSize: 11 },

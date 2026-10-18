@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { KeyRound, Plus, ScrollText } from 'lucide-react-native';
 import { View } from 'react-native';
 import { Button } from '@/components/ui/button';
+import { IconBubble } from '@/components/ui/layout';
 import { ListRow } from '@/components/ui/list-row';
 import { AppText, Badge } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
@@ -34,6 +35,11 @@ export default function CampaignsScreen() {
       {data?.map((campaign) => (
         <ListRow
           key={campaign.id}
+          leading={
+            <IconBubble tone={campaign.role === 'gm' ? 'brand' : 'neutral'}>
+              <ScrollText size={18} color={colors.fgAccent} />
+            </IconBubble>
+          }
           title={campaign.name}
           subtitle={[findSystem(campaign.systemId)?.shortName, `${campaign.memberCount} participante${campaign.memberCount === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}
           trailing={
@@ -47,7 +53,7 @@ export default function CampaignsScreen() {
       ))}
       {data && data.length > 0 ? (
         <AppText variant="small" style={{ color: colors.fgMuted, textAlign: 'center' }}>
-          Mestres também conduzem a mesa pelo app: sessões, biblioteca, turnos e rolagens ficam na página da campanha.
+          O app é para jogar: ficha, turno, dados e anotações. As ferramentas do mestre ficam no site.
         </AppText>
       ) : null}
     </Screen>

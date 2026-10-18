@@ -327,3 +327,14 @@ app; subida de nível no app.
 Verificações: `pnpm check` passou (banco 179 testes, 11 ao vivo pulados; rpg-systems 143; ui 33;
 domain 66; validation 15; web 12) e `pnpm build` passou. `supabase db push --dry-run` lista só
 `20261018130000_physical_dice.sql` (ainda não aplicada). Não verificado no navegador/celular.
+
+### 2026-10-18 — visual do app reformulado
+
+- Painel com destaque "Continuar jogando" (personagem da campanha ativa, com atalhos para ficha,
+  dados e mesa), próxima sessão, atalhos e seções com ícones.
+- Central da campanha: cartão "Meu personagem" com vida e condições no topo, atalhos maiores,
+  companheiros com avatar (ícone da classe) e vida; o próprio personagem não se repete na lista.
+- Componentes novos (`components/ui/layout.tsx`: SectionHeader, IconBubble, HeroCard,
+  QuickAction) e avatar de personagem com o ícone da classe; listas, cartões e abas mais legíveis.
+
+Verificações: `pnpm check` (20 tarefas) e build do app passaram. Não verificado no celular.

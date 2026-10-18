@@ -64,5 +64,5 @@ export function Screen({ children, title, eyebrow, subtitle, headerAction, refre
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing[4], paddingBottom: spacing[12], gap: spacing[4] },
-  header: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing[3], paddingBottom: spacing[2], borderBottomWidth: 1, borderBottomColor: colors.line },
+  header: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing[3], paddingBottom: spacing[1] },
 });
