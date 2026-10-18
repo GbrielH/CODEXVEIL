@@ -98,3 +98,13 @@ describe('subida de nível', () => {
     expect(applyAbilityImprovement(scores, { kind: 'feat', featId: 'grappler', ability: 'int' }).int).toBe(10);
   });
 });
+
+describe('ataques e armas equipadas', () => {
+  it('ataque de arma do inventário só vale equipada; os outros valem sempre', async () => {
+    const { isAttackAvailable } = await import('./weapon-attacks');
+    expect(isAttackAvailable('Machado grande', [{ name: 'Machado grande', isEquipped: false }])).toBe(false);
+    expect(isAttackAvailable('Machado grande', [{ name: 'Machado grande', isEquipped: true }])).toBe(true);
+    expect(isAttackAvailable('Adaga', [{ name: 'Adagas (2)', isEquipped: true }])).toBe(true);
+    expect(isAttackAvailable('Ataque desarmado', [{ name: 'Adaga', isEquipped: false }])).toBe(true);
+  });
+});

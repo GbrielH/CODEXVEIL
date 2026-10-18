@@ -374,3 +374,15 @@ Verificações: `pnpm check` (20 tarefas) e build do app passaram. Não verifica
 
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verificado no navegador ou no
 celular.
+
+### 2026-10-18 — armas equipadas, blocos vazios, comunidade e menu encolhível
+
+- **Aba Jogo:** ataques de armas do inventário só aparecem com a arma equipada (ataques sem arma,
+  como o desarmado, sempre aparecem; regra `isAttackAvailable` em rpg-systems, com teste). Vale
+  para a lista de ataques e para as ações do turno, no site e no app.
+- **Blocos vazios** (magias, habilidades usáveis) não aparecem na aba Jogo da campanha.
+- **Sistemas da comunidade:** nova aba no site (`/comunidade`) e no app, com "Em breve".
+- **Menu lateral do site encolhível** (só ícones); a escolha fica salva no navegador.
+
+Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verificado no navegador ou no
+celular.

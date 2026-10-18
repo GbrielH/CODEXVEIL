@@ -64,7 +64,8 @@ export function FeaturesTab({ withoutAttacks = false, show = 'all' }: { withoutA
   const features = abilities
     .filter((entry) => FEATURE_KINDS.includes(entry.kind))
     .filter((entry) => (show === 'usable' ? usable(entry) : show === 'passive' ? !usable(entry) : true));
-  const showSpells = show !== 'passive';
+  const showSpells = show === 'all' || (show === 'usable' && spells.length > 0);
+  const showFeatures = show === 'all' || features.length > 0;
   const featureTitle = show === 'usable' ? 'Habilidades usáveis' : show === 'passive' ? 'Características' : 'Habilidades e características';
 
   const spellsByCircle = new Map<number, CharacterAbility[]>();
@@ -116,6 +117,7 @@ export function FeaturesTab({ withoutAttacks = false, show = 'all' }: { withoutA
       </Card>
       ) : null}
 
+      {showFeatures ? (
       <Card>
         <CardHeader icon={<Sparkles className="h-5 w-5" aria-hidden="true" />} title={featureTitle} action={addButton('class_feature', 'Nova habilidade')} />
         {features.length === 0 ? <p className="text-sm text-fg-muted">{show === 'usable' ? 'Nenhuma habilidade com uso ou custo de ação. As passivas ficam na aba Atributos.' : 'Registre habilidades de classe, talentos e características de espécie.'}</p> : (
@@ -126,6 +128,7 @@ export function FeaturesTab({ withoutAttacks = false, show = 'all' }: { withoutA
           </ul>
         )}
       </Card>
+      ) : null}
 
       <AbilityFormModal state={editing} onClose={() => setEditing(null)} />
     </div>

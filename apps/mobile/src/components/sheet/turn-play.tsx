@@ -23,6 +23,7 @@ import {
   findDnd5eCondition,
   spellNamePt,
   spellTurnCost,
+  isAttackAvailable,
 } from '@codexveil/rpg-systems/dnd5e';
 import { Footprints, Swords } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -54,7 +55,7 @@ interface Option {
  * personagem, aparece a opção de reagir.
  */
 export function TurnPlay({ campaignId }: { campaignId: string }) {
-  const { characterId, abilities, derived, resources, conditions, canEditPlay, setResources, reloadPlayState } = useSheet();
+  const { characterId, abilities, items, derived, resources, conditions, canEditPlay, setResources, reloadPlayState } = useSheet();
   const toast = useToast();
   const [turn, setTurn] = useState<CampaignTurn | null>(null);
   const [actions, setActions] = useState<TurnAction[]>([]);
@@ -113,6 +114,7 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
     const list: Option[] = [];
     for (const ability of abilities) {
       if (ability.kind === 'attack') {
+        if (!isAttackAvailable(ability.name, items)) continue;
         const parsed = dnd5eAttackDataSchema.safeParse(ability.data ?? {});
         if (parsed.success) list.push({ key: ability.id, label: `Atacar: ${ability.name}`, kind: 'action', grantsAction: false, roll: d20Expression(attackRollBonus(parsed.data, derived)), ability });
       } else if (ability.kind === 'spell') {
@@ -129,7 +131,7 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
       list.push({ key: `acao:${key}`, label: dnd5eActions[key].label, kind: 'action', grantsAction: false, roll: null, ability: null });
     }
     return list;
-  }, [abilities, derived]);
+  }, [abilities, items, derived]);
 
   if (!turn) return null;
   const me = turn.order.find((entry) => entry.characterId === characterId) ?? null;

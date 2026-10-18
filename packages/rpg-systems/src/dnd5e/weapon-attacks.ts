@@ -68,3 +68,19 @@ export function weaponAttackEntry(weapon: WeaponDefinition, sheet: Dnd5eSheet): 
     data: { ability, proficient, bonus: 0, damage: weapon.damage, damageType: damageTypeLabels[weapon.damageType], range },
   };
 }
+
+/**
+ * O ataque pode ser usado agora? Se ele corresponde a uma arma do inventário (pelo nome), só
+ * vale com a arma equipada; ataques sem arma no inventário (desarmado, garras, magias de
+ * ataque) valem sempre.
+ */
+export function isAttackAvailable(attackName: string, items: readonly { name: string; isEquipped: boolean }[]): boolean {
+  const target = normalize(attackName);
+  const weapon = findSrdWeaponByName(attackName);
+  const matches = items.filter((item) => {
+    if (normalize(item.name) === target) return true;
+    const itemWeapon = findSrdWeaponByName(item.name);
+    return Boolean(weapon && itemWeapon && itemWeapon.id === weapon.id);
+  });
+  return matches.length === 0 || matches.some((item) => item.isEquipped);
+}

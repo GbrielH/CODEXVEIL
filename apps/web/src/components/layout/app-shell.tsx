@@ -1,4 +1,4 @@
-import { LayoutDashboard, LogOut, ScrollText, Swords, UserRound } from 'lucide-react';
+import { LayoutDashboard, LogOut, Puzzle, ScrollText, Swords, UserRound } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
@@ -7,6 +7,7 @@ import { Emblem, Wordmark } from '@/components/brand/emblem';
 import { Avatar } from '@/components/ui/avatar';
 import { routes } from '@/lib/routes';
 import { NavLink } from './nav-link';
+import { ShellFrame, SidebarToggle } from './shell-frame';
 import { ThemeToggle } from './theme-toggle';
 
 interface NavItem {
@@ -19,6 +20,7 @@ const navItems: NavItem[] = [
   { href: routes.dashboard, label: 'Painel', icon: <LayoutDashboard className="h-5 w-5" aria-hidden="true" /> },
   { href: routes.campaigns, label: 'Campanhas', icon: <ScrollText className="h-5 w-5" aria-hidden="true" /> },
   { href: routes.characters, label: 'Personagens', icon: <Swords className="h-5 w-5" aria-hidden="true" /> },
+  { href: routes.community, label: 'Comunidade', icon: <Puzzle className="h-5 w-5" aria-hidden="true" /> },
   { href: routes.profile, label: 'Perfil', icon: <UserRound className="h-5 w-5" aria-hidden="true" /> },
 ];
 
@@ -53,25 +55,34 @@ function SignOutButton({ compact = false }: { compact?: boolean }) {
  */
 export function AppShell({ displayName, motion, children }: AppShellProps) {
   return (
-    <div data-motion={motion} className="min-h-dvh lg:grid lg:grid-cols-[16rem_1fr]">
+    <ShellFrame motion={motion}>
       <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-raised/80 backdrop-blur lg:flex">
-        <div className="px-5 py-6">
+        <div className="flex items-center justify-between gap-2 px-5 py-6 group-data-[collapsed=true]/shell:flex-col group-data-[collapsed=true]/shell:px-2">
           <Link href={routes.dashboard} aria-label="Codexveil — painel">
-            <Wordmark size="sm" />
+            <span className="group-data-[collapsed=true]/shell:hidden">
+              <Wordmark size="sm" />
+            </span>
+            <Emblem className="hidden h-8 w-8 group-data-[collapsed=true]/shell:block" />
           </Link>
+          <SidebarToggle />
         </div>
-        <nav aria-label="Navegação principal" className="flex flex-1 flex-col gap-1 px-3">
+        <nav aria-label="Navegação principal" className="flex flex-1 flex-col gap-1 px-3 group-data-[collapsed=true]/shell:px-2">
           {navItems.map((item) => (
             <NavLink key={item.href} {...item} variant="sidebar" />
           ))}
         </nav>
-        <div className="flex items-center gap-3 border-t border-line px-4 py-4">
+        <div className="flex items-center gap-3 border-t border-line px-4 py-4 group-data-[collapsed=true]/shell:flex-col group-data-[collapsed=true]/shell:px-2">
           <Avatar name={displayName} size="sm" />
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 group-data-[collapsed=true]/shell:hidden">
             <p className="truncate text-sm font-medium text-fg">{displayName}</p>
           </div>
           <ThemeToggle compact />
-          <SignOutButton />
+          <span className="group-data-[collapsed=true]/shell:hidden">
+            <SignOutButton />
+          </span>
+          <span className="hidden group-data-[collapsed=true]/shell:block">
+            <SignOutButton compact />
+          </span>
         </div>
       </aside>
 
@@ -103,6 +114,6 @@ export function AppShell({ displayName, motion, children }: AppShellProps) {
           ))}
         </nav>
       </div>
-    </div>
+    </ShellFrame>
   );
 }

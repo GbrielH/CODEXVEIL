@@ -14,6 +14,7 @@ export const routes = {
   authError: '/auth/erro',
   dashboard: '/painel',
   profile: '/perfil',
+  community: '/comunidade',
   campaigns: '/campanhas',
   newCampaign: '/campanhas/nova',
   characters: '/personagens',
@@ -34,7 +35,7 @@ export function sessionPath(campaignId: string, sessionId: string, section = '')
 }
 
 /** Áreas que exigem sessão. */
-const privatePrefixes = ['/painel', '/perfil', '/campanhas', '/personagens', '/convite'];
+const privatePrefixes = ['/painel', '/perfil', '/comunidade', '/campanhas', '/personagens', '/convite'];
 
 /** Páginas que não fazem sentido para quem já está autenticado. */
 const guestOnlyPaths = [routes.signIn, routes.signUp, routes.forgotPassword];

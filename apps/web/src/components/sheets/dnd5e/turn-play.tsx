@@ -24,6 +24,7 @@ import {
   findDnd5eCondition,
   spellNamePt,
   spellTurnCost,
+  isAttackAvailable,
 } from '@codexveil/rpg-systems/dnd5e';
 import { Footprints, Hourglass, ShieldAlert, Sparkles, Swords } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
@@ -55,7 +56,7 @@ interface Option {
  * de encerrar o turno. Quando alguém mira o personagem, aparece a opção de reagir.
  */
 export function TurnPlay() {
-  const { character, abilities, derived, resources, conditions, permissions, reloadConditions, setResources } = useSheet();
+  const { character, abilities, items, derived, resources, conditions, permissions, reloadConditions, setResources } = useSheet();
   const campaignId = character.campaign?.id ?? null;
   const { toast } = useToast();
   const id = useId();
@@ -119,6 +120,7 @@ export function TurnPlay() {
     const list: Option[] = [];
     for (const ability of abilities) {
       if (ability.kind === 'attack') {
+        if (!isAttackAvailable(ability.name, items)) continue;
         const data = parseAttack(ability.data);
         list.push({ key: ability.id, label: `Atacar: ${ability.name}`, kind: 'action', grantsAction: false, roll: d20Expression(attackRollBonus(data, derived)), ability });
       } else if (ability.kind === 'spell') {
@@ -142,7 +144,7 @@ export function TurnPlay() {
       list.push({ key: `acao:${key}`, label: dnd5eActions[key].label, kind: 'action', grantsAction: false, roll: null, ability: null });
     }
     return list;
-  }, [abilities, derived]);
+  }, [abilities, items, derived]);
 
   if (!campaignId || !turn || character.campaign?.status !== 'active') return null;
 

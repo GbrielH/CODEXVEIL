@@ -9,6 +9,7 @@ import {
   formatModifier,
   passiveWithConditions,
   type Dnd5eAttackData,
+  isAttackAvailable,
 } from '@codexveil/rpg-systems/dnd5e';
 import { Crosshair, Footprints, Shield, Swords, Zap } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -75,8 +76,9 @@ export function parseAttack(data: unknown): Dnd5eAttackData {
 
 /** Tudo o que se consulta e altera com frequência durante uma partida, numa só tela. */
 export function PlayTab() {
-  const { sheet, derived, abilities, conditionEffects: effects } = useSheet();
-  const attacks = abilities.filter((entry) => entry.kind === 'attack');
+  const { sheet, derived, abilities, items, conditionEffects: effects } = useSheet();
+  // Armas do inventário só aparecem equipadas; ataques sem arma (desarmado, garras) sempre.
+  const attacks = abilities.filter((entry) => entry.kind === 'attack' && isAttackAvailable(entry.name, items));
   const speedValue = effectiveSpeed(sheet.combat.speed, sheet.combat.speedUnit, effects);
   const speed = `${speedValue.toLocaleString('pt-BR')} ${sheet.combat.speedUnit}`;
   const speedHint = effects.speedZero.length > 0 ? effects.speedZero.join(', ') : effects.speedReductionFeet > 0 ? `Exaustão ${effects.exhaustionLevel}` : undefined;
@@ -143,7 +145,7 @@ export function PlayTab() {
         <Card>
           <CardHeader icon={<Swords className="h-5 w-5" aria-hidden="true" />} title="Ataques" />
           {attacks.length === 0 ? (
-            <p className="text-sm text-fg-muted">Nenhum ataque cadastrado.</p>
+            <p className="text-sm text-fg-muted">Nenhuma arma equipada. Equipe uma arma no Inventário para atacar com ela.</p>
           ) : (
             <ul className="divide-y divide-line">
               {attacks.map((attack) => {
