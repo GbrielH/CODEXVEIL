@@ -1,7 +1,9 @@
 'use server';
 
 import {
+  CAMPAIGN_MEDIA_BUCKET,
   archiveCampaign,
+  campaignCoverPath,
   createCampaign,
   createCampaignInvite,
   deleteCampaign,
@@ -9,6 +11,7 @@ import {
   removeCampaignMedia,
   removeCampaignMember,
   revokeCampaignInvite,
+  setCampaignCover,
   setCampaignMemberRole,
   transferCampaignOwnership,
   unarchiveCampaign,
@@ -16,11 +19,13 @@ import {
 } from '@codexveil/database';
 import { CAMPAIGN_ROLES, formatInviteCode } from '@codexveil/domain';
 import {
+  IMAGE_EXTENSIONS,
   campaignCreateSchema,
   campaignUpdateSchema,
   fieldErrorsFrom,
   inviteCreateSchema,
   uuidSchema,
+  validateImageFile,
 } from '@codexveil/validation';
 import type { Route } from 'next';
 import { revalidatePath } from 'next/cache';
@@ -56,17 +61,48 @@ export async function createCampaignAction(_previous: FormState, formData: FormD
       values: raw,
     };
   }
+  // Capa opcional, já reduzida no navegador (o bucket confere tipo e tamanho de novo).
+  const coverField = formData.get('cover');
+  const cover = coverField instanceof File && coverField.size > 0 ? coverField : null;
+  const coverCheck = cover ? validateImageFile(cover, 'media') : null;
+  if (coverCheck && !coverCheck.ok) return { status: 'error', message: coverCheck.message, values: raw };
 
   let campaignId: string;
+  let coverSaved = true;
   try {
     const supabase = await createSupabaseServerClient();
     campaignId = await createCampaign(supabase, parsed.data);
+    if (cover && coverCheck?.ok) coverSaved = await uploadCampaignCover(supabase, campaignId, cover, coverCheck.mimeType);
   } catch (error) {
     return { status: 'error', message: failureMessage(error), values: raw };
   }
 
   revalidatePath(routes.dashboard);
-  redirect(`${campaignPath(campaignId)}?aviso=campanha-criada` as Route);
+  redirect(`${campaignPath(campaignId)}?aviso=${coverSaved ? 'campanha-criada' : 'campanha-criada-sem-capa'}` as Route);
+}
+
+/** Envia a capa e grava o caminho na campanha; a campanha continua criada se a capa falhar. */
+async function uploadCampaignCover(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  campaignId: string,
+  file: File,
+  mimeType: keyof typeof IMAGE_EXTENSIONS,
+): Promise<boolean> {
+  const path = campaignCoverPath(campaignId, `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[mimeType]}`);
+  const bucket = supabase.storage.from(CAMPAIGN_MEDIA_BUCKET);
+  const { error } = await bucket.upload(path, file, { contentType: mimeType, upsert: false });
+  if (error) {
+    console.warn('[codexveil] capa da campanha não enviada', error);
+    return false;
+  }
+  try {
+    await setCampaignCover(supabase, campaignId, path);
+    return true;
+  } catch (cause) {
+    console.warn('[codexveil] capa da campanha não gravada', cause);
+    await bucket.remove([path]);
+    return false;
+  }
 }
 
 export async function updateCampaignAction(

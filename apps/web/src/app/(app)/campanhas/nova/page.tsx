@@ -1,6 +1,5 @@
 import { listSystems } from '@codexveil/rpg-systems';
 import type { Metadata } from 'next';
-import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { CreateCampaignForm } from './form';
 
@@ -20,9 +19,7 @@ export default function NewCampaignPage() {
         title="Nova campanha"
         description="Você será o mestre responsável. Depois de criar, convide os jogadores."
       />
-      <Card ornate className="max-w-2xl">
-        <CreateCampaignForm systems={systems} />
-      </Card>
+      <CreateCampaignForm systems={systems} />
     </div>
   );
 }

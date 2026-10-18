@@ -37,9 +37,14 @@ export default async function DashboardPage({ searchParams }: PageProps<'/painel
     searchParams,
   ]);
   const recentCharacters = characters.slice(0, 4);
-  const portraits = await signedMediaUrls(supabase, recentCharacters.map((character) => character.portraitPath));
-
   const active = campaigns.filter((campaign) => campaign.status === 'active');
+  const shownCampaigns = active.slice(0, 6);
+  // Retratos e capas numa só chamada de URLs assinadas.
+  const media = await signedMediaUrls(supabase, [
+    ...recentCharacters.map((character) => character.portraitPath),
+    ...shownCampaigns.map((campaign) => campaign.coverPath),
+  ]);
+
   const archivedCount = campaigns.length - active.length;
   const firstName = (profile?.displayName ?? 'aventureiro').split(' ')[0];
 
@@ -118,9 +123,9 @@ export default async function DashboardPage({ searchParams }: PageProps<'/painel
             />
           ) : (
             <ul className="grid gap-4 sm:grid-cols-2">
-              {active.slice(0, 6).map((campaign) => (
+              {shownCampaigns.map((campaign) => (
                 <li key={campaign.id}>
-                  <CampaignCard campaign={campaign} />
+                  <CampaignCard campaign={campaign} coverUrl={campaign.coverPath ? (media[campaign.coverPath] ?? null) : null} />
                 </li>
               ))}
             </ul>
@@ -155,7 +160,7 @@ export default async function DashboardPage({ searchParams }: PageProps<'/painel
                       href={characterPath(character.id) as Route}
                       name={character.name}
                       subtitle={summarizeSheet(character.systemId, character.sheet).subtitle}
-                      portraitUrl={character.portraitPath ? (portraits[character.portraitPath] ?? null) : null}
+                      portraitUrl={character.portraitPath ? (media[character.portraitPath] ?? null) : null}
                       meta={character.campaignName}
                       className="p-3"
                     />

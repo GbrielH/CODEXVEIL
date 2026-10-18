@@ -446,3 +446,36 @@ verificado no navegador ou no celular.
 Verificações: `pnpm check` 20/20 (rpg-systems 144 testes; banco 180, com 11 ao vivo pulados; domain
 66; ui 33; validation 15; web 12) e `pnpm build` 2/2. Sem migração. Não verificado no navegador
 nem no celular.
+
+### 2026-10-18 — capa da campanha, classes por seletor, multiclasse e talentos
+
+- **Capa da campanha** (backend já existia): o mestre escolhe a imagem ao criar a campanha (vai
+  junto com o formulário, já reduzida no navegador; limite das Server Actions em 3 MB) e troca ou
+  remove em Configurações. A capa aparece nos cartões do Painel e da lista de Campanhas, no site
+  e no app; sem capa, um fundo com as iniciais. Os participantes leem pela regra de Storage que
+  já existia.
+- **Nova campanha (site):** a página usa a largura toda: capa ao lado de nome, descrição e
+  sistema; as regras de criação ficam em grade nas telas largas (consulta de contêiner, então as
+  Configurações continuam numa coluna).
+- **Classes sem digitação** (aba Personagem, site e app): classe, nível, subclasse e dado de vida
+  vêm das regras. Fichas antigas com classe escrita à mão ganham um seletor das classes do SRD.
+  O nível só muda pela subida de nível.
+- **Multiclasse na subida de nível** (site): o seletor "Classe que sobe de nível" traz as classes
+  da ficha e as classes novas. Pré-requisito do SRD 5.2.1 (13 no atributo principal da classe
+  nova e das atuais; "ou"/"e" conforme a classe), treinamentos da classe nova
+  (`MULTICLASS_TRAINING`, com perícia e instrumento por seletor), dado de vida da classe nova,
+  magias do 1º nível e espaços de magia pelo nível de conjurador somado (metade arredondada para
+  cima para paladino e patrulheiro). No app, a ficha só mostra as classes e orienta usar o site.
+- **Talentos no aumento de atributo:** a lista ficava vazia porque só oferecia talentos gerais (o
+  SRD só tem Agarrador além do aumento). Agora, pelas regras de 2024, entram também os de origem
+  (Alerta, Atacante Selvagem, Habilidoso com 3 perícias, Iniciado em Magia com lista, truques,
+  magia e atributo), os de estilo de luta para quem tem Estilo de Luta e as dádivas no 19º nível,
+  todos por seletor.
+- **Imagens oficiais de classes e espécies:** não adicionadas. Comprar os livros dá o direito de
+  ler, não de redistribuir a arte da Wizards num repositório e num site públicos. O assistente
+  continua com os ícones do game-icons.net e o link para a página oficial.
+
+Verificações: `pnpm check` 20/20 (rpg-systems 150 testes, com 6 novos de multiclasse e talentos;
+banco 180, com 11 ao vivo pulados; domain 66; ui 33; validation 15; web 12) e `pnpm build` 2/2.
+Sem migração. Não verificado no navegador nem no celular (envio de capa, telas novas e
+multiclasse ainda não foram usados de verdade).

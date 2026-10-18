@@ -22,6 +22,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   typedRoutes: true,
   transpilePackages: workspacePackages,
+  // A capa da campanha vai junto com o formulário de criação (já reduzida no navegador, até 2 MB).
+  experimental: {
+    serverActions: { bodySizeLimit: '3mb' },
+  },
   turbopack: {
     rules: {
       '*.css': {

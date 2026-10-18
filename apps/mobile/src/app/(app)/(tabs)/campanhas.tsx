@@ -1,13 +1,10 @@
-import { listMyCampaigns } from '@codexveil/database';
-import { campaignRoleLabels, campaignStatusLabels } from '@codexveil/domain';
-import { findSystem } from '@codexveil/rpg-systems';
+import { listMyCampaigns, signedMediaUrls } from '@codexveil/database';
 import { useRouter } from 'expo-router';
 import { KeyRound, Plus, ScrollText } from 'lucide-react-native';
 import { View } from 'react-native';
+import { CampaignCoverCard } from '@/components/campaign-cover-card';
 import { Button } from '@/components/ui/button';
-import { IconBubble } from '@/components/ui/layout';
-import { ListRow } from '@/components/ui/list-row';
-import { AppText, Badge } from '@/components/ui/primitives';
+import { AppText } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states';
 import { useAsyncData } from '@/lib/hooks';
@@ -18,7 +15,12 @@ import { colors } from '@/lib/theme';
 export default function CampaignsScreen() {
   const userId = useUserId();
   const router = useRouter();
-  const { data, error, loading, refreshing, reload } = useAsyncData(() => listMyCampaigns(getSupabase(), userId), userId);
+  const { data, error, loading, refreshing, reload } = useAsyncData(async () => {
+    const supabase = getSupabase();
+    const campaigns = await listMyCampaigns(supabase, userId);
+    const covers = await signedMediaUrls(supabase, campaigns.map((campaign) => campaign.coverPath));
+    return campaigns.map((campaign) => ({ campaign, coverUrl: campaign.coverPath ? (covers[campaign.coverPath] ?? null) : null }));
+  }, userId);
 
   if (loading) return <LoadingState />;
 
@@ -32,22 +34,11 @@ export default function CampaignsScreen() {
       {data && data.length === 0 ? (
         <EmptyState icon={<ScrollText size={28} color={colors.fgSecondary} />} title="Nenhuma campanha" description="Crie a sua para mestrar ou peça ao seu mestre um código de convite." />
       ) : null}
-      {data?.map((campaign) => (
-        <ListRow
+      {data?.map(({ campaign, coverUrl }) => (
+        <CampaignCoverCard
           key={campaign.id}
-          leading={
-            <IconBubble tone={campaign.role === 'gm' ? 'brand' : 'neutral'}>
-              <ScrollText size={18} color={colors.fgAccent} />
-            </IconBubble>
-          }
-          title={campaign.name}
-          subtitle={[findSystem(campaign.systemId)?.shortName, `${campaign.memberCount} participante${campaign.memberCount === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}
-          trailing={
-            <View style={{ alignItems: 'flex-end', gap: 4 }}>
-              <Badge label={campaign.isOwner ? 'Responsável' : campaignRoleLabels[campaign.role]} tone={campaign.role === 'gm' ? 'brand' : 'neutral'} />
-              {campaign.status === 'archived' ? <Badge label={campaignStatusLabels.archived} tone="warning" /> : null}
-            </View>
-          }
+          campaign={campaign}
+          coverUrl={coverUrl}
           onPress={() => router.push({ pathname: '/campanha/[id]', params: { id: campaign.id } })}
         />
       ))}

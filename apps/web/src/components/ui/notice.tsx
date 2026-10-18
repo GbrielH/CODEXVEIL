@@ -7,6 +7,10 @@ import { Alert, type AlertTone } from './alert';
 const notices = {
   'senha-alterada': { tone: 'success', text: 'Senha alterada com sucesso.' },
   'campanha-criada': { tone: 'success', text: 'Campanha criada. Convide seus jogadores quando quiser.' },
+  'campanha-criada-sem-capa': {
+    tone: 'warning',
+    text: 'Campanha criada, mas a capa não foi enviada. Tente de novo em Configurações.',
+  },
   'campanha-excluida': { tone: 'success', text: 'A campanha foi excluída definitivamente.' },
   'campanha-arquivada': { tone: 'success', text: 'Campanha arquivada. Os dados continuam preservados.' },
   'saiu-da-campanha': { tone: 'info', text: 'Você saiu da campanha. Seus personagens continuam com você.' },

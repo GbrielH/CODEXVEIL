@@ -1,8 +1,11 @@
+import { signedMediaUrls } from '@codexveil/database';
 import { Settings, ShieldAlert, Swords } from 'lucide-react';
 import type { Metadata } from 'next';
+import { CampaignCoverCard } from '@/components/campaigns/cover-card';
 import { Card, CardHeader } from '@/components/ui/card';
 import { ForbiddenState } from '@/components/ui/states';
 import { loadCampaignOrNotFound } from '@/lib/campaigns';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { DangerZone } from './danger-zone';
 import { CampaignSettingsForm } from './settings-form';
 import { TurnSettingsForm } from './turn-settings-form';
@@ -18,6 +21,7 @@ export default async function CampaignSettingsPage({ params }: PageProps<'/campa
   }
 
   const archived = campaign.status === 'archived';
+  const covers = await signedMediaUrls(await createSupabaseServerClient(), [campaign.coverPath]);
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
@@ -40,6 +44,14 @@ export default async function CampaignSettingsPage({ params }: PageProps<'/campa
           }}
         />
       </Card>
+
+      <CampaignCoverCard
+        campaignId={campaign.id}
+        name={campaign.name}
+        coverPath={campaign.coverPath}
+        coverUrl={campaign.coverPath ? (covers[campaign.coverPath] ?? null) : null}
+        disabled={archived}
+      />
 
       <Card>
         <CardHeader

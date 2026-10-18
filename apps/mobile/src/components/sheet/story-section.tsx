@@ -1,11 +1,9 @@
-import { HIT_DICE, type Dnd5eClass } from '@codexveil/rpg-systems/dnd5e';
-import { Minus, Plus, Trash2 } from 'lucide-react-native';
+import { findClassByName, listClasses, type Dnd5eClass } from '@codexveil/rpg-systems/dnd5e';
 import { View } from 'react-native';
-import { Button, IconButton } from '@/components/ui/button';
 import { Chip, ChipRow } from '@/components/ui/controls';
 import { Field } from '@/components/ui/field';
-import { AppText, Card } from '@/components/ui/primitives';
-import { colors, spacing } from '@/lib/theme';
+import { AppText, Badge, Card } from '@/components/ui/primitives';
+import { colors, fonts, spacing } from '@/lib/theme';
 import { useSheet } from './context';
 
 const detailFields = [
@@ -20,8 +18,11 @@ const detailFields = [
 export function StorySection() {
   const { sheet, derived, updateSheet, canEditSheet } = useSheet();
   const classes = sheet.identity.classes;
-  const setClasses = (next: Dnd5eClass[]) => updateSheet((current) => ({ ...current, identity: { ...current.identity, classes: next } }));
-  const patchClass = (index: number, patch: Partial<Dnd5eClass>) => setClasses(classes.map((entry, position) => (position === index ? { ...entry, ...patch } : entry)));
+  const patchClass = (index: number, patch: Partial<Dnd5eClass>) =>
+    updateSheet((current) => ({
+      ...current,
+      identity: { ...current.identity, classes: current.identity.classes.map((entry, position) => (position === index ? { ...entry, ...patch } : entry)) },
+    }));
   return (
     <View style={{ gap: spacing[4] }}>
       <Card>
@@ -51,33 +52,45 @@ export function StorySection() {
       <Card>
         <AppText variant="heading">Classes e níveis</AppText>
         <AppText variant="muted">Nível total {derived.level}. Multiclasse: até 4 classes.</AppText>
-        {classes.map((entry, index) => (
-          <View key={index} style={{ gap: spacing[2], padding: spacing[3], borderRadius: 10, borderWidth: 1, borderColor: colors.line }}>
-            <Field label="Classe" value={entry.name} editable={canEditSheet} maxLength={40} onChangeText={(name) => patchClass(index, { name })} />
-            <Field label="Subclasse" value={entry.subclass} editable={canEditSheet} maxLength={60} onChangeText={(subclass) => patchClass(index, { subclass })} />
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-              <AppText style={{ flex: 1 }}>Nível {entry.level}</AppText>
-              {canEditSheet ? (
+        {/* Sem digitação: classe, nível, subclasse e dado de vida vêm das regras. */}
+        {classes.map((entry, index) => {
+          const classDef = findClassByName(entry.name);
+          return (
+            <View key={index} style={{ gap: spacing[2], padding: spacing[3], borderRadius: 10, borderWidth: 1, borderColor: colors.line }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <AppText style={{ fontFamily: fonts.sansSemiBold, color: colors.fg }}>
+                    {classDef?.name ?? (entry.name || 'Classe não definida')} · {entry.level}º nível
+                  </AppText>
+                  <AppText variant="small">{entry.subclass ? `Subclasse: ${entry.subclass}` : entry.level < 3 ? 'Subclasse no 3º nível' : 'Sem subclasse'}</AppText>
+                </View>
+                <Badge label={`Dado de vida ${classDef?.hitDie ?? entry.hitDie}`} tone="parchment" />
+              </View>
+              {/* Fichas antigas, com a classe escrita à mão: escolhe-se a classe do SRD. */}
+              {canEditSheet && !classDef ? (
                 <>
-                  <IconButton icon={<Minus size={16} color={colors.fg} />} accessibilityLabel={`Diminuir o nível de ${entry.name || 'classe'}`} disabled={entry.level <= 1} onPress={() => patchClass(index, { level: entry.level - 1 })} />
-                  <IconButton icon={<Plus size={16} color={colors.fg} />} accessibilityLabel={`Aumentar o nível de ${entry.name || 'classe'}`} disabled={derived.level >= 20} onPress={() => patchClass(index, { level: entry.level + 1 })} />
+                  <AppText variant="small">Esta classe não é do SRD 5.2.1. Escolha a correspondente:</AppText>
+                  <ChipRow>
+                    {listClasses()
+                      .filter((option) => !classes.some((other) => findClassByName(other.name)?.id === option.id))
+                      .map((option) => (
+                        <Chip key={option.id} label={option.name} selected={false} onPress={() => patchClass(index, { name: option.name, hitDie: option.hitDie })} />
+                      ))}
+                  </ChipRow>
                 </>
               ) : null}
+              {canEditSheet && classDef && entry.level >= 3 && entry.subclass !== classDef.subclass.name ? (
+                <ChipRow>
+                  <Chip label={`Subclasse: ${classDef.subclass.name}`} selected={false} onPress={() => patchClass(index, { subclass: classDef.subclass.name })} />
+                </ChipRow>
+              ) : null}
             </View>
-            <ChipRow>
-              {HIT_DICE.map((die) => (
-                <Chip key={die} label={die} selected={entry.hitDie === die} disabled={!canEditSheet} onPress={() => patchClass(index, { hitDie: die })} />
-              ))}
-            </ChipRow>
-            {canEditSheet && classes.length > 1 ? (
-              <Button label="Remover classe" compact variant="ghost" icon={<Trash2 size={14} color={colors.fgSecondary} />} onPress={() => setClasses(classes.filter((_, position) => position !== index))} />
-            ) : null}
-          </View>
-        ))}
-        {canEditSheet && classes.length < 4 && derived.level < 20 ? (
-          <Button label="Adicionar classe (multiclasse)" compact variant="secondary" icon={<Plus size={14} color={colors.fg} />} onPress={() => setClasses([...classes, { name: '', subclass: '', level: 1, hitDie: 'd8' }])} />
-        ) : null}
-        <AppText variant="small">Ao subir de nível, ajuste também os pontos de vida máximos na aba Jogo.</AppText>
+          );
+        })}
+        <AppText variant="small">
+          Para subir de nível ou entrar numa classe nova (multiclasse), use “Subir de nível” na ficha pelo site: a vida, as habilidades, as
+          magias e os recursos são recalculados pelas regras.
+        </AppText>
       </Card>
       <Card>
         <AppText variant="heading">Crônica</AppText>

@@ -104,7 +104,7 @@ e magias na ficha).
 | Magias (339)                                                                                  | Completo     | Cabeçalho técnico em português; descrição no original em inglês, com dano, resistência e área resumidos em português.                                                   |
 | Condições (15)                                                                                | Completo     | Regras traduzidas, efeitos na ficha e duração (segunda rodada de 2026-10-17).                                                                                           |
 | Regras gerais e glossário                                                                     | Parcial      | A ficha calcula o que as regras definem (modificadores, proficiência, perícias, CA, iniciativa, espaços de magia, descansos); o texto do glossário não está no sistema. |
-| Multiclasse e subida de nível                                                                 | Parcial      | A ficha aceita até 4 classes, mas sem pré-requisitos de multiclasse e sem assistente de subida de nível.                                                                |
+| Multiclasse e subida de nível                                                                 | Completo     | Subida de nível guiada no site, com multiclasse (pré-requisitos, treinamentos, espaços de magia somados) e talentos; no app, ainda não.                                 |
 | Itens mágicos (258)                                                                           | Completo     | Catálogo para o mestre copiar à campanha; texto no original em inglês.                                                                                                  |
 | Monstros e animais (330 blocos de estatísticas)                                               | Completo     | Bestiário para copiar à biblioteca; campos técnicos em português, ações e traços em inglês.                                                                             |
 | Montarias, veículos, serviços, estilo de vida, fabricação e bugigangas                        | Não incluído |                                                                                                                                                                         |
@@ -146,9 +146,9 @@ Esta seção lista só o que falta ou está parcial. O que já foi atendido est�
 
 ### §6 Campanhas
 
-- **Pendente: imagem de capa.** O banco (`campaigns.cover_path`), as policies do Storage
-  (`campaigns/{id}/cover/`) e a consulta `setCampaignCover` estão prontos, mas **não há tela de
-  envio** nem exibição da capa nos cartões, na web ou no mobile.
+- **Feito (2026-10-18): imagem de capa.** O mestre envia na criação da campanha ou nas
+  configurações (site); a capa aparece nos cartões do painel e da lista de campanhas, no site e
+  no app. O envio pelo app ainda não existe.
 - **Pendente: envio de e-mail do convite pessoal.** O convite fica vinculado ao e-mail e
   aparece no painel do convidado (`get_my_pending_invites`), mas o mestre ainda precisa
   compartilhar o link. Enviar o e-mail exige uma Edge Function e um SMTP ou provedor de e-mail.
@@ -274,13 +274,13 @@ implementados, conforme o prompt. Nenhuma tela promete essas funções.
 3. **Usar o site publicado e o APK** com duas contas (mestre e jogador), seguindo as etapas de
    [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md), inclusive a criação guiada, e corrigir o que
    aparecer.
-4. **Subida de nível guiada e multiclasse**, com as mesmas regras do SRD usadas na criação.
+4. ~~**Subida de nível guiada e multiclasse**~~: feitas no site em 2026-10-18; falta a subida de nível no app.
 5. **Completar o conteúdo do SRD 5.2.1:** descrições das magias, monstros e animais como
    modelos na biblioteca do mestre, itens mágicos e o restante do equipamento (veja a
    cobertura na seção 3).
 6. **SMTP próprio** (Brevo, com o e-mail exclusivo do sistema) e envio dos templates em
    português.
-7. **Capa da campanha**: tela de envio e exibição (o backend está pronto).
+7. ~~**Capa da campanha**~~: feita em 2026-10-18 (envio pelo app pendente).
 8. **Referências a sessões** na página de NPCs e monstros.
 9. **Testes ponta a ponta** (Playwright) dos critérios 1 a 12, rodando contra o Supabase local
    na CI.
@@ -451,3 +451,36 @@ verificado no navegador ou no celular.
 Verificações: `pnpm check` 20/20 (rpg-systems 144 testes; banco 180, com 11 ao vivo pulados; domain
 66; ui 33; validation 15; web 12) e `pnpm build` 2/2. Sem migração. Não verificado no navegador
 nem no celular.
+
+### 2026-10-18 — capa da campanha, classes por seletor, multiclasse e talentos
+
+- **Capa da campanha** (backend já existia): o mestre escolhe a imagem ao criar a campanha (vai
+  junto com o formulário, já reduzida no navegador; limite das Server Actions em 3 MB) e troca ou
+  remove em Configurações. A capa aparece nos cartões do Painel e da lista de Campanhas, no site
+  e no app; sem capa, um fundo com as iniciais. Os participantes leem pela regra de Storage que
+  já existia.
+- **Nova campanha (site):** a página usa a largura toda: capa ao lado de nome, descrição e
+  sistema; as regras de criação ficam em grade nas telas largas (consulta de contêiner, então as
+  Configurações continuam numa coluna).
+- **Classes sem digitação** (aba Personagem, site e app): classe, nível, subclasse e dado de vida
+  vêm das regras. Fichas antigas com classe escrita à mão ganham um seletor das classes do SRD.
+  O nível só muda pela subida de nível.
+- **Multiclasse na subida de nível** (site): o seletor "Classe que sobe de nível" traz as classes
+  da ficha e as classes novas. Pré-requisito do SRD 5.2.1 (13 no atributo principal da classe
+  nova e das atuais; "ou"/"e" conforme a classe), treinamentos da classe nova
+  (`MULTICLASS_TRAINING`, com perícia e instrumento por seletor), dado de vida da classe nova,
+  magias do 1º nível e espaços de magia pelo nível de conjurador somado (metade arredondada para
+  cima para paladino e patrulheiro). No app, a ficha só mostra as classes e orienta usar o site.
+- **Talentos no aumento de atributo:** a lista ficava vazia porque só oferecia talentos gerais (o
+  SRD só tem Agarrador além do aumento). Agora, pelas regras de 2024, entram também os de origem
+  (Alerta, Atacante Selvagem, Habilidoso com 3 perícias, Iniciado em Magia com lista, truques,
+  magia e atributo), os de estilo de luta para quem tem Estilo de Luta e as dádivas no 19º nível,
+  todos por seletor.
+- **Imagens oficiais de classes e espécies:** não adicionadas. Comprar os livros dá o direito de
+  ler, não de redistribuir a arte da Wizards num repositório e num site públicos. O assistente
+  continua com os ícones do game-icons.net e o link para a página oficial.
+
+Verificações: `pnpm check` 20/20 (rpg-systems 150 testes, com 6 novos de multiclasse e talentos;
+banco 180, com 11 ao vivo pulados; domain 66; ui 33; validation 15; web 12) e `pnpm build` 2/2.
+Sem migração. Não verificado no navegador nem no celular (envio de capa, telas novas e
+multiclasse ainda não foram usados de verdade).

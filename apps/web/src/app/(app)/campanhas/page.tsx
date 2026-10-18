@@ -1,4 +1,4 @@
-import { listMyCampaigns } from '@codexveil/database';
+import { listMyCampaigns, signedMediaUrls } from '@codexveil/database';
 import { KeyRound, Plus, ScrollText } from 'lucide-react';
 import type { Metadata } from 'next';
 import { CampaignCard } from '@/components/campaigns/campaign-card';
@@ -18,6 +18,8 @@ export default async function CampaignsPage({ searchParams }: PageProps<'/campan
   const [campaigns, params] = await Promise.all([listMyCampaigns(supabase, user.id), searchParams]);
   const active = campaigns.filter((campaign) => campaign.status === 'active');
   const archived = campaigns.filter((campaign) => campaign.status === 'archived');
+  const covers = await signedMediaUrls(supabase, campaigns.map((campaign) => campaign.coverPath));
+  const coverOf = (path: string | null) => (path ? (covers[path] ?? null) : null);
 
   return (
     <div className="flex flex-col gap-8">
@@ -57,7 +59,7 @@ export default async function CampaignsPage({ searchParams }: PageProps<'/campan
               <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {active.map((campaign) => (
                   <li key={campaign.id}>
-                    <CampaignCard campaign={campaign} />
+                    <CampaignCard campaign={campaign} coverUrl={coverOf(campaign.coverPath)} />
                   </li>
                 ))}
               </ul>
@@ -74,7 +76,7 @@ export default async function CampaignsPage({ searchParams }: PageProps<'/campan
               <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {archived.map((campaign) => (
                   <li key={campaign.id}>
-                    <CampaignCard campaign={campaign} />
+                    <CampaignCard campaign={campaign} coverUrl={coverOf(campaign.coverPath)} />
                   </li>
                 ))}
               </ul>

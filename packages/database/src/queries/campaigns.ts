@@ -196,6 +196,11 @@ export async function updateCampaignTurnSettings(
   if (data.length === 0) throw new AppError('forbidden');
 }
 
+/** Caminho da capa da campanha no bucket `campaign-media` (só o mestre envia; os participantes leem). */
+export function campaignCoverPath(campaignId: string, fileName: string): string {
+  return `campaigns/${campaignId}/cover/${fileName}`;
+}
+
 export async function setCampaignCover(
   client: CodexveilClient,
   campaignId: string,

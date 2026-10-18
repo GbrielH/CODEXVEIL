@@ -4,16 +4,18 @@ import {
   listMyCampaigns,
   listMyCharacters,
   listUpcomingSessions,
+  signedMediaUrls,
 } from '@codexveil/database';
-import { campaignRoleLabels, formatInviteCode } from '@codexveil/domain';
+import { formatInviteCode } from '@codexveil/domain';
 import { summarizeSheet } from '@codexveil/rpg-systems';
 import { useRouter } from 'expo-router';
 import { CalendarClock, Dices, Mail, ScrollText, Swords } from 'lucide-react-native';
 import { View } from 'react-native';
+import { CampaignCoverCard } from '@/components/campaign-cover-card';
 import { CharacterAvatar } from '@/components/character-avatar';
 import { HeroCard, IconBubble, QuickAction, QuickActions, SectionHeader } from '@/components/ui/layout';
 import { ListRow } from '@/components/ui/list-row';
-import { AppText, Badge } from '@/components/ui/primitives';
+import { AppText } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states';
 import { useAsyncData } from '@/lib/hooks';
@@ -37,7 +39,12 @@ export default function DashboardScreen() {
       listMyCharacters(supabase, userId),
       listUpcomingSessions(supabase),
     ]);
-    return { profile, campaigns, invites, characters, sessions };
+    // Capas das mesas em andamento mostradas no painel.
+    const covers = await signedMediaUrls(
+      supabase,
+      campaigns.filter((campaign) => campaign.status === 'active').slice(0, 6).map((campaign) => campaign.coverPath),
+    );
+    return { profile, campaigns, invites, characters, sessions, covers };
   }, userId);
 
   if (loading) return <LoadingState label="Abrindo o grimório…" />;
@@ -129,16 +136,10 @@ export default function DashboardScreen() {
             <EmptyState title="Nenhuma campanha em andamento" description="Entre com o código do seu mestre ou crie uma campanha na aba Campanhas." />
           ) : (
             active.slice(0, 6).map((campaign) => (
-              <ListRow
+              <CampaignCoverCard
                 key={campaign.id}
-                leading={
-                  <IconBubble>
-                    <ScrollText size={18} color={colors.fgAccent} />
-                  </IconBubble>
-                }
-                title={campaign.name}
-                subtitle={`${campaign.memberCount} participante${campaign.memberCount === 1 ? '' : 's'}`}
-                trailing={<Badge label={campaign.isOwner ? 'Mestre' : campaignRoleLabels[campaign.role]} tone={campaign.role === 'gm' ? 'brand' : 'neutral'} />}
+                campaign={campaign}
+                coverUrl={campaign.coverPath ? (data.covers[campaign.coverPath] ?? null) : null}
                 onPress={() => router.push({ pathname: '/campanha/[id]', params: { id: campaign.id } })}
               />
             ))

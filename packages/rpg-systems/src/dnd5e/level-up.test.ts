@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyAbilityImprovement, applyDnd5eLevelUp, findClassByName, hitPointsGained, planDnd5eLevelUp } from './level-up';
+import { applyAbilityImprovement, applyDnd5eLevelUp, dnd5eMulticlassOptions, findClassByName, hitPointsGained, planDnd5eLevelUp } from './level-up';
 import { spellSlotResourceKey } from './resources';
 import { parseDnd5eSheet } from './sheet';
 
@@ -96,6 +96,92 @@ describe('subida de nível', () => {
     expect(applyAbilityImprovement(scores, { kind: 'plus_one_each', abilities: ['dex', 'con'] })).toMatchObject({ dex: 15, con: 15 });
     expect(applyAbilityImprovement({ ...scores, str: 20 }, { kind: 'feat', featId: 'boon_of_fate', ability: 'str' }).str).toBe(21);
     expect(applyAbilityImprovement(scores, { kind: 'feat', featId: 'grappler', ability: 'int' }).int).toBe(10);
+  });
+});
+
+describe('talentos no aumento de atributo', () => {
+  const base = { hitPoints: { method: 'average' as const }, cantrips: [], spells: [], invocations: [], metamagic: [] };
+
+  it('oferece os talentos gerais, de origem e, para quem tem Estilo de Luta, os de estilo', () => {
+    const rogue = planDnd5eLevelUp(sheetFor('Ladino', 3, 'Ladrão', { dex: 16 }), 0, ['Alerta']);
+    const ids = rogue.feats.map((feat) => feat.id);
+    expect(ids).toEqual(expect.arrayContaining(['ability_score_improvement', 'grappler', 'savage_attacker', 'skilled', 'magic_initiate']));
+    expect(ids).not.toContain('alert');
+    expect(ids).not.toContain('archery');
+    expect(planDnd5eLevelUp(sheetFor('Guerreiro', 3, 'Campeão'), 0).feats.map((feat) => feat.id)).toContain('archery');
+  });
+
+  it('Habilidoso pede 3 perícias e Iniciado em Magia pede lista, truques e magia', () => {
+    const sheet = sheetFor('Ladino', 3, 'Ladrão', { dex: 16 });
+    const plan = planDnd5eLevelUp(sheet, 0);
+    const skilled = applyDnd5eLevelUp(sheet, plan, { ...base, improvement: { kind: 'feat', featId: 'skilled' }, featSkills: ['history', 'nature'] });
+    expect(skilled.issues).toContain('Escolha as 3 perícias do talento Habilidoso.');
+    const done = applyDnd5eLevelUp(sheet, plan, { ...base, improvement: { kind: 'feat', featId: 'skilled' }, featSkills: ['history', 'nature', 'religion'] });
+    expect(done.issues).toEqual([]);
+    expect(done.sheet.skills.religion.proficiency).toBe('proficient');
+
+    const initiate = applyDnd5eLevelUp(sheet, plan, {
+      ...base,
+      improvement: { kind: 'feat', featId: 'magic_initiate' },
+      magicInitiate: { list: 'wizard', cantrips: ['Fire Bolt', 'Light'], spell: 'Magic Missile', ability: 'int' },
+    });
+    expect(initiate.issues).toEqual([]);
+    expect(initiate.abilities.map((entry) => entry.name)).toEqual(expect.arrayContaining(['Iniciado em Magia (Mago)', 'Fire Bolt', 'Light', 'Magic Missile']));
+    expect(initiate.abilities.find((entry) => entry.name === 'Magic Missile')?.resourceKey).toBe('feat_magic_initiate_wizard');
+    expect(initiate.resources.find((resource) => resource.key === 'feat_magic_initiate_wizard')).toMatchObject({ max: 1, recovery: 'long_rest' });
+  });
+});
+
+describe('multiclasse', () => {
+  const noChoices = { hitPoints: { method: 'average' as const }, improvement: null, cantrips: [], spells: [], invocations: [], metamagic: [] };
+
+  it('exige 13 no atributo principal da classe nova e das atuais', () => {
+    const blocked = (sheet: ReturnType<typeof sheetFor>, id: string) => dnd5eMulticlassOptions(sheet).find((option) => option.classDef.id === id)?.blocked;
+    const fighter = sheetFor('Guerreiro', 3, 'Campeão', { str: 15, int: 12 });
+    expect(dnd5eMulticlassOptions(fighter).map((option) => option.classDef.id)).not.toContain('fighter');
+    expect(blocked(fighter, 'wizard')).toEqual(['Exige Inteligência 13 (tem 12).']);
+    expect(blocked(sheetFor('Guerreiro', 3, 'Campeão', { str: 15, int: 13 }), 'wizard')).toEqual([]);
+    // Monge: Destreza e Sabedoria; Guerreiro: Força ou Destreza (basta um).
+    expect(blocked(sheetFor('Guerreiro', 3, '', { dex: 14, wis: 12 }), 'monk')).toEqual(['Exige Sabedoria 13 (tem 12).']);
+    expect(blocked(sheetFor('Guerreiro', 3, '', { int: 14 }), 'wizard')).toEqual(['Para sair de Guerreiro: Força 13 (tem 10) ou Destreza 13 (tem 10).']);
+  });
+
+  it('o 1º nível de mago num guerreiro traz o dado de vida, magias e espaços da classe nova', () => {
+    const sheet = sheetFor('Guerreiro', 3, 'Campeão', { str: 15, int: 14 });
+    const plan = planDnd5eLevelUp(sheet, 0, [], 'wizard');
+    expect(plan).toMatchObject({ className: 'Mago', newClassLevel: 1, newTotalLevel: 4, hitDieSides: 6, newCantrips: 3, newSpells: 6 });
+    expect(plan.multiclass).toMatchObject({ blocked: [], skillOptions: [], instrumentOptions: [] });
+    expect(plan.resources.find((resource) => resource.key === spellSlotResourceKey(1))).toMatchObject({ max: 2 });
+    const result = applyDnd5eLevelUp(sheet, plan, {
+      ...noChoices,
+      cantrips: ['Fire Bolt', 'Light', 'Mage Hand'],
+      spells: ['Magic Missile', 'Shield', 'Sleep', 'Detect Magic', 'Mage Armor', 'Burning Hands'],
+    });
+    expect(result.issues).toEqual([]);
+    expect(result.sheet.identity.classes).toEqual([
+      { name: 'Guerreiro', subclass: 'Campeão', level: 3, hitDie: 'd10' },
+      { name: 'Mago', subclass: '', level: 1, hitDie: 'd6' },
+    ]);
+    expect(result.resources.find((resource) => resource.key === 'hit_dice_d6')).toMatchObject({ max: 1 });
+    expect(result.summary).toContain('multiclasse em Mago');
+  });
+
+  it('espaços de magia somam os níveis de conjurador das classes', () => {
+    const sheet = sheetFor('Mago', 3, 'Evocador', { int: 15, wis: 13 });
+    const plan = planDnd5eLevelUp(sheet, 0, [], 'cleric');
+    // Mago 3 + Clérigo 1 = conjurador de 4º nível: 4 espaços de 1º e 3 de 2º círculo.
+    expect(plan.resources.find((resource) => resource.key === spellSlotResourceKey(2))).toMatchObject({ max: 3 });
+  });
+
+  it('a classe nova pede a perícia e acrescenta os treinamentos', () => {
+    const sheet = sheetFor('Guerreiro', 2, '', { str: 15, dex: 14 });
+    const plan = planDnd5eLevelUp(sheet, 0, [], 'rogue');
+    expect(plan.multiclass?.skillOptions).toContain('stealth');
+    expect(applyDnd5eLevelUp(sheet, plan, noChoices).issues).toContain('Escolha a perícia que a nova classe dá.');
+    const result = applyDnd5eLevelUp(sheet, plan, { ...noChoices, multiclassSkill: 'stealth' });
+    expect(result.issues).toEqual([]);
+    expect(result.sheet.skills.stealth.proficiency).toBe('proficient');
+    expect(result.sheet.proficiencies).toMatchObject({ armor: 'Armaduras leves', tools: 'Ferramentas de ladrão' });
   });
 });
 
