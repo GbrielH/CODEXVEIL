@@ -27,6 +27,7 @@ export async function createSessionAction(
     title: readText(formData, 'title'),
     scheduledAt: scheduledAt === undefined ? 'data-invalida' : scheduledAt,
     isPublished: formData.get('isPublished') === 'on',
+    physicalDice: formData.get('physicalDice') === 'on',
   };
   const parsed = sessionCreateSchema.safeParse(raw);
   if (!parsed.success) {

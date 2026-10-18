@@ -1,6 +1,6 @@
 import { ABILITIES, abilityLabels, spellSchoolLabels, type Ability, type ChoiceSpec, type Selection } from '@codexveil/rpg-systems/dnd5e';
 import { Check, Search } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { AppText, Badge } from '@/components/ui/primitives';
 import { colors, fonts, palette, radii, spacing } from '@/lib/theme';
@@ -83,6 +83,7 @@ export function OptionCard({
   description,
   note,
   onPress,
+  icon,
 }: {
   selected: boolean;
   disabled?: boolean;
@@ -90,6 +91,8 @@ export function OptionCard({
   description?: string | undefined;
   note?: string | undefined;
   onPress: () => void;
+  /** Ícone da classe ou espécie, à esquerda do título. */
+  icon?: (color: string) => ReactNode;
 }) {
   return (
     <Pressable
@@ -99,7 +102,10 @@ export function OptionCard({
       accessibilityState={{ selected, disabled }}
       style={({ pressed }) => [styles.card, selected && styles.cardSelected, pressed && { backgroundColor: colors.hover }, disabled && styles.disabled]}
     >
-      <AppText style={[styles.cardTitle, selected && { color: colors.fgAccent }]}>{title}</AppText>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        {icon ? icon(selected ? colors.fgAccent : colors.parchmentEdge) : null}
+        <AppText style={[styles.cardTitle, { flex: 1 }, selected && { color: colors.fgAccent }]}>{title}</AppText>
+      </View>
       {description ? <AppText variant="small">{description}</AppText> : null}
       {note ? <AppText variant="small" style={{ color: '#E6BE74' }}>{note}</AppText> : null}
     </Pressable>

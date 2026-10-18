@@ -54,6 +54,20 @@ function parseOrder(value: unknown): TurnOrderEntry[] {
 }
 
 /** Turno do encontro aberto da campanha, ou `null` quando não há encontro. */
+export interface SessionState {
+  /** Há sessão em andamento (jogadores só rolam e agem nela). */
+  playing: boolean;
+  /** A sessão em andamento usa dados presenciais. */
+  physicalDice: boolean;
+}
+
+export async function getSessionState(client: CodexveilClient, campaignId: string): Promise<SessionState> {
+  const { data, error } = await client.rpc('campaign_session_state', { p_campaign_id: campaignId });
+  if (error) throw toAppError(error);
+  const state = (data ?? {}) as { playing?: boolean; physicalDice?: boolean };
+  return { playing: state.playing === true, physicalDice: state.physicalDice === true };
+}
+
 /** A campanha tem sessão em andamento? (Jogadores só rolam e agem nela.) */
 export async function isSessionInProgress(client: CodexveilClient, campaignId: string): Promise<boolean> {
   const { data, error } = await client.rpc('campaign_session_in_progress', { p_campaign_id: campaignId });
@@ -166,6 +180,8 @@ export interface TurnActionRequest {
   /** Rolagem feita junto (ex.: ataque "1d20+5"), registrada no mural. */
   rollExpression?: string | null;
   rollMode?: DiceRollMode;
+  /** Resultado do dado físico (sessões com dados presenciais). */
+  manualTotal?: number | null;
 }
 
 export async function performTurnAction(client: CodexveilClient, request: TurnActionRequest): Promise<TurnAction> {
@@ -177,6 +193,7 @@ export async function performTurnAction(client: CodexveilClient, request: TurnAc
     p_grants_action: request.grantsAction ?? false,
     ...(request.rollExpression ? { p_roll_expression: request.rollExpression } : {}),
     p_roll_mode: request.rollMode ?? 'normal',
+    ...(request.manualTotal === undefined || request.manualTotal === null ? {} : { p_manual_total: request.manualTotal }),
   });
   if (error) throw toAppError(error);
   return toAction(data);

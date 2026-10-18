@@ -1295,6 +1295,7 @@ export type Database = {
           id: string;
           is_published: boolean;
           number: number;
+          physical_dice: boolean;
           recap: string;
           scheduled_at: string | null;
           status: Database['public']['Enums']['session_status'];
@@ -1309,6 +1310,7 @@ export type Database = {
           id?: string;
           is_published?: boolean;
           number?: number;
+          physical_dice?: boolean;
           recap?: string;
           scheduled_at?: string | null;
           status?: Database['public']['Enums']['session_status'];
@@ -1323,6 +1325,7 @@ export type Database = {
           id?: string;
           is_published?: boolean;
           number?: number;
+          physical_dice?: boolean;
           recap?: string;
           scheduled_at?: string | null;
           status?: Database['public']['Enums']['session_status'];
@@ -1550,6 +1553,12 @@ export type Database = {
         };
         Returns: boolean;
       };
+      campaign_session_state: {
+        Args: {
+          p_campaign_id: string;
+        };
+        Returns: Json;
+      };
       create_character: {
         Args: {
           p_name: string;
@@ -1605,6 +1614,7 @@ export type Database = {
           p_grants_action?: boolean;
           p_roll_expression?: string;
           p_roll_mode?: string;
+          p_manual_total?: number;
         };
         Returns: Database['public']['Tables']['turn_actions']['Row'];
         SetofOptions: {

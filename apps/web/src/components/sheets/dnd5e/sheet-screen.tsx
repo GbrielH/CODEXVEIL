@@ -292,11 +292,25 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
             value={tab}
             onValueChange={setTab}
             items={[
-              { value: 'jogo', label: 'Jogo', icon: <Swords className="h-4 w-4" aria-hidden="true" />, content: <PlayTab /> },
+              {
+                value: 'jogo',
+                label: 'Jogo',
+                icon: <Swords className="h-4 w-4" aria-hidden="true" />,
+                // Na campanha, tudo que se usa na mesa fica junto: ataques, magias e habilidades.
+                content:
+                  props.variant === 'campaign' ? (
+                    <div className="flex flex-col gap-5">
+                      <PlayTab />
+                      <FeaturesTab withoutAttacks />
+                    </div>
+                  ) : (
+                    <PlayTab />
+                  ),
+              },
               { value: 'atributos', label: 'Atributos', icon: <BookOpen className="h-4 w-4" aria-hidden="true" />, content: <AttributesTab /> },
               { value: 'inventario', label: 'Inventário', icon: <Backpack className="h-4 w-4" aria-hidden="true" />, content: <InventoryTab /> },
-              { value: 'habilidades', label: 'Habilidades e magias', icon: <Sparkles className="h-4 w-4" aria-hidden="true" />, content: <FeaturesTab /> },
               ...(props.variant === 'campaign' ? [] : [
+              { value: 'habilidades', label: 'Habilidades e magias', icon: <Sparkles className="h-4 w-4" aria-hidden="true" />, content: <FeaturesTab /> },
               { value: 'historia', label: 'Personagem', icon: <Feather className="h-4 w-4" aria-hidden="true" />, content: <StoryTab /> },
               { value: 'evolucao', label: 'Evolução', icon: <Hourglass className="h-4 w-4" aria-hidden="true" />, content: <ProgressTab /> },
               ...(permissions.isOwner || permissions.canEditSheet

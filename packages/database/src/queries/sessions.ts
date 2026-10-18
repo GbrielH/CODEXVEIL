@@ -29,6 +29,8 @@ export interface SessionSummary {
   scheduledAt: string | null;
   status: SessionStatus;
   isPublished: boolean;
+  /** A mesa rola dados físicos nesta sessão. */
+  physicalDice: boolean;
   updatedAt: string;
 }
 
@@ -45,7 +47,7 @@ export const sessionStatusLabels: Record<SessionStatus, string> = {
 };
 
 const SESSION_COLUMNS =
-  'id, campaign_id, number, title, scheduled_at, status, is_published, recap, version, created_at, updated_at' as const;
+  'id, campaign_id, number, title, scheduled_at, status, is_published, physical_dice, recap, version, created_at, updated_at' as const;
 
 type SessionRow = Pick<
   Tables<'sessions'>,
@@ -56,6 +58,7 @@ type SessionRow = Pick<
   | 'scheduled_at'
   | 'status'
   | 'is_published'
+  | 'physical_dice'
   | 'recap'
   | 'version'
   | 'created_at'
@@ -71,6 +74,7 @@ function toSessionDetail(row: SessionRow): SessionDetail {
     scheduledAt: row.scheduled_at,
     status: row.status,
     isPublished: row.is_published,
+    physicalDice: row.physical_dice,
     recap: row.recap,
     version: row.version,
     createdAt: row.created_at,
@@ -135,6 +139,7 @@ export async function createSession(
       title: input.title,
       scheduled_at: input.scheduledAt,
       is_published: input.isPublished,
+      physical_dice: input.physicalDice,
     })
     .select('id')
     .single();
@@ -155,6 +160,7 @@ export async function updateSession(
       title: input.title,
       scheduled_at: input.scheduledAt,
       is_published: input.isPublished,
+      physical_dice: input.physicalDice,
       recap: input.recap,
     })
     .eq('id', sessionId)

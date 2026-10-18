@@ -43,3 +43,13 @@ export const dnd5eOfficialLinks: readonly OfficialLink[] = [
     access: 'free',
   },
 ];
+
+/**
+ * Página oficial da classe ou espécie no D&D Beyond, com as ilustrações dos livros. A arte é da
+ * Wizards of the Coast e não pode ser copiada para o Codexveil (o SRD só libera o texto), então
+ * a ficha leva até ela. Endereços curtos conferidos em 2026-10-18 (redirecionam para a página).
+ */
+export function dnd5eOfficialPageUrl(kind: 'class' | 'species', id: string): string {
+  const slug = id.replace(/_/g, '-');
+  return `https://www.dndbeyond.com/${kind === 'class' ? 'classes' : 'species'}/${slug}`;
+}

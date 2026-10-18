@@ -143,7 +143,7 @@ export function PlayTab() {
         <Card>
           <CardHeader icon={<Swords className="h-5 w-5" aria-hidden="true" />} title="Ataques" />
           {attacks.length === 0 ? (
-            <p className="text-sm text-fg-muted">Cadastre ataques na aba “Habilidades e magias”.</p>
+            <p className="text-sm text-fg-muted">Nenhum ataque cadastrado.</p>
           ) : (
             <ul className="divide-y divide-line">
               {attacks.map((attack) => {

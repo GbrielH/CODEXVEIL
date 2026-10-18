@@ -88,6 +88,20 @@ describe('ações do turno', () => {
     await expectSqlError(db.as(player, (s) => s.query(`select public.perform_turn_action($1, 'movement', 'Movimento')`, [lyraCombatant])), 'CVTRN');
   });
 
+  it('com dados presenciais a ação não rola no app e guarda o resultado anotado', async () => {
+    const { gm, player, session, campaign, lyraCombatant, goblinCombatant } = await setupFight();
+    await db.as(gm, (s) => s.query(`update public.sessions set physical_dice = true where id = $1`, [session]));
+    const state = await db.as(player, (s) => s.one<{ state: { playing: boolean; physicalDice: boolean } }>(`select public.campaign_session_state($1) as state`, [campaign.id]));
+    expect(state.state).toEqual({ playing: true, physicalDice: true });
+    const attack = await db.as(player, (s) =>
+      s.one<{ roll_id: string | null; roll_total: number | null; roll_detail: string | null }>(
+        `select * from public.perform_turn_action($1, 'action', 'Atacar: Machado', $2, false, '1d20+5', 'normal', 17)`,
+        [lyraCombatant, goblinCombatant],
+      ),
+    );
+    expect(attack).toMatchObject({ roll_id: null, roll_total: 17, roll_detail: 'Dado físico' });
+  });
+
   it('fora da vez só cabe reação; ninguém age pelo personagem dos outros', async () => {
     const { player, otherPlayer, gm, lyraCombatant, goblinCombatant, encounter } = await setupFight();
     await expectSqlError(db.as(gm, (s) => s.query(`select public.perform_turn_action($1, 'action', 'Garra')`, [goblinCombatant])), 'CVTRN');

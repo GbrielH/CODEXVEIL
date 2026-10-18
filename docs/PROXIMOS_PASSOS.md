@@ -310,3 +310,20 @@ no celular (não foi aberto nada local, a pedido).
 
 Pendente: aplicar a migração em produção antes do push; imagens oficiais (item 2); tema claro no
 app; subida de nível no app.
+
+### 2026-10-18 — grupo, aba Jogo completa, ícones e dados presenciais
+
+- **Visão geral da campanha:** o jogador vê só os personagens dos outros (o seu fica em "Meu
+  personagem"); com as fichas do grupo ocultas pelo mestre, a lista some.
+- **Aba Jogo de "Meu personagem":** ataques, magias e habilidades juntos (sem trocar de aba).
+- **Imagens:** ícones de classes e espécies do game-icons.net (CC BY 3.0, crédito em /licencas)
+  no assistente do site e do app, e link para as ilustrações oficiais no D&D Beyond (a arte da
+  Wizards não pode ser copiada).
+- **Dados presenciais por sessão** (`sessions.physical_dice`, migração
+  `20261018130000_physical_dice.sql`): o mestre marca na criação ou no editor da sessão; as ações
+  do turno não rolam no app e o jogador pode anotar o resultado do dado físico
+  (`perform_turn_action(..., p_manual_total)`); `campaign_session_state` informa a interface.
+
+Verificações: `pnpm check` passou (banco 179 testes, 11 ao vivo pulados; rpg-systems 143; ui 33;
+domain 66; validation 15; web 12) e `pnpm build` passou. `supabase db push --dry-run` lista só
+`20261018130000_physical_dice.sql` (ainda não aplicada). Não verificado no navegador/celular.

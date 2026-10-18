@@ -77,6 +77,7 @@ interface SessionMeta {
   title: string;
   scheduledAt: string;
   isPublished: boolean;
+  physicalDice: boolean;
   recap: string;
 }
 
@@ -86,6 +87,7 @@ function toUpdate(meta: SessionMeta) {
     title: meta.title,
     scheduledAt: scheduledAt === undefined ? 'data-invalida' : scheduledAt,
     isPublished: meta.isPublished,
+    physicalDice: meta.physicalDice,
     recap: meta.recap,
   };
 }
@@ -119,6 +121,7 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
       title: session.title,
       scheduledAt: toBrasiliaInput(session.scheduledAt),
       isPublished: session.isPublished,
+      physicalDice: session.physicalDice,
       recap: session.recap,
     },
     version: session.version,
@@ -276,6 +279,13 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
               description="Jogadores veem o resumo e os blocos públicos. Blocos privados nunca são enviados a eles. Com data marcada, quem usa o app recebe um aviso."
               checked={meta.value.isPublished}
               onChange={(event) => meta.update((current) => ({ ...current, isPublished: event.target.checked }))}
+            />
+            <CheckboxField
+              id="session-physical-dice"
+              label="Dados presenciais"
+              description="A mesa rola dados físicos nesta sessão: as ações do turno não rolam no app, e o jogador pode anotar o resultado do dado. Vale só para esta sessão."
+              checked={meta.value.physicalDice}
+              onChange={(event) => meta.update((current) => ({ ...current, physicalDice: event.target.checked }))}
             />
             <TextareaField
               id="session-recap"

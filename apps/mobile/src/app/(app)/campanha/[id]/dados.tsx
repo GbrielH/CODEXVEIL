@@ -1,4 +1,4 @@
-import { getCampaign, isSessionInProgress, listCampaignCharacters } from '@codexveil/database';
+import { getCampaign, getSessionState, listCampaignCharacters } from '@codexveil/database';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { DicePanel, DiceProvider } from '@/components/dice/dice';
 import { RollFeed } from '@/components/dice/roll-feed';
@@ -18,7 +18,7 @@ export default function CampaignDiceScreen() {
     const supabase = getSupabase();
     const campaign = await getCampaign(supabase, id, userId);
     if (!campaign) return null;
-    const [party, playing] = await Promise.all([listCampaignCharacters(supabase, campaign.id), isSessionInProgress(supabase, campaign.id)]);
+    const [party, playing] = await Promise.all([listCampaignCharacters(supabase, campaign.id), getSessionState(supabase, campaign.id)]);
     return { campaign, playing, own: party.find((character) => character.ownerId === userId) ?? null };
   }, `${id}:${userId}`);
 
@@ -31,7 +31,8 @@ export default function CampaignDiceScreen() {
       </Screen>
     );
   }
-  const { campaign, own, playing } = data;
+  const { campaign, own, playing: session } = data;
+  const playing = session.playing;
   const isGm = campaign.role === 'gm';
   const ownCharacter = isGm ? null : own;
 
@@ -43,7 +44,11 @@ export default function CampaignDiceScreen() {
           <AppText variant="muted">
             {isGm ? 'Os jogadores veem as rolagens abertas; as secretas ficam só com os mestres.' : 'O resultado aparece no mural da mesa.'}
           </AppText>
-          {isGm || playing ? (
+          {!isGm && playing && session.physicalDice ? (
+            <AppText style={{ color: colors.fgSecondary }}>
+              Sessão com dados presenciais: role os dados na mesa. As ações do turno ficam no mural com o resultado que você anotar.
+            </AppText>
+          ) : isGm || playing ? (
             <DiceProvider campaignId={campaign.id} characterId={ownCharacter?.id ?? null}>
               <DicePanel isGm={isGm} characterName={ownCharacter?.name ?? null} />
             </DiceProvider>

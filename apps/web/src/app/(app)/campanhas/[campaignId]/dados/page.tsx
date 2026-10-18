@@ -1,4 +1,4 @@
-import { isSessionInProgress, listCampaignCharacters, listDiceRolls } from '@codexveil/database';
+import { getSessionState, listCampaignCharacters, listDiceRolls } from '@codexveil/database';
 import { Dices, ScrollText } from 'lucide-react';
 import type { Metadata } from 'next';
 import { DicePanel, DiceProvider } from '@/components/dice/dice-roller';
@@ -15,10 +15,10 @@ export default async function DicePage({ params }: PageProps<'/campanhas/[campai
   const { campaignId } = await params;
   const { user, campaign } = await loadCampaignOrNotFound(campaignId);
   const supabase = await createSupabaseServerClient();
-  const [rolls, party, playing] = await Promise.all([
+  const [rolls, party, session] = await Promise.all([
     listDiceRolls(supabase, campaign.id),
     listCampaignCharacters(supabase, campaign.id),
-    isSessionInProgress(supabase, campaign.id),
+    getSessionState(supabase, campaign.id),
   ]);
   const isGm = campaign.role === 'gm';
   const ownCharacter = isGm ? null : (party.find((character) => character.ownerId === user.id) ?? null);
@@ -37,7 +37,12 @@ export default async function DicePage({ params }: PageProps<'/campanhas/[campai
                 : 'O resultado aparece no mural da mesa. Marque “Só para o mestre” para uma rolagem escondida.'
             }
           />
-          {isGm || playing ? (
+          {!isGm && session.playing && session.physicalDice ? (
+            <Alert tone="info" title="Sessão com dados presenciais">
+              O mestre escolheu dados físicos para esta sessão: role na mesa. As ações do turno ficam registradas no mural, com o
+              resultado que você anotar.
+            </Alert>
+          ) : isGm || session.playing ? (
             <DiceProvider campaignId={campaign.id} characterId={ownCharacter?.id ?? null}>
               <DicePanel isGm={isGm} characterName={ownCharacter?.name ?? null} />
             </DiceProvider>

@@ -9,6 +9,7 @@
     "./tokens": "./src/tokens.ts",
     "./brand": "./src/brand.ts",
     "./glyphs": "./src/glyphs.ts",
+    "./character-icons": "./src/character-icons.ts",
     "./tokens.css": "./css/tokens.css"
   },
   "scripts": {

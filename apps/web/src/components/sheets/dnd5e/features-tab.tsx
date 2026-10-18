@@ -48,7 +48,8 @@ function parseSpell(data: unknown): Dnd5eSpellData {
 
 const FEATURE_KINDS: AbilityEntryKind[] = ['class_feature', 'species_trait', 'feat', 'background_feature', 'other'];
 
-export function FeaturesTab() {
+/** `withoutAttacks`: na aba Jogo da campanha os ataques já aparecem acima. */
+export function FeaturesTab({ withoutAttacks = false }: { withoutAttacks?: boolean }) {
   const { abilities, permissions } = useSheet();
   const [editing, setEditing] = useState<{ entry: CharacterAbility | null; kind: AbilityEntryKind } | null>(null);
   const canEdit = permissions.canEditSheet;
@@ -72,7 +73,7 @@ export function FeaturesTab() {
 
   return (
     <div className="flex flex-col gap-5">
-      <Card>
+      {withoutAttacks ? null : <Card>
         <CardHeader icon={<Swords className="h-5 w-5" aria-hidden="true" />} title="Ataques" action={addButton('attack', 'Novo ataque')} />
         {attacks.length === 0 ? <p className="text-sm text-fg-muted">Nenhum ataque cadastrado.</p> : (
           <ul className="divide-y divide-line">
@@ -81,7 +82,7 @@ export function FeaturesTab() {
             ))}
           </ul>
         )}
-      </Card>
+      </Card>}
 
       <Card>
         <CardHeader icon={<WandSparkles className="h-5 w-5" aria-hidden="true" />} title="Magias" action={addButton('spell', 'Nova magia')} />

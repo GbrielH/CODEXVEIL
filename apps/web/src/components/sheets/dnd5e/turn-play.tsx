@@ -5,7 +5,7 @@ import {
   applyCharacterCondition,
   endTurn,
   getCampaignTurn,
-  isSessionInProgress,
+  getSessionState,
   listTurnActions,
   performTurnAction,
   tickCharacterConditions,
@@ -66,6 +66,8 @@ export function TurnPlay() {
   const [busy, setBusy] = useState(false);
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [playing, setPlaying] = useState(true);
+  const [physicalDice, setPhysicalDice] = useState(false);
+  const [manual, setManual] = useState('');
 
   const reload = useCallback(async () => {
     if (!campaignId) return;
@@ -74,11 +76,12 @@ export function TurnPlay() {
       const [nextTurn, nextActions, inProgress] = await Promise.all([
         getCampaignTurn(client, campaignId),
         listTurnActions(client, campaignId, 60),
-        isSessionInProgress(client, campaignId),
+        getSessionState(client, campaignId),
       ]);
       setTurn(nextTurn);
       setActions(nextActions);
-      setPlaying(inProgress);
+      setPlaying(inProgress.playing);
+      setPhysicalDice(inProgress.physicalDice);
     } catch (error) {
       console.error('[codexveil] falha ao carregar o turno', error);
     }
@@ -88,12 +91,13 @@ export function TurnPlay() {
     if (!campaignId) return;
     let active = true;
     const client = getSupabaseBrowserClient();
-    Promise.all([getCampaignTurn(client, campaignId), listTurnActions(client, campaignId, 60), isSessionInProgress(client, campaignId)])
+    Promise.all([getCampaignTurn(client, campaignId), listTurnActions(client, campaignId, 60), getSessionState(client, campaignId)])
       .then(([nextTurn, nextActions, inProgress]) => {
         if (!active) return;
         setTurn(nextTurn);
         setActions(nextActions);
-        setPlaying(inProgress);
+        setPlaying(inProgress.playing);
+        setPhysicalDice(inProgress.physicalDice);
       })
       .catch(() => undefined);
     return () => {
@@ -164,7 +168,9 @@ export function TurnPlay() {
         label: option.label,
         targetCombatantId: kind === 'movement' || !target ? null : target,
         grantsAction: option.grantsAction,
-        rollExpression: option.roll,
+        // Dados presenciais: o app não rola; o jogador pode anotar o resultado do dado físico.
+        rollExpression: physicalDice ? null : option.roll,
+        manualTotal: physicalDice && manual.trim() !== '' && Number.isInteger(Number(manual)) ? Number(manual) : null,
       });
       // Habilidades com usos gastam 1 uso ao serem usadas.
       const resource = option.ability?.resourceId ? resources.find((entry) => entry.id === option.ability?.resourceId) : undefined;
@@ -178,6 +184,7 @@ export function TurnPlay() {
         description: done.rollTotal !== null ? `Resultado: ${done.rollTotal}` : undefined,
       });
       setChoice('');
+      setManual('');
       await reload();
     } catch (error) {
       toast({ tone: 'danger', title: 'A ação não foi registrada', description: failureMessage(error, 'Tente novamente.') });
@@ -304,9 +311,25 @@ export function TurnPlay() {
               </Select>
             </div>
           </div>
+          {physicalDice ? (
+            <div className="flex flex-col gap-1.5 sm:max-w-xs">
+              <label htmlFor={`${id}-dado`} className="text-sm font-medium">
+                Resultado do dado físico (opcional)
+              </label>
+              <input
+                id={`${id}-dado`}
+                inputMode="numeric"
+                value={manual}
+                onChange={(event) => setManual(event.target.value.replace(/[^0-9-]/g, '').slice(0, 5))}
+                placeholder="Ex.: 17"
+                className="h-10 rounded-md border border-line bg-sunken px-3 text-sm text-fg placeholder:text-fg-muted"
+              />
+              <p className="text-xs text-fg-muted">Sessão com dados presenciais: role na mesa e anote o total, se quiser que fique no mural.</p>
+            </div>
+          ) : null}
           <div className="flex flex-wrap gap-2">
             <Button loading={busy} disabled={!selected} icon={<Swords className="h-4 w-4" aria-hidden="true" />} onClick={() => selected && void act(selected)}>
-              {selected?.roll ? 'Fazer e rolar' : 'Fazer'}
+              {selected?.roll && !physicalDice ? 'Fazer e rolar' : 'Fazer'}
             </Button>
             <Button
               variant="secondary"

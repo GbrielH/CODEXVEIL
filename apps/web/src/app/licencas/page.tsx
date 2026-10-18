@@ -54,6 +54,21 @@ export default function LicensesPage() {
           </Card>
         ))}
         <Card>
+          <h2 className="text-lg">Ícones de classes e espécies</h2>
+          <p className="mt-2 text-sm text-fg-secondary">
+            Ícones de{' '}
+            <a href="https://game-icons.net" className="underline underline-offset-4" rel="noreferrer">
+              game-icons.net
+            </a>
+            , de Lorc e Delapouite, sob a licença{' '}
+            <a href="https://creativecommons.org/licenses/by/3.0/" className="underline underline-offset-4" rel="noreferrer">
+              CC BY 3.0
+            </a>
+            . Usados sem alteração do desenho, com a cor do tema do Codexveil. As ilustrações oficiais de D&amp;D são da Wizards of the
+            Coast e não são reproduzidas aqui; a ficha leva ao D&amp;D Beyond para vê-las.
+          </p>
+        </Card>
+        <Card>
           <h2 className="text-lg">Software e fontes de terceiros</h2>
           <ul className="mt-3 divide-y divide-line text-sm">
             {thirdParty.map((item) => (

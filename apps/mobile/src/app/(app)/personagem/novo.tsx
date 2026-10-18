@@ -34,6 +34,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AbilityScoresField, EMPTY_ROLLS, type RollState } from '@/components/creation/ability-scores';
+import { CharacterIcon } from '@/components/creation/character-icon';
 import { ChoiceField, OptionCard } from '@/components/creation/choice-fields';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
@@ -234,6 +235,7 @@ function Wizard({ campaigns, defaultCampaignId, loadError }: { campaigns: Playab
               key={entry.id}
               selected={entry.id === draft.classId}
               title={entry.name}
+              icon={(color) => <CharacterIcon kind="class" id={entry.id} color={color} />}
               description={`${entry.primaryAbilityLabel} · ${entry.hitDie} · ${entry.summary}`}
               onPress={() =>
                 setDraft((current) =>
@@ -306,6 +308,7 @@ function Wizard({ campaigns, defaultCampaignId, loadError }: { campaigns: Playab
               key={species.id}
               selected={species.id === draft.speciesId}
               title={species.name}
+              icon={(color) => <CharacterIcon kind="species" id={species.id} color={color} />}
               description={`${species.sizeLabel} · ${formatDistance(species.speed, 'm')}. ${species.summary}`}
               onPress={() =>
                 setDraft((current) =>

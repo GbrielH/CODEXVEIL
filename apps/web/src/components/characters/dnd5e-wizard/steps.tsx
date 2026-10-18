@@ -16,11 +16,14 @@ import {
   skillGrants,
   startingEquipment,
   toolGrants,
+  dnd5eOfficialPageUrl,
   type ClassDefinition,
   type Dnd5eDraft,
   type Skill,
 } from '@codexveil/rpg-systems/dnd5e';
+import { ExternalLink } from 'lucide-react';
 import { useId, type ReactNode } from 'react';
+import { CharacterIcon } from '@/components/characters/character-icon';
 import { Badge } from '@/components/ui/badge';
 import { TextareaField } from '@/components/ui/field';
 import { cx } from '@/lib/cx';
@@ -31,12 +34,14 @@ function PickerCard({
   title,
   subtitle,
   children,
+  icon,
 }: {
   selected: boolean;
   onSelect: () => void;
   title: string;
   subtitle?: string;
   children?: ReactNode;
+  icon?: ReactNode;
 }) {
   return (
     <button
@@ -49,7 +54,10 @@ function PickerCard({
         selected ? 'border-parchment-300/70 bg-parchment-200/10 shadow-[inset_0_0_0_1px_rgb(228_216_189/0.25)]' : 'border-line hover:border-line-strong hover:bg-hover',
       )}
     >
-      <span className="font-display text-base text-fg">{title}</span>
+      <span className="flex items-center gap-2">
+        {icon ? <span className={cx('text-parchment-400', selected && 'text-fg-accent')}>{icon}</span> : null}
+        <span className="font-display text-base text-fg">{title}</span>
+      </span>
       {subtitle ? <span className="text-xs text-fg-accent">{subtitle}</span> : null}
       {children ? <span className="text-xs leading-relaxed text-fg-muted">{children}</span> : null}
     </button>
@@ -87,12 +95,27 @@ export function ClassPicker({ value, onSelect }: { value: string; onSelect: (id:
           selected={entry.id === value}
           onSelect={() => onSelect(entry.id)}
           title={entry.name}
+          icon={<CharacterIcon kind="class" id={entry.id} className="h-8 w-8" />}
           subtitle={`${entry.primaryAbilityLabel} · Dado de vida ${entry.hitDie} · Complexidade ${entry.complexity.toLowerCase()}`}
         >
           {entry.summary}
         </PickerCard>
       ))}
     </div>
+  );
+}
+
+function OfficialArtLink({ kind, id, name }: { kind: 'class' | 'species'; id: string; name: string }) {
+  return (
+    <a
+      href={dnd5eOfficialPageUrl(kind, id)}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex w-fit items-center gap-1 text-xs text-fg-brand underline-offset-2 hover:underline"
+    >
+      Ver {name} com as ilustrações oficiais (D&amp;D Beyond)
+      <ExternalLink className="h-3 w-3" aria-hidden="true" />
+    </a>
   );
 }
 
@@ -105,6 +128,7 @@ export function ClassDetails({ classDef, level }: { classDef: ClassDefinition; l
       : `Escolha ${classDef.skillChoices.count}: ${classDef.skillChoices.options.map((skill) => skillDefinitions[skill].label).join(', ')}`;
   return (
     <div className="flex flex-col gap-4 rounded-md border border-line bg-card/60 p-4">
+      <OfficialArtLink kind="class" id={classDef.id} name={classDef.name} />
       <dl className="grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-[auto_1fr]">
         <dt className="text-fg-muted">Atributo principal</dt>
         <dd>{classDef.primaryAbilityLabel}</dd>
@@ -178,6 +202,7 @@ export function SpeciesPicker({ value, onSelect }: { value: string; onSelect: (i
           selected={species.id === value}
           onSelect={() => onSelect(species.id)}
           title={species.name}
+          icon={<CharacterIcon kind="species" id={species.id} className="h-8 w-8" />}
           subtitle={`${species.sizeLabel} · ${formatDistance(species.speed, 'm')}`}
         >
           {species.summary}
@@ -193,6 +218,7 @@ export function SpeciesDetails({ speciesId, level }: { speciesId: string; level:
   return (
     <div className="flex flex-col gap-2 rounded-md border border-line bg-card/60 p-4">
       <h3 className="eyebrow">Traços de {species.name}</h3>
+      <OfficialArtLink kind="species" id={species.id} name={species.name} />
       <FeatureList items={species.traits.filter((trait) => trait.level <= level)} />
       {species.traits.some((trait) => trait.level > level) ? (
         <p className="text-xs text-fg-subtle">

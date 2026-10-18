@@ -163,3 +163,8 @@ Migração `20261018120000_gameplay_turns.sql`:
 - Gatilho `dice_rolls_require_session`: jogadores só rolam com sessão em andamento (`CVSES`).
 - Índices únicos `characters_one_per_player_idx` e `campaign_notes_one_pinned_idx` (duplicatas
   antigas são desvinculadas/desafixadas antes).
+
+Migração `20261018130000_physical_dice.sql`: coluna `sessions.physical_dice` (padrão `false`),
+RPC `campaign_session_state` (`{ playing, physicalDice }`, só membros) e `perform_turn_action`
+recriada com `p_manual_total` (em sessão presencial não chama `roll_dice` e grava o total anotado
+com `roll_detail = 'Dado físico'`).

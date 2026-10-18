@@ -3,7 +3,7 @@ import {
   applyCharacterCondition,
   endTurn,
   getCampaignTurn,
-  isSessionInProgress,
+  getSessionState,
   listTurnActions,
   performTurnAction,
   tickCharacterConditions,
@@ -29,6 +29,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { Chip, ChipRow } from '@/components/ui/controls';
+import { Field } from '@/components/ui/field';
 import { PickerField } from '@/components/ui/picker';
 import { AppText, Badge, Card } from '@/components/ui/primitives';
 import { useToast } from '@/components/ui/toast';
@@ -62,6 +63,8 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
   const [busy, setBusy] = useState(false);
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [playing, setPlaying] = useState(true);
+  const [physicalDice, setPhysicalDice] = useState(false);
+  const [manual, setManual] = useState('');
 
   const reload = useCallback(async () => {
     try {
@@ -69,11 +72,12 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
       const [nextTurn, nextActions, inProgress] = await Promise.all([
         getCampaignTurn(client, campaignId),
         listTurnActions(client, campaignId, 60),
-        isSessionInProgress(client, campaignId),
+        getSessionState(client, campaignId),
       ]);
       setTurn(nextTurn);
       setActions(nextActions);
-      setPlaying(inProgress);
+      setPlaying(inProgress.playing);
+      setPhysicalDice(inProgress.physicalDice);
     } catch {
       // Sem conexão: mantém o último estado conhecido.
     }
@@ -82,12 +86,13 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
   useEffect(() => {
     let active = true;
     const client = getSupabase();
-    Promise.all([getCampaignTurn(client, campaignId), listTurnActions(client, campaignId, 60), isSessionInProgress(client, campaignId)])
+    Promise.all([getCampaignTurn(client, campaignId), listTurnActions(client, campaignId, 60), getSessionState(client, campaignId)])
       .then(([nextTurn, nextActions, inProgress]) => {
         if (!active) return;
         setTurn(nextTurn);
         setActions(nextActions);
-        setPlaying(inProgress);
+        setPlaying(inProgress.playing);
+        setPhysicalDice(inProgress.physicalDice);
       })
       .catch(() => undefined);
     return () => {
@@ -148,7 +153,9 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
         label: option.label,
         targetCombatantId: kind === 'movement' || !target ? null : target,
         grantsAction: option.grantsAction,
-        rollExpression: option.roll,
+        // Dados presenciais: o app não rola; o jogador pode anotar o resultado do dado físico.
+        rollExpression: physicalDice ? null : option.roll,
+        manualTotal: physicalDice && manual.trim() !== '' && Number.isInteger(Number(manual)) ? Number(manual) : null,
       });
       const resource = option.ability?.resourceId ? resources.find((entry) => entry.id === option.ability?.resourceId) : undefined;
       if (resource && resource.current > 0) {
@@ -161,6 +168,7 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
         description: done.rollTotal !== null ? `Resultado: ${done.rollTotal}` : undefined,
       });
       setChoice('');
+      setManual('');
       await reload();
     } catch (cause) {
       toast({ tone: 'danger', title: 'A ação não foi registrada', description: failureMessage(cause) });
@@ -254,8 +262,18 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
             onChange={setChoice}
           />
           <PickerField label="Alvo" value={target} options={[{ value: '', label: 'Sem alvo' }, ...targets.map((entry) => ({ value: entry.id, label: entry.name }))]} onChange={setTarget} />
+          {physicalDice ? (
+            <Field
+              label="Resultado do dado físico (opcional)"
+              value={manual}
+              keyboardType="numbers-and-punctuation"
+              maxLength={5}
+              onChangeText={(text) => setManual(text.replace(/[^0-9-]/g, ''))}
+              hint="Sessão com dados presenciais: role na mesa e anote o total, se quiser."
+            />
+          ) : null}
           <Button
-            label={selected?.roll ? 'Fazer e rolar' : 'Fazer'}
+            label={selected?.roll && !physicalDice ? 'Fazer e rolar' : 'Fazer'}
             icon={<Swords size={16} color={colors.primaryFg} />}
             loading={busy}
             disabled={!selected}

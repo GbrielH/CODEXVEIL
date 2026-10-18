@@ -37,6 +37,12 @@ export function NewSessionForm({ campaignId, suggestedTitle }: { campaignId: str
         label="Publicar para os jogadores"
         description="Jogadores veem apenas sessões publicadas, e só os blocos públicos. Notas privadas nunca são enviadas a eles."
       />
+      <CheckboxField
+        id="physicalDice"
+        name="physicalDice"
+        label="Dados presenciais"
+        description="Para mesas presenciais: os jogadores rolam dados físicos e o app não rola nas ações. Dá para mudar depois, no editor da sessão."
+      />
       <div>
         <SubmitButton pendingLabel="Criando…">Criar e abrir o editor</SubmitButton>
       </div>

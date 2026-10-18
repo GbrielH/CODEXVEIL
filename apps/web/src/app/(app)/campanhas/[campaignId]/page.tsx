@@ -33,6 +33,8 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
   const isGm = campaign.role === 'gm';
   const isActive = campaign.status === 'active';
   const hasOwnCharacter = party.some((character) => character.ownerId === user.id);
+  // O jogador usa a aba "Meu personagem"; aqui aparecem só os outros (se o mestre liberar as fichas).
+  const others = isGm ? party : party.filter((character) => character.ownerId !== user.id);
   const creationRules = system ? system.describeCampaignRules(system.parseCampaignRules(campaign.characterRules)) : [];
 
   return (
@@ -51,9 +53,11 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
             icon={<Swords className="h-5 w-5" aria-hidden="true" />}
             title="Grupo"
             description={
-              isGm || campaign.settings.partySheetsVisible
+              isGm
                 ? pluralize(party.length, 'personagem na campanha', 'personagens na campanha')
-                : 'Você vê apenas o seu personagem nesta campanha.'
+                : campaign.settings.partySheetsVisible
+                  ? 'Os personagens dos outros jogadores. O seu fica na aba “Meu personagem”.'
+                  : 'O mestre deixou as fichas dos outros jogadores ocultas. O seu personagem fica na aba “Meu personagem”.'
             }
             action={
               isActive && !isGm && !hasOwnCharacter ? (
@@ -63,14 +67,14 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
               ) : undefined
             }
           />
-          {party.length === 0 ? (
+          {others.length === 0 && (isGm || campaign.settings.partySheetsVisible) ? (
             <p className="text-sm text-fg-muted">
               {isGm
                 ? 'Nenhum personagem vinculado ainda. Os jogadores criam os personagens; o mestre usa NPCs e monstros da biblioteca.'
-                : 'Nenhum personagem vinculado ainda. Crie o seu aqui ou vincule um existente pela ficha.'}
+                : 'Ainda não há personagens de outros jogadores.'}
             </p>
           ) : (
-            <PartyList characters={party} portraits={portraits} currentUserId={user.id} />
+            others.length > 0 ? <PartyList characters={others} portraits={portraits} currentUserId={user.id} /> : null
           )}
         </Card>
         <Card ornate>
