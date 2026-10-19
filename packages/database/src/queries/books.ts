@@ -140,11 +140,15 @@ export interface BookEntryListing {
 
 const META_FIELDS: Record<string, string> = {
   section: 'chapter:data->>chapter, page:data->>page',
-  monster: 'cr:data->>cr, type:data->>type, size:data->>size',
-  magic_item: 'rarity:data->>rarity, type:data->>type',
-  spell: 'level:data->>level, school:data->>school',
+  // D&D (cr, size, rarity, level) e Tormenta20 (challenge, itemKind, price, circle, spellType, group…).
+  monster: 'cr:data->>cr, type:data->>type, size:data->>size, challenge:data->>challenge',
+  magic_item: 'rarity:data->>rarity, type:data->>type, itemKind:data->>kind, price:data->>price',
+  spell: 'level:data->>level, school:data->>school, circle:data->>circle, spellType:data->>type',
   subclass: 'classId:data->>classId',
-  feat: 'category:data->>category',
+  feat: 'category:data->>category, group:data->>group, prerequisite:data->>prerequisite',
+  deity: 'energy:data->>energy',
+  equipment: 'group:data->>group, category:data->>category, price:data->>price',
+  species: 'size:data->>size',
 };
 
 /** Lista leve (sem o conteúdo) de um tipo de entrada, para índices e buscas. */

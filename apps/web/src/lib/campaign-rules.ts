@@ -15,6 +15,12 @@ function rawRules(systemId: string, formData: FormData): Record<string, unknown>
         allowEvilAlignments: formData.get('rules.allowEvilAlignments') === 'on',
         sourcebooks: formData.get('rules.sourcebookMode') === 'expanded' ? formData.getAll('rules.sourcebooks').map(String) : [],
       };
+    case 'tormenta20':
+      return {
+        startingLevel: Number(formData.get('rules.startingLevel') ?? 1),
+        attributeMethods: formData.getAll('rules.attributeMethods').map(String),
+        sourcebooks: formData.getAll('rules.sourcebooks').map(String),
+      };
     default:
       return {};
   }

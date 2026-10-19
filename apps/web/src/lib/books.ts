@@ -13,14 +13,21 @@ import {
   parseDnd5eCampaignRules,
   visibleBookKinds,
   type BookContentSource,
-  type BookEntryKind,
   type Dnd5eBookContent,
 } from '@codexveil/rpg-systems/dnd5e';
+import { T20_BOOK_ENTRY_KINDS, T20_CHARACTER_BOOK_KINDS, t20BookEntryKindLabels } from '@codexveil/rpg-systems/tormenta20';
+import { bookEntryKindLabels } from '@codexveil/rpg-systems/dnd5e';
 import { uuidSchema } from '@codexveil/validation';
 
 /** Livros liberados na campanha (os do dono que ele marcou nas regras de criação). */
 export function campaignBookPacks(client: CodexveilClient, campaign: { ownerId: string; characterRules: unknown }): Promise<BookPackSummary[]> {
-  return listCampaignBookPacks(client, campaign.ownerId, parseDnd5eCampaignRules(campaign.characterRules).sourcebooks);
+  return listCampaignBookPacks(client, campaign.ownerId, campaignSourcebooks(campaign.characterRules));
+}
+
+/** Livros liberados nas regras da campanha, de qualquer sistema (o campo `sourcebooks`). */
+export function campaignSourcebooks(characterRules: unknown): string[] {
+  const raw = characterRules && typeof characterRules === 'object' ? (characterRules as { sourcebooks?: unknown }).sourcebooks : undefined;
+  return Array.isArray(raw) ? raw.filter((entry): entry is string => typeof entry === 'string') : parseDnd5eCampaignRules(characterRules).sourcebooks;
 }
 
 /** Livros prontos do próprio usuário (usados nas fichas pessoais). */
@@ -52,7 +59,7 @@ export async function loadDnd5eBookContent(client: CodexveilClient, packs: reado
 }
 
 /** Trechos de endereço dos tipos de entrada no leitor (`/livros/<id>/<trecho>/<chave>`). */
-export const BOOK_KIND_SLUGS: Record<BookEntryKind, string> = {
+export const BOOK_KIND_SLUGS: Record<string, string> = {
   section: 'texto',
   class: 'classes',
   subclass: 'subclasses',
@@ -63,17 +70,25 @@ export const BOOK_KIND_SLUGS: Record<BookEntryKind, string> = {
   spell_list: 'listas',
   monster: 'monstros',
   magic_item: 'itens',
+  deity: 'deuses',
+  equipment: 'equipamento',
 };
 
-export function bookKindFromSlug(slug: string): BookEntryKind | undefined {
-  return BOOK_ENTRY_KINDS.find((kind) => BOOK_KIND_SLUGS[kind] === slug);
+export function bookKindFromSlug(slug: string): string | undefined {
+  return Object.keys(BOOK_KIND_SLUGS).find((kind) => BOOK_KIND_SLUGS[kind] === slug);
+}
+
+/** Nome de um tipo de entrada no sistema do livro (Tormenta20: "Raças", "Origens", "Poderes"…). */
+export function bookKindLabel(systemId: string, kind: string, form: 'one' | 'many' = 'many'): string {
+  const labels: Record<string, { one: string; many: string }> = systemId === 'tormenta20' ? t20BookEntryKindLabels : bookEntryKindLabels;
+  return labels[kind]?.[form] ?? kind;
 }
 
 /** Livro aberto no leitor e o que o usuário pode ler dele. */
 export interface BookReaderContext {
   pack: BookPackSummary;
   /** Tipos que o usuário lê (o dono e os mestres leem tudo). */
-  kinds: BookEntryKind[];
+  kinds: string[];
   /** Campanha em que o livro foi aberto (leitor da campanha) ou `undefined` (Meus livros). */
   campaignId?: string;
   /** Mestre da campanha: pode copiar monstros e itens para a biblioteca. */
@@ -94,14 +109,20 @@ export async function loadBookReader(
   if (!pack) return null;
   const { campaign } = viewer;
   if (!campaign) {
-    return pack.ownerId === viewer.userId ? { pack, kinds: [...BOOK_ENTRY_KINDS], canCopy: false } : null;
+    return pack.ownerId === viewer.userId ? { pack, kinds: pack.systemId === 'tormenta20' ? [...T20_BOOK_ENTRY_KINDS] : [...BOOK_ENTRY_KINDS], canCopy: false } : null;
   }
-  const released = pack.isReady && pack.ownerId === campaign.ownerId && parseDnd5eCampaignRules(campaign.characterRules).sourcebooks.includes(pack.bookKey);
+  const released = pack.isReady && pack.ownerId === campaign.ownerId && campaignSourcebooks(campaign.characterRules).includes(pack.bookKey);
   if (!released) return null;
   const isGm = campaign.role === 'gm';
+  const readAll = isGm || pack.ownerId === viewer.userId;
+  // Tormenta20: jogadores leem o conteúdo de personagem (raças, classes, origens, poderes, magias,
+  // deuses e equipamento) e o texto dos livros de jogador; ameaças e itens mágicos ficam com o mestre.
+  const t20Kinds = readAll
+    ? [...T20_BOOK_ENTRY_KINDS]
+    : [...T20_CHARACTER_BOOK_KINDS, ...(['core', 'player', 'setting'].includes(pack.category) ? ['section'] : [])];
   return {
     pack,
-    kinds: visibleBookKinds(pack.category, isGm || pack.ownerId === viewer.userId),
+    kinds: pack.systemId === 'tormenta20' ? t20Kinds : visibleBookKinds(pack.category, readAll),
     campaignId: campaign.id,
     canCopy: isGm && campaign.status === 'active',
   };

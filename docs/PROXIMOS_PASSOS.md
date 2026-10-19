@@ -234,6 +234,15 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-19 — Tormenta20: campanha e leitor do livro (marco 2 de 7)
+
+- Nova campanha: o sistema Tormenta20 aparece na escolha; regras da campanha T20 (nível inicial,
+  métodos de atributos e livros T20 importados a liberar).
+- Meus livros e o leitor mostram livros de Tormenta20: abas por tipo (raças, classes, origens,
+  divindades, poderes, magias, equipamento, itens mágicos, ameaças) com busca e uma tela própria
+  para cada tipo (`t20-entry-view.tsx`); jogadores leem o conteúdo de personagem, o mestre lê tudo.
+- `pnpm check` passou; não aberto no navegador.
+
 ### 2026-10-19 — Tormenta20: extração do livro e núcleo do sistema (marco 1 de 7)
 
 - Extração completa do Tormenta20 Jogo do Ano (`scripts/books/t20.py`): 17 raças, 14 classes

@@ -1,6 +1,5 @@
 import { getBookEntry, listBookEntryIndex, type BookEntryListing } from '@codexveil/database';
 import {
-  bookEntryKindLabels,
   findSourcebook,
   isSourcebookId,
   sourcebookCategoryLabels,
@@ -17,19 +16,20 @@ import { Badge } from '@/components/ui/badge';
 import { buttonClasses } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/states';
-import { BOOK_KIND_SLUGS, bookKindFromSlug, type BookReaderContext } from '@/lib/books';
+import { BOOK_KIND_SLUGS, bookKindFromSlug, bookKindLabel, type BookReaderContext } from '@/lib/books';
 import { cx } from '@/lib/cx';
 import { bookPath } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { BookCopy } from './book-copy';
 import { BookEntryView } from './book-entry-view';
+import { T20BookEntryView } from './t20-entry-view';
 
 function normalize(text: string): string {
   return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 }
 
 /** Tipos com conteúdo que o usuário pode ler, na ordem do pacote. */
-function availableKinds(reader: BookReaderContext): BookEntryKind[] {
+function availableKinds(reader: BookReaderContext): string[] {
   return reader.kinds.filter((kind) => (reader.pack.entryCounts[kind] ?? 0) > 0);
 }
 
@@ -40,7 +40,11 @@ function BookHeader({ reader }: { reader: BookReaderContext }) {
     <header className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="parchment">{category}</Badge>
-        <Badge>{pack.edition === '2024' ? 'Regras de 2024' : 'Regras de 2014'}</Badge>
+        {pack.systemId === 'tormenta20' ? (
+          <Badge>Tormenta20 · {pack.edition}</Badge>
+        ) : (
+          <Badge>{pack.edition === '2024' ? 'Regras de 2024' : 'Regras de 2014'}</Badge>
+        )}
         {isSourcebookId(pack.bookKey) ? <Badge tone="info">Livro oficial: {findSourcebook(pack.bookKey)?.name}</Badge> : null}
       </div>
       <h2 className="text-2xl leading-tight sm:text-3xl">{pack.name}</h2>
@@ -50,6 +54,13 @@ function BookHeader({ reader }: { reader: BookReaderContext }) {
 }
 
 function entryMeta(entry: BookEntryListing): string {
+  // Tormenta20 (os campos só existem nos pacotes desse sistema).
+  if (entry.meta.circle) return `${entry.meta.spellType ? `${entry.meta.spellType[0]!.toUpperCase()}${entry.meta.spellType.slice(1)} ` : ''}${entry.meta.circle}º círculo · ${entry.meta.school ?? ''}`;
+  if (entry.meta.challenge) return [entry.meta.type, `ND ${entry.meta.challenge}`].filter(Boolean).join(' · ');
+  if (entry.meta.itemKind) return [entry.meta.itemKind.replace(/-/g, ' '), entry.meta.price].filter(Boolean).join(' · ');
+  if (entry.meta.group && entry.kind === 'feat') return [`Poder ${entry.meta.group === 'concedidos' ? 'concedido' : `de ${entry.meta.group}`}`, entry.meta.prerequisite].filter(Boolean).join(' · ');
+  if (entry.meta.group && entry.kind === 'equipment') return [entry.meta.category, entry.meta.price].filter(Boolean).join(' · ');
+  if (entry.meta.energy) return `Energia ${entry.meta.energy.toLowerCase()}`;
   switch (entry.kind) {
     case 'section':
       return entry.meta.page && entry.meta.page !== '0' ? `p. ${entry.meta.page}` : '';
@@ -113,7 +124,7 @@ export async function BookIndexScreen({ reader, kindSlug, term }: { reader: Book
                 entry === kind ? 'border-parchment-300 text-fg-accent' : 'border-transparent text-fg-muted hover:text-fg',
               )}
             >
-              {bookEntryKindLabels[entry].many}
+              {bookKindLabel(reader.pack.systemId, entry)}
               <span className="text-xs text-fg-subtle tabular">{reader.pack.entryCounts[entry]}</span>
             </Link>
           ))}
@@ -123,7 +134,7 @@ export async function BookIndexScreen({ reader, kindSlug, term }: { reader: Book
       <form method="get" className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <input type="hidden" name="tipo" value={BOOK_KIND_SLUGS[kind]} />
         <label className="flex flex-1 flex-col gap-1.5 text-sm font-medium">
-          Buscar em {bookEntryKindLabels[kind].many.toLowerCase()}
+          Buscar em {bookKindLabel(reader.pack.systemId, kind).toLowerCase()}
           <span className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-fg-subtle" aria-hidden="true" />
             <input
@@ -201,20 +212,24 @@ export async function BookEntryScreen({ reader, kindSlug, entryKey }: { reader: 
   }
   const indexHref = `${bookPath(reader.pack.id, '', reader.campaignId)}?tipo=${kindSlug}` as Route;
   const sectionHref = (section: BookEntryListing) => bookPath(reader.pack.id, `/${kindSlug}/${section.key}`, reader.campaignId) as Route;
-  const copyKind = reader.canCopy && reader.campaignId && (kind === 'monster' || kind === 'magic_item') ? kind : null;
+  const copyKind = reader.canCopy && reader.campaignId && reader.pack.systemId === 'dnd5e' && (kind === 'monster' || kind === 'magic_item') ? kind : null;
 
   return (
     <div className="flex flex-col gap-6">
       <Link href={indexHref} className="text-sm text-fg-muted hover:text-fg">
-        ← {reader.pack.name}: {bookEntryKindLabels[kind].many}
+        ← {reader.pack.name}: {bookKindLabel(reader.pack.systemId, kind)}
       </Link>
       <header>
-        <p className="eyebrow">{path.length ? path.join(' › ') : bookEntryKindLabels[kind].one}</p>
+        <p className="eyebrow">{path.length ? path.join(' › ') : bookKindLabel(reader.pack.systemId, kind, 'one')}</p>
         <h2 className="mt-1 text-3xl leading-tight">{entry.name}</h2>
       </header>
       <div className={cx('grid gap-6', copyKind && 'lg:grid-cols-[1fr_22rem]')}>
         <article className="min-w-0 max-w-3xl">
-          <BookEntryView kind={kind} name={entry.name} data={entry.data} />
+          {reader.pack.systemId === 'tormenta20' ? (
+            <T20BookEntryView kind={kind} data={entry.data} />
+          ) : (
+            <BookEntryView kind={kind as BookEntryKind} name={entry.name} data={entry.data} />
+          )}
         </article>
         {copyKind && reader.campaignId ? (
           <aside>

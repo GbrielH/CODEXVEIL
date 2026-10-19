@@ -50,13 +50,17 @@ export default async function MyBooksPage() {
               <Card className="flex h-full flex-col gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="parchment">{sourcebookCategoryLabels[pack.category as SourcebookCategory]?.name ?? pack.category}</Badge>
-                  <Badge>{pack.edition === '2024' ? 'Regras de 2024' : 'Regras de 2014'}</Badge>
+                  {pack.systemId === 'tormenta20' ? (
+                    <Badge>Tormenta20 · {pack.edition}</Badge>
+                  ) : (
+                    <Badge>{pack.edition === '2024' ? 'Regras de 2024' : 'Regras de 2014'}</Badge>
+                  )}
                   {pack.isReady ? null : <Badge tone="warning">Importação incompleta</Badge>}
                 </div>
                 <Link href={bookPath(pack.id) as Route} className="font-display text-xl text-fg-accent hover:underline">
                   {pack.name}
                 </Link>
-                <p className="text-sm text-fg-muted">{describeBookCounts(pack.entryCounts) || 'Sem conteúdo de regras (só texto).'}</p>
+                <p className="text-sm text-fg-muted">{describeBookCounts(pack.entryCounts, pack.systemId) || 'Sem conteúdo de regras (só texto).'}</p>
                 <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
                   <Link href={bookPath(pack.id) as Route} className="text-sm text-fg-brand underline-offset-2 hover:underline">
                     Abrir o livro

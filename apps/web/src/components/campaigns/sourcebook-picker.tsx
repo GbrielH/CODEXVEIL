@@ -10,6 +10,8 @@ import { routes } from '@/lib/routes';
 
 /** Livro importado em "Meus livros" (conteúdo do exemplar do usuário, guardado na conta dele). */
 export interface CampaignBookOption {
+  /** Sistema do livro (`dnd5e`, `tormenta20`): cada campanha só mostra os do seu sistema. */
+  systemId: string;
   bookKey: string;
   name: string;
   category: string;

@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: 'Nova campanha' };
 export default async function NewCampaignPage() {
   const user = await requireSessionUser(routes.newCampaign);
   const packs = await ownReadyBookPacks(await createSupabaseServerClient(), user.id);
-  const books = packs.map((pack) => ({ bookKey: pack.bookKey, name: pack.name, category: pack.category, edition: pack.edition, entryCounts: pack.entryCounts }));
+  const books = packs.map((pack) => ({ systemId: pack.systemId, bookKey: pack.bookKey, name: pack.name, category: pack.category, edition: pack.edition, entryCounts: pack.entryCounts }));
   const systems = listSystems().map((system) => ({
     id: system.id,
     name: system.name,

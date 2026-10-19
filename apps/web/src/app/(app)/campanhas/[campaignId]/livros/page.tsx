@@ -47,7 +47,7 @@ export default async function CampaignBooksPage({ params }: PageProps<'/campanha
                   {sourcebookCategoryLabels[pack.category as SourcebookCategory]?.name ?? pack.category}
                 </Badge>
                 <span className="font-display text-xl text-fg-accent">{pack.name}</span>
-                <span className="text-sm text-fg-muted">{describeBookCounts(pack.entryCounts)}</span>
+                <span className="text-sm text-fg-muted">{describeBookCounts(pack.entryCounts, pack.systemId)}</span>
               </Card>
             </Link>
           </li>

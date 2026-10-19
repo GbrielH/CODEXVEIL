@@ -588,3 +588,12 @@ recebe por atualização OTA). Não verificado no celular.
 - Meus livros importa pacotes de D&D e de Tormenta20 (o sistema vai em `book_packs.system_id`).
 - Próximos marcos: campanha T20 e leitor do livro; criação de personagem; ficha e jogo; subida de
   nível; app; mestre (ameaças e combate).
+
+### 2026-10-19 — Tormenta20: campanha e leitor do livro (marco 2 de 7)
+
+- Nova campanha: o sistema Tormenta20 aparece na escolha; regras da campanha T20 (nível inicial,
+  métodos de atributos e livros T20 importados a liberar).
+- Meus livros e o leitor mostram livros de Tormenta20: abas por tipo (raças, classes, origens,
+  divindades, poderes, magias, equipamento, itens mágicos, ameaças) com busca e uma tela própria
+  para cada tipo (`t20-entry-view.tsx`); jogadores leem o conteúdo de personagem, o mestre lê tudo.
+- `pnpm check` passou; não aberto no navegador.

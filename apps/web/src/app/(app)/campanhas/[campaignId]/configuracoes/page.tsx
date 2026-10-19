@@ -25,7 +25,7 @@ export default async function CampaignSettingsPage({ params }: PageProps<'/campa
   const supabase = await createSupabaseServerClient();
   const covers = await signedMediaUrls(supabase, [campaign.coverPath]);
   const packs = campaign.isOwner ? await ownReadyBookPacks(supabase, user.id) : await campaignBookPacks(supabase, campaign);
-  const books = packs.map((pack) => ({ bookKey: pack.bookKey, name: pack.name, category: pack.category, edition: pack.edition, entryCounts: pack.entryCounts }));
+  const books = packs.map((pack) => ({ systemId: pack.systemId, bookKey: pack.bookKey, name: pack.name, category: pack.category, edition: pack.edition, entryCounts: pack.entryCounts }));
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
