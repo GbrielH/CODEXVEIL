@@ -69,10 +69,10 @@ Próximos passos, em ordem:
 
 1. ~~Montar o pacote do **Manual de Monstros** e do **Monstros do Multiverso** e validar com
    `parseBookPack`~~ (**feito em 2026-10-19**; falta o responsável importar em Meus livros).
-2. **Livro de Magias** (compêndio): extrair as magias (nome, original em inglês, círculo, escola,
-   conjuradores, tempo, alcance, componentes, duração, texto, fonte).
-3. **Xanathar** e **Tasha:** subclasses, talentos, magias, itens mágicos, artífice (classe) e texto.
-4. **Livro do Jogador 2014:** raças e sub-raças, antecedentes, talentos, subclasses e texto.
+2. ~~**Livro de Magias**~~ (feito em 2026-10-19: 440 magias; as do Livro do Jogador vão no `phb-2014`).
+3. ~~**Xanathar** e **Tasha**~~ (feito em 2026-10-19; falta o Domínio da Sepultura e os itens do Xanathar).
+4. ~~**Livro do Jogador 2014**~~: raças, antecedentes e talentos feitos em 2026-10-19; faltam as
+   subclasses fora do SRD e o texto.
 5. Conferir as contagens contra os sumários dos livros (item 9) e, no app, ligar o conteúdo dos
    livros à criação de personagem.
 6. Depois: item 2 (tradução do SRD) e item 7 (combate com acerto, dano e reações).
@@ -233,6 +233,21 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-19 — livros de personagem e criação no app
+
+- Pacotes por livro oficial (o id é o da campanha, então marcar o livro libera o conteúdo na
+  criação): `phb-2014` (350 magias do compêndio "Livro de Magias", 9 raças com sub-raças, 13
+  antecedentes, 42 talentos), `xgte` (30 subclasses, 85 magias, 15 talentos raciais), `tcoe`
+  (classe Artífice com lista de magias, 30 subclasses, 21 magias, 15 talentos, 47 itens mágicos),
+  além de `mm-2014` e `mpmm`. Todos com 0 erros no `parseBookPack`; com os cinco liberados, a
+  criação lista 13 classes, 51 raças e 17 antecedentes (teste com o conteúdo real, fora do Git).
+- App: a criação de personagem passou a usar os livros liberados na campanha (ou os do usuário,
+  na ficha pessoal), como o site: classes, subclasses, raças, antecedentes, talentos e magias.
+  Typecheck e `pnpm check` passaram; não testado no aparelho.
+- Limitações: Xanathar é PDF escaneado (OCR): falta o Domínio da Sepultura e 46 magias do
+  Xanathar sem par no compêndio ficaram sem lista de classe; resumos das raças do Livro do
+  Jogador vêm do conto de abertura; o Livro do Jogador não traz as subclasses fora do SRD.
 
 ### 2026-10-19 — pacotes dos livros de monstros e "Selecionar todos"
 

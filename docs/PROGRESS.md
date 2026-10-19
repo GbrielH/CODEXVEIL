@@ -282,10 +282,10 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
-0. **Livros (2026-10-19):** importar `mm-2014.book.json` e `mpmm.book.json` em Meus livros
-   (validados: 441 e 480 entradas, 0 erros no `parseBookPack`); depois seguir a lista
-   "Continuidade" de [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md) (Livro de Magias).
-
+0. **Livros (2026-10-19):** importar em Meus livros os pacotes `phb-2014`, `xgte`, `tcoe`,
+   `mm-2014` e `mpmm` (em `livros-trabalho/out/`, validados com 0 erros) e marcar os livros na
+   campanha; conferir a criação no site e no app. Depois: subclasses do Livro do Jogador, item 2
+   (tradução do SRD) e item 7 (combate) de [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md).
 1. **Responsável:** criar o projeto no Firebase e enviar a chave FCM V1 ao Expo
    ([`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md), etapa 0c). **Claude:** enviar o
    `google-services.json` ao EAS (variável `GOOGLE_SERVICES_JSON`, tipo arquivo) e gerar o APK

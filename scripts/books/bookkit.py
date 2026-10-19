@@ -23,7 +23,7 @@ def clean(text):
     return text
 
 # Erros comuns de leitura dos PDFs (fontes trocadas e OCR).
-OCR_WORDS = [(r'\bColpe', 'Golpe'), (r'\bCarra\b', 'Garra'), (r'\bGonjur', 'Conjur'), (r'\bCrande\b', 'Grande'), (r'drufdic', 'druídic')]
+OCR_WORDS = [(r'\bColpe', 'Golpe'), (r'\bCarra\b', 'Garra'), (r'\bGonjur', 'Conjur'), (r'\bCrande\b', 'Grande'), (r'drufdic', 'druídic'), (r'\bMeio-[Oo]re\b', 'Meio-Orc'), (r'\bOre\b', 'Orc')]
 
 
 def fix_words(text):

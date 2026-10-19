@@ -38,4 +38,10 @@ repositório. Gere tudo numa pasta fora do projeto (por exemplo, `Documents/Code
    gera `<saída>/mm-2014.book.json` e `<saída>/mpmm.book.json` (monstros, raças e texto), prontos
    para importar em Meus livros.
 
+8. **Livros de personagem** (mesmo comando): `phb-2014` (magias do compêndio com fonte "Livro do
+   Jogador" + raças, antecedentes e talentos do OCR em `layout/LIVRO DO JOGADOR.jsonl`), `xgte`
+   (subclasses e talentos por OCR, magias casadas com o compêndio) e `tcoe` (Artífice, subclasses,
+   magias, talentos e itens). Scripts: `spells.py`, `subclasses.py`, `feats_items.py`,
+   `backgrounds.py`, `races_ocr.py`. O id do pacote é o do livro oficial: é ele que a campanha marca.
+
 Veja o andamento e o que falta em `docs/PROXIMOS_PASSOS.md` ("Continuidade").

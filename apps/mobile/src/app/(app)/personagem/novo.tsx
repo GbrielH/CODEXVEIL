@@ -1,28 +1,34 @@
-import { createCharacter, listMyCampaigns } from '@codexveil/database';
+import { createCharacter, listBookEntries, listCampaignBookPacks, listMyBookPacks, listMyCampaigns, type BookPackSummary } from '@codexveil/database';
 import {
   ABILITIES,
   ALIGNMENTS,
+  CHARACTER_BOOK_KINDS,
   DND5E_STEPS,
   PERSONAL_SHEET_CONTEXT,
   SKILLS,
-  SRD_BACKGROUNDS,
-  SRD_SPECIES,
   abilityLabels,
+  buildDnd5eBookContent,
   buildDnd5eCharacterFromDraft,
   createDnd5eDraft,
   describeDnd5eCampaignRules,
   dnd5eStepLabels,
   draftClass,
+  draftSubclass,
+  draftSubclassOptions,
   findFeat,
   formatDistance,
   formatModifier,
+  listBackgrounds,
   listClasses,
   listDnd5eChoices,
+  listSpecies,
   parseDnd5eCampaignRules,
   previewDnd5eCharacter,
+  setActiveDnd5eBookContent,
   skillDefinitions,
   startingEquipment,
   validateDnd5eDraft,
+  type BookContentSource,
   type Dnd5eCampaignRules,
   type Dnd5eCreationContext,
   type Dnd5eDraft,
@@ -51,6 +57,50 @@ interface PlayableCampaign {
   id: string;
   name: string;
   rules: Dnd5eCampaignRules;
+  /** Livros do mestre liberados nesta campanha (ids dos pacotes). */
+  packIds: string[];
+}
+
+interface CreationData {
+  campaigns: PlayableCampaign[];
+  /** Conteúdo de cada livro, pelo id do pacote. */
+  books: Record<string, BookContentSource>;
+  /** Livros prontos do próprio usuário (fichas pessoais). */
+  personalPackIds: string[];
+}
+
+/** Campanhas jogáveis e o conteúdo dos livros: os liberados em cada campanha e, na ficha pessoal, os do usuário. */
+async function loadCreationData(userId: string): Promise<CreationData> {
+  const client = getSupabase();
+  const list = (await listMyCampaigns(client, userId)).filter(
+    // Personagens de campanha são dos jogadores; o mestre usa NPCs e monstros.
+    (campaign) => campaign.status === 'active' && campaign.role === 'player' && campaign.systemId === 'dnd5e',
+  );
+  const [own, ...perCampaign] = await Promise.all([
+    listMyBookPacks(client, userId).then((packs) => packs.filter((pack) => pack.isReady)),
+    ...list.map((campaign) => listCampaignBookPacks(client, campaign.ownerId, parseDnd5eCampaignRules(campaign.characterRules).sourcebooks)),
+  ]);
+  const packs: BookPackSummary[] = [...new Map([...own, ...perCampaign.flat()].map((pack) => [pack.id, pack])).values()];
+  const entries = packs.length > 0 ? await listBookEntries(client, packs.map((pack) => pack.id), CHARACTER_BOOK_KINDS) : [];
+  const books = Object.fromEntries(
+    packs.map((pack) => [
+      pack.id,
+      {
+        book: { id: pack.bookKey, name: pack.name },
+        entries: entries.filter((entry) => entry.packId === pack.id).map(({ kind, key, name, data }) => ({ kind, key, name, data })),
+      },
+    ]),
+  );
+  return {
+    campaigns: list.map((campaign, index) => ({
+      id: campaign.id,
+      name: campaign.name,
+      rules: parseDnd5eCampaignRules(campaign.characterRules),
+      packIds: (perCampaign[index] ?? []).map((pack) => pack.id),
+    })),
+    books,
+    personalPackIds: own.map((pack) => pack.id),
+  };
 }
 
 const CLEAR_ON_CLASS = ['class.', 'subclass.', 'spells.', 'asi.', 'epic.', 'equipment.class'];
@@ -70,26 +120,26 @@ function contextFor(campaign: PlayableCampaign | undefined): Dnd5eCreationContex
 export default function NewCharacterScreen() {
   const params = useLocalSearchParams<{ campanha?: string }>();
   const userId = useUserId();
-  const campaigns = useAsyncData(async () => {
-    const list = await listMyCampaigns(getSupabase(), userId);
-    // Personagens de campanha são dos jogadores; o mestre usa NPCs e monstros.
-    return list
-      .filter((campaign) => campaign.status === 'active' && campaign.role === 'player' && campaign.systemId === 'dnd5e')
-      .map((campaign) => ({ id: campaign.id, name: campaign.name, rules: parseDnd5eCampaignRules(campaign.characterRules) }));
-  }, userId);
+  const data = useAsyncData(() => loadCreationData(userId), userId);
 
-  if (campaigns.loading) return <LoadingState label="Carregando suas campanhas…" />;
-  const list = campaigns.data ?? [];
-  const preselected = list.some((campaign) => campaign.id === params.campanha) ? (params.campanha ?? '') : '';
-  return <Wizard campaigns={list} defaultCampaignId={preselected} loadError={campaigns.error ? failureMessage(campaigns.error) : null} />;
+  if (data.loading) return <LoadingState label="Carregando suas campanhas e livros…" />;
+  const loaded = data.data ?? { campaigns: [], books: {}, personalPackIds: [] };
+  const preselected = loaded.campaigns.some((campaign) => campaign.id === params.campanha) ? (params.campanha ?? '') : '';
+  return <Wizard {...loaded} defaultCampaignId={preselected} loadError={data.error ? failureMessage(data.error) : null} />;
 }
 
-function Wizard({ campaigns, defaultCampaignId, loadError }: { campaigns: PlayableCampaign[]; defaultCampaignId: string; loadError: string | null }) {
+function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadError }: CreationData & { defaultCampaignId: string; loadError: string | null }) {
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
   const [campaignId, setCampaignId] = useState(defaultCampaignId);
   const campaign = campaigns.find((entry) => entry.id === campaignId);
   const context = useMemo(() => contextFor(campaign), [campaign]);
+  const packIds = campaign ? campaign.packIds : personalPackIds;
+  const bookSources = useMemo(() => packIds.map((id) => books[id]).filter((source): source is BookContentSource => Boolean(source)), [packIds, books]);
+  const bookContent = useMemo(() => buildDnd5eBookContent(bookSources), [bookSources]);
+  const bookNames = useMemo(() => Object.fromEntries(bookSources.map((source) => [source.book.id, source.book.name])), [bookSources]);
+  // As regras de criação consultam o SRD e os livros da campanha escolhida (como no site).
+  setActiveDnd5eBookContent(bookContent);
   const [draft, setDraft] = useState<Dnd5eDraft>(() =>
     createDnd5eDraft({ level: campaign?.rules.startingLevel ?? 1, abilityMethod: contextFor(campaign).abilityScoreMethods[0] ?? 'standard_array' }),
   );
@@ -99,8 +149,8 @@ function Wizard({ campaigns, defaultCampaignId, loadError }: { campaigns: Playab
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(loadError);
 
-  const specs = useMemo(() => listDnd5eChoices(draft), [draft]);
-  const issues = useMemo(() => validateDnd5eDraft(draft, context), [draft, context]);
+  const specs = useMemo(() => listDnd5eChoices(draft), [draft, bookContent]); // eslint-disable-line react-hooks/exhaustive-deps
+  const issues = useMemo(() => validateDnd5eDraft(draft, context), [draft, context, bookContent]); // eslint-disable-line react-hooks/exhaustive-deps
   const issueMap = useMemo(() => new Map(issues.map((issue) => [issue.path, issue.message])), [issues]);
   const steps = useMemo(() => DND5E_STEPS.filter((entry) => entry !== 'spells' || specs.some((spec) => spec.step === 'spells')), [specs]);
   const index = steps.indexOf(step);
@@ -108,6 +158,8 @@ function Wizard({ campaigns, defaultCampaignId, loadError }: { campaigns: Playab
   const errorFor = (path: string) => (showErrors ? issueMap.get(path) : undefined);
   const stepIssues = (target: Dnd5eStep) => issues.filter((issue) => issue.step === target);
   const classDef = draftClass(draft);
+  const subclass = draftSubclass(draft);
+  const subclassCount = draftSubclassOptions(draft).length;
 
   const update = (patch: Partial<Dnd5eDraft>) => setDraft((current) => ({ ...current, ...patch }));
   const setSelection = (id: string, value: Selection) => setDraft((current) => ({ ...current, selections: { ...current.selections, [id]: value } }));
@@ -207,7 +259,7 @@ function Wizard({ campaigns, defaultCampaignId, loadError }: { campaigns: Playab
               key={entry.id}
               selected={entry.id === campaignId}
               title={entry.name}
-              description={describeDnd5eCampaignRules(entry.rules).join(' ')}
+              description={describeDnd5eCampaignRules(entry.rules, bookNames).join(' ')}
               onPress={() => chooseCampaign(entry.id)}
             />
           ))}
@@ -226,7 +278,11 @@ function Wizard({ campaigns, defaultCampaignId, loadError }: { campaigns: Playab
           {/* Ficha pessoal: o jogador escolhe os livros; numa campanha, valem os do mestre (na descrição acima). */}
           {campaign ? null : <SourcebookChips audience="character" selected={draft.sourcebooks} onChange={(sourcebooks) => update({ sourcebooks })} />}
           <AppText variant="muted">
-            O passo a passo segue a criação do SRD 5.2.1: classe, origem (antecedente, espécie e idiomas), atributos, alinhamento e detalhes.
+            O passo a passo segue a criação do SRD 5.2.1: classe, origem (antecedente, espécie e idiomas), atributos, alinhamento e detalhes
+            {bookSources.length > 0
+              ? `, com o conteúdo dos livros ${campaign ? 'liberados pelo mestre' : 'que você importou'}: ${bookSources.map((source) => source.book.name).join(', ')}`
+              : ''}
+            .
           </AppText>
         </View>
       ) : null}
@@ -239,7 +295,7 @@ function Wizard({ campaigns, defaultCampaignId, loadError }: { campaigns: Playab
               selected={entry.id === draft.classId}
               title={entry.name}
               icon={(color) => <CharacterIcon kind="class" id={entry.id} color={color} />}
-              description={`${entry.primaryAbilityLabel} · ${entry.hitDie} · ${entry.summary}`}
+              description={`${entry.primaryAbilityLabel} · ${entry.hitDie}${entry.book ? ` · ${entry.book}` : ''} · ${entry.summary}`}
               onPress={() =>
                 setDraft((current) =>
                   current.classId === entry.id ? current : { ...current, classId: entry.id, selections: without(current.selections, CLEAR_ON_CLASS) },
@@ -261,10 +317,13 @@ function Wizard({ campaigns, defaultCampaignId, loadError }: { campaigns: Playab
                     <AppText variant="small">{feature.description}</AppText>
                   </View>
                 ))}
-              {draft.level >= 3 ? (
+              {draft.level >= 3 && subclass ? (
                 <>
-                  <AppText variant="eyebrow">Subclasse do SRD: {classDef.subclass.name}</AppText>
-                  {classDef.subclass.features
+                  <AppText variant="eyebrow">
+                    Subclasse: {subclass.name}
+                    {subclass.book ? ` (${subclass.book})` : ' (SRD)'}
+                  </AppText>
+                  {subclass.features
                     .filter((feature) => feature.level <= draft.level)
                     .map((feature) => (
                       <View key={`${feature.level}-${feature.name}`} style={{ gap: 2 }}>
@@ -276,7 +335,11 @@ function Wizard({ campaigns, defaultCampaignId, loadError }: { campaigns: Playab
                     ))}
                 </>
               ) : (
-                <AppText variant="small">A subclasse ({classDef.subclass.name}) chega no 3º nível.</AppText>
+                <AppText variant="small">
+                  {draft.level >= 3
+                    ? `Escolha a subclasse abaixo (${subclassCount} opções).`
+                    : `A subclasse é escolhida no 3º nível${subclassCount > 1 ? ` (${subclassCount} opções)` : ''}.`}
+                </AppText>
               )}
             </Card>
           ) : null}
@@ -286,12 +349,16 @@ function Wizard({ campaigns, defaultCampaignId, loadError }: { campaigns: Playab
 
       {step === 'background' ? (
         <View style={{ gap: spacing[3] }}>
-          {SRD_BACKGROUNDS.map((background) => (
+          {listBackgrounds().map((background) => (
             <OptionCard
               key={background.id}
               selected={background.id === draft.backgroundId}
               title={background.name}
-              description={`${background.summary} Atributos: ${background.abilities.map((ability) => abilityLabels[ability].abbreviation).join(', ')}. Talento: ${findFeat(background.feat)?.name ?? background.feat}. Perícias: ${background.skills.map((skill) => skillDefinitions[skill].label).join(' e ')}.`}
+              description={
+                background.book
+                  ? `${background.book} · Atributos à escolha · Talento de origem à escolha. ${background.summary}`
+                  : `${background.summary} Atributos: ${background.abilities.map((ability) => abilityLabels[ability].abbreviation).join(', ')}. Talento: ${findFeat(background.feat)?.name ?? background.feat}. Perícias: ${background.skills.map((skill) => skillDefinitions[skill].label).join(' e ')}.`
+              }
               onPress={() =>
                 setDraft((current) =>
                   current.backgroundId === background.id ? current : { ...current, backgroundId: background.id, selections: without(current.selections, CLEAR_ON_BACKGROUND) },
@@ -306,13 +373,13 @@ function Wizard({ campaigns, defaultCampaignId, loadError }: { campaigns: Playab
 
       {step === 'species' ? (
         <View style={{ gap: spacing[3] }}>
-          {SRD_SPECIES.map((species) => (
+          {listSpecies().map((species) => (
             <OptionCard
               key={species.id}
               selected={species.id === draft.speciesId}
               title={species.name}
               icon={(color) => <CharacterIcon kind="species" id={species.id} color={color} />}
-              description={`${species.sizeLabel} · ${formatDistance(species.speed, 'm')}. ${species.summary}`}
+              description={`${species.sizeLabel} · ${formatDistance(species.speed, 'm')}${species.book ? ` · ${species.book}` : ''}. ${species.summary}`}
               onPress={() =>
                 setDraft((current) =>
                   current.speciesId === species.id ? current : { ...current, speciesId: species.id, selections: without(current.selections, CLEAR_ON_SPECIES) },

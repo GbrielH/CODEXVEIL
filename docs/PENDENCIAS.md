@@ -519,3 +519,11 @@ recebe por atualização OTA). Não verificado no celular.
   Ficam fora do Git; **falta importar** em Meus livros. Itens 6 e 9 da "Continuidade" avançam
   (raças do Multiverso e monstros); itens mágicos e Livro do Jogador continuam pendentes.
 - "Selecionar todos" na escolha de livros da campanha (site e app).
+
+### 2026-10-19 — livros de personagem na criação (site e app)
+
+- Pacotes `phb-2014`, `xgte` e `tcoe` gerados e validados: raças com sub-raças, os 13
+  antecedentes do Livro do Jogador, talentos, subclasses, magias e a classe Artífice. Marcados na
+  campanha, aparecem na criação do personagem no site e, agora, também no app.
+- Pendente: importar os pacotes; Domínio da Sepultura (Xanathar); subclasses do Livro do Jogador
+  fora do SRD; teste no aparelho.
