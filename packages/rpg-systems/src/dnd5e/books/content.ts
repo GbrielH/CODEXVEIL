@@ -14,6 +14,7 @@ import { SRD_SPELLS } from '../srd/spells';
 import { SRD_SPELL_NAMES_PT } from '../srd/spell-names-pt';
 import { CLASS_IDS, type BackgroundDefinition, type ClassDefinition, type FeatDefinition, type SpeciesDefinition } from '../srd/types';
 import type { BookRef, BookSpell, BookSubclass, Dnd5eBookContent } from './active';
+import { equipmentFromText } from './equipment-text';
 import { safeBookEntryData } from './pack';
 
 export interface BookContentSource {
@@ -107,7 +108,7 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
         id,
         name: entry.name,
         book: book.name,
-        summary: [data.summary, data.equipment ? `Equipamento inicial: ${data.equipment}` : ''].filter(Boolean).join('\n\n'),
+        summary: data.summary,
         primaryAbilities: data.primaryAbilities,
         primaryAbilityLabel: data.primaryAbilities.map((ability) => abilityLabels[ability].name).join(' e '),
         complexity: 'Média',
@@ -119,7 +120,13 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
         armor: data.armor,
         armorLabel: armorLabel(data.armor),
         tools: data.tools ? [data.tools] : [],
-        equipment: [{ id: 'A', items: [], gold: data.startingGold }],
+        // Opção A: o equipamento do livro; opção B: o ouro inicial no lugar dele.
+        equipment: data.equipment
+          ? [
+              { id: 'A', ...equipmentFromText(data.equipment) },
+              { id: 'B', items: [], gold: data.startingGold },
+            ]
+          : [{ id: 'A', items: [], gold: data.startingGold }],
         standardArray: suggestedArray(data.primaryAbilities),
         asiLevels: data.asiLevels,
         features: data.features,
@@ -205,7 +212,6 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
             data.summary,
             data.tools ? `Ferramentas: ${data.tools}.` : '',
             data.languages ? `Idiomas: ${data.languages}.` : '',
-            data.equipment ? `Equipamento do livro: ${data.equipment}.` : '',
             data.feature?.name ? `${data.feature.name}: ${data.feature.description}` : '',
           ].filter(Boolean);
           backgrounds.push({
@@ -217,7 +223,12 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
             feat: '',
             skills: data.skills,
             ...(data.tools ? { tool: data.tools } : {}),
-            equipment: [{ id: 'A', items: [], gold: 50 }],
+            equipment: data.equipment
+              ? [
+                  { id: 'A', ...equipmentFromText(data.equipment) },
+                  { id: 'B', items: [], gold: 50 },
+                ]
+              : [{ id: 'A', items: [], gold: 50 }],
           });
           break;
         }

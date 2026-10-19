@@ -234,6 +234,21 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-19 — ajustes dos livros na criação, subida de nível e prompt de livros
+
+- Sem repetição: a versão do livro substitui a do SRD de mesmo nome (com os sinônimos de tradução,
+  ex.: Halfling/Pequenino, Caminho do Furioso/Berserker) e, entre livros, vale a do primeiro.
+- Classes e raças dos livros com ícone (o da raça/classe parecida) e resumo curto no cartão.
+- Equipamento das classes e antecedentes dos livros vira itens do catálogo (opção A) ou ouro
+  (opção B); antes vinha só o ouro. Equipamento dos antecedentes do Livro do Jogador completo.
+- Subida de nível: o dado de vida só pode ser rolado uma vez (site e app).
+- Aba Personagem: removida a escolha de livros da ficha.
+- App: a ficha e a subida de nível usam os livros liberados (antes só a criação). Ficha pessoal no
+  site valida com todos os livros do usuário, como o assistente mostra.
+- Novo [`PROMPT_LIVRO_JSON.md`](PROMPT_LIVRO_JSON.md): prompt para converter um livro comprado em
+  pacote, com aviso quando o sistema não existe no app.
+- `pnpm check` passou; não testado no navegador nem no aparelho.
+
 ### 2026-10-19 — pendências dos livros resolvidas
 
 - Livro do Jogador: 41 subclasses fora do SRD (o OCR lê "3° nível" como "30 nível"; corrigido) e

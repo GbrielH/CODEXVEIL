@@ -8,11 +8,12 @@ import {
   signedMediaUrls,
 } from '@codexveil/database';
 import { canEditCharacterPlayState, canEditCharacterSheet } from '@codexveil/domain';
-import { parseDnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
+import { buildDnd5eBookContent, parseDnd5eSheet, setActiveDnd5eBookContent } from '@codexveil/rpg-systems/dnd5e';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { SheetScreen } from '@/components/sheet/sheet-screen';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states';
+import { sheetBookSources } from '@/lib/books';
 import { useAsyncData } from '@/lib/hooks';
 import { useUserId } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase';
@@ -31,7 +32,10 @@ export default function CharacterScreen() {
       listCharacterAbilities(supabase, character.id),
     ]);
     const images = await signedMediaUrls(supabase, [character.portraitPath]);
-    return { character, resources, conditions, items, abilities, portraitUrl: character.portraitPath ? (images[character.portraitPath] ?? null) : null };
+    // Livros para a subida de nível (subclasses, talentos e magias), como no site.
+    const books =
+      character.systemId === 'dnd5e' && canEditCharacterSheet(characterAccessInput(character)) ? await sheetBookSources(supabase, userId, character) : [];
+    return { character, resources, conditions, items, abilities, books, portraitUrl: character.portraitPath ? (images[character.portraitPath] ?? null) : null };
   }, `${id}:${userId}`);
 
   if (loading) return <LoadingState label="Abrindo a ficha…" />;
@@ -58,6 +62,8 @@ export default function CharacterScreen() {
     return <ErrorState message="Os dados desta ficha não seguem o formato esperado. Nada foi alterado." />;
   }
 
+  // A ficha e a subida de nível consultam o SRD e os livros liberados.
+  setActiveDnd5eBookContent(buildDnd5eBookContent(data.books));
   const access = characterAccessInput(data.character);
   return (
     <>

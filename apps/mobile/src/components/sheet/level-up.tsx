@@ -95,7 +95,8 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
     else if (featId) improvement = { kind: 'feat', featId, ...(featAbility ? { ability: featAbility } : {}) };
   }
   const choices: Dnd5eLevelUpChoices = {
-    hitPoints: hpMethod === 'roll' ? { method: 'roll', die: rolled ?? 0 } : { method: 'average' },
+    // A rolagem vale uma vez só: depois de rolar, não dá para trocar pela média nem rolar de novo.
+    hitPoints: hpMethod === 'roll' ? { method: 'roll', die: Math.min(rolled ?? 0, plan.hitDieSides) } : { method: 'average' },
     improvement,
     cantrips,
     spells,
@@ -110,7 +111,6 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
 
   const chooseTarget = (value: string) => {
     setTarget(value);
-    setRolled(null);
     setCantrips([]);
     setSpells([]);
     setInvocations([]);
@@ -255,17 +255,21 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
 
         <Section title="Pontos de vida">
           <ChipRow>
-            <Chip label={`Média: ${Math.floor(plan.hitDieSides / 2) + 1}`} selected={hpMethod === 'average'} role="radio" onPress={() => setHpMethod('average')} />
+            <Chip label={`Média: ${Math.floor(plan.hitDieSides / 2) + 1}`} selected={hpMethod === 'average'} role="radio" onPress={() => (rolled === null ? setHpMethod('average') : undefined)} />
             <Chip label={`Rolar 1d${plan.hitDieSides}`} selected={hpMethod === 'roll'} role="radio" onPress={() => setHpMethod('roll')} />
           </ChipRow>
           {hpMethod === 'roll' ? (
-            <Button
-              label={rolled === null ? 'Rolar' : `Rolou ${rolled} · rolar de novo`}
-              compact
-              variant="secondary"
-              icon={<Dices size={14} color={colors.fg} />}
-              onPress={() => setRolled(rollDiceLocally(`1d${plan.hitDieSides}`)?.total ?? null)}
-            />
+            rolled === null ? (
+              <Button
+                label="Rolar (uma vez)"
+                compact
+                variant="secondary"
+                icon={<Dices size={14} color={colors.fg} />}
+                onPress={() => setRolled(rollDiceLocally(`1d${plan.hitDieSides}`)?.total ?? null)}
+              />
+            ) : (
+              <AppText>Rolou {Math.min(rolled, plan.hitDieSides)} · resultado final</AppText>
+            )
           ) : null}
           <AppText variant="small">
             Máximo de PV +{result.hitPointsGained} (inclui o modificador de Constituição{plan.conModifier !== 0 ? ` de ${plan.conModifier > 0 ? '+' : ''}${plan.conModifier}` : ''}).

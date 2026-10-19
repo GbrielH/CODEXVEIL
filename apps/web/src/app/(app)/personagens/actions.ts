@@ -67,9 +67,8 @@ export async function createDnd5eCharacterAction(input: unknown): Promise<Create
       sourcebooks = rules.sourcebooks;
       content = await loadDnd5eBookContent(supabase, await campaignBookPacks(supabase, campaign));
     } else {
-      // Ficha pessoal: o conteúdo dos livros importados pelo próprio jogador que ele marcou.
-      const own = await ownReadyBookPacks(supabase, user.id);
-      content = await loadDnd5eBookContent(supabase, own.filter((pack) => sourcebooks.includes(pack.bookKey)));
+      // Ficha pessoal: todos os livros importados pelo próprio jogador (o mesmo que o assistente mostra).
+      content = await loadDnd5eBookContent(supabase, await ownReadyBookPacks(supabase, user.id));
     }
   } catch (error) {
     return { ok: false, message: failureMessage(error) };

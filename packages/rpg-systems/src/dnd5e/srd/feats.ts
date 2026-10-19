@@ -3,6 +3,7 @@
  */
 import { activeDnd5eBookContent } from '../books/active';
 import type { FeatCategory, FeatDefinition } from './types';
+import { mergeWithoutRepeats } from '../books/dedupe';
 
 export const featCategoryLabels: Record<FeatCategory, string> = {
   origin: 'Talento de origem',
@@ -148,7 +149,7 @@ export function findFeat(id: string): FeatDefinition | undefined {
 /** Talentos do SRD e dos livros liberados. */
 export function listFeats(): readonly FeatDefinition[] {
   const books = activeDnd5eBookContent().feats;
-  return books.length ? [...SRD_FEATS, ...books] : SRD_FEATS;
+  return books.length ? mergeWithoutRepeats(SRD_FEATS, books) : SRD_FEATS;
 }
 
 /** Atributos que uma dádiva épica pode aumentar. */

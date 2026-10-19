@@ -107,6 +107,11 @@ const CLEAR_ON_CLASS = ['class.', 'subclass.', 'spells.', 'asi.', 'epic.', 'equi
 const CLEAR_ON_BACKGROUND = ['background.', 'equipment.background'];
 const CLEAR_ON_SPECIES = ['species.'];
 
+/** Resumo curto no cartão (os livros importados trazem textos longos). */
+function clip(text: string, max = 220): string {
+  return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
+}
+
 function without(selections: Dnd5eDraft['selections'], prefixes: string[]): Dnd5eDraft['selections'] {
   return Object.fromEntries(Object.entries(selections).filter(([key]) => !prefixes.some((prefix) => key.startsWith(prefix))));
 }
@@ -295,7 +300,7 @@ function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadErro
               selected={entry.id === draft.classId}
               title={entry.name}
               icon={(color) => <CharacterIcon kind="class" id={entry.id} color={color} />}
-              description={`${entry.primaryAbilityLabel} · ${entry.hitDie}${entry.book ? ` · ${entry.book}` : ''} · ${entry.summary}`}
+              description={`${entry.primaryAbilityLabel} · ${entry.hitDie}${entry.book ? ` · ${entry.book}` : ''} · ${clip(entry.summary)}`}
               onPress={() =>
                 setDraft((current) =>
                   current.classId === entry.id ? current : { ...current, classId: entry.id, selections: without(current.selections, CLEAR_ON_CLASS) },
@@ -356,7 +361,7 @@ function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadErro
               title={background.name}
               description={
                 background.book
-                  ? `${background.book} · Atributos à escolha · Talento de origem à escolha. ${background.summary}`
+                  ? `${background.book} · Atributos à escolha · Talento de origem à escolha. ${clip(background.summary)}`
                   : `${background.summary} Atributos: ${background.abilities.map((ability) => abilityLabels[ability].abbreviation).join(', ')}. Talento: ${findFeat(background.feat)?.name ?? background.feat}. Perícias: ${background.skills.map((skill) => skillDefinitions[skill].label).join(' e ')}.`
               }
               onPress={() =>
@@ -379,7 +384,7 @@ function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadErro
               selected={species.id === draft.speciesId}
               title={species.name}
               icon={(color) => <CharacterIcon kind="species" id={species.id} color={color} />}
-              description={`${species.sizeLabel} · ${formatDistance(species.speed, 'm')}${species.book ? ` · ${species.book}` : ''}. ${species.summary}`}
+              description={`${species.sizeLabel} · ${formatDistance(species.speed, 'm')}${species.book ? ` · ${species.book}` : ''}. ${clip(species.summary)}`}
               onPress={() =>
                 setDraft((current) =>
                   current.speciesId === species.id ? current : { ...current, speciesId: species.id, selections: without(current.selections, CLEAR_ON_SPECIES) },

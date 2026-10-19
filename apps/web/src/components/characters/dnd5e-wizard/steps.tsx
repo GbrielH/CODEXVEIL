@@ -105,7 +105,7 @@ export function ClassPicker({ value, onSelect }: { value: string; onSelect: (id:
               : `${entry.primaryAbilityLabel} · Dado de vida ${entry.hitDie} · Complexidade ${entry.complexity.toLowerCase()}`
           }
         >
-          {entry.summary}
+          <span className="line-clamp-4">{entry.summary}</span>
         </PickerCard>
       ))}
     </div>

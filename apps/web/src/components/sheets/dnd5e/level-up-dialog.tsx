@@ -114,7 +114,8 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
     else if (featId) improvement = { kind: 'feat', featId, ...(featAbility ? { ability: featAbility } : {}) };
   }
   const choices: Dnd5eLevelUpChoices = {
-    hitPoints: hpMethod === 'roll' ? { method: 'roll', die: rolled ?? 0 } : { method: 'average' },
+    // A rolagem vale uma vez só: depois de rolar, não dá para trocar pela média nem rolar de novo.
+    hitPoints: hpMethod === 'roll' ? { method: 'roll', die: Math.min(rolled ?? 0, plan.hitDieSides) } : { method: 'average' },
     improvement,
     cantrips,
     spells,
@@ -132,7 +133,6 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
 
   const resetChoices = (value: string) => {
     setTarget(value);
-    setRolled(null);
     setCantrips([]);
     setSpells([]);
     setInvocations([]);
@@ -336,12 +336,24 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
 
       <Section title="Pontos de vida">
         <div className="flex flex-wrap items-center gap-2">
-          <Choice name={`${id}-hp`} checked={hpMethod === 'average'} onChange={() => setHpMethod('average')} label={`Média: ${Math.floor(plan.hitDieSides / 2) + 1}`} />
+          <Choice
+            name={`${id}-hp`}
+            checked={hpMethod === 'average'}
+            onChange={() => setHpMethod('average')}
+            disabled={rolled !== null}
+            label={`Média: ${Math.floor(plan.hitDieSides / 2) + 1}`}
+          />
           <Choice name={`${id}-hp`} checked={hpMethod === 'roll'} onChange={() => setHpMethod('roll')} label={`Rolar 1d${plan.hitDieSides}`} />
           {hpMethod === 'roll' ? (
-            <Button size="sm" variant="secondary" icon={<Dices className="h-4 w-4" aria-hidden="true" />} onClick={() => setRolled(rollDiceLocally(`1d${plan.hitDieSides}`)?.total ?? null)}>
-              {rolled === null ? 'Rolar' : `Rolou ${rolled} · rolar de novo`}
-            </Button>
+            rolled === null ? (
+              <Button size="sm" variant="secondary" icon={<Dices className="h-4 w-4" aria-hidden="true" />} onClick={() => setRolled(rollDiceLocally(`1d${plan.hitDieSides}`)?.total ?? null)}>
+                Rolar (uma vez)
+              </Button>
+            ) : (
+              <span className="text-sm text-fg">
+                Rolou <strong>{Math.min(rolled, plan.hitDieSides)}</strong> · resultado final
+              </span>
+            )
           ) : null}
         </div>
         <p className="mt-2 text-sm text-fg-secondary">
@@ -557,10 +569,10 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function Choice({ name, checked, onChange, label }: { name: string; checked: boolean; onChange: () => void; label: string }) {
+function Choice({ name, checked, onChange, label, disabled }: { name: string; checked: boolean; onChange: () => void; label: string; disabled?: boolean }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2 rounded-md border border-line bg-sunken px-3 py-1.5 text-sm has-[:checked]:border-wine-500 has-[:checked]:text-fg">
-      <input type="radio" name={name} checked={checked} onChange={onChange} className="accent-wine-500" />
+    <label className="flex cursor-pointer items-center gap-2 rounded-md border border-line bg-sunken px-3 py-1.5 text-sm has-[:checked]:border-wine-500 has-[:checked]:text-fg has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
+      <input type="radio" name={name} checked={checked} onChange={onChange} disabled={disabled} className="accent-wine-500" />
       {label}
     </label>
   );

@@ -3,6 +3,7 @@
  */
 import { activeDnd5eBookContent } from '../books/active';
 import type { ResourceDefinition, SpeciesDefinition } from './types';
+import { mergeWithoutRepeats } from '../books/dedupe';
 
 const proficiencyUses = (key: string, label: string, recovery: 'short_rest' | 'long_rest' = 'long_rest'): ResourceDefinition => ({
   key,
@@ -327,7 +328,7 @@ export function findSpecies(id: string): SpeciesDefinition | undefined {
 /** Espécies do SRD e dos livros liberados. */
 export function listSpecies(): readonly SpeciesDefinition[] {
   const books = activeDnd5eBookContent().species;
-  return books.length ? [...SRD_SPECIES, ...books] : SRD_SPECIES;
+  return books.length ? mergeWithoutRepeats(SRD_SPECIES, books) : SRD_SPECIES;
 }
 
 export const sizeLabels = { small: 'Pequeno', medium: 'Médio' } as const;

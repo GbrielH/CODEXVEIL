@@ -47,12 +47,18 @@ def parse(rows, names, first_page, last_page):
         summary = '\n\n'.join(_paragraphs([rows[k] | {'t': texts[k]} for k in range(start, a) if texts[k]]))
         fields, field = {'skills': '', 'tools': '', 'languages': '', 'equipment': ''}, None
         k = a
-        while k < len(rows) and k < a + 14:
+        while k < len(rows) and k < a + 24:
             m = LABEL.match(texts[k])
             if m:
                 word = (m.group(1) or m.group(2) or m.group(3)).lower()
                 field = next(v for key, v in LABELS.items() if word.startswith(key[:5]))
                 fields[field] = m.group(4)
+            elif field == 'equipment' and texts[k] and not _heading(texts[k]) and not FEATURE.match(texts[k]):
+                # O equipamento é o último campo e quebra em várias linhas: vai até o ponto final.
+                fields[field] = join_lines([fields[field], texts[k]])
+                if fields[field].rstrip().endswith('.'):
+                    k += 1
+                    break
             elif field and texts[k] and not _heading(texts[k]) and (texts[k][:1].islower() or fields[field].endswith((',', 'e', 'de'))):
                 fields[field] = join_lines([fields[field], texts[k]])
             elif field:

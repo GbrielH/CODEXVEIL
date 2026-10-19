@@ -3,6 +3,7 @@
  */
 import { activeDnd5eBookContent } from '../books/active';
 import type { BackgroundDefinition } from './types';
+import { mergeWithoutRepeats } from '../books/dedupe';
 
 export const SRD_BACKGROUNDS: readonly BackgroundDefinition[] = [
   {
@@ -110,5 +111,5 @@ export function findBackground(id: string): BackgroundDefinition | undefined {
 /** Antecedentes do SRD e dos livros liberados. */
 export function listBackgrounds(): readonly BackgroundDefinition[] {
   const books = activeDnd5eBookContent().backgrounds;
-  return books.length ? [...SRD_BACKGROUNDS, ...books] : SRD_BACKGROUNDS;
+  return books.length ? mergeWithoutRepeats(SRD_BACKGROUNDS, books) : SRD_BACKGROUNDS;
 }
