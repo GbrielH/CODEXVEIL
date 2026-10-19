@@ -14,7 +14,7 @@ const messages: Record<string, string> = {
   same_password: 'A nova senha precisa ser diferente da atual.',
   over_request_rate_limit: 'Muitas tentativas em pouco tempo. Aguarde um instante e tente novamente.',
   over_email_send_rate_limit:
-    'Muitos e-mails enviados em pouco tempo. Aguarde alguns minutos e tente novamente.',
+    'Já enviamos um e-mail para este endereço há pouco. Aguarde 1 minuto e tente de novo (confira também a caixa de spam).',
   over_sms_send_rate_limit: 'Muitas tentativas em pouco tempo. Aguarde e tente novamente.',
   otp_expired: 'O link expirou ou já foi usado. Peça um novo.',
   flow_state_expired: 'O link expirou ou já foi usado. Peça um novo.',

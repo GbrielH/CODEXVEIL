@@ -134,6 +134,20 @@ function ProfileCard({ campaignId, creature }: Pick<CreatureEditorProps, 'campai
   return (
     <Card ornate>
       <CardHeader title="Perfil público" description="O que os jogadores veem quando o registro é revelado." />
+      <div className="mb-4 flex items-center gap-4">
+        <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-line bg-sunken">
+          {creature.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- URL assinada e temporária do Storage
+            <img src={creature.imageUrl} alt={`Imagem de ${creature.name}`} className="h-full w-full object-cover" />
+          ) : (
+            <ImageUp className="h-8 w-8 text-fg-subtle" aria-hidden="true" />
+          )}
+        </div>
+        <p className="text-sm text-fg-muted">
+          {creature.imageUrl ? 'Imagem atual do registro.' : 'Sem imagem ainda.'} Use “{creature.imagePath ? 'Trocar imagem' : 'Enviar imagem'}” abaixo (PNG, JPEG ou WebP; a
+          imagem é reduzida antes do envio).
+        </p>
+      </div>
       <form
         noValidate
         className="flex flex-col gap-4"

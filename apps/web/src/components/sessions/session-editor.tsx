@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Alert } from '@/components/ui/alert';
+import { DateTimeField } from '@/components/ui/date-time-field';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CheckboxField, TextareaField, TextField } from '@/components/ui/field';
@@ -265,13 +266,12 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
           ) : null}
           <div className="flex flex-col gap-4">
             <TextField id="session-title" label="Título" maxLength={120} value={meta.value.title} onChange={(event) => meta.update((current) => ({ ...current, title: event.target.value }))} />
-            <TextField
+            <DateTimeField
               id="session-date"
-              type="datetime-local"
               label="Data e hora"
               hint="Horário de Brasília."
               value={meta.value.scheduledAt}
-              onChange={(event) => meta.update((current) => ({ ...current, scheduledAt: event.target.value }))}
+              onChange={(scheduledAt) => meta.update((current) => ({ ...current, scheduledAt }))}
             />
             <CheckboxField
               id="session-published"

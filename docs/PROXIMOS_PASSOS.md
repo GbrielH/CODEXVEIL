@@ -179,6 +179,21 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-18 — calendário da sessão, imagens de NPCs e monstros e aviso de e-mail
+
+- **Data da sessão** (criar sessão e editor): calendário próprio no visual do Codexveil
+  (`components/ui/date-time-field.tsx`) no lugar do `datetime-local` do navegador; o valor continua
+  no formato `AAAA-MM-DDTHH:mm`.
+- **Imagens de NPCs e monstros:** no site, o editor do registro mostra a imagem atual ao lado do
+  botão de envio; no app, o mestre envia, troca ou remove a imagem na tela do registro (mesmo
+  componente da capa da campanha, preset `creature`).
+- **"Muitos e-mails enviados":** é o intervalo de 1 minuto por endereço (e 30 e-mails por hora no
+  projeto) do Supabase. A mensagem agora diz para aguardar 1 minuto e olhar o spam. O limite por
+  hora não é gerenciado pelo `config push`; se precisar, aumente no painel (Authentication → Rate
+  Limits). Recuperação de senha testada de novo pela API: envio aceito pela Brevo.
+
+Verificações: `pnpm check` 20/20. Não aberto no navegador nem no celular.
+
 ### 2026-10-18 — SMTP próprio (Brevo) e e-mails em português
 
 - SMTP salvo no painel do Supabase pelo responsável: Brevo (`smtp-relay.brevo.com:587`),

@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { Alert } from '@/components/ui/alert';
+import { DateTimeField } from '@/components/ui/date-time-field';
 import { CheckboxField, TextField } from '@/components/ui/field';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { idleFormState } from '@/lib/actions';
@@ -22,10 +23,9 @@ export function NewSessionForm({ campaignId, suggestedTitle }: { campaignId: str
         defaultValue={state.values?.title ?? ''}
         error={state.fieldErrors?.title}
       />
-      <TextField
+      <DateTimeField
         id="scheduledAt"
         name="scheduledAt"
-        type="datetime-local"
         label="Data e hora (opcional)"
         hint="Horário de Brasília. Aparece no painel dos jogadores quando a sessão é publicada."
         defaultValue={state.values?.scheduledAt ?? ''}
