@@ -160,3 +160,45 @@ def column_list(rows, pages, item_size, heading_size, list_id):
         s['name'] = re.sub(r'\s*\(ritual\)\s*', '', s['name']).replace('/ ', '/').strip()[:120]
     return {'kind': 'spell_list', 'key': slug(list_id), 'name': f'Lista de magias ({list_id})',
             'data': {'list': list_id, 'spells': spells[:400]}}
+
+
+LIST_ITEM = re.compile(r'^(.+?)\s*\((?:abjura|adivinha|conjura|encanta|evoca|ilus|necroman|transmuta)[^)]*\)?$', re.I)
+LIST_CLASS = re.compile(r'^MAGIAS DE (\w+)')
+
+
+def ocr_class_lists(rows, pages):
+    """Listas por classe de um PDF escaneado (Xanathar): {nome da magia em minúsculas: {classes}}.
+
+    Subcolunas lidas em ordem (página, coluna, x); o título "MAGIAS DE BARDO" troca a classe.
+    O nível das listas não é usado (o OCR troca os dígitos); a magia já traz o próprio círculo.
+    """
+    cells = [r for r in rows if r['p'] in pages and not r['f'].startswith('Hidden')]
+    columns = {}
+    for r in cells:
+        key = (r['p'], r['c'], round(r['x'] / 60))
+        columns.setdefault(key, []).append(r)
+    klass, out, last = None, {}, None
+    for key in sorted(columns):
+        for r in sorted(columns[key], key=lambda r: r['y']):
+            t = clean(r['t'])
+            m = LIST_CLASS.match(t)
+            if m:
+                klass = CLASSES.get(m.group(1).lower().replace('patrulheiro', 'patrulheiro'))
+                last = None
+                continue
+            if not klass:
+                continue
+            item = LIST_ITEM.match(t)
+            if item:
+                last = ocr_spell_name(item.group(1))
+                out.setdefault(last, set()).add(klass)
+            elif last and r['s'] < 9.3 and t and not t.startswith('(') and t[:1].islower():
+                pass
+    return out
+
+
+def ocr_spell_name(name):
+    """Nome de magia lido por OCR, normalizado para casar com os títulos ("e/ementa/" → "elemental")."""
+    name = re.sub(r'(?<=\w)/(?=\w)|(?<=\w)/$', 'l', name.strip())
+    name = re.sub(r'\s+', ' ', name).replace('va~mp', 'vamp')
+    return name.lower()

@@ -527,3 +527,9 @@ recebe por atualização OTA). Não verificado no celular.
   campanha, aparecem na criação do personagem no site e, agora, também no app.
 - Pendente: importar os pacotes; Domínio da Sepultura (Xanathar); subclasses do Livro do Jogador
   fora do SRD; teste no aparelho.
+
+### 2026-10-19 — pendências dos livros resolvidas
+
+- Feitos: subclasses do Livro do Jogador (41), Domínio da Sepultura, classes de todas as magias
+  do Xanathar, itens comuns do Xanathar e resumos das raças. Falta importar os pacotes e testar no
+  aparelho.

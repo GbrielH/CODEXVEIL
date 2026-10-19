@@ -83,20 +83,38 @@ XANATHAR_CLASS_PAGES = {'barbarian': (9, 16), 'bard': (17, 19), 'warlock': (20, 
                         'wizard': (49, 51), 'monk': (52, 55), 'paladin': (56, 59), 'ranger': (60, 68)}
 
 
+# Magias cujo nome o OCR quebrou na lista de classes: nome corrigido e classes conferidas no livro.
+XANATHAR_SPELL_FIXES = {'evaporação de abi- dalzim-dalzim': ('Evaporação de Abi-Dalzim', ('sorcerer', 'wizard')),
+                        'inundação de energia negativa': ('Inundação de Energia Negativa', ('warlock', 'wizard'))}
+
+
 def xanathar(rows, layout_dir):
     """Subclasses (OCR) e magias do Xanathar; o texto da magia vem do compêndio quando o nome bate."""
     compendium = {s['name'].lower(): s for s in spells.parse(bookkit.load(layout_dir / 'LIVRO DE MAGIAS.jsonl'))}
-    found = []
+    found, class_lists = [], spells.ocr_class_lists(rows, {150, 151, 152})
     for spell in spells.parse(rows, body_max=10.6, upper_names=True, pages=(150, 200)):
         if spell['name'].startswith('Magia sem nome'):
             continue
         same = compendium.get(spell['name'].lower())
-        found.append(same | {'key': spell['key']} if same else spell)
-    return subclasses.parse_ocr(rows, XANATHAR_CLASS_PAGES) + found + feats_items.feats_ocr(rows, 76, 79)
+        spell = same | {'key': spell['key']} if same else spell
+        # Classes: as do compêndio somadas às listas do próprio Xanathar (capítulo 3).
+        fix = XANATHAR_SPELL_FIXES.get(spell['name'].lower())
+        if fix:
+            spell = spell | {'name': fix[0]}
+        listed = class_lists.get(spells.ocr_spell_name(spell['name']), set()) | set(fix[1] if fix else ())
+        spell['data'] = spell['data'] | {'classes': sorted(set(spell['data']['classes']) | listed)}
+        found.append(spell)
+    return (subclasses.parse_ocr(rows, XANATHAR_CLASS_PAGES) + found + feats_items.feats_ocr(rows, 76, 79)
+            + feats_items.items(rows, 130, 150, 8.0, 10.6, ocr=True))
 
 
 PHB_BACKGROUNDS = ['Acólito', 'Artesão de Guilda', 'Artista', 'Charlatão', 'Criminoso', 'Eremita', 'Forasteiro',
                    'Herói do Povo', 'Marinheiro', 'Nobre', 'Órfão', 'Sábio', 'Soldado']
+
+
+PHB_CLASS_PAGES = {'barbarian': (45, 49), 'bard': (50, 54), 'warlock': (55, 61), 'cleric': (62, 69), 'druid': (70, 75),
+                   'sorcerer': (76, 81), 'fighter': (82, 87), 'rogue': (88, 92), 'wizard': (93, 100), 'monk': (101, 106),
+                   'paladin': (107, 113), 'ranger': (114, 121)}
 
 
 def phb(rows, layout_dir):
@@ -106,7 +124,7 @@ def phb(rows, layout_dir):
         print('  faltando', source, '(rode o OCR do Livro do Jogador)')
         return []
     ocr = bookkit.load(source)
-    return (races_ocr.parse(ocr, 17, 44) + backgrounds.parse(ocr, PHB_BACKGROUNDS, 127, 142)
+    return (races_ocr.parse(ocr, 17, 44) + subclasses.parse_phb(ocr, PHB_CLASS_PAGES) + backgrounds.parse(ocr, PHB_BACKGROUNDS, 127, 142)
             + feats_items.feats_ocr(ocr, 166, 171, (15, 40), (15, 40), None,
                                     skip=('talentos', 'espaço de magia por nível de magia')))
 

@@ -70,9 +70,9 @@ Próximos passos, em ordem:
 1. ~~Montar o pacote do **Manual de Monstros** e do **Monstros do Multiverso** e validar com
    `parseBookPack`~~ (**feito em 2026-10-19**; falta o responsável importar em Meus livros).
 2. ~~**Livro de Magias**~~ (feito em 2026-10-19: 440 magias; as do Livro do Jogador vão no `phb-2014`).
-3. ~~**Xanathar** e **Tasha**~~ (feito em 2026-10-19; falta o Domínio da Sepultura e os itens do Xanathar).
-4. ~~**Livro do Jogador 2014**~~: raças, antecedentes e talentos feitos em 2026-10-19; faltam as
-   subclasses fora do SRD e o texto.
+3. ~~**Xanathar** e **Tasha**~~ (feito em 2026-10-19).
+4. ~~**Livro do Jogador 2014**~~: raças, antecedentes, talentos e subclasses feitos em 2026-10-19
+   (falta só o texto corrido).
 5. Conferir as contagens contra os sumários dos livros (item 9) e, no app, ligar o conteúdo dos
    livros à criação de personagem.
 6. Depois: item 2 (tradução do SRD) e item 7 (combate com acerto, dano e reações).
@@ -233,6 +233,15 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-19 — pendências dos livros resolvidas
+
+- Livro do Jogador: 41 subclasses fora do SRD (o OCR lê "3° nível" como "30 nível"; corrigido) e
+  resumo das raças tirado da descrição, não do conto de abertura.
+- Xanathar: Domínio da Sepultura (31 de 31 subclasses), classes das 85 magias pelas listas do
+  capítulo 3 (todas com classe) e 47 itens mágicos comuns.
+- Com os cinco livros, a criação lista 13 classes com 8 a 13 subclasses cada (Artífice, 4), 51
+  raças e 17 antecedentes; todos os pacotes com 0 erros no `parseBookPack`.
 
 ### 2026-10-19 — livros de personagem e criação no app
 

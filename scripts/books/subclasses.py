@@ -84,7 +84,7 @@ def parse(rows, class_size, subclass_size, feature_size, body_max=10.5):
 
 # Xanathar (PDF escaneado, OCR): classe em título grande, subclasse em caixa alta (~9,5) e cada
 # característica em caixa alta menor (~8,3), com o nível no texto ("Começando no 6° nível…").
-LEVEL_IN_TEXT = re.compile(r'(\d{1,2})\s*[°ºoQ0]?\s*n[íi]vel')
+LEVEL_IN_TEXT = re.compile(r'(\d{1,2})\s*[°ºoQ0]?\s*n[íi]vel', re.I)
 CLASS_TITLES = {'BÁRBARO': 'barbarian', 'BARDO': 'bard', 'BRUXO': 'warlock', 'CLÉRIGO': 'cleric', 'DRUIDA': 'druid',
                 'GUERREIRO': 'fighter', 'MONGE': 'monk', 'PALADINO': 'paladin', 'PATRULHEIRO': 'ranger',
                 'LADINO': 'rogue', 'FEITICEIRO': 'sorcerer', 'MAGO': 'wizard'}
@@ -92,7 +92,8 @@ CLASS_TITLES = {'BÁRBARO': 'barbarian', 'BARDO': 'bard', 'BRUXO': 'warlock', 'C
 
 # Nomes de subclasse que o OCR do Xanathar estraga.
 NAME_FIXES = {'caminho do guardiã o ancestral': 'Caminho do Guardião Ancestral', 'oligio dos sussurros': 'Colégio dos Sussurros',
-              'juramento da rendencão': 'Juramento da Redenção'}
+              'juramento da rendencão': 'Juramento da Redenção', 'domfnio a sepultura': 'Domínio da Sepultura',
+              'domfnio da sepultura': 'Domínio da Sepultura'}
 TABLE_TITLE = re.compile(r'^CARACTER\S{1,3}STICAS\s+D[OAE]S?\s+(.+)$', re.I)
 
 
@@ -146,7 +147,7 @@ def parse_ocr(rows, class_pages, sub_size=(9.0, 10.4), feature_size=(7.8, 8.9)):
             text = '\n\n'.join(_paragraphs(body)).replace('Ü', 'O')
             level = LEVEL_IN_TEXT.search(text[:160])
             if level and 1 <= int(level.group(1)) <= 20:
-                current['features'].append({'level': int(level.group(1)), 'name': t.title()[:120], 'description': text[:8000]})
+                current['features'].append({'level': int(level.group(1)), 'name': _title_case(t)[:120], 'description': text[:8000]})
     entries, seen = [], set()
     for sub in subs:
         if sub['classId'] == 'warlock':
@@ -168,3 +169,80 @@ def parse_ocr(rows, class_pages, sub_size=(9.0, 10.4), feature_size=(7.8, 8.9)):
         entries.append({'kind': 'subclass', 'key': key, 'name': name[:200],
                         'data': {'classId': sub['classId'], 'summary': summary, 'features': sub['features'][:60], 'alwaysPrepared': []}})
     return entries
+
+
+# Livro do Jogador 2014 (OCR do Windows, sem fonte): subclasse e característica têm a mesma altura,
+# então a subclasse é reconhecida pelo nome ("DOMÍNIO DA LUZ", "ESCOLA DE ILUSÃO", "CAMPEÃO"…).
+PHB_SUBCLASS = re.compile(
+    r'^(CAMINHO D[OAE]S? (?!PRIMITIVO)|COLÉGIO D[OA] (?!BARDO)|DOMÍNIO D[OAE] |CÍRCULO D[AO] (?!DRUÍDICO)|LINHAGEM DRACÔNICA|'
+    r'MAGIA SELVAGEM$|ESCOLA DE |JURAMENTO D[EOA]S? |CONCLAVE D[OA] |CAMPEÃO$|MESTRE DE BATALHA$|CAVALEIRO ARCANO$|'
+    r'LADRÃO$|ASSASSINO$|TRAPACEIRO ARCANO$|A ARQUIFADA$|O CORRUPTOR$|O GRANDE ANTIGO$|O IMORAL$|O INFERNAL$)')
+
+
+PHB_DEGREE = re.compile(r'\b(\d{1,2})0 (n[íi]ve(?:l|is))')
+
+
+def parse_phb(rows, class_pages, skip_names=()):
+    """class_pages: {classe: (primeira, última página)}; skip_names: subclasses que o SRD já tem."""
+    texts = [clean(r['t']) for r in rows]
+    page_class = {p: c for c, (a, b) in class_pages.items() for p in range(a, b + 1)}
+    first_page, last_page = min(page_class), max(page_class)
+    subs, current = [], None
+    heading = lambda k: _upper(texts[k]) and 3 < len(texts[k]) < 60 and rows[k]['s'] >= 22
+    for i, r in enumerate(rows):
+        if not first_page <= r['p'] <= last_page or not texts[i]:
+            continue
+        klass = page_class[r['p']]
+        if current and current['classId'] != klass:
+            current = None
+        t = texts[i]
+        if not heading(i):
+            continue
+        if PHB_SUBCLASS.match(t):
+            current = {'name': t, 'classId': klass, 'row': i, 'features': []}
+            subs.append(current)
+            continue
+        if current is None:
+            continue
+        body = []
+        for k in range(i + 1, min(i + 200, len(rows))):
+            if texts[k] and heading(k):
+                break
+            if texts[k] and not re.fullmatch(r'[\d\W]{1,4}', texts[k]):
+                body.append(rows[k] | {'t': texts[k]})
+        # O OCR lê "3° nível" como "30 nível" (e "o 4°" como "0 40").
+        text = PHB_DEGREE.sub(r'\1º \2', '\n\n'.join(_paragraphs(body)))
+        level = re.search(r'(\d{1,2})º n[íi]vel', text[:200])
+        if level and 1 <= int(level.group(1)) <= 20:
+            current['features'].append({'level': int(level.group(1)), 'name': _title_case(t)[:120], 'description': fix_words(text)[:8000]})
+    for n in range(len(subs) - 1, 0, -1):
+        # "CAMINHO DA FLORESTA" no Círculo da Terra é um subtítulo da subclasse, não outra subclasse.
+        if subs[n]['classId'] == 'druid' and subs[n]['name'].startswith('CAMINHO'):
+            subs[n - 1]['features'] += subs.pop(n)['features']
+    entries, seen = [], set()
+    for sub in subs:
+        name = _title_case(sub['name'])
+        if sub['classId'] == 'warlock':
+            # As invocações místicas vêm logo depois do último patrono: não são dele.
+            sub['features'] = [f for f in sub['features'] if f['level'] in (1, 6, 10, 14)]
+        for f in sub['features']:
+            f['name'] = f['name'].replace('Ma10r', 'Maior').replace('Mâos', 'Mãos').replace(' À ', ' à ').replace(' As ', ' as ')
+        if len(sub['features']) < 2 or name.lower() in skip_names:
+            continue
+        intro = [rows[k] | {'t': texts[k]} for k in range(sub['row'] + 1, min(sub['row'] + 40, len(rows)))]
+        intro = intro[:next((n for n, r in enumerate(intro) if heading(rows.index(r) if False else sub['row'] + 1 + n)), len(intro))]
+        summary = fix_words('\n\n'.join(_paragraphs(intro)))[:2000]
+        key = slug(f"{sub['classId']}-{name}")
+        if key in seen:
+            continue
+        seen.add(key)
+        sub['features'].sort(key=lambda f: f['level'])
+        entries.append({'kind': 'subclass', 'key': key, 'name': name[:200],
+                        'data': {'classId': sub['classId'], 'summary': summary, 'features': sub['features'][:60], 'alwaysPrepared': []}})
+    return entries
+
+
+def _title_case(t):
+    small = ('da', 'de', 'do', 'das', 'dos', 'e', 'em', 'com', 'a', 'o')
+    words = t.lower().split()
+    return ' '.join(w if (w in small and n) else w.capitalize() for n, w in enumerate(words))

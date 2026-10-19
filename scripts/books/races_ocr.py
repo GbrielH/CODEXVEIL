@@ -82,9 +82,17 @@ def parse(rows, first_page, last_page):
                 continue
             traits.append({'level': 1, 'name': e['name'][:120], 'description': text[:8000]})
             cantrips += [c.strip() for c in CANTRIP.findall(text)][:6 - len(cantrips)]
-        # Resumo: primeiros parágrafos do capítulo da raça (do título até os traços).
+        # Resumo: o capítulo abre com um conto; a descrição da raça vem depois do primeiro subtítulo
+        # ("BAIXOS E ROBUSTOS", "UMA BELEZA ETÉREA"…).
         start = max((k for k in range(heads[n - 1] if n else 0, h) if texts[k].upper() == name.upper()), default=h - 30)
-        summary = join_lines([texts[k] for k in range(start + 1, min(start + 14, h)) if texts[k] and not _upper(texts[k])])
+        first = next((k for k in range(start + 1, h) if _upper(texts[k]) and 3 < len(texts[k]) < 40), start)
+        lines = []
+        for k in range(first + 1, h):
+            if _upper(texts[k]) and lines:
+                break
+            if texts[k] and not _upper(texts[k]):
+                lines.append(texts[k])
+        summary = join_lines(lines[:14])
         data = {'summary': fix_words(summary)[:2000] or fix_words(join_lines(race['intro']))[:2000], 'creatureType': 'Humanoide',
                 'sizes': sizes, 'speed': speed, 'traits': traits[:40], 'cantrips': cantrips}
         options = []

@@ -26,14 +26,14 @@ def _paragraphs(rows):
     return [fix_words(p)[:8000] for p in paras if p]
 
 
-def _body(rows, texts, start, body_max):
+def _body(rows, texts, start, body_max, ocr=False):
     """Linhas de corpo a partir de start até o próximo título (ignora números de página)."""
     out = []
     for k in range(start, len(rows)):
         t = texts[k]
         if not t or re.fullmatch(r'\d{1,3}', t):
             continue
-        if rows[k]['s'] > body_max + 0.6:
+        if rows[k]['s'] > body_max + 0.6 or ocr and _upper(t) and 3 < len(t) < 60:  # OCR: título em caixa alta menor
             break
         if rows[k]['s'] >= 8.5:
             out.append(rows[k] | {'t': t})
@@ -67,7 +67,8 @@ def feats(rows, first_page, last_page, title_size, body_max=10.5):
     return entries
 
 
-def items(rows, first_page, last_page, title_min, body_max=10.5):
+def items(rows, first_page, last_page, title_min, body_max=10.5, ocr=False):
+    """ocr=True (Xanathar): o título é a linha em caixa alta acima do tipo, menor que o corpo."""
     texts = [clean(r['t']) for r in rows]
     entries, seen = [], set()
     for i, t in enumerate(texts):
@@ -77,11 +78,18 @@ def items(rows, first_page, last_page, title_min, body_max=10.5):
         if not m or i == 0 or rows[i - 1]['s'] < title_min:
             continue
         name = re.sub(r'^(\w+) \1\b', r'\1', texts[i - 1]).rstrip(',. ')  # "Tatuagem Tatuagem da…"
+        if ocr:
+            small = ('da', 'de', 'do', 'das', 'dos', 'e')
+            name = ' '.join(w if w in small else w.capitalize() for w in name.replace('Ü', 'O').lower().split())
         rarity, attunement = m.group('rarity').strip(), m.group('att') or ''
         if rarity.endswith('(requer'):  # "(requer" no fim da linha e "sintonização)" na seguinte
             rarity, attunement = rarity[:-7].strip(), 'requer sintonização'
         data = {'type': t[:m.start('rarity')].rstrip(', ')[:200], 'rarity': rarity[:80],
-                'attunement': attunement[:200], 'description': _paragraphs(_body(rows, texts, i + 1, body_max))[:200]}
+                'attunement': attunement[:200], 'description': _paragraphs(_body(rows, texts, i + 1, body_max, ocr))[:200]}
+        if data['description'] and data['description'][0].lower().startswith('sintoniza'):
+            # "(requer" ficou na linha do tipo e "sintonização)" abriu o texto.
+            data['description'] = data['description'][1:]
+            data['attunement'] = 'requer sintonização'
         key = slug(name)
         base, n = key, 2
         while key in seen:
