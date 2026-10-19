@@ -61,3 +61,5 @@ export * from './campaign-rules';
 export * from './books/pack';
 export { tormenta20License } from './license';
 export { t20OfficialLinks } from './links';
+export * from './content';
+export * from './creation';

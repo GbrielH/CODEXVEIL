@@ -241,7 +241,14 @@ def classes(book):
         # Seções extras da classe (Linhagens, Forma Selvagem, Engenhocas…) depois das habilidades.
         extra_heads = [k for k in heads if k > hab and k - 1 not in heads]  # título em duas linhas conta uma vez
         hab_stop = extra_heads[0] if extra_heads else stop
-        abilities, powers, golpe = [], [], []
+        abilities, powers, golpe, boxed = [], [], [], []
+        last = None  # tipo da última entrada: 'ability' ou 'power'
+        # Quadros do livro (título em SourceSansPro-Bold grande): onde ficam, por página e coluna.
+        box_titles = {}
+        for k in range(i, stop):
+            r_ = book.rows[k]
+            if r_['f'].startswith('SourceSansPro-Bold') and r_['s'] >= 12.5:
+                box_titles.setdefault((r_['p'], r_['c']), r_['y'])
         for e in book.entries(hab + 1, hab_stop):
             if not e['name'] and not e['bullet'] or e['name'].startswith('Nível') or e['name'][:1].islower():
                 continue  # cabeçalho da tabela ou negrito no meio do texto
@@ -249,19 +256,41 @@ def classes(book):
                 # Opções do Golpe Pessoal (guerreiro): "Amplo (+3 PM)"…, num quadro à parte.
                 golpe.append({'name': e['name'], 'text': e['text']})
                 continue
-            in_powers = any(plain(a['name']).startswith('poder de') for a in abilities)
-            if e['bullet'] and e['name'] and not in_powers and abilities:
-                # Antes da lista de poderes, os itens são opções da habilidade (Caminho do Arcanista).
+            # Poder da classe: "•<tab>Nome." Itens sem a tabulação ("• Coruja." dos familiares)
+            # vêm de quadros e não são poderes.
+            row_ = book.rows[e['row']]
+            is_power = row_['t'].lstrip().startswith('•	')
+            in_box = not is_power and (row_['p'], row_['c']) in box_titles and row_['y'] > box_titles[(row_['p'], row_['c'])]
+            announces_options = last == 'ability' and re.search(r'[Ee]scolha (?:uma|um|entre)[^.]*(?:a seguir|opções|caminhos)', abilities[-1]['text'])
+            if e['bullet'] and e['name'] and announces_options:
+                # Itens logo após uma habilidade são opções dela (Caminho do Arcanista, Caminho do Cavaleiro).
                 abilities[-1].setdefault('options', []).append({'name': e['name'], 'text': e['text']})
+                continue
+            if e['bullet'] and e['name'] and in_box:
+                if powers:
+                    powers[-1]['text'] += f"\n• {e['name']}. {e['text']}"
+                else:
+                    boxed.append({'name': e['name'], 'text': e['text']})
                 continue
             if e['bullet'] and e['name']:
                 text, prereq = split_prereq(e['text'])
                 powers.append({'name': e['name'], 'text': text, 'prerequisite': prereq})
+                last = 'power'
             elif e['bullet'] and abilities:
                 abilities[-1]['text'] += '\n• ' + e['text']
             else:
-                abilities.append({'name': e['name'], 'text': e['text'], 'level': ability_level(e['name'], table)})
+                ability = {'name': e['name'], 'text': e['text'], 'level': ability_level(e['name'], table)}
+                abilities.append(ability)
+                # "Poder de X" abre a lista de poderes; as demais habilidades podem ter opções.
+                last = 'power' if plain(e['name']).startswith('poder de') else 'ability'
         sections = [{'title': 'Golpe Pessoal', 'paragraphs': [], 'entries': golpe}] if golpe else []
+        if boxed:
+            sections.append({'title': 'Quadro', 'paragraphs': [], 'entries': boxed})
+        # Familiares do arcanista: o quadro descreve as opções do poder Familiar.
+        familiar = next((p for p in powers if plain(p['name']) == 'familiar'), None)
+        if familiar and boxed:
+            familiar['text'] += ''.join(f"\n• {b_['name']}. {b_['text']}" for b_ in boxed)
+            sections.pop()
         for m, k in enumerate(extra_heads):
             sec_stop = extra_heads[m + 1] if m + 1 < len(extra_heads) else stop
             title = book.texts[k]
@@ -401,17 +430,20 @@ def narrow_columns(book, first_page, last_page):
 
 def spells(book):
     order = narrow_columns(book, 184, 217)
-    out, current = [], None
+    out, current, pending_title = [], None, ""
     for pos, i in enumerate(order):
         r, t = book.rows[i], book.texts[i]
         if book.is_title(i, 16):
             nxt = order[pos + 1] if pos + 1 < len(order) else None
             if nxt is not None and SPELL_HEADER.match(book.texts[nxt]):
-                current = {'name': t, 'lines': [], 'fields': [], 'upgrades': []}
+                # Nome em duas linhas: a primeira veio antes (guardada em `pending_title`).
+                name = f'{pending_title} {t}' if pending_title else t
+                pending_title = ''
+                current = {'name': name, 'lines': [], 'fields': [], 'upgrades': []}
                 out.append(current)
                 continue
-            if current is not None and not current['lines'] and not current['fields']:
-                current['name'] += ' ' + t  # nome em duas linhas
+            if nxt is not None and book.is_title(nxt, 16):
+                pending_title = f'{pending_title} {t}'.strip()
                 continue
         if current is None:
             continue

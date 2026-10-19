@@ -282,6 +282,8 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **Tormenta20:** seguir a seção "Continuidade Tormenta20" de [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md) (marco 3: tela do assistente de criação T20 no site).
+
 0. **Livros (2026-10-19):** importar em Meus livros os pacotes `phb-2014`, `xgte`, `tcoe`,
    `mm-2014` e `mpmm` (em `livros-trabalho/out/`, validados com 0 erros) e marcar os livros na
    campanha; conferir a criação no site e no app. Depois: subclasses do Livro do Jogador, item 2

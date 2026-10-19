@@ -24,6 +24,58 @@
   navegador** em que o pedido foi feito.
 - A **recuperação de senha pedida pelo app não funciona**.
 
+## Continuidade Tormenta20 (parada em 2026-10-19 à noite, retomar em outra máquina)
+
+Pedido do responsável: implantar o **Tormenta20 completo** (Edição Jogo do Ano), a partir do PDF
+`T20.pdf` que ele tem (estava em `C:\Users\JULIO\Videos\T20.pdf`), em 7 marcos, cada um subindo
+para a `main`. Regra mantida: o código tem só as regras; o conteúdo do livro vai num pacote
+importado em Meus livros (fora do Git), como nos livros de D&D.
+
+### Estado dos marcos
+
+| #   | Marco                                           | Situação                                                                                                                    |
+| --- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Extração do livro + núcleo de regras + migração | **Feito** (`8076641`). Migração `20261019120000_tormenta20.sql` aplicada em produção.                                       |
+| 2   | Campanha T20 + leitor dos livros T20            | **Feito** (`780275a`).                                                                                                      |
+| 3   | Criação de personagem T20 (site)                | **Em andamento**: motor pronto e testado (`tormenta20/content.ts` e `creation.ts`); **falta a tela** do assistente no site. |
+| 4   | Ficha e jogo T20 (site)                         | Não iniciado.                                                                                                               |
+| 5   | Subida de nível T20                             | Não iniciado.                                                                                                               |
+| 6   | App (criação, ficha, subida de nível)           | Não iniciado.                                                                                                               |
+| 7   | Mestre: ameaças no escudo e combate             | Não iniciado.                                                                                                               |
+
+### Como retomar
+
+1. **Arquivos de trabalho (fora do Git):** copie `C:\Users\JULIO\Documents\Codexveil\livros-trabalho\`
+   (PDFs, `venv` com PyMuPDF, `layout/T20.jsonl`, `out/t20.json`, `out/t20-jda.book.json`). Sem a
+   pasta, gere de novo pelo [`scripts/books/README.md`](../scripts/books/README.md) (item 9).
+2. **Pacote T20:** `out/t20-jda.book.json` (raças 17, classes 14, origens 33, deuses 20, poderes
+   431, magias 196, equipamento 211, itens mágicos 191, ameaças 80); valida com `parseT20BookPack`
+   (0 erros). O responsável importa em Meus livros e libera na campanha T20.
+3. **Marco 3, próximo passo exato:** criar `apps/web/src/components/characters/t20-wizard/` no
+   molde do assistente de D&D (`dnd5e-wizard/`), usando `@codexveil/rpg-systems/tormenta20`:
+   `buildT20Content` (conteúdo dos pacotes da campanha/usuário via `loadBookSources`),
+   `createT20Draft`, `t20DraftIssues`, `buildT20Character` e os auxiliares (`t20EquipmentOptions`,
+   `t20AvailableSpells`, `t20PowerLevels`, `t20PowerOptions`, `t20EligibleDeities`,
+   `t20GrantedPowers`, `rollT20Attributes`, `t20Lineages`). Etapas: `T20_STEPS`. A página
+   `/personagens/novo` precisa escolher o assistente pelo sistema da campanha (hoje só lista
+   campanhas `dnd5e`), e a ação do servidor deve validar com `t20DraftIssues` e criar com
+   `createCharacter` (sistema `tormenta20`).
+4. **Depois:** ficha T20 em `components/sheets/` (ramo `tormenta20` em `character-sheet.tsx`, usando
+   `computeT20Derived`), subida de nível, app e mestre.
+
+### Pendências conhecidas da extração
+
+- Poderes de classe: itens de quadros (familiares do arcanista) são separados por título de quadro;
+  conferir no leitor se algum poder ficou faltando em alguma classe.
+- Feiticeiro aprende magias só em níveis ímpares (tratado no motor); linhagens vêm da seção
+  "Linhagens Sobrenaturais".
+
+### Observação sobre o app (Expo)
+
+O plano gratuito do EAS esgotou os 60 minutos de CI/CD do mês (volta em 2026-11-01): o workflow
+"Atualizar app" falha ao começar. Até lá, para o app receber atualizações, publique a OTA
+manualmente na máquina (não usa minutos de CI): `cd apps/mobile && npx eas-cli update --branch preview --message "..."`.
+
 ## Continuidade (parada em 2026-10-19, retomar em outra máquina)
 
 Lista pedida pelo responsável em 2026-10-18, **a terminar antes da IA**. Estado de cada item:
