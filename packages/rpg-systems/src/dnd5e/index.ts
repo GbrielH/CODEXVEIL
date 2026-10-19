@@ -90,5 +90,7 @@ export * from './campaign-rules';
 export * from './level-up';
 export * from './sourcebooks';
 export * from './books';
+export { comparableName } from './books/dedupe';
+export * from './names-en';
 export * from './srd';
 export { srd52License } from './license';

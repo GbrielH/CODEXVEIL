@@ -1,4 +1,11 @@
-import { ABILITIES, abilityLabels, spellSchoolLabels, type Ability, type ChoiceSpec, type Selection } from '@codexveil/rpg-systems/dnd5e';
+import {
+  ABILITIES,
+  abilityLabels,
+  spellSchoolLabels,
+  type Ability,
+  type ChoiceSpec,
+  type Selection,
+} from '@codexveil/rpg-systems/dnd5e';
 import { Check, Search } from 'lucide-react-native';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -10,18 +17,37 @@ const SEARCH_AT = 10;
 
 /** Comparação sem acentos e sem diferenciar maiúsculas. */
 function normalize(text: string): string {
-  return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+  return text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
 }
 
 /** Filtra opções pelo nome e pela descrição; as escolhidas continuam sempre visíveis. */
-function useOptionFilter<T extends { name: string; description?: string | undefined }>(options: readonly T[], keep: (option: T) => boolean) {
+function useOptionFilter<T extends { name: string; description?: string | undefined }>(
+  options: readonly T[],
+  keep: (option: T) => boolean,
+) {
   const [query, setQuery] = useState('');
   const term = normalize(query.trim());
-  const visible = term ? options.filter((option) => keep(option) || normalize(`${option.name} ${option.description ?? ''}`).includes(term)) : options;
+  const visible = term
+    ? options.filter(
+        (option) =>
+          keep(option) || normalize(`${option.name} ${option.description ?? ''}`).includes(term),
+      )
+    : options;
   return { query, setQuery, visible, searchable: options.length > SEARCH_AT };
 }
 
-function OptionSearch({ label, query, onChange }: { label: string; query: string; onChange: (query: string) => void }) {
+function OptionSearch({
+  label,
+  query,
+  onChange,
+}: {
+  label: string;
+  query: string;
+  onChange: (query: string) => void;
+}) {
   return (
     <View style={styles.filter}>
       <Search size={16} color={colors.fgSubtle} />
@@ -58,14 +84,33 @@ export function ChoiceField({ spec, value, error, onChange }: ChoiceFieldProps) 
             {spec.source}
           </AppText>
         </View>
-        {spec.kind === 'multi' || spec.kind === 'spells' ? <Badge label={`${count} de ${spec.count}`} tone={count === spec.count ? 'success' : 'neutral'} /> : null}
+        {spec.kind === 'multi' || spec.kind === 'spells' ? (
+          <Badge
+            label={`${count} de ${spec.count}`}
+            tone={count === spec.count ? 'success' : 'neutral'}
+          />
+        ) : null}
       </View>
       {spec.description ? <AppText variant="muted">{spec.description}</AppText> : null}
-      {spec.kind === 'option' ? <OptionList spec={spec} value={typeof value === 'string' ? value : ''} onChange={onChange} /> : null}
-      {spec.kind === 'multi' ? <MultiList spec={spec} value={Array.isArray(value) ? value : []} onChange={onChange} /> : null}
-      {spec.kind === 'spells' ? <SpellList spec={spec} value={Array.isArray(value) ? value : []} onChange={onChange} /> : null}
+      {spec.kind === 'option' ? (
+        <OptionList
+          spec={spec}
+          value={typeof value === 'string' ? value : ''}
+          onChange={onChange}
+        />
+      ) : null}
+      {spec.kind === 'multi' ? (
+        <MultiList spec={spec} value={Array.isArray(value) ? value : []} onChange={onChange} />
+      ) : null}
+      {spec.kind === 'spells' ? (
+        <SpellList spec={spec} value={Array.isArray(value) ? value : []} onChange={onChange} />
+      ) : null}
       {spec.kind === 'ability_increase' ? (
-        <IncreaseField spec={spec} value={value && typeof value === 'object' && !Array.isArray(value) ? value : {}} onChange={onChange} />
+        <IncreaseField
+          spec={spec}
+          value={value && typeof value === 'object' && !Array.isArray(value) ? value : {}}
+          onChange={onChange}
+        />
       ) : null}
       {error ? (
         <AppText style={styles.error} accessibilityLiveRegion="polite">
@@ -84,10 +129,13 @@ export function OptionCard({
   note,
   onPress,
   icon,
+  titleEn,
 }: {
   selected: boolean;
   disabled?: boolean;
   title: string;
+  /** Nome original em inglês, pequeno ao lado do título. */
+  titleEn?: string | undefined;
   description?: string | undefined;
   note?: string | undefined;
   onPress: () => void;
@@ -100,23 +148,49 @@ export function OptionCard({
       disabled={disabled}
       accessibilityRole="radio"
       accessibilityState={{ selected, disabled }}
-      style={({ pressed }) => [styles.card, selected && styles.cardSelected, pressed && { backgroundColor: colors.hover }, disabled && styles.disabled]}
+      style={({ pressed }) => [
+        styles.card,
+        selected && styles.cardSelected,
+        pressed && { backgroundColor: colors.hover },
+        disabled && styles.disabled,
+      ]}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         {icon ? icon(selected ? colors.fgAccent : colors.parchmentEdge) : null}
-        <AppText style={[styles.cardTitle, { flex: 1 }, selected && { color: colors.fgAccent }]}>{title}</AppText>
+        <AppText style={[styles.cardTitle, { flex: 1 }, selected && { color: colors.fgAccent }]}>
+          {title}
+          {titleEn ? <AppText variant="small">{`  ${titleEn}`}</AppText> : null}
+        </AppText>
       </View>
       {description ? <AppText variant="small">{description}</AppText> : null}
-      {note ? <AppText variant="small" style={{ color: '#E6BE74' }}>{note}</AppText> : null}
+      {note ? (
+        <AppText variant="small" style={{ color: '#E6BE74' }}>
+          {note}
+        </AppText>
+      ) : null}
     </Pressable>
   );
 }
 
-function OptionList({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { kind: 'option' }>; value: string; onChange: (value: string) => void }) {
+function OptionList({
+  spec,
+  value,
+  onChange,
+}: {
+  spec: Extract<ChoiceSpec, { kind: 'option' }>;
+  value: string;
+  onChange: (value: string) => void;
+}) {
   const filter = useOptionFilter(spec.options, (option) => option.id === value);
   return (
-    <View style={{ gap: spacing[2] }} accessibilityRole="radiogroup" accessibilityLabel={spec.label}>
-      {filter.searchable ? <OptionSearch label={spec.label} query={filter.query} onChange={filter.setQuery} /> : null}
+    <View
+      style={{ gap: spacing[2] }}
+      accessibilityRole="radiogroup"
+      accessibilityLabel={spec.label}
+    >
+      {filter.searchable ? (
+        <OptionSearch label={spec.label} query={filter.query} onChange={filter.setQuery} />
+      ) : null}
       {filter.visible.map((option) => (
         <OptionCard
           key={option.id}
@@ -132,7 +206,19 @@ function OptionList({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { kin
   );
 }
 
-function Chip({ label, selected, disabled, onPress, hint }: { label: string; selected: boolean; disabled: boolean; onPress: () => void; hint?: string | undefined }) {
+function Chip({
+  label,
+  selected,
+  disabled,
+  onPress,
+  hint,
+}: {
+  label: string;
+  selected: boolean;
+  disabled: boolean;
+  onPress: () => void;
+  hint?: string | undefined;
+}) {
   return (
     <Pressable
       onPress={onPress}
@@ -140,20 +226,40 @@ function Chip({ label, selected, disabled, onPress, hint }: { label: string; sel
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected, disabled }}
       accessibilityHint={hint}
-      style={({ pressed }) => [styles.chip, selected && styles.chipSelected, pressed && { backgroundColor: colors.hover }, disabled && styles.disabled]}
+      style={({ pressed }) => [
+        styles.chip,
+        selected && styles.chipSelected,
+        pressed && { backgroundColor: colors.hover },
+        disabled && styles.disabled,
+      ]}
     >
       {selected ? <Check size={14} color={colors.fgAccent} /> : null}
-      <AppText style={{ fontSize: 14, color: selected ? colors.fgAccent : colors.fgSecondary }}>{label}</AppText>
+      <AppText style={{ fontSize: 14, color: selected ? colors.fgAccent : colors.fgSecondary }}>
+        {label}
+      </AppText>
     </Pressable>
   );
 }
 
-function MultiList({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { kind: 'multi' }>; value: string[]; onChange: (value: string[]) => void }) {
+function MultiList({
+  spec,
+  value,
+  onChange,
+}: {
+  spec: Extract<ChoiceSpec, { kind: 'multi' }>;
+  value: string[];
+  onChange: (value: string[]) => void;
+}) {
   const full = value.length >= spec.count;
-  const detailed = spec.options.some((option) => option.description && option.description.length > 20);
-  const toggle = (id: string) => onChange(value.includes(id) ? value.filter((entry) => entry !== id) : [...value, id]);
+  const detailed = spec.options.some(
+    (option) => option.description && option.description.length > 20,
+  );
+  const toggle = (id: string) =>
+    onChange(value.includes(id) ? value.filter((entry) => entry !== id) : [...value, id]);
   const filter = useOptionFilter(spec.options, (option) => value.includes(option.id));
-  const search = filter.searchable ? <OptionSearch label={spec.label} query={filter.query} onChange={filter.setQuery} /> : null;
+  const search = filter.searchable ? (
+    <OptionSearch label={spec.label} query={filter.query} onChange={filter.setQuery} />
+  ) : null;
   if (detailed) {
     return (
       <View style={{ gap: spacing[2] }}>
@@ -200,23 +306,46 @@ function MultiList({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { kind
 const levelLabel = (level: number) => (level === 0 ? 'Truque' : `${level}º`);
 const MAX_VISIBLE_SPELLS = 60;
 
-function SpellList({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { kind: 'spells' }>; value: string[]; onChange: (value: string[]) => void }) {
+function SpellList({
+  spec,
+  value,
+  onChange,
+}: {
+  spec: Extract<ChoiceSpec, { kind: 'spells' }>;
+  value: string[];
+  onChange: (value: string[]) => void;
+}) {
   const [query, setQuery] = useState('');
-  const levels = useMemo(() => [...new Set(spec.options.map((option) => option.level))].sort((a, b) => a - b), [spec.options]);
+  const levels = useMemo(
+    () => [...new Set(spec.options.map((option) => option.level))].sort((a, b) => a - b),
+    [spec.options],
+  );
   const [level, setLevel] = useState<number | null>(null);
   const full = value.length >= spec.count;
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
-    return spec.options.filter((option) => (level === null || option.level === level) && (!term || `${option.name} ${option.id}`.toLowerCase().includes(term)));
+    return spec.options.filter(
+      (option) =>
+        (level === null || option.level === level) &&
+        (!term || `${option.name} ${option.id}`.toLowerCase().includes(term)),
+    );
   }, [spec.options, query, level]);
-  const toggle = (id: string) => onChange(value.includes(id) ? value.filter((entry) => entry !== id) : [...value, id]);
+  const toggle = (id: string) =>
+    onChange(value.includes(id) ? value.filter((entry) => entry !== id) : [...value, id]);
 
   return (
     <View style={{ gap: spacing[2] }}>
       {value.length > 0 ? (
         <View style={styles.chips}>
           {value.map((name) => (
-            <Chip key={name} label={`${name} ×`} selected disabled={false} onPress={() => toggle(name)} hint="Toque para remover" />
+            <Chip
+              key={name}
+              label={`${name} ×`}
+              selected
+              disabled={false}
+              onPress={() => toggle(name)}
+              hint="Toque para remover"
+            />
           ))}
         </View>
       ) : null}
@@ -231,9 +360,20 @@ function SpellList({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { kind
       />
       {levels.length > 1 ? (
         <View style={styles.chips}>
-          <Chip label="Todos" selected={level === null} disabled={false} onPress={() => setLevel(null)} />
+          <Chip
+            label="Todos"
+            selected={level === null}
+            disabled={false}
+            onPress={() => setLevel(null)}
+          />
           {levels.map((entry) => (
-            <Chip key={entry} label={levelLabel(entry)} selected={level === entry} disabled={false} onPress={() => setLevel(entry)} />
+            <Chip
+              key={entry}
+              label={levelLabel(entry)}
+              selected={level === entry}
+              disabled={false}
+              onPress={() => setLevel(entry)}
+            />
           ))}
         </View>
       ) : null}
@@ -248,10 +388,17 @@ function SpellList({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { kind
               disabled={disabled}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: selected, disabled }}
-              style={({ pressed }) => [styles.spellRow, selected && styles.cardSelected, pressed && { backgroundColor: colors.hover }, disabled && styles.disabled]}
+              style={({ pressed }) => [
+                styles.spellRow,
+                selected && styles.cardSelected,
+                pressed && { backgroundColor: colors.hover },
+                disabled && styles.disabled,
+              ]}
             >
               <View style={{ flex: 1 }}>
-                <AppText style={{ fontSize: 15, color: selected ? colors.fgAccent : colors.fg }}>{option.name}</AppText>
+                <AppText style={{ fontSize: 15, color: selected ? colors.fgAccent : colors.fg }}>
+                  {option.name}
+                </AppText>
                 <AppText variant="small">
                   {levelLabel(option.level)} · {spellSchoolLabels[option.school]}
                   {option.concentration ? ' · C' : ''}
@@ -263,9 +410,14 @@ function SpellList({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { kind
             </Pressable>
           );
         })}
-        {filtered.length === 0 ? <AppText variant="muted">Nenhuma magia encontrada.</AppText> : null}
+        {filtered.length === 0 ? (
+          <AppText variant="muted">Nenhuma magia encontrada.</AppText>
+        ) : null}
         {filtered.length > MAX_VISIBLE_SPELLS ? (
-          <AppText variant="small">Mostrando {MAX_VISIBLE_SPELLS} de {filtered.length}. Busque ou filtre pelo círculo para ver as outras.</AppText>
+          <AppText variant="small">
+            Mostrando {MAX_VISIBLE_SPELLS} de {filtered.length}. Busque ou filtre pelo círculo para
+            ver as outras.
+          </AppText>
         ) : null}
       </View>
       <AppText variant="small" style={{ color: colors.fgSubtle }}>
@@ -287,7 +439,9 @@ function IncreaseField({
   const entries = ABILITIES.filter((ability) => (value[ability] ?? 0) > 0);
   const even = spec.mode === 'background' && entries.length === 3;
   // O modo do Aumento no Valor de Atributo fica guardado: com nada escolhido, não dá para deduzi-lo.
-  const [asiMode, setAsiMode] = useState<'two' | 'split'>(() => (entries.length === 1 && value[entries[0]!] === 2 ? 'two' : 'split'));
+  const [asiMode, setAsiMode] = useState<'two' | 'split'>(() =>
+    entries.length === 1 && value[entries[0]!] === 2 ? 'two' : 'split',
+  );
   const asiTwo = spec.mode === 'asi' && asiMode === 'two';
   const two = entries.find((ability) => value[ability] === 2);
   const ones = entries.filter((ability) => value[ability] === 1);
@@ -299,7 +453,9 @@ function IncreaseField({
     onChange(next);
   };
   const toggleOne = (ability: Ability) => {
-    const current = ones.includes(ability) ? ones.filter((entry) => entry !== ability) : [...ones, ability].slice(-2);
+    const current = ones.includes(ability)
+      ? ones.filter((entry) => entry !== ability)
+      : [...ones, ability].slice(-2);
     onChange(Object.fromEntries(current.map((entry) => [entry, 1])));
   };
 
@@ -307,7 +463,13 @@ function IncreaseField({
     spec.mode === 'background'
       ? [
           { id: 'split', label: '+2 e +1', active: !even, apply: () => onChange({}) },
-          { id: 'even', label: '+1 nos três', active: even, apply: () => onChange(Object.fromEntries(spec.abilities.map((ability) => [ability, 1]))) },
+          {
+            id: 'even',
+            label: '+1 nos três',
+            active: even,
+            apply: () =>
+              onChange(Object.fromEntries(spec.abilities.map((ability) => [ability, 1]))),
+          },
         ]
       : [
           {
@@ -334,7 +496,13 @@ function IncreaseField({
     <View style={{ gap: spacing[2] }}>
       <View style={styles.chips}>
         {modes.map((mode) => (
-          <Chip key={mode.id} label={mode.label} selected={mode.active} disabled={false} onPress={mode.apply} />
+          <Chip
+            key={mode.id}
+            label={mode.label}
+            selected={mode.active}
+            disabled={false}
+            onPress={mode.apply}
+          />
         ))}
       </View>
       {spec.mode === 'background' && !even ? (
@@ -342,7 +510,13 @@ function IncreaseField({
           <AppText variant="small">+2 em</AppText>
           <View style={styles.chips}>
             {spec.abilities.map((ability) => (
-              <Chip key={ability} label={abilityLabels[ability].name} selected={two === ability} disabled={false} onPress={() => setTwoOne(ability, ones[0])} />
+              <Chip
+                key={ability}
+                label={abilityLabels[ability].name}
+                selected={two === ability}
+                disabled={false}
+                onPress={() => setTwoOne(ability, ones[0])}
+              />
             ))}
           </View>
           <AppText variant="small">+1 em</AppText>
@@ -350,18 +524,32 @@ function IncreaseField({
             {spec.abilities
               .filter((ability) => ability !== two)
               .map((ability) => (
-                <Chip key={ability} label={abilityLabels[ability].name} selected={ones.includes(ability)} disabled={false} onPress={() => setTwoOne(two, ability)} />
+                <Chip
+                  key={ability}
+                  label={abilityLabels[ability].name}
+                  selected={ones.includes(ability)}
+                  disabled={false}
+                  onPress={() => setTwoOne(two, ability)}
+                />
               ))}
           </View>
         </>
       ) : null}
       {spec.mode === 'background' && even ? (
-        <AppText variant="muted">{spec.abilities.map((ability) => `${abilityLabels[ability].name} +1`).join(' · ')}</AppText>
+        <AppText variant="muted">
+          {spec.abilities.map((ability) => `${abilityLabels[ability].name} +1`).join(' · ')}
+        </AppText>
       ) : null}
       {spec.mode === 'asi' && asiTwo ? (
         <View style={styles.chips}>
           {spec.abilities.map((ability) => (
-            <Chip key={ability} label={`${abilityLabels[ability].abbreviation} +2`} selected={value[ability] === 2} disabled={false} onPress={() => onChange({ [ability]: 2 })} />
+            <Chip
+              key={ability}
+              label={`${abilityLabels[ability].abbreviation} +2`}
+              selected={value[ability] === 2}
+              disabled={false}
+              onPress={() => onChange({ [ability]: 2 })}
+            />
           ))}
         </View>
       ) : null}
@@ -369,10 +557,18 @@ function IncreaseField({
         <>
           <View style={styles.chips}>
             {spec.abilities.map((ability) => (
-              <Chip key={ability} label={`${abilityLabels[ability].abbreviation} +1`} selected={ones.includes(ability)} disabled={false} onPress={() => toggleOne(ability)} />
+              <Chip
+                key={ability}
+                label={`${abilityLabels[ability].abbreviation} +1`}
+                selected={ones.includes(ability)}
+                disabled={false}
+                onPress={() => toggleOne(ability)}
+              />
             ))}
           </View>
-          <AppText variant="small">Escolha dois atributos diferentes. Para +2 num só, use “+2 em um”.</AppText>
+          <AppText variant="small">
+            Escolha dois atributos diferentes. Para +2 num só, use “+2 em um”.
+          </AppText>
         </>
       ) : null}
     </View>
@@ -391,12 +587,28 @@ const styles = StyleSheet.create({
     backgroundColor: colors.sunken,
   },
   filterInput: { flex: 1, height: 44, color: colors.fg, fontFamily: fonts.sans, fontSize: 16 },
-  box: { gap: spacing[2], borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, padding: spacing[3], backgroundColor: 'rgba(255,255,255,0.01)' },
+  box: {
+    gap: spacing[2],
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.md,
+    padding: spacing[3],
+    backgroundColor: 'rgba(255,255,255,0.01)',
+  },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[2] },
   title: { fontFamily: fonts.sansMedium, fontSize: 15 },
   error: { color: '#EC9384', fontFamily: fonts.sansMedium, fontSize: 14 },
-  card: { borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, padding: spacing[3], gap: 2 },
-  cardSelected: { borderColor: 'rgba(206, 191, 157, 0.7)', backgroundColor: 'rgba(228, 216, 189, 0.08)' },
+  card: {
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.md,
+    padding: spacing[3],
+    gap: 2,
+  },
+  cardSelected: {
+    borderColor: 'rgba(206, 191, 157, 0.7)',
+    backgroundColor: 'rgba(228, 216, 189, 0.08)',
+  },
   cardTitle: { fontFamily: fonts.sansMedium, fontSize: 15 },
   disabled: { opacity: 0.45 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
@@ -410,7 +622,10 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
     paddingHorizontal: spacing[3],
   },
-  chipSelected: { borderColor: 'rgba(206, 191, 157, 0.7)', backgroundColor: 'rgba(228, 216, 189, 0.08)' },
+  chipSelected: {
+    borderColor: 'rgba(206, 191, 157, 0.7)',
+    backgroundColor: 'rgba(228, 216, 189, 0.08)',
+  },
   search: {
     minHeight: 44,
     borderWidth: 1,
@@ -423,5 +638,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[3],
   },
   spellList: { gap: 4 },
-  spellRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2], borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, padding: spacing[2] },
+  spellRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.md,
+    padding: spacing[2],
+  },
 });

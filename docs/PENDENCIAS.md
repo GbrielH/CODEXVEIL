@@ -548,3 +548,10 @@ recebe por atualização OTA). Não verificado no celular.
 - Novo [`PROMPT_LIVRO_JSON.md`](PROMPT_LIVRO_JSON.md): prompt para converter um livro comprado em
   pacote, com aviso quando o sistema não existe no app.
 - `pnpm check` passou; não testado no navegador nem no aparelho.
+
+### 2026-10-19 — nomes em inglês e busca nos dois idiomas
+
+- Criação de personagem (site e app): classes e raças com o nome em português em destaque e o
+  original em inglês pequeno ao lado (Golias · Goliath, Tiferino · Tiefling); busca nas etapas
+  Classe e Espécie aceita os dois idiomas, sem acento (`names-en.ts`, com teste).
+- `pnpm check` passou; não aberto no navegador nem no aparelho.

@@ -234,6 +234,13 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-19 — nomes em inglês e busca nos dois idiomas
+
+- Criação de personagem (site e app): classes e raças com o nome em português em destaque e o
+  original em inglês pequeno ao lado (Golias · Goliath, Tiferino · Tiefling); busca nas etapas
+  Classe e Espécie aceita os dois idiomas, sem acento (`names-en.ts`, com teste).
+- `pnpm check` passou; não aberto no navegador nem no aparelho.
+
 ### 2026-10-19 — ajustes dos livros na criação, subida de nível e prompt de livros
 
 - Sem repetição: a versão do livro substitui a do SRD de mesmo nome (com os sinônimos de tradução,

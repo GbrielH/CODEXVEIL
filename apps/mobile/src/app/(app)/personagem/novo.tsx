@@ -1,4 +1,11 @@
-import { createCharacter, listBookEntries, listCampaignBookPacks, listMyBookPacks, listMyCampaigns, type BookPackSummary } from '@codexveil/database';
+import {
+  createCharacter,
+  listBookEntries,
+  listCampaignBookPacks,
+  listMyBookPacks,
+  listMyCampaigns,
+  type BookPackSummary,
+} from '@codexveil/database';
 import {
   ABILITIES,
   ALIGNMENTS,
@@ -15,6 +22,8 @@ import {
   draftClass,
   draftSubclass,
   draftSubclassOptions,
+  englishName,
+  matchesNameSearch,
   findFeat,
   formatDistance,
   formatModifier,
@@ -39,7 +48,11 @@ import { characterCreateSchema } from '@codexveil/validation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { AbilityScoresField, EMPTY_ROLLS, type RollState } from '@/components/creation/ability-scores';
+import {
+  AbilityScoresField,
+  EMPTY_ROLLS,
+  type RollState,
+} from '@/components/creation/ability-scores';
 import { SourcebookChips } from '@/components/campaign-rules-editor';
 import { CharacterIcon } from '@/components/creation/character-icon';
 import { ChoiceField, OptionCard } from '@/components/creation/choice-fields';
@@ -74,20 +87,38 @@ async function loadCreationData(userId: string): Promise<CreationData> {
   const client = getSupabase();
   const list = (await listMyCampaigns(client, userId)).filter(
     // Personagens de campanha são dos jogadores; o mestre usa NPCs e monstros.
-    (campaign) => campaign.status === 'active' && campaign.role === 'player' && campaign.systemId === 'dnd5e',
+    (campaign) =>
+      campaign.status === 'active' && campaign.role === 'player' && campaign.systemId === 'dnd5e',
   );
   const [own, ...perCampaign] = await Promise.all([
     listMyBookPacks(client, userId).then((packs) => packs.filter((pack) => pack.isReady)),
-    ...list.map((campaign) => listCampaignBookPacks(client, campaign.ownerId, parseDnd5eCampaignRules(campaign.characterRules).sourcebooks)),
+    ...list.map((campaign) =>
+      listCampaignBookPacks(
+        client,
+        campaign.ownerId,
+        parseDnd5eCampaignRules(campaign.characterRules).sourcebooks,
+      ),
+    ),
   ]);
-  const packs: BookPackSummary[] = [...new Map([...own, ...perCampaign.flat()].map((pack) => [pack.id, pack])).values()];
-  const entries = packs.length > 0 ? await listBookEntries(client, packs.map((pack) => pack.id), CHARACTER_BOOK_KINDS) : [];
+  const packs: BookPackSummary[] = [
+    ...new Map([...own, ...perCampaign.flat()].map((pack) => [pack.id, pack])).values(),
+  ];
+  const entries =
+    packs.length > 0
+      ? await listBookEntries(
+          client,
+          packs.map((pack) => pack.id),
+          CHARACTER_BOOK_KINDS,
+        )
+      : [];
   const books = Object.fromEntries(
     packs.map((pack) => [
       pack.id,
       {
         book: { id: pack.bookKey, name: pack.name },
-        entries: entries.filter((entry) => entry.packId === pack.id).map(({ kind, key, name, data }) => ({ kind, key, name, data })),
+        entries: entries
+          .filter((entry) => entry.packId === pack.id)
+          .map(({ kind, key, name, data }) => ({ kind, key, name, data })),
       },
     ]),
   );
@@ -112,13 +143,24 @@ function clip(text: string, max = 220): string {
   return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
 }
 
-function without(selections: Dnd5eDraft['selections'], prefixes: string[]): Dnd5eDraft['selections'] {
-  return Object.fromEntries(Object.entries(selections).filter(([key]) => !prefixes.some((prefix) => key.startsWith(prefix))));
+function without(
+  selections: Dnd5eDraft['selections'],
+  prefixes: string[],
+): Dnd5eDraft['selections'] {
+  return Object.fromEntries(
+    Object.entries(selections).filter(
+      ([key]) => !prefixes.some((prefix) => key.startsWith(prefix)),
+    ),
+  );
 }
 
 function contextFor(campaign: PlayableCampaign | undefined): Dnd5eCreationContext {
   return campaign
-    ? { lockedLevel: campaign.rules.startingLevel, abilityScoreMethods: campaign.rules.abilityScoreMethods, allowEvilAlignments: campaign.rules.allowEvilAlignments }
+    ? {
+        lockedLevel: campaign.rules.startingLevel,
+        abilityScoreMethods: campaign.rules.abilityScoreMethods,
+        allowEvilAlignments: campaign.rules.allowEvilAlignments,
+      }
     : PERSONAL_SHEET_CONTEXT;
 }
 
@@ -129,35 +171,72 @@ export default function NewCharacterScreen() {
 
   if (data.loading) return <LoadingState label="Carregando suas campanhas e livros…" />;
   const loaded = data.data ?? { campaigns: [], books: {}, personalPackIds: [] };
-  const preselected = loaded.campaigns.some((campaign) => campaign.id === params.campanha) ? (params.campanha ?? '') : '';
-  return <Wizard {...loaded} defaultCampaignId={preselected} loadError={data.error ? failureMessage(data.error) : null} />;
+  const preselected = loaded.campaigns.some((campaign) => campaign.id === params.campanha)
+    ? (params.campanha ?? '')
+    : '';
+  return (
+    <Wizard
+      {...loaded}
+      defaultCampaignId={preselected}
+      loadError={data.error ? failureMessage(data.error) : null}
+    />
+  );
 }
 
-function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadError }: CreationData & { defaultCampaignId: string; loadError: string | null }) {
+function Wizard({
+  campaigns,
+  books,
+  personalPackIds,
+  defaultCampaignId,
+  loadError,
+}: CreationData & { defaultCampaignId: string; loadError: string | null }) {
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
   const [campaignId, setCampaignId] = useState(defaultCampaignId);
   const campaign = campaigns.find((entry) => entry.id === campaignId);
   const context = useMemo(() => contextFor(campaign), [campaign]);
   const packIds = campaign ? campaign.packIds : personalPackIds;
-  const bookSources = useMemo(() => packIds.map((id) => books[id]).filter((source): source is BookContentSource => Boolean(source)), [packIds, books]);
+  const bookSources = useMemo(
+    () =>
+      packIds
+        .map((id) => books[id])
+        .filter((source): source is BookContentSource => Boolean(source)),
+    [packIds, books],
+  );
   const bookContent = useMemo(() => buildDnd5eBookContent(bookSources), [bookSources]);
-  const bookNames = useMemo(() => Object.fromEntries(bookSources.map((source) => [source.book.id, source.book.name])), [bookSources]);
+  const bookNames = useMemo(
+    () => Object.fromEntries(bookSources.map((source) => [source.book.id, source.book.name])),
+    [bookSources],
+  );
   // As regras de criação consultam o SRD e os livros da campanha escolhida (como no site).
   setActiveDnd5eBookContent(bookContent);
   const [draft, setDraft] = useState<Dnd5eDraft>(() =>
-    createDnd5eDraft({ level: campaign?.rules.startingLevel ?? 1, abilityMethod: contextFor(campaign).abilityScoreMethods[0] ?? 'standard_array' }),
+    createDnd5eDraft({
+      level: campaign?.rules.startingLevel ?? 1,
+      abilityMethod: contextFor(campaign).abilityScoreMethods[0] ?? 'standard_array',
+    }),
   );
   const [rolls, setRolls] = useState<RollState>(EMPTY_ROLLS);
   const [step, setStep] = useState<Dnd5eStep>('start');
   const [attempted, setAttempted] = useState<Set<Dnd5eStep>>(new Set());
   const [busy, setBusy] = useState(false);
+  // Busca de classe e espécie pelo nome em português ou em inglês.
+  const [query, setQuery] = useState('');
   const [message, setMessage] = useState<string | null>(loadError);
 
   const specs = useMemo(() => listDnd5eChoices(draft), [draft, bookContent]); // eslint-disable-line react-hooks/exhaustive-deps
   const issues = useMemo(() => validateDnd5eDraft(draft, context), [draft, context, bookContent]); // eslint-disable-line react-hooks/exhaustive-deps
-  const issueMap = useMemo(() => new Map(issues.map((issue) => [issue.path, issue.message])), [issues]);
-  const steps = useMemo(() => DND5E_STEPS.filter((entry) => entry !== 'spells' || specs.some((spec) => spec.step === 'spells')), [specs]);
+  const issueMap = useMemo(
+    () => new Map(issues.map((issue) => [issue.path, issue.message])),
+    [issues],
+  );
+  const steps = useMemo(
+    () =>
+      DND5E_STEPS.filter(
+        (entry) => entry !== 'spells' || specs.some((spec) => spec.step === 'spells'),
+      ),
+    [specs],
+  );
   const index = steps.indexOf(step);
   const showErrors = attempted.has(step) || step === 'review';
   const errorFor = (path: string) => (showErrors ? issueMap.get(path) : undefined);
@@ -167,9 +246,11 @@ function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadErro
   const subclassCount = draftSubclassOptions(draft).length;
 
   const update = (patch: Partial<Dnd5eDraft>) => setDraft((current) => ({ ...current, ...patch }));
-  const setSelection = (id: string, value: Selection) => setDraft((current) => ({ ...current, selections: { ...current.selections, [id]: value } }));
+  const setSelection = (id: string, value: Selection) =>
+    setDraft((current) => ({ ...current, selections: { ...current.selections, [id]: value } }));
   const goTo = (target: Dnd5eStep) => {
     setStep(target);
+    setQuery('');
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
   const next = () => {
@@ -188,7 +269,10 @@ function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadErro
       level: nextCampaign ? nextCampaign.rules.startingLevel : current.level,
       ...(nextContext.abilityScoreMethods.includes(current.abilityMethod)
         ? {}
-        : { abilityMethod: nextContext.abilityScoreMethods[0] ?? 'standard_array', baseScores: { str: null, dex: null, con: null, int: null, wis: null, cha: null } }),
+        : {
+            abilityMethod: nextContext.abilityScoreMethods[0] ?? 'standard_array',
+            baseScores: { str: null, dex: null, con: null, int: null, wis: null, cha: null },
+          }),
     }));
   };
 
@@ -199,14 +283,21 @@ function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadErro
       setMessage('Ainda há escolhas pendentes. Revise os passos indicados.');
       return;
     }
-    const base = characterCreateSchema.safeParse({ name: draft.name, systemId: 'dnd5e', campaignId: campaignId || null });
+    const base = characterCreateSchema.safeParse({
+      name: draft.name,
+      systemId: 'dnd5e',
+      campaignId: campaignId || null,
+    });
     if (!base.success) {
       setMessage(base.error.issues[0]?.message ?? 'Dados inválidos.');
       return;
     }
     setBusy(true);
     try {
-      const built = buildDnd5eCharacterFromDraft({ ...draft, sourcebooks: campaign ? campaign.rules.sourcebooks : draft.sourcebooks });
+      const built = buildDnd5eCharacterFromDraft({
+        ...draft,
+        sourcebooks: campaign ? campaign.rules.sourcebooks : draft.sourcebooks,
+      });
       const id = await createCharacter(getSupabase(), {
         name: base.data.name,
         systemId: base.data.systemId,
@@ -225,11 +316,28 @@ function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadErro
 
   const stepSpecs = specs.filter((spec) => spec.step === step);
   const renderSpecs = () =>
-    stepSpecs.map((spec) => <ChoiceField key={spec.id} spec={spec} value={draft.selections[spec.id]} error={errorFor(spec.id)} onChange={(value) => setSelection(spec.id, value)} />);
+    stepSpecs.map((spec) => (
+      <ChoiceField
+        key={spec.id}
+        spec={spec}
+        value={draft.selections[spec.id]}
+        error={errorFor(spec.id)}
+        onChange={(value) => setSelection(spec.id, value)}
+      />
+    ));
 
   return (
-    <ScrollView ref={scrollRef} style={{ flex: 1, backgroundColor: colors.canvas }} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+    <ScrollView
+      ref={scrollRef}
+      style={{ flex: 1, backgroundColor: colors.canvas }}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+    >
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 6 }}
+      >
         {steps.map((entry, position) => {
           const current = entry === step;
           const warn = attempted.has(entry) && stepIssues(entry).length > 0 && !current;
@@ -241,7 +349,12 @@ function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadErro
               accessibilityState={{ selected: current }}
               style={[styles.stepChip, current && styles.stepChipCurrent]}
             >
-              <AppText style={{ fontSize: 13, color: current ? colors.fgAccent : warn ? '#E6BE74' : colors.fgSecondary }}>
+              <AppText
+                style={{
+                  fontSize: 13,
+                  color: current ? colors.fgAccent : warn ? '#E6BE74' : colors.fgSecondary,
+                }}
+              >
                 {position + 1}. {dnd5eStepLabels[entry]}
               </AppText>
             </Pressable>
@@ -256,9 +369,20 @@ function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadErro
 
       {step === 'start' ? (
         <View style={{ gap: spacing[3] }}>
-          <Field label="Nome do personagem" value={draft.name} onChangeText={(name) => update({ name })} maxLength={80} error={errorFor('name')} />
+          <Field
+            label="Nome do personagem"
+            value={draft.name}
+            onChangeText={(name) => update({ name })}
+            maxLength={80}
+            error={errorFor('name')}
+          />
           <AppText style={{ fontFamily: fonts.sansMedium }}>Campanha</AppText>
-          <OptionCard selected={campaignId === ''} title="Sem campanha (ficha pessoal)" description="Você escolhe o nível." onPress={() => chooseCampaign('')} />
+          <OptionCard
+            selected={campaignId === ''}
+            title="Sem campanha (ficha pessoal)"
+            description="Você escolhe o nível."
+            onPress={() => chooseCampaign('')}
+          />
           {campaigns.map((entry) => (
             <OptionCard
               key={entry.id}
@@ -268,22 +392,48 @@ function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadErro
               onPress={() => chooseCampaign(entry.id)}
             />
           ))}
-          <AppText variant="small">Campanhas em que você é mestre não aparecem: o mestre usa NPCs e monstros.</AppText>
+          <AppText variant="small">
+            Campanhas em que você é mestre não aparecem: o mestre usa NPCs e monstros.
+          </AppText>
           {campaign ? (
-            <Badge label={`Nível definido pelo mestre: ${campaign.rules.startingLevel}º`} tone="parchment" />
+            <Badge
+              label={`Nível definido pelo mestre: ${campaign.rules.startingLevel}º`}
+              tone="parchment"
+            />
           ) : (
             <View style={styles.levelRow}>
               <AppText style={{ flex: 1 }}>Nível</AppText>
-              <Button label="−" variant="secondary" compact onPress={() => update({ level: Math.max(1, draft.level - 1) })} disabled={draft.level <= 1} accessibilityLabel="Diminuir nível" />
+              <Button
+                label="−"
+                variant="secondary"
+                compact
+                onPress={() => update({ level: Math.max(1, draft.level - 1) })}
+                disabled={draft.level <= 1}
+                accessibilityLabel="Diminuir nível"
+              />
               <AppText variant="number">{draft.level}º</AppText>
-              <Button label="+" variant="secondary" compact onPress={() => update({ level: Math.min(20, draft.level + 1) })} disabled={draft.level >= 20} accessibilityLabel="Aumentar nível" />
+              <Button
+                label="+"
+                variant="secondary"
+                compact
+                onPress={() => update({ level: Math.min(20, draft.level + 1) })}
+                disabled={draft.level >= 20}
+                accessibilityLabel="Aumentar nível"
+              />
             </View>
           )}
           {errorFor('level') ? <Notice tone="danger" message={errorFor('level')!} /> : null}
           {/* Ficha pessoal: o jogador escolhe os livros; numa campanha, valem os do mestre (na descrição acima). */}
-          {campaign ? null : <SourcebookChips audience="character" selected={draft.sourcebooks} onChange={(sourcebooks) => update({ sourcebooks })} />}
+          {campaign ? null : (
+            <SourcebookChips
+              audience="character"
+              selected={draft.sourcebooks}
+              onChange={(sourcebooks) => update({ sourcebooks })}
+            />
+          )}
           <AppText variant="muted">
-            O passo a passo segue a criação do SRD 5.2.1: classe, origem (antecedente, espécie e idiomas), atributos, alinhamento e detalhes
+            O passo a passo segue a criação do SRD 5.2.1: classe, origem (antecedente, espécie e
+            idiomas), atributos, alinhamento e detalhes
             {bookSources.length > 0
               ? `, com o conteúdo dos livros ${campaign ? 'liberados pelo mestre' : 'que você importou'}: ${bookSources.map((source) => source.book.name).join(', ')}`
               : ''}
@@ -294,20 +444,35 @@ function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadErro
 
       {step === 'class' ? (
         <View style={{ gap: spacing[3] }}>
-          {listClasses().map((entry) => (
-            <OptionCard
-              key={entry.id}
-              selected={entry.id === draft.classId}
-              title={entry.name}
-              icon={(color) => <CharacterIcon kind="class" id={entry.id} color={color} />}
-              description={`${entry.primaryAbilityLabel} · ${entry.hitDie}${entry.book ? ` · ${entry.book}` : ''} · ${clip(entry.summary)}`}
-              onPress={() =>
-                setDraft((current) =>
-                  current.classId === entry.id ? current : { ...current, classId: entry.id, selections: without(current.selections, CLEAR_ON_CLASS) },
-                )
-              }
-            />
-          ))}
+          <Field
+            label="Buscar classe"
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Nome em português ou em inglês"
+          />
+          {listClasses()
+            .filter((entry) => matchesNameSearch(entry.name, query))
+            .map((entry) => (
+              <OptionCard
+                key={entry.id}
+                titleEn={englishName(entry.name)}
+                selected={entry.id === draft.classId}
+                title={entry.name}
+                icon={(color) => <CharacterIcon kind="class" id={entry.id} color={color} />}
+                description={`${entry.primaryAbilityLabel} · ${entry.hitDie}${entry.book ? ` · ${entry.book}` : ''} · ${clip(entry.summary)}`}
+                onPress={() =>
+                  setDraft((current) =>
+                    current.classId === entry.id
+                      ? current
+                      : {
+                          ...current,
+                          classId: entry.id,
+                          selections: without(current.selections, CLEAR_ON_CLASS),
+                        },
+                  )
+                }
+              />
+            ))}
           {errorFor('classId') ? <Notice tone="danger" message={errorFor('classId')!} /> : null}
           {classDef ? (
             <Card>
@@ -366,32 +531,55 @@ function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadErro
               }
               onPress={() =>
                 setDraft((current) =>
-                  current.backgroundId === background.id ? current : { ...current, backgroundId: background.id, selections: without(current.selections, CLEAR_ON_BACKGROUND) },
+                  current.backgroundId === background.id
+                    ? current
+                    : {
+                        ...current,
+                        backgroundId: background.id,
+                        selections: without(current.selections, CLEAR_ON_BACKGROUND),
+                      },
                 )
               }
             />
           ))}
-          {errorFor('backgroundId') ? <Notice tone="danger" message={errorFor('backgroundId')!} /> : null}
+          {errorFor('backgroundId') ? (
+            <Notice tone="danger" message={errorFor('backgroundId')!} />
+          ) : null}
           {renderSpecs()}
         </View>
       ) : null}
 
       {step === 'species' ? (
         <View style={{ gap: spacing[3] }}>
-          {listSpecies().map((species) => (
-            <OptionCard
-              key={species.id}
-              selected={species.id === draft.speciesId}
-              title={species.name}
-              icon={(color) => <CharacterIcon kind="species" id={species.id} color={color} />}
-              description={`${species.sizeLabel} · ${formatDistance(species.speed, 'm')}${species.book ? ` · ${species.book}` : ''}. ${clip(species.summary)}`}
-              onPress={() =>
-                setDraft((current) =>
-                  current.speciesId === species.id ? current : { ...current, speciesId: species.id, selections: without(current.selections, CLEAR_ON_SPECIES) },
-                )
-              }
-            />
-          ))}
+          <Field
+            label="Buscar espécie"
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Nome em português ou em inglês"
+          />
+          {listSpecies()
+            .filter((species) => matchesNameSearch(species.name, query))
+            .map((species) => (
+              <OptionCard
+                key={species.id}
+                titleEn={englishName(species.name)}
+                selected={species.id === draft.speciesId}
+                title={species.name}
+                icon={(color) => <CharacterIcon kind="species" id={species.id} color={color} />}
+                description={`${species.sizeLabel} · ${formatDistance(species.speed, 'm')}${species.book ? ` · ${species.book}` : ''}. ${clip(species.summary)}`}
+                onPress={() =>
+                  setDraft((current) =>
+                    current.speciesId === species.id
+                      ? current
+                      : {
+                          ...current,
+                          speciesId: species.id,
+                          selections: without(current.selections, CLEAR_ON_SPECIES),
+                        },
+                  )
+                }
+              />
+            ))}
           {errorFor('speciesId') ? <Notice tone="danger" message={errorFor('speciesId')!} /> : null}
           {renderSpecs()}
         </View>
@@ -447,14 +635,24 @@ function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadErro
                   disabled={disabled}
                   accessibilityRole="radio"
                   accessibilityState={{ selected, disabled }}
-                  style={[styles.stepChip, selected && styles.stepChipCurrent, disabled && { opacity: 0.4 }]}
+                  style={[
+                    styles.stepChip,
+                    selected && styles.stepChipCurrent,
+                    disabled && { opacity: 0.4 },
+                  ]}
                 >
-                  <AppText style={{ fontSize: 14, color: selected ? colors.fgAccent : colors.fgSecondary }}>{alignment.name}</AppText>
+                  <AppText
+                    style={{ fontSize: 14, color: selected ? colors.fgAccent : colors.fgSecondary }}
+                  >
+                    {alignment.name}
+                  </AppText>
                 </Pressable>
               );
             })}
           </View>
-          {errorFor('alignment') ? <AppText style={{ color: '#EC9384' }}>{errorFor('alignment')}</AppText> : null}
+          {errorFor('alignment') ? (
+            <AppText style={{ color: '#EC9384' }}>{errorFor('alignment')}</AppText>
+          ) : null}
           {(
             [
               ['appearance', 'Aparência', 4000],
@@ -480,13 +678,28 @@ function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadErro
       {step === 'review' ? <Review draft={draft} issues={issues} onGo={goTo} /> : null}
 
       {showErrors && step !== 'review' && stepIssues(step).length > 0 ? (
-        <Notice tone="warning" message={`Há ${stepIssues(step).length} pendência(s) neste passo.`} />
+        <Notice
+          tone="warning"
+          message={`Há ${stepIssues(step).length} pendência(s) neste passo.`}
+        />
       ) : null}
 
       <View style={styles.footer}>
-        <Button label="Voltar" variant="ghost" onPress={() => goTo(steps[index - 1] ?? 'start')} disabled={index <= 0} style={{ flex: 1 }} />
+        <Button
+          label="Voltar"
+          variant="ghost"
+          onPress={() => goTo(steps[index - 1] ?? 'start')}
+          disabled={index <= 0}
+          style={{ flex: 1 }}
+        />
         {step === 'review' ? (
-          <Button label="Criar personagem" onPress={() => void submit()} loading={busy} disabled={issues.length > 0} style={{ flex: 2 }} />
+          <Button
+            label="Criar personagem"
+            onPress={() => void submit()}
+            loading={busy}
+            disabled={issues.length > 0}
+            style={{ flex: 2 }}
+          />
         ) : (
           <Button label="Próximo" onPress={next} style={{ flex: 2 }} />
         )}
@@ -495,7 +708,15 @@ function Wizard({ campaigns, books, personalPackIds, defaultCampaignId, loadErro
   );
 }
 
-function Review({ draft, issues, onGo }: { draft: Dnd5eDraft; issues: ReturnType<typeof validateDnd5eDraft>; onGo: (step: Dnd5eStep) => void }) {
+function Review({
+  draft,
+  issues,
+  onGo,
+}: {
+  draft: Dnd5eDraft;
+  issues: ReturnType<typeof validateDnd5eDraft>;
+  onGo: (step: Dnd5eStep) => void;
+}) {
   const preview = useMemo(() => previewDnd5eCharacter(draft), [draft]);
   const { sheet, derived, resources, abilities, items } = preview;
   const hp = resources.find((resource) => resource.key === 'hp');
@@ -506,7 +727,12 @@ function Review({ draft, issues, onGo }: { draft: Dnd5eDraft; issues: ReturnType
         <Card>
           <AppText variant="heading">Pendências ({issues.length})</AppText>
           {issues.map((issue) => (
-            <Pressable key={issue.path} onPress={() => onGo(issue.step)} accessibilityRole="button" style={{ gap: 2, paddingVertical: 4 }}>
+            <Pressable
+              key={issue.path}
+              onPress={() => onGo(issue.step)}
+              accessibilityRole="button"
+              style={{ gap: 2, paddingVertical: 4 }}
+            >
               <AppText variant="small" style={{ color: '#E6BE74' }}>
                 {dnd5eStepLabels[issue.step]}
               </AppText>
@@ -520,7 +746,14 @@ function Review({ draft, issues, onGo }: { draft: Dnd5eDraft; issues: ReturnType
       <Card ornate>
         <AppText variant="title">{draft.name || 'Sem nome'}</AppText>
         <AppText variant="muted">
-          {[sheet.identity.species, klass ? `${klass.name} ${klass.level}${klass.subclass ? ` · ${klass.subclass}` : ''}` : '', sheet.identity.background, sheet.identity.alignment]
+          {[
+            sheet.identity.species,
+            klass
+              ? `${klass.name} ${klass.level}${klass.subclass ? ` · ${klass.subclass}` : ''}`
+              : '',
+            sheet.identity.background,
+            sheet.identity.alignment,
+          ]
             .filter(Boolean)
             .join(' · ')}
         </AppText>
@@ -529,7 +762,10 @@ function Review({ draft, issues, onGo }: { draft: Dnd5eDraft; issues: ReturnType
           <Badge label={`CA ${sheet.combat.armorClass}`} tone="parchment" />
           <Badge label={`Iniciativa ${formatModifier(derived.initiative)}`} tone="parchment" />
           <Badge label={`${String(sheet.combat.speed).replace('.', ',')} m`} tone="parchment" />
-          <Badge label={`Proficiência ${formatModifier(derived.proficiencyBonus)}`} tone="parchment" />
+          <Badge
+            label={`Proficiência ${formatModifier(derived.proficiencyBonus)}`}
+            tone="parchment"
+          />
         </View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
           {ABILITIES.map((ability) => (
@@ -544,12 +780,22 @@ function Review({ draft, issues, onGo }: { draft: Dnd5eDraft; issues: ReturnType
         </View>
         <AppText variant="eyebrow">Perícias</AppText>
         <AppText variant="small">
-          {SKILLS.filter((skill) => sheet.skills[skill].proficiency === 'proficient' || sheet.skills[skill].proficiency === 'expertise')
-            .map((skill) => `${skillDefinitions[skill].label} ${formatModifier(derived.skills[skill].bonus)}`)
+          {SKILLS.filter(
+            (skill) =>
+              sheet.skills[skill].proficiency === 'proficient' ||
+              sheet.skills[skill].proficiency === 'expertise',
+          )
+            .map(
+              (skill) =>
+                `${skillDefinitions[skill].label} ${formatModifier(derived.skills[skill].bonus)}`,
+            )
             .join(' · ') || '—'}
         </AppText>
         <AppText variant="eyebrow">Idiomas e ferramentas</AppText>
-        <AppText variant="small">{[sheet.proficiencies.languages, sheet.proficiencies.tools].filter(Boolean).join(' · ') || '—'}</AppText>
+        <AppText variant="small">
+          {[sheet.proficiencies.languages, sheet.proficiencies.tools].filter(Boolean).join(' · ') ||
+            '—'}
+        </AppText>
         <AppText variant="eyebrow">Habilidades</AppText>
         <AppText variant="small">
           {abilities
@@ -569,8 +815,14 @@ function Review({ draft, issues, onGo }: { draft: Dnd5eDraft; issues: ReturnType
           </>
         ) : null}
         <AppText variant="eyebrow">Inventário</AppText>
-        <AppText variant="small">{items.map((item) => (item.quantity > 1 ? `${item.quantity} × ${item.name}` : item.name)).join(' · ') || '—'}</AppText>
-        <AppText variant="small">{resources.find((resource) => resource.key === 'currency_gp')?.current ?? 0} PO</AppText>
+        <AppText variant="small">
+          {items
+            .map((item) => (item.quantity > 1 ? `${item.quantity} × ${item.name}` : item.name))
+            .join(' · ') || '—'}
+        </AppText>
+        <AppText variant="small">
+          {resources.find((resource) => resource.key === 'currency_gp')?.current ?? 0} PO
+        </AppText>
       </Card>
     </View>
   );
@@ -578,9 +830,32 @@ function Review({ draft, issues, onGo }: { draft: Dnd5eDraft; issues: ReturnType
 
 const styles = StyleSheet.create({
   content: { padding: spacing[4], paddingBottom: spacing[12], gap: spacing[4] },
-  stepChip: { minHeight: 36, justifyContent: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: radii.full, paddingHorizontal: spacing[3] },
-  stepChipCurrent: { borderColor: 'rgba(206, 191, 157, 0.7)', backgroundColor: 'rgba(228, 216, 189, 0.08)' },
+  stepChip: {
+    minHeight: 36,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.full,
+    paddingHorizontal: spacing[3],
+  },
+  stepChipCurrent: {
+    borderColor: 'rgba(206, 191, 157, 0.7)',
+    backgroundColor: 'rgba(228, 216, 189, 0.08)',
+  },
   levelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
-  footer: { flexDirection: 'row', gap: spacing[2], borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing[3] },
-  ability: { minWidth: 52, alignItems: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, paddingVertical: 4 },
+  footer: {
+    flexDirection: 'row',
+    gap: spacing[2],
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+    paddingTop: spacing[3],
+  },
+  ability: {
+    minWidth: 52,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.md,
+    paddingVertical: 4,
+  },
 });

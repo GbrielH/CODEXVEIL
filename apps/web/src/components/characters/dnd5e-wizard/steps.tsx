@@ -19,16 +19,18 @@ import {
   startingEquipment,
   toolGrants,
   dnd5eOfficialPageUrl,
+  englishName,
+  matchesNameSearch,
   type ClassDefinition,
   type Dnd5eDraft,
   type Skill,
   type SubclassDefinition,
 } from '@codexveil/rpg-systems/dnd5e';
 import { ExternalLink } from 'lucide-react';
-import { useId, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { CharacterIcon } from '@/components/characters/character-icon';
 import { Badge } from '@/components/ui/badge';
-import { TextareaField } from '@/components/ui/field';
+import { TextField, TextareaField } from '@/components/ui/field';
 import { cx } from '@/lib/cx';
 
 function PickerCard({
@@ -41,6 +43,7 @@ function PickerCard({
 }: {
   selected: boolean;
   onSelect: () => void;
+  /** Nome em português; o original em inglês aparece pequeno ao lado, quando existe. */
   title: string;
   subtitle?: string;
   children?: ReactNode;
@@ -54,12 +57,21 @@ function PickerCard({
       onClick={onSelect}
       className={cx(
         'flex h-full flex-col gap-1.5 rounded-md border p-3 text-left transition-colors',
-        selected ? 'border-parchment-300/70 bg-parchment-200/10 shadow-[inset_0_0_0_1px_rgb(228_216_189/0.25)]' : 'border-line hover:border-line-strong hover:bg-hover',
+        selected
+          ? 'border-parchment-300/70 bg-parchment-200/10 shadow-[inset_0_0_0_1px_rgb(228_216_189/0.25)]'
+          : 'border-line hover:border-line-strong hover:bg-hover',
       )}
     >
       <span className="flex items-center gap-2">
-        {icon ? <span className={cx('text-parchment-400', selected && 'text-fg-accent')}>{icon}</span> : null}
-        <span className="font-display text-base text-fg">{title}</span>
+        {icon ? (
+          <span className={cx('text-parchment-400', selected && 'text-fg-accent')}>{icon}</span>
+        ) : null}
+        <span className="font-display text-base text-fg">
+          {title}
+          {englishName(title) ? (
+            <span className="ml-1.5 font-sans text-xs text-fg-muted">{englishName(title)}</span>
+          ) : null}
+        </span>
       </span>
       {subtitle ? <span className="text-xs text-fg-accent">{subtitle}</span> : null}
       {children ? <span className="text-xs leading-relaxed text-fg-muted">{children}</span> : null}
@@ -89,30 +101,80 @@ function FeatureList({ items }: { items: { level: number; name: string; descript
 // Classe
 // ---------------------------------------------------------------------------
 
-export function ClassPicker({ value, onSelect }: { value: string; onSelect: (id: string) => void }) {
+/** Busca por nome em português ou inglês ("Golias" ou "Goliath"). */
+function NameSearch({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const id = useId();
   return (
-    <div role="radiogroup" aria-label="Classe" className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-      {listClasses().map((entry) => (
-        <PickerCard
-          key={entry.id}
-          selected={entry.id === value}
-          onSelect={() => onSelect(entry.id)}
-          title={entry.name}
-          icon={<CharacterIcon kind="class" id={entry.id} className="h-8 w-8" />}
-          subtitle={
-            entry.book
-              ? `${entry.primaryAbilityLabel} · Dado de vida ${entry.hitDie} · ${entry.book}`
-              : `${entry.primaryAbilityLabel} · Dado de vida ${entry.hitDie} · Complexidade ${entry.complexity.toLowerCase()}`
-          }
-        >
-          <span className="line-clamp-4">{entry.summary}</span>
-        </PickerCard>
-      ))}
+    <TextField
+      id={id}
+      label={label}
+      type="search"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder="Nome em português ou em inglês"
+      fieldClassName="max-w-sm"
+    />
+  );
+}
+
+export function ClassPicker({
+  value,
+  onSelect,
+}: {
+  value: string;
+  onSelect: (id: string) => void;
+}) {
+  const [query, setQuery] = useState('');
+  const classes = listClasses().filter((entry) => matchesNameSearch(entry.name, query));
+  return (
+    <div className="flex flex-col gap-3">
+      <NameSearch label="Buscar classe" value={query} onChange={setQuery} />
+      {classes.length === 0 ? (
+        <p className="text-sm text-fg-muted">Nenhuma classe com esse nome.</p>
+      ) : null}
+      <div
+        role="radiogroup"
+        aria-label="Classe"
+        className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3"
+      >
+        {classes.map((entry) => (
+          <PickerCard
+            key={entry.id}
+            selected={entry.id === value}
+            onSelect={() => onSelect(entry.id)}
+            title={entry.name}
+            icon={<CharacterIcon kind="class" id={entry.id} className="h-8 w-8" />}
+            subtitle={
+              entry.book
+                ? `${entry.primaryAbilityLabel} · Dado de vida ${entry.hitDie} · ${entry.book}`
+                : `${entry.primaryAbilityLabel} · Dado de vida ${entry.hitDie} · Complexidade ${entry.complexity.toLowerCase()}`
+            }
+          >
+            <span className="line-clamp-4">{entry.summary}</span>
+          </PickerCard>
+        ))}
+      </div>
     </div>
   );
 }
 
-function OfficialArtLink({ kind, id, name }: { kind: 'class' | 'species'; id: string; name: string }) {
+function OfficialArtLink({
+  kind,
+  id,
+  name,
+}: {
+  kind: 'class' | 'species';
+  id: string;
+  name: string;
+}) {
   return (
     <a
       href={dnd5eOfficialPageUrl(kind, id)}
@@ -126,17 +188,30 @@ function OfficialArtLink({ kind, id, name }: { kind: 'class' | 'species'; id: st
   );
 }
 
-export function ClassDetails({ classDef, level, subclass }: { classDef: ClassDefinition; level: number; subclass: SubclassDefinition | undefined }) {
+export function ClassDetails({
+  classDef,
+  level,
+  subclass,
+}: {
+  classDef: ClassDefinition;
+  level: number;
+  subclass: SubclassDefinition | undefined;
+}) {
   const features = classDef.features.filter((feature) => feature.level <= level);
   const subclasses = listSubclasses(classDef);
-  const subclassFeatures = level >= 3 && subclass ? subclass.features.filter((feature) => feature.level <= level) : [];
+  const subclassFeatures =
+    level >= 3 && subclass ? subclass.features.filter((feature) => feature.level <= level) : [];
   const skillText =
     classDef.skillChoices.options === 'any'
       ? `Escolha ${classDef.skillChoices.count} perícias quaisquer`
       : `Escolha ${classDef.skillChoices.count}: ${classDef.skillChoices.options.map((skill) => skillDefinitions[skill].label).join(', ')}`;
   return (
     <div className="flex flex-col gap-4 rounded-md border border-line bg-card/60 p-4">
-      {classDef.book ? <p className="text-xs text-fg-accent">{classDef.book}</p> : <OfficialArtLink kind="class" id={classDef.id} name={classDef.name} />}
+      {classDef.book ? (
+        <p className="text-xs text-fg-accent">{classDef.book}</p>
+      ) : (
+        <OfficialArtLink kind="class" id={classDef.id} name={classDef.name} />
+      )}
       <dl className="grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-[auto_1fr]">
         <dt className="text-fg-muted">Atributo principal</dt>
         <dd>{classDef.primaryAbilityLabel}</dd>
@@ -155,7 +230,11 @@ export function ClassDetails({ classDef, level, subclass }: { classDef: ClassDef
         {classDef.tools.length > 0 || classDef.toolChoice ? (
           <>
             <dt className="text-fg-muted">Ferramentas</dt>
-            <dd>{[...classDef.tools.map(catalogItemName), classDef.toolChoice?.label].filter(Boolean).join(', ')}</dd>
+            <dd>
+              {[...classDef.tools.map(catalogItemName), classDef.toolChoice?.label]
+                .filter(Boolean)
+                .join(', ')}
+            </dd>
           </>
         ) : null}
       </dl>
@@ -173,11 +252,16 @@ export function ClassDetails({ classDef, level, subclass }: { classDef: ClassDef
           <FeatureList items={subclassFeatures} />
         </div>
       ) : level >= 3 ? (
-        <p className="text-sm text-fg-muted">Escolha a subclasse abaixo ({subclasses.length} opções).</p>
+        <p className="text-sm text-fg-muted">
+          Escolha a subclasse abaixo ({subclasses.length} opções).
+        </p>
       ) : (
         <p className="text-sm text-fg-muted">
           A subclasse é escolhida no 3º nível
-          {subclasses.length > 0 ? ` (${subclasses.length === 1 ? subclasses[0]!.name : `${subclasses.length} opções`})` : ''}.
+          {subclasses.length > 0
+            ? ` (${subclasses.length === 1 ? subclasses[0]!.name : `${subclasses.length} opções`})`
+            : ''}
+          .
         </p>
       )}
     </div>
@@ -188,7 +272,13 @@ export function ClassDetails({ classDef, level, subclass }: { classDef: ClassDef
 // Antecedente e espécie
 // ---------------------------------------------------------------------------
 
-export function BackgroundPicker({ value, onSelect }: { value: string; onSelect: (id: string) => void }) {
+export function BackgroundPicker({
+  value,
+  onSelect,
+}: {
+  value: string;
+  onSelect: (id: string) => void;
+}) {
   return (
     <div role="radiogroup" aria-label="Antecedente" className="grid gap-2 sm:grid-cols-2">
       {listBackgrounds().map((background) => (
@@ -204,29 +294,51 @@ export function BackgroundPicker({ value, onSelect }: { value: string; onSelect:
           }
         >
           <span className="line-clamp-4 whitespace-pre-line">{background.summary}</span>
-          {background.skills.length ? ` Perícias: ${background.skills.map((skill) => skillDefinitions[skill].label).join(' e ')}.` : ''}
-          {background.tool ? ` Ferramenta: ${typeof background.tool === 'string' ? catalogItemName(background.tool) : 'um jogo à escolha'}.` : ''}
+          {background.skills.length
+            ? ` Perícias: ${background.skills.map((skill) => skillDefinitions[skill].label).join(' e ')}.`
+            : ''}
+          {background.tool
+            ? ` Ferramenta: ${typeof background.tool === 'string' ? catalogItemName(background.tool) : 'um jogo à escolha'}.`
+            : ''}
         </PickerCard>
       ))}
     </div>
   );
 }
 
-export function SpeciesPicker({ value, onSelect }: { value: string; onSelect: (id: string) => void }) {
+export function SpeciesPicker({
+  value,
+  onSelect,
+}: {
+  value: string;
+  onSelect: (id: string) => void;
+}) {
+  const [query, setQuery] = useState('');
+  const list = listSpecies().filter((species) => matchesNameSearch(species.name, query));
   return (
-    <div role="radiogroup" aria-label="Espécie" className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-      {listSpecies().map((species) => (
-        <PickerCard
-          key={species.id}
-          selected={species.id === value}
-          onSelect={() => onSelect(species.id)}
-          title={species.name}
-          icon={<CharacterIcon kind="species" id={species.id} className="h-8 w-8" />}
-          subtitle={`${species.sizeLabel} · ${formatDistance(species.speed, 'm')}${species.book ? ` · ${species.book}` : ''}`}
-        >
-          <span className="line-clamp-4">{species.summary}</span>
-        </PickerCard>
-      ))}
+    <div className="flex flex-col gap-3">
+      <NameSearch label="Buscar espécie" value={query} onChange={setQuery} />
+      {list.length === 0 ? (
+        <p className="text-sm text-fg-muted">Nenhuma espécie com esse nome.</p>
+      ) : null}
+      <div
+        role="radiogroup"
+        aria-label="Espécie"
+        className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3"
+      >
+        {list.map((species) => (
+          <PickerCard
+            key={species.id}
+            selected={species.id === value}
+            onSelect={() => onSelect(species.id)}
+            title={species.name}
+            icon={<CharacterIcon kind="species" id={species.id} className="h-8 w-8" />}
+            subtitle={`${species.sizeLabel} · ${formatDistance(species.speed, 'm')}${species.book ? ` · ${species.book}` : ''}`}
+          >
+            <span className="line-clamp-4">{species.summary}</span>
+          </PickerCard>
+        ))}
+      </div>
     </div>
   );
 }
@@ -245,7 +357,12 @@ export function SpeciesDetails({ speciesId, level }: { speciesId: string; level:
       <FeatureList items={species.traits.filter((trait) => trait.level <= level)} />
       {species.traits.some((trait) => trait.level > level) ? (
         <p className="text-xs text-fg-subtle">
-          Mais tarde: {species.traits.filter((trait) => trait.level > level).map((trait) => `${trait.name} (${trait.level}º nível)`).join(', ')}.
+          Mais tarde:{' '}
+          {species.traits
+            .filter((trait) => trait.level > level)
+            .map((trait) => `${trait.name} (${trait.level}º nível)`)
+            .join(', ')}
+          .
         </p>
       ) : null}
     </div>
@@ -268,7 +385,8 @@ export function ProficiencySummary({ draft }: { draft: Dnd5eDraft }) {
           {skills.length === 0 ? <li className="text-fg-muted">Nenhuma ainda.</li> : null}
           {skills.map((grant) => (
             <li key={`${grant.id}-${grant.source}`}>
-              {skillDefinitions[grant.id as Skill]?.label ?? grant.id} <span className="text-xs text-fg-subtle">· {grant.source}</span>
+              {skillDefinitions[grant.id as Skill]?.label ?? grant.id}{' '}
+              <span className="text-xs text-fg-subtle">· {grant.source}</span>
             </li>
           ))}
         </ul>
@@ -279,7 +397,8 @@ export function ProficiencySummary({ draft }: { draft: Dnd5eDraft }) {
           {tools.length === 0 ? <li className="text-fg-muted">Nenhuma.</li> : null}
           {tools.map((grant) => (
             <li key={`${grant.id}-${grant.source}`}>
-              {catalogItemName(grant.id)} <span className="text-xs text-fg-subtle">· {grant.source}</span>
+              {catalogItemName(grant.id)}{' '}
+              <span className="text-xs text-fg-subtle">· {grant.source}</span>
             </li>
           ))}
         </ul>
@@ -289,7 +408,8 @@ export function ProficiencySummary({ draft }: { draft: Dnd5eDraft }) {
         <ul className="flex flex-col gap-1">
           {languages.map((grant) => (
             <li key={`${grant.id}-${grant.source}`}>
-              {languageName(grant.id)} <span className="text-xs text-fg-subtle">· {grant.source}</span>
+              {languageName(grant.id)}{' '}
+              <span className="text-xs text-fg-subtle">· {grant.source}</span>
             </li>
           ))}
         </ul>
@@ -324,7 +444,8 @@ export function EquipmentPreview({ draft }: { draft: Dnd5eDraft }) {
         {equipment.gold} PO · CA {combat.armorClass} ({combat.armorClassSource})
       </p>
       <p className="text-xs text-fg-subtle">
-        Moedas podem ser gastas em equipamento depois, na ficha. Em níveis mais altos, o mestre pode dar itens ou ouro extras.
+        Moedas podem ser gastas em equipamento depois, na ficha. Em níveis mais altos, o mestre pode
+        dar itens ou ouro extras.
       </p>
     </div>
   );
@@ -357,7 +478,9 @@ export function AlignmentPicker({
               key={alignment.id}
               className={cx(
                 'flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm',
-                value === alignment.id ? 'border-parchment-300/70 bg-parchment-200/10' : 'border-line hover:bg-hover',
+                value === alignment.id
+                  ? 'border-parchment-300/70 bg-parchment-200/10'
+                  : 'border-line hover:bg-hover',
                 disabled && 'cursor-not-allowed opacity-45 hover:bg-transparent',
               )}
             >
@@ -370,12 +493,17 @@ export function AlignmentPicker({
                 onChange={() => onChange(alignment.id)}
                 className="h-4 w-4 accent-wine-500"
               />
-              {alignment.name} <span className="text-xs text-fg-subtle">({alignment.abbreviation})</span>
+              {alignment.name}{' '}
+              <span className="text-xs text-fg-subtle">({alignment.abbreviation})</span>
             </label>
           );
         })}
       </div>
-      {!allowEvil ? <p className="text-xs text-fg-subtle">O mestre desta campanha não liberou alinhamentos malignos.</p> : null}
+      {!allowEvil ? (
+        <p className="text-xs text-fg-subtle">
+          O mestre desta campanha não liberou alinhamentos malignos.
+        </p>
+      ) : null}
       {error ? (
         <p className="text-sm font-medium text-danger" role="alert">
           {error}
@@ -394,7 +522,13 @@ const DETAIL_FIELDS = [
   { key: 'backstory', label: 'História', max: 20000, rows: 6 },
 ] as const;
 
-export function DetailsFields({ draft, onChange }: { draft: Dnd5eDraft; onChange: (details: Dnd5eDraft['details']) => void }) {
+export function DetailsFields({
+  draft,
+  onChange,
+}: {
+  draft: Dnd5eDraft;
+  onChange: (details: Dnd5eDraft['details']) => void;
+}) {
   const id = useId();
   return (
     <div className="grid gap-4 md:grid-cols-2">
