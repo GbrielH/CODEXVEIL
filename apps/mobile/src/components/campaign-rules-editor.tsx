@@ -102,16 +102,29 @@ export function SourcebookChips({ selected, onChange, audience }: { selected: re
           <OfficialLink key={link.url} label={link.label} url={link.url} />
         ))}
       {expanded
-        ? SOURCEBOOK_CATEGORIES.map((category) => (
+        ? SOURCEBOOK_CATEGORIES.map((category) => {
+            const ids = DND5E_SOURCEBOOKS.filter((book) => book.category === category).map((book) => book.id);
+            const all = ids.every((id) => selected.includes(id));
+            return (
             <View key={category} style={{ gap: 6 }}>
               <AppText variant="eyebrow">{sourcebookCategoryLabels[category].name}</AppText>
               <ChipRow>
+                {ids.length > 1 ? (
+                  <Chip
+                    label={all ? 'Desmarcar todos' : 'Selecionar todos'}
+                    selected={all}
+                    onPress={() =>
+                      onChange(all ? selected.filter((id) => !ids.includes(id)) : [...new Set([...selected, ...ids])])
+                    }
+                  />
+                ) : null}
                 {DND5E_SOURCEBOOKS.filter((book) => book.category === category).map((book) => (
                   <Chip key={book.id} label={book.name} selected={selected.includes(book.id)} onPress={() => toggle(book.id)} />
                 ))}
               </ChipRow>
             </View>
-          ))
+            );
+          })
         : null}
       {expanded && selected.length > 0 ? (
         <View style={{ gap: 2 }}>

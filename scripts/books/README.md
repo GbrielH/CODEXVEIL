@@ -25,13 +25,17 @@ repositório. Gere tudo numa pasta fora do projeto (por exemplo, `Documents/Code
    (`scripts/books/ocr.ps1 <pngs> <ocr>`) e converter:
    `python -I scripts/books/ocr_to_layout.py <ocr> "<saída>/layout/LIVRO DO JOGADOR.jsonl"`.
 3. **Estilos de um livro** (para descobrir tamanhos de título): `python -X utf8 scripts/books/styles.py <jsonl>`.
-4. **Monstros:** `python -X utf8 scripts/books/run_monsters.py <saída>/layout <saída>`.
-   Resultado em 2026-10-19: Manual de Monstros 420 blocos (412 completos); Monstros do
-   Multiverso 239 (214 completos). Correções manuais pendentes: o bloco "Criatura sem nome (p. 202)"
-   do Multiverso é o **Mirmidão Elemental do Fogo**; erros de OCR como "Colpe" → "Golpe" e
-   "Gonjurador" → "Conjurador".
+4. **Monstros:** `python -X utf8 scripts/books/run_monsters.py <saída>/layout <saída> [pasta dos PDFs]`.
+   Com a pasta dos PDFs, atributos ilegíveis são lidos por OCR (`ocr_abilities.py`). Correções
+   conferidas à mão ficam em `<saída>/correcoes.json` (fora do Git). Resultado em 2026-10-19:
+   Manual de Monstros 428 blocos, Monstros do Multiverso 261.
 5. **Texto corrido** (`sections.py`): `build(rows, classify, exclude=...)` monta capítulos e seções;
    `classify` é por livro (tamanho e fonte dos títulos). Os blocos de monstro já extraídos são
    excluídos pelas linhas em `m['_rows']` (devolvidas por `monsters.parse`).
+
+6. **Raças** (`species.py`): `parse(rows, primeira_página, última_página)`; no Multiverso, 7 a 37.
+7. **Pacotes:** `python -X utf8 scripts/books/build_pack.py <saída>/layout <saída> [pasta dos PDFs]`
+   gera `<saída>/mm-2014.book.json` e `<saída>/mpmm.book.json` (monstros, raças e texto), prontos
+   para importar em Meus livros.
 
 Veja o andamento e o que falta em `docs/PROXIMOS_PASSOS.md` ("Continuidade").

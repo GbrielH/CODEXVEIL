@@ -39,6 +39,22 @@ export function SourcebookPicker({ selected, onChange, audience, fieldName, mode
   const id = useId();
   const [mode, setMode] = useState<'base' | 'expanded'>(selected.length > 0 ? 'expanded' : 'base');
   const toggle = (bookId: string, checked: boolean) => onChange(checked ? [...selected, bookId] : selected.filter((entry) => entry !== bookId));
+  /** Marca ou desmarca todos os livros de um grupo de uma vez. */
+  const toggleGroup = (ids: readonly string[], checked: boolean) =>
+    onChange(checked ? [...new Set([...selected, ...ids])] : selected.filter((entry) => !ids.includes(entry)));
+  const selectAll = (key: string, ids: readonly string[]) =>
+    ids.length > 1 ? (
+      <label htmlFor={`${id}-all-${key}`} className="flex w-fit cursor-pointer items-center gap-2 text-xs font-medium text-fg-secondary">
+        <input
+          id={`${id}-all-${key}`}
+          type="checkbox"
+          className="h-4 w-4 cursor-pointer accent-wine-500"
+          checked={ids.every((bookId) => selected.includes(bookId))}
+          onChange={(event) => toggleGroup(ids, event.target.checked)}
+        />
+        Selecionar todos
+      </label>
+    ) : null;
   const who = audience === 'campaign' ? 'a mesa usa' : 'este personagem usa';
   return (
     <div className="flex flex-col gap-3">
@@ -92,6 +108,7 @@ export function SourcebookPicker({ selected, onChange, audience, fieldName, mode
               {SOURCEBOOK_CATEGORIES.filter((category) => books.some((book) => book.category === category)).map((category) => (
                 <div key={category} className="flex flex-col gap-2">
                   <p className="eyebrow">{sourcebookCategoryLabels[category].name}</p>
+                  {selectAll(`own-${category}`, books.filter((book) => book.category === category).map((book) => book.bookKey))}
                   <div className="grid gap-2 sm:grid-cols-2 @3xl:grid-cols-3">
                     {books
                       .filter((book) => book.category === category)
@@ -130,6 +147,12 @@ export function SourcebookPicker({ selected, onChange, audience, fieldName, mode
                 </span>
               </summary>
               <p className="mt-1 text-xs text-fg-muted">{sourcebookCategoryLabels[category].description}</p>
+              <div className="mt-2">
+                {selectAll(
+                  category,
+                  DND5E_SOURCEBOOKS.filter((book) => book.category === category && !imported.has(book.id)).map((book) => book.id),
+                )}
+              </div>
               <div className="mt-2 grid gap-2 sm:grid-cols-2 @3xl:grid-cols-3">
                 {DND5E_SOURCEBOOKS.filter((book) => book.category === category && !imported.has(book.id)).map((book) => (
                   <CheckboxField

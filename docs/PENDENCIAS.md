@@ -511,3 +511,11 @@ Verificações: `pnpm check` 20/20 (rpg-systems 152 testes; banco 180, com 11 ao
 
 Verificações: `pnpm check` 20/20 e `pnpm build` 2/2. Sem migração e sem mudança nativa (o app
 recebe por atualização OTA). Não verificado no celular.
+
+### 2026-10-19 — pacotes dos livros de monstros
+
+- Pacotes do Manual de Monstros (428 monstros) e do Monstros do Multiverso (261 monstros e 33
+  raças) gerados a partir dos PDFs do responsável e validados com `parseBookPack` (0 erros).
+  Ficam fora do Git; **falta importar** em Meus livros. Itens 6 e 9 da "Continuidade" avançam
+  (raças do Multiverso e monstros); itens mágicos e Livro do Jogador continuam pendentes.
+- "Selecionar todos" na escolha de livros da campanha (site e app).

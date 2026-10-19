@@ -51,15 +51,24 @@ máquina, copie essa pasta e os PDFs, ou gere tudo de novo pelo README dos scrip
 Feito:
 
 - Layout dos 5 PDFs com texto e OCR das 315 páginas do Livro do Jogador 2014 (`D&D.pdf`, escaneado).
-- **Monstros:** Manual de Monstros 420 blocos (412 completos), Monstros do Multiverso 239 (214
-  completos), com nome, tipo, CA, PV, deslocamento, atributos, campos, traços, ações, reações,
-  ações lendárias e ambientação.
-- Esboço do texto corrido (`sections.py`), ainda não rodado nem conferido.
+- **Monstros (2026-10-19):** Manual de Monstros 428 blocos, Monstros do Multiverso 261, com nome,
+  tipo, CA, PV, deslocamento, atributos, campos, traços, ações, reações, ações lendárias e
+  ambientação. Só faltam dados que o próprio livro não tem (Cavalo Marinho e Sapo sem ações;
+  Estátua Sagrada sem ND). Atributos ilegíveis no texto do PDF lidos por OCR
+  (`ocr_abilities.py`) e o resto corrigido à mão em `out/correcoes.json` (fora do Git).
+- **Raças do Multiverso:** 33 (`species.py`; Genasi em quatro variantes), com tipo, tamanho,
+  deslocamento, traços e truques.
+- **Pacotes montados e validados** (`build_pack.py`): `mm-2014.book.json` (428 monstros + 13
+  seções de texto) e `mpmm.book.json` (261 monstros + 33 raças + 186 seções), ambos com 0 erros
+  no `parseBookPack`. **Falta o responsável importar** os dois em Meus livros (arquivos em
+  `livros-trabalho/out/`). Pendências conhecidas: o Manual de Monstros quase não tem texto fora
+  dos blocos (a ambientação vai em cada monstro); resumo do Githyanki é só a frase de abertura;
+  "Visão no Escuro" do Genasi da Terra leva texto a mais.
 
 Próximos passos, em ordem:
 
-1. Montar o pacote do **Manual de Monstros** e do **Monstros do Multiverso** (monstros + texto +
-   as 33 raças do Multiverso), validar com `parseBookPack` e importar em Meus livros.
+1. ~~Montar o pacote do **Manual de Monstros** e do **Monstros do Multiverso** e validar com
+   `parseBookPack`~~ (**feito em 2026-10-19**; falta o responsável importar em Meus livros).
 2. **Livro de Magias** (compêndio): extrair as magias (nome, original em inglês, círculo, escola,
    conjuradores, tempo, alcance, componentes, duração, texto, fonte).
 3. **Xanathar** e **Tasha:** subclasses, talentos, magias, itens mágicos, artífice (classe) e texto.
@@ -224,6 +233,14 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-19 — pacotes dos livros de monstros e "Selecionar todos"
+
+- Pacotes do Manual de Monstros e do Monstros do Multiverso gerados e validados (veja
+  "Continuidade"); scripts novos `species.py`, `ocr_abilities.py` e `build_pack.py`.
+- Escolha de livros da campanha: opção "Selecionar todos" em cada grupo (site, caixa de seleção;
+  app, botão "Selecionar todos"/"Desmarcar todos"). Lint e typecheck do site e do app passaram;
+  não aberto no navegador nem no aparelho.
 
 ### 2026-10-18 — livros importados retomados (a pedido)
 

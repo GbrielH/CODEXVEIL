@@ -17,10 +17,21 @@ def family(font):
 def clean(text):
     text = text.replace('­', '').replace('ﬁ', 'fi').replace('ﬂ', 'fl')
     text = re.sub(r'_{3,}', ' ', text)
+    text = re.sub(r'(?<=[A-Za-zÀ-ÿ])\*(?=[A-Za-zÀ-ÿ])', '', text)  # "D*esafio" -> "Desafio"
+    text = re.sub(r'(?<=[a-zà-ÿ])\^(?=[A-ZÀ-Ý])', ' ', text)        # "de^Armadura" -> "de Armadura"
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
 # Erros comuns de leitura dos PDFs (fontes trocadas e OCR).
+OCR_WORDS = [(r'\bColpe', 'Golpe'), (r'\bCarra\b', 'Garra'), (r'\bGonjur', 'Conjur'), (r'\bCrande\b', 'Grande'), (r'drufdic', 'druídic')]
+
+
+def fix_words(text):
+    for pattern, replacement in OCR_WORDS:
+        text = re.sub(pattern, replacement, text)
+    return text
+
+
 def fix_dice(text):
     text = re.sub(r'\b[lI](d\d)', r'1\1', text)            # ld6 -> 1d6
     text = re.sub(r'(\d)\s+d(\d)', r'\1d\2', text)          # 1 d4 -> 1d4
@@ -50,9 +61,18 @@ def join_lines(lines):
             out = line
     return out
 
-SIZES = r'(?:Miúd[oa]|Pequen[oa]|Médi[oa]|Grande|Enorme|Imens[oa]|Colossal)'
-TYPE_LINE = re.compile(rf'^(?P<type>[^,]{{2,60}}?) (?P<size>{SIZES}(?: ou {SIZES})?)\b ?(?P<tags>\([^)]*\))?\s*,\s*(?P<align>.+)$')
-TYPE_LINE_SIZE_FIRST = re.compile(rf'^(?P<size>{SIZES}(?: ou {SIZES})?) (?P<type>[^,(]{{2,60}}?) ?(?P<tags>\([^)]*\))?\s*,\s*(?P<align>.+)$')
+SIZES = r'(?:Miúd[oa]s?|Minúscul[oa]s?|Pequen[oa]s?|Médi[oa]s?|Grandes?|Enormes?|Imens[oa]s?|Colossal)'
+# Enxames: "Enxame Médio de bestas Miúdas, imparcial".
+SWARM = rf'(?: de [^,()]{{2,40}}?{SIZES})?'
+TYPE_LINE = re.compile(rf'^(?P<type>[^,]{{2,60}}?) (?P<size>{SIZES}(?: ou {SIZES})?){SWARM}\b ?(?P<tags>\([^)]*\))?\s*,\s*(?P<align>.+)$', re.I)
+TYPE_LINE_SIZE_FIRST = re.compile(rf'^(?P<size>{SIZES}(?: ou {SIZES})?) (?P<type>[^,(]{{2,60}}?) ?(?P<tags>\([^)]*\))?\s*,\s*(?P<align>.+)$', re.I)
+
+
+def normalize_type_line(text):
+    """Corrige erros de leitura comuns na linha de tipo antes de reconhecê-la."""
+    text = re.sub(r'\bCrande\b', 'Grande', text)
+    text = re.sub(r'\bde(feras|bestas)\b', r'de \1', text)
+    return text
 
 FIELDS = [
     ('savingThrows', r'(?:Testes de Resistência|Salvaguardas)'),
