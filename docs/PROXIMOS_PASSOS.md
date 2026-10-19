@@ -234,6 +234,15 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-19 — ícones dos antecedentes e resumos corrigidos
+
+- Antecedentes com ícone (game-icons.net, CC BY 3.0) no site e no app; antecedentes sem ícone
+  próprio usam um genérico.
+- Resumos de Herói do Povo e Nobre (Livro do Jogador) corrigidos: começam no título do
+  antecedente, sem a tabela do anterior. É preciso reimportar `phb-2014.book.json`.
+- Classes: com os 5 livros, a única classe nova é o Artífice (as demais são as 12 do SRD); os
+  livros acrescentam subclasses.
+
 ### 2026-10-19 — nomes em inglês e busca nos dois idiomas
 
 - Criação de personagem (site e app): classes e raças com o nome em português em destaque e o

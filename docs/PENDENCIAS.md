@@ -555,3 +555,12 @@ recebe por atualização OTA). Não verificado no celular.
   original em inglês pequeno ao lado (Golias · Goliath, Tiferino · Tiefling); busca nas etapas
   Classe e Espécie aceita os dois idiomas, sem acento (`names-en.ts`, com teste).
 - `pnpm check` passou; não aberto no navegador nem no aparelho.
+
+### 2026-10-19 — ícones dos antecedentes e resumos corrigidos
+
+- Antecedentes com ícone (game-icons.net, CC BY 3.0) no site e no app; antecedentes sem ícone
+  próprio usam um genérico.
+- Resumos de Herói do Povo e Nobre (Livro do Jogador) corrigidos: começam no título do
+  antecedente, sem a tabela do anterior. É preciso reimportar `phb-2014.book.json`.
+- Classes: com os 5 livros, a única classe nova é o Artífice (as demais são as 12 do SRD); os
+  livros acrescentam subclasses.

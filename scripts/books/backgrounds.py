@@ -39,11 +39,17 @@ def parse(rows, names, first_page, last_page):
     entries = []
     for n, (a, name) in enumerate(zip(anchors, names)):
         # Resumo: linhas antes das perícias, desde o fim do antecedente anterior (ou 25 linhas).
+        # O título com o nome do antecedente ("HERÓI DO POVO") marca o começo; sem ele, o último
+        # título antes das perícias (tabelas de personalidade do antecedente anterior ficam de fora).
+        title = next((k for k in range(a - 1, max(a - 90, 0), -1) if texts[k].upper() == name.upper()), None)
         start = max(a - 25, 0)
-        for k in range(a - 1, start, -1):
-            if _heading(texts[k]) and len(texts[k]) > 3:
-                start = k + 1
-                break
+        if title is not None:
+            start = title + 1
+        else:
+            for k in range(a - 1, start, -1):
+                if _heading(texts[k]) and len(texts[k]) > 3:
+                    start = k + 1
+                    break
         summary = '\n\n'.join(_paragraphs([rows[k] | {'t': texts[k]} for k in range(start, a) if texts[k]]))
         fields, field = {'skills': '', 'tools': '', 'languages': '', 'equipment': ''}, None
         k = a

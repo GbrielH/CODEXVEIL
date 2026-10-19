@@ -524,6 +524,7 @@ function Wizard({
               key={background.id}
               selected={background.id === draft.backgroundId}
               title={background.name}
+              icon={(color) => <CharacterIcon kind="background" id={background.name} color={color} />}
               description={
                 background.book
                   ? `${background.book} · Atributos à escolha · Talento de origem à escolha. ${clip(background.summary)}`

@@ -287,6 +287,7 @@ export function BackgroundPicker({
           selected={background.id === value}
           onSelect={() => onSelect(background.id)}
           title={background.name}
+          icon={<CharacterIcon kind="background" id={background.name} className="h-8 w-8" />}
           subtitle={
             background.book
               ? `${background.book} · Atributos à escolha · Talento de origem à escolha`
