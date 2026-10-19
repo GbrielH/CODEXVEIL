@@ -23,6 +23,7 @@ export default async function CampaignLayout({ children, params }: LayoutProps<'
     { href: `${base}/sessoes` as Route, label: 'Sessões' },
     { href: `${base}/dados` as Route, label: 'Dados' },
     { href: `${base}/biblioteca` as Route, label: 'Biblioteca' },
+    { href: `${base}/livros` as Route, label: 'Livros' },
     { href: `${base}/anotacoes` as Route, label: 'Anotações' },
     { href: `${base}/links` as Route, label: 'Links' },
   );

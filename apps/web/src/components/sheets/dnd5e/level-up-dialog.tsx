@@ -26,11 +26,11 @@ import {
   spellNamePt,
   type Ability,
   type AbilityImprovement,
+  type BookSpell,
   type Dnd5eLevelUpChoices,
   type MagicInitiateChoice,
   type MagicInitiateList,
   type Skill,
-  type SrdSpell,
 } from '@codexveil/rpg-systems/dnd5e';
 import { Dices, Sparkles, TrendingUp } from 'lucide-react';
 import { useId, useMemo, useState, type ReactNode } from 'react';
@@ -102,6 +102,7 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
   const [metamagic, setMetamagic] = useState<string[]>([]);
   const [multiclassSkill, setMulticlassSkill] = useState<Skill | ''>('');
   const [multiclassInstrument, setMulticlassInstrument] = useState('');
+  const [subclassId, setSubclassId] = useState('');
   const [busy, setBusy] = useState(false);
 
   const featOptions = plan.feats.filter((feat) => feat.id !== 'ability_score_improvement');
@@ -123,9 +124,11 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
     ...(multiclassInstrument ? { multiclassInstrument } : {}),
     featSkills: featSkills.filter((skill): skill is Skill => Boolean(skill)),
     magicInitiate: initiate,
+    ...(subclassId ? { subclassId } : {}),
   };
   const result = applyDnd5eLevelUp(sheet, plan, choices);
   const blockedOptions = multiclassOptions.filter((option) => option.blocked.length > 0);
+  const chosenSubclass = plan.subclassOptions.find((option) => option.id === subclassId);
 
   const resetChoices = (value: string) => {
     setTarget(value);
@@ -136,6 +139,7 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
     setMetamagic([]);
     setMulticlassSkill('');
     setMulticlassInstrument('');
+    setSubclassId('');
   };
 
   const apply = async () => {
@@ -202,7 +206,11 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
       busy={busy}
       size="lg"
       title={`Nível ${plan.newTotalLevel}: ${plan.className || 'classe'} ${plan.newClassLevel}`}
-      description={plan.classDef ? 'Regras do SRD 5.2.1. Escolha o que o nível oferece e aplique.' : 'Esta classe não está no SRD: o nível sobe e a vida é calculada, mas habilidades e magias ficam por sua conta.'}
+      description={
+        plan.classDef
+          ? 'Regras do SRD 5.2.1 e dos livros liberados. Escolha o que o nível oferece e aplique.'
+          : 'Esta classe não está no SRD nem nos livros liberados: o nível sobe e a vida é calculada, mas habilidades e magias ficam por sua conta.'
+      }
     >
       <div className="flex flex-col gap-1.5">
         <label htmlFor={`${id}-class`} className="text-sm font-medium">
@@ -279,8 +287,36 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
 
       {plan.subclass ? (
         <Alert tone="info" title={`Subclasse: ${plan.subclass.name}`}>
-          {plan.subclass.description} O SRD traz uma subclasse por classe.
+          {plan.subclass.description} Outras subclasses aparecem aqui quando o mestre libera livros na campanha.
         </Alert>
+      ) : null}
+      {plan.subclassOptions.length > 0 ? (
+        <Section title="Subclasse">
+          <Select aria-label="Subclasse" value={subclassId} placeholder="Escolha a subclasse" onChange={(event) => setSubclassId(event.target.value)}>
+            <option value="">Escolha a subclasse</option>
+            {plan.subclassOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.name}
+                {option.book ? ` (${option.book})` : ' (SRD)'}
+              </option>
+            ))}
+          </Select>
+          {chosenSubclass ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-xs whitespace-pre-line text-fg-muted">{chosenSubclass.description}</p>
+              <ul className="flex flex-col gap-2">
+                {chosenSubclass.features
+                  .filter((feature) => feature.level <= plan.newClassLevel)
+                  .map((feature) => (
+                    <li key={feature.name} className="rounded-md border border-line bg-sunken p-3">
+                      <p className="text-sm font-medium text-fg">{feature.name}</p>
+                      <p className="mt-0.5 text-xs whitespace-pre-line text-fg-muted">{feature.description}</p>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          ) : null}
+        </Section>
       ) : null}
 
       <Section title="Habilidades novas">
@@ -547,7 +583,7 @@ function toggle(list: string[], value: string, limit: number): string[] {
   return list.length >= limit ? list : [...list, value];
 }
 
-function SpellPicker({ title, hint, count, options, value, onChange }: { title: string; hint?: string; count: number; options: readonly SrdSpell[]; value: string[]; onChange: (next: string[]) => void }) {
+function SpellPicker({ title, hint, count, options, value, onChange }: { title: string; hint?: string; count: number; options: readonly BookSpell[]; value: string[]; onChange: (next: string[]) => void }) {
   const [query, setQuery] = useState('');
   const term = query.trim().toLowerCase();
   const filtered = term ? options.filter((spell) => `${spellNamePt(spell.name)} ${spell.name}`.toLowerCase().includes(term)) : options;
@@ -570,7 +606,10 @@ function SpellPicker({ title, hint, count, options, value, onChange }: { title: 
               <label className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm">
                 <input type="checkbox" checked={checked} disabled={!checked && value.length >= count} onChange={() => onChange(toggle(value, spell.name, count))} className="accent-wine-500" />
                 <span className="flex-1">{spellNamePt(spell.name)}</span>
-                <span className="text-xs text-fg-muted">{spell.level === 0 ? 'Truque' : `${spell.level}º`} · {spell.castingTime}</span>
+                <span className="text-xs text-fg-muted">
+                  {spell.level === 0 ? 'Truque' : `${spell.level}º`} · {spell.castingTime}
+                  {spell.book ? ` · ${spell.book.name}` : ''}
+                </span>
               </label>
             </li>
           );

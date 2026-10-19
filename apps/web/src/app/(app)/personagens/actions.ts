@@ -7,7 +7,9 @@ import {
   dnd5eDraftSchema,
   parseDnd5eCampaignRules,
   validateDnd5eDraft,
+  withDnd5eBookContent,
   type DraftIssue,
+  type Dnd5eBookContent,
   type Dnd5eCreationContext,
 } from '@codexveil/rpg-systems/dnd5e';
 import { characterCreateSchema, uuidSchema } from '@codexveil/validation';
@@ -15,6 +17,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { failureMessage } from '@/lib/actions';
 import { requireSessionUser } from '@/lib/auth';
+import { campaignBookPacks, loadDnd5eBookContent, ownReadyBookPacks } from '@/lib/books';
 import { routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -43,6 +46,7 @@ export async function createDnd5eCharacterAction(input: unknown): Promise<Create
   let context: Dnd5eCreationContext = PERSONAL_SHEET_CONTEXT;
   // Livros da ficha: os escolhidos na ficha pessoal ou, numa campanha, os do mestre.
   let sourcebooks = draft.data.sourcebooks;
+  let content: Dnd5eBookContent;
   try {
     supabase = await createSupabaseServerClient();
     if (campaignId) {
@@ -61,19 +65,25 @@ export async function createDnd5eCharacterAction(input: unknown): Promise<Create
         allowEvilAlignments: rules.allowEvilAlignments,
       };
       sourcebooks = rules.sourcebooks;
+      content = await loadDnd5eBookContent(supabase, await campaignBookPacks(supabase, campaign));
+    } else {
+      // Ficha pessoal: o conteúdo dos livros importados pelo próprio jogador que ele marcou.
+      const own = await ownReadyBookPacks(supabase, user.id);
+      content = await loadDnd5eBookContent(supabase, own.filter((pack) => sourcebooks.includes(pack.bookKey)));
     }
   } catch (error) {
     return { ok: false, message: failureMessage(error) };
   }
 
-  const issues = validateDnd5eDraft(draft.data, context);
+  // As regras consultam o SRD e os livros liberados (o mesmo conteúdo que o assistente usou).
+  const issues = withDnd5eBookContent(content, () => validateDnd5eDraft(draft.data, context));
   if (issues.length > 0) {
     return { ok: false, message: 'Ainda há escolhas pendentes. Revise os passos indicados.', issues };
   }
   const base = characterCreateSchema.safeParse({ name: draft.data.name, systemId: 'dnd5e', campaignId });
   if (!base.success) return { ok: false, message: base.error.issues[0]?.message ?? 'Dados inválidos.' };
 
-  const built = buildDnd5eCharacterFromDraft({ ...draft.data, sourcebooks });
+  const built = withDnd5eBookContent(content, () => buildDnd5eCharacterFromDraft({ ...draft.data, sourcebooks }));
   let characterId: string;
   try {
     characterId = await createCharacter(supabase, {

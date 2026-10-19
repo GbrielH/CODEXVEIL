@@ -13,20 +13,19 @@ import { suggestedSpellSlots } from '../progression';
 import { SKILLS, skillDefinitions, type Skill } from '../skills';
 import { findBackground } from '../srd/backgrounds';
 import { CIRCLE_OF_THE_LAND, SRD_INVOCATIONS, SRD_METAMAGIC } from '../srd/class-options';
-import { SORCERER_METAMAGIC, WARLOCK_INVOCATIONS, WARLOCK_SLOT_LEVEL, atLevel, findClass } from '../srd/classes';
+import { SORCERER_METAMAGIC, WARLOCK_INVOCATIONS, WARLOCK_SLOT_LEVEL, atLevel, findClass, listSubclasses } from '../srd/classes';
 import { spellNamePt } from '../srd/spell-names-pt';
 import { ALL_TOOLS, ARTISAN_TOOLS, GAMING_SETS, MUSICAL_INSTRUMENTS, SRD_ITEMS, SRD_WEAPONS, findTool } from '../srd/equipment';
-import { SRD_FEATS, epicBoonAbilities, findFeat } from '../srd/feats';
+import { epicBoonAbilities, findFeat, listFeats } from '../srd/feats';
 import { ALIGNMENTS, CLASS_ONLY_LANGUAGES, SRD_LANGUAGES, languageName } from '../srd/languages';
 import { findSpecies } from '../srd/species';
-import { SRD_SPELLS } from '../srd/spells';
+import { findSpell, listSpells } from '../srd/spells';
 import type {
   BackgroundDefinition,
   ClassDefinition,
   EquipmentOption,
   FeatDefinition,
   SpeciesDefinition,
-  SpellListId,
   SubclassDefinition,
 } from '../srd/types';
 import {
@@ -133,8 +132,19 @@ export function draftClass(draft: Dnd5eDraft): ClassDefinition | undefined {
   return draft.classId ? findClass(draft.classId) : undefined;
 }
 
+/** Subclasses que o personagem pode escolher (a do SRD e as dos livros liberados). */
+export function draftSubclassOptions(draft: Dnd5eDraft): SubclassDefinition[] {
+  const classDef = draftClass(draft);
+  return classDef ? listSubclasses(classDef) : [];
+}
+
+/** Subclasse do personagem a partir do 3º nível: a única disponível ou a escolhida. */
 export function draftSubclass(draft: Dnd5eDraft): SubclassDefinition | undefined {
-  return draft.level >= 3 ? draftClass(draft)?.subclass : undefined;
+  if (draft.level < 3) return undefined;
+  const options = draftSubclassOptions(draft);
+  if (options.length <= 1) return options[0];
+  const chosen = selectionText(draft, 'class.subclass');
+  return options.find((option) => option.id === chosen);
 }
 
 export function draftBackground(draft: Dnd5eDraft): BackgroundDefinition | undefined {
@@ -157,7 +167,8 @@ const isSkill = (value: string): value is Skill => (SKILLS as readonly string[])
 const abilityOptions = (abilities: readonly Ability[]): ChoiceOption[] =>
   abilities.map((ability) => ({ id: ability, name: abilityLabels[ability].name }));
 
-const SPELL_LIST_LABELS: Record<SpellListId, string> = {
+const SPELL_LIST_LABELS: Record<string, string> = {
+  artificer: 'Artífice',
   bard: 'Bardo',
   cleric: 'Clérigo',
   druid: 'Druida',
@@ -167,8 +178,8 @@ const SPELL_LIST_LABELS: Record<SpellListId, string> = {
   warlock: 'Bruxo',
   wizard: 'Mago',
 };
-export function spellListLabel(list: SpellListId): string {
-  return SPELL_LIST_LABELS[list];
+export function spellListLabel(list: string): string {
+  return SPELL_LIST_LABELS[list] ?? list;
 }
 
 /** O personagem tem a habilidade Estilo de Luta neste nível? */
@@ -188,19 +199,20 @@ export function maxClassSpellLevel(classDef: ClassDefinition | undefined, level:
   return suggestedSpellSlots(casterLevel).length;
 }
 
+/** Magia pelo nome: do SRD ou de um livro liberado. */
 export function findSrdSpell(name: string) {
-  return SRD_SPELLS.find((spell) => spell.name === name);
+  return findSpell(name);
 }
 
 function spellOptions(filter: {
-  lists: readonly SpellListId[];
+  lists: readonly string[];
   minLevel: number;
   maxLevel: number;
   school?: SpellSchool;
   only?: readonly string[];
 }): SpellOption[] {
   const allowed = filter.only ? new Set(filter.only) : null;
-  return SRD_SPELLS.filter(
+  return listSpells().filter(
     (spell) =>
       spell.level >= filter.minLevel &&
       spell.level <= filter.maxLevel &&
@@ -210,7 +222,7 @@ function spellOptions(filter: {
   ).map((spell) => ({
     id: spell.name,
     name: spellNamePt(spell.name),
-    description: spell.name,
+    description: spell.book ? spell.book.name : spell.name,
     level: spell.level,
     school: spell.school,
     concentration: Boolean(spell.concentration),
@@ -230,13 +242,17 @@ export function draftFeats(draft: Dnd5eDraft): FeatInstance[] {
   const species = draftSpecies(draft);
 
   if (background) {
-    feats.push({
-      specId: 'background.feat',
-      featId: background.feat,
-      source: `Antecedente: ${background.name}`,
-      level: 1,
-      ...(background.magicInitiateList ? { fixedList: background.magicInitiateList } : {}),
-    });
+    // Antecedentes de livro (2014) não trazem talento: o jogador escolhe um de origem.
+    const featId = background.feat || selectionText(draft, 'background.origin_feat');
+    if (featId) {
+      feats.push({
+        specId: 'background.feat',
+        featId,
+        source: `Antecedente: ${background.name}`,
+        level: 1,
+        ...(background.magicInitiateList ? { fixedList: background.magicInitiateList } : {}),
+      });
+    }
   }
   if (species?.id === 'human') {
     const featId = selectionText(draft, 'species.versatile');
@@ -401,7 +417,16 @@ function featChoiceSpecs(draft: Dnd5eDraft, feat: FeatInstance, step: Dnd5eStep)
       specs.push({ kind: 'option', id: `${prefix}.ability`, step, label: 'Agarrador: Força ou Destreza +1', source, options: abilityOptions(['str', 'dex']) });
       break;
     default:
-      if (definition.category === 'epic') {
+      if (definition.abilityIncrease?.length) {
+        specs.push({
+          kind: 'option',
+          id: `${prefix}.ability`,
+          step,
+          label: `${definition.name}: atributo +1 (máximo 20)`,
+          source,
+          options: abilityOptions(definition.abilityIncrease),
+        });
+      } else if (definition.category === 'epic') {
         specs.push({
           kind: 'option',
           id: `${prefix}.ability`,
@@ -467,7 +492,7 @@ export function toolGrants(draft: Dnd5eDraft): Grant[] {
       for (const tool of selectionList(draft, 'class.tools')) grants.push({ id: tool, source: `Classe: ${classDef.name}`, specId: 'class.tools' });
     }
   }
-  if (background) {
+  if (background?.tool) {
     if (typeof background.tool === 'string') grants.push({ id: background.tool, source: `Antecedente: ${background.name}` });
     else {
       const tool = selectionText(draft, 'background.tool');
@@ -638,7 +663,7 @@ function featOptionsFor(
   scoresBefore: Record<Ability, number> | null,
 ): ChoiceOption[] {
   const taken = draftFeats(draft).filter((feat) => feat.specId !== specId);
-  const ordered = SRD_FEATS.filter((feat) => categories.includes(feat.category)).sort(
+  const ordered = listFeats().filter((feat) => categories.includes(feat.category)).sort(
     (a, b) => categories.indexOf(a.category) - categories.indexOf(b.category),
   );
   return ordered.map((feat) => {
@@ -650,7 +675,8 @@ function featOptionsFor(
     else if (feat.minScore && scoresBefore && !feat.minScore.abilities.some((ability) => scoresBefore[ability] >= feat.minScore!.value)) {
       disabledReason = `Exige ${feat.minScore.abilities.map((ability) => abilityLabels[ability].abbreviation).join(' ou ')} ${feat.minScore.value}+.`;
     }
-    return { id: feat.id, name: feat.name, description: feat.description, ...(disabledReason ? { disabledReason } : {}) };
+    const description = feat.book ? `${feat.book}. ${feat.description}` : feat.description;
+    return { id: feat.id, name: feat.name, description, ...(disabledReason ? { disabledReason } : {}) };
   });
 }
 
@@ -669,6 +695,22 @@ export function listDnd5eChoices(draft: Dnd5eDraft): ChoiceSpec[] {
   const skillChoiceOptions = (skills: readonly Skill[], specId: string) => markTaken(skillOptions(skills), grantedElsewhere(skillsGranted, specId));
   if (classDef) {
     const classSource = `Classe: ${classDef.name}`;
+    const subclassOptions = draftSubclassOptions(draft);
+    if (level >= 3 && subclassOptions.length > 1) {
+      specs.push({
+        kind: 'option',
+        id: 'class.subclass',
+        step: 'class',
+        label: 'Subclasse',
+        description: 'A subclasse do SRD e as dos livros liberados pelo mestre.',
+        source: classSource,
+        options: subclassOptions.map((option) => ({
+          id: option.id,
+          name: option.name,
+          description: option.book ? `${option.book}. ${option.description}` : option.description,
+        })),
+      });
+    }
     const options = classDef.skillChoices.options === 'any' ? SKILLS : classDef.skillChoices.options;
     specs.push({
       kind: 'multi',
@@ -861,7 +903,18 @@ export function listDnd5eChoices(draft: Dnd5eDraft): ChoiceSpec[] {
 
   // Antecedente ---------------------------------------------------------------
   if (background) {
-    if (typeof background.tool !== 'string') {
+    if (!background.feat) {
+      specs.push({
+        kind: 'option',
+        id: 'background.origin_feat',
+        step: 'background',
+        label: 'Talento de origem',
+        description: 'Antecedentes de livros antigos não trazem talento: escolha um talento de origem.',
+        source: `Antecedente: ${background.name}`,
+        options: featOptionsFor(draft, ['origin'], 'background.feat', null),
+      });
+    }
+    if (background.tool && typeof background.tool !== 'string') {
       specs.push({
         kind: 'option',
         id: 'background.tool',
@@ -1104,7 +1157,7 @@ export function listDnd5eChoices(draft: Dnd5eDraft): ChoiceSpec[] {
         options: spellOptions({ lists: ['wizard'], minLevel: 1, maxLevel }),
       });
     }
-    const preparedLists: SpellListId[] = classDef.id === 'bard' && level >= 10 ? ['bard', 'cleric', 'druid', 'wizard'] : [casting.list];
+    const preparedLists: string[] = classDef.id === 'bard' && level >= 10 ? ['bard', 'cleric', 'druid', 'wizard'] : [casting.list];
     const book = casting.spellbook ? [...selectionList(draft, 'spells.spellbook'), ...selectionList(draft, 'subclass.evocation_savant')] : undefined;
     specs.push({
       kind: 'spells',
@@ -1259,6 +1312,7 @@ export function featIncrease(draft: Dnd5eDraft, feat: FeatInstance): { increase:
   const ability = selectionText(draft, `${feat.specId}.ability`);
   if (!(ABILITIES as readonly string[]).includes(ability)) return { increase: {}, cap: 20 };
   if (definition.id === 'grappler') return { increase: { [ability]: 1 }, cap: 20 };
+  if (definition.abilityIncrease?.includes(ability as Ability)) return { increase: { [ability]: 1 }, cap: 20 };
   if (definition.category === 'epic') return { increase: { [ability]: 1 }, cap: 30 };
   return { increase: {}, cap: 20 };
 }

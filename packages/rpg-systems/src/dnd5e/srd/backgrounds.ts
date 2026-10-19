@@ -1,6 +1,7 @@
 /**
  * Antecedentes do SRD 5.2.1.
  */
+import { activeDnd5eBookContent } from '../books/active';
 import type { BackgroundDefinition } from './types';
 
 export const SRD_BACKGROUNDS: readonly BackgroundDefinition[] = [
@@ -103,5 +104,11 @@ export const SRD_BACKGROUNDS: readonly BackgroundDefinition[] = [
 ];
 
 export function findBackground(id: string): BackgroundDefinition | undefined {
-  return SRD_BACKGROUNDS.find((background) => background.id === id);
+  return SRD_BACKGROUNDS.find((background) => background.id === id) ?? activeDnd5eBookContent().backgrounds.find((background) => background.id === id);
+}
+
+/** Antecedentes do SRD e dos livros liberados. */
+export function listBackgrounds(): readonly BackgroundDefinition[] {
+  const books = activeDnd5eBookContent().backgrounds;
+  return books.length ? [...SRD_BACKGROUNDS, ...books] : SRD_BACKGROUNDS;
 }

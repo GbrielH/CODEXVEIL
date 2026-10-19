@@ -10,7 +10,7 @@
 | Área        | Situação                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Site        | **No ar** em <https://codexveil.vercel.app> (Vercel, projeto `codexveil`), **publicado sozinho a cada push em `main`** pela integração com o GitHub. Conferido em 2026-10-18: os quatro commits do dia aparecem como "Deployment has completed" no GitHub.                                                                                                                                                                                                                                                                              |
-| Backend     | **No ar:** Supabase `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`, us-east-2), com as **14 migrações aplicadas** (`supabase db push --dry-run` em 2026-10-18: nada pendente), Site URL e Redirect URLs (`deploy/supabase/config.toml`).                                                                                                                                                                                                                                                                                                           |
+| Backend     | **No ar:** Supabase `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`, us-east-2), com as **15 migrações aplicadas** (a `20261018140000_book_packs.sql` em 2026-10-18), Site URL e Redirect URLs (`deploy/supabase/config.toml`).                                                                                                                                                                                                                                                                                                                     |
 | App Android | **APK atual:** [download](https://expo.dev/artifacts/eas/m0Px-_WnwK0q8a6BOSANOEa1oIJUvajr8DDOeJ279Sk.apk) ([build `e02e7079`](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/e02e7079-2f5c-4da6-b225-2e78522d084a), 2026-10-17, com notificações e imagens). Cada push publica uma **atualização OTA** pelo workflow do EAS (conferido em 2026-10-18); APKs anteriores (`420f6c37`, `de6ceb5c`) não recebem mais atualizações. Todos os builds: <https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds>. |
 | Validação   | Teste ao vivo da API contra o banco real: **11/11 em 2026-10-18** (também 10/10 em 2026-10-16 e 11/11 em 2026-10-17). `pnpm check` 20/20 e `pnpm build` 2/2 em 2026-10-18. **Ninguém usou ainda as telas com duas contas**, e as telas de 2026-10-18 (capa, multiclasse, talentos, livros, dados por sessão) não foram abertas no navegador nem no celular.                                                                                                                                                                             |
 | E-mail      | **SMTP próprio ligado em 2026-10-18:** Brevo, remetente `codexveil@gmail.com`, templates em português enviados. Um e-mail de recuperação de senha foi aceito pelo Supabase; falta confirmar a chegada na caixa de entrada e testar o cadastro com uma conta de fora da organização e a recuperação pelo app.                                                                                                                                                                                                                            |
@@ -178,6 +178,22 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-18 — livros importados retomados (a pedido)
+
+- **Decisão do responsável:** retomar a importação dos livros que ele tem para a conta dele
+  (o trabalho guardado no `git stash` foi aplicado e combinado com a multiclasse e os livros da
+  ficha feitos depois).
+- **Banco:** migração `20261018140000_book_packs.sql` aplicada na produção (`book_packs` e
+  `book_entries`, com RLS por dono e por campanha que liberou o livro).
+- **Site:** página **Meus livros** (`/livros`: importar o pacote `.json`, ver e remover), leitor do
+  livro (texto por capítulo e cada tipo de conteúdo, com busca), aba **Livros** na campanha (com
+  cópia de monstros e itens para a biblioteca pelo mestre) e a escolha dos livros (campanha e ficha
+  pessoal) mostrando primeiro os livros importados, com o que cada um traz.
+- **Regras:** espécies, classes, subclasses, antecedentes, talentos e magias dos livros liberados
+  aparecem na criação de personagem e na subida de nível (inclusive multiclasse em classe de livro).
+- **Falta:** gerar os pacotes dos livros do responsável (extração dos PDFs) e o app (criação no
+  celular ainda usa só o SRD).
 
 ### 2026-10-18 — calendário da sessão, imagens de NPCs e monstros e aviso de e-mail
 

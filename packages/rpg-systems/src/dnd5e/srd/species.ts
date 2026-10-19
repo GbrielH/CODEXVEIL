@@ -1,6 +1,7 @@
 /**
  * Espécies do SRD 5.2.1. Todas são do tipo Humanoide.
  */
+import { activeDnd5eBookContent } from '../books/active';
 import type { ResourceDefinition, SpeciesDefinition } from './types';
 
 const proficiencyUses = (key: string, label: string, recovery: 'short_rest' | 'long_rest' = 'long_rest'): ResourceDefinition => ({
@@ -320,7 +321,13 @@ export const SRD_SPECIES: readonly SpeciesDefinition[] = [
 ];
 
 export function findSpecies(id: string): SpeciesDefinition | undefined {
-  return SRD_SPECIES.find((species) => species.id === id);
+  return SRD_SPECIES.find((species) => species.id === id) ?? activeDnd5eBookContent().species.find((species) => species.id === id);
+}
+
+/** Espécies do SRD e dos livros liberados. */
+export function listSpecies(): readonly SpeciesDefinition[] {
+  const books = activeDnd5eBookContent().species;
+  return books.length ? [...SRD_SPECIES, ...books] : SRD_SPECIES;
 }
 
 export const sizeLabels = { small: 'Pequeno', medium: 'Médio' } as const;

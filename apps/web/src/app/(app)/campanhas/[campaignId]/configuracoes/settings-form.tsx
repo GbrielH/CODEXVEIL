@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import { CampaignRulesFields } from '@/components/campaigns/campaign-rules-fields';
+import { CampaignRulesFields, type CampaignBookOption } from '@/components/campaigns/campaign-rules-fields';
 import { Alert } from '@/components/ui/alert';
 import { CheckboxField, TextareaField, TextField } from '@/components/ui/field';
 import { SubmitButton } from '@/components/ui/submit-button';
@@ -12,6 +12,7 @@ interface SettingsFormProps {
   campaignId: string;
   systemId: string;
   disabled: boolean;
+  books: CampaignBookOption[];
   initial: {
     name: string;
     description: string;
@@ -21,7 +22,7 @@ interface SettingsFormProps {
   };
 }
 
-export function CampaignSettingsForm({ campaignId, systemId, disabled, initial }: SettingsFormProps) {
+export function CampaignSettingsForm({ campaignId, systemId, disabled, books, initial }: SettingsFormProps) {
   const [state, action] = useActionState<FormState, FormData>(updateCampaignAction.bind(null, campaignId), {
     status: 'idle',
   });
@@ -63,7 +64,7 @@ export function CampaignSettingsForm({ campaignId, systemId, disabled, initial }
           description="Desmarcado, só mestres alteram atributos, perícias e dados básicos. Vida, recursos e inventário continuam editáveis pelo jogador."
           defaultChecked={initial.playersCanEditSheets}
         />
-        <CampaignRulesFields systemId={systemId} initial={initial.characterRules} errors={state.fieldErrors} />
+        <CampaignRulesFields systemId={systemId} initial={initial.characterRules} errors={state.fieldErrors} books={books} />
         <div>
           <SubmitButton pendingLabel="Salvando…">Salvar alterações</SubmitButton>
         </div>

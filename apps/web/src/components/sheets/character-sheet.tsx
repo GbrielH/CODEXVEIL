@@ -1,4 +1,5 @@
 import {
+  getCampaign,
   characterAccessInput,
   listCharacterAbilities,
   listCharacterConditions,
@@ -12,6 +13,7 @@ import { findSystem } from '@codexveil/rpg-systems';
 import { parseDnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
 import { Dnd5eSheetScreen } from '@/components/sheets/dnd5e/sheet-screen';
 import { ErrorState } from '@/components/ui/states';
+import { campaignBookPacks, loadBookSources, ownReadyBookPacks } from '@/lib/books';
 import { loadCharacterOrNotFound } from '@/lib/characters';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -38,6 +40,14 @@ export async function CharacterSheet({ characterId, variant = 'full' }: { charac
     isOwner: character.viewer.isOwner,
     isGm: character.viewer.membership?.role === 'gm',
   };
+
+  // Livros para a subida de nível: os liberados na campanha do personagem ou, em fichas pessoais, os do dono.
+  let books: Awaited<ReturnType<typeof loadBookSources>> = [];
+  if (permissions.canEditSheet && character.systemId === 'dnd5e') {
+    const campaign = character.campaign ? await getCampaign(supabase, character.campaign.id, user.id) : null;
+    const packs = campaign ? await campaignBookPacks(supabase, campaign) : character.viewer.isOwner ? await ownReadyBookPacks(supabase, user.id) : [];
+    books = await loadBookSources(supabase, packs);
+  }
 
   const system = findSystem(character.systemId);
   let content;
@@ -68,6 +78,7 @@ export async function CharacterSheet({ characterId, variant = 'full' }: { charac
         abilities={abilities}
         permissions={permissions}
         variant={variant}
+        books={books}
         campaigns={campaigns
           // Só campanhas em que o dono é jogador: mestres não vinculam personagens às próprias mesas.
           .filter((campaign) => campaign.status === 'active' && campaign.role === 'player' && campaign.systemId === character.systemId)

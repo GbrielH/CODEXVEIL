@@ -1,4 +1,4 @@
-import { LayoutDashboard, LogOut, Puzzle, ScrollText, Swords, UserRound } from 'lucide-react';
+import { BookOpen, LayoutDashboard, LogOut, Puzzle, ScrollText, Swords, UserRound } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
@@ -21,6 +21,7 @@ const navItems: NavItem[] = [
   { href: routes.dashboard, label: 'Painel', icon: <LayoutDashboard className="h-5 w-5" aria-hidden="true" /> },
   { href: routes.campaigns, label: 'Campanhas', icon: <ScrollText className="h-5 w-5" aria-hidden="true" /> },
   { href: routes.characters, label: 'Personagens', icon: <Swords className="h-5 w-5" aria-hidden="true" /> },
+  { href: routes.books, label: 'Meus livros', icon: <BookOpen className="h-5 w-5" aria-hidden="true" /> },
   { href: routes.community, label: 'Comunidade', icon: <Puzzle className="h-5 w-5" aria-hidden="true" /> },
   { href: routes.profile, label: 'Perfil', icon: <UserRound className="h-5 w-5" aria-hidden="true" /> },
 ];

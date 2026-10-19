@@ -15,6 +15,110 @@ export type Database = {
   };
   public: {
     Tables: {
+      book_entries: {
+        Row: {
+          data: Json;
+          id: string;
+          key: string;
+          kind: string;
+          name: string;
+          pack_id: string;
+          sort_order: number;
+        };
+        Insert: {
+          data?: Json;
+          id?: string;
+          key: string;
+          kind: string;
+          name: string;
+          pack_id: string;
+          sort_order?: number;
+        };
+        Update: {
+          data?: Json;
+          id?: string;
+          key?: string;
+          kind?: string;
+          name?: string;
+          pack_id?: string;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'book_entries_pack_id_fkey';
+            columns: ['pack_id'];
+            isOneToOne: false;
+            referencedRelation: 'book_packs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      book_packs: {
+        Row: {
+          book_key: string;
+          category: string;
+          content_bytes: number;
+          created_at: string;
+          edition: string;
+          entry_counts: Json;
+          entry_total: number;
+          id: string;
+          is_ready: boolean;
+          name: string;
+          origin: string;
+          owner_id: string;
+          system_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          book_key: string;
+          category: string;
+          content_bytes?: number;
+          created_at?: string;
+          edition?: string;
+          entry_counts?: Json;
+          entry_total?: number;
+          id?: string;
+          is_ready?: boolean;
+          name: string;
+          origin?: string;
+          owner_id?: string;
+          system_id?: string;
+          updated_at?: string;
+        };
+        Update: {
+          book_key?: string;
+          category?: string;
+          content_bytes?: number;
+          created_at?: string;
+          edition?: string;
+          entry_counts?: Json;
+          entry_total?: number;
+          id?: string;
+          is_ready?: boolean;
+          name?: string;
+          origin?: string;
+          owner_id?: string;
+          system_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'book_packs_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'book_packs_system_id_fkey';
+            columns: ['system_id'];
+            isOneToOne: false;
+            referencedRelation: 'rpg_systems';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       campaign_invites: {
         Row: {
           campaign_id: string;

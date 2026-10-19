@@ -6,6 +6,6 @@ export * from './feats';
 export * from './languages';
 export * from './equipment';
 export * from './class-options';
-export { SRD_SPELLS } from './spells';
+export { SRD_SPELLS, findSpell, listSpells } from './spells';
 export * from './catalog';
 export * from './spell-names-pt';

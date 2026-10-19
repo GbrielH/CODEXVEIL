@@ -77,6 +77,14 @@ Usuários anônimos (`anon`) só leem `rpg_systems`. Nenhuma outra tabela tem GR
 - As imagens de roteiro e de NPCs só podem ser lidas quando o registro que as referencia pode
   ser lido (veja Storage abaixo).
 
+## Livros importados
+
+O conteúdo de livros comerciais nunca vai para o código. Cada usuário importa os próprios livros
+para `book_packs`/`book_entries`. O RLS (`private.can_read_book_pack`) libera a leitura só ao
+dono e aos participantes das campanhas **do dono** que liberaram o livro nas regras de criação;
+livros com importação incompleta (`is_ready = false`) ficam só para o dono. Só o dono grava ou
+apaga (`private.owns_book_pack`). Testado em `packages/database/test/rls/books.test.ts`.
+
 ## Storage
 
 | Bucket                               | Acesso                                                                                                                                     | Caminhos                                                                                                          |

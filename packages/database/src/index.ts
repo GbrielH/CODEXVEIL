@@ -30,6 +30,7 @@ export * from './queries/library';
 export * from './queries/scene';
 export * from './queries/notes';
 export * from './queries/items';
+export * from './queries/books';
 export * from './queries/dice';
 export * from './queries/turns';
 export * from './queries/notifications';

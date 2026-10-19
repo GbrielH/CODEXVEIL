@@ -19,6 +19,8 @@ export interface CampaignSummary {
   archivedAt: string | null;
   /** Regras de criação de personagens (JSON do módulo do sistema; leia com `parseCampaignRules`). */
   characterRules: unknown;
+  /** Dono (mestre principal); os livros liberados na campanha são os dele. */
+  ownerId: string;
 }
 
 /** Como os encontros novos da campanha começam (modo e ordem) e o que os jogadores veem. */
@@ -70,6 +72,7 @@ export async function listMyCampaigns(client: CodexveilClient, userId: string): 
     updatedAt: row.updated_at,
     archivedAt: row.archived_at,
     characterRules: row.character_rules,
+    ownerId: row.owner_id,
   }));
 }
 

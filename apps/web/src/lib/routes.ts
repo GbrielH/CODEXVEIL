@@ -19,6 +19,7 @@ export const routes = {
   newCampaign: '/campanhas/nova',
   characters: '/personagens',
   newCharacter: '/personagens/novo',
+  books: '/livros',
   licenses: '/licencas',
 } as const;
 
@@ -30,12 +31,17 @@ export function characterPath(characterId: string): string {
   return `/personagens/${characterId}`;
 }
 
+/** Leitor de um livro importado: em "Meus livros" (do dono) ou na campanha que o liberou. */
+export function bookPath(packId: string, section = '', campaignId?: string): string {
+  return campaignId ? `/campanhas/${campaignId}/livros/${packId}${section}` : `/livros/${packId}${section}`;
+}
+
 export function sessionPath(campaignId: string, sessionId: string, section = ''): string {
   return `/campanhas/${campaignId}/sessoes/${sessionId}${section}`;
 }
 
 /** Áreas que exigem sessão. */
-const privatePrefixes = ['/painel', '/perfil', '/comunidade', '/campanhas', '/personagens', '/convite'];
+const privatePrefixes = ['/painel', '/perfil', '/comunidade', '/campanhas', '/personagens', '/convite', '/livros'];
 
 /** Páginas que não fazem sentido para quem já está autenticado. */
 const guestOnlyPaths = [routes.signIn, routes.signUp, routes.forgotPassword];

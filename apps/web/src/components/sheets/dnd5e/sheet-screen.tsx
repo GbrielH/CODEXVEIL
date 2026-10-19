@@ -13,10 +13,13 @@ import {
 } from '@codexveil/database';
 import { applyTrackOperation, type TrackOperation } from '@codexveil/domain';
 import {
+  buildDnd5eBookContent,
   computeDnd5eDerived,
   dnd5eConditionEffects,
   dnd5eSheetSchema,
   parseDnd5eSheet,
+  setActiveDnd5eBookContent,
+  type BookContentSource,
   type Dnd5eSheet,
 } from '@codexveil/rpg-systems/dnd5e';
 import { BookOpen, Backpack, Feather, Hourglass, Settings, Sparkles, Swords } from 'lucide-react';
@@ -52,6 +55,8 @@ interface Dnd5eSheetScreenProps {
   campaigns: { id: string; name: string; characterRules?: unknown }[];
   /** `campaign`: só o que se usa na mesa (jogo, atributos, inventário, habilidades e magias). */
   variant?: 'full' | 'campaign';
+  /** Livros liberados na campanha do personagem (ou os do dono, em fichas pessoais), para a subida de nível. */
+  books?: BookContentSource[];
 }
 
 interface Draft {
@@ -72,7 +77,10 @@ function validateDraft(draft: Draft): string | null {
 }
 
 export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
-  const { character, permissions } = props;
+  const { character, permissions, books } = props;
+  const bookContent = useMemo(() => buildDnd5eBookContent(books ?? []), [books]);
+  // A subida de nível consulta o SRD e os livros liberados (subclasses, talentos e magias).
+  setActiveDnd5eBookContent(bookContent);
   const { toast } = useToast();
   const [tab, setTab] = useState('jogo');
   const [resources, setResources] = useState(props.resources);

@@ -2,8 +2,21 @@
 
 import { DND5E_SOURCEBOOKS, SOURCEBOOK_CATEGORIES, dnd5eOfficialLinks, sourcebookCategoryLabels, sourcebookUrl } from '@codexveil/rpg-systems/dnd5e';
 import { ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 import { useId, useState } from 'react';
 import { CheckboxField } from '@/components/ui/field';
+import { describeBookCounts } from '@/lib/book-counts';
+import { routes } from '@/lib/routes';
+
+/** Livro importado em "Meus livros" (conteúdo do exemplar do usuário, guardado na conta dele). */
+export interface CampaignBookOption {
+  bookKey: string;
+  name: string;
+  category: string;
+  edition: string;
+  entryCounts: Record<string, number>;
+}
+
 
 interface SourcebookPickerProps {
   selected: readonly string[];
@@ -13,13 +26,16 @@ interface SourcebookPickerProps {
   /** Nomes dos campos quando o seletor está dentro de um formulário enviado ao servidor. */
   fieldName?: string;
   modeFieldName?: string;
+  /** Livros importados pelo usuário: o conteúdo deles entra na criação e na biblioteca. */
+  books?: readonly CampaignBookOption[];
 }
 
 /**
  * Sistema base (só o SRD) ou com livros oficiais escolhidos por categoria. Os livros são pagos:
  * cada um leva à página oficial, e as fontes gratuitas ficam com o link direto.
  */
-export function SourcebookPicker({ selected, onChange, audience, fieldName, modeFieldName }: SourcebookPickerProps) {
+export function SourcebookPicker({ selected, onChange, audience, fieldName, modeFieldName, books = [] }: SourcebookPickerProps) {
+  const imported = new Set(books.map((book) => book.bookKey));
   const id = useId();
   const [mode, setMode] = useState<'base' | 'expanded'>(selected.length > 0 ? 'expanded' : 'base');
   const toggle = (bookId: string, checked: boolean) => onChange(checked ? [...selected, bookId] : selected.filter((entry) => entry !== bookId));
@@ -45,12 +61,12 @@ export function SourcebookPicker({ selected, onChange, audience, fieldName, mode
                 }}
                 className="accent-wine-500"
               />
-              {option === 'base' ? 'Sistema base' : 'Base + livros oficiais'}
+              {option === 'base' ? 'Sistema base' : 'Base + livros'}
             </span>
             <span className="text-xs text-fg-muted">
               {option === 'base'
                 ? 'Só o SRD 5.2.1, gratuito e já pronto no Codexveil. Sem nada para escolher.'
-                : `Escolha os livros que ${who}. São livros pagos, vendidos pela Wizards na página oficial: o conteúdo deles não vem no Codexveil e entra à mão.`}
+                : `Escolha os livros que ${who}. Os importados em "Meus livros" trazem espécies, classes, antecedentes, magias, monstros e itens para o Codexveil; os demais só ficam registrados.`}
             </span>
           </label>
         ))}
@@ -70,8 +86,43 @@ export function SourcebookPicker({ selected, onChange, audience, fieldName, mode
       </p>
       {mode === 'expanded' ? (
         <div className="flex flex-col gap-4">
+          {books.length > 0 ? (
+            <div className="flex flex-col gap-3 rounded-md border border-parchment-300/40 bg-parchment-200/5 p-3">
+              <p className="text-sm font-medium text-fg">Livros importados (com conteúdo)</p>
+              {SOURCEBOOK_CATEGORIES.filter((category) => books.some((book) => book.category === category)).map((category) => (
+                <div key={category} className="flex flex-col gap-2">
+                  <p className="eyebrow">{sourcebookCategoryLabels[category].name}</p>
+                  <div className="grid gap-2 sm:grid-cols-2 @3xl:grid-cols-3">
+                    {books
+                      .filter((book) => book.category === category)
+                      .map((book) => (
+                        <CheckboxField
+                          key={book.bookKey}
+                          id={`${id}-own-${book.bookKey}`}
+                          {...(fieldName ? { name: fieldName } : {})}
+                          value={book.bookKey}
+                          label={book.name}
+                          description={[describeBookCounts(book.entryCounts), book.edition === '2024' ? 'regras de 2024' : ''].filter(Boolean).join(' · ')}
+                          checked={selected.includes(book.bookKey)}
+                          onChange={(event) => toggle(book.bookKey, event.target.checked)}
+                        />
+                      ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="rounded-md border border-line p-3 text-sm text-fg-muted">
+              Nenhum livro importado ainda. Em{' '}
+              <Link href={routes.books} className="text-fg-brand underline-offset-2 hover:underline">
+                Meus livros
+              </Link>{' '}
+              você importa o conteúdo dos seus livros; ele aparece aqui, na criação de personagens e na biblioteca.
+            </p>
+          )}
+          <p className="text-xs text-fg-muted">Outros livros oficiais (sem conteúdo no Codexveil, só registram o que vale na mesa):</p>
           {SOURCEBOOK_CATEGORIES.map((category) => (
-            <details key={category} className="rounded-md border border-line px-3 py-2" open={category === 'core' || category === 'player'}>
+            <details key={category} className="rounded-md border border-line px-3 py-2" open={books.length === 0 && (category === 'core' || category === 'player')}>
               <summary className="cursor-pointer text-sm font-medium text-fg">
                 {sourcebookCategoryLabels[category].name}
                 <span className="ml-2 text-xs text-fg-muted">
@@ -80,7 +131,7 @@ export function SourcebookPicker({ selected, onChange, audience, fieldName, mode
               </summary>
               <p className="mt-1 text-xs text-fg-muted">{sourcebookCategoryLabels[category].description}</p>
               <div className="mt-2 grid gap-2 sm:grid-cols-2 @3xl:grid-cols-3">
-                {DND5E_SOURCEBOOKS.filter((book) => book.category === category).map((book) => (
+                {DND5E_SOURCEBOOKS.filter((book) => book.category === category && !imported.has(book.id)).map((book) => (
                   <CheckboxField
                     key={book.id}
                     id={`${id}-book-${book.id}`}

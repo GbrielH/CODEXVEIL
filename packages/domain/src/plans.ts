@@ -12,7 +12,8 @@ export interface PlanLimits {
   maxStorageMb: number | null;
 }
 
-export type LimitedResource = keyof PlanLimits;
+/** Recursos limitados: os do plano e os limites fixos que protegem o espaço do banco. */
+export type LimitedResource = keyof PlanLimits | 'maxBookPacks' | 'maxBookEntries' | 'maxBookBytes' | 'maxBookStorage';
 
 /** `null` significa ilimitado. */
 export function isWithinLimit(currentCount: number, limit: number | null): boolean {
@@ -28,4 +29,8 @@ export const limitReachedMessages: Record<LimitedResource, string> = {
   maxOwnedCharacters: 'Você atingiu o limite de personagens do seu plano.',
   maxMembersPerCampaign: 'A campanha atingiu o limite de participantes do plano do mestre.',
   maxStorageMb: 'O espaço de armazenamento do seu plano está cheio.',
+  maxBookPacks: 'Você atingiu o limite de 40 livros importados. Remova um livro para importar outro.',
+  maxBookEntries: 'O livro passou do limite de 6.000 entradas. Divida o pacote em mais de um livro.',
+  maxBookBytes: 'O livro passou do limite de 25 MB. Divida o pacote em mais de um livro.',
+  maxBookStorage: 'Seus livros passaram do limite de 60 MB por conta. Remova um livro para importar outro.',
 };

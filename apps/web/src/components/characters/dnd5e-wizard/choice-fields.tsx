@@ -2,7 +2,7 @@
 
 import {
   ABILITIES,
-  SRD_SPELLS,
+  findSpell,
   abilityLabels,
   dnd5eSpellDataSchema,
   spellSchoolLabels,
@@ -194,7 +194,7 @@ const LEVEL_LABEL = (level: number) => (level === 0 ? 'Truque' : `${level}º cí
 
 /** Dados técnicos da magia do SRD no formato da ficha (para o cartão de detalhes). */
 function srdSpellData(option: SpellOption): Dnd5eSpellData {
-  const srd = SRD_SPELLS.find((spell) => spell.name === option.id);
+  const srd = findSpell(option.id);
   return dnd5eSpellDataSchema.parse({
     circle: option.level,
     school: option.school,
@@ -273,7 +273,7 @@ function SpellPicker({ spec, value, onChange }: { spec: Extract<ChoiceSpec, { ki
           const disabled = !selected && (Boolean(option.disabledReason) || full);
           return (
             <li key={option.id}>
-              <HoverCard className="block" content={() => <SpellDetails name={option.name} data={srdSpellData(option)} description="" />}>
+              <HoverCard className="block" content={() => <SpellDetails name={option.name} data={srdSpellData(option)} description={(findSpell(option.id)?.description ?? []).join('\n\n')} />}>
                 <button
                   type="button"
                   role="checkbox"

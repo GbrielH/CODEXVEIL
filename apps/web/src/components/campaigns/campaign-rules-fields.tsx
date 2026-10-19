@@ -4,22 +4,26 @@ import { ABILITY_SCORE_METHODS, abilityScoreMethodLabels, parseDnd5eCampaignRule
 import type { FieldErrors } from '@codexveil/validation';
 import { useId, useState } from 'react';
 import { CheckboxField, SelectField } from '@/components/ui/field';
-import { SourcebookPicker } from './sourcebook-picker';
+import { SourcebookPicker, type CampaignBookOption } from './sourcebook-picker';
+
+export type { CampaignBookOption };
 
 interface CampaignRulesFieldsProps {
   systemId: string;
   /** Regras atuais (JSON gravado na campanha) ou `undefined` para os padrões do sistema. */
   initial?: unknown;
   errors?: FieldErrors | undefined;
+  /** Livros importados pelo mestre (para liberar na campanha). */
+  books?: CampaignBookOption[];
 }
 
 /** Campos das regras de criação de personagens, conforme o sistema da campanha. */
-export function CampaignRulesFields({ systemId, initial, errors }: CampaignRulesFieldsProps) {
+export function CampaignRulesFields({ systemId, initial, errors, books = [] }: CampaignRulesFieldsProps) {
   if (systemId !== 'dnd5e') return null;
-  return <Dnd5eRulesFields initial={initial} errors={errors} />;
+  return <Dnd5eRulesFields initial={initial} errors={errors} books={books} />;
 }
 
-function Dnd5eRulesFields({ initial, errors }: { initial: unknown; errors?: FieldErrors | undefined }) {
+function Dnd5eRulesFields({ initial, errors, books }: { initial: unknown; errors?: FieldErrors | undefined; books: CampaignBookOption[] }) {
   const id = useId();
   const [rules, setRules] = useState(() => parseDnd5eCampaignRules(initial));
   const toggleMethod = (method: AbilityScoreMethod, checked: boolean) =>
@@ -35,7 +39,7 @@ function Dnd5eRulesFields({ initial, errors }: { initial: unknown; errors?: Fiel
     <fieldset className="@container flex flex-col gap-5 rounded-md border border-line p-4 sm:p-5">
       <legend className="eyebrow px-1">Criação de personagens</legend>
       <p className="-mt-1 text-sm text-fg-muted">
-        Os jogadores criam os personagens num passo a passo que segue as regras do SRD 5.2 e as escolhas abaixo.
+        Os jogadores criam os personagens num passo a passo que segue as regras do SRD 5.2, os livros liberados e as escolhas abaixo.
       </p>
       {/* Em telas largas (criação da campanha), os três controles ficam lado a lado. */}
       <div className="grid gap-5 @3xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)] @3xl:gap-8">
@@ -88,6 +92,7 @@ function Dnd5eRulesFields({ initial, errors }: { initial: unknown; errors?: Fiel
       </div>
       <div className="border-t border-line pt-4">
         <SourcebookPicker
+          books={books}
           audience="campaign"
           selected={rules.sourcebooks}
           onChange={(sourcebooks) => setRules((current) => ({ ...current, sourcebooks }))}

@@ -2,7 +2,8 @@
  * Classes do SRD 5.2.1: características básicas, habilidades por nível, subclasse do SRD,
  * conjuração, recursos e equipamento inicial. Os resumos foram escritos pelo Codexveil.
  */
-import type { ClassDefinition, ClassId, LevelTable, ResourceDefinition } from './types';
+import { activeDnd5eBookContent } from '../books/active';
+import type { ClassDefinition, ClassId, LevelTable, ResourceDefinition, SubclassDefinition } from './types';
 
 /** Valor da tabela para o nível (1 a 20). */
 export function atLevel(table: LevelTable, level: number): number {
@@ -850,9 +851,16 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
 };
 
 export function findClass(id: string): ClassDefinition | undefined {
-  return (SRD_CLASSES as Record<string, ClassDefinition | undefined>)[id];
+  return (SRD_CLASSES as Record<string, ClassDefinition | undefined>)[id] ?? activeDnd5eBookContent().classes.find((entry) => entry.id === id);
 }
 
+/** Classes do SRD e dos livros liberados. */
 export function listClasses(): ClassDefinition[] {
-  return Object.values(SRD_CLASSES);
+  return [...Object.values(SRD_CLASSES), ...activeDnd5eBookContent().classes];
+}
+
+/** Subclasses disponíveis para a classe: a do SRD e as dos livros liberados. */
+export function listSubclasses(classDef: ClassDefinition): SubclassDefinition[] {
+  const books = activeDnd5eBookContent().subclasses.filter((subclass) => subclass.classId === classDef.id);
+  return [...(classDef.subclass.id ? [classDef.subclass] : []), ...books];
 }

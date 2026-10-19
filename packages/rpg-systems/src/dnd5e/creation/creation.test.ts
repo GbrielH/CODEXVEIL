@@ -346,9 +346,10 @@ describe('regras da campanha', () => {
       sourcebooks: [],
     });
     expect(parseDnd5eCampaignRules({ startingLevel: 99 }).startingLevel).toBe(1);
-    // Livros: ids desconhecidos invalidam a lista; os válidos ficam.
+    // Livros: ids malformados invalidam a lista; os válidos (oficiais ou importados) ficam.
     expect(parseDnd5eCampaignRules({ sourcebooks: ['xgte', 'tcoe'] }).sourcebooks).toEqual(['xgte', 'tcoe']);
-    expect(parseDnd5eCampaignRules({ sourcebooks: ['livro-falso'] }).sourcebooks).toEqual([]);
+    expect(parseDnd5eCampaignRules({ sourcebooks: ['livro-de-magias'] }).sourcebooks).toEqual(['livro-de-magias']);
+    expect(parseDnd5eCampaignRules({ sourcebooks: ['Livro Falso!'] }).sourcebooks).toEqual([]);
   });
 });
 

@@ -4,7 +4,6 @@
  */
 import { z } from 'zod';
 import { ABILITIES, type Ability } from '../abilities';
-import { CLASS_IDS } from '../srd/types';
 
 export const ABILITY_SCORE_METHODS = ['standard_array', 'point_buy', 'random'] as const;
 export type AbilityScoreMethod = (typeof ABILITY_SCORE_METHODS)[number];
@@ -55,8 +54,8 @@ export const RANDOM_SCORE_MIN = 3;
 export const RANDOM_SCORE_MAX = 18;
 
 const selectionSchema = z.union([
-  z.string().max(80),
-  z.array(z.string().max(80)).max(80),
+  z.string().max(160),
+  z.array(z.string().max(160)).max(120),
   z.partialRecord(z.enum(ABILITIES), z.number().int().min(0).max(4)),
 ]);
 export type Selection = z.output<typeof selectionSchema>;
@@ -66,9 +65,10 @@ const text = (max: number) => z.string().trim().max(max, `Use no máximo ${max} 
 export const dnd5eDraftSchema = z.object({
   name: text(80),
   level: z.number().int().min(1).max(20).default(1),
-  classId: z.union([z.enum(CLASS_IDS), z.literal('')]).default(''),
-  backgroundId: z.string().max(40).default(''),
-  speciesId: z.string().max(40).default(''),
+  /** Classe do SRD (`CLASS_IDS`) ou de um livro liberado ("<livro>:<chave>"). */
+  classId: z.string().max(120).default(''),
+  backgroundId: z.string().max(120).default(''),
+  speciesId: z.string().max(120).default(''),
   abilityMethod: z.enum(ABILITY_SCORE_METHODS).default('standard_array'),
   /** Valores gerados pelo método, antes dos aumentos do antecedente e dos talentos. */
   baseScores: z

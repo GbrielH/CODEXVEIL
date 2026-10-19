@@ -116,6 +116,27 @@ As interfaces (`apps/web/src/components/characters/dnd5e-wizard/` e
 Action repete a validação com as regras da campanha lidas do banco antes de gravar. A gravação
 usa `create_character`, que cria ficha, trilhas, inventário e habilidades numa transação.
 
+### Livros importados (D&D 5e)
+
+O Codexveil traz só o SRD. O conteúdo de outros livros entra pela página **Meus livros**: o dono
+importa um **pacote de livro** (JSON no formato `codexveil.dnd5e.book`, validado por
+`parseBookPack` em `packages/rpg-systems/src/dnd5e/books/pack.ts`) gerado do próprio exemplar. O
+navegador valida o arquivo e grava em lotes direto no banco (`importBookPack`), com a sessão do
+usuário; o livro só fica visível para a mesa quando a importação termina (`is_ready`).
+
+- **Tipos de entrada:** texto do livro (`section`), classes, subclasses, espécies, antecedentes,
+  talentos, magias, listas de magias, monstros e itens mágicos.
+- **Na criação e na subida de nível:** `books/content.ts` converte as entradas para o formato das
+  regras (`buildDnd5eBookContent`), e `books/active.ts` deixa esse conteúdo ativo para as funções
+  de `creation/` e `level-up.ts`, que consultam o SRD e os livros (`listSpecies`, `listClasses`,
+  `listSubclasses`, `listFeats`, `listSpells`). O assistente e a ficha ativam o conteúdo ao
+  renderizar; no servidor, `withDnd5eBookContent` envolve a validação e a montagem. Conteúdo de
+  2014 segue a orientação do Livro do Jogador de 2024: espécies sem aumento de atributo,
+  antecedentes antigos com atributos e talento de origem à escolha, habilidades de subclasse de
+  1º/2º nível no 3º e talentos gerais a partir do 4º.
+- **Na campanha:** aba **Livros** com o leitor (texto, regras, monstros e itens, com busca); o
+  mestre copia monstros e itens para a biblioteca (`livros/actions.ts`).
+
 ### Condições (D&D 5e)
 
 `packages/rpg-systems/src/dnd5e/conditions.ts` traz as 15 condições do glossário do SRD
@@ -211,28 +232,28 @@ limites (`null` = ilimitado), e não há cobrança, preço nem assinatura simula
 
 ## Decisões registradas
 
-| Decisão                                                     | Motivo                                                                                                                                                                            |
-| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Supabase sem servidor próprio                               | RLS cobre a autorização. Edge Functions ficam para operações privilegiadas reais (e-mails, rotinas agendadas).                                                                    |
-| Papel por campanha (`campaign_members.role`)                | O mesmo usuário é mestre numa campanha e jogador em outra.                                                                                                                        |
-| Ficha como JSON validado mais tabelas de estado de jogo     | Os sistemas variam na estrutura da ficha. Vida e recursos precisam de atualizações atômicas e de Realtime por linha.                                                              |
-| Segredos de NPCs numa tabela separada (`creature_gm_data`)  | O RLS é por linha. Separar a tabela garante que jogadores nunca recebam a coluna secreta, nem pelo Realtime.                                                                      |
-| Roteiro em blocos JSON tipados (nunca HTML)                 | Validação no cliente (zod) e no banco (`is_valid_block_data`), sem XSS armazenado, e `schema_version` para evolução.                                                              |
-| Posição dos blocos em `double precision`                    | Permite inserir entre dois blocos sem renumerar. `reorder_session_blocks` renumera quando necessário.                                                                             |
-| Mídia privada com URLs assinadas                            | Capas, retratos e imagens de roteiro seguem a visibilidade do registro.                                                                                                           |
-| Sem foto de perfil                                          | O usuário é identificado pelas iniciais. Menos dados pessoais e menos uso de armazenamento.                                                                                       |
-| Imagens reduzidas no navegador                              | Redimensionar e regravar em WebP antes do envio poupa o armazenamento do Supabase; o bucket limita a 2 MB.                                                                        |
-| Criação de personagem guiada por regras compartilhadas      | Web, mobile e servidor usam o mesmo motor (`listDnd5eChoices`, `validateDnd5eDraft`, `buildDnd5eCharacterFromDraft`).                                                             |
-| Mestres não são donos de personagens das próprias campanhas | O mestre conduz com NPCs e monstros; a regra fica no banco (`CVGMC`), não só na interface.                                                                                        |
-| Só conteúdo do SRD 5.2.1 na criação                         | É o conteúdo oficial que a licença CC-BY-4.0 permite reproduzir; livros comerciais ficam de fora (prompt, §8).                                                                    |
-| Livros pagos só como escolha, sem conteúdo                  | A campanha e a ficha guardam só os ids dos livros (`sourcebooks`), com aviso de que são pagos e o link oficial; nada dos livros vai ao banco ou ao código (pedido de 2026-10-18). |
-| Arte oficial fora do projeto                                | Comprar os livros não dá direito de redistribuir a arte da Wizards num repositório e site públicos; o assistente usa ícones CC BY e o link oficial.                               |
-| Classes só pela subida de nível                             | Classe, nível, subclasse e dado de vida não são digitados: a subida de nível (com multiclasse) recalcula vida, habilidades, magias e recursos.                                    |
-| Seletor próprio com `<select>` nativo oculto                | Lista com o visual do sistema e busca, sem mudar a API dos formulários: o `<select>` oculto guarda o valor e recebe um evento de mudança real.                                    |
-| Diálogos do app no visual do Codexveil                      | O alerta nativo do Android segue o tema do aparelho; o diálogo próprio usa a identidade e os botões do app.                                                                       |
-| Largura padrão dos controles só sem outra largura           | Duas classes de largura não se resolvem pela ordem das classes (vale a ordem do CSS); `w-full` só entra sem outra.                                                                |
-| Testes de RLS com PGlite                                    | Testam as policies reais sem Docker nem banco externo, na CI e em qualquer máquina.                                                                                               |
-| Pacotes sem build                                           | Menos configuração, e o mesmo código é usado pelos dois apps.                                                                                                                     |
+| Decisão                                                     | Motivo                                                                                                                                                                          |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Supabase sem servidor próprio                               | RLS cobre a autorização. Edge Functions ficam para operações privilegiadas reais (e-mails, rotinas agendadas).                                                                  |
+| Papel por campanha (`campaign_members.role`)                | O mesmo usuário é mestre numa campanha e jogador em outra.                                                                                                                      |
+| Ficha como JSON validado mais tabelas de estado de jogo     | Os sistemas variam na estrutura da ficha. Vida e recursos precisam de atualizações atômicas e de Realtime por linha.                                                            |
+| Segredos de NPCs numa tabela separada (`creature_gm_data`)  | O RLS é por linha. Separar a tabela garante que jogadores nunca recebam a coluna secreta, nem pelo Realtime.                                                                    |
+| Roteiro em blocos JSON tipados (nunca HTML)                 | Validação no cliente (zod) e no banco (`is_valid_block_data`), sem XSS armazenado, e `schema_version` para evolução.                                                            |
+| Posição dos blocos em `double precision`                    | Permite inserir entre dois blocos sem renumerar. `reorder_session_blocks` renumera quando necessário.                                                                           |
+| Mídia privada com URLs assinadas                            | Capas, retratos e imagens de roteiro seguem a visibilidade do registro.                                                                                                         |
+| Sem foto de perfil                                          | O usuário é identificado pelas iniciais. Menos dados pessoais e menos uso de armazenamento.                                                                                     |
+| Imagens reduzidas no navegador                              | Redimensionar e regravar em WebP antes do envio poupa o armazenamento do Supabase; o bucket limita a 2 MB.                                                                      |
+| Criação de personagem guiada por regras compartilhadas      | Web, mobile e servidor usam o mesmo motor (`listDnd5eChoices`, `validateDnd5eDraft`, `buildDnd5eCharacterFromDraft`).                                                           |
+| Mestres não são donos de personagens das próprias campanhas | O mestre conduz com NPCs e monstros; a regra fica no banco (`CVGMC`), não só na interface.                                                                                      |
+| Só conteúdo do SRD 5.2.1 no código                          | É o conteúdo oficial que a licença CC-BY-4.0 permite reproduzir; o repositório e o site são públicos, então nada de livro comercial vai para o código (prompt, §8).             |
+| Livros do usuário no banco, na conta dele                   | Retomado a pedido em 2026-10-18: o dono importa o pacote do próprio exemplar (`book_packs`/`book_entries`); só ele e as mesas em que ele liberar o livro leem o conteúdo (RLS). |
+| Arte oficial fora do projeto                                | Comprar os livros não dá direito de redistribuir a arte da Wizards num repositório e site públicos; o assistente usa ícones CC BY e o link oficial.                             |
+| Classes só pela subida de nível                             | Classe, nível, subclasse e dado de vida não são digitados: a subida de nível (com multiclasse) recalcula vida, habilidades, magias e recursos.                                  |
+| Seletor próprio com `<select>` nativo oculto                | Lista com o visual do sistema e busca, sem mudar a API dos formulários: o `<select>` oculto guarda o valor e recebe um evento de mudança real.                                  |
+| Diálogos do app no visual do Codexveil                      | O alerta nativo do Android segue o tema do aparelho; o diálogo próprio usa a identidade e os botões do app.                                                                     |
+| Largura padrão dos controles só sem outra largura           | Duas classes de largura não se resolvem pela ordem das classes (vale a ordem do CSS); `w-full` só entra sem outra.                                                              |
+| Testes de RLS com PGlite                                    | Testam as policies reais sem Docker nem banco externo, na CI e em qualquer máquina.                                                                                             |
+| Pacotes sem build                                           | Menos configuração, e o mesmo código é usado pelos dois apps.                                                                                                                   |
 
 ## Catálogo do SRD, dados e turnos (2026-10-17)
 

@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { CampaignCoverCard } from '@/components/campaigns/cover-card';
 import { Card, CardHeader } from '@/components/ui/card';
 import { ForbiddenState } from '@/components/ui/states';
+import { campaignBookPacks, ownReadyBookPacks } from '@/lib/books';
 import { loadCampaignOrNotFound } from '@/lib/campaigns';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { DangerZone } from './danger-zone';
@@ -14,14 +15,17 @@ export const metadata: Metadata = { title: 'Configurações da campanha' };
 
 export default async function CampaignSettingsPage({ params }: PageProps<'/campanhas/[campaignId]/configuracoes'>) {
   const { campaignId } = await params;
-  const { campaign } = await loadCampaignOrNotFound(campaignId);
+  const { campaign, user } = await loadCampaignOrNotFound(campaignId);
 
   if (campaign.role !== 'gm') {
     return <ForbiddenState description="Somente mestres alteram as configurações desta campanha." />;
   }
 
   const archived = campaign.status === 'archived';
-  const covers = await signedMediaUrls(await createSupabaseServerClient(), [campaign.coverPath]);
+  const supabase = await createSupabaseServerClient();
+  const covers = await signedMediaUrls(supabase, [campaign.coverPath]);
+  const packs = campaign.isOwner ? await ownReadyBookPacks(supabase, user.id) : await campaignBookPacks(supabase, campaign);
+  const books = packs.map((pack) => ({ bookKey: pack.bookKey, name: pack.name, category: pack.category, edition: pack.edition, entryCounts: pack.entryCounts }));
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
@@ -35,6 +39,7 @@ export default async function CampaignSettingsPage({ params }: PageProps<'/campa
           campaignId={campaign.id}
           systemId={campaign.systemId}
           disabled={archived}
+          books={books}
           initial={{
             name: campaign.name,
             description: campaign.description,

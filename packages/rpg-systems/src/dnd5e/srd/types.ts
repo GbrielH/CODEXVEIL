@@ -45,7 +45,8 @@ export interface SrdSpell {
   /** 0 = truque. */
   level: number;
   school: SpellSchool;
-  classes: readonly SpellListId[];
+  /** Listas de classe (`SpellListId` no SRD; livros podem trazer outras, como `artificer`). */
+  classes: readonly string[];
   castingTime: string;
   range: string;
   components: string;
@@ -170,6 +171,8 @@ export interface EquipmentOption {
 export interface SubclassDefinition {
   id: string;
   name: string;
+  /** Livro de origem (ausente no SRD). */
+  book?: string;
   description: string;
   features: readonly FeatureDefinition[];
   /** Magias sempre preparadas, liberadas no nível indicado. */
@@ -179,7 +182,8 @@ export interface SubclassDefinition {
 
 export interface SpellcastingDefinition {
   ability: 'int' | 'wis' | 'cha';
-  list: SpellListId;
+  /** Lista de magias (`SpellListId` no SRD ou a lista de uma classe de livro). */
+  list: string;
   /** Conjurador completo, meio conjurador (metade arredondada para cima) ou Magia de Pacto. */
   progression: 'full' | 'half' | 'pact';
   /** `null` quando a classe não aprende truques. */
@@ -196,8 +200,11 @@ export interface WeaponTraining {
 }
 
 export interface ClassDefinition {
-  id: ClassId;
+  /** `ClassId` no SRD; classes de livro usam "<livro>:<chave>". */
+  id: string;
   name: string;
+  /** Livro de origem (ausente no SRD). */
+  book?: string;
   summary: string;
   primaryAbilities: readonly Ability[];
   primaryAbilityLabel: string;
@@ -240,19 +247,28 @@ export interface FeatDefinition {
   minLevel?: number;
   /** Pré-requisito de atributo: pelo menos um dos valores. */
   minScore?: { abilities: readonly Ability[]; value: number };
+  /** +1 num destes atributos, à escolha (talentos de livro). */
+  abilityIncrease?: readonly Ability[];
+  /** Livro de origem (ausente no SRD). */
+  book?: string;
 }
 
 export interface BackgroundDefinition {
   id: string;
   name: string;
   summary: string;
-  abilities: readonly [Ability, Ability, Ability];
+  /** Atributos que o antecedente pode aumentar (três no SRD; todos nos antecedentes de livro). */
+  abilities: readonly Ability[];
+  /** Talento de origem concedido; vazio = o jogador escolhe um (antecedentes de livro). */
   feat: string;
   /** Lista de magias fixa do Iniciado em Magia deste antecedente. */
   magicInitiateList?: 'cleric' | 'wizard';
-  skills: readonly [Skill, Skill];
-  tool: string | { choice: 'gaming_set' };
+  skills: readonly Skill[];
+  /** Ferramenta concedida; ausente quando o antecedente não dá ferramenta. */
+  tool?: string | { choice: 'gaming_set' };
   equipment: readonly EquipmentOption[];
+  /** Livro de origem (ausente no SRD). */
+  book?: string;
 }
 
 export interface SpeciesOptionDefinition {
@@ -265,6 +281,8 @@ export interface SpeciesDefinition {
   id: string;
   name: string;
   summary: string;
+  /** Livro de origem (ausente no SRD). */
+  book?: string;
   sizes: readonly ('small' | 'medium')[];
   sizeLabel: string;
   /** Deslocamento em pés. */

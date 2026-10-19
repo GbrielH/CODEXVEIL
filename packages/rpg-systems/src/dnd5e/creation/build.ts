@@ -585,9 +585,9 @@ export function buildDnd5eCharacterFromDraft(draft: Dnd5eDraft): BuiltDnd5eChara
       const note = notes[feature.name];
       abilities.push({
         kind: 'class_feature',
-        name: feature.name,
-        source: `${classDef.name} ${feature.level}º nível`,
-        description: note ? `${feature.description}\n\n${note}` : feature.description,
+        name: clip(feature.name, 120),
+        source: clip(`${classDef.name} ${feature.level}º nível`, 120),
+        description: clip(note ? `${feature.description}\n\n${note}` : feature.description, 8000),
         data: {},
         ...withResource(feature.resourceKey),
         sortOrder: order++,
@@ -617,9 +617,9 @@ export function buildDnd5eCharacterFromDraft(draft: Dnd5eDraft): BuiltDnd5eChara
       const note = notes[feature.name];
       abilities.push({
         kind: 'class_feature',
-        name: feature.name,
-        source: `${subclass.name} ${feature.level}º nível`,
-        description: note ? `${feature.description}\n\n${note}` : feature.description,
+        name: clip(feature.name, 120),
+        source: clip(`${subclass.name} ${feature.level}º nível`, 120),
+        description: clip(note ? `${feature.description}\n\n${note}` : feature.description, 8000),
         data: {},
         ...withResource(feature.resourceKey),
         sortOrder: order++,
@@ -659,7 +659,7 @@ export function buildDnd5eCharacterFromDraft(draft: Dnd5eDraft): BuiltDnd5eChara
         kind: 'species_trait',
         name: trait.name,
         source: speciesLabel,
-        description: note ? `${trait.description}\n\n${note}` : trait.description,
+        description: clip(note ? `${trait.description}\n\n${note}` : trait.description, 8000),
         data: {},
         ...withResource(trait.resourceKey),
         sortOrder: order++,
@@ -667,7 +667,12 @@ export function buildDnd5eCharacterFromDraft(draft: Dnd5eDraft): BuiltDnd5eChara
     }
   }
   if (background) {
-    const tool = typeof background.tool === 'string' ? (findTool(background.tool)?.name ?? background.tool) : (findTool(selectionText(draft, 'background.tool'))?.name ?? 'jogo à escolha');
+    const tool =
+      typeof background.tool === 'string'
+        ? (findTool(background.tool)?.name ?? background.tool)
+        : background.tool
+          ? (findTool(selectionText(draft, 'background.tool'))?.name ?? 'jogo à escolha')
+          : '';
     const increase = draft.selections['background.abilities'];
     const increaseText =
       increase && typeof increase === 'object' && !Array.isArray(increase)
@@ -675,19 +680,20 @@ export function buildDnd5eCharacterFromDraft(draft: Dnd5eDraft): BuiltDnd5eChara
             .map((ability) => `${abilityLabels[ability].name} +${increase[ability]}`)
             .join(', ')
         : '';
+    const featId = background.feat || selectionText(draft, 'background.origin_feat');
     abilities.push({
       kind: 'background_feature',
       name: background.name,
-      source: 'Antecedente',
-      description: [
+      source: background.book ? clip(`Antecedente · ${background.book}`, 120) : 'Antecedente',
+      description: clip([
         background.summary,
-        `Perícias: ${background.skills.map((skill) => skillDefinitions[skill].label).join(' e ')}.`,
-        `Ferramenta: ${tool}.`,
-        `Talento: ${findFeat(background.feat)?.name ?? background.feat}.`,
+        background.skills.length ? `Perícias: ${background.skills.map((skill) => skillDefinitions[skill].label).join(' e ')}.` : '',
+        tool ? `Ferramenta: ${tool}.` : '',
+        `Talento: ${findFeat(featId)?.name ?? featId}.`,
         increaseText ? `Aumentos de atributo: ${increaseText}.` : '',
       ]
         .filter(Boolean)
-        .join(' '),
+        .join(' '), 8000),
       data: {},
       sortOrder: order++,
     });
@@ -700,7 +706,7 @@ export function buildDnd5eCharacterFromDraft(draft: Dnd5eDraft): BuiltDnd5eChara
       kind: 'feat',
       name: list ? `${definition.name} (${spellListLabel(list)})` : definition.name,
       source: feat.source,
-      description: featDescription(draft, feat),
+      description: clip(featDescription(draft, feat), 8000),
       data: {},
       ...(list ? withResource(`feat_magic_initiate_${list}`) : {}),
       sortOrder: order++,
@@ -710,11 +716,12 @@ export function buildDnd5eCharacterFromDraft(draft: Dnd5eDraft): BuiltDnd5eChara
   for (const spell of spells) {
     const srd = findSrdSpell(spell.name);
     if (!srd) continue;
+    const header = `${srd.level === 0 ? 'Truque' : `${srd.level}º círculo`} de ${spellSchoolLabels[srd.school].toLowerCase()}. ${spell.note}`.trim();
     abilities.push({
       kind: 'spell',
-      name: spell.name,
-      source: clip(`${spell.source} · SRD 5.2.1`, 120),
-      description: `${srd.level === 0 ? 'Truque' : `${srd.level}º círculo`} de ${spellSchoolLabels[srd.school].toLowerCase()}. ${spell.note}`.trim(),
+      name: clip(spell.name, 120),
+      source: clip(`${spell.source} · ${srd.book?.name ?? 'SRD 5.2.1'}`, 120),
+      description: clip([header, ...(srd.description ?? [])].join('\n\n'), 8000),
       data: {
         circle: srd.level,
         school: srd.school,

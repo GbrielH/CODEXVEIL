@@ -3,16 +3,20 @@
 import {
   DND5E_STEPS,
   PERSONAL_SHEET_CONTEXT,
+  buildDnd5eBookContent,
   combatSummary,
   createDnd5eDraft,
   describeDnd5eCampaignRules,
   dnd5eDraftSchema,
   dnd5eStepLabels,
   draftClass,
+  draftSubclass,
   finalAbilityScores,
   listDnd5eChoices,
+  setActiveDnd5eBookContent,
   validateDnd5eDraft,
   type AbilityScoreMethod,
+  type BookContentSource,
   type Dnd5eCampaignRules,
   type Dnd5eCreationContext,
   type Dnd5eDraft,
@@ -51,10 +55,16 @@ export interface WizardCampaign {
   id: string;
   name: string;
   rules: Dnd5eCampaignRules;
+  /** Livros liberados pelo mestre (ids em `books`). */
+  packIds: string[];
 }
 
 interface WizardProps {
   campaigns: WizardCampaign[];
+  /** Conteúdo dos livros usados pelas campanhas e pelas fichas pessoais, por id do livro importado. */
+  books: Record<string, BookContentSource>;
+  /** Livros do próprio usuário, usados nas fichas pessoais. */
+  personalPackIds: string[];
   defaultCampaignId: string;
   /** Chave do rascunho salvo neste navegador (por usuário). */
   storageKey: string;
@@ -108,11 +118,17 @@ function contextFor(campaign: WizardCampaign | undefined): Dnd5eCreationContext 
     : PERSONAL_SHEET_CONTEXT;
 }
 
-export function Dnd5eCreationWizard({ campaigns, defaultCampaignId, storageKey }: WizardProps) {
+export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, defaultCampaignId, storageKey }: WizardProps) {
   const router = useRouter();
   const [campaignId, setCampaignId] = useState(defaultCampaignId);
   const campaign = campaigns.find((entry) => entry.id === campaignId);
   const context = useMemo(() => contextFor(campaign), [campaign]);
+  const packIds = campaign ? campaign.packIds : personalPackIds;
+  const bookSources = useMemo(() => packIds.map((id) => books[id]).filter((source): source is BookContentSource => Boolean(source)), [packIds, books]);
+  const bookContent = useMemo(() => buildDnd5eBookContent(bookSources), [bookSources]);
+  const bookNames = useMemo(() => Object.fromEntries(bookSources.map((source) => [source.book.id, source.book.name])), [bookSources]);
+  // As regras de criação consultam o SRD e os livros da campanha escolhida.
+  setActiveDnd5eBookContent(bookContent);
   const [draft, setDraft] = useState<Dnd5eDraft>(() =>
     createDnd5eDraft({ level: campaign?.rules.startingLevel ?? 1, abilityMethod: contextFor(campaign).abilityScoreMethods[0] ?? 'standard_array' }),
   );
@@ -151,8 +167,8 @@ export function Dnd5eCreationWizard({ campaigns, defaultCampaignId, storageKey }
     }
   };
 
-  const specs = useMemo(() => listDnd5eChoices(draft), [draft]);
-  const issues = useMemo(() => validateDnd5eDraft(draft, context), [draft, context]);
+  const specs = useMemo(() => listDnd5eChoices(draft), [draft, bookContent]); // eslint-disable-line react-hooks/exhaustive-deps
+  const issues = useMemo(() => validateDnd5eDraft(draft, context), [draft, context, bookContent]); // eslint-disable-line react-hooks/exhaustive-deps
   const issueMap = useMemo(() => new Map(issues.map((issue) => [issue.path, issue.message])), [issues]);
   const steps = useMemo(
     () => DND5E_STEPS.filter((entry) => entry !== 'spells' || specs.some((spec) => spec.step === 'spells')),
@@ -316,7 +332,7 @@ export function Dnd5eCreationWizard({ campaigns, defaultCampaignId, storageKey }
                 <div className="rounded-md border border-line bg-card/60 p-4 text-sm">
                   <h3 className="eyebrow mb-2">Regras do mestre</h3>
                   <ul className="flex list-disc flex-col gap-1 pl-5 text-fg-secondary">
-                    {describeDnd5eCampaignRules(campaign.rules).map((rule) => (
+                    {describeDnd5eCampaignRules(campaign.rules, bookNames).map((rule) => (
                       <li key={rule}>{rule}</li>
                     ))}
                   </ul>
@@ -349,7 +365,8 @@ export function Dnd5eCreationWizard({ campaigns, defaultCampaignId, storageKey }
               )}
               <p className="text-sm text-fg-muted">
                 O passo a passo segue a criação de personagem do SRD 5.2: classe, origem (antecedente, espécie e idiomas), atributos,
-                alinhamento e detalhes. Só aparecem opções do conteúdo aberto do SRD.
+                alinhamento e detalhes. Aparecem as opções do SRD
+                {bookSources.length > 0 ? ` e dos livros ${campaign ? 'liberados pelo mestre' : 'que você importou'}: ${bookSources.map((source) => source.book.name).join(', ')}` : ''}.
               </p>
             </div>
           ) : null}
@@ -360,12 +377,12 @@ export function Dnd5eCreationWizard({ campaigns, defaultCampaignId, storageKey }
                 value={draft.classId}
                 onSelect={(id) =>
                   edit((current) =>
-                    current.classId === id ? current : { ...current, classId: id as Dnd5eDraft['classId'], selections: without(current.selections, CLEAR_ON_CLASS) },
+                    current.classId === id ? current : { ...current, classId: id, selections: without(current.selections, CLEAR_ON_CLASS) },
                   )
                 }
               />
               {errorFor('classId') ? <Alert tone="danger">{errorFor('classId')}</Alert> : null}
-              {classDef ? <ClassDetails classDef={classDef} level={draft.level} /> : null}
+              {classDef ? <ClassDetails classDef={classDef} level={draft.level} subclass={draftSubclass(draft)} /> : null}
               {renderSpecs()}
             </div>
           ) : null}
@@ -510,7 +527,7 @@ function SummaryPanel({ draft, campaignName }: { draft: Dnd5eDraft; campaignName
         <p className="font-display text-lg text-fg">{draft.name || 'Novo personagem'}</p>
         <p className="text-fg-secondary">
           {classDef ? `${classDef.name} ${draft.level}` : `Nível ${draft.level}`}
-          {draft.level >= 3 && classDef ? ` · ${classDef.subclass.name}` : ''}
+          {draftSubclass(draft) ? ` · ${draftSubclass(draft)?.name}` : ''}
         </p>
         <p className="text-xs text-fg-muted">{campaignName ? `Campanha: ${campaignName}` : 'Ficha pessoal'}</p>
         {combat ? (

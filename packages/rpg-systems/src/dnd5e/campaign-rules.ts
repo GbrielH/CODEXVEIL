@@ -4,7 +4,7 @@
  */
 import { z } from 'zod';
 import { ABILITY_SCORE_METHODS, abilityScoreMethodLabels } from './creation/draft';
-import { findSourcebook, isSourcebookId } from './sourcebooks';
+import { findSourcebook } from './sourcebooks';
 
 export const dnd5eCampaignRulesSchema = z.object({
   /** Nível com que os personagens começam (o SRD recomenda o 1º, ou o 3º para grupos experientes). */
@@ -21,8 +21,14 @@ export const dnd5eCampaignRulesSchema = z.object({
     .default([...ABILITY_SCORE_METHODS]),
   /** O SRD pressupõe personagens não malignos; o mestre pode liberar. */
   allowEvilAlignments: z.boolean().default(false),
-  /** Livros oficiais liberados além do SRD (ids de `DND5E_SOURCEBOOKS`); vazio = sistema base. */
-  sourcebooks: z.array(z.string().refine(isSourcebookId, 'Livro desconhecido.')).max(80).default([]),
+  /**
+   * Livros liberados além do SRD: o id do livro importado pelo mestre em "Meus livros" (o mesmo de
+   * `DND5E_SOURCEBOOKS` para livros oficiais). Vazio = sistema base.
+   */
+  sourcebooks: z
+    .array(z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Livro desconhecido.').max(80))
+    .max(80)
+    .default([]),
 });
 
 export type Dnd5eCampaignRules = z.output<typeof dnd5eCampaignRulesSchema>;
@@ -49,7 +55,8 @@ export function parseDnd5eCampaignRules(data: unknown): Dnd5eCampaignRules {
   };
 }
 
-export function describeDnd5eCampaignRules(rules: Dnd5eCampaignRules): string[] {
+/** `bookNames` dá o nome dos livros importados (os oficiais têm nome no catálogo). */
+export function describeDnd5eCampaignRules(rules: Dnd5eCampaignRules, bookNames: Readonly<Record<string, string>> = {}): string[] {
   const methods = rules.abilityScoreMethods.map((method) => abilityScoreMethodLabels[method].name.toLowerCase());
   return [
     `Personagens começam no ${rules.startingLevel}º nível.`,
@@ -57,7 +64,7 @@ export function describeDnd5eCampaignRules(rules: Dnd5eCampaignRules): string[] 
     rules.allowEvilAlignments ? 'Alinhamentos malignos permitidos.' : 'Sem alinhamentos malignos.',
     rules.sourcebooks.length === 0
       ? 'Sistema base: só o conteúdo do SRD 5.2.1.'
-      : `Livros liberados: ${rules.sourcebooks.map((id) => findSourcebook(id)?.name ?? id).join(', ')}. São livros pagos, vendidos na página oficial; o conteúdo deles entra à mão na ficha.`,
+      : `Livros liberados: ${rules.sourcebooks.map((id) => bookNames[id] ?? findSourcebook(id)?.name ?? id).join(', ')}.`,
   ];
 }
 

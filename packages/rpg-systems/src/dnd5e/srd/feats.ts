@@ -1,6 +1,7 @@
 /**
  * Talentos do SRD 5.2.1: de origem, gerais, de estilo de luta e dádivas épicas.
  */
+import { activeDnd5eBookContent } from '../books/active';
 import type { FeatCategory, FeatDefinition } from './types';
 
 export const featCategoryLabels: Record<FeatCategory, string> = {
@@ -141,7 +142,13 @@ export const SRD_FEATS: readonly FeatDefinition[] = [
 ];
 
 export function findFeat(id: string): FeatDefinition | undefined {
-  return SRD_FEATS.find((feat) => feat.id === id);
+  return SRD_FEATS.find((feat) => feat.id === id) ?? activeDnd5eBookContent().feats.find((feat) => feat.id === id);
+}
+
+/** Talentos do SRD e dos livros liberados. */
+export function listFeats(): readonly FeatDefinition[] {
+  const books = activeDnd5eBookContent().feats;
+  return books.length ? [...SRD_FEATS, ...books] : SRD_FEATS;
 }
 
 /** Atributos que uma dádiva épica pode aumentar. */

@@ -7,6 +7,7 @@
  * duração traduzidos para o português; distâncias convertidas para metros (5 pés = 1,5 m);
  * componentes materiais resumidos para "M". Os nomes das magias seguem o original em inglês.
  */
+import { activeDnd5eBookContent, type BookSpell, type Dnd5eBookContent } from '../books/active';
 import type { SrdSpell } from './types';
 
 export const SRD_SPELLS: readonly SrdSpell[] = [
@@ -350,3 +351,28 @@ export const SRD_SPELLS: readonly SrdSpell[] = [
   { name: 'Weird', level: 9, school: 'illusion', classes: ['warlock', 'wizard'], castingTime: 'Ação', range: '36 m', components: 'V, S', duration: 'Concentração, até 1 minuto', concentration: true },
   { name: 'Wish', level: 9, school: 'conjuration', classes: ['sorcerer', 'wizard'], castingTime: 'Ação', range: 'Pessoal', components: 'V', duration: 'Instantânea' },
 ];
+
+const merged = new WeakMap<Dnd5eBookContent, readonly BookSpell[]>();
+
+/** Magias do SRD (com as listas acrescentadas pelos livros) e as magias dos livros liberados. */
+export function listSpells(): readonly BookSpell[] {
+  const content = activeDnd5eBookContent();
+  if (content.spells.length === 0 && Object.keys(content.srdSpellLists).length === 0) return SRD_SPELLS;
+  let spells = merged.get(content);
+  if (!spells) {
+    spells = [
+      ...SRD_SPELLS.map((spell) => {
+        const extra = content.srdSpellLists[spell.name];
+        return extra ? { ...spell, classes: [...spell.classes, ...extra] } : spell;
+      }),
+      ...content.spells,
+    ];
+    merged.set(content, spells);
+  }
+  return spells;
+}
+
+/** Magia pelo nome (original do SRD ou o nome do livro). */
+export function findSpell(name: string): BookSpell | undefined {
+  return listSpells().find((spell) => spell.name === name);
+}

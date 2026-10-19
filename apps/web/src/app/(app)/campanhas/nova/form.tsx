@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import { CampaignRulesFields } from '@/components/campaigns/campaign-rules-fields';
+import { CampaignRulesFields, type CampaignBookOption } from '@/components/campaigns/campaign-rules-fields';
 import { CoverPicker } from '@/components/campaigns/cover-picker';
 import { Alert } from '@/components/ui/alert';
 import { ButtonLink } from '@/components/ui/button';
@@ -18,7 +18,7 @@ interface SystemOption {
   reference: string;
 }
 
-export function CreateCampaignForm({ systems }: { systems: SystemOption[] }) {
+export function CreateCampaignForm({ systems, books }: { systems: SystemOption[]; books: CampaignBookOption[] }) {
   const [state, action] = useActionState(createCampaignAction, idleFormState);
   const [systemId, setSystemId] = useState(state.values?.systemId ?? systems[0]?.id ?? 'dnd5e');
   const [name, setName] = useState(state.values?.name ?? '');
@@ -69,7 +69,7 @@ export function CreateCampaignForm({ systems }: { systems: SystemOption[] }) {
           </div>
         </div>
       </Card>
-      <CampaignRulesFields systemId={systemId} errors={state.fieldErrors} />
+      <CampaignRulesFields systemId={systemId} errors={state.fieldErrors} books={books} />
       <div className="flex flex-col-reverse gap-2 border-t border-line pt-5 sm:flex-row sm:justify-end">
         <ButtonLink href={routes.campaigns} variant="ghost">
           Cancelar

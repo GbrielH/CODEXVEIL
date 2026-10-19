@@ -3,7 +3,7 @@ import { campaignPath, characterPath, isGuestOnlyPath, isPrivatePath, routes, se
 
 describe('rotas privadas', () => {
   it('protege painel, campanhas, personagens, perfil e convites', () => {
-    for (const path of ['/painel', '/campanhas', '/campanhas/abc/sessoes', '/personagens/x', '/perfil', '/convite/ABCD']) {
+    for (const path of ['/painel', '/campanhas', '/campanhas/abc/sessoes', '/personagens/x', '/perfil', '/convite/ABCD', '/livros']) {
       expect(isPrivatePath(path)).toBe(true);
     }
   });

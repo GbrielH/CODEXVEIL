@@ -164,6 +164,12 @@ Migração `20261018120000_gameplay_turns.sql`:
 - Índices únicos `characters_one_per_player_idx` e `campaign_notes_one_pinned_idx` (duplicatas
   antigas são desvinculadas/desafixadas antes).
 
+Migração `20261018140000_book_packs.sql`: `book_packs` (livro importado: dono, `book_key`,
+nome, categoria, edição, contagem por tipo e `is_ready`) e `book_entries` (`kind`, `key`, `name`,
+`data` JSON de até 128 KB). Limites de 40 livros por usuário e 6.000 entradas por livro. Leitura:
+o dono e os participantes das campanhas do dono cujo `character_rules.sourcebooks` contém o
+`book_key` (só livros prontos). Escrita: só o dono.
+
 Migração `20261018130000_physical_dice.sql`: coluna `sessions.physical_dice` (padrão `false`),
 RPC `campaign_session_state` (`{ playing, physicalDice }`, só membros) e `perform_turn_action`
 recriada com `p_manual_total` (em sessão presencial não chama `roll_dice` e grava o total anotado

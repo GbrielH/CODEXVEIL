@@ -9,9 +9,11 @@ import {
   formatDistance,
   languageGrants,
   languageName,
+  findSpecies,
+  listBackgrounds,
   listClasses,
-  SRD_BACKGROUNDS,
-  SRD_SPECIES,
+  listSpecies,
+  listSubclasses,
   skillDefinitions,
   skillGrants,
   startingEquipment,
@@ -20,6 +22,7 @@ import {
   type ClassDefinition,
   type Dnd5eDraft,
   type Skill,
+  type SubclassDefinition,
 } from '@codexveil/rpg-systems/dnd5e';
 import { ExternalLink } from 'lucide-react';
 import { useId, type ReactNode } from 'react';
@@ -96,7 +99,11 @@ export function ClassPicker({ value, onSelect }: { value: string; onSelect: (id:
           onSelect={() => onSelect(entry.id)}
           title={entry.name}
           icon={<CharacterIcon kind="class" id={entry.id} className="h-8 w-8" />}
-          subtitle={`${entry.primaryAbilityLabel} · Dado de vida ${entry.hitDie} · Complexidade ${entry.complexity.toLowerCase()}`}
+          subtitle={
+            entry.book
+              ? `${entry.primaryAbilityLabel} · Dado de vida ${entry.hitDie} · ${entry.book}`
+              : `${entry.primaryAbilityLabel} · Dado de vida ${entry.hitDie} · Complexidade ${entry.complexity.toLowerCase()}`
+          }
         >
           {entry.summary}
         </PickerCard>
@@ -119,16 +126,17 @@ function OfficialArtLink({ kind, id, name }: { kind: 'class' | 'species'; id: st
   );
 }
 
-export function ClassDetails({ classDef, level }: { classDef: ClassDefinition; level: number }) {
+export function ClassDetails({ classDef, level, subclass }: { classDef: ClassDefinition; level: number; subclass: SubclassDefinition | undefined }) {
   const features = classDef.features.filter((feature) => feature.level <= level);
-  const subclassFeatures = level >= 3 ? classDef.subclass.features.filter((feature) => feature.level <= level) : [];
+  const subclasses = listSubclasses(classDef);
+  const subclassFeatures = level >= 3 && subclass ? subclass.features.filter((feature) => feature.level <= level) : [];
   const skillText =
     classDef.skillChoices.options === 'any'
       ? `Escolha ${classDef.skillChoices.count} perícias quaisquer`
       : `Escolha ${classDef.skillChoices.count}: ${classDef.skillChoices.options.map((skill) => skillDefinitions[skill].label).join(', ')}`;
   return (
     <div className="flex flex-col gap-4 rounded-md border border-line bg-card/60 p-4">
-      <OfficialArtLink kind="class" id={classDef.id} name={classDef.name} />
+      {classDef.book ? <p className="text-xs text-fg-accent">{classDef.book}</p> : <OfficialArtLink kind="class" id={classDef.id} name={classDef.name} />}
       <dl className="grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-[auto_1fr]">
         <dt className="text-fg-muted">Atributo principal</dt>
         <dd>{classDef.primaryAbilityLabel}</dd>
@@ -155,15 +163,21 @@ export function ClassDetails({ classDef, level }: { classDef: ClassDefinition; l
         <h3 className="eyebrow mb-2">Habilidades até o {level}º nível</h3>
         <FeatureList items={features} />
       </div>
-      {level >= 3 ? (
+      {level >= 3 && subclass ? (
         <div>
-          <h3 className="eyebrow mb-1">Subclasse do SRD: {classDef.subclass.name}</h3>
-          <p className="mb-2 text-sm text-fg-muted">{classDef.subclass.description}</p>
+          <h3 className="eyebrow mb-1">
+            Subclasse: {subclass.name}
+            {subclass.book ? ` (${subclass.book})` : ' (SRD)'}
+          </h3>
+          <p className="mb-2 text-sm whitespace-pre-line text-fg-muted">{subclass.description}</p>
           <FeatureList items={subclassFeatures} />
         </div>
+      ) : level >= 3 ? (
+        <p className="text-sm text-fg-muted">Escolha a subclasse abaixo ({subclasses.length} opções).</p>
       ) : (
         <p className="text-sm text-fg-muted">
-          A subclasse ({classDef.subclass.name}, no SRD) é escolhida no 3º nível.
+          A subclasse é escolhida no 3º nível
+          {subclasses.length > 0 ? ` (${subclasses.length === 1 ? subclasses[0]!.name : `${subclasses.length} opções`})` : ''}.
         </p>
       )}
     </div>
@@ -177,16 +191,21 @@ export function ClassDetails({ classDef, level }: { classDef: ClassDefinition; l
 export function BackgroundPicker({ value, onSelect }: { value: string; onSelect: (id: string) => void }) {
   return (
     <div role="radiogroup" aria-label="Antecedente" className="grid gap-2 sm:grid-cols-2">
-      {SRD_BACKGROUNDS.map((background) => (
+      {listBackgrounds().map((background) => (
         <PickerCard
           key={background.id}
           selected={background.id === value}
           onSelect={() => onSelect(background.id)}
           title={background.name}
-          subtitle={`Atributos: ${background.abilities.map((ability) => abilityLabels[ability].abbreviation).join(', ')} · Talento: ${findFeat(background.feat)?.name ?? background.feat}`}
+          subtitle={
+            background.book
+              ? `${background.book} · Atributos à escolha · Talento de origem à escolha`
+              : `Atributos: ${background.abilities.map((ability) => abilityLabels[ability].abbreviation).join(', ')} · Talento: ${findFeat(background.feat)?.name ?? background.feat}`
+          }
         >
-          {background.summary} Perícias: {background.skills.map((skill) => skillDefinitions[skill].label).join(' e ')}. Ferramenta:{' '}
-          {typeof background.tool === 'string' ? catalogItemName(background.tool) : 'um jogo à escolha'}.
+          <span className="line-clamp-4 whitespace-pre-line">{background.summary}</span>
+          {background.skills.length ? ` Perícias: ${background.skills.map((skill) => skillDefinitions[skill].label).join(' e ')}.` : ''}
+          {background.tool ? ` Ferramenta: ${typeof background.tool === 'string' ? catalogItemName(background.tool) : 'um jogo à escolha'}.` : ''}
         </PickerCard>
       ))}
     </div>
@@ -196,16 +215,16 @@ export function BackgroundPicker({ value, onSelect }: { value: string; onSelect:
 export function SpeciesPicker({ value, onSelect }: { value: string; onSelect: (id: string) => void }) {
   return (
     <div role="radiogroup" aria-label="Espécie" className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-      {SRD_SPECIES.map((species) => (
+      {listSpecies().map((species) => (
         <PickerCard
           key={species.id}
           selected={species.id === value}
           onSelect={() => onSelect(species.id)}
           title={species.name}
           icon={<CharacterIcon kind="species" id={species.id} className="h-8 w-8" />}
-          subtitle={`${species.sizeLabel} · ${formatDistance(species.speed, 'm')}`}
+          subtitle={`${species.sizeLabel} · ${formatDistance(species.speed, 'm')}${species.book ? ` · ${species.book}` : ''}`}
         >
-          {species.summary}
+          <span className="line-clamp-4">{species.summary}</span>
         </PickerCard>
       ))}
     </div>
@@ -213,12 +232,16 @@ export function SpeciesPicker({ value, onSelect }: { value: string; onSelect: (i
 }
 
 export function SpeciesDetails({ speciesId, level }: { speciesId: string; level: number }) {
-  const species = SRD_SPECIES.find((entry) => entry.id === speciesId);
+  const species = findSpecies(speciesId);
   if (!species) return null;
   return (
     <div className="flex flex-col gap-2 rounded-md border border-line bg-card/60 p-4">
       <h3 className="eyebrow">Traços de {species.name}</h3>
-      <OfficialArtLink kind="species" id={species.id} name={species.name} />
+      {species.book ? (
+        <p className="text-sm whitespace-pre-line text-fg-muted">{species.summary}</p>
+      ) : (
+        <OfficialArtLink kind="species" id={species.id} name={species.name} />
+      )}
       <FeatureList items={species.traits.filter((trait) => trait.level <= level)} />
       {species.traits.some((trait) => trait.level > level) ? (
         <p className="text-xs text-fg-subtle">

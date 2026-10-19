@@ -89,5 +89,6 @@ export * from './creation';
 export * from './campaign-rules';
 export * from './level-up';
 export * from './sourcebooks';
+export * from './books';
 export * from './srd';
 export { srd52License } from './license';
