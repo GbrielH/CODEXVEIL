@@ -24,6 +24,52 @@
   navegador** em que o pedido foi feito.
 - A **recuperação de senha pedida pelo app não funciona**.
 
+## Continuidade (parada em 2026-10-19, retomar em outra máquina)
+
+Lista pedida pelo responsável em 2026-10-18, **a terminar antes da IA**. Estado de cada item:
+
+| #   | Pedido                                                                                                                           | Situação                                                                                                                                                                                                                                         |
+| --- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Calendário da criação de sessão no visual do app                                                                                 | **Feito** (site): `components/ui/date-time-field.tsx`, na criação e no editor da sessão. Não aberto no navegador.                                                                                                                                |
+| 2   | Nomes e descrições de monstros/itens em português, com o nome em inglês pequeno embaixo (busca nas duas línguas)                 | **Não iniciado.** Os 330 monstros e 258 itens do SRD estão em inglês (`srd/data/*.json`); falta traduzir nomes e textos e ajustar listas e busca (site e app). Os monstros dos livros importados já vêm em português.                            |
+| 3   | "Muitos e-mails enviados" na recuperação; envio pela Brevo com `codexveil@gmail.com`                                             | **Feito:** SMTP da Brevo ativo e templates em português na produção; o aviso é o limite de 1 min por endereço (mensagem nova). Falta confirmar a chegada e testar pelo app; o limite de 30/h só sobe pelo painel (Authentication → Rate Limits). |
+| 4   | Raças, classes etc. dos livros liberados aparecendo na criação                                                                   | **Infra pronta e publicada** (Meus livros, leitor, aba Livros, conteúdo na criação e na subida de nível, migração `20261018140000_book_packs.sql` aplicada). **Falta gerar e importar os pacotes** (abaixo) e levar o conteúdo à criação no app. |
+| 5   | Todos os antecedentes dos livros                                                                                                 | Depende da extração (Livro do Jogador 2014: 13 antecedentes).                                                                                                                                                                                    |
+| 6   | Todas as raças dos livros                                                                                                        | Depende da extração (Monstros do Multiverso: 33 raças no capítulo 1; Livro do Jogador: raças e sub-raças).                                                                                                                                       |
+| 7   | Combate: rolagem de acerto e depois de dano, dano aplicado sozinho, reações do alvo (bloquear, esquivar…) com cálculo automático | **Não iniciado.**                                                                                                                                                                                                                                |
+| 8   | Imagens em monstros e NPCs                                                                                                       | **Feito:** prévia no editor do site; envio, troca e remoção no app (tela do registro). Não testado no aparelho.                                                                                                                                  |
+| 9   | Conferir se todos os monstros e itens dos livros estão no site                                                                   | Extração dos monstros feita (abaixo); itens mágicos dos livros ainda não extraídos.                                                                                                                                                              |
+
+### Extração dos livros (itens 4, 5, 6 e 9)
+
+Scripts em [`scripts/books/`](../scripts/books/README.md) (só a lógica; nenhum texto dos livros
+vai para o repositório). Dados intermediários guardados **fora do Git** em
+`C:\Users\henri\Documents\Codexveil\livros-trabalho\` (`layout/` = linhas de cada PDF,
+`ddocr/` = OCR do Livro do Jogador, `out/` = monstros extraídos). Para continuar em outra
+máquina, copie essa pasta e os PDFs, ou gere tudo de novo pelo README dos scripts.
+
+Feito:
+
+- Layout dos 5 PDFs com texto e OCR das 315 páginas do Livro do Jogador 2014 (`D&D.pdf`, escaneado).
+- **Monstros:** Manual de Monstros 420 blocos (412 completos), Monstros do Multiverso 239 (214
+  completos), com nome, tipo, CA, PV, deslocamento, atributos, campos, traços, ações, reações,
+  ações lendárias e ambientação.
+- Esboço do texto corrido (`sections.py`), ainda não rodado nem conferido.
+
+Próximos passos, em ordem:
+
+1. Montar o pacote do **Manual de Monstros** e do **Monstros do Multiverso** (monstros + texto +
+   as 33 raças do Multiverso), validar com `parseBookPack` e importar em Meus livros.
+2. **Livro de Magias** (compêndio): extrair as magias (nome, original em inglês, círculo, escola,
+   conjuradores, tempo, alcance, componentes, duração, texto, fonte).
+3. **Xanathar** e **Tasha:** subclasses, talentos, magias, itens mágicos, artífice (classe) e texto.
+4. **Livro do Jogador 2014:** raças e sub-raças, antecedentes, talentos, subclasses e texto.
+5. Conferir as contagens contra os sumários dos livros (item 9) e, no app, ligar o conteúdo dos
+   livros à criação de personagem.
+6. Depois: item 2 (tradução do SRD) e item 7 (combate com acerto, dano e reações).
+7. Só então: **assistente de IA** (pedido completo na conversa de 2026-10-18: consultivo, sem
+   escrita, contexto pelo RLS, proteção contra spoilers; exige chave do provedor no backend).
+
 ## Próximos passos (em ordem)
 
 ### 0c. Notificações de sessão agendada — você e Claude

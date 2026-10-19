@@ -1,6 +1,6 @@
 # Progresso do Codexveil
 
-> Documento de retomada. Última atualização: **2026-10-18**.
+> Documento de retomada. Última atualização: **2026-10-19**. Para retomar o trabalho em andamento, veja primeiro a seção "Continuidade" de [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md#continuidade-parada-em-2026-10-19-retomar-em-outra-máquina).
 > O que falta em relação ao prompt inicial está em [`PENDENCIAS.md`](PENDENCIAS.md).
 
 ## Estado atual
