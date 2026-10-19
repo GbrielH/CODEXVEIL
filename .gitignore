@@ -55,3 +55,7 @@ pnpm-debug.log*
 Thumbs.db
 desktop.ini
 .idea/
+
+# Python
+__pycache__/
+*.pyc
