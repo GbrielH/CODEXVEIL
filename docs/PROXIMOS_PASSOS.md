@@ -234,6 +234,16 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-19 — idiomas das raças e antecedentes dos livros de 2014
+
+- Raças com o traço "Idiomas" (Livro do Jogador 2014) dão os próprios idiomas no lugar dos dois
+  padrão da origem (Anão: Comum e Anão; Meio-Elfo e Humano: mais um à escolha; Alto Elfo: mais um
+  pela sub-raça). Antecedentes com "Um/Dois à sua escolha" dão escolhas extras, inclusive idiomas
+  raros (menos Druídico e Gíria de Ladrão). Raças sem esse traço (SRD, Multiverso) seguem a regra
+  de 2024. Lido do texto já importado (`languages-text.ts`, com teste); não precisa reimportar.
+- Conferido com o pacote real: Anão+Acólito, Alto Elfo+Soldado, Humano+Sábio e Golias+Nobre.
+  `pnpm check` passou; não aberto no navegador nem no aparelho.
+
 ### 2026-10-19 — ícones dos antecedentes e resumos corrigidos
 
 - Antecedentes com ícone (game-icons.net, CC BY 3.0) no site e no app; antecedentes sem ícone

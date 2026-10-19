@@ -6,7 +6,7 @@ const NUMBER_WORDS: Record<string, number> = { um: 1, uma: 1, dois: 2, duas: 2, 
 function plain(text: string): string {
   return text
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9 ]+/g, ' ')
     .replace(/\s+/g, ' ')

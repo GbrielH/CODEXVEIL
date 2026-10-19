@@ -564,3 +564,13 @@ recebe por atualização OTA). Não verificado no celular.
   antecedente, sem a tabela do anterior. É preciso reimportar `phb-2014.book.json`.
 - Classes: com os 5 livros, a única classe nova é o Artífice (as demais são as 12 do SRD); os
   livros acrescentam subclasses.
+
+### 2026-10-19 — idiomas das raças e antecedentes dos livros de 2014
+
+- Raças com o traço "Idiomas" (Livro do Jogador 2014) dão os próprios idiomas no lugar dos dois
+  padrão da origem (Anão: Comum e Anão; Meio-Elfo e Humano: mais um à escolha; Alto Elfo: mais um
+  pela sub-raça). Antecedentes com "Um/Dois à sua escolha" dão escolhas extras, inclusive idiomas
+  raros (menos Druídico e Gíria de Ladrão). Raças sem esse traço (SRD, Multiverso) seguem a regra
+  de 2024. Lido do texto já importado (`languages-text.ts`, com teste); não precisa reimportar.
+- Conferido com o pacote real: Anão+Acólito, Alto Elfo+Soldado, Humano+Sábio e Golias+Nobre.
+  `pnpm check` passou; não aberto no navegador nem no aparelho.

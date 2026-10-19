@@ -509,11 +509,34 @@ export function toolGrants(draft: Dnd5eDraft): Grant[] {
   return grants;
 }
 
+/** Idiomas à escolha da raça de livro: os do traço "Idiomas" e o "Idioma Adicional" da sub-raça (Alto Elfo). */
+function speciesLanguageChoices(draft: Dnd5eDraft): number {
+  const species = draftSpecies(draft);
+  if (!species?.bookLanguages) return 0;
+  const lineage = draftLineage(draft);
+  return species.bookLanguages.choices + (lineage && /idioma adicional/i.test(lineage.description) ? 1 : 0);
+}
+
 /** Idiomas conhecidos, com a origem de cada um. */
 export function languageGrants(draft: Dnd5eDraft): Grant[] {
   const grants: Grant[] = [{ id: 'common', source: 'Todos os personagens' }];
   const classDef = draftClass(draft);
-  for (const language of selectionList(draft, 'origin.languages')) grants.push({ id: language, source: 'Origem', specId: 'origin.languages' });
+  const species = draftSpecies(draft);
+  const background = draftBackground(draft);
+  // Raça de um livro de 2014 com o traço "Idiomas": no lugar dos dois idiomas padrão da origem.
+  if (!species?.bookLanguages) {
+    for (const language of selectionList(draft, 'origin.languages')) grants.push({ id: language, source: 'Origem', specId: 'origin.languages' });
+  }
+  if (species?.bookLanguages) {
+    for (const language of species.bookLanguages.fixed) grants.push({ id: language, source: `Espécie: ${species.name}` });
+    for (const language of selectionList(draft, 'species.languages')) grants.push({ id: language, source: `Espécie: ${species.name}`, specId: 'species.languages' });
+  }
+  if (background?.bookLanguages) {
+    for (const language of background.bookLanguages.fixed) grants.push({ id: language, source: `Antecedente: ${background.name}` });
+    for (const language of selectionList(draft, 'background.languages')) {
+      grants.push({ id: language, source: `Antecedente: ${background.name}`, specId: 'background.languages' });
+    }
+  }
   if (classDef) {
     for (const language of classDef.languages ?? []) grants.push({ id: language, source: `Classe: ${classDef.name}` });
     if (classDef.id === 'rogue') {
@@ -995,16 +1018,47 @@ export function listDnd5eChoices(draft: Dnd5eDraft): ChoiceSpec[] {
       ...(known.has(language.id) && !own.has(language.id) ? { disabledReason: 'Você já conhece este idioma.' } : {}),
     }));
   };
-  specs.push({
-    kind: 'multi',
-    id: 'origin.languages',
-    step: 'proficiencies',
-    label: 'Idiomas',
-    description: 'Todo personagem conhece o Comum e mais dois idiomas padrão.',
-    source: 'Origem',
-    count: 2,
-    options: languageOptions('origin.languages', 'standard'),
-  });
+  const bookSpecies = draftSpecies(draft);
+  const bookBackground = draftBackground(draft);
+  if (bookSpecies?.bookLanguages) {
+    // Livros de 2014: a raça dá os próprios idiomas (e às vezes um à escolha, de qualquer raridade).
+    const choices = speciesLanguageChoices(draft);
+    if (choices > 0) {
+      specs.push({
+        kind: 'multi',
+        id: 'species.languages',
+        step: 'proficiencies',
+        label: 'Idiomas da espécie',
+        description: `${bookSpecies.name} conhece ${['Comum', ...bookSpecies.bookLanguages.fixed.map(languageName)].join(', ')} e escolhe mais ${choices}.`,
+        source: `Espécie: ${bookSpecies.name}`,
+        count: choices,
+        options: languageOptions('species.languages', 'any'),
+      });
+    }
+  } else {
+    specs.push({
+      kind: 'multi',
+      id: 'origin.languages',
+      step: 'proficiencies',
+      label: 'Idiomas',
+      description: 'Todo personagem conhece o Comum e mais dois idiomas padrão.',
+      source: 'Origem',
+      count: 2,
+      options: languageOptions('origin.languages', 'standard'),
+    });
+  }
+  if (bookBackground?.bookLanguages && bookBackground.bookLanguages.choices > 0) {
+    specs.push({
+      kind: 'multi',
+      id: 'background.languages',
+      step: 'proficiencies',
+      label: 'Idiomas do antecedente',
+      description: `${bookBackground.name}: ${bookBackground.bookLanguages.choices === 1 ? 'um idioma' : `${bookBackground.bookLanguages.choices} idiomas`} à sua escolha, inclusive os raros.`,
+      source: `Antecedente: ${bookBackground.name}`,
+      count: bookBackground.bookLanguages.choices,
+      options: languageOptions('background.languages', 'any'),
+    });
+  }
   if (classDef?.id === 'rogue') {
     specs.push({
       kind: 'multi',

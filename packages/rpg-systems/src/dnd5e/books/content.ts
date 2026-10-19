@@ -15,6 +15,7 @@ import { SRD_SPELL_NAMES_PT } from '../srd/spell-names-pt';
 import { CLASS_IDS, type BackgroundDefinition, type ClassDefinition, type FeatDefinition, type SpeciesDefinition } from '../srd/types';
 import type { BookRef, BookSpell, BookSubclass, Dnd5eBookContent } from './active';
 import { equipmentFromText } from './equipment-text';
+import { languagesFromText } from './languages-text';
 import { safeBookEntryData } from './pack';
 
 export interface BookContentSource {
@@ -75,6 +76,14 @@ function suggestedArray(primary: readonly Ability[]): Record<Ability, number> {
 const isSrdClass = (id: string) => (CLASS_IDS as readonly string[]).includes(id);
 
 /** Monta o conteúdo usado pelas regras a partir dos livros liberados, na ordem recebida. */
+/** Idiomas do traço "Idiomas" da raça; sem esse traço, vale a regra de 2024 (dois padrão). */
+function speciesLanguages(traits: readonly { name: string; description: string }[]) {
+  const trait = traits.find((entry) => /^idiomas?$/i.test(entry.name.trim()));
+  if (!trait) return {};
+  const parsed = languagesFromText(trait.description);
+  return parsed.fixed.length || parsed.choices ? { bookLanguages: parsed } : {};
+}
+
 export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dnd5eBookContent {
   const classes: ClassDefinition[] = [];
   const classKeys = new Map<string, string>();
@@ -188,6 +197,7 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
             sizeLabel: data.sizes.map((size) => SIZE_LABELS[size]).join(' ou '),
             speed: data.speed,
             traits: data.traits,
+            ...speciesLanguages(data.traits),
             ...(data.lineage
               ? {
                   lineage: {
@@ -223,6 +233,7 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
             feat: '',
             skills: data.skills,
             ...(data.tools ? { tool: data.tools } : {}),
+            ...(data.languages ? { bookLanguages: languagesFromText(data.languages) } : {}),
             equipment: data.equipment
               ? [
                   { id: 'A', ...equipmentFromText(data.equipment) },

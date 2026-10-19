@@ -269,6 +269,8 @@ export interface BackgroundDefinition {
   equipment: readonly EquipmentOption[];
   /** Livro de origem (ausente no SRD). */
   book?: string;
+  /** Idiomas dos livros de 2014: os citados e quantos são à escolha (de qualquer raridade). */
+  bookLanguages?: { fixed: readonly string[]; choices: number };
 }
 
 export interface SpeciesOptionDefinition {
@@ -283,6 +285,8 @@ export interface SpeciesDefinition {
   summary: string;
   /** Livro de origem (ausente no SRD). */
   book?: string;
+  /** Idiomas dos livros de 2014 (traço "Idiomas"): no lugar dos dois idiomas padrão da origem. */
+  bookLanguages?: { fixed: readonly string[]; choices: number };
   sizes: readonly ('small' | 'medium')[];
   sizeLabel: string;
   /** Deslocamento em pés. */
