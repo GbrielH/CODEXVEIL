@@ -35,15 +35,15 @@ depois desse uso.
 
 ## 1. O que depende de você (configuração externa)
 
-| Item                                          | Situação (2026-10-16)                                                                                        | Onde está documentado                              |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
-| Projeto Supabase exclusivo                    | **Feito:** `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`), com as migrações aplicadas                                  | [DEPLOY](DEPLOY.md#1-supabase-projeto-e-migrações) |
-| Site URL e URLs de redirecionamento           | **Feito:** `deploy/supabase/config.toml`                                                                     | [DEPLOY](DEPLOY.md#2-autenticação)                 |
-| SMTP próprio (Brevo) e templates em português | **Pendente:** conta Brevo e SMTP no painel do Supabase; depois, `config push` dos templates                  | [DEPLOY](DEPLOY.md#2-autenticação)                 |
-| Hospedagem da web                             | **Feito:** <https://codexveil.vercel.app>, publicado sozinho a cada push em `main` (conferido em 2026-10-18) | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
-| Conta Expo e projeto EAS                      | **Feito:** `@gabriel.xxtth/codexveil`; o workflow roda a cada push (OTA; APK novo só com mudança nativa)     | [DEPLOY](DEPLOY.md#5-app-android-apk-e-aab)        |
-| Firebase (notificações de sessão)             | **Pendente:** projeto Firebase e chave FCM V1 no Expo (passo 0c de PROXIMOS_PASSOS)                          | [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md)              |
-| Domínio próprio                               | Opcional                                                                                                     | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
+| Item                                          | Situação (2026-10-16)                                                                                             | Onde está documentado                              |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Projeto Supabase exclusivo                    | **Feito:** `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`), com as migrações aplicadas                                       | [DEPLOY](DEPLOY.md#1-supabase-projeto-e-migrações) |
+| Site URL e URLs de redirecionamento           | **Feito:** `deploy/supabase/config.toml`                                                                          | [DEPLOY](DEPLOY.md#2-autenticação)                 |
+| SMTP próprio (Brevo) e templates em português | **Parcial (2026-10-18):** SMTP salvo no painel e templates enviados; falta confirmar a entrega e o fluxo pelo app | [DEPLOY](DEPLOY.md#2-autenticação)                 |
+| Hospedagem da web                             | **Feito:** <https://codexveil.vercel.app>, publicado sozinho a cada push em `main` (conferido em 2026-10-18)      | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
+| Conta Expo e projeto EAS                      | **Feito:** `@gabriel.xxtth/codexveil`; o workflow roda a cada push (OTA; APK novo só com mudança nativa)          | [DEPLOY](DEPLOY.md#5-app-android-apk-e-aab)        |
+| Firebase (notificações de sessão)             | **Pendente:** projeto Firebase e chave FCM V1 no Expo (passo 0c de PROXIMOS_PASSOS)                               | [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md)              |
+| Domínio próprio                               | Opcional                                                                                                          | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
 
 ## 2. Critérios de aceitação do MVP (seção 22)
 

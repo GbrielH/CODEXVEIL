@@ -8,7 +8,8 @@
 As fases de 1 a 7 do plano estão implementadas. O MVP está **publicado**: site em
 <https://codexveil.vercel.app>, backend no projeto Supabase `CODEXVEIL` e APK gerado pelo EAS
 (veja [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md)). A API foi validada ao vivo por um teste de
-integração (11/11 em 2026-10-17). A fase 8 continua parcial: faltam o SMTP próprio (adiado), o
+integração (11/11 em 2026-10-17). A fase 8 continua parcial: o SMTP próprio (Brevo) foi ligado em 2026-10-18,
+com os templates em português, mas falta confirmar a entrega e o fluxo pelo app; faltam também o
 uso real no navegador e no aparelho com duas contas, os testes ponta a ponta e as auditorias.
 
 **Em 2026-10-17:** criação de personagens guiada pelas regras do SRD 5.2.1 na web e no app,

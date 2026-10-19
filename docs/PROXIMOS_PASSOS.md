@@ -13,9 +13,9 @@
 | Backend     | **No ar:** Supabase `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`, us-east-2), com as **14 migrações aplicadas** (`supabase db push --dry-run` em 2026-10-18: nada pendente), Site URL e Redirect URLs (`deploy/supabase/config.toml`).                                                                                                                                                                                                                                                                                                           |
 | App Android | **APK atual:** [download](https://expo.dev/artifacts/eas/m0Px-_WnwK0q8a6BOSANOEa1oIJUvajr8DDOeJ279Sk.apk) ([build `e02e7079`](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/e02e7079-2f5c-4da6-b225-2e78522d084a), 2026-10-17, com notificações e imagens). Cada push publica uma **atualização OTA** pelo workflow do EAS (conferido em 2026-10-18); APKs anteriores (`420f6c37`, `de6ceb5c`) não recebem mais atualizações. Todos os builds: <https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds>. |
 | Validação   | Teste ao vivo da API contra o banco real: **11/11 em 2026-10-18** (também 10/10 em 2026-10-16 e 11/11 em 2026-10-17). `pnpm check` 20/20 e `pnpm build` 2/2 em 2026-10-18. **Ninguém usou ainda as telas com duas contas**, e as telas de 2026-10-18 (capa, multiclasse, talentos, livros, dados por sessão) não foram abertas no navegador nem no celular.                                                                                                                                                                             |
-| E-mail      | **Adiado:** o SMTP próprio (Brevo) será configurado com um e-mail exclusivo do sistema. Até lá, valem os e-mails padrão do Supabase, em inglês, com as limitações abaixo.                                                                                                                                                                                                                                                                                                                                                               |
+| E-mail      | **SMTP próprio ligado em 2026-10-18:** Brevo, remetente `codexveil@gmail.com`, templates em português enviados. Um e-mail de recuperação de senha foi aceito pelo Supabase; falta confirmar a chegada na caixa de entrada e testar o cadastro com uma conta de fora da organização e a recuperação pelo app.                                                                                                                                                                                                                            |
 
-### Limitações enquanto não houver SMTP próprio
+### Limitações do período sem SMTP próprio (até 2026-10-18; confirmar se sumiram)
 
 - Os e-mails de confirmação e de recuperação só chegam a **membros da organização CODEXVEIL**
   no Supabase. Para testar com duas contas, convide o segundo e-mail para a organização ou use
@@ -137,12 +137,13 @@ marcados e os critérios "Validado na API" e "Falta validar ao vivo" de
 
 ### 3. SMTP próprio e e-mails em português — você e Claude
 
-1. **Você:** crie o e-mail exclusivo do sistema, a conta na Brevo, confirme o remetente, gere
-   uma chave SMTP e preencha o SMTP no painel do Supabase (valores em
-   [`DEPLOY.md`](DEPLOY.md#2-autenticação)).
-2. **Claude:** envia os templates em português
-   (`pnpm exec supabase config push --workdir deploy --project-ref ityfhobhpjzhlkgvjhfb`) e testa
-   cadastro e recuperação de senha pelo site e pelo app.
+1. [x] **Você:** e-mail do sistema (`codexveil@gmail.com`), conta na Brevo, remetente
+       verificado, chave SMTP e SMTP salvo no painel do Supabase (2026-10-18).
+2. [x] **Claude:** templates em português enviados
+       (`pnpm exec supabase config push --workdir deploy --project-ref ityfhobhpjzhlkgvjhfb`,
+       2026-10-18) e pedido de recuperação de senha aceito pela API.
+3. [ ] **Você e Claude:** confirmar a chegada do e-mail, cadastrar uma conta de fora da
+       organização e pedir a recuperação de senha pelo app.
 
 **Pronto quando:** um e-mail de fora da organização receber a confirmação em português e a
 recuperação de senha funcionar a partir do app.
@@ -177,6 +178,19 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-18 — SMTP próprio (Brevo) e e-mails em português
+
+- SMTP salvo no painel do Supabase pelo responsável: Brevo (`smtp-relay.brevo.com:587`),
+  remetente `Codexveil <codexveil@gmail.com>`. Conferido pelo `config diff`.
+- Templates de confirmação, recuperação e troca de e-mail enviados à produção pelo `config push`.
+  A CLI nova recusa `content_path` fora da pasta `deploy`, então os templates foram copiados para
+  `deploy/supabase/templates/`.
+- Teste: pedido de recuperação de senha pela API pública. A primeira tentativa falhou (senha do
+  SMTP errada no painel); depois da correção, o Supabase aceitou o envio. Chegada na caixa de
+  entrada ainda não confirmada.
+- A importação dos livros do usuário para o banco foi interrompida e guardada num `git stash`
+  ("livros importados no Supabase (descartado a pedido em 2026-10-18)"); nada dela foi publicado.
 
 ### 2026-10-17 — condições, listas, diálogos e cobertura do SRD (segunda rodada)
 

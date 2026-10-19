@@ -60,6 +60,11 @@ senha é segredo e não fica no repositório:
 
 Depois do SMTP, rode o `config push` acima para enviar os templates.
 
+**Configurado em 2026-10-18:** remetente `Codexveil <codexveil@gmail.com>` (verificado na
+Brevo), login `bec567001@smtp-brevo.com`, porta 587. Os templates foram enviados no mesmo dia.
+Os arquivos enviados à produção são as cópias em `deploy/supabase/templates/` (a CLI recusa
+caminhos fora da pasta `deploy`); mantenha-as iguais a `supabase/templates/`.
+
 Os templates montam o link como `{{ .SiteURL }}/auth/confirmar?token_hash=…&type=…`, então a
 **Site URL precisa ser exatamente a URL do site**. A rota `/auth/confirmar` valida o token e só
 redireciona para caminhos internos. Ela também aceita o `?code=` dos e-mails padrão (fluxo
