@@ -18,6 +18,8 @@ em [`SECURITY.md`](SECURITY.md).
 
 ## Migrações
 
+| `20261019120000_tormenta20.sql` | Sistema `tormenta20` em `rpg_systems`; `book_entries.kind` aceita `deity` e `equipment`; edição livre em `book_packs` (ex.: "Jogo do Ano"); jogadores leem divindades e equipamento dos livros liberados |
+
 | Arquivo                                       | Conteúdo                                                                                                                                                                                                                    |
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `20261016120000_foundation.sql`               | Esquema `private`, enums, utilitários, `rpg_systems`, `plans`, `user_plans`, `profiles` e criação do perfil no cadastro                                                                                                     |

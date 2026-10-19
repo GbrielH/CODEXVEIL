@@ -81,6 +81,20 @@ as **regras de criação da campanha** (`campaignRulesSchema`, `parseCampaignRul
 `describeCampaignRules`; gravadas em `campaigns.character_rules`) e a licença do conteúdo de
 referência.
 
+### Tormenta20
+
+Segundo sistema (`packages/rpg-systems/src/tormenta20`, exportado em `@codexveil/rpg-systems/tormenta20`):
+atributos (o valor já é o modificador; compra por 10 pontos ou rolagens), as 29 perícias
+(metade do nível + atributo + treino de +2/+4/+6), PV e PM por classe (multiclasse ganha PV de
+nível seguinte), Defesa (10 + Des + armadura + escudo; armadura pesada não soma Des), carga em
+espaços, as 35 condições com os efeitos codificados (penalidades, inclusões e agravamento),
+recursos (PV, PM, T$), ficha de ameaça e regras de campanha. O livro declara as regras como
+Conteúdo Open Game (OGL 1.0a), mas o conteúdo do livro (raças, classes, poderes, magias, deuses,
+equipamento, itens mágicos e ameaças) **não** fica no código: vem do pacote
+`codexveil.tormenta20.book` (`books/pack.ts`) que o usuário gera do próprio exemplar
+(`scripts/books/t20.py` + `t20_pack.py`) e importa em Meus livros; os pacotes de livro guardam o
+sistema em `book_packs.system_id`.
+
 ### Criação guiada de personagens (D&D 5e)
 
 A criação segue os passos do SRD 5.2.1 (classe → origem: antecedente, espécie e idiomas →

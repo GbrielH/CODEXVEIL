@@ -12,6 +12,8 @@ import type { Json, Tables } from '../types.gen';
 export interface BookPackSummary {
   id: string;
   ownerId: string;
+  /** Sistema de RPG do livro (`dnd5e`, `tormenta20`). */
+  systemId: string;
   bookKey: string;
   name: string;
   category: string;
@@ -33,11 +35,11 @@ export interface BookEntryRow {
   sortOrder: number;
 }
 
-const PACK_COLUMNS = 'id, owner_id, book_key, name, category, edition, origin, entry_counts, is_ready, updated_at' as const;
+const PACK_COLUMNS = 'id, owner_id, system_id, book_key, name, category, edition, origin, entry_counts, is_ready, updated_at' as const;
 
 type PackRow = Pick<
   Tables<'book_packs'>,
-  'id' | 'owner_id' | 'book_key' | 'name' | 'category' | 'edition' | 'origin' | 'entry_counts' | 'is_ready' | 'updated_at'
+  'id' | 'owner_id' | 'system_id' | 'book_key' | 'name' | 'category' | 'edition' | 'origin' | 'entry_counts' | 'is_ready' | 'updated_at'
 >;
 
 function toPack(row: PackRow): BookPackSummary {
@@ -48,6 +50,7 @@ function toPack(row: PackRow): BookPackSummary {
   return {
     id: row.id,
     ownerId: row.owner_id,
+    systemId: row.system_id,
     bookKey: row.book_key,
     name: row.name,
     category: row.category,
@@ -192,6 +195,8 @@ export async function getBookEntry(client: CodexveilClient, packId: string, kind
 // ----------------------------------------------------------------------------- Importação
 
 export interface BookImportInput {
+  /** Sistema do pacote; padrão `dnd5e` (pacotes antigos). */
+  systemId?: string;
   book: { id: string; name: string; category: string; edition: string; origin: string };
   entries: readonly { kind: string; key: string; name: string; data: unknown }[];
 }
@@ -217,6 +222,7 @@ export async function importBookPack(
   const { data: pack, error } = await client
     .from('book_packs')
     .insert({
+      system_id: input.systemId ?? 'dnd5e',
       book_key: input.book.id,
       name: input.book.name,
       category: input.book.category,

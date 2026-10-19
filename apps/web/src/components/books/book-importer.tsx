@@ -1,7 +1,8 @@
 'use client';
 
 import { importBookPack } from '@codexveil/database';
-import { bookEntryKindLabels, parseBookPack, type BookEntryKind, type BookPack, type BookPackIssue } from '@codexveil/rpg-systems/dnd5e';
+import { bookEntryKindLabels, parseBookPack, type BookPackIssue } from '@codexveil/rpg-systems/dnd5e';
+import { T20_BOOK_PACK_FORMAT, parseT20BookPack, t20BookEntryKindLabels } from '@codexveil/rpg-systems/tormenta20';
 import { FileUp, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
@@ -10,16 +11,38 @@ import { Button } from '@/components/ui/button';
 import { failureMessage } from '@/lib/client-errors';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
+/** Pacote lido, de qualquer sistema: o que a tela e a importação precisam. */
+interface AnyPack {
+  systemId: string;
+  book: { id: string; name: string; category: string; edition: string; origin: string };
+  entries: readonly { kind: string; key: string; name: string; data: unknown }[];
+}
+
 type State =
   | { step: 'idle' }
-  | { step: 'ready'; fileName: string; pack: BookPack; issues: BookPackIssue[]; replaces: boolean }
+  | { step: 'ready'; fileName: string; pack: AnyPack; issues: BookPackIssue[]; replaces: boolean }
   | { step: 'importing'; fileName: string; done: number; total: number }
   | { step: 'error'; message: string };
 
-function counts(pack: BookPack): [BookEntryKind, number][] {
-  const map = new Map<BookEntryKind, number>();
+function counts(pack: AnyPack): [string, number][] {
+  const map = new Map<string, number>();
   for (const entry of pack.entries) map.set(entry.kind, (map.get(entry.kind) ?? 0) + 1);
   return [...map];
+}
+
+function kindLabel(systemId: string, kind: string): string {
+  const labels: Record<string, { many: string }> = systemId === 'tormenta20' ? t20BookEntryKindLabels : bookEntryKindLabels;
+  return labels[kind]?.many ?? kind;
+}
+
+/** Lê o pacote conforme o formato: D&D 5e (`codexveil.dnd5e.book`) ou Tormenta20. */
+function readPack(input: unknown): { pack: AnyPack; issues: BookPackIssue[] } {
+  if (input && typeof input === 'object' && (input as { format?: unknown }).format === T20_BOOK_PACK_FORMAT) {
+    const parsed = parseT20BookPack(input);
+    return { pack: { systemId: 'tormenta20', book: parsed.pack.book, entries: parsed.pack.entries }, issues: parsed.issues };
+  }
+  const parsed = parseBookPack(input);
+  return { pack: { systemId: 'dnd5e', book: parsed.pack.book, entries: parsed.pack.entries }, issues: parsed.issues };
 }
 
 /**
@@ -33,7 +56,7 @@ export function BookImporter({ userId, existingKeys }: { userId: string; existin
 
   const read = async (file: File) => {
     try {
-      const parsed = parseBookPack(JSON.parse(await file.text()) as unknown);
+      const parsed = readPack(JSON.parse(await file.text()) as unknown);
       setState({ step: 'ready', fileName: file.name, pack: parsed.pack, issues: parsed.issues, replaces: existingKeys.includes(parsed.pack.book.id) });
     } catch (error) {
       setState({ step: 'error', message: error instanceof SyntaxError ? 'O arquivo não é um JSON válido.' : failureMessage(error, 'Este arquivo não é um pacote de livro do Codexveil.') });
@@ -47,7 +70,7 @@ export function BookImporter({ userId, existingKeys }: { userId: string; existin
     const { pack, fileName } = state;
     setState({ step: 'importing', fileName, done: 0, total: pack.entries.length });
     try {
-      await importBookPack(getSupabaseBrowserClient(), userId, pack, (done, total) => setState({ step: 'importing', fileName, done, total }));
+      await importBookPack(getSupabaseBrowserClient(), userId, { systemId: pack.systemId, book: pack.book, entries: pack.entries }, (done, total) => setState({ step: 'importing', fileName, done, total }));
       setState({ step: 'idle' });
       router.refresh();
     } catch (error) {
@@ -84,7 +107,7 @@ export function BookImporter({ userId, existingKeys }: { userId: string; existin
           <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-fg-secondary">
             {counts(state.pack).map(([kind, total]) => (
               <li key={kind}>
-                {bookEntryKindLabels[kind].many}: <strong className="text-fg">{total}</strong>
+                {kindLabel(state.pack.systemId, kind)}: <strong className="text-fg">{total}</strong>
               </li>
             ))}
           </ul>

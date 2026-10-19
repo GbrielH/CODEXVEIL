@@ -94,8 +94,8 @@ describe('acesso anônimo', () => {
   });
 
   it('pode listar os sistemas de RPG suportados', async () => {
-    const systems = await db.as(anon, (s) => s.query(`select id from public.rpg_systems`));
-    expect(systems).toEqual([{ id: 'dnd5e' }]);
+    const systems = await db.as(anon, (s) => s.query(`select id from public.rpg_systems order by id`));
+    expect(systems).toEqual([{ id: 'dnd5e' }, { id: 'tormenta20' }]);
   });
 });
 

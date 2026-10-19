@@ -44,4 +44,9 @@ repositório. Gere tudo numa pasta fora do projeto (por exemplo, `Documents/Code
    magias, talentos e itens). Scripts: `spells.py`, `subclasses.py`, `feats_items.py`,
    `backgrounds.py`, `races_ocr.py`. O id do pacote é o do livro oficial: é ele que a campanha marca.
 
+9. **Tormenta20** (`T20.pdf`, texto selecionável): `layout.py` → `layout/T20.jsonl`, depois
+   `python -X utf8 scripts/books/t20.py <saída>/layout/T20.jsonl <saída>/out/t20.json` e
+   `python -X utf8 scripts/books/t20_pack.py <saída>/out/t20.json <saída>/out/t20-jda.book.json`.
+   O pacote (`codexveil.tormenta20.book`) é importado em Meus livros como os de D&D.
+
 Veja o andamento e o que falta em `docs/PROXIMOS_PASSOS.md` ("Continuidade").

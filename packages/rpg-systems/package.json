@@ -2,11 +2,12 @@
   "name": "@codexveil/rpg-systems",
   "version": "0.0.0",
   "private": true,
-  "description": "Arquitetura de sistemas de RPG do Codexveil e módulos de cada sistema (D&D 5e SRD 5.2).",
+  "description": "Arquitetura de sistemas de RPG do Codexveil e módulos de cada sistema (D&D 5e SRD 5.2 e Tormenta20).",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./dnd5e": "./src/dnd5e/index.ts"
+    "./dnd5e": "./src/dnd5e/index.ts",
+    "./tormenta20": "./src/tormenta20/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

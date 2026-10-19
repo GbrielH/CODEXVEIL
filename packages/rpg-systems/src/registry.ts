@@ -3,15 +3,17 @@
  * tabela `rpg_systems` do banco (a chave estrangeira impede sistemas desconhecidos).
  */
 import { dnd5eSystem } from './dnd5e';
+import { tormenta20System } from './tormenta20';
 import type { CharacterSummary, RpgSystem } from './types';
 
-export const SYSTEM_IDS = ['dnd5e'] as const;
+export const SYSTEM_IDS = ['dnd5e', 'tormenta20'] as const;
 export type SystemId = (typeof SYSTEM_IDS)[number];
 
 export const DEFAULT_SYSTEM_ID: SystemId = 'dnd5e';
 
 const systems: Record<SystemId, RpgSystem> = {
   dnd5e: dnd5eSystem,
+  tormenta20: tormenta20System,
 };
 
 export function isSystemId(value: string): value is SystemId {

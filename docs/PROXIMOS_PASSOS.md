@@ -234,6 +234,20 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-19 — Tormenta20: extração do livro e núcleo do sistema (marco 1 de 7)
+
+- Extração completa do Tormenta20 Jogo do Ano (`scripts/books/t20.py`): 17 raças, 14 classes
+  (com tabela, habilidades e 241 poderes), 33 origens, 20 deuses, 29 perícias, 162 poderes gerais,
+  196 magias, 47 armas, 12 armaduras/escudos, 121 itens, 31 melhorias, 76 ameaças e 4 perigos,
+  35 condições e 191 itens mágicos. Pacote `t20-jda.book.json` (`t20_pack.py`) com 1.219
+  entradas e 0 erros no validador. Fica fora do Git.
+- Núcleo `tormenta20` em `@codexveil/rpg-systems` (regras, ficha, derivados, condições,
+  recursos, ameaça, regras de campanha, formato do pacote) com 8 testes; registrado como sistema.
+- Migração `20261019120000_tormenta20.sql` aplicada em produção (dry-run conferido antes).
+- Meus livros importa pacotes de D&D e de Tormenta20 (o sistema vai em `book_packs.system_id`).
+- Próximos marcos: campanha T20 e leitor do livro; criação de personagem; ficha e jogo; subida de
+  nível; app; mestre (ameaças e combate).
+
 ### 2026-10-19 — idiomas das raças e antecedentes dos livros de 2014
 
 - Raças com o traço "Idiomas" (Livro do Jogador 2014) dão os próprios idiomas no lugar dos dois
