@@ -26,6 +26,8 @@ import {
   t20EligibleDeities,
   t20EquipmentOptions,
   t20FinalAttributes,
+  isT20AttributeIncrease,
+  t20CreationFeatureChoices,
   t20GenericPowerGroups,
   t20GenericPowerOptions,
   t20GrantedPowers,
@@ -93,7 +95,7 @@ export function T20MobileWizard({ campaign, sources }: { campaign: T20MobileCamp
   const origin = findT20Origin(content, draft.originId);
   const attrs = t20FinalAttributes(content, draft);
   const powerLevels = klass ? t20PowerLevels(klass, draft.level) : [];
-  const steps = T20_STEPS.filter((entry) => (entry === 'magias' ? Boolean(klass?.spellcasting) : entry === 'poderes' ? powerLevels.length > 0 || !klass : true));
+  const steps = T20_STEPS.filter((entry) => (entry === 'magias' ? Boolean(klass?.spellcasting) : entry === 'poderes' ? powerLevels.length > 0 || t20CreationFeatureChoices(content, draft).length > 0 || !klass : true));
   const index = steps.indexOf(step);
   const stepIssues = (target: T20Step) => issues.filter((issue) => issue.step === target);
   const showErrors = attempted.has(step) || step === 'revisao';
@@ -396,19 +398,38 @@ export function T20MobileWizard({ campaign, sources }: { campaign: T20MobileCamp
         <View style={{ gap: spacing[3] }}>
           {powerLevels.map((level) => {
             const others = t20DraftPowerNames(content, { ...draft, levelPowers: Object.fromEntries(Object.entries(draft.levelPowers).filter(([key]) => key !== String(level))) });
+            const chosen = content.powers.find((power) => power.id === draft.levelPowers[String(level)]);
             return (
+              <View key={level} style={{ gap: spacing[2] }}>
               <PickerField
-                key={level}
                 label={`Poder do ${level}º nível`}
                 value={draft.levelPowers[String(level)] ?? ''}
                 onChange={(value) => update({ levelPowers: { ...draft.levelPowers, [String(level)]: value } })}
                 options={t20PowerOptions(content, draft).map((power) => {
                   const problems = t20PrerequisiteProblems(power.prerequisite, { attributes: attrs, skills: t20TrainedSkills(content, draft), level, powers: others, content });
-                  return { value: power.id, label: power.name, description: problems.length ? `Falta ${problems.join(', ')}` : clip(power.text, 140), disabled: problems.length > 0 || others.includes(power.name) };
+                  return { value: power.id, label: power.name, description: problems.length ? `Falta ${problems.join(', ')}` : clip(power.text, 140), disabled: problems.length > 0 || (!isT20AttributeIncrease(power.name) && others.includes(power.name)) };
                 })}
               />
+              {chosen && isT20AttributeIncrease(chosen.name) ? (
+                <PickerField
+                  label={`Atributo que aumenta no ${level}º nível (+1)`}
+                  value={draft.levelPowerAttributes[String(level)] ?? ''}
+                  onChange={(value) => update({ levelPowerAttributes: { ...draft.levelPowerAttributes, [String(level)]: value as T20Attribute } })}
+                  options={T20_ATTRIBUTES.map((key) => ({ value: key, label: t20AttributeLabels[key].name }))}
+                />
+              ) : null}
+              </View>
             );
           })}
+          {t20CreationFeatureChoices(content, draft).map((choice) => (
+            <PickerField
+              key={choice.key}
+              label={`${choice.ability} (${choice.level}º nível): escolha`}
+              value={draft.featureChoices[choice.key] ?? ''}
+              onChange={(value) => update({ featureChoices: { ...draft.featureChoices, [choice.key]: value } })}
+              options={choice.options.map((option) => ({ value: option.id, label: option.name, description: clip(option.text, 140) }))}
+            />
+          ))}
         </View>
       ) : null}
 

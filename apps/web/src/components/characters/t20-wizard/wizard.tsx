@@ -27,6 +27,8 @@ import {
   t20EligibleDeities,
   t20EquipmentOptions,
   t20FinalAttributes,
+  isT20AttributeIncrease,
+  t20CreationFeatureChoices,
   t20GenericPowerGroups,
   t20GenericPowerOptions,
   t20GrantedPowers,
@@ -111,7 +113,7 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
 
   const steps = T20_STEPS.filter((entry) => {
     if (entry === 'magias') return Boolean(klass?.spellcasting);
-    if (entry === 'poderes') return powerLevels.length > 0 || !klass;
+    if (entry === 'poderes') return powerLevels.length > 0 || t20CreationFeatureChoices(content, draft).length > 0 || !klass;
     return true;
   });
   const index = steps.indexOf(step);
@@ -431,7 +433,7 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                       <option value="">Escolha</option>
                       {t20PowerOptions(content, draft).map((power) => {
                         const problems = t20PrerequisiteProblems(power.prerequisite, { attributes: finalAttributes, skills: t20TrainedSkills(content, draft), level, powers: others, content });
-                        const taken = others.some((name) => plainT20(name) === plainT20(power.name));
+                        const taken = !isT20AttributeIncrease(power.name) && others.some((name) => plainT20(name) === plainT20(power.name));
                         return (
                           <option key={power.id} value={power.id} disabled={taken || problems.length > 0}>
                             {power.name}
@@ -442,9 +444,42 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                       })}
                     </SelectField>
                     {chosen ? <p className="text-xs whitespace-pre-line text-fg-muted">{chosen.text}</p> : null}
+                    {chosen && isT20AttributeIncrease(chosen.name) ? (
+                      <SelectField
+                        id={`t20-power-attr-${level}`}
+                        label={`Atributo que aumenta no ${level}º nível (+1)`}
+                        value={draft.levelPowerAttributes[String(level)] ?? ''}
+                        onChange={(event) => update({ levelPowerAttributes: { ...draft.levelPowerAttributes, [String(level)]: event.target.value as T20Attribute } })}
+                      >
+                        <option value="">Escolha</option>
+                        {T20_ATTRIBUTES.map((key) => (
+                          <option key={key} value={key}>
+                            {t20AttributeLabels[key].name}
+                          </option>
+                        ))}
+                      </SelectField>
+                    ) : null}
                   </div>
                 );
               })}
+              {t20CreationFeatureChoices(content, draft).map((choice) => (
+                <div key={choice.key} className="flex flex-col gap-1">
+                  <SelectField
+                    id={`t20-feature-${choice.key}`}
+                    label={`${choice.ability} (${choice.level}º nível): escolha`}
+                    value={draft.featureChoices[choice.key] ?? ''}
+                    onChange={(event) => update({ featureChoices: { ...draft.featureChoices, [choice.key]: event.target.value } })}
+                    error={errorFor(`featureChoices.${choice.key}`)}
+                  >
+                    <option value="">Escolha</option>
+                    {choice.options.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.name}
+                      </option>
+                    ))}
+                  </SelectField>
+                </div>
+              ))}
             </div>
           ) : null}
 

@@ -282,6 +282,9 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-20 (auditoria T20):** correções do QA conferidas contra todas as classes e origens
+  do livro (script local sobre o pacote `t20-jda`); Cavaleiro, Caçador e criação acima do 1º nível
+  corrigidos; 4 testes em `level-up.test.ts`. Pendente: Especialista do Ladino.
 - **2026-10-20 (QA T20, parte 2):** itens 4 a 7 feitos; lista do QA concluída (`pnpm check`
   20/20; sem teste no navegador nem no aparelho). Próximo: testes manuais do T20 e item 11
   (tradução do SRD e assistente de IA). Adiados: [`MELHORIAS_FUTURAS.md`](MELHORIAS_FUTURAS.md).

@@ -114,6 +114,15 @@ seletor Desvantagem/Normal/Vantagem nas abas Jogo e Perícias (2d20, maior ou me
 com carga em espaços, categorias, equipar, quantidade (+/−) e, no site, adicionar/editar/excluir.
 Armas e armaduras novas gravam os espaços do livro. Site e app.
 
+Auditoria em todas as classes e origens do livro (2026-10-20): as 5 origens com poder genérico
+(Capanga, Gladiador, Guarda, Soldado: combate; Assistente de Laboratório: Tormenta) abrem a
+escolha; "Aumento de Atributo" existe em todas as classes e níveis de poder; habilidades com
+escolha cobertas: Paladino (Bênção da Justiça), Cavaleiro (Caminho do Cavaleiro: Bastião ou
+Montaria) e Caçador (Explorador: terreno, de novo no 7º, 11º, 15º e 19º pela tabela). A subida de
+nível mostra a linha da tabela do nível (Fúria +3, Inspiração +2…). A criação acima do 1º nível
+também pede essas escolhas e o atributo de cada Aumento de Atributo. Pendente conhecido:
+Especialista do Ladino (escolher perícias no 1º nível) ainda só aparece como texto.
+
 ### Estado em 2026-10-20 (feito e publicado)
 
 - Tormenta20: marcos 1 a 7 em versão 1 (criação, ficha, subida de nível no site e no app, ameaças
@@ -397,6 +406,11 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-20 — QA do Tormenta20 (auditoria geral)
+
+- Correções aplicadas a todas as classes e origens, não só ao Paladino: Cavaleiro e Caçador,
+  repetição de habilidades pela tabela e escolhas na criação acima do 1º nível. `pnpm check` 20/20.
 
 ### 2026-10-20 — QA do Tormenta20 (parte 2)
 

@@ -103,6 +103,7 @@ function Panel({ characterId, content, sheet, version, resources, onDone, onClos
       <p className="text-sm text-fg-secondary">
         +{hitPointsGained} PV e +{plan.manaPointsGained} PM.
       </p>
+      {plan.tableText ? <p className="text-sm text-fg-secondary">Neste nível (tabela da classe): {plan.tableText}.</p> : null}
       {plan.abilities.length ? (
         <div className="flex flex-col gap-2">
           <h3 className="text-sm font-semibold tracking-wider text-fg-muted uppercase">Habilidades novas</h3>

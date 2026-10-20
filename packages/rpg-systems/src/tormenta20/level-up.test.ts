@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildT20Content } from './content';
+import { createT20Draft, t20CreationFeatureChoices, t20FinalAttributes } from './creation';
 import { applyT20LevelUp, planT20LevelUp } from './level-up';
 import { createDefaultT20Sheet, parseT20Sheet } from './sheet';
 
@@ -17,6 +18,18 @@ const content = buildT20Content([
           pmPerLevel: 3,
           abilities: [{ name: 'Bênção da Justiça', text: 'No 5º nível, escolha entre égide sagrada e montaria sagrada. Uma vez feita, esta escolha não pode ser mudada.', level: 5 }],
           table: { '4': 'Poder de paladino', '5': 'Bênção da justiça, poder de paladino' },
+        },
+      },
+      {
+        kind: 'class',
+        key: 'cacador',
+        name: 'Caçador',
+        data: {
+          pvInitial: 16,
+          pvPerLevel: 4,
+          pmPerLevel: 4,
+          abilities: [{ name: 'Explorador', text: 'No 3º nível, escolha um tipo de terreno entre aquático, floresta ou urbano. A cada quatro níveis, escolha outro.', level: 3 }],
+          table: { '3': 'Explorador, poder de caçador', '7': 'Explorador, poder de caçador' },
         },
       },
       { kind: 'feat', key: 'aumento', name: 'Aumento de Atributo', data: { group: 'classe', owners: ['Paladino'], text: 'Você recebe +1 em um atributo.' } },
@@ -55,5 +68,24 @@ describe('Tormenta20 — subida de nível', () => {
     const result = applyT20LevelUp(sheet, plan, { powerId: power.id, spellIds: [], attribute: 'for', featureChoices: { 'Bênção da Justiça': egide.id } });
     expect(result.issues).toEqual([]);
     expect(result.abilities.some((ability) => ability.name === 'Égide Sagrada')).toBe(true);
+  });
+
+  it('opções que não são poderes (terreno do Explorador) e repetição pela tabela', () => {
+    const cacador = content.classes.find((klass) => klass.name === 'Caçador')!;
+    const base = createDefaultT20Sheet();
+    const sheet = parseT20Sheet({ ...base, identity: { ...base.identity, classes: [{ key: cacador.id, name: 'Caçador', level: 6 }] } });
+    const plan = planT20LevelUp(content, sheet);
+    expect(plan.featureChoices[0]?.options.map((option) => option.name)).toEqual(['Explorador (Aquático)', 'Explorador (Floresta)', 'Explorador (Urbano)']);
+    const result = applyT20LevelUp(sheet, plan, { powerId: '', spellIds: [], featureChoices: { Explorador: plan.featureChoices[0]!.options[1]!.id } });
+    expect(result.abilities.map((ability) => ability.name)).toContain('Explorador (Floresta)');
+    expect(result.sheet.powers.some((power) => power.name.startsWith('Explorador'))).toBe(false);
+  });
+
+  it('criação acima do 1º nível pede as escolhas de habilidade e soma o Aumento de Atributo', () => {
+    const paladino = content.classes.find((klass) => klass.name === 'Paladino')!;
+    const aumento = content.powers.find((power) => power.name === 'Aumento de Atributo')!;
+    const draft = { ...createT20Draft(5), classId: paladino.id, levelPowers: { '4': aumento.id }, levelPowerAttributes: { '4': 'car' as const } };
+    expect(t20CreationFeatureChoices(content, draft).map((choice) => choice.key)).toEqual(['5:Bênção da Justiça']);
+    expect(t20FinalAttributes(content, draft).car).toBe(t20FinalAttributes(content, { ...draft, levelPowerAttributes: {} }).car + 1);
   });
 });

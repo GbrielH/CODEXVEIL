@@ -123,7 +123,8 @@ export function t20GrantedPowers(content: T20Content, deityName: string) {
 /** Opções de uma habilidade de classe com escolha: as `options` do livro ou "escolha entre X e Y" no texto. */
 export function t20AbilityChoiceNames(ability: { text: string; options?: { name: string }[] }): string[] {
   if (ability.options?.length) return ability.options.map((option) => option.name);
-  const match = /escolha entre ([^.;:]+?)(?:\.|;|:|$)/i.exec(ability.text);
+  // "escolha entre X e Y" ou "escolha um tipo de terreno entre A, B ou C".
+  const match = /escolha (?:[^.;:]{0,40}? )?entre ([^.;:]+?)(?:\.|;|:|$)/i.exec(ability.text);
   if (!match?.[1]) return [];
   return match[1]
     .split(/,\s*|\s+e\s+|\s+ou\s+/)
@@ -144,4 +145,37 @@ export function t20AbilityCost(ability: { kind: string; description?: string | n
   if (ability.kind === 'spell') return data?.cost ?? 1;
   const match = /(\d+)\s*PM\b/.exec(ability.description ?? '');
   return match ? Number(match[1]) : 0;
+}
+
+/** Nome do poder que pede a escolha de um atributo. */
+export const T20_ATTRIBUTE_INCREASE = 'Aumento de Atributo';
+
+export function isT20AttributeIncrease(name: string): boolean {
+  return plainT20(name.replace(/\s*\(.*\)$/, '')) === plainT20(T20_ATTRIBUTE_INCREASE);
+}
+
+export interface T20FeatureChoice {
+  ability: string;
+  options: { id: string; name: string; text: string }[];
+}
+
+/**
+ * Habilidades com escolha que a classe ganha num nível: as do próprio nível e as que a tabela
+ * repete (ex.: Explorador do Caçador no 7º, 11º…). Opções que são poderes usam o poder; as outras
+ * (ex.: tipos de terreno) viram "Explorador (Floresta)" com o texto da habilidade.
+ */
+export function t20FeatureChoicesAt(content: T20Content, klass: T20Item<'class'> | null, classLevel: number): T20FeatureChoice[] {
+  if (!klass) return [];
+  const tableNames = (klass.table[String(classLevel)] ?? '').split(',').map((segment) => plainT20(segment.replace(/\s*[(+−-].*$/, '').trim()));
+  return klass.abilities
+    .filter((ability) => !/^poder de /i.test(ability.name) && (ability.level === classLevel || (ability.level < classLevel && tableNames.includes(plainT20(ability.name)))))
+    .map((ability) => ({
+      ability: ability.name,
+      options: t20AbilityChoiceNames(ability).map((name) => {
+        const power = content.powers.find((entry) => plainT20(entry.name) === plainT20(name) && entry.owners.some((owner) => plainT20(owner) === plainT20(klass.name)));
+        const label = name.charAt(0).toUpperCase() + name.slice(1);
+        return { id: power?.id ?? `opcao:${plainT20(name)}`, name: power?.name ?? `${ability.name} (${label})`, text: power?.text ?? ability.text };
+      }),
+    }))
+    .filter((choice) => choice.options.length > 1);
 }

@@ -4,7 +4,7 @@
  * magias novas. A tela mostra o plano; `applyT20LevelUp` monta a ficha e as entradas novas.
  */
 import type { AbilityEntryTemplate } from '../types';
-import { findT20Class, plainT20, t20AbilityChoiceNames, t20ChoiceOnlyPowers, type T20Content, type T20Item } from './content';
+import { findT20Class, isT20AttributeIncrease, plainT20, t20ChoiceOnlyPowers, t20FeatureChoicesAt, type T20Content, type T20FeatureChoice, type T20Item } from './content';
 import { t20MaxCircle, t20PrerequisiteProblems } from './creation';
 import { T20_ATTRIBUTES, type T20Attribute } from './attributes';
 import { t20Tier } from './progression';
@@ -25,17 +25,14 @@ export interface T20LevelUpPlan {
   newSpells: number;
   spellOptions: T20Item<'spell'>[];
   /** Habilidades do nível com escolha ("escolha entre égide sagrada e montaria sagrada"). */
-  featureChoices: { ability: string; options: { id: string; name: string; text: string }[] }[];
+  featureChoices: T20FeatureChoice[];
   /** Atributos que já receberam "Aumento de Atributo" neste patamar (não podem repetir). */
   blockedAttributes: T20Attribute[];
+  /** Linha da tabela da classe neste nível (ex.: "Fúria +3, poder de bárbaro"). */
+  tableText: string;
 }
 
-/** Nome do poder que pede a escolha de um atributo. */
-export const T20_ATTRIBUTE_INCREASE = 'Aumento de Atributo';
 
-export function isT20AttributeIncrease(name: string): boolean {
-  return plainT20(name.replace(/\s*\(.*\)$/, '')) === plainT20(T20_ATTRIBUTE_INCREASE);
-}
 
 
 
@@ -84,16 +81,8 @@ export function planT20LevelUp(content: T20Content, sheet: T20Sheet, classIndex 
         )
       : [];
   const levelAbilities = klass ? klass.abilities.filter((ability) => ability.level === newClassLevel && !/^poder de /i.test(ability.name)) : [];
-  const featureChoices = levelAbilities
-    .map((ability) => ({
-      ability: ability.name,
-      options: t20AbilityChoiceNames(ability).map((name) => {
-        const power = content.powers.find((entry) => plainT20(entry.name) === plainT20(name) && (!klass || entry.owners.some((owner) => plainT20(owner) === plainT20(klass.name))));
-        const label = name.charAt(0).toUpperCase() + name.slice(1);
-        return { id: power?.id ?? `opcao:${plainT20(name)}`, name: power?.name ?? label, text: power?.text ?? '' };
-      }),
-    }))
-    .filter((choice) => choice.options.length > 1);
+  const tableText = klass?.table[String(newClassLevel)] ?? '';
+  const featureChoices = t20FeatureChoicesAt(content, klass, newClassLevel);
   const tier = t20Tier(newTotalLevel);
   const blockedAttributes = T20_ATTRIBUTES.filter((attribute) =>
     sheet.powers.some((power) => isT20AttributeIncrease(power.name) && power.attribute === attribute && t20Tier(power.level) === tier),
@@ -112,6 +101,7 @@ export function planT20LevelUp(content: T20Content, sheet: T20Sheet, classIndex 
     spellOptions,
     featureChoices,
     blockedAttributes,
+    tableText,
   };
 }
 
@@ -153,7 +143,7 @@ export function applyT20LevelUp(sheet: T20Sheet, plan: T20LevelUpPlan, choices: 
   const powerName = power ? (increase ? `${power.name} (${attributeNames[increase]})` : power.name) : '';
   // +1 em Constituição vale para todos os níveis: +1 PV por nível de personagem.
   const conBonus = increase === 'con' ? plan.newTotalLevel : 0;
-  const featurePowers = picked.flatMap(({ option }) => (option ? [{ key: option.id, name: option.name, source, level: plan.newTotalLevel }] : []));
+  const featurePowers = picked.flatMap(({ option }) => (option && !option.id.startsWith('opcao:') ? [{ key: option.id, name: option.name, source, level: plan.newTotalLevel }] : []));
   const next: T20Sheet = {
     ...sheet,
     identity: { ...sheet.identity, classes },

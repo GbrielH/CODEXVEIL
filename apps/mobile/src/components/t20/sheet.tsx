@@ -457,6 +457,7 @@ function LevelUpModal({ content, sheet, onClose, onApply }: { content: ReturnTyp
         <AppText>
           +{preview.sheet.hitPoints.max - sheet.hitPoints.max} PV e +{plan.manaPointsGained} PM.
         </AppText>
+        {plan.tableText ? <AppText variant="small">Neste nível (tabela da classe): {plan.tableText}.</AppText> : null}
         {plan.abilities.map((ability) => (
           <Card key={ability.name}>
             <AppText style={{ fontFamily: fonts.sansMedium }}>{ability.name}</AppText>

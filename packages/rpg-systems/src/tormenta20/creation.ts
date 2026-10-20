@@ -23,7 +23,10 @@ import {
   findT20PowerByName,
   findT20Race,
   plainT20,
+  isT20AttributeIncrease,
   t20ChoiceOnlyPowers,
+  t20FeatureChoicesAt,
+  type T20FeatureChoice,
   t20ClassPowers,
   t20GeneralPowers,
   t20GrantedPowers,
@@ -31,7 +34,7 @@ import {
   type T20Item,
 } from './content';
 import { t20HitPointsFor, t20ManaPointsFor } from './derived';
-import { T20_STARTING_MONEY } from './progression';
+import { T20_STARTING_MONEY, t20Tier } from './progression';
 import { t20DefaultResources } from './resources';
 import { parseT20Sheet, type T20Sheet } from './sheet';
 import { T20_SKILLS, T20_SKILL_IDS, t20SkillFromName, type T20Skill } from './skills';
@@ -91,6 +94,10 @@ export interface T20Draft {
   grantedPowerId: string;
   /** Poder escolhido em cada nível com "Poder de <classe>" (id do poder). */
   levelPowers: Record<string, string>;
+  /** Nível → atributo do "Aumento de Atributo" escolhido como poder daquele nível. */
+  levelPowerAttributes: Record<string, T20Attribute>;
+  /** `<nível>:<habilidade>` → id da opção (ex.: "5:Bênção da Justiça" → Égide Sagrada). */
+  featureChoices: Record<string, string>;
   spellIds: string[];
   equipment: { simple: string; martial: string; armor: string; shield: boolean };
   /** Dinheiro inicial (4d6 rolado no 1º nível). */
@@ -130,6 +137,8 @@ export function createT20Draft(level = 1, method: T20AttributeMethodChoice = 'po
     deityId: '',
     grantedPowerId: '',
     levelPowers: {},
+    levelPowerAttributes: {},
+    featureChoices: {},
     spellIds: [],
     equipment: { simple: '', martial: '', armor: '', shield: false },
     money: null,
@@ -177,7 +186,30 @@ export function t20RaceModifiers(content: T20Content, draft: T20Draft): Record<T
 export function t20FinalAttributes(content: T20Content, draft: T20Draft): Record<T20Attribute, number> {
   const base = t20BaseAttributes(draft);
   const race = t20RaceModifiers(content, draft);
-  return Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, (base[key] ?? 0) + race[key]])) as Record<T20Attribute, number>;
+  const increases = t20LevelAttributeIncreases(content, draft);
+  return Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, (base[key] ?? 0) + race[key] + increases[key]])) as Record<T20Attribute, number>;
+}
+
+/** +1 de cada "Aumento de Atributo" escolhido como poder de nível na criação. */
+export function t20LevelAttributeIncreases(content: T20Content, draft: T20Draft): Record<T20Attribute, number> {
+  const totals = Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, 0])) as Record<T20Attribute, number>;
+  for (const [level, id] of Object.entries(draft.levelPowers)) {
+    if (Number(level) > draft.level) continue;
+    const power = content.powers.find((entry) => entry.id === id);
+    const attribute = draft.levelPowerAttributes[level];
+    if (power && attribute && isT20AttributeIncrease(power.name)) totals[attribute] += 1;
+  }
+  return totals;
+}
+
+/** Habilidades com escolha de todos os níveis da criação (2º nível em diante). */
+export function t20CreationFeatureChoices(content: T20Content, draft: T20Draft): (T20FeatureChoice & { key: string; level: number })[] {
+  const klass = t20ClassOf(content, draft) ?? null;
+  const list: (T20FeatureChoice & { key: string; level: number })[] = [];
+  for (let level = 2; level <= draft.level; level += 1) {
+    for (const choice of t20FeatureChoicesAt(content, klass, level)) list.push({ ...choice, level, key: `${level}:${choice.ability}` });
+  }
+  return list;
 }
 
 /** Rola 4d6 descartando o menor, seis vezes; repete o menor até a soma dos atributos ser ≥ 6. */
@@ -530,7 +562,23 @@ export function t20DraftIssues(content: T20Content, draft: T20Draft, context: { 
       });
       if (problems.length) add('poderes', `levelPowers.${level}`, `${chosen.name}: falta ${problems.join(', ')}.`);
     }
-    const repeated = Object.values(draft.levelPowers).filter((id, index, all) => all.indexOf(id) !== index);
+    for (const level of t20PowerLevels(klass, draft.level)) {
+      const chosen = content.powers.find((power) => power.id === draft.levelPowers[String(level)]);
+      if (!chosen || !isT20AttributeIncrease(chosen.name)) continue;
+      const attribute = draft.levelPowerAttributes[String(level)];
+      if (!attribute) add('poderes', `levelPowers.${level}`, `Escolha o atributo do Aumento de Atributo do ${level}º nível.`);
+      else {
+        const sameTier = t20PowerLevels(klass, draft.level).filter(
+          (other) => other !== level && t20Tier(other) === t20Tier(level) && draft.levelPowerAttributes[String(other)] === attribute && isT20AttributeIncrease(content.powers.find((power) => power.id === draft.levelPowers[String(other)])?.name ?? ''),
+        );
+        if (sameTier.length) add('poderes', `levelPowers.${level}`, 'Cada atributo só pode receber um Aumento de Atributo por patamar.');
+      }
+    }
+    for (const choice of t20CreationFeatureChoices(content, draft)) {
+      if (!choice.options.some((option) => option.id === draft.featureChoices[choice.key])) add('poderes', `featureChoices.${choice.key}`, `${choice.ability} (${choice.level}º nível): escolha uma opção.`);
+    }
+    // "Aumento de Atributo" pode repetir; os outros poderes, não.
+    const repeated = Object.values(draft.levelPowers).filter((id, index, all) => all.indexOf(id) !== index && !isT20AttributeIncrease(content.powers.find((power) => power.id === id)?.name ?? ''));
     if (repeated.length) add('poderes', 'levelPowers', 'O mesmo poder foi escolhido mais de uma vez.');
   }
 
@@ -597,7 +645,7 @@ export function buildT20Character(content: T20Content, draft: T20Draft, sourcebo
   const shield = draft.equipment.shield ? options.shield : undefined;
   const heavy = armor?.category === 'armaduras pesadas';
 
-  const powerRefs: { key: string; name: string; source: string; level: number }[] = [];
+  const powerRefs: { key: string; name: string; source: string; level: number; attribute?: T20Attribute }[] = [];
   const pushPower = (power: T20Item<'feat'> | undefined, source: string, level: number) => {
     if (power) powerRefs.push({ key: power.id, name: power.name, source, level });
   };
@@ -607,7 +655,20 @@ export function buildT20Character(content: T20Content, draft: T20Draft, sourcebo
   pushPower(content.powers.find((power) => power.id === draft.grantedPowerId), `Devoto de ${deity?.name ?? ''}`, 1);
   pushPower(content.powers.find((power) => power.id === draft.raceSkillPower), `Raça: ${race?.name ?? ''} (Versátil)`, 1);
   for (const [level, id] of Object.entries(draft.levelPowers)) {
-    if (klass && t20PowerLevels(klass, draft.level).includes(Number(level))) pushPower(content.powers.find((power) => power.id === id), `${klass.name} ${level}º nível`, Number(level));
+    if (!klass || !t20PowerLevels(klass, draft.level).includes(Number(level))) continue;
+    const power = content.powers.find((entry) => entry.id === id);
+    const attribute = draft.levelPowerAttributes[level];
+    if (power && attribute && isT20AttributeIncrease(power.name)) {
+      const names: Record<T20Attribute, string> = { for: 'Força', des: 'Destreza', con: 'Constituição', int: 'Inteligência', sab: 'Sabedoria', car: 'Carisma' };
+      powerRefs.push({ key: power.id, name: `${power.name} (${names[attribute]})`, source: `${klass.name} ${level}º nível`, level: Number(level), attribute });
+    } else pushPower(power, `${klass.name} ${level}º nível`, Number(level));
+  }
+  const featurePicks = t20CreationFeatureChoices(content, draft).flatMap((choice) => {
+    const option = choice.options.find((entry) => entry.id === draft.featureChoices[choice.key]);
+    return option ? [{ choice, option }] : [];
+  });
+  for (const { choice, option } of featurePicks) {
+    if (!option.id.startsWith('opcao:')) powerRefs.push({ key: option.id, name: option.name, source: `${klass?.name ?? ''} ${choice.level}º nível (${choice.ability})`, level: choice.level });
   }
 
   const spells = draft.spellIds
@@ -682,6 +743,9 @@ export function buildT20Character(content: T20Content, draft: T20Draft, sourcebo
     const path = klass!.abilities.flatMap((ability) => ability.options).find((option) => plainT20(option.name) === draft.arcanistPath);
     if (path) addAbility({ kind: 'class_feature', name: `Caminho: ${path.name}`, source: klass!.name, description: path.text, data: {} });
   }
+  for (const { choice, option } of featurePicks) {
+    if (option.id.startsWith('opcao:')) addAbility({ kind: 'class_feature', name: option.name, source: `${klass?.name ?? ''} ${choice.level}º nível`, description: option.text, data: { level: choice.level } });
+  }
   if (draft.lineage) {
     const section = klass?.sections.find((entry) => /linhage/i.test(entry.title));
     addAbility({ kind: 'class_feature', name: draft.lineage, source: 'Feiticeiro', description: section?.text ?? '', data: {} });
@@ -753,6 +817,8 @@ const t20DraftSchema = z.object({
   deityId: shortText(160),
   grantedPowerId: shortText(160),
   levelPowers: z.record(z.string().max(4), z.string().trim().max(160)).catch({}),
+  levelPowerAttributes: z.record(z.string().max(4), z.enum(T20_ATTRIBUTES)).catch({}),
+  featureChoices: z.record(z.string().max(220), z.string().trim().max(160)).catch({}),
   spellIds: idList(60),
   equipment: z
     .object({ simple: shortText(160), martial: shortText(160), armor: shortText(160), shield: z.boolean().catch(false) })
