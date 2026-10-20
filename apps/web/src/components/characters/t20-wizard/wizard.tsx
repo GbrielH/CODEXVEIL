@@ -29,6 +29,7 @@ import {
   t20FinalAttributes,
   isT20AttributeIncrease,
   t20CreationFeatureChoices,
+  t20ExpertiseRule,
   t20GenericPowerGroups,
   t20GenericPowerOptions,
   t20GrantedPowers,
@@ -807,6 +808,7 @@ function SkillsStep({
   const all = Object.keys(T20_SKILLS) as T20Skill[];
   const taken = (except: T20Skill[]) => new Set([...granted, ...draft.classSkills, ...draft.intSkills, ...draft.raceSkills].filter((skill) => !except.includes(skill)));
   const versatile = race?.abilities.some((ability) => plainT20(ability.name) === 'versatil');
+  const expertise = t20ExpertiseRule(content, draft);
   const optionsFor = (list: T20Skill[], own: T20Skill[]) => {
     const used = taken(own);
     return list.map((skill) => ({ id: skill, name: T20_SKILLS[skill].label, disabled: used.has(skill) && !own.includes(skill) }));
@@ -843,6 +845,16 @@ function SkillsStep({
           value={draft.classSkills}
           onChange={(classSkills) => update({ classSkills: classSkills as T20Skill[] })}
           error={errorFor('classSkills')}
+        />
+      ) : null}
+      {expertise ? (
+        <MultiPick
+          label={`${expertise.ability}: perícias treinadas (escolha ${expertise.count})`}
+          count={expertise.count}
+          options={t20TrainedSkills(content, draft).map((skill) => ({ id: skill, name: T20_SKILLS[skill].label }))}
+          value={draft.expertSkills.filter((skill) => t20TrainedSkills(content, draft).includes(skill))}
+          onChange={(expertSkills) => update({ expertSkills: expertSkills as T20Skill[] })}
+          error={errorFor('expertSkills')}
         />
       ) : null}
       {finalInt > 0 ? (

@@ -120,8 +120,10 @@ escolha; "Aumento de Atributo" existe em todas as classes e níveis de poder; ha
 escolha cobertas: Paladino (Bênção da Justiça), Cavaleiro (Caminho do Cavaleiro: Bastião ou
 Montaria) e Caçador (Explorador: terreno, de novo no 7º, 11º, 15º e 19º pela tabela). A subida de
 nível mostra a linha da tabela do nível (Fúria +3, Inspiração +2…). A criação acima do 1º nível
-também pede essas escolhas e o atributo de cada Aumento de Atributo. Pendente conhecido:
-Especialista do Ladino (escolher perícias no 1º nível) ainda só aparece como texto.
+também pede essas escolhas e o atributo de cada Aumento de Atributo. Especialista do Ladino:
+a criação pede as perícias treinadas (quantidade = Inteligência, mínimo 1) e a ficha mostra
+"Especialista (Atletismo, …)". App: inventário T20 também adiciona e exclui itens. D&D já tinha
+"Passar rodada" nas condições (site e app).
 
 ### Estado em 2026-10-20 (feito e publicado)
 
@@ -406,6 +408,11 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-20 — Pendências da auditoria
+
+- Especialista do Ladino na criação (site e app); adicionar/excluir itens do T20 no app.
+  `pnpm check` 20/20.
 
 ### 2026-10-20 — QA do Tormenta20 (auditoria geral)
 

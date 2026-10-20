@@ -5,6 +5,7 @@ import {
   createCharacterAbility,
   removeCharacterCondition,
   adjustCharacterItemQuantity,
+  deleteCharacterItem,
   setCharacterItemEquipped,
   tickCharacterConditions,
   saveCharacterSheet,
@@ -44,6 +45,7 @@ import { AppText, Badge, Card } from '@/components/ui/primitives';
 import { Segmented } from '@/components/ui/segmented';
 import { Notice } from '@/components/ui/states';
 import { DiceProvider, useDice } from '@/components/dice/dice';
+import { T20NewItem } from './new-item';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/errors';
 import { getSupabase } from '@/lib/supabase';
@@ -88,6 +90,16 @@ function T20SheetBody(props: Props) {
   const [levelUp, setLevelUp] = useState(false);
   const [condRounds, setCondRounds] = useState('');
   const [items, setItems] = useState(props.items);
+  const [addingItem, setAddingItem] = useState(false);
+  const removeItem = async (item: CharacterItem) => {
+    try {
+      await deleteCharacterItem(getSupabase(), item.id);
+      setItems((current) => current.filter((entry) => entry.id !== item.id));
+      toast({ tone: 'success', title: `${item.name} removido.` });
+    } catch (error) {
+      toast({ tone: 'danger', title: failureMessage(error) });
+    }
+  };
   const usedSpaces = items.reduce((sum, item) => sum + (item.weight ?? 0) * item.quantity, 0);
   const changeQuantity = async (item: CharacterItem, delta: number) => {
     try {
@@ -344,9 +356,16 @@ function T20SheetBody(props: Props) {
               {usedSpaces.toLocaleString('pt-BR')} de {derived.carryCapacity} espaços{usedSpaces > derived.carryCapacity ? ' (sobrecarregado)' : ''}
             </AppText>
           </Card>
+          {props.canEditPlay ? (
+            addingItem ? (
+              <T20NewItem characterId={props.character.id} onCreated={(item) => setItems((current) => [...current, item])} onClose={() => setAddingItem(false)} />
+            ) : (
+              <Button label="Adicionar item" variant="secondary" onPress={() => setAddingItem(true)} />
+            )
+          ) : null}
           {items.length === 0 ? (
             <Card>
-              <AppText variant="small">Sem itens. Adicione itens pela ficha no site.</AppText>
+              <AppText variant="small">Mochila vazia.</AppText>
             </Card>
           ) : null}
           {groupByCategory(items).map((group) => (
@@ -369,6 +388,7 @@ function T20SheetBody(props: Props) {
                       <Button label="−" variant="ghost" compact disabled={item.quantity <= 0} onPress={() => void changeQuantity(item, -1)} />
                       <AppText>{item.quantity}</AppText>
                       <Button label="+" variant="ghost" compact onPress={() => void changeQuantity(item, 1)} />
+                      <Button label="Excluir" variant="ghost" compact onPress={() => void removeItem(item)} />
                     </>
                   ) : (
                     <AppText>× {item.quantity}</AppText>

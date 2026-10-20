@@ -81,6 +81,8 @@ export interface T20Draft {
   classFixedChoices: T20Skill[];
   classSkills: T20Skill[];
   intSkills: T20Skill[];
+  /** Habilidade "escolha um número de perícias treinadas igual a sua X" (Especialista do Ladino). */
+  expertSkills: T20Skill[];
   arcanistPath: T20ArcanistPath | '';
   /** Feiticeiro: linhagem escolhida (Dracônica, Feérica, Rubra…). */
   lineage: string;
@@ -128,6 +130,7 @@ export function createT20Draft(level = 1, method: T20AttributeMethodChoice = 'po
     classFixedChoices: [],
     classSkills: [],
     intSkills: [],
+    expertSkills: [],
     arcanistPath: '',
     lineage: '',
     spellSchools: [],
@@ -318,6 +321,26 @@ export function t20GrantedSkills(content: T20Content, draft: T20Draft): T20Skill
 }
 
 /** Todas as perícias treinadas do rascunho. */
+const ATTRIBUTE_BY_WORD: Record<string, T20Attribute> = { forca: 'for', destreza: 'des', constituicao: 'con', inteligencia: 'int', sabedoria: 'sab', carisma: 'car' };
+
+/**
+ * Habilidade de 1º nível que pede perícias treinadas em quantidade igual a um atributo (no livro:
+ * Especialista do Ladino, "igual a sua Inteligência… mínimo 1"). Vale para qualquer classe com
+ * esse texto.
+ */
+export function t20ExpertiseRule(content: T20Content, draft: T20Draft): { ability: string; count: number; attribute: T20Attribute } | null {
+  const klass = t20ClassOf(content, draft);
+  for (const ability of klass?.abilities ?? []) {
+    if (ability.level > 1) continue;
+    const match = /escolha um numero de pericias treinadas igual a sua (\w+)/.exec(plainT20(ability.text));
+    const attribute = match?.[1] ? ATTRIBUTE_BY_WORD[match[1]] : undefined;
+    if (!attribute) continue;
+    const value = (t20BaseAttributes(draft)[attribute] ?? 0) + t20RaceModifiers(content, draft)[attribute];
+    return { ability: ability.name, count: Math.max(1, value), attribute };
+  }
+  return null;
+}
+
 export function t20TrainedSkills(content: T20Content, draft: T20Draft): T20Skill[] {
   return [...new Set([...t20GrantedSkills(content, draft), ...draft.classSkills, ...draft.intSkills, ...draft.raceSkills])];
 }
@@ -523,6 +546,11 @@ export function t20DraftIssues(content: T20Content, draft: T20Draft, context: { 
   if (draft.intSkills.length !== intCount) add('pericias', 'intSkills', intCount ? `Escolha ${intCount} perícia(s) pela Inteligência.` : 'Sem perícias extras pela Inteligência.');
   const allTrained = [...t20GrantedSkills(content, draft), ...draft.classSkills, ...draft.intSkills, ...draft.raceSkills];
   if (new Set(allTrained).size !== allTrained.length) add('pericias', 'skills', 'Há perícias repetidas: troque as que já vêm treinadas.');
+  const expertise = t20ExpertiseRule(content, draft);
+  if (expertise) {
+    const trained = t20TrainedSkills(content, draft);
+    if (draft.expertSkills.length !== expertise.count || draft.expertSkills.some((skill) => !trained.includes(skill))) add('pericias', 'expertSkills', `${expertise.ability}: escolha ${expertise.count} perícia(s) treinada(s).`);
+  }
 
   // Origem
   const origin = findT20Origin(content, draft.originId);
@@ -743,6 +771,12 @@ export function buildT20Character(content: T20Content, draft: T20Draft, sourcebo
     const path = klass!.abilities.flatMap((ability) => ability.options).find((option) => plainT20(option.name) === draft.arcanistPath);
     if (path) addAbility({ kind: 'class_feature', name: `Caminho: ${path.name}`, source: klass!.name, description: path.text, data: {} });
   }
+  const expertise = t20ExpertiseRule(content, draft);
+  if (expertise && draft.expertSkills.length) {
+    const index = abilities.findIndex((entry) => entry.kind === 'class_feature' && plainT20(entry.name) === plainT20(expertise.ability));
+    const label = draft.expertSkills.map((skill) => T20_SKILLS[skill].label).join(', ');
+    if (index >= 0) abilities[index] = { ...abilities[index]!, name: `${expertise.ability} (${label})`.slice(0, 120) };
+  }
   for (const { choice, option } of featurePicks) {
     if (option.id.startsWith('opcao:')) addAbility({ kind: 'class_feature', name: option.name, source: `${klass?.name ?? ''} ${choice.level}º nível`, description: option.text, data: { level: choice.level } });
   }
@@ -808,6 +842,7 @@ const t20DraftSchema = z.object({
   classFixedChoices: z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(4).catch([]),
   classSkills: z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(12).catch([]),
   intSkills: z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(12).catch([]),
+  expertSkills: z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(12).catch([]),
   arcanistPath: z.enum(['bruxo', 'feiticeiro', 'mago', '']).catch(''),
   lineage: shortText(80),
   spellSchools: z.array(z.string().trim().max(40)).max(8).catch([]),

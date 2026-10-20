@@ -28,6 +28,7 @@ import {
   t20FinalAttributes,
   isT20AttributeIncrease,
   t20CreationFeatureChoices,
+  t20ExpertiseRule,
   t20GenericPowerGroups,
   t20GenericPowerOptions,
   t20GrantedPowers,
@@ -168,6 +169,7 @@ export function T20MobileWizard({ campaign, sources }: { campaign: T20MobileCamp
       ))}
     </View>
   );
+  const expertise = t20ExpertiseRule(content, draft);
   const taken = (own: string[]) => new Set([...t20GrantedSkills(content, draft), ...draft.classSkills, ...draft.intSkills, ...draft.raceSkills].filter((skill) => !own.includes(skill)));
   const skillOptions = (list: T20Skill[], own: T20Skill[]) => {
     const used = taken(own);
@@ -387,6 +389,7 @@ export function T20MobileWizard({ campaign, sources }: { campaign: T20MobileCamp
             />
           ))}
           {klass ? multi('Perícias da classe', klass.skillsChoice.count, skillOptions(klass.skillsChoice.options, draft.classSkills), draft.classSkills, (value) => update({ classSkills: value as T20Skill[] })) : null}
+          {expertise ? multi(`${expertise.ability}: perícias treinadas`, expertise.count, t20TrainedSkills(content, draft).map((skill) => ({ id: skill, name: T20_SKILLS[skill].label })), draft.expertSkills.filter((skill) => t20TrainedSkills(content, draft).includes(skill)), (value) => update({ expertSkills: value as T20Skill[] })) : null}
           {attrs.int > 0 ? multi('Perícias pela Inteligência', attrs.int, skillOptions(Object.keys(T20_SKILLS) as T20Skill[], draft.intSkills), draft.intSkills, (value) => update({ intSkills: value as T20Skill[] })) : null}
           {race?.abilities.some((ability) => plainT20(ability.name) === 'versatil')
             ? multi('Versátil: perícias', 2, skillOptions(Object.keys(T20_SKILLS) as T20Skill[], draft.raceSkills), draft.raceSkills, (value) => update({ raceSkills: value as T20Skill[] }))
