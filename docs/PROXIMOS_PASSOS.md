@@ -99,7 +99,7 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
 3. **Ação de combate personalizada** criada pelo mestre.
 4. **[Feito em 2026-10-20]** Subida de nível: poder "Treinamento em Perícia" abre a escolha da perícia, como no Aumento de
    Atributo.
-5. Benefícios de origem: breve descrição de cada perícia/poder.
+5. **[Feito em 2026-10-20]** Benefícios de origem: breve descrição de cada perícia/poder.
 6. Aba Sessão do mestre: mostrar a sessão montada e iniciada, com botão prático de liberar cada
    trecho aos jogadores ali mesmo.
 7. **[Feito em 2026-10-20]** Perícias já treinadas nas listas de escolha: elemento visual (não só desabilitar).
@@ -429,6 +429,11 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-20 — Descrição dos benefícios de origem
+
+- Cada benefício mostra uma linha: perícia com resumo de para que serve (escrito pelo projeto,
+  `t20SkillSummaries`), poder com o texto do livro. Site e app. `pnpm check` 20/20.
 
 ### 2026-10-20 — Poderes com perícia à escolha e perícias já treinadas
 

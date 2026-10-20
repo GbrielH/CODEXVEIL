@@ -30,6 +30,7 @@ import {
   isT20AttributeIncrease,
   t20CreationFeatureChoices,
   t20ExpertiseRule,
+  t20OriginBenefitOptions,
   t20PowerSkillPick,
   T20_SKILL_IDS,
   t20GenericPowerGroups,
@@ -346,10 +347,7 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                   <MultiPick
                     label="Benefícios da origem (escolha 2)"
                     count={2}
-                    options={[
-                      ...origin.benefitSkills.map((skill) => ({ id: `skill:${skill}`, name: `Perícia: ${T20_SKILLS[skill].label}` })),
-                      ...origin.benefitPowers.map((power) => ({ id: `power:${power}`, name: `Poder: ${power}` })),
-                    ]}
+                    options={t20OriginBenefitOptions(content, origin)}
                     value={draft.originBenefits}
                     onChange={(originBenefits) => update({ originBenefits })}
                     error={errorFor('originBenefits')}

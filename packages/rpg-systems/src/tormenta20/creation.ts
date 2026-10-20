@@ -39,7 +39,7 @@ import { t20HitPointsFor, t20ManaPointsFor } from './derived';
 import { T20_STARTING_MONEY, t20Tier } from './progression';
 import { t20DefaultResources } from './resources';
 import { parseT20Sheet, type T20Sheet } from './sheet';
-import { T20_SKILLS, T20_SKILL_IDS, t20SkillFromName, type T20Skill } from './skills';
+import { T20_SKILLS, T20_SKILL_IDS, t20SkillFromName, t20SkillSummaries, type T20Skill } from './skills';
 
 export const T20_STEPS = ['inicio', 'atributos', 'raca', 'classe', 'origem', 'divindade', 'pericias', 'poderes', 'magias', 'equipamento', 'detalhes', 'revisao'] as const;
 export type T20Step = (typeof T20_STEPS)[number];
@@ -896,3 +896,18 @@ const t20DraftSchema = z.object({
 export function parseT20Draft(input: unknown): T20Draft {
   return t20DraftSchema.parse(input && typeof input === 'object' ? input : {});
 }
+
+/** Opções de benefício da origem com uma descrição curta (perícia: para que serve; poder: texto). */
+export function t20OriginBenefitOptions(content: T20Content, origin: T20Content['origins'][number]): { id: string; name: string; description: string }[] {
+  const clip = (text: string) => (text.length > 180 ? `${text.slice(0, 179).trimEnd()}…` : text);
+  return [
+    ...origin.benefitSkills.map((skill) => ({ id: `skill:${skill}`, name: `Perícia: ${T20_SKILLS[skill].label}`, description: t20SkillSummaries[skill] })),
+    ...origin.benefitPowers.map((name) => {
+      const unique = origin.uniquePowers.find((power) => plainT20(power.name) === plainT20(name));
+      const power = unique ?? findT20PowerByName(content, name, origin.name);
+      const description = t20GenericPowerGroups(name) ? 'Você escolhe o poder logo abaixo.' : clip(power?.text ?? '');
+      return { id: `power:${name}`, name: `Poder: ${name}`, description };
+    }),
+  ];
+}
+

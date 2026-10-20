@@ -68,3 +68,37 @@ export function t20TrainingBonus(level: number): number {
   if (level >= 7) return 4;
   return 2;
 }
+
+/** Para que serve cada perícia (resumo curto escrito pelo Codexveil, não o texto do livro). */
+export const t20SkillSummaries: Record<T20Skill, string> = {
+  acrobacia: 'Equilíbrio, saltos e manobras ágeis; escapar de agarrões.',
+  adestramento: 'Lidar com animais: acalmar, treinar e conduzir montarias.',
+  atletismo: 'Correr, escalar, nadar, saltar e outras proezas de força.',
+  atuacao: 'Cantar, tocar, dançar e entreter uma plateia.',
+  cavalgar: 'Montar e conduzir montarias, inclusive em combate.',
+  conhecimento: 'Saber sobre história, geografia, ciências e lendas.',
+  cura: 'Primeiros socorros, tratar doenças, venenos e ferimentos.',
+  diplomacia: 'Convencer e negociar com boas maneiras.',
+  enganacao: 'Mentir, disfarçar-se e blefar.',
+  fortitude: 'Resistir a venenos, doenças e esforço físico.',
+  furtividade: 'Esconder-se e mover-se sem ser notado.',
+  guerra: 'Táticas, estratégia e conhecimento militar.',
+  iniciativa: 'Agir rápido quando o combate começa.',
+  intimidacao: 'Assustar e coagir com ameaças.',
+  intuicao: 'Perceber mentiras e intenções ocultas.',
+  investigacao: 'Procurar pistas, examinar e deduzir.',
+  jogatina: 'Jogos de azar e apostas.',
+  ladinagem: 'Abrir fechaduras, desarmar armadilhas e furtar.',
+  luta: 'Ataques corpo a corpo.',
+  misticismo: 'Magia, itens mágicos e o sobrenatural.',
+  nobreza: 'Etiqueta, heráldica, leis e a nobreza.',
+  oficio: 'Uma profissão ou arte (ferreiro, alquimista, cozinheiro…).',
+  percepcao: 'Notar coisas pela visão, audição e outros sentidos.',
+  pilotagem: 'Conduzir veículos e embarcações.',
+  pontaria: 'Ataques à distância.',
+  reflexos: 'Esquivar de áreas de efeito e armadilhas.',
+  religiao: 'Deuses, igrejas, rituais e criaturas divinas.',
+  sobrevivencia: 'Rastrear, orientar-se e sobreviver na natureza.',
+  vontade: 'Resistir a efeitos mentais e de medo.',
+};
+

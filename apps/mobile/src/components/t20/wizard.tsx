@@ -29,6 +29,7 @@ import {
   isT20AttributeIncrease,
   t20CreationFeatureChoices,
   t20ExpertiseRule,
+  t20OriginBenefitOptions,
   t20PowerSkillPick,
   T20_SKILL_IDS,
   t20GenericPowerGroups,
@@ -155,7 +156,7 @@ export function T20MobileWizard({ campaign, sources }: { campaign: T20MobileCamp
     );
   }
 
-  const multi = (label: string, count: number, options: { id: string; name: string; disabled?: boolean }[], value: string[], onChange: (value: string[]) => void) => (
+  const multi = (label: string, count: number, options: { id: string; name: string; disabled?: boolean; description?: string }[], value: string[], onChange: (value: string[]) => void) => (
     <View style={{ gap: 6 }}>
       <AppText style={{ fontFamily: fonts.sansMedium }}>
         {label} ({value.length}/{count})
@@ -164,6 +165,7 @@ export function T20MobileWizard({ campaign, sources }: { campaign: T20MobileCamp
         <CheckRow
           key={option.id}
           label={option.name}
+          {...(option.description ? { description: option.description } : {})}
           checked={value.includes(option.id)}
           disabled={option.disabled || (!value.includes(option.id) && value.length >= count)}
           onChange={(checked) => onChange(checked ? [...value, option.id] : value.filter((entry) => entry !== option.id))}
@@ -334,7 +336,7 @@ export function T20MobileWizard({ campaign, sources }: { campaign: T20MobileCamp
             ? multi(
                 'Benefícios da origem',
                 2,
-                [...origin.benefitSkills.map((skill) => ({ id: `skill:${skill}`, name: `Perícia: ${T20_SKILLS[skill].label}` })), ...origin.benefitPowers.map((power) => ({ id: `power:${power}`, name: `Poder: ${power}` }))],
+                t20OriginBenefitOptions(content, origin),
                 draft.originBenefits,
                 (originBenefits) => update({ originBenefits }),
               )
