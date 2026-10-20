@@ -26,6 +26,8 @@ import {
   t20EligibleDeities,
   t20EquipmentOptions,
   t20FinalAttributes,
+  t20GenericPowerGroups,
+  t20GenericPowerOptions,
   t20GrantedPowers,
   t20GrantedSkills,
   t20Lineages,
@@ -320,7 +322,7 @@ export function T20MobileWizard({ campaign, sources }: { campaign: T20MobileCamp
       {step === 'origem' ? (
         <View style={{ gap: spacing[2] }}>
           {content.origins.map((entry) => (
-            <OptionCard key={entry.id} selected={entry.id === draft.originId} title={entry.name} description={clip(entry.benefitsText || entry.summary)} onPress={() => update({ originId: entry.id, originBenefits: [] })} />
+            <OptionCard key={entry.id} selected={entry.id === draft.originId} title={entry.name} description={clip(entry.benefitsText || entry.summary)} onPress={() => update({ originId: entry.id, originBenefits: [], originPowerChoices: {} })} />
           ))}
           {origin
             ? multi(
@@ -331,6 +333,20 @@ export function T20MobileWizard({ campaign, sources }: { campaign: T20MobileCamp
                 (originBenefits) => update({ originBenefits }),
               )
             : null}
+          {draft.originBenefits
+            .filter((benefit) => benefit.startsWith('power:') && t20GenericPowerGroups(benefit.slice(6)))
+            .map((benefit) => {
+              const name = benefit.slice(6);
+              return (
+                <PickerField
+                  key={benefit}
+                  label={`Poder escolhido (${name})`}
+                  value={draft.originPowerChoices[name] ?? ''}
+                  onChange={(id) => update({ originPowerChoices: { ...draft.originPowerChoices, [name]: id } })}
+                  options={t20GenericPowerOptions(content, name).map((power) => ({ value: power.id, label: power.prerequisite ? `${power.name} (requer: ${power.prerequisite})` : power.name }))}
+                />
+              );
+            })}
         </View>
       ) : null}
 

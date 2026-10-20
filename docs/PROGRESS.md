@@ -282,6 +282,9 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-20 (QA T20, parte 1):** itens 1, 2, 3 e 8 da lista do QA feitos (`pnpm check` 20/20;
+  sem teste no navegador). Próximo: itens 4 a 7 (condições com rodadas, rolagem em 3 estados,
+  usar poder/magia na jogada, inventário).
 - **2026-10-20 (itens 6 a 10):** feitos (`pnpm check` 20/20; testes novos de ícones de raça e
   do prompt de imagem). Ficha T20 agora usa o dado animado. Próximo: dado 3D estilo app "Dice"
   (em avaliação) e item 11.

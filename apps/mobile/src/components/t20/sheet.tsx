@@ -17,6 +17,8 @@ import {
   T20_REST_QUALITY,
   applyT20LevelUp,
   buildT20Content,
+  isT20AttributeIncrease,
+  type T20LevelUpChoices,
   computeT20Derived,
   findT20Condition,
   formatT20Bonus,
@@ -272,15 +274,15 @@ function T20SheetBody(props: Props) {
           content={content}
           sheet={sheet}
           onClose={() => setLevelUp(false)}
-          onApply={async (powerId, spellIds) => {
+          onApply={async (choices) => {
             const plan = planT20LevelUp(content, sheet, 0);
-            const result = applyT20LevelUp(sheet, plan, { powerId, spellIds });
+            const result = applyT20LevelUp(sheet, plan, choices);
             if (result.issues.length) return result.issues.join(' ');
             try {
               const client = getSupabase();
               const saved = await saveCharacterSheet(client, props.character.id, version, { sheet: result.sheet });
               for (const [key, gain] of [
-                [T20_RESOURCE_KEYS.hitPoints, plan.hitPointsGained],
+                [T20_RESOURCE_KEYS.hitPoints, result.sheet.hitPoints.max - sheet.hitPoints.max],
                 [T20_RESOURCE_KEYS.manaPoints, plan.manaPointsGained],
               ] as const) {
                 const target = track(key);
@@ -325,10 +327,14 @@ function RestCard({ level, onRest }: { level: number; onRest: (gain: number) => 
   );
 }
 
-function LevelUpModal({ content, sheet, onClose, onApply }: { content: ReturnType<typeof buildT20Content>; sheet: T20Sheet; onClose: () => void; onApply: (powerId: string, spellIds: string[]) => Promise<string | null> }) {
+function LevelUpModal({ content, sheet, onClose, onApply }: { content: ReturnType<typeof buildT20Content>; sheet: T20Sheet; onClose: () => void; onApply: (choices: T20LevelUpChoices) => Promise<string | null> }) {
   const plan = useMemo(() => planT20LevelUp(content, sheet, 0), [content, sheet]);
   const [powerId, setPowerId] = useState('');
   const [spellIds, setSpellIds] = useState<string[]>([]);
+  const [attribute, setAttribute] = useState<T20LevelUpChoices['attribute']>('');
+  const [featureChoices, setFeatureChoices] = useState<Record<string, string>>({});
+  const preview = applyT20LevelUp(sheet, plan, { powerId, spellIds, attribute, featureChoices });
+  const chosenPower = plan.powerOptions.find((power) => power.id === powerId);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   return (
@@ -338,7 +344,7 @@ function LevelUpModal({ content, sheet, onClose, onApply }: { content: ReturnTyp
           Nível {plan.newTotalLevel}: {plan.classDef?.name ?? 'classe'} {plan.newClassLevel}
         </AppText>
         <AppText>
-          +{plan.hitPointsGained} PV e +{plan.manaPointsGained} PM.
+          +{preview.sheet.hitPoints.max - sheet.hitPoints.max} PV e +{plan.manaPointsGained} PM.
         </AppText>
         {plan.abilities.map((ability) => (
           <Card key={ability.name}>
@@ -348,12 +354,34 @@ function LevelUpModal({ content, sheet, onClose, onApply }: { content: ReturnTyp
             </AppText>
           </Card>
         ))}
+        {plan.featureChoices.map((choice) => (
+          <PickerField
+            key={choice.ability}
+            label={`${choice.ability}: escolha`}
+            value={featureChoices[choice.ability] ?? ''}
+            onChange={(id) => setFeatureChoices((current) => ({ ...current, [choice.ability]: id }))}
+            options={choice.options.map((option) => ({ value: option.id, label: option.name, description: option.text.slice(0, 140) }))}
+          />
+        ))}
         {plan.powerChoice ? (
           <PickerField
             label="Poder do nível"
             value={powerId}
             onChange={setPowerId}
             options={plan.powerOptions.map((power) => ({ value: power.id, label: power.name, description: power.problems.length ? `Falta ${power.problems.join(', ')}` : power.text.slice(0, 140), disabled: power.problems.length > 0 }))}
+          />
+        ) : null}
+        {chosenPower && isT20AttributeIncrease(chosenPower.name) ? (
+          <PickerField
+            label="Atributo que aumenta (+1)"
+            value={attribute ?? ''}
+            onChange={(value) => setAttribute(value as T20LevelUpChoices['attribute'])}
+            options={T20_ATTRIBUTES.map((key) => ({
+              value: key,
+              label: `${t20AttributeLabels[key].name} (${formatT20Bonus(sheet.attributes[key])} → ${formatT20Bonus(sheet.attributes[key] + 1)})`,
+              description: plan.blockedAttributes.includes(key) ? 'Já aumentado neste patamar' : undefined,
+              disabled: plan.blockedAttributes.includes(key),
+            }))}
           />
         ) : null}
         {plan.newSpells > 0
@@ -376,7 +404,7 @@ function LevelUpModal({ content, sheet, onClose, onApply }: { content: ReturnTyp
             loading={busy}
             onPress={async () => {
               setBusy(true);
-              setError(await onApply(powerId, spellIds));
+              setError(await onApply({ powerId, spellIds, attribute, featureChoices }));
               setBusy(false);
             }}
           />

@@ -27,6 +27,8 @@ import {
   t20EligibleDeities,
   t20EquipmentOptions,
   t20FinalAttributes,
+  t20GenericPowerGroups,
+  t20GenericPowerOptions,
   t20GrantedPowers,
   t20GrantedSkills,
   t20Lineages,
@@ -330,7 +332,7 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                 label="Origem"
                 value={draft.originId}
                 items={content.origins.map((entry) => ({ id: entry.id, title: entry.name, subtitle: entry.benefitsText, text: entry.summary }))}
-                onSelect={(originId) => update({ originId, originBenefits: [] })}
+                onSelect={(originId) => update({ originId, originBenefits: [], originPowerChoices: {} })}
               />
               {errorFor('originId') ? <Alert tone="danger">{errorFor('originId')}</Alert> : null}
               {origin ? (
@@ -348,6 +350,32 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                     error={errorFor('originBenefits')}
                   />
                   <FeatureList title="Poderes únicos" items={origin.uniquePowers.map((power) => ({ name: power.name, text: power.text }))} />
+                  {draft.originBenefits
+                    .filter((benefit) => benefit.startsWith('power:') && t20GenericPowerGroups(benefit.slice(6)))
+                    .map((benefit) => {
+                      const name = benefit.slice(6);
+                      const chosen = content.powers.find((power) => power.id === draft.originPowerChoices[name]);
+                      return (
+                        <div key={benefit} className="flex flex-col gap-2">
+                          <SelectField
+                            id={`t20-origem-${name}`}
+                            label={`Poder escolhido (${name})`}
+                            value={draft.originPowerChoices[name] ?? ''}
+                            onChange={(event) => update({ originPowerChoices: { ...draft.originPowerChoices, [name]: event.target.value } })}
+                            error={errorFor('originPowerChoices')}
+                          >
+                            <option value="">Escolha o poder…</option>
+                            {t20GenericPowerOptions(content, name).map((power) => (
+                              <option key={power.id} value={power.id}>
+                                {power.name}
+                                {power.prerequisite ? ` (requer: ${power.prerequisite})` : ''}
+                              </option>
+                            ))}
+                          </SelectField>
+                          {chosen ? <p className="text-sm text-fg-secondary">{chosen.text}</p> : null}
+                        </div>
+                      );
+                    })}
                 </>
               ) : null}
             </div>

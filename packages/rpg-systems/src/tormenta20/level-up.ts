@@ -4,8 +4,10 @@
  * magias novas. A tela mostra o plano; `applyT20LevelUp` monta a ficha e as entradas novas.
  */
 import type { AbilityEntryTemplate } from '../types';
-import { findT20Class, plainT20, type T20Content, type T20Item } from './content';
+import { findT20Class, plainT20, t20AbilityChoiceNames, t20ChoiceOnlyPowers, type T20Content, type T20Item } from './content';
 import { t20MaxCircle, t20PrerequisiteProblems } from './creation';
+import { T20_ATTRIBUTES, type T20Attribute } from './attributes';
+import { t20Tier } from './progression';
 import type { T20Sheet } from './sheet';
 import { T20_SKILL_IDS } from './skills';
 
@@ -22,7 +24,20 @@ export interface T20LevelUpPlan {
   powerOptions: (T20Item<'feat'> & { problems: string[] })[];
   newSpells: number;
   spellOptions: T20Item<'spell'>[];
+  /** Habilidades do nível com escolha ("escolha entre égide sagrada e montaria sagrada"). */
+  featureChoices: { ability: string; options: { id: string; name: string; text: string }[] }[];
+  /** Atributos que já receberam "Aumento de Atributo" neste patamar (não podem repetir). */
+  blockedAttributes: T20Attribute[];
 }
+
+/** Nome do poder que pede a escolha de um atributo. */
+export const T20_ATTRIBUTE_INCREASE = 'Aumento de Atributo';
+
+export function isT20AttributeIncrease(name: string): boolean {
+  return plainT20(name.replace(/\s*\(.*\)$/, '')) === plainT20(T20_ATTRIBUTE_INCREASE);
+}
+
+
 
 function classFor(content: T20Content, sheet: T20Sheet, index: number) {
   const entry = sheet.identity.classes[index];
@@ -47,10 +62,14 @@ export function planT20LevelUp(content: T20Content, sheet: T20Sheet, classIndex 
   const knownPowers = sheet.powers.map((power) => power.name);
   const trained = sheet.skills.trained.filter((skill) => (T20_SKILL_IDS as readonly string[]).includes(skill));
   const powerChoice = Boolean(klass && /poder de /i.test(klass.table[String(newClassLevel)] ?? ''));
+  const choiceOnly = t20ChoiceOnlyPowers(klass);
   const powerOptions = powerChoice && klass
     ? content.powers
         .filter((power) => power.owners.some((owner) => plainT20(owner) === plainT20(klass.name)) || ['combate', 'destino', 'magia', 'tormenta'].includes(power.group))
-        .filter((power) => !knownPowers.some((name) => plainT20(name) === plainT20(power.name)))
+        .filter((power) => !choiceOnly.has(plainT20(power.name)))
+        // "Aumento de Atributo" pode ser escolhido várias vezes (uma opção só na lista); os outros, uma vez.
+        .filter((power) => isT20AttributeIncrease(power.name) || !knownPowers.some((name) => plainT20(name) === plainT20(power.name)))
+        .filter((power, index, list) => !isT20AttributeIncrease(power.name) || list.findIndex((entry) => isT20AttributeIncrease(entry.name)) === index)
         .map((power) => ({
           ...power,
           problems: t20PrerequisiteProblems(power.prerequisite, { attributes: sheet.attributes, skills: trained, level: newTotalLevel, powers: knownPowers, content }),
@@ -64,6 +83,21 @@ export function planT20LevelUp(content: T20Content, sheet: T20Sheet, classIndex 
           (spell) => spell.circle <= t20MaxCircle(klass, newClassLevel) && (spell.type === klass.spellcasting!.type || spell.type === 'universal') && !known.has(plainT20(spell.name)),
         )
       : [];
+  const levelAbilities = klass ? klass.abilities.filter((ability) => ability.level === newClassLevel && !/^poder de /i.test(ability.name)) : [];
+  const featureChoices = levelAbilities
+    .map((ability) => ({
+      ability: ability.name,
+      options: t20AbilityChoiceNames(ability).map((name) => {
+        const power = content.powers.find((entry) => plainT20(entry.name) === plainT20(name) && (!klass || entry.owners.some((owner) => plainT20(owner) === plainT20(klass.name))));
+        const label = name.charAt(0).toUpperCase() + name.slice(1);
+        return { id: power?.id ?? `opcao:${plainT20(name)}`, name: power?.name ?? label, text: power?.text ?? '' };
+      }),
+    }))
+    .filter((choice) => choice.options.length > 1);
+  const tier = t20Tier(newTotalLevel);
+  const blockedAttributes = T20_ATTRIBUTES.filter((attribute) =>
+    sheet.powers.some((power) => isT20AttributeIncrease(power.name) && power.attribute === attribute && t20Tier(power.level) === tier),
+  );
   return {
     classIndex,
     classDef: klass,
@@ -71,11 +105,13 @@ export function planT20LevelUp(content: T20Content, sheet: T20Sheet, classIndex 
     newTotalLevel,
     hitPointsGained: klass ? Math.max(1, klass.pvPerLevel + con) : Math.max(1, 3 + con),
     manaPointsGained: klass?.pmPerLevel ?? 0,
-    abilities: klass ? klass.abilities.filter((ability) => ability.level === newClassLevel && !/^poder de /i.test(ability.name)) : [],
+    abilities: levelAbilities,
     powerChoice,
     powerOptions,
     newSpells,
     spellOptions,
+    featureChoices,
+    blockedAttributes,
   };
 }
 
@@ -86,23 +122,45 @@ export interface T20LevelUpResult {
   summary: string;
 }
 
-export function applyT20LevelUp(sheet: T20Sheet, plan: T20LevelUpPlan, choices: { powerId: string; spellIds: readonly string[] }): T20LevelUpResult {
+export interface T20LevelUpChoices {
+  powerId: string;
+  spellIds: readonly string[];
+  /** Atributo do "Aumento de Atributo". */
+  attribute?: T20Attribute | '';
+  /** Habilidade com escolha → id da opção escolhida. */
+  featureChoices?: Record<string, string>;
+}
+
+export function applyT20LevelUp(sheet: T20Sheet, plan: T20LevelUpPlan, choices: T20LevelUpChoices): T20LevelUpResult {
   const issues: string[] = [];
   const power = plan.powerOptions.find((option) => option.id === choices.powerId);
   if (plan.powerChoice && !power) issues.push('Escolha o poder do nível.');
   if (power && power.problems.length) issues.push(`${power.name}: falta ${power.problems.join(', ')}.`);
+  const increase = power && isT20AttributeIncrease(power.name) ? choices.attribute || null : null;
+  if (power && isT20AttributeIncrease(power.name)) {
+    if (!increase) issues.push('Escolha o atributo que vai aumentar.');
+    else if (plan.blockedAttributes.includes(increase)) issues.push('Este atributo já recebeu um aumento neste patamar.');
+  }
+  const picked = plan.featureChoices.map((choice) => ({ choice, option: choice.options.find((option) => option.id === choices.featureChoices?.[choice.ability]) }));
+  for (const { choice, option } of picked) if (!option) issues.push(`${choice.ability}: escolha uma opção.`);
   const spells = plan.spellOptions.filter((spell) => choices.spellIds.includes(spell.id));
   if (spells.length !== plan.newSpells) issues.push(`Escolha ${plan.newSpells} magia(s).`);
 
   const className = plan.classDef?.name ?? sheet.identity.classes[plan.classIndex]?.name ?? '';
   const source = `${className} ${plan.newClassLevel}º nível`;
   const classes = sheet.identity.classes.map((entry, index) => (index === plan.classIndex ? { ...entry, level: plan.newClassLevel } : entry));
+  const attributeNames: Record<T20Attribute, string> = { for: 'Força', des: 'Destreza', con: 'Constituição', int: 'Inteligência', sab: 'Sabedoria', car: 'Carisma' };
+  const powerName = power ? (increase ? `${power.name} (${attributeNames[increase]})` : power.name) : '';
+  // +1 em Constituição vale para todos os níveis: +1 PV por nível de personagem.
+  const conBonus = increase === 'con' ? plan.newTotalLevel : 0;
+  const featurePowers = picked.flatMap(({ option }) => (option ? [{ key: option.id, name: option.name, source, level: plan.newTotalLevel }] : []));
   const next: T20Sheet = {
     ...sheet,
     identity: { ...sheet.identity, classes },
-    hitPoints: { max: sheet.hitPoints.max + plan.hitPointsGained },
+    attributes: increase ? { ...sheet.attributes, [increase]: sheet.attributes[increase] + 1 } : sheet.attributes,
+    hitPoints: { max: sheet.hitPoints.max + plan.hitPointsGained + conBonus },
     manaPoints: { max: sheet.manaPoints.max + plan.manaPointsGained },
-    powers: power ? [...sheet.powers, { key: power.id, name: power.name, source, level: plan.newTotalLevel }] : sheet.powers,
+    powers: [...sheet.powers, ...(power ? [{ key: power.id, name: powerName, source, level: plan.newTotalLevel, ...(increase ? { attribute: increase } : {}) }] : []), ...featurePowers],
     spells: {
       ...sheet.spells,
       known: [...sheet.spells.known, ...spells.map((spell) => ({ key: spell.id, name: spell.name, source: className, circle: spell.circle, type: spell.type }))],
@@ -111,7 +169,8 @@ export function applyT20LevelUp(sheet: T20Sheet, plan: T20LevelUpPlan, choices: 
   const abilities: AbilityEntryTemplate[] = [];
   const add = (entry: Omit<AbilityEntryTemplate, 'sortOrder'>) => abilities.push({ ...entry, sortOrder: 500 + abilities.length });
   for (const ability of plan.abilities) add({ kind: 'class_feature', name: ability.name, source, description: ability.text, data: { level: ability.level } });
-  if (power) add({ kind: 'feat', name: power.name, source, description: power.text, data: { prerequisite: power.prerequisite } });
+  for (const { choice, option } of picked) if (option) add({ kind: 'class_feature', name: option.name, source: `${source} (${choice.ability})`, description: option.text, data: { level: plan.newClassLevel } });
+  if (power) add({ kind: 'feat', name: powerName, source, description: power.text, data: { prerequisite: power.prerequisite, ...(increase ? { attribute: increase } : {}) } });
   for (const spell of spells) {
     add({
       kind: 'spell',
@@ -122,7 +181,8 @@ export function applyT20LevelUp(sheet: T20Sheet, plan: T20LevelUpPlan, choices: 
     });
   }
   const parts = [`${className} ${plan.newClassLevel} (nível ${plan.newTotalLevel})`, `+${plan.hitPointsGained} PV`, `+${plan.manaPointsGained} PM`];
-  if (power) parts.push(`poder ${power.name}`);
+  if (power) parts.push(`poder ${powerName}`);
+  for (const { option } of picked) if (option) parts.push(option.name);
   if (spells.length) parts.push(`${spells.length} magia(s)`);
   return { sheet: next, abilities, issues, summary: `Subiu de nível: ${parts.join(' · ')}.`.slice(0, 300) };
 }

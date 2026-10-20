@@ -23,6 +23,7 @@ import {
   findT20PowerByName,
   findT20Race,
   plainT20,
+  t20ChoiceOnlyPowers,
   t20ClassPowers,
   t20GeneralPowers,
   t20GrantedPowers,
@@ -84,6 +85,8 @@ export interface T20Draft {
   originId: string;
   /** Dois benefícios da origem: `skill:<id>` ou `power:<nome>`. */
   originBenefits: string[];
+  /** Benefício genérico ("um poder de combate à sua escolha") → id do poder escolhido. */
+  originPowerChoices: Record<string, string>;
   deityId: string;
   grantedPowerId: string;
   /** Poder escolhido em cada nível com "Poder de <classe>" (id do poder). */
@@ -123,6 +126,7 @@ export function createT20Draft(level = 1, method: T20AttributeMethodChoice = 'po
     spellSchools: [],
     originId: '',
     originBenefits: [],
+    originPowerChoices: {},
     deityId: '',
     grantedPowerId: '',
     levelPowers: {},
@@ -354,13 +358,43 @@ export function t20PrerequisiteProblems(
 /** Poderes que podem ser escolhidos num nível da classe (da classe ou gerais). */
 export function t20PowerOptions(content: T20Content, draft: T20Draft): T20Item<'feat'>[] {
   const klass = t20ClassOf(content, draft);
-  return [...(klass ? t20ClassPowers(content, klass.name) : []), ...t20GeneralPowers(content)];
+  // Poderes que só vêm de uma habilidade com escolha (ex.: Égide Sagrada) não entram na lista.
+  const choiceOnly = t20ChoiceOnlyPowers(klass ?? null);
+  return [...(klass ? t20ClassPowers(content, klass.name) : []), ...t20GeneralPowers(content)].filter((power) => !choiceOnly.has(plainT20(power.name)));
+}
+
+/**
+ * Benefício de origem genérico ("um poder de combate a sua escolha", "um poder geral…"): grupos de
+ * poderes de onde a escolha sai. `null` quando o benefício já é um poder com nome.
+ */
+export function t20GenericPowerGroups(benefitName: string): string[] | null {
+  const text = plainT20(benefitName);
+  if (!text.includes('a sua escolha') && !text.startsWith('um poder')) return null;
+  for (const group of ['combate', 'destino', 'magia', 'tormenta']) if (text.includes(group)) return [group];
+  return ['combate', 'destino', 'magia', 'tormenta'];
+}
+
+/** Poderes que podem ser escolhidos num benefício genérico da origem. */
+export function t20GenericPowerOptions(content: T20Content, benefitName: string): T20Item<'feat'>[] {
+  const groups = t20GenericPowerGroups(benefitName) ?? [];
+  return content.powers.filter((power) => groups.includes(power.group));
+}
+
+/** Poder efetivo de um benefício de origem `power:<nome>` (o escolhido, se for genérico). */
+function originBenefitPower(content: T20Content, draft: T20Draft, name: string, originName?: string): T20Item<'feat'> | undefined {
+  if (t20GenericPowerGroups(name)) return content.powers.find((power) => power.id === draft.originPowerChoices[name]);
+  return findT20PowerByName(content, name, originName);
 }
 
 /** Nomes dos poderes que o personagem tem no rascunho (origem, concedido, níveis, humano). */
 export function t20DraftPowerNames(content: T20Content, draft: T20Draft): string[] {
   const names: string[] = [];
-  for (const benefit of draft.originBenefits) if (benefit.startsWith('power:')) names.push(benefit.slice(6));
+  for (const benefit of draft.originBenefits) {
+    if (!benefit.startsWith('power:')) continue;
+    const name = benefit.slice(6);
+    const chosen = t20GenericPowerGroups(name) ? originBenefitPower(content, draft, name)?.name : name;
+    if (chosen) names.push(chosen);
+  }
   const granted = content.powers.find((power) => power.id === draft.grantedPowerId);
   if (granted) names.push(granted.name);
   const raceSkillPower = content.powers.find((power) => power.id === draft.raceSkillPower);
@@ -462,6 +496,10 @@ export function t20DraftIssues(content: T20Content, draft: T20Draft, context: { 
   const origin = findT20Origin(content, draft.originId);
   if (!origin) add('origem', 'originId', 'Escolha uma origem.');
   else if (origin.benefitSkills.length + origin.benefitPowers.length > 0 && draft.originBenefits.length !== 2) add('origem', 'originBenefits', 'Escolha dois benefícios da origem.');
+  for (const benefit of draft.originBenefits) {
+    const name = benefit.startsWith('power:') ? benefit.slice(6) : '';
+    if (name && t20GenericPowerGroups(name) && !originBenefitPower(content, draft, name)) add('origem', 'originPowerChoices', `Escolha o poder de "${name}".`);
+  }
 
   // Divindade
   if (t20MustBeDevoted(content, draft) && !draft.deityId) add('divindade', 'deityId', 'Sua classe exige ser devoto de uma divindade.');
@@ -564,7 +602,7 @@ export function buildT20Character(content: T20Content, draft: T20Draft, sourcebo
     if (power) powerRefs.push({ key: power.id, name: power.name, source, level });
   };
   for (const benefit of draft.originBenefits) {
-    if (benefit.startsWith('power:')) pushPower(findT20PowerByName(content, benefit.slice(6), origin?.name), `Origem: ${origin?.name ?? ''}`, 1);
+    if (benefit.startsWith('power:')) pushPower(originBenefitPower(content, draft, benefit.slice(6), origin?.name), `Origem: ${origin?.name ?? ''}`, 1);
   }
   pushPower(content.powers.find((power) => power.id === draft.grantedPowerId), `Devoto de ${deity?.name ?? ''}`, 1);
   pushPower(content.powers.find((power) => power.id === draft.raceSkillPower), `Raça: ${race?.name ?? ''} (Versátil)`, 1);
@@ -706,6 +744,7 @@ const t20DraftSchema = z.object({
   spellSchools: z.array(z.string().trim().max(40)).max(8).catch([]),
   originId: shortText(160),
   originBenefits: z.array(z.string().trim().max(160)).max(4).catch([]),
+  originPowerChoices: z.record(z.string().max(160), z.string().trim().max(160)).catch({}),
   deityId: shortText(160),
   grantedPowerId: shortText(160),
   levelPowers: z.record(z.string().max(4), z.string().trim().max(160)).catch({}),

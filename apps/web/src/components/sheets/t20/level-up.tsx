@@ -1,7 +1,7 @@
 'use client';
 
 import { addCharacterEvent, adjustCharacterResource, createCharacterAbility, saveCharacterSheet, type CharacterAbility, type CharacterResource } from '@codexveil/database';
-import { T20_RESOURCE_KEYS, applyT20LevelUp, planT20LevelUp, type T20Content, type T20Sheet } from '@codexveil/rpg-systems/tormenta20';
+import { T20_ATTRIBUTES, T20_RESOURCE_KEYS, applyT20LevelUp, isT20AttributeIncrease, planT20LevelUp, t20AttributeLabels, type T20Attribute, type T20Content, type T20Sheet } from '@codexveil/rpg-systems/tormenta20';
 import { TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Alert } from '@/components/ui/alert';
@@ -41,9 +41,14 @@ function Panel({ characterId, content, sheet, version, resources, onDone, onClos
   const [classIndex, setClassIndex] = useState(0);
   const [powerId, setPowerId] = useState('');
   const [spellIds, setSpellIds] = useState<string[]>([]);
+  const [attribute, setAttribute] = useState<T20Attribute | ''>('');
+  const [featureChoices, setFeatureChoices] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const plan = useMemo(() => planT20LevelUp(content, sheet, classIndex), [content, sheet, classIndex]);
-  const result = applyT20LevelUp(sheet, plan, { powerId, spellIds });
+  const result = applyT20LevelUp(sheet, plan, { powerId, spellIds, attribute, featureChoices });
+  const chosenPower = plan.powerOptions.find((power) => power.id === powerId);
+  // PV ganhos de verdade (inclui o +1 PV por nível quando a Constituição aumenta).
+  const hitPointsGained = result.sheet.hitPoints.max - sheet.hitPoints.max;
 
   const apply = async () => {
     if (result.issues.length) return;
@@ -53,7 +58,7 @@ function Panel({ characterId, content, sheet, version, resources, onDone, onClos
       const saved = await saveCharacterSheet(client, characterId, version, { sheet: result.sheet });
       const updated: CharacterResource[] = [];
       for (const [key, gain] of [
-        [T20_RESOURCE_KEYS.hitPoints, plan.hitPointsGained],
+        [T20_RESOURCE_KEYS.hitPoints, hitPointsGained],
         [T20_RESOURCE_KEYS.manaPoints, plan.manaPointsGained],
       ] as const) {
         const track = resources.find((entry) => entry.key === key);
@@ -96,7 +101,7 @@ function Panel({ characterId, content, sheet, version, resources, onDone, onClos
       ) : null}
       {!plan.classDef ? <Alert tone="warning">A classe não está nos livros liberados: só PV e PM sobem.</Alert> : null}
       <p className="text-sm text-fg-secondary">
-        +{plan.hitPointsGained} PV e +{plan.manaPointsGained} PM.
+        +{hitPointsGained} PV e +{plan.manaPointsGained} PM.
       </p>
       {plan.abilities.length ? (
         <div className="flex flex-col gap-2">
@@ -109,6 +114,26 @@ function Panel({ characterId, content, sheet, version, resources, onDone, onClos
           ))}
         </div>
       ) : null}
+      {plan.featureChoices.map((choice) => (
+        <div key={choice.ability} className="flex flex-col gap-1">
+          <SelectField
+            id={`t20-lu-feature-${choice.ability}`}
+            label={`${choice.ability}: escolha`}
+            value={featureChoices[choice.ability] ?? ''}
+            onChange={(event) => setFeatureChoices((current) => ({ ...current, [choice.ability]: event.target.value }))}
+          >
+            <option value="">Escolha</option>
+            {choice.options.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.name}
+              </option>
+            ))}
+          </SelectField>
+          {featureChoices[choice.ability] ? (
+            <p className="text-xs whitespace-pre-line text-fg-muted">{choice.options.find((option) => option.id === featureChoices[choice.ability])?.text}</p>
+          ) : null}
+        </div>
+      ))}
       {plan.powerChoice ? (
         <div className="flex flex-col gap-1">
           <SelectField id="t20-lu-power" label="Poder do nível" value={powerId} onChange={(event) => setPowerId(event.target.value)}>
@@ -121,7 +146,19 @@ function Panel({ characterId, content, sheet, version, resources, onDone, onClos
               </option>
             ))}
           </SelectField>
-          {powerId ? <p className="text-xs whitespace-pre-line text-fg-muted">{plan.powerOptions.find((power) => power.id === powerId)?.text}</p> : null}
+          {powerId ? <p className="text-xs whitespace-pre-line text-fg-muted">{chosenPower?.text}</p> : null}
+          {chosenPower && isT20AttributeIncrease(chosenPower.name) ? (
+            <SelectField id="t20-lu-attribute" label="Atributo que aumenta (+1)" value={attribute} onChange={(event) => setAttribute(event.target.value as T20Attribute | '')}>
+              <option value="">Escolha</option>
+              {T20_ATTRIBUTES.map((key) => (
+                <option key={key} value={key} disabled={plan.blockedAttributes.includes(key)}>
+                  {t20AttributeLabels[key].name} ({sheet.attributes[key] >= 0 ? '+' : ''}
+                  {sheet.attributes[key]} → {sheet.attributes[key] + 1 >= 0 ? '+' : ''}
+                  {sheet.attributes[key] + 1}){plan.blockedAttributes.includes(key) ? ' — já aumentado neste patamar' : ''}
+                </option>
+              ))}
+            </SelectField>
+          ) : null}
         </div>
       ) : null}
       {plan.newSpells > 0 ? (

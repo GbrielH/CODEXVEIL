@@ -119,3 +119,21 @@ export function t20GrantedPowers(content: T20Content, deityName: string) {
   const names = new Set((deity?.grantedPowers ?? []).map(plainT20));
   return content.powers.filter((power) => power.group === 'concedidos' && names.has(plainT20(power.name)));
 }
+
+/** Opções de uma habilidade de classe com escolha: as `options` do livro ou "escolha entre X e Y" no texto. */
+export function t20AbilityChoiceNames(ability: { text: string; options?: { name: string }[] }): string[] {
+  if (ability.options?.length) return ability.options.map((option) => option.name);
+  const match = /escolha entre ([^.;:]+?)(?:\.|;|:|$)/i.exec(ability.text);
+  if (!match?.[1]) return [];
+  return match[1]
+    .split(/,\s*|\s+e\s+|\s+ou\s+/)
+    .map((name) => name.trim())
+    .filter(Boolean);
+}
+
+/** Poderes que só se ganham por uma habilidade com escolha (não entram na lista de poderes do nível). */
+export function t20ChoiceOnlyPowers(klass: T20Item<'class'> | null): Set<string> {
+  const names = new Set<string>();
+  for (const ability of klass?.abilities ?? []) for (const name of t20AbilityChoiceNames(ability)) names.add(plainT20(name));
+  return names;
+}

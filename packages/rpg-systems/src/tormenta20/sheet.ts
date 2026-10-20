@@ -95,7 +95,7 @@ export const t20SheetSchema = z.object({
       other: text(500),
     })
     .prefault({}),
-  powers: z.array(namedRef.extend({ level: z.number().int().min(1).max(20).default(1) })).max(120).default([]),
+  powers: z.array(namedRef.extend({ level: z.number().int().min(1).max(20).default(1), /** Aumento de Atributo: qual atributo subiu. */ attribute: z.enum(T20_ATTRIBUTES).optional() })).max(120).default([]),
   spells: z
     .object({
       /** Atributo-chave das magias (Int para magos, Sab para clérigos…). */

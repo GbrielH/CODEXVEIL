@@ -78,7 +78,7 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
     personalidade, história, antecedente e demais dados; copiar ou ignorar.
     Feito: na revisão da criação (D&D e T20, site e app) aparece o cartão "Prompt para a imagem do personagem (opcional)" com Copiar e Ignorar; montado por `characterImagePrompt` (domínio, com teste).
 11. Depois: tradução do SRD (item 2 antigo) e assistente de IA (pedido de 2026-10-18).
-12. **Sistema da comunidade "Behind the Magic" (livro "Manual de Runas").** RPG de autoria de um
+12. **[Adiado — ver [`MELHORIAS_FUTURAS.md`](MELHORIAS_FUTURAS.md)] Sistema da comunidade "Behind the Magic" (livro "Manual de Runas").** RPG de autoria de um
     amigo do responsável, **original e com uso autorizado** (pode usar todo o conteúdo do livro:
     regras, imagens, tudo). Diferente dos livros comerciais, ele vai **direto no Codexveil**, como
     um sistema na aba **Sistemas da comunidade**. Requisitos:
@@ -88,6 +88,25 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
     - seguir o modelo dos sistemas existentes (`packages/rpg-systems/src/<id>/`, registro em
       `registry.ts`, migração inserindo em `rpg_systems`, ficha e assistente no site e no app).
     - PDF do livro (65 MB), versionado com autorização do responsável: [`docs/sistemas/behind-the-magic/MANUAL DE RUNAS.pdf`](sistemas/behind-the-magic/MANUAL%20DE%20RUNAS.pdf).
+
+## Correções do QA para Tormenta20 (2026-10-20, em andamento)
+
+1. **[Feito]** Criação: o benefício de origem "um poder de combate à sua escolha" abre a escolha do poder ali
+   mesmo, abaixo de Poderes únicos.
+2. **[Feito]** Subida de nível: "Aumento de Atributo" abre a escolha do atributo e aplica o aumento.
+3. **[Feito]** Subida de nível: habilidades com escolha (ex.: Bênção da Justiça: Égide Sagrada ou Montaria
+   Sagrada) já permitem escolher a opção.
+4. Condições: duração em rodadas ao aplicar, para o efeito sair sozinho.
+5. Rolagem com seletor de três estados: desvantagem / normal / vantagem.
+6. Poderes e magias: botão para usar na jogada (registrar/rolar).
+7. Inventário mais parecido com o do D&D.
+8. **[Feito]** Não mostrar habilidades de níveis ainda não alcançados.
+
+Feito (1, 2, 3 e 8): benefício genérico da origem abre a lista de poderes do grupo (combate,
+destino…); "Aumento de Atributo" pede o atributo (+1, um por patamar; Constituição soma +1 PV por
+nível); habilidades com "escolha entre X e Y" pedem a opção; poderes que só vêm dessas escolhas
+(Égide Sagrada, Montaria Sagrada) saíram da lista de poderes da criação e da subida de nível.
+Site e app; testes em `tormenta20/level-up.test.ts`.
 
 ### Estado em 2026-10-20 (feito e publicado)
 
@@ -372,6 +391,11 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-20 — QA do Tormenta20 (parte 1)
+
+- Itens 1, 2, 3 e 8 da lista do QA. Relatório [`MELHORIAS_FUTURAS.md`](MELHORIAS_FUTURAS.md) criado
+  (dado 3D e Behind the Magic). `pnpm check` 20/20 (rpg-systems 179 testes).
 
 ### 2026-10-20 — Itens 6 a 10
 
