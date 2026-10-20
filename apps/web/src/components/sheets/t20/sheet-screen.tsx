@@ -38,6 +38,7 @@ import { Card, CardHeader } from '@/components/ui/card';
 import { TextareaField } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
 import { Tabs } from '@/components/ui/tabs';
+import { DiceProvider, useDice } from '@/components/dice/dice-roller';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
 import { cx } from '@/lib/cx';
@@ -54,6 +55,8 @@ interface T20SheetScreenProps {
   permissions: { canEditSheet: boolean; canEditPlay: boolean };
   /** Livros T20 da campanha (ou do dono), para a subida de nível. */
   sources?: T20ContentSource[];
+  /** Na campanha, as rolagens vão para o mural e só valem com a sessão em andamento. */
+  variant?: 'full' | 'campaign';
 }
 
 const ABILITY_GROUPS: { kind: CharacterAbility['kind']; title: string }[] = [
@@ -65,6 +68,21 @@ const ABILITY_GROUPS: { kind: CharacterAbility['kind']; title: string }[] = [
 
 /** Ficha do Tormenta20: vida e mana, testes, poderes, magias, inventário, condições e história. */
 export function T20SheetScreen(props: T20SheetScreenProps) {
+  // Mesmo rolador do D&D: dado animado na tela e, na campanha, rolagem no mural da mesa.
+  return (
+    <DiceProvider
+      campaignId={props.variant === 'campaign' ? (props.character.campaign?.id ?? null) : null}
+      characterId={props.character.id}
+      enabled={props.permissions.canEditPlay}
+      sessionGate={props.variant === 'campaign'}
+    >
+      <T20SheetBody {...props} />
+    </DiceProvider>
+  );
+}
+
+function T20SheetBody(props: T20SheetScreenProps) {
+  const dice = useDice();
   const { character, permissions } = props;
   const { toast } = useToast();
   const [tab, setTab] = useState('jogo');
@@ -95,7 +113,12 @@ export function T20SheetScreen(props: T20SheetScreenProps) {
   };
 
   const roll = (label: string, bonus: number) => {
-    const result = rollDiceLocally(`1d20${bonus >= 0 ? '+' : ''}${bonus}`);
+    const expression = `1d20${bonus >= 0 ? '+' : ''}${bonus}`;
+    if (dice) {
+      void dice.roll({ expression, label });
+      return;
+    }
+    const result = rollDiceLocally(expression);
     if (result) toast({ tone: 'info', title: `${label}: ${result.total}`, description: `1d20 (${result.total - bonus}) ${formatT20Bonus(bonus)}` });
   };
 

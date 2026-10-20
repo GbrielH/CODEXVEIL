@@ -5,6 +5,7 @@ import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { BookDeleteButton } from '@/components/books/book-delete';
 import { BookImporter } from '@/components/books/book-importer';
+import { SystemBadge } from '@/components/books/system-badge';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
@@ -50,11 +51,7 @@ export default async function MyBooksPage() {
               <Card className="flex h-full flex-col gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="parchment">{sourcebookCategoryLabels[pack.category as SourcebookCategory]?.name ?? pack.category}</Badge>
-                  {pack.systemId === 'tormenta20' ? (
-                    <Badge>Tormenta20 · {pack.edition}</Badge>
-                  ) : (
-                    <Badge>{pack.edition === '2024' ? 'Regras de 2024' : 'Regras de 2014'}</Badge>
-                  )}
+                  <SystemBadge systemId={pack.systemId} edition={pack.edition} />
                   {pack.isReady ? null : <Badge tone="warning">Importação incompleta</Badge>}
                 </div>
                 <Link href={bookPath(pack.id) as Route} className="font-display text-xl text-fg-accent hover:underline">

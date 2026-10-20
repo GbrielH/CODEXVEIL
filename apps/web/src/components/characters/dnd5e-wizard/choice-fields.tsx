@@ -321,18 +321,29 @@ function AbilityIncrease({
   const entries = ABILITIES.filter((ability) => (value[ability] ?? 0) > 0);
   // O modo do Aumento no Valor de Atributo fica guardado: com nada escolhido, não dá para deduzi-lo.
   const [asiMode, setAsiMode] = useState<'two' | 'split'>(() => (entries.length === 1 && value[entries[0]!] === 2 ? 'two' : 'split'));
-  const allOnes = spec.mode === 'background' && entries.length === 3;
+  // Modo do antecedente guardado: livros oferecem os 6 atributos, e aí o "+1 nos três" pede a escolha.
+  const [bgMode, setBgMode] = useState<'split' | 'even'>(() => (entries.length === 3 && entries.every((ability) => value[ability] === 1) ? 'even' : 'split'));
+  const allOnes = bgMode === 'even';
   const twoAndOne = !allOnes;
   const plusTwo = entries.find((ability) => value[ability] === 2) ?? '';
   const ones = entries.filter((ability) => value[ability] === 1);
 
   if (spec.mode === 'background') {
-    const setMode = (mode: 'split' | 'even') =>
-      onChange(mode === 'even' ? Object.fromEntries(spec.abilities.map((ability) => [ability, 1])) : {});
+    const fixedThree = spec.abilities.length === 3;
+    const setMode = (mode: 'split' | 'even') => {
+      setBgMode(mode);
+      onChange(mode === 'even' && fixedThree ? Object.fromEntries(spec.abilities.map((ability) => [ability, 1])) : {});
+    };
     const setSplit = (two: Ability | '', one: Ability | '') => {
       const next: Partial<Record<Ability, number>> = {};
       if (two) next[two] = 2;
       if (one && one !== two) next[one] = 1;
+      onChange(next);
+    };
+    const setOne = (slot: number, ability: Ability | '') => {
+      const picked = [0, 1, 2].map((index) => (index === slot ? ability : (ones[index] ?? '')));
+      const next: Partial<Record<Ability, number>> = {};
+      for (const entry of picked) if (entry) next[entry] = 1;
       onChange(next);
     };
     return (
@@ -355,8 +366,20 @@ function AbilityIncrease({
               onChange={(ability) => setSplit(plusTwo, ability)}
             />
           </div>
-        ) : (
+        ) : fixedThree ? (
           <p className="text-sm text-fg-secondary">{spec.abilities.map((ability) => `${abilityLabels[ability].name} +1`).join(' · ')}</p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[0, 1, 2].map((slot) => (
+              <AbilitySelect
+                key={slot}
+                label="+1 em"
+                abilities={spec.abilities.filter((ability) => ability === ones[slot] || !ones.includes(ability))}
+                value={ones[slot] ?? ''}
+                onChange={(ability) => setOne(slot, ability)}
+              />
+            ))}
+          </div>
         )}
       </div>
     );

@@ -1,3 +1,4 @@
+import { characterImagePrompt } from '@codexveil/domain';
 import { createCharacter } from '@codexveil/database';
 import {
   T20_ATTRIBUTES,
@@ -53,6 +54,8 @@ import { Field } from '@/components/ui/field';
 import { PickerField } from '@/components/ui/picker';
 import { AppText, Badge, Card } from '@/components/ui/primitives';
 import { Notice } from '@/components/ui/states';
+import { CharacterIcon } from '@/components/creation/character-icon';
+import { ImagePromptCard } from '@/components/creation/image-prompt-card';
 import { failureMessage } from '@/lib/errors';
 import { getSupabase } from '@/lib/supabase';
 import { colors, fonts, radii, spacing } from '@/lib/theme';
@@ -268,7 +271,7 @@ export function T20MobileWizard({ campaign, sources }: { campaign: T20MobileCamp
       {step === 'raca' ? (
         <View style={{ gap: spacing[2] }}>
           {content.races.map((entry) => (
-            <OptionCard key={entry.id} selected={entry.id === draft.raceId} title={entry.name} description={clip(entry.summary)} onPress={() => update({ raceId: entry.id, raceAttributeChoices: [], raceVariant: '', raceSkills: [], raceSkillPower: '' })} />
+            <OptionCard key={entry.id} selected={entry.id === draft.raceId} title={entry.name} description={clip(entry.summary)} icon={(color) => <CharacterIcon kind="species" id={entry.id} color={color} />} onPress={() => update({ raceId: entry.id, raceAttributeChoices: [], raceVariant: '', raceSkills: [], raceSkillPower: '' })} />
           ))}
           {race?.attributeChoice
             ? multi(
@@ -447,6 +450,9 @@ export function T20MobileWizard({ campaign, sources }: { campaign: T20MobileCamp
           <AppText variant="small">{T20_ATTRIBUTES.map((key) => `${t20AttributeLabels[key].abbreviation} ${formatT20Bonus(attrs[key])}`).join('  ')}</AppText>
           {issues.length ? <Notice tone="warning" title={`Pendências (${issues.length})`} message={issues.map((issue) => issue.message).join('\n')} /> : <Notice tone="success" message="Tudo certo! Crie o personagem." />}
         </Card>
+      ) : null}
+      {step === 'revisao' ? (
+        <ImagePromptCard prompt={characterImagePrompt({ system: 'Tormenta20', name: draft.name, species: race?.name, className: klass?.name, level: draft.level, background: origin?.name, appearance: draft.appearance, personality: draft.personality, backstory: draft.history })} />
       ) : null}
 
       {showErrors && step !== 'revisao' && stepIssues(step).length ? <Notice tone="warning" message={stepIssues(step).map((issue) => issue.message).join(' ')} /> : null}

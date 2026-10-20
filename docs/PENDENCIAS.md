@@ -85,6 +85,7 @@ depois desse uso.
 | Combate roleplay (pedido de 2026-10-20) | Implementado (sem teste no navegador) | O jogador não escolhe alvo; rola o ataque, o mestre diz se acertou e o dano é rolado só no mural, sem aplicar em PV. Site e app. |
 | Aba Sessão (pedido de 2026-10-20) | Implementado e migração aplicada | Lore oculta por padrão; o mestre libera trechos na mesa; jogadores veem na aba Sessão em tempo real. App: leitura atualiza sozinha. |
 | Dados realistas (pedido de 2026-10-20) | Implementado (sem teste visual) | Dados grandes caindo e girando no meio da tela, sem caixa, até 6 por vez. Site e app. |
+| Pedidos 6 a 10 de 2026-10-20 | Implementado (sem teste visual) | Selo do sistema, ícones de raça, "+1 nos três", abas por papel e prompt de imagem. |
 | Listas no visual do sistema, com busca | Implementado; falta publicar | Todas as listas de seleção do site trocaram o `<select>` nativo por um componente próprio com busca sem acentos, teclado e leitor de tela; listas longas do assistente ganharam busca; no app, a lista de condições abre em painel com busca. |
 | Crônica com as cores certas e página na largura da tela | Implementado; falta publicar | O cartão escuro anulava o fundo do pergaminho e deixava os rótulos ilegíveis; agora a crônica é um pergaminho com tinta escura. A área logada ocupa toda a largura. Corrigido também o defeito antigo que espremia os nomes das perícias. |
 | Confirmar que todo o conteúdo do livro de D&D está no sistema | Respondido | Não está, e nem pode estar todo: veja a cobertura abaixo. |

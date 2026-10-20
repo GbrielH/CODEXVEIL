@@ -282,6 +282,9 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-20 (itens 6 a 10):** feitos (`pnpm check` 20/20; testes novos de ícones de raça e
+  do prompt de imagem). Ficha T20 agora usa o dado animado. Próximo: dado 3D estilo app "Dice"
+  (em avaliação) e item 11.
 - **2026-10-20 (dados realistas):** item 5 feito (`pnpm check` 20/20; animação não conferida
   no navegador nem no aparelho). Próximo: item 6 (selo do sistema em Meus livros).
 - **2026-10-20 (aba Sessão):** item 4 feito no código (`pnpm check` 20/20; sem teste no

@@ -437,7 +437,12 @@ function IncreaseField({
   onChange: (value: Partial<Record<Ability, number>>) => void;
 }) {
   const entries = ABILITIES.filter((ability) => (value[ability] ?? 0) > 0);
-  const even = spec.mode === 'background' && entries.length === 3;
+  // Livros oferecem os 6 atributos: aí o "+1 nos três" pede a escolha dos três.
+  const fixedThree = spec.abilities.length === 3;
+  const [bgMode, setBgMode] = useState<'split' | 'even'>(() =>
+    entries.length === 3 && entries.every((ability) => value[ability] === 1) ? 'even' : 'split',
+  );
+  const even = spec.mode === 'background' && bgMode === 'even';
   // O modo do Aumento no Valor de Atributo fica guardado: com nada escolhido, não dá para deduzi-lo.
   const [asiMode, setAsiMode] = useState<'two' | 'split'>(() =>
     entries.length === 1 && value[entries[0]!] === 2 ? 'two' : 'split',
@@ -462,13 +467,23 @@ function IncreaseField({
   const modes =
     spec.mode === 'background'
       ? [
-          { id: 'split', label: '+2 e +1', active: !even, apply: () => onChange({}) },
+          {
+            id: 'split',
+            label: '+2 e +1',
+            active: !even,
+            apply: () => {
+              setBgMode('split');
+              onChange({});
+            },
+          },
           {
             id: 'even',
             label: '+1 nos três',
             active: even,
-            apply: () =>
-              onChange(Object.fromEntries(spec.abilities.map((ability) => [ability, 1]))),
+            apply: () => {
+              setBgMode('even');
+              onChange(fixedThree ? Object.fromEntries(spec.abilities.map((ability) => [ability, 1])) : {});
+            },
           },
         ]
       : [
@@ -535,10 +550,29 @@ function IncreaseField({
           </View>
         </>
       ) : null}
-      {spec.mode === 'background' && even ? (
+      {spec.mode === 'background' && even && fixedThree ? (
         <AppText variant="muted">
           {spec.abilities.map((ability) => `${abilityLabels[ability].name} +1`).join(' · ')}
         </AppText>
+      ) : null}
+      {spec.mode === 'background' && even && !fixedThree ? (
+        <>
+          <AppText variant="small">+1 em três ({ones.length}/3)</AppText>
+          <View style={styles.chips}>
+            {spec.abilities.map((ability) => (
+              <Chip
+                key={ability}
+                label={abilityLabels[ability].name}
+                selected={ones.includes(ability)}
+                disabled={!ones.includes(ability) && ones.length >= 3}
+                onPress={() => {
+                  const next = ones.includes(ability) ? ones.filter((entry) => entry !== ability) : [...ones, ability];
+                  onChange(Object.fromEntries(next.map((entry) => [entry, 1])));
+                }}
+              />
+            ))}
+          </View>
+        </>
       ) : null}
       {spec.mode === 'asi' && asiTwo ? (
         <View style={styles.chips}>

@@ -1,3 +1,4 @@
+import { characterImagePrompt } from '@codexveil/domain';
 import {
   createCharacter,
   listBookEntries,
@@ -55,6 +56,7 @@ import {
 } from '@/components/creation/ability-scores';
 import { SourcebookChips } from '@/components/campaign-rules-editor';
 import { CharacterIcon } from '@/components/creation/character-icon';
+import { ImagePromptCard } from '@/components/creation/image-prompt-card';
 import { ChoiceField, OptionCard } from '@/components/creation/choice-fields';
 import { T20MobileWizard } from '@/components/t20/wizard';
 import { Button } from '@/components/ui/button';
@@ -887,6 +889,22 @@ function Review({
           {resources.find((resource) => resource.key === 'currency_gp')?.current ?? 0} PO
         </AppText>
       </Card>
+      <ImagePromptCard
+        prompt={characterImagePrompt({
+          system: 'D&D 5e',
+          name: draft.name,
+          species: sheet.identity.species,
+          className: klass ? `${klass.name}${klass.subclass ? ` (${klass.subclass})` : ''}` : '',
+          level: klass?.level ?? null,
+          background: sheet.identity.background,
+          alignment: sheet.identity.alignment,
+          strengths: [...ABILITIES].sort((a, b) => sheet.abilities[b] - sheet.abilities[a]).map((ability) => abilityLabels[ability].name),
+          equipment: items.filter((item) => item.isEquipped).map((item) => item.name),
+          appearance: draft.details.appearance,
+          personality: [draft.details.personality, draft.details.ideals].filter(Boolean).join(' '),
+          backstory: draft.details.backstory,
+        })}
+      />
     </View>
   );
 }

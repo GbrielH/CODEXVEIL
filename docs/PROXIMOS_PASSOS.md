@@ -65,13 +65,18 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
    quicando e girando no meio da tela, sem caixa, com o número trocando até parar; 20 natural fica
    verde e 1 natural vermelho; o total aparece embaixo e tudo some sozinho (no app, também com um
    toque). Movimento reduzido do sistema desliga a queda.
-6. **Meus livros:** marcador do sistema de cada livro (D&D 5e, Tormenta20…).
-7. **Imagens das raças:** muitas raças aparecem com imagem básica de humano; revisar todas.
-8. **Botão "+1 nos três"** (aumento do antecedente) não responde ao clique; corrigir.
-9. **Abas do mestre x jogadores:** conferir se as abas visíveis a cada papel são coerentes.
-10. **Prompt de imagem do personagem:** ao terminar a criação, oferecer (opcional) um prompt pronto
+6. **[Feito em 2026-10-20] Meus livros:** marcador do sistema de cada livro (D&D 5e, Tormenta20…).
+   Feito: selo "D&D 5e · regras de 2014/2024" ou "Tormenta20 · edição" em Meus livros, nos Livros da campanha e no leitor.
+7. **[Feito em 2026-10-20] Imagens das raças:** muitas raças aparecem com imagem básica de humano; revisar todas.
+   Feito: 29 ícones novos (game-icons.net, CC BY 3.0) para as raças de Monstros do Multiverso e de Tormenta20; teste garante que nenhuma raça dos livros cai no humano; ícones também na escolha de raça do T20 (site e app).
+8. **[Feito em 2026-10-20] Botão "+1 nos três"** (aumento do antecedente) não responde ao clique; corrigir.
+   Feito: os antecedentes dos livros oferecem os 6 atributos, e o botão tentava dar +1 em todos (inválido, parecia não responder). Agora o modo fica guardado e, com mais de 3 opções, pede a escolha de 3 atributos (site e app).
+9. **[Feito em 2026-10-20] Abas do mestre x jogadores:** conferir se as abas visíveis a cada papel são coerentes.
+   Conferido: mestre vê Mesa, Convites e Configurações (bloqueadas para jogadores); jogador vê Meu personagem (bloqueada para o mestre); as demais abas filtram pelo papel e pelo RLS. Nenhuma correção necessária.
+10. **[Feito em 2026-10-20] Prompt de imagem do personagem:** ao terminar a criação, oferecer (opcional) um prompt pronto
     para gerar a imagem numa IA de preferência do jogador, com classe, raça, habilidades,
     personalidade, história, antecedente e demais dados; copiar ou ignorar.
+    Feito: na revisão da criação (D&D e T20, site e app) aparece o cartão "Prompt para a imagem do personagem (opcional)" com Copiar e Ignorar; montado por `characterImagePrompt` (domínio, com teste).
 11. Depois: tradução do SRD (item 2 antigo) e assistente de IA (pedido de 2026-10-18).
 12. **Sistema da comunidade "Behind the Magic" (livro "Manual de Runas").** RPG de autoria de um
     amigo do responsável, **original e com uso autorizado** (pode usar todo o conteúdo do livro:
@@ -367,6 +372,12 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-20 — Itens 6 a 10
+
+- Selo do sistema nos livros, ícones das raças, "+1 nos três" consertado, abas conferidas e prompt
+  de imagem do personagem. A ficha de Tormenta20 passou a usar o mesmo rolador (dado animado e,
+  na campanha, mural). `pnpm check` 20/20; sem teste no navegador nem no aparelho.
 
 ### 2026-10-20 — Dados realistas
 

@@ -37,6 +37,7 @@ import { PickerField } from '@/components/ui/picker';
 import { AppText, Badge, Card } from '@/components/ui/primitives';
 import { Segmented } from '@/components/ui/segmented';
 import { Notice } from '@/components/ui/states';
+import { DiceProvider, useDice } from '@/components/dice/dice';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/errors';
 import { getSupabase } from '@/lib/supabase';
@@ -58,6 +59,16 @@ interface Props {
 
 /** Ficha do Tormenta20 no app: vida, mana, condições, testes, poderes, magias, itens e subida de nível. */
 export function T20MobileSheet(props: Props) {
+  // Mesmo rolador do D&D: dado grande animado na tela.
+  return (
+    <DiceProvider campaignId={null} characterId={props.character.id} enabled={props.canEditPlay}>
+      <T20SheetBody {...props} />
+    </DiceProvider>
+  );
+}
+
+function T20SheetBody(props: Props) {
+  const dice = useDice();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>('jogo');
   const [sheet, setSheet] = useState(props.sheet);
@@ -83,7 +94,12 @@ export function T20MobileSheet(props: Props) {
     }
   };
   const roll = (label: string, bonus: number) => {
-    const result = rollDiceLocally(`1d20${bonus >= 0 ? '+' : ''}${bonus}`);
+    const expression = `1d20${bonus >= 0 ? '+' : ''}${bonus}`;
+    if (dice) {
+      void dice.roll({ expression, label });
+      return;
+    }
+    const result = rollDiceLocally(expression);
     if (result) toast({ tone: 'info', title: `${label}: ${result.total}`, description: `1d20 (${result.total - bonus}) ${formatT20Bonus(bonus)}` });
   };
 

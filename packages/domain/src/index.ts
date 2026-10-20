@@ -8,3 +8,4 @@ export * from './visibility';
 export * from './plans';
 export * from './errors';
 export * from './combat/dice';
+export * from './characters/image-prompt';

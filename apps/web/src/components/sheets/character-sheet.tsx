@@ -126,6 +126,7 @@ export async function CharacterSheet({ characterId, variant = 'full' }: { charac
         abilities={abilities}
         permissions={{ canEditSheet: permissions.canEditSheet, canEditPlay: permissions.canEditPlay }}
         sources={t20Sources}
+        variant={variant}
       />
     ) : (
       <ErrorState title="Não foi possível abrir a ficha" description="Os dados desta ficha não seguem o formato do Tormenta20. Nada foi alterado." />

@@ -12,6 +12,7 @@ import { BookOpen, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { SystemBadge } from '@/components/books/system-badge';
 import { Badge } from '@/components/ui/badge';
 import { buttonClasses } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -40,11 +41,7 @@ function BookHeader({ reader }: { reader: BookReaderContext }) {
     <header className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="parchment">{category}</Badge>
-        {pack.systemId === 'tormenta20' ? (
-          <Badge>Tormenta20 · {pack.edition}</Badge>
-        ) : (
-          <Badge>{pack.edition === '2024' ? 'Regras de 2024' : 'Regras de 2014'}</Badge>
-        )}
+        <SystemBadge systemId={pack.systemId} edition={pack.edition} />
         {isSourcebookId(pack.bookKey) ? <Badge tone="info">Livro oficial: {findSourcebook(pack.bookKey)?.name}</Badge> : null}
       </div>
       <h2 className="text-2xl leading-tight sm:text-3xl">{pack.name}</h2>

@@ -2,6 +2,7 @@ import { sourcebookCategoryLabels, type SourcebookCategory } from '@codexveil/rp
 import { BookOpen } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
+import { SystemBadge } from '@/components/books/system-badge';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/states';
@@ -43,9 +44,10 @@ export default async function CampaignBooksPage({ params }: PageProps<'/campanha
           <li key={pack.id}>
             <Link href={bookPath(pack.id, '', campaign.id) as Route} className="block h-full">
               <Card className="flex h-full flex-col gap-2 transition-colors hover:border-line-strong">
-                <Badge tone="parchment" className="w-fit">
-                  {sourcebookCategoryLabels[pack.category as SourcebookCategory]?.name ?? pack.category}
-                </Badge>
+                <div className="flex flex-wrap gap-2">
+                  <Badge tone="parchment">{sourcebookCategoryLabels[pack.category as SourcebookCategory]?.name ?? pack.category}</Badge>
+                  <SystemBadge systemId={pack.systemId} edition={pack.edition} />
+                </div>
                 <span className="font-display text-xl text-fg-accent">{pack.name}</span>
                 <span className="text-sm text-fg-muted">{describeBookCounts(pack.entryCounts, pack.systemId)}</span>
               </Card>

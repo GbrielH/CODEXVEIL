@@ -16,7 +16,9 @@ import {
   spellNamePt,
   type Dnd5eDraft,
 } from '@codexveil/rpg-systems/dnd5e';
+import { characterImagePrompt } from '@codexveil/domain';
 import { useMemo } from 'react';
+import { ImagePromptCard } from '@/components/characters/image-prompt-card';
 import { Badge } from '@/components/ui/badge';
 
 const kindLabels = {
@@ -41,6 +43,20 @@ export function CharacterReview({ draft }: { draft: Dnd5eDraft }) {
   const attacks = abilities.filter((entry) => entry.kind === 'attack');
   const proficientSkills = SKILLS.filter((skill) => sheet.skills[skill].proficiency === 'proficient' || sheet.skills[skill].proficiency === 'expertise');
   const klass = sheet.identity.classes[0];
+  const imagePrompt = characterImagePrompt({
+    system: 'D&D 5e',
+    name: draft.name,
+    species: sheet.identity.species,
+    className: klass ? `${klass.name}${klass.subclass ? ` (${klass.subclass})` : ''}` : '',
+    level: klass?.level ?? null,
+    background: sheet.identity.background,
+    alignment: sheet.identity.alignment,
+    strengths: [...ABILITIES].sort((a, b) => sheet.abilities[b] - sheet.abilities[a]).map((ability) => abilityLabels[ability].name),
+    equipment: items.filter((item) => item.isEquipped).map((item) => item.name),
+    appearance: draft.details.appearance,
+    personality: [draft.details.personality, draft.details.ideals].filter(Boolean).join(' '),
+    backstory: draft.details.backstory,
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -225,6 +241,8 @@ export function CharacterReview({ draft }: { draft: Dnd5eDraft }) {
         )}
         <p className="mt-2 text-sm text-fg-secondary">Ouro: {gold} PO</p>
       </section>
+
+      <ImagePromptCard prompt={imagePrompt} />
     </div>
   );
 }

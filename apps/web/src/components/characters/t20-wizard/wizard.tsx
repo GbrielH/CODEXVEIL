@@ -47,15 +47,18 @@ import {
   type T20Skill,
   type T20Step,
 } from '@codexveil/rpg-systems/tormenta20';
+import { characterImagePrompt } from '@codexveil/domain';
 import { AlertTriangle, Check, ChevronLeft, ChevronRight, Dices, Minus, Plus, Sparkles } from 'lucide-react';
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
-import { useMemo, useRef, useState, useTransition } from 'react';
+import { useMemo, useRef, useState, useTransition, type ReactNode } from 'react';
 import { createT20CharacterAction } from '@/app/(app)/personagens/actions-t20';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckboxField, SelectField, TextField, TextareaField } from '@/components/ui/field';
+import { CharacterIcon } from '@/components/characters/character-icon';
+import { ImagePromptCard } from '@/components/characters/image-prompt-card';
 import { cx } from '@/lib/cx';
 import { characterPath } from '@/lib/routes';
 
@@ -245,6 +248,7 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                 items={content.races.map((entry) => ({
                   id: entry.id,
                   title: entry.name,
+                  icon: <CharacterIcon kind="species" id={entry.id} className="h-7 w-7 text-fg-accent" />,
                   subtitle: [attributeText(entry.attributes), entry.attributeChoice ? `+${entry.attributeChoice.value} em ${entry.attributeChoice.count} à escolha` : '', t20SizeLabels[entry.size], `${entry.speed} m`]
                     .filter(Boolean)
                     .join(' · '),
@@ -471,6 +475,19 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                   </ul>
                 </div>
               )}
+              <ImagePromptCard
+                prompt={characterImagePrompt({
+                  system: 'Tormenta20',
+                  name: draft.name,
+                  species: race?.name,
+                  className: klass?.name,
+                  level: draft.level,
+                  background: [origin?.name, content.deities.find((deity) => deity.id === draft.deityId)?.name ? `devoto de ${content.deities.find((deity) => deity.id === draft.deityId)?.name}` : ''].filter(Boolean).join(', '),
+                  appearance: draft.appearance,
+                  personality: draft.personality,
+                  backstory: draft.history,
+                })}
+              />
             </div>
           ) : null}
 
@@ -532,7 +549,7 @@ function attributeText(attributes: Partial<Record<T20Attribute, number>>): strin
 // Peças da tela
 // ---------------------------------------------------------------------------
 
-function PickerGrid({ label, value, items, onSelect }: { label: string; value: string; items: { id: string; title: string; subtitle?: string; text?: string }[]; onSelect: (id: string) => void }) {
+function PickerGrid({ label, value, items, onSelect }: { label: string; value: string; items: { id: string; title: string; subtitle?: string; text?: string; icon?: ReactNode }[]; onSelect: (id: string) => void }) {
   return (
     <div role="radiogroup" aria-label={label} className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
       {items.map((item) => (
@@ -547,7 +564,10 @@ function PickerGrid({ label, value, items, onSelect }: { label: string; value: s
             item.id === value ? 'border-parchment-300/70 bg-parchment-200/10' : 'border-line hover:border-line-strong hover:bg-hover',
           )}
         >
-          <span className="font-display text-base text-fg">{item.title}</span>
+          <span className="flex items-center gap-2 font-display text-base text-fg">
+            {item.icon}
+            {item.title}
+          </span>
           {item.subtitle ? <span className="text-xs text-fg-accent">{item.subtitle}</span> : null}
           {item.text ? <span className="line-clamp-4 text-xs leading-relaxed text-fg-muted">{item.text}</span> : null}
         </button>
