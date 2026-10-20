@@ -1,4 +1,9 @@
-import { acceptCampaignInvite, declineCampaignInvite, getInvitePreview, type InvitePreview } from '@codexveil/database';
+import {
+  acceptCampaignInvite,
+  declineCampaignInvite,
+  getInvitePreview,
+  type InvitePreview,
+} from '@codexveil/database';
 import { formatInviteCode, inviteRejectionMessages } from '@codexveil/domain';
 import { findSystem } from '@codexveil/rpg-systems';
 import { inviteCodeSchema } from '@codexveil/validation';
@@ -57,7 +62,11 @@ export default function InviteScreen() {
     try {
       const result = await acceptCampaignInvite(getSupabase(), normalized);
       if (result.ok) {
-        toast({ tone: 'success', title: 'Bem-vindo à mesa!', description: 'Você agora participa desta campanha.' });
+        toast({
+          tone: 'success',
+          title: 'Bem-vindo à mesa!',
+          description: 'Você agora participa desta campanha.',
+        });
         router.replace({ pathname: '/campanha/[id]', params: { id: result.campaignId } });
         return;
       }
@@ -91,10 +100,21 @@ export default function InviteScreen() {
   const campaign = preview && 'campaign' in preview ? preview.campaign : null;
 
   return (
-    <Screen title="Entrar com código" subtitle="Digite o código que o mestre enviou (ex.: ABCD-EFGH-JKLM).">
+    <Screen
+      title="Entrar com código"
+      subtitle="Digite o código que o mestre enviou (ex.: ABCD-EFGH-JKLM)."
+    >
       {error ? <Notice tone="danger" message={error} /> : null}
       <Card>
-        <Field label="Código do convite" value={code} onChangeText={(value) => setCode(value.toUpperCase())} autoCapitalize="characters" autoCorrect={false} maxLength={20} onSubmitEditing={() => void lookUp()} />
+        <Field
+          label="Código do convite"
+          value={code}
+          onChangeText={(value) => setCode(value.toUpperCase())}
+          autoCapitalize="characters"
+          autoCorrect={false}
+          maxLength={20}
+          onSubmitEditing={() => void lookUp()}
+        />
         <Button label="Ver convite" onPress={() => void lookUp()} loading={busy === 'preview'} />
       </Card>
       {campaign ? (
@@ -103,14 +123,32 @@ export default function InviteScreen() {
           <AppText variant="title">{campaign.name}</AppText>
           {campaign.description ? <AppText variant="serif">{campaign.description}</AppText> : null}
           <AppText variant="muted">
-            {findSystem(campaign.systemId)?.shortName ?? campaign.systemId} · Mestre: {campaign.ownerName ?? '—'} · {campaign.memberCount} participante{campaign.memberCount === 1 ? '' : 's'}
+            {findSystem(campaign.systemId)?.shortName ?? campaign.systemId} · Mestre:{' '}
+            {campaign.ownerName ?? '—'} · {campaign.memberCount} participante
+            {campaign.memberCount === 1 ? '' : 's'}
           </AppText>
           {preview && !preview.ok && preview.reason === 'already_member' ? (
-            <Button label="Abrir a campanha" onPress={() => router.replace({ pathname: '/campanha/[id]', params: { id: campaign.id } })} />
+            <Button
+              label="Abrir a campanha"
+              onPress={() =>
+                router.replace({ pathname: '/campanha/[id]', params: { id: campaign.id } })
+              }
+            />
           ) : (
             <View style={{ gap: 8 }}>
-              <Button label="Aceitar e entrar" onPress={() => void accept()} loading={busy === 'accept'} />
-              {preview && 'isPersonal' in preview && preview.isPersonal ? <Button label="Recusar" variant="ghost" onPress={() => void decline()} loading={busy === 'decline'} /> : null}
+              <Button
+                label="Aceitar e entrar"
+                onPress={() => void accept()}
+                loading={busy === 'accept'}
+              />
+              {preview && 'isPersonal' in preview && preview.isPersonal ? (
+                <Button
+                  label="Recusar"
+                  variant="ghost"
+                  onPress={() => void decline()}
+                  loading={busy === 'decline'}
+                />
+              ) : null}
             </View>
           )}
           <AppText variant="small">Código: {formatInviteCode(code)}</AppText>

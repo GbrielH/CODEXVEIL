@@ -59,7 +59,16 @@ export function LevelUpModal({ visible, onClose }: { visible: boolean; onClose: 
 }
 
 function LevelUpPanel({ onClose }: { onClose: () => void }) {
-  const { characterId, sheet, resources, abilities, updateSheet, setAbilities, reloadPlayState, run } = useSheet();
+  const {
+    characterId,
+    sheet,
+    resources,
+    abilities,
+    updateSheet,
+    setAbilities,
+    reloadPlayState,
+    run,
+  } = useSheet();
   const toast = useToast();
   // Classe que sobe: a posição de uma classe da ficha ou "nova:<classe>" (multiclasse).
   const [target, setTarget] = useState('0');
@@ -67,7 +76,10 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
   const classIndex = newClassId ? 0 : Number(target);
   const knownNames = useMemo(() => abilities.map((entry) => entry.name), [abilities]);
   const multiclassOptions = useMemo(() => dnd5eMulticlassOptions(sheet), [sheet]);
-  const plan = useMemo(() => planDnd5eLevelUp(sheet, classIndex, knownNames, newClassId), [sheet, classIndex, knownNames, newClassId]);
+  const plan = useMemo(
+    () => planDnd5eLevelUp(sheet, classIndex, knownNames, newClassId),
+    [sheet, classIndex, knownNames, newClassId],
+  );
 
   const [hpMethod, setHpMethod] = useState<'average' | 'roll'>('average');
   const [rolled, setRolled] = useState<number | null>(null);
@@ -77,7 +89,12 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
   const [featId, setFeatId] = useState('');
   const [featAbility, setFeatAbility] = useState<Ability | ''>('');
   const [featSkills, setFeatSkills] = useState<(Skill | '')[]>(['', '', '']);
-  const [initiate, setInitiate] = useState<MagicInitiateChoice>({ list: '', cantrips: [], spell: '', ability: '' });
+  const [initiate, setInitiate] = useState<MagicInitiateChoice>({
+    list: '',
+    cantrips: [],
+    spell: '',
+    ability: '',
+  });
   const [cantrips, setCantrips] = useState<string[]>([]);
   const [spells, setSpells] = useState<string[]>([]);
   const [invocations, setInvocations] = useState<string[]>([]);
@@ -91,12 +108,17 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
   let improvement: AbilityImprovement | null = null;
   if (plan.abilityScoreImprovement) {
     if (mode === 'plus_two') improvement = { kind: 'plus_two', ability: first };
-    else if (mode === 'plus_one_each') improvement = { kind: 'plus_one_each', abilities: [first, second] };
-    else if (featId) improvement = { kind: 'feat', featId, ...(featAbility ? { ability: featAbility } : {}) };
+    else if (mode === 'plus_one_each')
+      improvement = { kind: 'plus_one_each', abilities: [first, second] };
+    else if (featId)
+      improvement = { kind: 'feat', featId, ...(featAbility ? { ability: featAbility } : {}) };
   }
   const choices: Dnd5eLevelUpChoices = {
     // A rolagem vale uma vez só: depois de rolar, não dá para trocar pela média nem rolar de novo.
-    hitPoints: hpMethod === 'roll' ? { method: 'roll', die: Math.min(rolled ?? 0, plan.hitDieSides) } : { method: 'average' },
+    hitPoints:
+      hpMethod === 'roll'
+        ? { method: 'roll', die: Math.min(rolled ?? 0, plan.hitDieSides) }
+        : { method: 'average' },
     improvement,
     cantrips,
     spells,
@@ -133,7 +155,11 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
     })),
   ];
   const abilityOptions = (scores: Record<Ability, number>): PickerOption[] =>
-    ABILITIES.map((ability) => ({ value: ability, label: `${abilityLabels[ability].name} (${scores[ability]})`, disabled: scores[ability] >= 20 }));
+    ABILITIES.map((ability) => ({
+      value: ability,
+      label: `${abilityLabels[ability].name} (${scores[ability]})`,
+      disabled: scores[ability] >= 20,
+    }));
 
   const apply = async () => {
     if (result.issues.length) return;
@@ -178,7 +204,11 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
           }),
         );
       }
-      await addCharacterEvent(supabase, characterId, { kind: 'level_up', summary: result.summary, data: { classIndex: plan.classIndex, level: plan.newTotalLevel } });
+      await addCharacterEvent(supabase, characterId, {
+        kind: 'level_up',
+        summary: result.summary,
+        data: { classIndex: plan.classIndex, level: plan.newTotalLevel },
+      });
       return saved;
     }, 'A subida de nível não foi concluída');
     setBusy(false);
@@ -199,7 +229,11 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
             Nível {plan.newTotalLevel}: {plan.className || 'classe'} {plan.newClassLevel}
           </AppText>
         </View>
-        <IconButton icon={<X size={20} color={colors.fg} />} accessibilityLabel="Fechar" onPress={onClose} />
+        <IconButton
+          icon={<X size={20} color={colors.fg} />}
+          accessibilityLabel="Fechar"
+          onPress={onClose}
+        />
       </View>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <AppText variant="muted">
@@ -208,21 +242,37 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
             : 'Esta classe não está no SRD: o nível sobe e a vida é calculada, mas habilidades e magias ficam por sua conta.'}
         </AppText>
 
-        <PickerField label="Classe que sobe de nível" options={classOptions} value={target} onChange={chooseTarget} />
-        <AppText variant="small">Multiclasse (SRD 5.2.1): 13 ou mais no atributo principal da classe nova e das que você já tem.</AppText>
+        <PickerField
+          label="Classe que sobe de nível"
+          options={classOptions}
+          value={target}
+          onChange={chooseTarget}
+        />
+        <AppText variant="small">
+          Multiclasse (SRD 5.2.1): 13 ou mais no atributo principal da classe nova e das que você já
+          tem.
+        </AppText>
 
         {plan.multiclass ? (
           <Section title="Nova classe">
             <AppText variant="small">
-              {plan.className} entra no 1º nível, com dado de vida {plan.classDef?.hitDie}. Os testes de resistência continuam os da primeira classe.
-              {[plan.multiclass.training.armor, plan.multiclass.training.weapons, plan.multiclass.training.tools].some(Boolean)
+              {plan.className} entra no 1º nível, com dado de vida {plan.classDef?.hitDie}. Os
+              testes de resistência continuam os da primeira classe.
+              {[
+                plan.multiclass.training.armor,
+                plan.multiclass.training.weapons,
+                plan.multiclass.training.tools,
+              ].some(Boolean)
                 ? ` Treinamento novo: ${[plan.multiclass.training.armor, plan.multiclass.training.weapons, plan.multiclass.training.tools].filter(Boolean).join('; ')}.`
                 : ''}
             </AppText>
             {plan.multiclass.skillOptions.length > 0 ? (
               <PickerField
                 label="Perícia da nova classe"
-                options={plan.multiclass.skillOptions.map((skill) => ({ value: skill, label: skillDefinitions[skill].label }))}
+                options={plan.multiclass.skillOptions.map((skill) => ({
+                  value: skill,
+                  label: skillDefinitions[skill].label,
+                }))}
                 value={multiclassSkill}
                 onChange={(value) => setMulticlassSkill(value as Skill)}
               />
@@ -230,7 +280,10 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
             {plan.multiclass.instrumentOptions.length > 0 ? (
               <PickerField
                 label="Instrumento musical"
-                options={plan.multiclass.instrumentOptions.map((instrument) => ({ value: instrument.id, label: instrument.name }))}
+                options={plan.multiclass.instrumentOptions.map((instrument) => ({
+                  value: instrument.id,
+                  label: instrument.name,
+                }))}
                 value={multiclassInstrument}
                 onChange={setMulticlassInstrument}
               />
@@ -238,7 +291,13 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
           </Section>
         ) : null}
 
-        {plan.subclass ? <Notice tone="info" title={`Subclasse: ${plan.subclass.name}`} message={plan.subclass.description} /> : null}
+        {plan.subclass ? (
+          <Notice
+            tone="info"
+            title={`Subclasse: ${plan.subclass.name}`}
+            message={plan.subclass.description}
+          />
+        ) : null}
 
         <Section title="Habilidades novas">
           {plan.features.length === 0 ? (
@@ -255,8 +314,18 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
 
         <Section title="Pontos de vida">
           <ChipRow>
-            <Chip label={`Média: ${Math.floor(plan.hitDieSides / 2) + 1}`} selected={hpMethod === 'average'} role="radio" onPress={() => (rolled === null ? setHpMethod('average') : undefined)} />
-            <Chip label={`Rolar 1d${plan.hitDieSides}`} selected={hpMethod === 'roll'} role="radio" onPress={() => setHpMethod('roll')} />
+            <Chip
+              label={`Média: ${Math.floor(plan.hitDieSides / 2) + 1}`}
+              selected={hpMethod === 'average'}
+              role="radio"
+              onPress={() => (rolled === null ? setHpMethod('average') : undefined)}
+            />
+            <Chip
+              label={`Rolar 1d${plan.hitDieSides}`}
+              selected={hpMethod === 'roll'}
+              role="radio"
+              onPress={() => setHpMethod('roll')}
+            />
           </ChipRow>
           {hpMethod === 'roll' ? (
             rolled === null ? (
@@ -272,20 +341,55 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
             )
           ) : null}
           <AppText variant="small">
-            Máximo de PV +{result.hitPointsGained} (inclui o modificador de Constituição{plan.conModifier !== 0 ? ` de ${plan.conModifier > 0 ? '+' : ''}${plan.conModifier}` : ''}).
+            Máximo de PV +{result.hitPointsGained} (inclui o modificador de Constituição
+            {plan.conModifier !== 0
+              ? ` de ${plan.conModifier > 0 ? '+' : ''}${plan.conModifier}`
+              : ''}
+            ).
           </AppText>
         </Section>
 
         {plan.abilityScoreImprovement ? (
-          <Section title={plan.epicBoon ? 'Dádiva épica ou talento' : 'Aumento no Valor de Atributo ou talento'}>
+          <Section
+            title={
+              plan.epicBoon ? 'Dádiva épica ou talento' : 'Aumento no Valor de Atributo ou talento'
+            }
+          >
             <ChipRow>
-              <Chip label="+2 em um atributo" selected={mode === 'plus_two'} role="radio" onPress={() => setMode('plus_two')} />
-              <Chip label="+1 em dois" selected={mode === 'plus_one_each'} role="radio" onPress={() => setMode('plus_one_each')} />
-              <Chip label="Talento" selected={mode === 'feat'} role="radio" onPress={() => setMode('feat')} />
+              <Chip
+                label="+2 em um atributo"
+                selected={mode === 'plus_two'}
+                role="radio"
+                onPress={() => setMode('plus_two')}
+              />
+              <Chip
+                label="+1 em dois"
+                selected={mode === 'plus_one_each'}
+                role="radio"
+                onPress={() => setMode('plus_one_each')}
+              />
+              <Chip
+                label="Talento"
+                selected={mode === 'feat'}
+                role="radio"
+                onPress={() => setMode('feat')}
+              />
             </ChipRow>
-            {mode !== 'feat' ? <PickerField label="Atributo" options={abilityOptions(sheet.abilities)} value={first} onChange={(value) => setFirst(value as Ability)} /> : null}
+            {mode !== 'feat' ? (
+              <PickerField
+                label="Atributo"
+                options={abilityOptions(sheet.abilities)}
+                value={first}
+                onChange={(value) => setFirst(value as Ability)}
+              />
+            ) : null}
             {mode === 'plus_one_each' ? (
-              <PickerField label="Segundo atributo" options={abilityOptions(sheet.abilities)} value={second} onChange={(value) => setSecond(value as Ability)} />
+              <PickerField
+                label="Segundo atributo"
+                options={abilityOptions(sheet.abilities)}
+                value={second}
+                onChange={(value) => setSecond(value as Ability)}
+              />
             ) : null}
             {mode === 'feat' ? (
               featOptions.length === 0 ? (
@@ -293,7 +397,11 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
               ) : (
                 <PickerField
                   label="Talento"
-                  options={featOptions.map((feat) => ({ value: feat.id, label: feat.name, description: `${featCategoryLabels[feat.category]}. ${feat.description}` }))}
+                  options={featOptions.map((feat) => ({
+                    value: feat.id,
+                    label: feat.name,
+                    description: `${featCategoryLabels[feat.category]}. ${feat.description}`,
+                  }))}
                   value={featId}
                   onChange={(value) => {
                     setFeatId(value);
@@ -307,7 +415,10 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
             {mode === 'feat' && featIncrease ? (
               <PickerField
                 label="Atributo +1"
-                options={featIncrease.abilities.map((ability) => ({ value: ability, label: `${abilityLabels[ability].name} (${sheet.abilities[ability]})` }))}
+                options={featIncrease.abilities.map((ability) => ({
+                  value: ability,
+                  label: `${abilityLabels[ability].name} (${sheet.abilities[ability]})`,
+                }))}
                 value={featAbility}
                 onChange={(value) => setFeatAbility(value as Ability)}
               />
@@ -321,7 +432,13 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
                       .filter((skill) => skill === value || !featSkills.includes(skill))
                       .map((skill) => ({ value: skill, label: skillDefinitions[skill].label }))}
                     value={value}
-                    onChange={(next) => setFeatSkills((current) => current.map((entry, index) => (index === position ? (next as Skill) : entry)))}
+                    onChange={(next) =>
+                      setFeatSkills((current) =>
+                        current.map((entry, index) =>
+                          index === position ? (next as Skill) : entry,
+                        ),
+                      )
+                    }
                   />
                 ))
               : null}
@@ -329,15 +446,33 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
               <>
                 <PickerField
                   label="Lista de magias"
-                  options={MAGIC_INITIATE_LISTS.map((list) => ({ value: list, label: magicInitiateListLabels[list] }))}
+                  options={MAGIC_INITIATE_LISTS.map((list) => ({
+                    value: list,
+                    label: magicInitiateListLabels[list],
+                  }))}
                   value={initiate.list}
-                  onChange={(value) => setInitiate((current) => ({ ...current, list: value as MagicInitiateList, cantrips: [], spell: '' }))}
+                  onChange={(value) =>
+                    setInitiate((current) => ({
+                      ...current,
+                      list: value as MagicInitiateList,
+                      cantrips: [],
+                      spell: '',
+                    }))
+                  }
                 />
                 <PickerField
                   label="Atributo de conjuração"
-                  options={(['int', 'wis', 'cha'] as const).map((ability) => ({ value: ability, label: abilityLabels[ability].name }))}
+                  options={(['int', 'wis', 'cha'] as const).map((ability) => ({
+                    value: ability,
+                    label: abilityLabels[ability].name,
+                  }))}
                   value={initiate.ability}
-                  onChange={(value) => setInitiate((current) => ({ ...current, ability: value as MagicInitiateChoice['ability'] }))}
+                  onChange={(value) =>
+                    setInitiate((current) => ({
+                      ...current,
+                      ability: value as MagicInitiateChoice['ability'],
+                    }))
+                  }
                 />
                 {initiate.list ? (
                   <>
@@ -346,14 +481,18 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
                       count={2}
                       options={magicInitiateOptions(initiate.list, knownNames).cantrips}
                       value={[...initiate.cantrips]}
-                      onChange={(chosen) => setInitiate((current) => ({ ...current, cantrips: chosen }))}
+                      onChange={(chosen) =>
+                        setInitiate((current) => ({ ...current, cantrips: chosen }))
+                      }
                     />
                     <SpellChecklist
                       title="Magia de 1º círculo do Iniciado em Magia"
                       count={1}
                       options={magicInitiateOptions(initiate.list, knownNames).spells}
                       value={initiate.spell ? [initiate.spell] : []}
-                      onChange={(chosen) => setInitiate((current) => ({ ...current, spell: chosen[0] ?? '' }))}
+                      onChange={(chosen) =>
+                        setInitiate((current) => ({ ...current, spell: chosen[0] ?? '' }))
+                      }
                     />
                   </>
                 ) : null}
@@ -362,10 +501,22 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
           </Section>
         ) : null}
 
-        {plan.newCantrips > 0 ? <SpellChecklist title="Truques novos" count={plan.newCantrips} options={plan.cantripOptions} value={cantrips} onChange={setCantrips} /> : null}
+        {plan.newCantrips > 0 ? (
+          <SpellChecklist
+            title="Truques novos"
+            count={plan.newCantrips}
+            options={plan.cantripOptions}
+            value={cantrips}
+            onChange={setCantrips}
+          />
+        ) : null}
         {plan.newSpells > 0 ? (
           <SpellChecklist
-            title={plan.classDef?.spellcasting?.spellbook ? 'Magias para o grimório' : 'Magias preparadas a mais'}
+            title={
+              plan.classDef?.spellcasting?.spellbook
+                ? 'Magias para o grimório'
+                : 'Magias preparadas a mais'
+            }
             hint={`Até o ${plan.maxSpellCircle}º círculo.`}
             count={plan.newSpells}
             options={plan.spellOptions}
@@ -377,7 +528,11 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
           <OptionChecklist
             title="Invocações Místicas"
             count={plan.newInvocations}
-            options={plan.invocationOptions.map((option) => ({ id: option.id, name: option.name, description: option.description }))}
+            options={plan.invocationOptions.map((option) => ({
+              id: option.id,
+              name: option.name,
+              description: option.description,
+            }))}
             value={invocations}
             onChange={setInvocations}
           />
@@ -386,28 +541,51 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
           <OptionChecklist
             title="Metamagia"
             count={plan.newMetamagic}
-            options={plan.metamagicOptions.map((option) => ({ id: option.id, name: option.name, description: option.description }))}
+            options={plan.metamagicOptions.map((option) => ({
+              id: option.id,
+              name: option.name,
+              description: option.description,
+            }))}
             value={metamagic}
             onChange={setMetamagic}
           />
         ) : null}
         {plan.newWeaponMasteries > 0 ? (
-          <Notice tone="info" message={`Maestria em mais ${plan.newWeaponMasteries} arma${plan.newWeaponMasteries > 1 ? 's' : ''}: registre a arma no ataque correspondente.`} />
+          <Notice
+            tone="info"
+            message={`Maestria em mais ${plan.newWeaponMasteries} arma${plan.newWeaponMasteries > 1 ? 's' : ''}: registre a arma no ataque correspondente.`}
+          />
         ) : null}
 
         {plan.resources.length ? (
           <Section title="Recursos no novo nível">
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {plan.resources.map((resource) => (
-                <Badge key={resource.key} label={`${resource.label}: ${resource.max}`} tone="parchment" />
+                <Badge
+                  key={resource.key}
+                  label={`${resource.label}: ${resource.max}`}
+                  tone="parchment"
+                />
               ))}
             </View>
           </Section>
         ) : null}
 
-        {result.issues.length ? <Notice tone="warning" title="Falta escolher" message={result.issues.map((issue) => `• ${issue}`).join('\n')} /> : null}
+        {result.issues.length ? (
+          <Notice
+            tone="warning"
+            title="Falta escolher"
+            message={result.issues.map((issue) => `• ${issue}`).join('\n')}
+          />
+        ) : null}
         <View style={styles.footer}>
-          <Button label="Cancelar" variant="ghost" onPress={onClose} disabled={busy} style={{ flex: 1 }} />
+          <Button
+            label="Cancelar"
+            variant="ghost"
+            onPress={onClose}
+            disabled={busy}
+            style={{ flex: 1 }}
+          />
           <Button
             label={`Aplicar nível ${plan.newTotalLevel}`}
             icon={<Sparkles size={16} color={colors.primaryFg} />}
@@ -439,11 +617,32 @@ function toggle(list: string[], value: string, limit: number): string[] {
 /** Até 40 resultados por vez: a busca encontra o resto sem rolar listas enormes no celular. */
 const VISIBLE = 40;
 
-function SpellChecklist({ title, hint, count, options, value, onChange }: { title: string; hint?: string; count: number; options: readonly SrdSpell[]; value: string[]; onChange: (next: string[]) => void }) {
+function SpellChecklist({
+  title,
+  hint,
+  count,
+  options,
+  value,
+  onChange,
+}: {
+  title: string;
+  hint?: string;
+  count: number;
+  options: readonly SrdSpell[];
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
   const [query, setQuery] = useState('');
   const term = query.trim().toLowerCase();
-  const filtered = term ? options.filter((spell) => `${spellNamePt(spell.name)} ${spell.name}`.toLowerCase().includes(term)) : options;
-  const shown = [...options.filter((spell) => value.includes(spell.name)), ...filtered.filter((spell) => !value.includes(spell.name))].slice(0, VISIBLE);
+  const filtered = term
+    ? options.filter((spell) =>
+        `${spellNamePt(spell.name)} ${spell.name}`.toLowerCase().includes(term),
+      )
+    : options;
+  const shown = [
+    ...options.filter((spell) => value.includes(spell.name)),
+    ...filtered.filter((spell) => !value.includes(spell.name)),
+  ].slice(0, VISIBLE);
   return (
     <Section title={`${title} (${value.length}/${count})`}>
       {hint ? <AppText variant="small">{hint}</AppText> : null}
@@ -468,13 +667,29 @@ function SpellChecklist({ title, hint, count, options, value, onChange }: { titl
           />
         );
       })}
-      {filtered.length > shown.length ? <AppText variant="small">Mostrando {shown.length} de {filtered.length}: busque pelo nome para ver as outras.</AppText> : null}
+      {filtered.length > shown.length ? (
+        <AppText variant="small">
+          Mostrando {shown.length} de {filtered.length}: busque pelo nome para ver as outras.
+        </AppText>
+      ) : null}
       {filtered.length === 0 ? <AppText variant="muted">Nenhuma magia encontrada.</AppText> : null}
     </Section>
   );
 }
 
-function OptionChecklist({ title, count, options, value, onChange }: { title: string; count: number; options: { id: string; name: string; description: string }[]; value: string[]; onChange: (next: string[]) => void }) {
+function OptionChecklist({
+  title,
+  count,
+  options,
+  value,
+  onChange,
+}: {
+  title: string;
+  count: number;
+  options: { id: string; name: string; description: string }[];
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
   return (
     <Section title={`${title} (${value.length}/${count})`}>
       {options.map((option) => {
@@ -516,5 +731,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sans,
     backgroundColor: colors.sunken,
   },
-  footer: { flexDirection: 'row', gap: spacing[2], borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing[3] },
+  footer: {
+    flexDirection: 'row',
+    gap: spacing[2],
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+    paddingTop: spacing[3],
+  },
 });

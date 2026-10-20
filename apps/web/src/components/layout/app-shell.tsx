@@ -1,4 +1,12 @@
-import { BookOpen, LayoutDashboard, LogOut, Puzzle, ScrollText, Swords, UserRound } from 'lucide-react';
+import {
+  BookOpen,
+  LayoutDashboard,
+  LogOut,
+  Puzzle,
+  ScrollText,
+  Swords,
+  UserRound,
+} from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
@@ -18,12 +26,36 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: routes.dashboard, label: 'Painel', icon: <LayoutDashboard className="h-5 w-5" aria-hidden="true" /> },
-  { href: routes.campaigns, label: 'Campanhas', icon: <ScrollText className="h-5 w-5" aria-hidden="true" /> },
-  { href: routes.characters, label: 'Personagens', icon: <Swords className="h-5 w-5" aria-hidden="true" /> },
-  { href: routes.books, label: 'Meus livros', icon: <BookOpen className="h-5 w-5" aria-hidden="true" /> },
-  { href: routes.community, label: 'Comunidade', icon: <Puzzle className="h-5 w-5" aria-hidden="true" /> },
-  { href: routes.profile, label: 'Perfil', icon: <UserRound className="h-5 w-5" aria-hidden="true" /> },
+  {
+    href: routes.dashboard,
+    label: 'Painel',
+    icon: <LayoutDashboard className="h-5 w-5" aria-hidden="true" />,
+  },
+  {
+    href: routes.campaigns,
+    label: 'Campanhas',
+    icon: <ScrollText className="h-5 w-5" aria-hidden="true" />,
+  },
+  {
+    href: routes.characters,
+    label: 'Personagens',
+    icon: <Swords className="h-5 w-5" aria-hidden="true" />,
+  },
+  {
+    href: routes.books,
+    label: 'Meus livros',
+    icon: <BookOpen className="h-5 w-5" aria-hidden="true" />,
+  },
+  {
+    href: routes.community,
+    label: 'Comunidade',
+    icon: <Puzzle className="h-5 w-5" aria-hidden="true" />,
+  },
+  {
+    href: routes.profile,
+    label: 'Perfil',
+    icon: <UserRound className="h-5 w-5" aria-hidden="true" />,
+  },
 ];
 
 interface AppShellProps {
@@ -69,7 +101,10 @@ export function AppShell({ displayName, motion, children }: AppShellProps) {
           </Link>
           <SidebarToggle />
         </div>
-        <nav aria-label="Navegação principal" className="flex flex-1 flex-col gap-1 px-3 group-data-[collapsed=true]/shell:px-2">
+        <nav
+          aria-label="Navegação principal"
+          className="flex flex-1 flex-col gap-1 px-3 group-data-[collapsed=true]/shell:px-2"
+        >
           {navItems.map((item) => (
             <NavLink key={item.href} {...item} variant="sidebar" />
           ))}
@@ -91,7 +126,11 @@ export function AppShell({ displayName, motion, children }: AppShellProps) {
 
       <div className="flex min-h-dvh flex-col">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-canvas/90 px-4 backdrop-blur lg:hidden">
-          <Link href={routes.dashboard} className="flex items-center gap-2" aria-label="Codexveil — painel">
+          <Link
+            href={routes.dashboard}
+            className="flex items-center gap-2"
+            aria-label="Codexveil — painel"
+          >
             <Emblem className="h-7 w-7" />
             <span className="font-display text-sm font-semibold uppercase tracking-[0.18em] text-fg-accent">
               Codexveil
@@ -104,7 +143,10 @@ export function AppShell({ displayName, motion, children }: AppShellProps) {
           </div>
         </header>
 
-        <main id="conteudo" className="animate-fade-up w-full min-w-0 flex-1 px-4 pt-6 pb-28 sm:px-6 lg:px-10 lg:pt-10 lg:pb-12 2xl:px-14">
+        <main
+          id="conteudo"
+          className="animate-fade-up w-full min-w-0 flex-1 px-4 pt-6 pb-28 sm:px-6 lg:px-10 lg:pt-10 lg:pb-12 2xl:px-14"
+        >
           {children}
         </main>
 

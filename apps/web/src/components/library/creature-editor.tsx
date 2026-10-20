@@ -18,7 +18,13 @@ import {
   type Dnd5eStatBlock,
   type StatBlockEntry,
 } from '@codexveil/rpg-systems/dnd5e';
-import { creatureGmDataSchema, creatureSchema, fieldErrorsFrom, IMAGE_EXTENSIONS, type FieldErrors } from '@codexveil/validation';
+import {
+  creatureGmDataSchema,
+  creatureSchema,
+  fieldErrorsFrom,
+  IMAGE_EXTENSIONS,
+  type FieldErrors,
+} from '@codexveil/validation';
 import { ImageUp, Lock, Plus, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useId, useRef, useState } from 'react';
@@ -64,7 +70,10 @@ export function CreatureEditor({ campaignId, creature, gm, statBlock }: Creature
   );
 }
 
-function ProfileCard({ campaignId, creature }: Pick<CreatureEditorProps, 'campaignId' | 'creature'>) {
+function ProfileCard({
+  campaignId,
+  creature,
+}: Pick<CreatureEditorProps, 'campaignId' | 'creature'>) {
   const router = useRouter();
   const { toast } = useToast();
   const id = useId();
@@ -81,7 +90,11 @@ function ProfileCard({ campaignId, creature }: Pick<CreatureEditorProps, 'campai
   const [imageError, setImageError] = useState<string | null>(null);
 
   const save = async () => {
-    const parsed = creatureSchema.safeParse({ ...form, kind: creature.kind, visibility: form.revealed ? 'members' : 'gm' });
+    const parsed = creatureSchema.safeParse({
+      ...form,
+      kind: creature.kind,
+      visibility: form.revealed ? 'members' : 'gm',
+    });
     if (!parsed.success) {
       setErrors(fieldErrorsFrom(parsed.error));
       return;
@@ -93,7 +106,11 @@ function ProfileCard({ campaignId, creature }: Pick<CreatureEditorProps, 'campai
       toast({ tone: 'success', title: 'Perfil salvo.' });
       router.refresh();
     } catch (error) {
-      toast({ tone: 'danger', title: 'O perfil não foi salvo', description: failureMessage(error, 'Tente novamente.') });
+      toast({
+        tone: 'danger',
+        title: 'O perfil não foi salvo',
+        description: failureMessage(error, 'Tente novamente.'),
+      });
     } finally {
       setBusy(false);
     }
@@ -109,7 +126,10 @@ function ProfileCard({ campaignId, creature }: Pick<CreatureEditorProps, 'campai
         setImageError(prepared.message);
         return;
       }
-      const path = creatureImagePath(campaignId, `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`);
+      const path = creatureImagePath(
+        campaignId,
+        `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`,
+      );
       const { error } = await client.storage
         .from(CAMPAIGN_MEDIA_BUCKET)
         .upload(path, prepared.file, { contentType: prepared.mimeType, upsert: false });
@@ -120,7 +140,8 @@ function ProfileCard({ campaignId, creature }: Pick<CreatureEditorProps, 'campai
         await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([path]);
         throw cause;
       }
-      if (creature.imagePath) await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([creature.imagePath]);
+      if (creature.imagePath)
+        await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([creature.imagePath]);
       toast({ tone: 'success', title: 'Imagem atualizada.' });
       router.refresh();
     } catch (error) {
@@ -133,18 +154,26 @@ function ProfileCard({ campaignId, creature }: Pick<CreatureEditorProps, 'campai
 
   return (
     <Card ornate>
-      <CardHeader title="Perfil público" description="O que os jogadores veem quando o registro é revelado." />
+      <CardHeader
+        title="Perfil público"
+        description="O que os jogadores veem quando o registro é revelado."
+      />
       <div className="mb-4 flex items-center gap-4">
         <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-line bg-sunken">
           {creature.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- URL assinada e temporária do Storage
-            <img src={creature.imageUrl} alt={`Imagem de ${creature.name}`} className="h-full w-full object-cover" />
+            <img
+              src={creature.imageUrl}
+              alt={`Imagem de ${creature.name}`}
+              className="h-full w-full object-cover"
+            />
           ) : (
             <ImageUp className="h-8 w-8 text-fg-subtle" aria-hidden="true" />
           )}
         </div>
         <p className="text-sm text-fg-muted">
-          {creature.imageUrl ? 'Imagem atual do registro.' : 'Sem imagem ainda.'} Use “{creature.imagePath ? 'Trocar imagem' : 'Enviar imagem'}” abaixo (PNG, JPEG ou WebP; a
+          {creature.imageUrl ? 'Imagem atual do registro.' : 'Sem imagem ainda.'} Use “
+          {creature.imagePath ? 'Trocar imagem' : 'Enviar imagem'}” abaixo (PNG, JPEG ou WebP; a
           imagem é reduzida antes do envio).
         </p>
       </div>
@@ -157,16 +186,45 @@ function ProfileCard({ campaignId, creature }: Pick<CreatureEditorProps, 'campai
         }}
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextField id={`${id}-name`} label="Nome" required maxLength={80} value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} error={errors.name} />
-          <TextField id={`${id}-subtitle`} label="Descrição curta" maxLength={80} value={form.subtitle} onChange={(event) => setForm((current) => ({ ...current, subtitle: event.target.value }))} error={errors.subtitle} />
+          <TextField
+            id={`${id}-name`}
+            label="Nome"
+            required
+            maxLength={80}
+            value={form.name}
+            onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+            error={errors.name}
+          />
+          <TextField
+            id={`${id}-subtitle`}
+            label="Descrição curta"
+            maxLength={80}
+            value={form.subtitle}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, subtitle: event.target.value }))
+            }
+            error={errors.subtitle}
+          />
         </div>
-        <TextareaField id={`${id}-description`} label="Descrição" rows={5} maxLength={4000} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} error={errors.description} />
+        <TextareaField
+          id={`${id}-description`}
+          label="Descrição"
+          rows={5}
+          maxLength={4000}
+          value={form.description}
+          onChange={(event) =>
+            setForm((current) => ({ ...current, description: event.target.value }))
+          }
+          error={errors.description}
+        />
         <CheckboxField
           id={`${id}-revealed`}
           label="Revelado aos jogadores"
           description="Somente nome, descrição e imagem. Estatísticas, notas e segredos continuam exclusivos dos mestres."
           checked={form.revealed}
-          onChange={(event) => setForm((current) => ({ ...current, revealed: event.target.checked }))}
+          onChange={(event) =>
+            setForm((current) => ({ ...current, revealed: event.target.checked }))
+          }
         />
         <div className="flex flex-wrap items-center gap-2">
           <Button type="submit" loading={busy}>
@@ -183,7 +241,12 @@ function ProfileCard({ campaignId, creature }: Pick<CreatureEditorProps, 'campai
               if (file) void upload(file);
             }}
           />
-          <Button variant="secondary" loading={imageBusy} onClick={() => inputRef.current?.click()} icon={<ImageUp className="h-4 w-4" aria-hidden="true" />}>
+          <Button
+            variant="secondary"
+            loading={imageBusy}
+            onClick={() => inputRef.current?.click()}
+            icon={<ImageUp className="h-4 w-4" aria-hidden="true" />}
+          >
             {creature.imagePath ? 'Trocar imagem' : 'Enviar imagem'}
           </Button>
         </div>
@@ -197,13 +260,28 @@ function ProfileCard({ campaignId, creature }: Pick<CreatureEditorProps, 'campai
   );
 }
 
-function DangerCard({ campaignId, creatureId, name }: { campaignId: string; creatureId: string; name: string }) {
+function DangerCard({
+  campaignId,
+  creatureId,
+  name,
+}: {
+  campaignId: string;
+  creatureId: string;
+  name: string;
+}) {
   return (
     <Card className="border-ember-400/40">
-      <CardHeader title="Excluir registro" description="Instâncias já colocadas em cenas continuam, mas perdem o vínculo com este registro." />
+      <CardHeader
+        title="Excluir registro"
+        description="Instâncias já colocadas em cenas continuam, mas perdem o vínculo com este registro."
+      />
       <ConfirmDialog
         trigger={(open) => (
-          <Button variant="danger" onClick={open} icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}>
+          <Button
+            variant="danger"
+            onClick={open}
+            icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
+          >
             Excluir da biblioteca
           </Button>
         )}
@@ -219,7 +297,12 @@ function DangerCard({ campaignId, creatureId, name }: { campaignId: string; crea
   );
 }
 
-function GmDataCard({ creatureId, name, gm, statBlock }: Pick<CreatureEditorProps, 'gm' | 'statBlock'> & { creatureId: string; name: string }) {
+function GmDataCard({
+  creatureId,
+  name,
+  gm,
+  statBlock,
+}: Pick<CreatureEditorProps, 'gm' | 'statBlock'> & { creatureId: string; name: string }) {
   const router = useRouter();
   const { toast } = useToast();
   const id = useId();
@@ -229,7 +312,8 @@ function GmDataCard({ creatureId, name, gm, statBlock }: Pick<CreatureEditorProp
   const [errors, setErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
 
-  const set = (patch: Partial<Dnd5eStatBlock>) => setStats((current) => (current ? { ...current, ...patch } : current));
+  const set = (patch: Partial<Dnd5eStatBlock>) =>
+    setStats((current) => (current ? { ...current, ...patch } : current));
 
   const save = async () => {
     const texts = creatureGmDataSchema.safeParse({ notes, secrets });
@@ -237,7 +321,9 @@ function GmDataCard({ creatureId, name, gm, statBlock }: Pick<CreatureEditorProp
     if (!texts.success || (parsedStats && !parsedStats.success)) {
       setErrors({
         ...(texts.success ? {} : fieldErrorsFrom(texts.error)),
-        ...(parsedStats && !parsedStats.success ? { stats: parsedStats.error.issues[0]?.message ?? 'Estatísticas inválidas.' } : {}),
+        ...(parsedStats && !parsedStats.success
+          ? { stats: parsedStats.error.issues[0]?.message ?? 'Estatísticas inválidas.' }
+          : {}),
       });
       return;
     }
@@ -252,7 +338,11 @@ function GmDataCard({ creatureId, name, gm, statBlock }: Pick<CreatureEditorProp
       toast({ tone: 'success', title: 'Dados do mestre salvos.' });
       router.refresh();
     } catch (error) {
-      toast({ tone: 'danger', title: 'Os dados não foram salvos', description: failureMessage(error, 'Tente novamente.') });
+      toast({
+        tone: 'danger',
+        title: 'Os dados não foram salvos',
+        description: failureMessage(error, 'Tente novamente.'),
+      });
     } finally {
       setBusy(false);
     }
@@ -260,7 +350,11 @@ function GmDataCard({ creatureId, name, gm, statBlock }: Pick<CreatureEditorProp
 
   return (
     <Card className="border-wine-400/40">
-      <CardHeader icon={<Lock className="h-5 w-5" aria-hidden="true" />} title="Dados do mestre" description="Nunca enviados aos jogadores, nem quando o registro é revelado." />
+      <CardHeader
+        icon={<Lock className="h-5 w-5" aria-hidden="true" />}
+        title="Dados do mestre"
+        description="Nunca enviados aos jogadores, nem quando o registro é revelado."
+      />
       <form
         noValidate
         className="flex flex-col gap-5"
@@ -269,43 +363,115 @@ function GmDataCard({ creatureId, name, gm, statBlock }: Pick<CreatureEditorProp
           void save();
         }}
       >
-        <TextareaField id={`${id}-secrets`} label="Segredos" rows={3} maxLength={8000} value={secrets} onChange={(event) => setSecrets(event.target.value)} error={errors.secrets} hint="Motivações ocultas, verdadeira identidade, o que só será revelado depois." />
-        <TextareaField id={`${id}-notes`} label="Observações" rows={3} maxLength={8000} value={notes} onChange={(event) => setNotes(event.target.value)} error={errors.notes} />
+        <TextareaField
+          id={`${id}-secrets`}
+          label="Segredos"
+          rows={3}
+          maxLength={8000}
+          value={secrets}
+          onChange={(event) => setSecrets(event.target.value)}
+          error={errors.secrets}
+          hint="Motivações ocultas, verdadeira identidade, o que só será revelado depois."
+        />
+        <TextareaField
+          id={`${id}-notes`}
+          label="Observações"
+          rows={3}
+          maxLength={8000}
+          value={notes}
+          onChange={(event) => setNotes(event.target.value)}
+          error={errors.notes}
+        />
 
         {stats ? (
           <fieldset className="flex flex-col gap-4 rounded-md border border-line p-3">
             <legend className="px-1 text-sm font-medium">Estatísticas (D&amp;D 5e)</legend>
             {errors.stats ? <Alert tone="danger">{errors.stats}</Alert> : null}
             <div className="grid gap-3 sm:grid-cols-3">
-              <SelectField id={`${id}-size`} label="Tamanho" value={stats.size} onChange={(event) => set({ size: event.target.value as CreatureSize })}>
+              <SelectField
+                id={`${id}-size`}
+                label="Tamanho"
+                value={stats.size}
+                onChange={(event) => set({ size: event.target.value as CreatureSize })}
+              >
                 {CREATURE_SIZES.map((size) => (
                   <option key={size} value={size}>
                     {creatureSizeLabels[size]}
                   </option>
                 ))}
               </SelectField>
-              <TextField id={`${id}-type`} label="Tipo" placeholder="Morto-vivo" maxLength={60} value={stats.creatureType} onChange={(event) => set({ creatureType: event.target.value })} />
-              <TextField id={`${id}-alignment`} label="Alinhamento" maxLength={40} value={stats.alignment} onChange={(event) => set({ alignment: event.target.value })} />
+              <TextField
+                id={`${id}-type`}
+                label="Tipo"
+                placeholder="Morto-vivo"
+                maxLength={60}
+                value={stats.creatureType}
+                onChange={(event) => set({ creatureType: event.target.value })}
+              />
+              <TextField
+                id={`${id}-alignment`}
+                label="Alinhamento"
+                maxLength={40}
+                value={stats.alignment}
+                onChange={(event) => set({ alignment: event.target.value })}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div className="flex flex-col gap-1.5">
                 <label htmlFor={`${id}-ac`} className="text-sm font-medium">
                   CA
                 </label>
-                <NumberInput id={`${id}-ac`} value={stats.armorClass} min={0} max={50} onCommit={(value) => set({ armorClass: value ?? 10 })} />
+                <NumberInput
+                  id={`${id}-ac`}
+                  value={stats.armorClass}
+                  min={0}
+                  max={50}
+                  onCommit={(value) => set({ armorClass: value ?? 10 })}
+                />
               </div>
-              <TextField id={`${id}-armor-note`} label="Armadura" maxLength={80} value={stats.armorNote} onChange={(event) => set({ armorNote: event.target.value })} />
+              <TextField
+                id={`${id}-armor-note`}
+                label="Armadura"
+                maxLength={80}
+                value={stats.armorNote}
+                onChange={(event) => set({ armorNote: event.target.value })}
+              />
               <div className="flex flex-col gap-1.5">
                 <label htmlFor={`${id}-hp`} className="text-sm font-medium">
                   PV
                 </label>
-                <NumberInput id={`${id}-hp`} value={stats.hitPoints} min={1} max={9999} onCommit={(value) => set({ hitPoints: value ?? 1 })} />
+                <NumberInput
+                  id={`${id}-hp`}
+                  value={stats.hitPoints}
+                  min={1}
+                  max={9999}
+                  onCommit={(value) => set({ hitPoints: value ?? 1 })}
+                />
               </div>
-              <TextField id={`${id}-hp-formula`} label="Fórmula" placeholder="5d8" maxLength={40} value={stats.hitPointFormula} onChange={(event) => set({ hitPointFormula: event.target.value })} />
+              <TextField
+                id={`${id}-hp-formula`}
+                label="Fórmula"
+                placeholder="5d8"
+                maxLength={40}
+                value={stats.hitPointFormula}
+                onChange={(event) => set({ hitPointFormula: event.target.value })}
+              />
             </div>
             <div className="grid gap-3 sm:grid-cols-[1fr_9rem]">
-              <TextField id={`${id}-speed`} label="Deslocamento" placeholder="9 m, voo 18 m" maxLength={120} value={stats.speed} onChange={(event) => set({ speed: event.target.value })} />
-              <SelectField id={`${id}-cr`} label="Nível de desafio" value={stats.challengeRating} onChange={(event) => set({ challengeRating: event.target.value })}>
+              <TextField
+                id={`${id}-speed`}
+                label="Deslocamento"
+                placeholder="9 m, voo 18 m"
+                maxLength={120}
+                value={stats.speed}
+                onChange={(event) => set({ speed: event.target.value })}
+              />
+              <SelectField
+                id={`${id}-cr`}
+                label="Nível de desafio"
+                value={stats.challengeRating}
+                onChange={(event) => set({ challengeRating: event.target.value })}
+              >
                 {CHALLENGE_RATINGS.map((rating) => (
                   <option key={rating} value={rating}>
                     {rating}
@@ -319,7 +485,15 @@ function GmDataCard({ creatureId, name, gm, statBlock }: Pick<CreatureEditorProp
                   <label htmlFor={`${id}-${ability}`} className="text-center text-xs font-semibold">
                     {abilityLabels[ability].abbreviation}
                   </label>
-                  <NumberInput id={`${id}-${ability}`} value={stats.abilities[ability]} min={1} max={30} onCommit={(value) => set({ abilities: { ...stats.abilities, [ability]: value ?? 10 } })} />
+                  <NumberInput
+                    id={`${id}-${ability}`}
+                    value={stats.abilities[ability]}
+                    min={1}
+                    max={30}
+                    onCommit={(value) =>
+                      set({ abilities: { ...stats.abilities, [ability]: value ?? 10 } })
+                    }
+                  />
                 </div>
               ))}
             </div>
@@ -335,7 +509,14 @@ function GmDataCard({ creatureId, name, gm, statBlock }: Pick<CreatureEditorProp
                   ['languages', 'Idiomas', 200],
                 ] as const
               ).map(([key, label, max]) => (
-                <TextField key={key} id={`${id}-${key}`} label={label} maxLength={max} value={stats[key]} onChange={(event) => set({ [key]: event.target.value })} />
+                <TextField
+                  key={key}
+                  id={`${id}-${key}`}
+                  label={label}
+                  maxLength={max}
+                  value={stats[key]}
+                  onChange={(event) => set({ [key]: event.target.value })}
+                />
               ))}
             </div>
             {(
@@ -347,7 +528,13 @@ function GmDataCard({ creatureId, name, gm, statBlock }: Pick<CreatureEditorProp
                 ['legendaryActions', 'Ações lendárias'],
               ] as const
             ).map(([key, label]) => (
-              <EntryList key={key} id={`${id}-${key}`} label={label} entries={stats[key]} onChange={(entries) => set({ [key]: entries })} />
+              <EntryList
+                key={key}
+                id={`${id}-${key}`}
+                label={label}
+                entries={stats[key]}
+                onChange={(entries) => set({ [key]: entries })}
+              />
             ))}
           </fieldset>
         ) : null}
@@ -367,7 +554,17 @@ function GmDataCard({ creatureId, name, gm, statBlock }: Pick<CreatureEditorProp
   );
 }
 
-function EntryList({ id, label, entries, onChange }: { id: string; label: string; entries: StatBlockEntry[]; onChange: (entries: StatBlockEntry[]) => void }) {
+function EntryList({
+  id,
+  label,
+  entries,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  entries: StatBlockEntry[];
+  onChange: (entries: StatBlockEntry[]) => void;
+}) {
   return (
     <div className="flex flex-col gap-2">
       <p className="text-sm font-medium">{label}</p>
@@ -379,10 +576,21 @@ function EntryList({ id, label, entries, onChange }: { id: string; label: string
               value={entry.name}
               maxLength={80}
               placeholder="Nome"
-              onChange={(event) => onChange(entries.map((item, position) => (position === index ? { ...item, name: event.target.value } : item)))}
+              onChange={(event) =>
+                onChange(
+                  entries.map((item, position) =>
+                    position === index ? { ...item, name: event.target.value } : item,
+                  ),
+                )
+              }
               className="h-10 min-w-0 flex-1 rounded-md border border-line-strong bg-sunken px-3 text-sm text-fg"
             />
-            <Button size="icon" variant="ghost" aria-label={`Remover ${entry.name || `item ${index + 1}`}`} onClick={() => onChange(entries.filter((_, position) => position !== index))}>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={`Remover ${entry.name || `item ${index + 1}`}`}
+              onClick={() => onChange(entries.filter((_, position) => position !== index))}
+            >
               <X className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
@@ -391,7 +599,13 @@ function EntryList({ id, label, entries, onChange }: { id: string; label: string
             value={entry.description}
             maxLength={4000}
             rows={2}
-            onChange={(event) => onChange(entries.map((item, position) => (position === index ? { ...item, description: event.target.value } : item)))}
+            onChange={(event) =>
+              onChange(
+                entries.map((item, position) =>
+                  position === index ? { ...item, description: event.target.value } : item,
+                ),
+              )
+            }
             className="rounded-md border border-line-strong bg-sunken px-3 py-2 text-sm text-fg"
           />
         </div>

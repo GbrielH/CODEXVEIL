@@ -4,16 +4,36 @@ import { cx } from '@/lib/cx';
 
 export type SessionModeValue = 'presencial' | 'online';
 
-function Choice({ name, selected, label, description, onSelect }: { name: string; selected: boolean; label: string; description: string; onSelect: () => void }) {
+function Choice({
+  name,
+  selected,
+  label,
+  description,
+  onSelect,
+}: {
+  name: string;
+  selected: boolean;
+  label: string;
+  description: string;
+  onSelect: () => void;
+}) {
   return (
     <label
       className={cx(
         'flex cursor-pointer flex-col gap-0.5 rounded-md border p-3 text-sm transition-colors',
-        selected ? 'border-parchment-300/70 bg-parchment-200/10' : 'border-line hover:border-line-strong hover:bg-hover',
+        selected
+          ? 'border-parchment-300/70 bg-parchment-200/10'
+          : 'border-line hover:border-line-strong hover:bg-hover',
       )}
     >
       <span className="flex items-center gap-2 font-medium text-fg">
-        <input type="radio" name={name} checked={selected} onChange={onSelect} className="accent-wine-500" />
+        <input
+          type="radio"
+          name={name}
+          checked={selected}
+          onChange={onSelect}
+          className="accent-wine-500"
+        />
         {label}
       </span>
       <span className="text-xs text-fg-muted">{description}</span>
@@ -40,12 +60,30 @@ export function SessionModeFields({
     <fieldset className="flex flex-col gap-3">
       <legend className="mb-1 text-sm font-medium">Tipo de sessão</legend>
       <div className="grid gap-2 sm:grid-cols-2">
-        <Choice name="session-mode" selected={mode === 'presencial'} label="Presencial" description="Todos na mesma mesa. Você escolhe se os dados são físicos ou virtuais." onSelect={() => onChange({ mode: 'presencial', physicalDice })} />
-        <Choice name="session-mode" selected={mode === 'online'} label="Online" description="Cada um no seu lugar. Os dados virtuais ficam ligados automaticamente." onSelect={() => onChange({ mode: 'online', physicalDice: false })} />
+        <Choice
+          name="session-mode"
+          selected={mode === 'presencial'}
+          label="Presencial"
+          description="Todos na mesma mesa. Você escolhe se os dados são físicos ou virtuais."
+          onSelect={() => onChange({ mode: 'presencial', physicalDice })}
+        />
+        <Choice
+          name="session-mode"
+          selected={mode === 'online'}
+          label="Online"
+          description="Cada um no seu lugar. Os dados virtuais ficam ligados automaticamente."
+          onSelect={() => onChange({ mode: 'online', physicalDice: false })}
+        />
       </div>
       {mode === 'presencial' ? (
         <div className="grid gap-2 sm:grid-cols-2">
-          <Choice name="session-dice" selected={!physicalDice} label="Dados virtuais" description="O app rola os dados (aparecem na tela e no mural)." onSelect={() => onChange({ mode, physicalDice: false })} />
+          <Choice
+            name="session-dice"
+            selected={!physicalDice}
+            label="Dados virtuais"
+            description="O app rola os dados (aparecem na tela e no mural)."
+            onSelect={() => onChange({ mode, physicalDice: false })}
+          />
           <Choice
             name="session-dice"
             selected={physicalDice}
@@ -60,7 +98,11 @@ export function SessionModeFields({
       {inputs ? (
         <>
           <input type="hidden" name="mode" value={mode} />
-          <input type="hidden" name="physicalDice" value={mode === 'presencial' && physicalDice ? 'on' : ''} />
+          <input
+            type="hidden"
+            name="physicalDice"
+            value={mode === 'presencial' && physicalDice ? 'on' : ''}
+          />
         </>
       ) : null}
     </fieldset>

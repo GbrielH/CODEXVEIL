@@ -13,7 +13,15 @@ export interface MenuItem {
 }
 
 /** Menu de opções (três pontinhos): abre uma lista curta de ações sobre o item. */
-export function MenuButton({ label, items, className }: { label: string; items: MenuItem[]; className?: string }) {
+export function MenuButton({
+  label,
+  items,
+  className,
+}: {
+  label: string;
+  items: MenuItem[];
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const id = useId();
@@ -21,7 +29,12 @@ export function MenuButton({ label, items, className }: { label: string; items: 
   useEffect(() => {
     if (!open) return;
     const close = (event: MouseEvent | KeyboardEvent) => {
-      if (event instanceof KeyboardEvent ? event.key === 'Escape' : !root.current?.contains(event.target as Node)) setOpen(false);
+      if (
+        event instanceof KeyboardEvent
+          ? event.key === 'Escape'
+          : !root.current?.contains(event.target as Node)
+      )
+        setOpen(false);
     };
     document.addEventListener('mousedown', close);
     document.addEventListener('keydown', close);
@@ -45,7 +58,11 @@ export function MenuButton({ label, items, className }: { label: string; items: 
         <MoreVertical className="h-4 w-4" aria-hidden="true" />
       </button>
       {open ? (
-        <ul id={id} role="menu" className="absolute right-0 z-30 mt-1 min-w-44 rounded-md border border-line-strong bg-raised p-1 shadow-[0_18px_40px_-12px_rgb(0_0_0/0.85)]">
+        <ul
+          id={id}
+          role="menu"
+          className="absolute right-0 z-30 mt-1 min-w-44 rounded-md border border-line-strong bg-raised p-1 shadow-[0_18px_40px_-12px_rgb(0_0_0/0.85)]"
+        >
           {items.map((item) => (
             <li key={item.label} role="none">
               <button

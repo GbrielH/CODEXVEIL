@@ -26,7 +26,11 @@ import { routes } from '@/lib/routes';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useSheet } from './context';
 
-export function SettingsTab({ campaigns }: { campaigns: { id: string; name: string; characterRules?: unknown }[] }) {
+export function SettingsTab({
+  campaigns,
+}: {
+  campaigns: { id: string; name: string; characterRules?: unknown }[];
+}) {
   const { permissions } = useSheet();
   return (
     <div className="grid gap-5 lg:grid-cols-2">
@@ -56,7 +60,10 @@ function PortraitCard() {
         setError(prepared.message);
         return;
       }
-      const path = characterPortraitPath(character.id, `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`);
+      const path = characterPortraitPath(
+        character.id,
+        `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`,
+      );
       const { error: uploadError } = await client.storage
         .from(CAMPAIGN_MEDIA_BUCKET)
         .upload(path, prepared.file, { contentType: prepared.mimeType, upsert: false });
@@ -67,7 +74,8 @@ function PortraitCard() {
         await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([path]);
         throw cause;
       }
-      if (character.portraitPath) await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([character.portraitPath]);
+      if (character.portraitPath)
+        await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([character.portraitPath]);
       toast({ tone: 'success', title: 'Retrato atualizado.' });
       router.refresh();
     } catch (cause) {
@@ -96,7 +104,10 @@ function PortraitCard() {
 
   return (
     <Card>
-      <CardHeader title="Retrato" description="Visível para quem pode ver a ficha. PNG, JPEG ou WebP, até 5 MB." />
+      <CardHeader
+        title="Retrato"
+        description="Visível para quem pode ver a ficha. PNG, JPEG ou WebP, até 5 MB."
+      />
       <div className="flex items-center gap-4">
         <Portrait name={name} url={character.portraitUrl} size="lg" />
         <div className="flex flex-col gap-2">
@@ -111,11 +122,23 @@ function PortraitCard() {
               if (file) void upload(file);
             }}
           />
-          <Button size="sm" variant="secondary" loading={busy} onClick={() => inputRef.current?.click()} icon={<ImageUp className="h-4 w-4" aria-hidden="true" />}>
+          <Button
+            size="sm"
+            variant="secondary"
+            loading={busy}
+            onClick={() => inputRef.current?.click()}
+            icon={<ImageUp className="h-4 w-4" aria-hidden="true" />}
+          >
             {character.portraitPath ? 'Trocar retrato' : 'Enviar retrato'}
           </Button>
           {character.portraitPath ? (
-            <Button size="sm" variant="ghost" disabled={busy} onClick={() => void remove()} icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={busy}
+              onClick={() => void remove()}
+              icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
+            >
               Remover
             </Button>
           ) : null}
@@ -130,7 +153,11 @@ function PortraitCard() {
   );
 }
 
-function CampaignCard({ campaigns }: { campaigns: { id: string; name: string; characterRules?: unknown }[] }) {
+function CampaignCard({
+  campaigns,
+}: {
+  campaigns: { id: string; name: string; characterRules?: unknown }[];
+}) {
   const { character, name, sheet } = useSheet();
   const router = useRouter();
   const { toast } = useToast();
@@ -138,7 +165,9 @@ function CampaignCard({ campaigns }: { campaigns: { id: string; name: string; ch
   const [selected, setSelected] = useState('');
   const chosen = campaigns.find((campaign) => campaign.id === selected);
   // O que impede a entrada na campanha escolhida, com o que mudar na ficha.
-  const issues = chosen ? dnd5eCampaignIssues({ name, sheet }, parseDnd5eCampaignRules(chosen.characterRules)) : [];
+  const issues = chosen
+    ? dnd5eCampaignIssues({ name, sheet }, parseDnd5eCampaignRules(chosen.characterRules))
+    : [];
 
   const link = async (campaignId: string | null) => {
     try {
@@ -146,7 +175,10 @@ function CampaignCard({ campaigns }: { campaigns: { id: string; name: string; ch
     } catch (cause) {
       throw new Error(failureMessage(cause, 'Não foi possível alterar a campanha.'));
     }
-    toast({ tone: 'success', title: campaignId ? 'Personagem vinculado à campanha.' : 'Personagem desvinculado.' });
+    toast({
+      tone: 'success',
+      title: campaignId ? 'Personagem vinculado à campanha.' : 'Personagem desvinculado.',
+    });
     router.refresh();
   };
 
@@ -154,7 +186,14 @@ function CampaignCard({ campaigns }: { campaigns: { id: string; name: string; ch
 
   return (
     <Card>
-      <CardHeader title="Campanha" description={character.campaign ? `Vinculado a “${character.campaign.name}”.` : 'Ficha pessoal, sem campanha.'} />
+      <CardHeader
+        title="Campanha"
+        description={
+          character.campaign
+            ? `Vinculado a “${character.campaign.name}”.`
+            : 'Ficha pessoal, sem campanha.'
+        }
+      />
       <div className="flex flex-col gap-3">
         {options.length > 0 ? (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -175,7 +214,12 @@ function CampaignCard({ campaigns }: { campaigns: { id: string; name: string; ch
             </SelectField>
             <ConfirmDialog
               trigger={(open) => (
-                <Button variant="secondary" disabled={!selected || issues.length > 0} onClick={open} icon={<Link2 className="h-4 w-4" aria-hidden="true" />}>
+                <Button
+                  variant="secondary"
+                  disabled={!selected || issues.length > 0}
+                  onClick={open}
+                  icon={<Link2 className="h-4 w-4" aria-hidden="true" />}
+                >
                   Vincular
                 </Button>
               )}
@@ -201,7 +245,12 @@ function CampaignCard({ campaigns }: { campaigns: { id: string; name: string; ch
         {character.campaign ? (
           <ConfirmDialog
             trigger={(open) => (
-              <Button variant="ghost" onClick={open} icon={<Unlink className="h-4 w-4" aria-hidden="true" />} className="self-start">
+              <Button
+                variant="ghost"
+                onClick={open}
+                icon={<Unlink className="h-4 w-4" aria-hidden="true" />}
+                className="self-start"
+              >
                 Desvincular da campanha
               </Button>
             )}
@@ -226,16 +275,24 @@ function DangerCard() {
     } catch (cause) {
       throw new Error(failureMessage(cause, 'Não foi possível excluir o personagem.'));
     }
-    if (character.portraitPath) await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([character.portraitPath]);
+    if (character.portraitPath)
+      await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([character.portraitPath]);
     router.replace(`${routes.characters}?aviso=personagem-excluido` as Route);
     router.refresh();
   };
   return (
     <Card className="border-ember-400/40 lg:col-span-2">
-      <CardHeader title="Excluir personagem" description="Apaga a ficha, o inventário, as habilidades e o histórico. Não pode ser desfeito." />
+      <CardHeader
+        title="Excluir personagem"
+        description="Apaga a ficha, o inventário, as habilidades e o histórico. Não pode ser desfeito."
+      />
       <ConfirmDialog
         trigger={(open) => (
-          <Button variant="danger" onClick={open} icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}>
+          <Button
+            variant="danger"
+            onClick={open}
+            icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
+          >
             Excluir definitivamente
           </Button>
         )}

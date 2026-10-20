@@ -22,7 +22,13 @@ interface CoverCardProps {
 }
 
 /** Envio, troca e remoção da capa (só mestres de campanhas ativas enviam, pelo Storage). */
-export function CampaignCoverCard({ campaignId, name, coverPath, coverUrl, disabled }: CoverCardProps) {
+export function CampaignCoverCard({
+  campaignId,
+  name,
+  coverPath,
+  coverUrl,
+  disabled,
+}: CoverCardProps) {
   const router = useRouter();
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -39,9 +45,15 @@ export function CampaignCoverCard({ campaignId, name, coverPath, coverUrl, disab
         setError(prepared.message);
         return;
       }
-      const path = campaignCoverPath(campaignId, `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`);
+      const path = campaignCoverPath(
+        campaignId,
+        `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`,
+      );
       const bucket = client.storage.from(CAMPAIGN_MEDIA_BUCKET);
-      const { error: uploadError } = await bucket.upload(path, prepared.file, { contentType: prepared.mimeType, upsert: false });
+      const { error: uploadError } = await bucket.upload(path, prepared.file, {
+        contentType: prepared.mimeType,
+        upsert: false,
+      });
       if (uploadError) throw uploadError;
       try {
         await setCampaignCover(client, campaignId, path);
@@ -79,9 +91,16 @@ export function CampaignCoverCard({ campaignId, name, coverPath, coverUrl, disab
 
   return (
     <Card>
-      <CardHeader title="Capa da campanha" description="Aparece no painel e na lista de campanhas de todos os participantes. PNG, JPEG ou WebP." />
+      <CardHeader
+        title="Capa da campanha"
+        description="Aparece no painel e na lista de campanhas de todos os participantes. PNG, JPEG ou WebP."
+      />
       <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-        <CampaignCover url={coverUrl} name={name} className="aspect-[16/9] w-full rounded-md border border-line" />
+        <CampaignCover
+          url={coverUrl}
+          name={name}
+          className="aspect-[16/9] w-full rounded-md border border-line"
+        />
         <div className="flex flex-col gap-2">
           <input
             ref={inputRef}
@@ -94,11 +113,24 @@ export function CampaignCoverCard({ campaignId, name, coverPath, coverUrl, disab
               if (file) void upload(file);
             }}
           />
-          <Button size="sm" variant="secondary" loading={busy} disabled={disabled} onClick={() => inputRef.current?.click()} icon={<ImageUp className="h-4 w-4" aria-hidden="true" />}>
+          <Button
+            size="sm"
+            variant="secondary"
+            loading={busy}
+            disabled={disabled}
+            onClick={() => inputRef.current?.click()}
+            icon={<ImageUp className="h-4 w-4" aria-hidden="true" />}
+          >
             {coverPath ? 'Trocar capa' : 'Enviar capa'}
           </Button>
           {coverPath ? (
-            <Button size="sm" variant="ghost" disabled={busy || disabled} onClick={() => void remove()} icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={busy || disabled}
+              onClick={() => void remove()}
+              icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
+            >
               Remover
             </Button>
           ) : null}

@@ -25,7 +25,11 @@ interface TabsProps {
  */
 export function Tabs({ items, value, onValueChange, label, className }: TabsProps) {
   return (
-    <RadixTabs.Root value={value} onValueChange={onValueChange} className={cx('flex flex-col gap-5', className)}>
+    <RadixTabs.Root
+      value={value}
+      onValueChange={onValueChange}
+      className={cx('flex flex-col gap-5', className)}
+    >
       <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
         <RadixTabs.List aria-label={label} className="flex min-w-max gap-1 border-b border-line">
           {items.map((item) => (
@@ -45,7 +49,11 @@ export function Tabs({ items, value, onValueChange, label, className }: TabsProp
         </RadixTabs.List>
       </div>
       {items.map((item) => (
-        <RadixTabs.Content key={item.value} value={item.value} className="focus-visible:outline-none">
+        <RadixTabs.Content
+          key={item.value}
+          value={item.value}
+          className="focus-visible:outline-none"
+        >
           {item.content}
         </RadixTabs.Content>
       ))}

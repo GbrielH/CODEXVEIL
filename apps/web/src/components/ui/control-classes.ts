@@ -17,5 +17,10 @@ export function defaultWidth(classes?: string): string | null {
 
 /** Aparência comum dos controles de formulário (campo, área de texto e seletor). */
 export function controlClasses(invalid: boolean, extra?: string) {
-  return cx(controlBase, defaultWidth(extra), invalid ? 'border-ember-400/80' : 'border-line-strong', extra);
+  return cx(
+    controlBase,
+    defaultWidth(extra),
+    invalid ? 'border-ember-400/80' : 'border-line-strong',
+    extra,
+  );
 }

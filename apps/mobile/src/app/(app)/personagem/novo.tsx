@@ -99,7 +99,9 @@ async function loadCreationData(userId: string): Promise<CreationData> {
   // Só livros de D&D aqui (o Tormenta20 tem o próprio assistente).
   const isDnd = (pack: BookPackSummary) => (pack.systemId ?? 'dnd5e') === 'dnd5e';
   const [own, ...perCampaign] = await Promise.all([
-    listMyBookPacks(client, userId).then((packs) => packs.filter((pack) => pack.isReady && isDnd(pack))),
+    listMyBookPacks(client, userId).then((packs) =>
+      packs.filter((pack) => pack.isReady && isDnd(pack)),
+    ),
     ...list.map((campaign) =>
       listCampaignBookPacks(
         client,
@@ -175,7 +177,12 @@ function contextFor(campaign: PlayableCampaign | undefined): Dnd5eCreationContex
 /** Campanhas de Tormenta20 em que o usuário é jogador e o conteúdo dos livros (dela ou do usuário). */
 async function loadT20Data(userId: string) {
   const client = getSupabase();
-  const campaigns = (await listMyCampaigns(client, userId)).filter((campaign) => campaign.status === 'active' && campaign.role === 'player' && campaign.systemId === 'tormenta20');
+  const campaigns = (await listMyCampaigns(client, userId)).filter(
+    (campaign) =>
+      campaign.status === 'active' &&
+      campaign.role === 'player' &&
+      campaign.systemId === 'tormenta20',
+  );
   const own = (await listMyBookPacks(client, userId)).filter((pack) => pack.isReady);
   return { campaigns, own: await loadT20Sources(client, own) };
 }
@@ -191,7 +198,8 @@ export default function NewCharacterScreen() {
   const preT20 = t20.data?.campaigns.find((campaign) => campaign.id === params.campanha);
   const activeSystem = preT20 ? 'tormenta20' : system;
 
-  if (data.loading || t20.loading) return <LoadingState label="Carregando suas campanhas e livros…" />;
+  if (data.loading || t20.loading)
+    return <LoadingState label="Carregando suas campanhas e livros…" />;
   const hasT20 = (t20.data?.campaigns.length ?? 0) > 0 || (t20.data?.own.length ?? 0) > 0;
   if (activeSystem === 'tormenta20' && t20.data) {
     const chosenId = preT20?.id ?? t20Campaign;
@@ -199,26 +207,68 @@ export default function NewCharacterScreen() {
     if (chosenId && !t20Sources) {
       void (async () => {
         const client = getSupabase();
-        const packs = chosen ? await listCampaignBookPacks(client, chosen.ownerId, parseDnd5eCampaignRules(chosen.characterRules).sourcebooks) : [];
+        const packs = chosen
+          ? await listCampaignBookPacks(
+              client,
+              chosen.ownerId,
+              parseDnd5eCampaignRules(chosen.characterRules).sourcebooks,
+            )
+          : [];
         setT20Sources(await loadT20Sources(client, packs));
       })();
       return <LoadingState label="Carregando os livros da campanha…" />;
     }
     if (!chosenId && t20Campaign === '') {
       return (
-        <ScrollView style={{ flex: 1, backgroundColor: colors.canvas }} contentContainerStyle={styles.content}>
-          <Segmented value="tormenta20" onChange={(value) => setSystem(value)} accessibilityLabel="Sistema" options={[{ value: 'dnd5e', label: 'D&D 5e' }, { value: 'tormenta20', label: 'Tormenta20' }]} />
+        <ScrollView
+          style={{ flex: 1, backgroundColor: colors.canvas }}
+          contentContainerStyle={styles.content}
+        >
+          <Segmented
+            value="tormenta20"
+            onChange={(value) => setSystem(value)}
+            accessibilityLabel="Sistema"
+            options={[
+              { value: 'dnd5e', label: 'D&D 5e' },
+              { value: 'tormenta20', label: 'Tormenta20' },
+            ]}
+          />
           <AppText variant="title">Onde o personagem vai jogar?</AppText>
           {t20.data.campaigns.map((campaign) => (
-            <OptionCard key={campaign.id} selected={false} title={campaign.name} description="Campanha de Tormenta20" onPress={() => { setT20Sources(null); setT20Campaign(campaign.id); }} />
+            <OptionCard
+              key={campaign.id}
+              selected={false}
+              title={campaign.name}
+              description="Campanha de Tormenta20"
+              onPress={() => {
+                setT20Sources(null);
+                setT20Campaign(campaign.id);
+              }}
+            />
           ))}
-          <OptionCard selected={false} title="Ficha pessoal" description="Com os seus livros do Tormenta20." onPress={() => { setT20Sources(t20.data!.own); setT20Campaign('pessoal'); }} />
+          <OptionCard
+            selected={false}
+            title="Ficha pessoal"
+            description="Com os seus livros do Tormenta20."
+            onPress={() => {
+              setT20Sources(t20.data!.own);
+              setT20Campaign('pessoal');
+            }}
+          />
         </ScrollView>
       );
     }
     return (
       <T20MobileWizard
-        campaign={chosen ? { id: chosen.id, name: chosen.name, rules: parseT20CampaignRules(chosen.characterRules) } : null}
+        campaign={
+          chosen
+            ? {
+                id: chosen.id,
+                name: chosen.name,
+                rules: parseT20CampaignRules(chosen.characterRules),
+              }
+            : null
+        }
         sources={chosen ? (t20Sources ?? []) : t20.data.own}
       />
     );
@@ -231,7 +281,15 @@ export default function NewCharacterScreen() {
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
       {hasT20 ? (
         <View style={{ padding: spacing[4], paddingBottom: 0 }}>
-          <Segmented value="dnd5e" onChange={(value) => setSystem(value)} accessibilityLabel="Sistema" options={[{ value: 'dnd5e', label: 'D&D 5e' }, { value: 'tormenta20', label: 'Tormenta20' }]} />
+          <Segmented
+            value="dnd5e"
+            onChange={(value) => setSystem(value)}
+            accessibilityLabel="Sistema"
+            options={[
+              { value: 'dnd5e', label: 'D&D 5e' },
+              { value: 'tormenta20', label: 'Tormenta20' },
+            ]}
+          />
         </View>
       ) : null}
       <Wizard
@@ -263,7 +321,10 @@ function Wizard({
   );
   // Livros: na campanha, os do mestre; na ficha pessoal, só os importados que estão marcados.
   const packIds = useMemo(
-    () => (campaign ? campaign.packIds : personalPackIds.filter((id) => draft.sourcebooks.includes(books[id]?.book.id ?? ''))),
+    () =>
+      campaign
+        ? campaign.packIds
+        : personalPackIds.filter((id) => draft.sourcebooks.includes(books[id]?.book.id ?? '')),
     [campaign, personalPackIds, books, draft.sourcebooks],
   );
   const bookSources = useMemo(
@@ -588,7 +649,9 @@ function Wizard({
               key={background.id}
               selected={background.id === draft.backgroundId}
               title={background.name}
-              icon={(color) => <CharacterIcon kind="background" id={background.name} color={color} />}
+              icon={(color) => (
+                <CharacterIcon kind="background" id={background.name} color={color} />
+              )}
               description={
                 background.book
                   ? `${background.book} · Atributos à escolha · Talento de origem à escolha. ${clip(background.summary)}`
@@ -898,7 +961,9 @@ function Review({
           level: klass?.level ?? null,
           background: sheet.identity.background,
           alignment: sheet.identity.alignment,
-          strengths: [...ABILITIES].sort((a, b) => sheet.abilities[b] - sheet.abilities[a]).map((ability) => abilityLabels[ability].name),
+          strengths: [...ABILITIES]
+            .sort((a, b) => sheet.abilities[b] - sheet.abilities[a])
+            .map((ability) => abilityLabels[ability].name),
           equipment: items.filter((item) => item.isEquipped).map((item) => item.name),
           appearance: draft.details.appearance,
           personality: [draft.details.personality, draft.details.ideals].filter(Boolean).join(' '),

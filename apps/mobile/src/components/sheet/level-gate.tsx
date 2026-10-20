@@ -40,12 +40,23 @@ export function LevelGate({
   const [busy, setBusy] = useState(false);
   if (level >= 20) return <AppText variant="small">Nível máximo.</AppText>;
 
-  const levelUpButton = <Button label="Subir de nível" icon={<TrendingUp size={16} color={colors.primaryFg} />} onPress={onLevelUp} />;
+  const levelUpButton = (
+    <Button
+      label="Subir de nível"
+      icon={<TrendingUp size={16} color={colors.primaryFg} />}
+      onPress={onLevelUp}
+    />
+  );
 
   if (!gate.inCampaign) return canEditSheet ? levelUpButton : null;
   const pending = granted > level;
   if (gate.isGm) {
-    if (pending) return <AppText variant="small">Nível {granted} liberado: aguardando o jogador escolher as melhorias.</AppText>;
+    if (pending)
+      return (
+        <AppText variant="small">
+          Nível {granted} liberado: aguardando o jogador escolher as melhorias.
+        </AppText>
+      );
     return (
       <Button
         label={`Liberar nível ${level + 1}`}
@@ -57,7 +68,11 @@ export function LevelGate({
             setGranted(await grantCharacterLevel(getSupabase(), characterId));
             toast({ tone: 'success', title: `Nível ${level + 1} liberado para ${characterName}.` });
           } catch (error) {
-            toast({ tone: 'danger', title: 'O nível não foi liberado', description: failureMessage(error) });
+            toast({
+              tone: 'danger',
+              title: 'O nível não foi liberado',
+              description: failureMessage(error),
+            });
           } finally {
             setBusy(false);
           }

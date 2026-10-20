@@ -1,8 +1,16 @@
 'use client';
 
 import { importBookPack } from '@codexveil/database';
-import { bookEntryKindLabels, parseBookPack, type BookPackIssue } from '@codexveil/rpg-systems/dnd5e';
-import { T20_BOOK_PACK_FORMAT, parseT20BookPack, t20BookEntryKindLabels } from '@codexveil/rpg-systems/tormenta20';
+import {
+  bookEntryKindLabels,
+  parseBookPack,
+  type BookPackIssue,
+} from '@codexveil/rpg-systems/dnd5e';
+import {
+  T20_BOOK_PACK_FORMAT,
+  parseT20BookPack,
+  t20BookEntryKindLabels,
+} from '@codexveil/rpg-systems/tormenta20';
 import { FileUp, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
@@ -31,18 +39,29 @@ function counts(pack: AnyPack): [string, number][] {
 }
 
 function kindLabel(systemId: string, kind: string): string {
-  const labels: Record<string, { many: string }> = systemId === 'tormenta20' ? t20BookEntryKindLabels : bookEntryKindLabels;
+  const labels: Record<string, { many: string }> =
+    systemId === 'tormenta20' ? t20BookEntryKindLabels : bookEntryKindLabels;
   return labels[kind]?.many ?? kind;
 }
 
 /** Lê o pacote conforme o formato: D&D 5e (`codexveil.dnd5e.book`) ou Tormenta20. */
 function readPack(input: unknown): { pack: AnyPack; issues: BookPackIssue[] } {
-  if (input && typeof input === 'object' && (input as { format?: unknown }).format === T20_BOOK_PACK_FORMAT) {
+  if (
+    input &&
+    typeof input === 'object' &&
+    (input as { format?: unknown }).format === T20_BOOK_PACK_FORMAT
+  ) {
     const parsed = parseT20BookPack(input);
-    return { pack: { systemId: 'tormenta20', book: parsed.pack.book, entries: parsed.pack.entries }, issues: parsed.issues };
+    return {
+      pack: { systemId: 'tormenta20', book: parsed.pack.book, entries: parsed.pack.entries },
+      issues: parsed.issues,
+    };
   }
   const parsed = parseBookPack(input);
-  return { pack: { systemId: 'dnd5e', book: parsed.pack.book, entries: parsed.pack.entries }, issues: parsed.issues };
+  return {
+    pack: { systemId: 'dnd5e', book: parsed.pack.book, entries: parsed.pack.entries },
+    issues: parsed.issues,
+  };
 }
 
 /**
@@ -57,9 +76,21 @@ export function BookImporter({ userId, existingKeys }: { userId: string; existin
   const read = async (file: File) => {
     try {
       const parsed = readPack(JSON.parse(await file.text()) as unknown);
-      setState({ step: 'ready', fileName: file.name, pack: parsed.pack, issues: parsed.issues, replaces: existingKeys.includes(parsed.pack.book.id) });
+      setState({
+        step: 'ready',
+        fileName: file.name,
+        pack: parsed.pack,
+        issues: parsed.issues,
+        replaces: existingKeys.includes(parsed.pack.book.id),
+      });
     } catch (error) {
-      setState({ step: 'error', message: error instanceof SyntaxError ? 'O arquivo não é um JSON válido.' : failureMessage(error, 'Este arquivo não é um pacote de livro do Codexveil.') });
+      setState({
+        step: 'error',
+        message:
+          error instanceof SyntaxError
+            ? 'O arquivo não é um JSON válido.'
+            : failureMessage(error, 'Este arquivo não é um pacote de livro do Codexveil.'),
+      });
     } finally {
       if (input.current) input.current.value = '';
     }
@@ -70,11 +101,22 @@ export function BookImporter({ userId, existingKeys }: { userId: string; existin
     const { pack, fileName } = state;
     setState({ step: 'importing', fileName, done: 0, total: pack.entries.length });
     try {
-      await importBookPack(getSupabaseBrowserClient(), userId, { systemId: pack.systemId, book: pack.book, entries: pack.entries }, (done, total) => setState({ step: 'importing', fileName, done, total }));
+      await importBookPack(
+        getSupabaseBrowserClient(),
+        userId,
+        { systemId: pack.systemId, book: pack.book, entries: pack.entries },
+        (done, total) => setState({ step: 'importing', fileName, done, total }),
+      );
       setState({ step: 'idle' });
       router.refresh();
     } catch (error) {
-      setState({ step: 'error', message: failureMessage(error, 'A importação não terminou. Importe o arquivo de novo: o livro incompleto é substituído.') });
+      setState({
+        step: 'error',
+        message: failureMessage(
+          error,
+          'A importação não terminou. Importe o arquivo de novo: o livro incompleto é substituído.',
+        ),
+      });
     }
   };
 
@@ -93,7 +135,10 @@ export function BookImporter({ userId, existingKeys }: { userId: string; existin
       />
       {state.step === 'idle' || state.step === 'error' ? (
         <div>
-          <Button icon={<FileUp className="h-4 w-4" aria-hidden="true" />} onClick={() => input.current?.click()}>
+          <Button
+            icon={<FileUp className="h-4 w-4" aria-hidden="true" />}
+            onClick={() => input.current?.click()}
+          >
             Escolher arquivo do livro (.json)
           </Button>
         </div>
@@ -112,7 +157,10 @@ export function BookImporter({ userId, existingKeys }: { userId: string; existin
             ))}
           </ul>
           {state.issues.length > 0 ? (
-            <Alert tone="warning" title={`${state.issues.length} entrada(s) com problema ficam de fora`}>
+            <Alert
+              tone="warning"
+              title={`${state.issues.length} entrada(s) com problema ficam de fora`}
+            >
               <ul className="list-disc pl-4 text-xs">
                 {state.issues.slice(0, 8).map((issue) => (
                   <li key={issue.index}>
@@ -123,9 +171,14 @@ export function BookImporter({ userId, existingKeys }: { userId: string; existin
               </ul>
             </Alert>
           ) : null}
-          {state.replaces ? <Alert tone="info">Você já importou este livro: a versão atual será substituída.</Alert> : null}
+          {state.replaces ? (
+            <Alert tone="info">Você já importou este livro: a versão atual será substituída.</Alert>
+          ) : null}
           <div className="flex flex-wrap gap-2">
-            <Button icon={<Upload className="h-4 w-4" aria-hidden="true" />} onClick={() => void start()}>
+            <Button
+              icon={<Upload className="h-4 w-4" aria-hidden="true" />}
+              onClick={() => void start()}
+            >
               Importar {state.pack.entries.length} entradas
             </Button>
             <Button variant="ghost" onClick={() => setState({ step: 'idle' })}>
@@ -141,7 +194,12 @@ export function BookImporter({ userId, existingKeys }: { userId: string; existin
             Importando {state.fileName}… {state.done} de {state.total}
           </p>
           <div className="h-2 overflow-hidden rounded-full bg-sunken">
-            <div className="h-full bg-wine-500 transition-[width]" style={{ width: `${state.total ? Math.round((state.done / state.total) * 100) : 0}%` }} />
+            <div
+              className="h-full bg-wine-500 transition-[width]"
+              style={{
+                width: `${state.total ? Math.round((state.done / state.total) * 100) : 0}%`,
+              }}
+            />
           </div>
           <p className="text-xs text-fg-muted">Não feche a página até terminar.</p>
         </div>

@@ -27,7 +27,12 @@ interface AsyncState<T> {
 export function useAsyncData<T>(load: () => Promise<T>, key: string) {
   const [attempt, setAttempt] = useState(0);
   const requestKey = `${key}#${attempt}`;
-  const [state, setState] = useState<AsyncState<T>>({ settledKey: null, baseKey: null, data: null, error: null });
+  const [state, setState] = useState<AsyncState<T>>({
+    settledKey: null,
+    baseKey: null,
+    data: null,
+    error: null,
+  });
   const run = useEffectEvent(load);
 
   useEffect(() => {
@@ -62,7 +67,9 @@ export function useAsyncData<T>(load: () => Promise<T>, key: string) {
     reload: useCallback(() => setAttempt((value) => value + 1), []),
     /** Atualiza os dados localmente após uma alteração confirmada pelo servidor. */
     mutate: (update: (current: T) => T) =>
-      setState((current) => (current.data === null ? current : { ...current, data: update(current.data) })),
+      setState((current) =>
+        current.data === null ? current : { ...current, data: update(current.data) },
+      ),
   };
 }
 
@@ -73,7 +80,12 @@ export function useAutosave<T>(options: {
   validate?: (value: T) => string | null;
 }) {
   const [value, setValue] = useState<T>(options.initial);
-  const [state, setState] = useState<AutosaveState>({ status: 'saved', message: null, version: options.version, lastSavedAt: null });
+  const [state, setState] = useState<AutosaveState>({
+    status: 'saved',
+    message: null,
+    version: options.version,
+    lastSavedAt: null,
+  });
   const [saver] = useState(
     () =>
       new Autosaver<T>({
@@ -115,14 +127,21 @@ export function useAutosave<T>(options: {
   };
 }
 
-export function useRealtimeRefresh(channelName: string, bindings: readonly RealtimeBinding[], onChange: () => void): RealtimeStatus {
+export function useRealtimeRefresh(
+  channelName: string,
+  bindings: readonly RealtimeBinding[],
+  onChange: () => void,
+): RealtimeStatus {
   const [status, setStatus] = useState<RealtimeStatus>('connecting');
   const handle = useEffectEvent(onChange);
   const bindingsKey = JSON.stringify(bindings);
 
   useEffect(() => {
     const parsed = JSON.parse(bindingsKey) as RealtimeBinding[];
-    const unsubscribe = subscribeToChanges(getSupabase(), channelName, parsed, { onChange: () => handle(), onStatus: setStatus });
+    const unsubscribe = subscribeToChanges(getSupabase(), channelName, parsed, {
+      onChange: () => handle(),
+      onStatus: setStatus,
+    });
     // Ao voltar para o app, recarrega: eventos podem ter sido perdidos em segundo plano.
     const subscription = AppState.addEventListener('change', (next) => {
       if (next === 'active') handle();

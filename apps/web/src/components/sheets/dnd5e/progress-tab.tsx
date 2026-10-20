@@ -46,7 +46,11 @@ function ExperienceCard() {
     <Card>
       <CardHeader
         title="Progressão"
-        description={usesXp ? 'Evolução por pontos de experiência.' : 'Evolução por marcos: o mestre indica quando subir de nível.'}
+        description={
+          usesXp
+            ? 'Evolução por pontos de experiência.'
+            : 'Evolução por marcos: o mestre indica quando subir de nível.'
+        }
         action={<LevelUpButton />}
       />
       <dl className="grid grid-cols-3 gap-3 text-center">
@@ -56,11 +60,15 @@ function ExperienceCard() {
         </div>
         <div className="rounded-md border border-line bg-raised p-3">
           <dt className="text-[11px] uppercase tracking-wider text-fg-muted">Experiência</dt>
-          <dd className="tabular font-display text-2xl text-fg-accent">{derived.experience.current.toLocaleString('pt-BR')}</dd>
+          <dd className="tabular font-display text-2xl text-fg-accent">
+            {derived.experience.current.toLocaleString('pt-BR')}
+          </dd>
         </div>
         <div className="rounded-md border border-line bg-raised p-3">
           <dt className="text-[11px] uppercase tracking-wider text-fg-muted">Próximo nível</dt>
-          <dd className="tabular font-display text-2xl text-fg-accent">{derived.experience.nextLevelAt?.toLocaleString('pt-BR') ?? '—'}</dd>
+          <dd className="tabular font-display text-2xl text-fg-accent">
+            {derived.experience.nextLevelAt?.toLocaleString('pt-BR') ?? '—'}
+          </dd>
         </div>
       </dl>
       {usesXp ? (
@@ -74,11 +82,17 @@ function ExperienceCard() {
             min={0}
             max={1_000_000}
             disabled={!permissions.canEditSheet}
-            onCommit={(experience) => updateSheet((current) => ({ ...current, identity: { ...current.identity, experience: experience ?? 0 } }))}
+            onCommit={(experience) =>
+              updateSheet((current) => ({
+                ...current,
+                identity: { ...current.identity, experience: experience ?? 0 },
+              }))
+            }
           />
           {derived.experience.levelFromExperience > derived.level ? (
             <p className="text-xs text-amber-300">
-              A experiência já permite o nível {derived.experience.levelFromExperience}. Use “Subir de nível”.
+              A experiência já permite o nível {derived.experience.levelFromExperience}. Use “Subir
+              de nível”.
             </p>
           ) : null}
         </div>
@@ -93,7 +107,11 @@ function EventsCard() {
   const [kind, setKind] = useState<CharacterEventKind>('milestone');
   const [summary, setSummary] = useState('');
   const [busy, setBusy] = useState(false);
-  const { data: events, error, reload: load } = useAsyncData(
+  const {
+    data: events,
+    error,
+    reload: load,
+  } = useAsyncData(
     () => listCharacterEvents(getSupabaseBrowserClient(), character.id),
     'Não foi possível carregar o histórico.',
     character.id,
@@ -103,10 +121,13 @@ function EventsCard() {
     const text = summary.trim();
     if (!text) return;
     setBusy(true);
-    const ok = await run(() => addCharacterEvent(getSupabaseBrowserClient(), character.id, { kind, summary: text }), {
-      success: 'Registro adicionado ao histórico.',
-      failure: 'O registro não foi salvo',
-    });
+    const ok = await run(
+      () => addCharacterEvent(getSupabaseBrowserClient(), character.id, { kind, summary: text }),
+      {
+        success: 'Registro adicionado ao histórico.',
+        failure: 'O registro não foi salvo',
+      },
+    );
     setBusy(false);
     if (ok === undefined) return;
     setSummary('');
@@ -115,7 +136,11 @@ function EventsCard() {
 
   return (
     <Card>
-      <CardHeader icon={<ScrollText className="h-5 w-5" aria-hidden="true" />} title="Histórico de evolução" description="Registros permanentes: níveis, marcos e acontecimentos importantes." />
+      <CardHeader
+        icon={<ScrollText className="h-5 w-5" aria-hidden="true" />}
+        title="Histórico de evolução"
+        description="Registros permanentes: níveis, marcos e acontecimentos importantes."
+      />
       {permissions.canEditPlay ? (
         <form
           className="mb-4 grid gap-3 sm:grid-cols-[11rem_1fr_auto] sm:items-end"
@@ -124,21 +149,40 @@ function EventsCard() {
             void add();
           }}
         >
-          <SelectField id={`${id}-kind`} label="Tipo" value={kind} onChange={(event) => setKind(event.target.value as CharacterEventKind)}>
+          <SelectField
+            id={`${id}-kind`}
+            label="Tipo"
+            value={kind}
+            onChange={(event) => setKind(event.target.value as CharacterEventKind)}
+          >
             {CHARACTER_EVENT_KINDS.map((option) => (
               <option key={option} value={option}>
                 {characterEventKindLabels[option]}
               </option>
             ))}
           </SelectField>
-          <TextField id={`${id}-summary`} label="O que aconteceu" maxLength={300} value={summary} onChange={(event) => setSummary(event.target.value)} placeholder="Ex.: Derrotou o carniçal da torre" />
+          <TextField
+            id={`${id}-summary`}
+            label="O que aconteceu"
+            maxLength={300}
+            value={summary}
+            onChange={(event) => setSummary(event.target.value)}
+            placeholder="Ex.: Derrotou o carniçal da torre"
+          />
           <Button type="submit" loading={busy} disabled={!summary.trim()}>
             Registrar
           </Button>
         </form>
       ) : null}
       {error ? (
-        <ErrorState description={error} action={<Button size="sm" variant="secondary" onClick={load}>Tentar de novo</Button>} />
+        <ErrorState
+          description={error}
+          action={
+            <Button size="sm" variant="secondary" onClick={load}>
+              Tentar de novo
+            </Button>
+          }
+        />
       ) : events === null ? (
         <LoadingState label="Carregando histórico…" />
       ) : events.length === 0 ? (
@@ -147,7 +191,10 @@ function EventsCard() {
         <ol className="relative flex flex-col gap-4 border-l border-line pl-5">
           {events.map((event) => (
             <li key={event.id} className="relative">
-              <span className="absolute -left-[1.6rem] top-1.5 h-2.5 w-2.5 rotate-45 bg-parchment-400" aria-hidden="true" />
+              <span
+                className="absolute -left-[1.6rem] top-1.5 h-2.5 w-2.5 rotate-45 bg-parchment-400"
+                aria-hidden="true"
+              />
               <p className="text-xs text-fg-muted">
                 {formatDateTime(event.occurredAt)} · {characterEventKindLabels[event.kind]}
                 {event.actorName ? ` · por ${event.actorName}` : ''}
@@ -164,7 +211,11 @@ function EventsCard() {
 function SnapshotsCard() {
   const { character, name, sheet, updateSheet, setName } = useSheet();
   const { toast } = useToast();
-  const { data: snapshots, error, reload: load } = useAsyncData(
+  const {
+    data: snapshots,
+    error,
+    reload: load,
+  } = useAsyncData(
     () => listCharacterSnapshots(getSupabaseBrowserClient(), character.id),
     'Não foi possível carregar as cópias.',
     character.id,
@@ -181,7 +232,11 @@ function SnapshotsCard() {
     // atual vira uma nova cópia de segurança automaticamente.
     setName(snapshot.name);
     updateSheet(() => restored);
-    toast({ tone: 'success', title: 'Cópia restaurada', description: 'A ficha será salva automaticamente.' });
+    toast({
+      tone: 'success',
+      title: 'Cópia restaurada',
+      description: 'A ficha será salva automaticamente.',
+    });
     return Promise.resolve();
   };
 
@@ -193,11 +248,20 @@ function SnapshotsCard() {
         description="Guardadas automaticamente antes de cada rajada de edições (até 30)."
       />
       {error ? (
-        <ErrorState description={error} action={<Button size="sm" variant="secondary" onClick={load}>Tentar de novo</Button>} />
+        <ErrorState
+          description={error}
+          action={
+            <Button size="sm" variant="secondary" onClick={load}>
+              Tentar de novo
+            </Button>
+          }
+        />
       ) : snapshots === null ? (
         <LoadingState label="Carregando cópias…" />
       ) : snapshots.length === 0 ? (
-        <p className="text-sm text-fg-muted">Ainda não há cópias. Elas surgem conforme a ficha é editada.</p>
+        <p className="text-sm text-fg-muted">
+          Ainda não há cópias. Elas surgem conforme a ficha é editada.
+        </p>
       ) : (
         <ul className="flex flex-col divide-y divide-line">
           {snapshots.map((snapshot) => {
@@ -218,7 +282,12 @@ function SnapshotsCard() {
                 </div>
                 <ConfirmDialog
                   trigger={(open) => (
-                    <Button size="sm" variant="ghost" onClick={open} icon={<RotateCcw className="h-4 w-4" aria-hidden="true" />}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={open}
+                      icon={<RotateCcw className="h-4 w-4" aria-hidden="true" />}
+                    >
                       Restaurar
                     </Button>
                   )}
@@ -233,7 +302,14 @@ function SnapshotsCard() {
           })}
         </ul>
       )}
-      <p className="mt-3 text-xs text-fg-muted">Ficha atual: {sheet.identity.classes.map((entry) => entry.name).filter(Boolean).join(' / ') || 'sem classe definida'}.</p>
+      <p className="mt-3 text-xs text-fg-muted">
+        Ficha atual:{' '}
+        {sheet.identity.classes
+          .map((entry) => entry.name)
+          .filter(Boolean)
+          .join(' / ') || 'sem classe definida'}
+        .
+      </p>
     </Card>
   );
 }

@@ -28,7 +28,11 @@ function ProfileForm({ profile, onSaved }: { profile: Profile; onSaved: () => vo
   const [busy, setBusy] = useState(false);
 
   const save = async () => {
-    const parsed = profileUpdateSchema.safeParse({ displayName, bio, preferences: profile.preferences });
+    const parsed = profileUpdateSchema.safeParse({
+      displayName,
+      bio,
+      preferences: profile.preferences,
+    });
     if (!parsed.success) {
       setErrors(fieldErrorsFrom(parsed.error));
       return;
@@ -40,7 +44,11 @@ function ProfileForm({ profile, onSaved }: { profile: Profile; onSaved: () => vo
       toast({ tone: 'success', title: 'Perfil atualizado.' });
       onSaved();
     } catch (error) {
-      toast({ tone: 'danger', title: 'O perfil não foi salvo', description: failureMessage(error) });
+      toast({
+        tone: 'danger',
+        title: 'O perfil não foi salvo',
+        description: failureMessage(error),
+      });
     } finally {
       setBusy(false);
     }
@@ -49,8 +57,21 @@ function ProfileForm({ profile, onSaved }: { profile: Profile; onSaved: () => vo
   return (
     <Card ornate>
       <AppText variant="heading">Dados públicos</AppText>
-      <Field label="Nome de exibição" value={displayName} onChangeText={setDisplayName} maxLength={40} error={errors.displayName} />
-      <Field label="Sobre você" value={bio} onChangeText={setBio} maxLength={500} multiline error={errors.bio} />
+      <Field
+        label="Nome de exibição"
+        value={displayName}
+        onChangeText={setDisplayName}
+        maxLength={40}
+        error={errors.displayName}
+      />
+      <Field
+        label="Sobre você"
+        value={bio}
+        onChangeText={setBio}
+        maxLength={500}
+        multiline
+        error={errors.bio}
+      />
       <Button label="Salvar perfil" onPress={() => void save()} loading={busy} />
     </Card>
   );
@@ -59,7 +80,8 @@ function ProfileForm({ profile, onSaved }: { profile: Profile; onSaved: () => vo
 const pushMessages: Record<PushSetupResult, string> = {
   registered: 'Este aparelho recebe os avisos de sessões agendadas.',
   disabled: 'Avisos desligados neste aparelho.',
-  denied: 'O Android bloqueou as notificações do Codexveil. Libere-as nas configurações do aparelho.',
+  denied:
+    'O Android bloqueou as notificações do Codexveil. Libere-as nas configurações do aparelho.',
   unsupported: 'Avisos só funcionam no app instalado no celular.',
   unavailable: 'Não foi possível ativar os avisos agora (verifique a conexão ou atualize o app).',
 };
@@ -112,14 +134,19 @@ export default function ProfileScreen() {
   const userId = useUserId();
   const { email, signOut } = useSession();
   const confirm = useConfirm();
-  const { data, error, loading, reload } = useAsyncData(() => getProfile(getSupabase(), userId), userId);
+  const { data, error, loading, reload } = useAsyncData(
+    () => getProfile(getSupabase(), userId),
+    userId,
+  );
 
   if (loading) return <LoadingState />;
 
   return (
     <Screen title="Perfil" subtitle={email ?? undefined}>
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
-      {data ? <ProfileForm key={data.displayName + data.bio} profile={data} onSaved={reload} /> : null}
+      {data ? (
+        <ProfileForm key={data.displayName + data.bio} profile={data} onSaved={reload} />
+      ) : null}
       <PushCard />
       <Card>
         <AppText variant="heading">Conta</AppText>
@@ -129,11 +156,14 @@ export default function ProfileScreen() {
           variant="danger"
           icon={<LogOut size={16} color="#EC9384" />}
           onPress={() =>
-            void confirm({ title: 'Sair da conta?', message: 'Você precisará entrar novamente neste aparelho.', confirmLabel: 'Sair', tone: 'danger' }).then(
-              (confirmed) => {
-                if (confirmed) void signOut();
-              },
-            )
+            void confirm({
+              title: 'Sair da conta?',
+              message: 'Você precisará entrar novamente neste aparelho.',
+              confirmLabel: 'Sair',
+              tone: 'danger',
+            }).then((confirmed) => {
+              if (confirmed) void signOut();
+            })
           }
         />
       </Card>

@@ -482,7 +482,9 @@ function IncreaseField({
             active: even,
             apply: () => {
               setBgMode('even');
-              onChange(fixedThree ? Object.fromEntries(spec.abilities.map((ability) => [ability, 1])) : {});
+              onChange(
+                fixedThree ? Object.fromEntries(spec.abilities.map((ability) => [ability, 1])) : {},
+              );
             },
           },
         ]
@@ -566,7 +568,9 @@ function IncreaseField({
                 selected={ones.includes(ability)}
                 disabled={!ones.includes(ability) && ones.length >= 3}
                 onPress={() => {
-                  const next = ones.includes(ability) ? ones.filter((entry) => entry !== ability) : [...ones, ability];
+                  const next = ones.includes(ability)
+                    ? ones.filter((entry) => entry !== ability)
+                    : [...ones, ability];
                   onChange(Object.fromEntries(next.map((entry) => [entry, 1])));
                 }}
               />

@@ -48,10 +48,24 @@ export function HpQuickAdjust({ label, disabled = false, onApply }: HpQuickAdjus
         placeholder="0"
         className="tabular h-9 w-14 rounded-md border border-line-strong bg-sunken text-center text-sm text-fg aria-invalid:border-ember-400"
       />
-      <Button size="sm" variant="danger" disabled={disabled} onClick={() => apply('damage')} aria-label={`Dano em ${label}`} className="px-2">
+      <Button
+        size="sm"
+        variant="danger"
+        disabled={disabled}
+        onClick={() => apply('damage')}
+        aria-label={`Dano em ${label}`}
+        className="px-2"
+      >
         <HeartCrack className="h-4 w-4" aria-hidden="true" />
       </Button>
-      <Button size="sm" variant="secondary" disabled={disabled} onClick={() => apply('heal')} aria-label={`Cura em ${label}`} className="px-2">
+      <Button
+        size="sm"
+        variant="secondary"
+        disabled={disabled}
+        onClick={() => apply('heal')}
+        aria-label={`Cura em ${label}`}
+        className="px-2"
+      >
         <Heart className="h-4 w-4" aria-hidden="true" />
       </Button>
     </div>

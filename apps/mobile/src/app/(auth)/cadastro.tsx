@@ -10,12 +10,20 @@ import { Notice } from '@/components/ui/states';
 import { getSupabase, siteUrl, supabaseConfig } from '@/lib/supabase';
 
 export default function SignUpScreen() {
-  const [form, setForm] = useState({ displayName: '', email: '', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({
+    displayName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [result, setResult] = useState<{ tone: 'success' | 'danger'; message: string } | null>(null);
+  const [result, setResult] = useState<{ tone: 'success' | 'danger'; message: string } | null>(
+    null,
+  );
   const [busy, setBusy] = useState(false);
 
-  const set = (key: keyof typeof form) => (value: string) => setForm((current) => ({ ...current, [key]: value }));
+  const set = (key: keyof typeof form) => (value: string) =>
+    setForm((current) => ({ ...current, [key]: value }));
 
   const submit = async () => {
     setResult(null);
@@ -42,7 +50,10 @@ export default function SignUpScreen() {
     }
     if (!data.session) {
       // Mesma resposta para e-mails novos e já cadastrados (não revela quem tem conta).
-      setResult({ tone: 'success', message: `Enviamos um link de confirmação para ${parsed.data.email}. Abra-o e depois entre no app.` });
+      setResult({
+        tone: 'success',
+        message: `Enviamos um link de confirmação para ${parsed.data.email}. Abra-o e depois entre no app.`,
+      });
     }
   };
 
@@ -51,11 +62,46 @@ export default function SignUpScreen() {
       <ConfigNotice />
       {result ? <Notice tone={result.tone} message={result.message} /> : null}
       <Card>
-        <Field label="Nome de exibição" value={form.displayName} onChangeText={set('displayName')} maxLength={40} autoComplete="name" error={errors.displayName} />
-        <Field label="E-mail" value={form.email} onChangeText={set('email')} autoCapitalize="none" keyboardType="email-address" autoComplete="email" error={errors.email} />
-        <Field label="Senha" value={form.password} onChangeText={set('password')} secureTextEntry autoComplete="new-password" hint="Pelo menos 8 caracteres, com letras e números." error={errors.password} />
-        <Field label="Confirme a senha" value={form.confirmPassword} onChangeText={set('confirmPassword')} secureTextEntry autoComplete="new-password" error={errors.confirmPassword} />
-        <Button label="Criar conta" onPress={() => void submit()} loading={busy} disabled={!supabaseConfig.ok} />
+        <Field
+          label="Nome de exibição"
+          value={form.displayName}
+          onChangeText={set('displayName')}
+          maxLength={40}
+          autoComplete="name"
+          error={errors.displayName}
+        />
+        <Field
+          label="E-mail"
+          value={form.email}
+          onChangeText={set('email')}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          autoComplete="email"
+          error={errors.email}
+        />
+        <Field
+          label="Senha"
+          value={form.password}
+          onChangeText={set('password')}
+          secureTextEntry
+          autoComplete="new-password"
+          hint="Pelo menos 8 caracteres, com letras e números."
+          error={errors.password}
+        />
+        <Field
+          label="Confirme a senha"
+          value={form.confirmPassword}
+          onChangeText={set('confirmPassword')}
+          secureTextEntry
+          autoComplete="new-password"
+          error={errors.confirmPassword}
+        />
+        <Button
+          label="Criar conta"
+          onPress={() => void submit()}
+          loading={busy}
+          disabled={!supabaseConfig.ok}
+        />
       </Card>
     </Screen>
   );

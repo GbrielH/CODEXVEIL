@@ -21,7 +21,12 @@ export function StorySection() {
   const patchClass = (index: number, patch: Partial<Dnd5eClass>) =>
     updateSheet((current) => ({
       ...current,
-      identity: { ...current.identity, classes: current.identity.classes.map((entry, position) => (position === index ? { ...entry, ...patch } : entry)) },
+      identity: {
+        ...current.identity,
+        classes: current.identity.classes.map((entry, position) =>
+          position === index ? { ...entry, ...patch } : entry,
+        ),
+      },
     }));
   return (
     <View style={{ gap: spacing[4] }}>
@@ -32,21 +37,30 @@ export function StorySection() {
           value={sheet.identity.species}
           editable={canEditSheet}
           maxLength={60}
-          onChangeText={(species) => updateSheet((current) => ({ ...current, identity: { ...current.identity, species } }))}
+          onChangeText={(species) =>
+            updateSheet((current) => ({ ...current, identity: { ...current.identity, species } }))
+          }
         />
         <Field
           label="Antecedente"
           value={sheet.identity.background}
           editable={canEditSheet}
           maxLength={60}
-          onChangeText={(background) => updateSheet((current) => ({ ...current, identity: { ...current.identity, background } }))}
+          onChangeText={(background) =>
+            updateSheet((current) => ({
+              ...current,
+              identity: { ...current.identity, background },
+            }))
+          }
         />
         <Field
           label="Alinhamento"
           value={sheet.identity.alignment}
           editable={canEditSheet}
           maxLength={40}
-          onChangeText={(alignment) => updateSheet((current) => ({ ...current, identity: { ...current.identity, alignment } }))}
+          onChangeText={(alignment) =>
+            updateSheet((current) => ({ ...current, identity: { ...current.identity, alignment } }))
+          }
         />
       </Card>
       <Card>
@@ -56,39 +70,77 @@ export function StorySection() {
         {classes.map((entry, index) => {
           const classDef = findClassByName(entry.name);
           return (
-            <View key={index} style={{ gap: spacing[2], padding: spacing[3], borderRadius: 10, borderWidth: 1, borderColor: colors.line }}>
+            <View
+              key={index}
+              style={{
+                gap: spacing[2],
+                padding: spacing[3],
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: colors.line,
+              }}
+            >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
                 <View style={{ flex: 1, gap: 2 }}>
                   <AppText style={{ fontFamily: fonts.sansSemiBold, color: colors.fg }}>
                     {classDef?.name ?? (entry.name || 'Classe não definida')} · {entry.level}º nível
                   </AppText>
-                  <AppText variant="small">{entry.subclass ? `Subclasse: ${entry.subclass}` : entry.level < 3 ? 'Subclasse no 3º nível' : 'Sem subclasse'}</AppText>
+                  <AppText variant="small">
+                    {entry.subclass
+                      ? `Subclasse: ${entry.subclass}`
+                      : entry.level < 3
+                        ? 'Subclasse no 3º nível'
+                        : 'Sem subclasse'}
+                  </AppText>
                 </View>
-                <Badge label={`Dado de vida ${classDef?.hitDie ?? entry.hitDie}`} tone="parchment" />
+                <Badge
+                  label={`Dado de vida ${classDef?.hitDie ?? entry.hitDie}`}
+                  tone="parchment"
+                />
               </View>
               {/* Fichas antigas, com a classe escrita à mão: escolhe-se a classe do SRD. */}
               {canEditSheet && !classDef ? (
                 <>
-                  <AppText variant="small">Esta classe não é do SRD 5.2.1. Escolha a correspondente:</AppText>
+                  <AppText variant="small">
+                    Esta classe não é do SRD 5.2.1. Escolha a correspondente:
+                  </AppText>
                   <ChipRow>
                     {listClasses()
-                      .filter((option) => !classes.some((other) => findClassByName(other.name)?.id === option.id))
+                      .filter(
+                        (option) =>
+                          !classes.some((other) => findClassByName(other.name)?.id === option.id),
+                      )
                       .map((option) => (
-                        <Chip key={option.id} label={option.name} selected={false} onPress={() => patchClass(index, { name: option.name, hitDie: option.hitDie })} />
+                        <Chip
+                          key={option.id}
+                          label={option.name}
+                          selected={false}
+                          onPress={() =>
+                            patchClass(index, { name: option.name, hitDie: option.hitDie })
+                          }
+                        />
                       ))}
                   </ChipRow>
                 </>
               ) : null}
-              {canEditSheet && classDef && entry.level >= 3 && entry.subclass !== classDef.subclass.name ? (
+              {canEditSheet &&
+              classDef &&
+              entry.level >= 3 &&
+              entry.subclass !== classDef.subclass.name ? (
                 <ChipRow>
-                  <Chip label={`Subclasse: ${classDef.subclass.name}`} selected={false} onPress={() => patchClass(index, { subclass: classDef.subclass.name })} />
+                  <Chip
+                    label={`Subclasse: ${classDef.subclass.name}`}
+                    selected={false}
+                    onPress={() => patchClass(index, { subclass: classDef.subclass.name })}
+                  />
                 </ChipRow>
               ) : null}
             </View>
           );
         })}
         <AppText variant="small">
-          Classe, nível e subclasse mudam pela subida de nível, na aba Evolução (que também abre classes novas na multiclasse).
+          Classe, nível e subclasse mudam pela subida de nível, na aba Evolução (que também abre
+          classes novas na multiclasse).
         </AppText>
       </Card>
       <Card>
@@ -101,7 +153,12 @@ export function StorySection() {
             editable={canEditSheet}
             maxLength={field.max}
             multiline
-            onChangeText={(text) => updateSheet((current) => ({ ...current, details: { ...current.details, [field.key]: text } }))}
+            onChangeText={(text) =>
+              updateSheet((current) => ({
+                ...current,
+                details: { ...current.details, [field.key]: text },
+              }))
+            }
           />
         ))}
       </Card>

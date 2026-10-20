@@ -29,9 +29,16 @@ export function brasiliaToIso(date: string, time: string): string | null | undef
   if (!dateMatch || !timeMatch) return undefined;
   const [day, month, year] = [Number(dateMatch[1]), Number(dateMatch[2]), Number(dateMatch[3])];
   const [hours, minutes] = [Number(timeMatch[1]), Number(timeMatch[2])];
-  if (month < 1 || month > 12 || day < 1 || day > 31 || hours > 23 || minutes > 59) return undefined;
-  const value = new Date(`${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00-03:00`);
-  if (Number.isNaN(value.getTime()) || isoToBrasilia(value.toISOString()).date !== `${pad(day)}/${pad(month)}/${year}`) return undefined;
+  if (month < 1 || month > 12 || day < 1 || day > 31 || hours > 23 || minutes > 59)
+    return undefined;
+  const value = new Date(
+    `${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00-03:00`,
+  );
+  if (
+    Number.isNaN(value.getTime()) ||
+    isoToBrasilia(value.toISOString()).date !== `${pad(day)}/${pad(month)}/${year}`
+  )
+    return undefined;
   return value.toISOString();
 }
 

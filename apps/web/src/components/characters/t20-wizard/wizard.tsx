@@ -56,7 +56,16 @@ import {
   type T20Step,
 } from '@codexveil/rpg-systems/tormenta20';
 import { characterImagePrompt } from '@codexveil/domain';
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, Dices, Minus, Plus, Sparkles } from 'lucide-react';
+import {
+  AlertTriangle,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Dices,
+  Minus,
+  Plus,
+  Sparkles,
+} from 'lucide-react';
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition, type ReactNode } from 'react';
@@ -93,11 +102,17 @@ function d6(): number {
 export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
   const router = useRouter();
   const rules = campaign?.rules;
-  const allowedMethods = useMemo(() => rules?.attributeMethods ?? (['pontos', 'rolagem'] as const), [rules]);
-  const [draft, setDraft] = useState<T20Draft>(() => createT20Draft(rules?.startingLevel ?? 1, allowedMethods[0] ?? 'pontos'));
+  const allowedMethods = useMemo(
+    () => rules?.attributeMethods ?? (['pontos', 'rolagem'] as const),
+    [rules],
+  );
+  const [draft, setDraft] = useState<T20Draft>(() =>
+    createT20Draft(rules?.startingLevel ?? 1, allowedMethods[0] ?? 'pontos'),
+  );
   // Na campanha, os livros do mestre; na ficha pessoal, só os livros marcados abaixo.
   const selectedSources = useMemo(
-    () => (campaign ? sources : sources.filter((source) => draft.sourcebooks.includes(source.book.id))),
+    () =>
+      campaign ? sources : sources.filter((source) => draft.sourcebooks.includes(source.book.id)),
     [campaign, sources, draft.sourcebooks],
   );
   const content = useMemo(() => buildT20Content(selectedSources), [selectedSources]);
@@ -108,7 +123,10 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
   const topRef = useRef<HTMLDivElement>(null);
 
   const update = (patch: Partial<T20Draft>) => setDraft((current) => ({ ...current, ...patch }));
-  const issues = useMemo(() => t20DraftIssues(content, draft, { allowedMethods }), [content, draft, allowedMethods]);
+  const issues = useMemo(
+    () => t20DraftIssues(content, draft, { allowedMethods }),
+    [content, draft, allowedMethods],
+  );
   const klass = findT20Class(content, draft.classId);
   const race = findT20Race(content, draft.raceId);
   const origin = findT20Origin(content, draft.originId);
@@ -117,13 +135,17 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
 
   const steps = T20_STEPS.filter((entry) => {
     if (entry === 'magias') return Boolean(klass?.spellcasting);
-    if (entry === 'poderes') return powerLevels.length > 0 || t20CreationFeatureChoices(content, draft).length > 0 || !klass;
+    if (entry === 'poderes')
+      return (
+        powerLevels.length > 0 || t20CreationFeatureChoices(content, draft).length > 0 || !klass
+      );
     return true;
   });
   const index = steps.indexOf(step);
   const stepIssues = (target: T20Step) => issues.filter((issue) => issue.step === target);
   const showErrors = attempted.has(step) || step === 'revisao';
-  const errorFor = (path: string) => (showErrors ? issues.find((issue) => issue.path === path)?.message : undefined);
+  const errorFor = (path: string) =>
+    showErrors ? issues.find((issue) => issue.path === path)?.message : undefined;
 
   const goTo = (target: T20Step) => {
     setStep(target);
@@ -175,11 +197,15 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                   aria-current={current ? 'step' : undefined}
                   className={cx(
                     'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs whitespace-nowrap',
-                    current ? 'border-parchment-300/70 bg-parchment-200/10 text-fg' : 'border-line text-fg-secondary hover:bg-hover',
+                    current
+                      ? 'border-parchment-300/70 bg-parchment-200/10 text-fg'
+                      : 'border-line text-fg-secondary hover:bg-hover',
                   )}
                 >
                   {done ? <Check className="h-3.5 w-3.5 text-success" aria-hidden="true" /> : null}
-                  {warn ? <AlertTriangle className="h-3.5 w-3.5 text-warning" aria-hidden="true" /> : null}
+                  {warn ? (
+                    <AlertTriangle className="h-3.5 w-3.5 text-warning" aria-hidden="true" />
+                  ) : null}
                   <span className="tabular text-fg-subtle">{position + 1}</span>
                   {t20StepLabels[entry]}
                 </button>
@@ -197,18 +223,35 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
 
           {step === 'inicio' ? (
             <div className="flex flex-col gap-5">
-              <TextField id="t20-name" label="Nome do personagem" maxLength={80} required value={draft.name} onChange={(event) => update({ name: event.target.value })} error={errorFor('name')} />
+              <TextField
+                id="t20-name"
+                label="Nome do personagem"
+                maxLength={80}
+                required
+                value={draft.name}
+                onChange={(event) => update({ name: event.target.value })}
+                error={errorFor('name')}
+              />
               {campaign ? (
                 <div className="rounded-md border border-line bg-card/60 p-4 text-sm">
                   <h3 className="eyebrow mb-2">Regras do mestre ({campaign.name})</h3>
                   <ul className="flex list-disc flex-col gap-1 pl-5 text-fg-secondary">
-                    {describeT20CampaignRules(campaign.rules, Object.fromEntries(content.books.map((book) => [book.id, book.name]))).map((rule) => (
+                    {describeT20CampaignRules(
+                      campaign.rules,
+                      Object.fromEntries(content.books.map((book) => [book.id, book.name])),
+                    ).map((rule) => (
                       <li key={rule}>{rule}</li>
                     ))}
                   </ul>
                 </div>
               ) : (
-                <SelectField id="t20-level" label="Nível" value={String(draft.level)} onChange={(event) => update({ level: Number(event.target.value) })} fieldClassName="sm:max-w-xs">
+                <SelectField
+                  id="t20-level"
+                  label="Nível"
+                  value={String(draft.level)}
+                  onChange={(event) => update({ level: Number(event.target.value) })}
+                  fieldClassName="sm:max-w-xs"
+                >
                   {Array.from({ length: 20 }, (_, position) => position + 1).map((level) => (
                     <option key={level} value={level}>
                       {level}º nível
@@ -217,13 +260,20 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                 </SelectField>
               )}
               {campaign ? (
-                <p className="text-sm text-fg-muted">Livros liberados pelo mestre: {content.books.map((book) => book.name).join(', ') || 'nenhum'}.</p>
+                <p className="text-sm text-fg-muted">
+                  Livros liberados pelo mestre:{' '}
+                  {content.books.map((book) => book.name).join(', ') || 'nenhum'}.
+                </p>
               ) : (
                 <div className="flex flex-col gap-2 rounded-md border border-line bg-card/60 p-4">
                   <p className="text-sm font-medium text-fg">Livros desta ficha</p>
-                  <p className="text-xs text-fg-muted">Só o conteúdo dos livros marcados aparece na criação.</p>
+                  <p className="text-xs text-fg-muted">
+                    Só o conteúdo dos livros marcados aparece na criação.
+                  </p>
                   {sources.length === 0 ? (
-                    <p className="text-sm text-fg-muted">Nenhum livro de Tormenta20 importado em Meus livros.</p>
+                    <p className="text-sm text-fg-muted">
+                      Nenhum livro de Tormenta20 importado em Meus livros.
+                    </p>
                   ) : (
                     sources.map((source) => (
                       <CheckboxField
@@ -246,7 +296,19 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
             </div>
           ) : null}
 
-          {step === 'atributos' ? <AttributesStep draft={draft} update={update} methods={allowedMethods} error={errorFor('points') ?? errorFor('rolls') ?? errorFor('rollAssignment') ?? errorFor('attributeMethod')} /> : null}
+          {step === 'atributos' ? (
+            <AttributesStep
+              draft={draft}
+              update={update}
+              methods={allowedMethods}
+              error={
+                errorFor('points') ??
+                errorFor('rolls') ??
+                errorFor('rollAssignment') ??
+                errorFor('attributeMethod')
+              }
+            />
+          ) : null}
 
           {step === 'raca' ? (
             <div className="flex flex-col gap-5">
@@ -256,27 +318,58 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                 items={content.races.map((entry) => ({
                   id: entry.id,
                   title: entry.name,
-                  icon: <CharacterIcon kind="species" id={entry.id} className="h-7 w-7 text-fg-accent" />,
-                  subtitle: [attributeText(entry.attributes), entry.attributeChoice ? `+${entry.attributeChoice.value} em ${entry.attributeChoice.count} à escolha` : '', t20SizeLabels[entry.size], `${entry.speed} m`]
+                  icon: (
+                    <CharacterIcon
+                      kind="species"
+                      id={entry.id}
+                      className="h-7 w-7 text-fg-accent"
+                    />
+                  ),
+                  subtitle: [
+                    attributeText(entry.attributes),
+                    entry.attributeChoice
+                      ? `+${entry.attributeChoice.value} em ${entry.attributeChoice.count} à escolha`
+                      : '',
+                    t20SizeLabels[entry.size],
+                    `${entry.speed} m`,
+                  ]
                     .filter(Boolean)
                     .join(' · '),
                   text: entry.summary,
                 }))}
-                onSelect={(raceId) => update({ raceId, raceAttributeChoices: [], raceVariant: '', raceSkills: [], raceSkillPower: '' })}
+                onSelect={(raceId) =>
+                  update({
+                    raceId,
+                    raceAttributeChoices: [],
+                    raceVariant: '',
+                    raceSkills: [],
+                    raceSkillPower: '',
+                  })
+                }
               />
               {errorFor('raceId') ? <Alert tone="danger">{errorFor('raceId')}</Alert> : null}
               {race?.attributeChoice ? (
                 <MultiPick
                   label={`Atributos com +${race.attributeChoice.value} (escolha ${race.attributeChoice.count})`}
                   count={race.attributeChoice.count}
-                  options={T20_ATTRIBUTES.filter((key) => !race.attributeChoice!.exclude.includes(key)).map((key) => ({ id: key, name: t20AttributeLabels[key].name }))}
+                  options={T20_ATTRIBUTES.filter(
+                    (key) => !race.attributeChoice!.exclude.includes(key),
+                  ).map((key) => ({ id: key, name: t20AttributeLabels[key].name }))}
                   value={draft.raceAttributeChoices}
-                  onChange={(raceAttributeChoices) => update({ raceAttributeChoices: raceAttributeChoices as T20Attribute[] })}
+                  onChange={(raceAttributeChoices) =>
+                    update({ raceAttributeChoices: raceAttributeChoices as T20Attribute[] })
+                  }
                   error={errorFor('raceAttributeChoices')}
                 />
               ) : null}
               {race && race.variants.length > 0 ? (
-                <SelectField id="t20-variant" label="Variante" value={draft.raceVariant} onChange={(event) => update({ raceVariant: event.target.value })} error={errorFor('raceVariant')}>
+                <SelectField
+                  id="t20-variant"
+                  label="Variante"
+                  value={draft.raceVariant}
+                  onChange={(event) => update({ raceVariant: event.target.value })}
+                  error={errorFor('raceVariant')}
+                >
                   <option value="">Escolha</option>
                   {race.variants.map((variant) => (
                     <option key={variant.name} value={variant.name}>
@@ -285,7 +378,15 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                   ))}
                 </SelectField>
               ) : null}
-              {race ? <FeatureList title={`Habilidades de ${race.name}`} items={race.abilities.map((ability) => ({ name: ability.name, text: ability.text }))} /> : null}
+              {race ? (
+                <FeatureList
+                  title={`Habilidades de ${race.name}`}
+                  items={race.abilities.map((ability) => ({
+                    name: ability.name,
+                    text: ability.text,
+                  }))}
+                />
+              ) : null}
             </div>
           ) : null}
 
@@ -301,12 +402,34 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                   text: entry.summary,
                 }))}
                 onSelect={(classId) =>
-                  update({ classId, classFixedChoices: [], classSkills: [], arcanistPath: '', lineage: '', spellSchools: [], spellIds: [], levelPowers: {}, equipment: { simple: '', martial: '', armor: '', shield: false } })
+                  update({
+                    classId,
+                    classFixedChoices: [],
+                    classSkills: [],
+                    arcanistPath: '',
+                    lineage: '',
+                    spellSchools: [],
+                    spellIds: [],
+                    levelPowers: {},
+                    equipment: { simple: '', martial: '', armor: '', shield: false },
+                  })
                 }
               />
               {errorFor('classId') ? <Alert tone="danger">{errorFor('classId')}</Alert> : null}
               {klass && plainT20(klass.name) === 'arcanista' ? (
-                <SelectField id="t20-path" label="Caminho do arcanista" value={draft.arcanistPath} onChange={(event) => update({ arcanistPath: event.target.value as T20ArcanistPath | '', lineage: '', spellIds: [] })} error={errorFor('arcanistPath')}>
+                <SelectField
+                  id="t20-path"
+                  label="Caminho do arcanista"
+                  value={draft.arcanistPath}
+                  onChange={(event) =>
+                    update({
+                      arcanistPath: event.target.value as T20ArcanistPath | '',
+                      lineage: '',
+                      spellIds: [],
+                    })
+                  }
+                  error={errorFor('arcanistPath')}
+                >
                   <option value="">Escolha</option>
                   <option value="bruxo">Bruxo</option>
                   <option value="feiticeiro">Feiticeiro</option>
@@ -314,7 +437,13 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                 </SelectField>
               ) : null}
               {klass && draft.arcanistPath === 'feiticeiro' && t20Lineages(klass).length > 0 ? (
-                <SelectField id="t20-lineage" label="Linhagem" value={draft.lineage} onChange={(event) => update({ lineage: event.target.value })} error={errorFor('lineage')}>
+                <SelectField
+                  id="t20-lineage"
+                  label="Linhagem"
+                  value={draft.lineage}
+                  onChange={(event) => update({ lineage: event.target.value })}
+                  error={errorFor('lineage')}
+                >
                   <option value="">Escolha</option>
                   {t20Lineages(klass).map((lineage) => (
                     <option key={lineage} value={lineage}>
@@ -326,7 +455,12 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
               {klass ? (
                 <FeatureList
                   title={`${klass.name} até o ${draft.level}º nível`}
-                  items={klass.abilities.filter((ability) => ability.level <= draft.level).map((ability) => ({ name: `${ability.level}º · ${ability.name}`, text: ability.text }))}
+                  items={klass.abilities
+                    .filter((ability) => ability.level <= draft.level)
+                    .map((ability) => ({
+                      name: `${ability.level}º · ${ability.name}`,
+                      text: ability.text,
+                    }))}
                 />
               ) : null}
             </div>
@@ -337,13 +471,22 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
               <PickerGrid
                 label="Origem"
                 value={draft.originId}
-                items={content.origins.map((entry) => ({ id: entry.id, title: entry.name, subtitle: entry.benefitsText, text: entry.summary }))}
-                onSelect={(originId) => update({ originId, originBenefits: [], originPowerChoices: {} })}
+                items={content.origins.map((entry) => ({
+                  id: entry.id,
+                  title: entry.name,
+                  subtitle: entry.benefitsText,
+                  text: entry.summary,
+                }))}
+                onSelect={(originId) =>
+                  update({ originId, originBenefits: [], originPowerChoices: {} })
+                }
               />
               {errorFor('originId') ? <Alert tone="danger">{errorFor('originId')}</Alert> : null}
               {origin ? (
                 <>
-                  {origin.items ? <p className="text-sm text-fg-secondary">Itens: {origin.items}</p> : null}
+                  {origin.items ? (
+                    <p className="text-sm text-fg-secondary">Itens: {origin.items}</p>
+                  ) : null}
                   <MultiPick
                     label="Benefícios da origem (escolha 2)"
                     count={2}
@@ -352,19 +495,37 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                     onChange={(originBenefits) => update({ originBenefits })}
                     error={errorFor('originBenefits')}
                   />
-                  <FeatureList title="Poderes únicos" items={origin.uniquePowers.map((power) => ({ name: power.name, text: power.text }))} />
+                  <FeatureList
+                    title="Poderes únicos"
+                    items={origin.uniquePowers.map((power) => ({
+                      name: power.name,
+                      text: power.text,
+                    }))}
+                  />
                   {draft.originBenefits
-                    .filter((benefit) => benefit.startsWith('power:') && t20GenericPowerGroups(benefit.slice(6)))
+                    .filter(
+                      (benefit) =>
+                        benefit.startsWith('power:') && t20GenericPowerGroups(benefit.slice(6)),
+                    )
                     .map((benefit) => {
                       const name = benefit.slice(6);
-                      const chosen = content.powers.find((power) => power.id === draft.originPowerChoices[name]);
+                      const chosen = content.powers.find(
+                        (power) => power.id === draft.originPowerChoices[name],
+                      );
                       return (
                         <div key={benefit} className="flex flex-col gap-2">
                           <SelectField
                             id={`t20-origem-${name}`}
                             label={`Poder escolhido (${name})`}
                             value={draft.originPowerChoices[name] ?? ''}
-                            onChange={(event) => update({ originPowerChoices: { ...draft.originPowerChoices, [name]: event.target.value } })}
+                            onChange={(event) =>
+                              update({
+                                originPowerChoices: {
+                                  ...draft.originPowerChoices,
+                                  [name]: event.target.value,
+                                },
+                              })
+                            }
                             error={errorFor('originPowerChoices')}
                           >
                             <option value="">Escolha o poder…</option>
@@ -375,7 +536,9 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                               </option>
                             ))}
                           </SelectField>
-                          {chosen ? <p className="text-sm text-fg-secondary">{chosen.text}</p> : null}
+                          {chosen ? (
+                            <p className="text-sm text-fg-secondary">{chosen.text}</p>
+                          ) : null}
                         </div>
                       );
                     })}
@@ -387,9 +550,17 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
           {step === 'divindade' ? (
             <div className="flex flex-col gap-4">
               <p className="text-sm text-fg-muted">
-                {t20MustBeDevoted(content, draft) ? 'Sua classe exige ser devoto de uma divindade.' : 'Opcional: ser devoto dá um poder concedido e exige seguir as Obrigações & Restrições.'}
+                {t20MustBeDevoted(content, draft)
+                  ? 'Sua classe exige ser devoto de uma divindade.'
+                  : 'Opcional: ser devoto dá um poder concedido e exige seguir as Obrigações & Restrições.'}
               </p>
-              <SelectField id="t20-deity" label="Divindade" value={draft.deityId} onChange={(event) => update({ deityId: event.target.value, grantedPowerId: '' })} error={errorFor('deityId')}>
+              <SelectField
+                id="t20-deity"
+                label="Divindade"
+                value={draft.deityId}
+                onChange={(event) => update({ deityId: event.target.value, grantedPowerId: '' })}
+                error={errorFor('deityId')}
+              >
                 <option value="">Nenhuma</option>
                 {t20EligibleDeities(content, draft).map((deity) => (
                   <option key={deity.id} value={deity.id}>
@@ -399,44 +570,97 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
               </SelectField>
               {draft.deityId ? (
                 <>
-                  <p className="text-sm whitespace-pre-line text-fg-secondary">{findT20Deity(content, draft.deityId)?.summary}</p>
-                  <SelectField id="t20-granted" label="Poder concedido" value={draft.grantedPowerId} onChange={(event) => update({ grantedPowerId: event.target.value })} error={errorFor('grantedPowerId')}>
+                  <p className="text-sm whitespace-pre-line text-fg-secondary">
+                    {findT20Deity(content, draft.deityId)?.summary}
+                  </p>
+                  <SelectField
+                    id="t20-granted"
+                    label="Poder concedido"
+                    value={draft.grantedPowerId}
+                    onChange={(event) => update({ grantedPowerId: event.target.value })}
+                    error={errorFor('grantedPowerId')}
+                  >
                     <option value="">Escolha</option>
-                    {t20GrantedPowers(content, findT20Deity(content, draft.deityId)?.name ?? '').map((power) => (
+                    {t20GrantedPowers(
+                      content,
+                      findT20Deity(content, draft.deityId)?.name ?? '',
+                    ).map((power) => (
                       <option key={power.id} value={power.id}>
                         {power.name}
                       </option>
                     ))}
                   </SelectField>
-                  {draft.grantedPowerId ? <p className="text-xs text-fg-muted">{content.powers.find((power) => power.id === draft.grantedPowerId)?.text}</p> : null}
+                  {draft.grantedPowerId ? (
+                    <p className="text-xs text-fg-muted">
+                      {content.powers.find((power) => power.id === draft.grantedPowerId)?.text}
+                    </p>
+                  ) : null}
                 </>
               ) : null}
             </div>
           ) : null}
 
-          {step === 'pericias' ? <SkillsStep content={content} draft={draft} update={update} errorFor={errorFor} finalInt={finalAttributes.int} /> : null}
+          {step === 'pericias' ? (
+            <SkillsStep
+              content={content}
+              draft={draft}
+              update={update}
+              errorFor={errorFor}
+              finalInt={finalAttributes.int}
+            />
+          ) : null}
 
           {step === 'poderes' ? (
             <div className="flex flex-col gap-4">
-              {powerLevels.length === 0 ? <p className="text-sm text-fg-muted">Nenhum poder de classe para escolher até este nível.</p> : null}
+              {powerLevels.length === 0 ? (
+                <p className="text-sm text-fg-muted">
+                  Nenhum poder de classe para escolher até este nível.
+                </p>
+              ) : null}
               {powerLevels.map((level) => {
-                const others = t20DraftPowerNames(content, { ...draft, levelPowers: Object.fromEntries(Object.entries(draft.levelPowers).filter(([key]) => key !== String(level))) });
-                const chosen = content.powers.find((power) => power.id === draft.levelPowers[String(level)]);
+                const others = t20DraftPowerNames(content, {
+                  ...draft,
+                  levelPowers: Object.fromEntries(
+                    Object.entries(draft.levelPowers).filter(([key]) => key !== String(level)),
+                  ),
+                });
+                const chosen = content.powers.find(
+                  (power) => power.id === draft.levelPowers[String(level)],
+                );
                 return (
                   <div key={level} className="flex flex-col gap-1">
                     <SelectField
                       id={`t20-power-${level}`}
                       label={`Poder do ${level}º nível`}
                       value={draft.levelPowers[String(level)] ?? ''}
-                      onChange={(event) => update({ levelPowers: { ...draft.levelPowers, [String(level)]: event.target.value } })}
+                      onChange={(event) =>
+                        update({
+                          levelPowers: {
+                            ...draft.levelPowers,
+                            [String(level)]: event.target.value,
+                          },
+                        })
+                      }
                       error={errorFor(`levelPowers.${level}`)}
                     >
                       <option value="">Escolha</option>
                       {t20PowerOptions(content, draft).map((power) => {
-                        const problems = t20PrerequisiteProblems(power.prerequisite, { attributes: finalAttributes, skills: t20TrainedSkills(content, draft), level, powers: others, content });
-                        const taken = !isT20AttributeIncrease(power.name) && others.some((name) => plainT20(name) === plainT20(power.name));
+                        const problems = t20PrerequisiteProblems(power.prerequisite, {
+                          attributes: finalAttributes,
+                          skills: t20TrainedSkills(content, draft),
+                          level,
+                          powers: others,
+                          content,
+                        });
+                        const taken =
+                          !isT20AttributeIncrease(power.name) &&
+                          others.some((name) => plainT20(name) === plainT20(power.name));
                         return (
-                          <option key={power.id} value={power.id} disabled={taken || problems.length > 0}>
+                          <option
+                            key={power.id}
+                            value={power.id}
+                            disabled={taken || problems.length > 0}
+                          >
                             {power.name}
                             {power.owners.length ? '' : ` (${power.group})`}
                             {problems.length ? ` — falta ${problems.join(', ')}` : ''}
@@ -444,17 +668,33 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                         );
                       })}
                     </SelectField>
-                    {chosen ? <p className="text-xs whitespace-pre-line text-fg-muted">{chosen.text}</p> : null}
+                    {chosen ? (
+                      <p className="text-xs whitespace-pre-line text-fg-muted">{chosen.text}</p>
+                    ) : null}
                     {chosen && t20PowerSkillPick(chosen) ? (
                       <MultiPick
                         label={`Perícias de ${chosen.name} (escolha ${t20PowerSkillPick(chosen)!.count})`}
                         count={t20PowerSkillPick(chosen)!.count}
                         options={T20_SKILL_IDS.map((skill) => {
-                          const trained = t20TrainedSkills(content, { ...draft, levelPowerSkills: { ...draft.levelPowerSkills, [String(level)]: [] } }).includes(skill);
-                          return { id: skill, name: `${T20_SKILLS[skill].label}${trained && t20PowerSkillPick(chosen)!.trains ? ' (já treinada)' : ''}`, disabled: trained && t20PowerSkillPick(chosen)!.trains };
+                          const trained = t20TrainedSkills(content, {
+                            ...draft,
+                            levelPowerSkills: { ...draft.levelPowerSkills, [String(level)]: [] },
+                          }).includes(skill);
+                          return {
+                            id: skill,
+                            name: `${T20_SKILLS[skill].label}${trained && t20PowerSkillPick(chosen)!.trains ? ' (já treinada)' : ''}`,
+                            disabled: trained && t20PowerSkillPick(chosen)!.trains,
+                          };
                         })}
                         value={draft.levelPowerSkills[String(level)] ?? []}
-                        onChange={(value) => update({ levelPowerSkills: { ...draft.levelPowerSkills, [String(level)]: value as T20Skill[] } })}
+                        onChange={(value) =>
+                          update({
+                            levelPowerSkills: {
+                              ...draft.levelPowerSkills,
+                              [String(level)]: value as T20Skill[],
+                            },
+                          })
+                        }
                       />
                     ) : null}
                     {chosen && isT20AttributeIncrease(chosen.name) ? (
@@ -462,7 +702,14 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                         id={`t20-power-attr-${level}`}
                         label={`Atributo que aumenta no ${level}º nível (+1)`}
                         value={draft.levelPowerAttributes[String(level)] ?? ''}
-                        onChange={(event) => update({ levelPowerAttributes: { ...draft.levelPowerAttributes, [String(level)]: event.target.value as T20Attribute } })}
+                        onChange={(event) =>
+                          update({
+                            levelPowerAttributes: {
+                              ...draft.levelPowerAttributes,
+                              [String(level)]: event.target.value as T20Attribute,
+                            },
+                          })
+                        }
                       >
                         <option value="">Escolha</option>
                         {T20_ATTRIBUTES.map((key) => (
@@ -481,7 +728,14 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                     id={`t20-feature-${choice.key}`}
                     label={`${choice.ability} (${choice.level}º nível): escolha`}
                     value={draft.featureChoices[choice.key] ?? ''}
-                    onChange={(event) => update({ featureChoices: { ...draft.featureChoices, [choice.key]: event.target.value } })}
+                    onChange={(event) =>
+                      update({
+                        featureChoices: {
+                          ...draft.featureChoices,
+                          [choice.key]: event.target.value,
+                        },
+                      })
+                    }
                     error={errorFor(`featureChoices.${choice.key}`)}
                   >
                     <option value="">Escolha</option>
@@ -511,7 +765,11 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
               <MultiPick
                 label={`Magias conhecidas (${draft.spellIds.length}/${t20SpellCount(content, draft)})`}
                 count={t20SpellCount(content, draft)}
-                options={t20AvailableSpells(content, draft).map((spell) => ({ id: spell.id, name: `${spell.name} · ${spell.circle}º círculo · ${spell.school}`, description: spell.text.slice(0, 220) }))}
+                options={t20AvailableSpells(content, draft).map((spell) => ({
+                  id: spell.id,
+                  name: `${spell.name} · ${spell.circle}º círculo · ${spell.school}`,
+                  description: spell.text.slice(0, 220),
+                }))}
                 value={draft.spellIds}
                 onChange={(spellIds) => update({ spellIds })}
                 error={errorFor('spellIds')}
@@ -520,13 +778,36 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
             </div>
           ) : null}
 
-          {step === 'equipamento' ? <EquipmentStep content={content} draft={draft} update={update} errorFor={errorFor} /> : null}
+          {step === 'equipamento' ? (
+            <EquipmentStep content={content} draft={draft} update={update} errorFor={errorFor} />
+          ) : null}
 
           {step === 'detalhes' ? (
             <div className="flex flex-col gap-4">
-              <TextareaField id="t20-appearance" label="Aparência" rows={3} maxLength={4000} value={draft.appearance} onChange={(event) => update({ appearance: event.target.value })} />
-              <TextareaField id="t20-personality" label="Personalidade" rows={3} maxLength={4000} value={draft.personality} onChange={(event) => update({ personality: event.target.value })} />
-              <TextareaField id="t20-history" label="História" rows={6} maxLength={20000} value={draft.history} onChange={(event) => update({ history: event.target.value })} />
+              <TextareaField
+                id="t20-appearance"
+                label="Aparência"
+                rows={3}
+                maxLength={4000}
+                value={draft.appearance}
+                onChange={(event) => update({ appearance: event.target.value })}
+              />
+              <TextareaField
+                id="t20-personality"
+                label="Personalidade"
+                rows={3}
+                maxLength={4000}
+                value={draft.personality}
+                onChange={(event) => update({ personality: event.target.value })}
+              />
+              <TextareaField
+                id="t20-history"
+                label="História"
+                rows={6}
+                maxLength={20000}
+                value={draft.history}
+                onChange={(event) => update({ history: event.target.value })}
+              />
             </div>
           ) : null}
 
@@ -537,11 +818,15 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
               ) : (
                 <div className="rounded-md border border-amber-400/40 bg-warning-bg p-4">
                   <h3 className="mb-2 flex items-center gap-2 text-base">
-                    <AlertTriangle className="h-4 w-4 text-warning" aria-hidden="true" /> Pendências ({issues.length})
+                    <AlertTriangle className="h-4 w-4 text-warning" aria-hidden="true" /> Pendências
+                    ({issues.length})
                   </h3>
                   <ul className="flex flex-col gap-1.5 text-sm">
                     {issues.map((issue, position) => (
-                      <li key={`${issue.path}-${position}`} className="flex flex-wrap items-center justify-between gap-2">
+                      <li
+                        key={`${issue.path}-${position}`}
+                        className="flex flex-wrap items-center justify-between gap-2"
+                      >
                         <span className="text-fg-secondary">{issue.message}</span>
                         <Button size="sm" variant="ghost" onClick={() => goTo(issue.step)}>
                           Ir para {t20StepLabels[issue.step]}
@@ -558,7 +843,14 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                   species: race?.name,
                   className: klass?.name,
                   level: draft.level,
-                  background: [origin?.name, content.deities.find((deity) => deity.id === draft.deityId)?.name ? `devoto de ${content.deities.find((deity) => deity.id === draft.deityId)?.name}` : ''].filter(Boolean).join(', '),
+                  background: [
+                    origin?.name,
+                    content.deities.find((deity) => deity.id === draft.deityId)?.name
+                      ? `devoto de ${content.deities.find((deity) => deity.id === draft.deityId)?.name}`
+                      : '',
+                  ]
+                    .filter(Boolean)
+                    .join(', '),
                   appearance: draft.appearance,
                   personality: draft.personality,
                   backstory: draft.history,
@@ -569,17 +861,29 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
 
           {showErrors && step !== 'revisao' && stepIssues(step).length > 0 ? (
             <Alert tone="warning">
-              {stepIssues(step).map((issue) => issue.message).join(' ')}
+              {stepIssues(step)
+                .map((issue) => issue.message)
+                .join(' ')}
             </Alert>
           ) : null}
           {submitError ? <Alert tone="danger">{submitError}</Alert> : null}
 
           <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:flex-row sm:justify-between">
-            <Button variant="ghost" icon={<ChevronLeft className="h-4 w-4" aria-hidden="true" />} onClick={() => steps[index - 1] && goTo(steps[index - 1]!)} disabled={index <= 0}>
+            <Button
+              variant="ghost"
+              icon={<ChevronLeft className="h-4 w-4" aria-hidden="true" />}
+              onClick={() => steps[index - 1] && goTo(steps[index - 1]!)}
+              disabled={index <= 0}
+            >
               Voltar
             </Button>
             {step === 'revisao' ? (
-              <Button icon={<Sparkles className="h-4 w-4" aria-hidden="true" />} onClick={submit} loading={pending} disabled={issues.length > 0}>
+              <Button
+                icon={<Sparkles className="h-4 w-4" aria-hidden="true" />}
+                onClick={submit}
+                loading={pending}
+                disabled={issues.length > 0}
+              >
                 Criar personagem
               </Button>
             ) : (
@@ -594,19 +898,34 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
           <div className="sticky top-6 flex flex-col gap-3 rounded-lg border border-line bg-card p-4 text-sm shadow-card">
             <p className="font-display text-lg text-fg">{draft.name || 'Novo personagem'}</p>
             <p className="text-fg-secondary">
-              {[race?.name, klass ? `${klass.name} ${draft.level}` : `Nível ${draft.level}`, origin?.name].filter(Boolean).join(' · ')}
+              {[
+                race?.name,
+                klass ? `${klass.name} ${draft.level}` : `Nível ${draft.level}`,
+                origin?.name,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </p>
-            <p className="text-xs text-fg-muted">{campaign ? `Campanha: ${campaign.name}` : 'Ficha pessoal'} · Tormenta20</p>
+            <p className="text-xs text-fg-muted">
+              {campaign ? `Campanha: ${campaign.name}` : 'Ficha pessoal'} · Tormenta20
+            </p>
             <dl className="grid grid-cols-3 gap-1 text-center">
               {T20_ATTRIBUTES.map((key) => (
                 <div key={key} className="rounded border border-line py-1">
-                  <dt className="text-[10px] tracking-wider text-fg-subtle uppercase">{t20AttributeLabels[key].abbreviation}</dt>
+                  <dt className="text-[10px] tracking-wider text-fg-subtle uppercase">
+                    {t20AttributeLabels[key].abbreviation}
+                  </dt>
                   <dd className="tabular text-fg">{formatT20Bonus(finalAttributes[key])}</dd>
                 </div>
               ))}
             </dl>
             {t20TrainedSkills(content, draft).length ? (
-              <p className="text-xs text-fg-muted">Treinado: {t20TrainedSkills(content, draft).map((skill) => T20_SKILLS[skill].label).join(', ')}</p>
+              <p className="text-xs text-fg-muted">
+                Treinado:{' '}
+                {t20TrainedSkills(content, draft)
+                  .map((skill) => T20_SKILLS[skill].label)
+                  .join(', ')}
+              </p>
             ) : null}
           </div>
         </aside>
@@ -617,7 +936,10 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
 
 function attributeText(attributes: Partial<Record<T20Attribute, number>>): string {
   return Object.entries(attributes)
-    .map(([key, value]) => `${t20AttributeLabels[key as T20Attribute].abbreviation} ${formatT20Bonus(value)}`)
+    .map(
+      ([key, value]) =>
+        `${t20AttributeLabels[key as T20Attribute].abbreviation} ${formatT20Bonus(value)}`,
+    )
     .join(', ');
 }
 
@@ -625,7 +947,17 @@ function attributeText(attributes: Partial<Record<T20Attribute, number>>): strin
 // Peças da tela
 // ---------------------------------------------------------------------------
 
-function PickerGrid({ label, value, items, onSelect }: { label: string; value: string; items: { id: string; title: string; subtitle?: string; text?: string; icon?: ReactNode }[]; onSelect: (id: string) => void }) {
+function PickerGrid({
+  label,
+  value,
+  items,
+  onSelect,
+}: {
+  label: string;
+  value: string;
+  items: { id: string; title: string; subtitle?: string; text?: string; icon?: ReactNode }[];
+  onSelect: (id: string) => void;
+}) {
   return (
     <div role="radiogroup" aria-label={label} className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
       {items.map((item) => (
@@ -637,7 +969,9 @@ function PickerGrid({ label, value, items, onSelect }: { label: string; value: s
           onClick={() => onSelect(item.id)}
           className={cx(
             'flex h-full flex-col gap-1.5 rounded-md border p-3 text-left transition-colors',
-            item.id === value ? 'border-parchment-300/70 bg-parchment-200/10' : 'border-line hover:border-line-strong hover:bg-hover',
+            item.id === value
+              ? 'border-parchment-300/70 bg-parchment-200/10'
+              : 'border-line hover:border-line-strong hover:bg-hover',
           )}
         >
           <span className="flex items-center gap-2 font-display text-base text-fg">
@@ -645,7 +979,9 @@ function PickerGrid({ label, value, items, onSelect }: { label: string; value: s
             {item.title}
           </span>
           {item.subtitle ? <span className="text-xs text-fg-accent">{item.subtitle}</span> : null}
-          {item.text ? <span className="line-clamp-4 text-xs leading-relaxed text-fg-muted">{item.text}</span> : null}
+          {item.text ? (
+            <span className="line-clamp-4 text-xs leading-relaxed text-fg-muted">{item.text}</span>
+          ) : null}
         </button>
       ))}
     </div>
@@ -658,7 +994,10 @@ function FeatureList({ title, items }: { title: string; items: { name: string; t
     <div className="flex flex-col gap-1 rounded-md border border-line bg-card/60 p-4">
       <h3 className="eyebrow mb-1">{title}</h3>
       {items.map((item) => (
-        <details key={item.name} className="rounded-md border border-line px-3 py-2 text-sm open:bg-raised/40">
+        <details
+          key={item.name}
+          className="rounded-md border border-line px-3 py-2 text-sm open:bg-raised/40"
+        >
           <summary className="cursor-pointer text-fg">{item.name}</summary>
           <p className="mt-2 leading-relaxed whitespace-pre-line text-fg-secondary">{item.text}</p>
         </details>
@@ -687,11 +1026,21 @@ function MultiPick({
   const [query, setQuery] = useState('');
   const term = plainT20(query.trim());
   const shown = term ? options.filter((option) => plainT20(option.name).includes(term)) : options;
-  const toggle = (id: string) => onChange(value.includes(id) ? value.filter((entry) => entry !== id) : value.length < count ? [...value, id] : value);
+  const toggle = (id: string) =>
+    onChange(
+      value.includes(id)
+        ? value.filter((entry) => entry !== id)
+        : value.length < count
+          ? [...value, id]
+          : value,
+    );
   return (
     <fieldset className="flex flex-col gap-2">
       <legend className="mb-1 text-sm font-medium text-fg">
-        {label} <span className="text-xs text-fg-muted">({value.length}/{count})</span>
+        {label}{' '}
+        <span className="text-xs text-fg-muted">
+          ({value.length}/{count})
+        </span>
       </legend>
       {searchable ? (
         <input
@@ -703,13 +1052,17 @@ function MultiPick({
           className="h-9 rounded-md border border-line bg-sunken px-3 text-sm text-fg placeholder:text-fg-muted"
         />
       ) : null}
-      <div className={cx('grid gap-1.5 sm:grid-cols-2', searchable && 'max-h-96 overflow-y-auto pr-1')}>
+      <div
+        className={cx('grid gap-1.5 sm:grid-cols-2', searchable && 'max-h-96 overflow-y-auto pr-1')}
+      >
         {shown.map((option) => (
           <CheckboxField
             key={option.id}
             id={`pick-${label}-${option.id}`}
             label={option.note ? `✓ ${option.name} · ${option.note}` : option.name}
-            className={option.note ? 'rounded-md bg-verdigris-900/40 px-1.5 text-verdigris-300' : undefined}
+            className={
+              option.note ? 'rounded-md bg-verdigris-900/40 px-1.5 text-verdigris-300' : undefined
+            }
             description={option.description}
             checked={value.includes(option.id)}
             disabled={option.disabled || (!value.includes(option.id) && value.length >= count)}
@@ -726,12 +1079,30 @@ function MultiPick({
   );
 }
 
-function AttributesStep({ draft, update, methods, error }: { draft: T20Draft; update: (patch: Partial<T20Draft>) => void; methods: readonly ('pontos' | 'rolagem')[]; error?: string | undefined }) {
+function AttributesStep({
+  draft,
+  update,
+  methods,
+  error,
+}: {
+  draft: T20Draft;
+  update: (patch: Partial<T20Draft>) => void;
+  methods: readonly ('pontos' | 'rolagem')[];
+  error?: string | undefined;
+}) {
   const spent = t20PointsSpent(draft.points);
   return (
     <div className="flex flex-col gap-5">
       {methods.length > 1 ? (
-        <SelectField id="t20-method" label="Método" value={draft.attributeMethod} onChange={(event) => update({ attributeMethod: event.target.value as T20Draft['attributeMethod'] })} fieldClassName="sm:max-w-sm">
+        <SelectField
+          id="t20-method"
+          label="Método"
+          value={draft.attributeMethod}
+          onChange={(event) =>
+            update({ attributeMethod: event.target.value as T20Draft['attributeMethod'] })
+          }
+          fieldClassName="sm:max-w-sm"
+        >
           {methods.map((method) => (
             <option key={method} value={method}>
               {t20AttributeMethodLabels[method]}
@@ -739,21 +1110,50 @@ function AttributesStep({ draft, update, methods, error }: { draft: T20Draft; up
           ))}
         </SelectField>
       ) : (
-        <p className="text-sm text-fg-muted">Método definido pelo mestre: {t20AttributeMethodLabels[methods[0] ?? 'pontos']}.</p>
+        <p className="text-sm text-fg-muted">
+          Método definido pelo mestre: {t20AttributeMethodLabels[methods[0] ?? 'pontos']}.
+        </p>
       )}
       {draft.attributeMethod === 'pontos' ? (
         <>
           <p className="text-sm text-fg-secondary">
-            Pontos gastos: <strong className={cx(spent > T20_POINT_BUY_BUDGET ? 'text-danger' : 'text-fg')}>{spent}</strong> de {T20_POINT_BUY_BUDGET}. Valores de –1 (devolve 1 ponto) a 4.
+            Pontos gastos:{' '}
+            <strong className={cx(spent > T20_POINT_BUY_BUDGET ? 'text-danger' : 'text-fg')}>
+              {spent}
+            </strong>{' '}
+            de {T20_POINT_BUY_BUDGET}. Valores de –1 (devolve 1 ponto) a 4.
           </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {T20_ATTRIBUTES.map((key) => (
-              <div key={key} className="flex items-center justify-between rounded-md border border-line px-3 py-2">
+              <div
+                key={key}
+                className="flex items-center justify-between rounded-md border border-line px-3 py-2"
+              >
                 <span className="text-sm text-fg">{t20AttributeLabels[key].name}</span>
                 <span className="flex items-center gap-2">
-                  <Button size="sm" variant="ghost" aria-label={`Diminuir ${t20AttributeLabels[key].name}`} disabled={draft.points[key] <= T20_POINT_BUY_MIN} onClick={() => update({ points: { ...draft.points, [key]: draft.points[key] - 1 } })} icon={<Minus className="h-4 w-4" aria-hidden="true" />} />
-                  <span className="tabular w-8 text-center text-fg">{formatT20Bonus(draft.points[key])}</span>
-                  <Button size="sm" variant="ghost" aria-label={`Aumentar ${t20AttributeLabels[key].name}`} disabled={draft.points[key] >= T20_POINT_BUY_MAX} onClick={() => update({ points: { ...draft.points, [key]: draft.points[key] + 1 } })} icon={<Plus className="h-4 w-4" aria-hidden="true" />} />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-label={`Diminuir ${t20AttributeLabels[key].name}`}
+                    disabled={draft.points[key] <= T20_POINT_BUY_MIN}
+                    onClick={() =>
+                      update({ points: { ...draft.points, [key]: draft.points[key] - 1 } })
+                    }
+                    icon={<Minus className="h-4 w-4" aria-hidden="true" />}
+                  />
+                  <span className="tabular w-8 text-center text-fg">
+                    {formatT20Bonus(draft.points[key])}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-label={`Aumentar ${t20AttributeLabels[key].name}`}
+                    disabled={draft.points[key] >= T20_POINT_BUY_MAX}
+                    onClick={() =>
+                      update({ points: { ...draft.points, [key]: draft.points[key] + 1 } })
+                    }
+                    icon={<Plus className="h-4 w-4" aria-hidden="true" />}
+                  />
                 </span>
               </div>
             ))}
@@ -762,12 +1162,26 @@ function AttributesStep({ draft, update, methods, error }: { draft: T20Draft; up
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-3">
-            <Button variant="secondary" icon={<Dices className="h-4 w-4" aria-hidden="true" />} onClick={() => update({ rolls: rollT20Attributes(), rollAssignment: Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, null])) as T20Draft['rollAssignment'] })}>
+            <Button
+              variant="secondary"
+              icon={<Dices className="h-4 w-4" aria-hidden="true" />}
+              onClick={() =>
+                update({
+                  rolls: rollT20Attributes(),
+                  rollAssignment: Object.fromEntries(
+                    T20_ATTRIBUTES.map((key) => [key, null]),
+                  ) as T20Draft['rollAssignment'],
+                })
+              }
+            >
               {draft.rolls.length ? 'Rolar de novo' : 'Rolar 4d6 seis vezes'}
             </Button>
             {draft.rolls.length ? (
               <span className="text-sm text-fg-secondary">
-                Resultados: {draft.rolls.map((roll) => `${roll} (${formatT20Bonus(t20AttributeFromRoll(roll))})`).join(', ')}
+                Resultados:{' '}
+                {draft.rolls
+                  .map((roll) => `${roll} (${formatT20Bonus(t20AttributeFromRoll(roll))})`)
+                  .join(', ')}
               </span>
             ) : null}
           </div>
@@ -778,12 +1192,23 @@ function AttributesStep({ draft, update, methods, error }: { draft: T20Draft; up
                   key={key}
                   id={`t20-roll-${key}`}
                   label={t20AttributeLabels[key].name}
-                  value={draft.rollAssignment[key] === null ? '' : String(draft.rollAssignment[key])}
-                  onChange={(event) => update({ rollAssignment: { ...draft.rollAssignment, [key]: event.target.value === '' ? null : Number(event.target.value) } })}
+                  value={
+                    draft.rollAssignment[key] === null ? '' : String(draft.rollAssignment[key])
+                  }
+                  onChange={(event) =>
+                    update({
+                      rollAssignment: {
+                        ...draft.rollAssignment,
+                        [key]: event.target.value === '' ? null : Number(event.target.value),
+                      },
+                    })
+                  }
                 >
                   <option value="">Escolha</option>
                   {draft.rolls.map((roll, position) => {
-                    const usedBy = T20_ATTRIBUTES.find((other) => other !== key && draft.rollAssignment[other] === position);
+                    const usedBy = T20_ATTRIBUTES.find(
+                      (other) => other !== key && draft.rollAssignment[other] === position,
+                    );
                     return (
                       <option key={position} value={position} disabled={Boolean(usedBy)}>
                         {roll} → {formatT20Bonus(t20AttributeFromRoll(roll))}
@@ -819,19 +1244,33 @@ function SkillsStep({
   const race = findT20Race(content, draft.raceId);
   const granted = t20GrantedSkills(content, draft);
   const all = Object.keys(T20_SKILLS) as T20Skill[];
-  const taken = (except: T20Skill[]) => new Set([...granted, ...draft.classSkills, ...draft.intSkills, ...draft.raceSkills].filter((skill) => !except.includes(skill)));
+  const taken = (except: T20Skill[]) =>
+    new Set(
+      [...granted, ...draft.classSkills, ...draft.intSkills, ...draft.raceSkills].filter(
+        (skill) => !except.includes(skill),
+      ),
+    );
   const versatile = race?.abilities.some((ability) => plainT20(ability.name) === 'versatil');
   const expertise = t20ExpertiseRule(content, draft);
   const optionsFor = (list: T20Skill[], own: T20Skill[]) => {
     const used = taken(own);
     return list.map((skill) => {
       const already = used.has(skill) && !own.includes(skill);
-      return { id: skill, name: T20_SKILLS[skill].label, disabled: already, ...(already ? { note: 'já treinada' } : {}) };
+      return {
+        id: skill,
+        name: T20_SKILLS[skill].label,
+        disabled: already,
+        ...(already ? { note: 'já treinada' } : {}),
+      };
     });
   };
   return (
     <div className="flex flex-col gap-6">
-      {granted.length ? <p className="text-sm text-fg-secondary">Já treinado: {granted.map((skill) => T20_SKILLS[skill].label).join(', ')}.</p> : null}
+      {granted.length ? (
+        <p className="text-sm text-fg-secondary">
+          Já treinado: {granted.map((skill) => T20_SKILLS[skill].label).join(', ')}.
+        </p>
+      ) : null}
       {klass?.skillsFixedChoices.map((group, position) => (
         <SelectField
           key={group.join('-')}
@@ -867,8 +1306,13 @@ function SkillsStep({
         <MultiPick
           label={`${expertise.ability}: perícias treinadas (escolha ${expertise.count})`}
           count={expertise.count}
-          options={t20TrainedSkills(content, draft).map((skill) => ({ id: skill, name: T20_SKILLS[skill].label }))}
-          value={draft.expertSkills.filter((skill) => t20TrainedSkills(content, draft).includes(skill))}
+          options={t20TrainedSkills(content, draft).map((skill) => ({
+            id: skill,
+            name: T20_SKILLS[skill].label,
+          }))}
+          value={draft.expertSkills.filter((skill) =>
+            t20TrainedSkills(content, draft).includes(skill),
+          )}
           onChange={(expertSkills) => update({ expertSkills: expertSkills as T20Skill[] })}
           error={errorFor('expertSkills')}
         />
@@ -885,8 +1329,20 @@ function SkillsStep({
       ) : null}
       {versatile ? (
         <div className="flex flex-col gap-3 rounded-md border border-line p-3">
-          <p className="text-sm text-fg">Versátil ({race?.name}): duas perícias, ou uma perícia e um poder geral.</p>
-          <SelectField id="t20-versatile-power" label="Trocar uma perícia por um poder geral (opcional)" value={draft.raceSkillPower} onChange={(event) => update({ raceSkillPower: event.target.value, raceSkills: draft.raceSkills.slice(0, event.target.value ? 1 : 2) })}>
+          <p className="text-sm text-fg">
+            Versátil ({race?.name}): duas perícias, ou uma perícia e um poder geral.
+          </p>
+          <SelectField
+            id="t20-versatile-power"
+            label="Trocar uma perícia por um poder geral (opcional)"
+            value={draft.raceSkillPower}
+            onChange={(event) =>
+              update({
+                raceSkillPower: event.target.value,
+                raceSkills: draft.raceSkills.slice(0, event.target.value ? 1 : 2),
+              })
+            }
+          >
             <option value="">Não, duas perícias</option>
             {content.powers
               .filter((power) => ['combate', 'destino', 'magia', 'tormenta'].includes(power.group))
@@ -911,15 +1367,36 @@ function SkillsStep({
   );
 }
 
-function EquipmentStep({ content, draft, update, errorFor }: { content: ReturnType<typeof buildT20Content>; draft: T20Draft; update: (patch: Partial<T20Draft>) => void; errorFor: (path: string) => string | undefined }) {
+function EquipmentStep({
+  content,
+  draft,
+  update,
+  errorFor,
+}: {
+  content: ReturnType<typeof buildT20Content>;
+  draft: T20Draft;
+  update: (patch: Partial<T20Draft>) => void;
+  errorFor: (path: string) => string | undefined;
+}) {
   const options = t20EquipmentOptions(content, draft);
-  const setEquipment = (patch: Partial<T20Draft['equipment']>) => update({ equipment: { ...draft.equipment, ...patch } });
-  const weaponLabel = (item: (typeof options.simple)[number]) => `${item.name} (${[item.damage, item.critical, item.damageType].filter(Boolean).join(', ')})`;
+  const setEquipment = (patch: Partial<T20Draft['equipment']>) =>
+    update({ equipment: { ...draft.equipment, ...patch } });
+  const weaponLabel = (item: (typeof options.simple)[number]) =>
+    `${item.name} (${[item.damage, item.critical, item.damageType].filter(Boolean).join(', ')})`;
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-fg-muted">Todo aventureiro começa com mochila, saco de dormir e traje de viajante, mais as armas e a armadura abaixo e os itens da origem.</p>
+      <p className="text-sm text-fg-muted">
+        Todo aventureiro começa com mochila, saco de dormir e traje de viajante, mais as armas e a
+        armadura abaixo e os itens da origem.
+      </p>
       {options.simple.length ? (
-        <SelectField id="t20-simple" label="Arma simples" value={draft.equipment.simple} onChange={(event) => setEquipment({ simple: event.target.value })} error={errorFor('equipment.simple')}>
+        <SelectField
+          id="t20-simple"
+          label="Arma simples"
+          value={draft.equipment.simple}
+          onChange={(event) => setEquipment({ simple: event.target.value })}
+          error={errorFor('equipment.simple')}
+        >
           <option value="">Escolha</option>
           {options.simple.map((item) => (
             <option key={item.id} value={item.id}>
@@ -929,7 +1406,13 @@ function EquipmentStep({ content, draft, update, errorFor }: { content: ReturnTy
         </SelectField>
       ) : null}
       {options.martial.length ? (
-        <SelectField id="t20-martial" label="Arma marcial" value={draft.equipment.martial} onChange={(event) => setEquipment({ martial: event.target.value })} error={errorFor('equipment.martial')}>
+        <SelectField
+          id="t20-martial"
+          label="Arma marcial"
+          value={draft.equipment.martial}
+          onChange={(event) => setEquipment({ martial: event.target.value })}
+          error={errorFor('equipment.martial')}
+        >
           <option value="">Escolha</option>
           {options.martial.map((item) => (
             <option key={item.id} value={item.id}>
@@ -939,7 +1422,13 @@ function EquipmentStep({ content, draft, update, errorFor }: { content: ReturnTy
         </SelectField>
       ) : null}
       {options.armors.length ? (
-        <SelectField id="t20-armor" label="Armadura" value={draft.equipment.armor} onChange={(event) => setEquipment({ armor: event.target.value })} error={errorFor('equipment.armor')}>
+        <SelectField
+          id="t20-armor"
+          label="Armadura"
+          value={draft.equipment.armor}
+          onChange={(event) => setEquipment({ armor: event.target.value })}
+          error={errorFor('equipment.armor')}
+        >
           <option value="">Escolha</option>
           {options.armors.map((item) => (
             <option key={item.id} value={item.id}>
@@ -948,17 +1437,29 @@ function EquipmentStep({ content, draft, update, errorFor }: { content: ReturnTy
           ))}
         </SelectField>
       ) : null}
-      {options.shield ? <CheckboxField id="t20-shield" label={`${options.shield.name} (Defesa +${options.shield.defense ?? 0})`} checked={draft.equipment.shield} onChange={(event) => setEquipment({ shield: event.target.checked })} /> : null}
+      {options.shield ? (
+        <CheckboxField
+          id="t20-shield"
+          label={`${options.shield.name} (Defesa +${options.shield.defense ?? 0})`}
+          checked={draft.equipment.shield}
+          onChange={(event) => setEquipment({ shield: event.target.checked })}
+        />
+      ) : null}
       {draft.level === 1 ? (
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="secondary" icon={<Dices className="h-4 w-4" aria-hidden="true" />} onClick={() => update({ money: d6() + d6() + d6() + d6() })}>
+          <Button
+            variant="secondary"
+            icon={<Dices className="h-4 w-4" aria-hidden="true" />}
+            onClick={() => update({ money: d6() + d6() + d6() + d6() })}
+          >
             {draft.money === null ? 'Rolar dinheiro inicial (4d6 T$)' : 'Rolar de novo'}
           </Button>
           {draft.money !== null ? <Badge tone="parchment">T$ {draft.money}</Badge> : null}
-          {errorFor('money') ? <span className="text-xs text-danger">{errorFor('money')}</span> : null}
+          {errorFor('money') ? (
+            <span className="text-xs text-danger">{errorFor('money')}</span>
+          ) : null}
         </div>
       ) : null}
     </div>
   );
 }
-

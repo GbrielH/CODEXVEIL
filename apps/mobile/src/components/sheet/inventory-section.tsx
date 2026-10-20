@@ -7,8 +7,23 @@ import {
   setCharacterItemEquipped,
   type CharacterItem,
 } from '@codexveil/database';
-import { ITEM_CATEGORIES, groupByCategory, itemCategoryLabels, totalWeight, type ItemCategory } from '@codexveil/domain';
-import { CURRENCIES, currencyLabels, currencyResource, currencyResourceKey, findSrdWeaponByName, totalInGold, weaponAttackEntry, type Currency } from '@codexveil/rpg-systems/dnd5e';
+import {
+  ITEM_CATEGORIES,
+  groupByCategory,
+  itemCategoryLabels,
+  totalWeight,
+  type ItemCategory,
+} from '@codexveil/domain';
+import {
+  CURRENCIES,
+  currencyLabels,
+  currencyResource,
+  currencyResourceKey,
+  findSrdWeaponByName,
+  totalInGold,
+  weaponAttackEntry,
+  type Currency,
+} from '@codexveil/rpg-systems/dnd5e';
 import { fieldErrorsFrom, inventoryItemSchema, type FieldErrors } from '@codexveil/validation';
 import { Minus, Plus, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
@@ -24,7 +39,8 @@ import { useSheet } from './context';
 function Coins() {
   const { resources, adjustResource, canEditPlay, characterId, setResources, run } = useSheet();
   const [drafts, setDrafts] = useState<Partial<Record<Currency, string>>>({});
-  const amountOf = (coin: Currency) => resources.find((resource) => resource.key === currencyResourceKey(coin))?.current ?? 0;
+  const amountOf = (coin: Currency) =>
+    resources.find((resource) => resource.key === currencyResourceKey(coin))?.current ?? 0;
 
   const commit = async (coin: Currency) => {
     const text = drafts[coin];
@@ -37,11 +53,17 @@ function Coins() {
       adjustResource(existing, 'set_current', value);
       return;
     }
-    const created = await run(() => createCharacterResource(getSupabase(), characterId, currencyResource(coin, value)), `${currencyLabels[coin].name}: valor não salvo`);
+    const created = await run(
+      () => createCharacterResource(getSupabase(), characterId, currencyResource(coin, value)),
+      `${currencyLabels[coin].name}: valor não salvo`,
+    );
     if (created) setResources((current) => [...current, created]);
   };
 
-  const amounts = Object.fromEntries(CURRENCIES.map((coin) => [coin, amountOf(coin)])) as Record<Currency, number>;
+  const amounts = Object.fromEntries(CURRENCIES.map((coin) => [coin, amountOf(coin)])) as Record<
+    Currency,
+    number
+  >;
   return (
     <Card>
       <AppText variant="heading">Moedas</AppText>
@@ -81,7 +103,10 @@ function NewItem({ onClose }: { onClose: () => void }) {
       return;
     }
     setBusy(true);
-    const created = await run(() => createCharacterItem(getSupabase(), characterId, parsed.data), 'O item não foi adicionado');
+    const created = await run(
+      () => createCharacterItem(getSupabase(), characterId, parsed.data),
+      'O item não foi adicionado',
+    );
     setBusy(false);
     if (!created) return;
     setItems((current) => [...current, created]);
@@ -92,8 +117,18 @@ function NewItem({ onClose }: { onClose: () => void }) {
     <Card>
       <AppText variant="heading">Novo item</AppText>
       <Field label="Nome" value={name} onChangeText={setName} maxLength={120} error={errors.name} />
-      <Field label="Quantidade" value={quantity} onChangeText={setQuantity} keyboardType="number-pad" error={errors.quantity} />
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }} accessibilityRole="radiogroup" accessibilityLabel="Categoria">
+      <Field
+        label="Quantidade"
+        value={quantity}
+        onChangeText={setQuantity}
+        keyboardType="number-pad"
+        error={errors.quantity}
+      />
+      <View
+        style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}
+        accessibilityRole="radiogroup"
+        accessibilityLabel="Categoria"
+      >
         {ITEM_CATEGORIES.map((option) => (
           <Pressable
             key={option}
@@ -102,7 +137,10 @@ function NewItem({ onClose }: { onClose: () => void }) {
             accessibilityState={{ selected: category === option }}
             style={[styles.chip, category === option && styles.chipSelected]}
           >
-            <AppText variant="small" style={{ color: category === option ? colors.fgAccent : colors.fgSecondary }}>
+            <AppText
+              variant="small"
+              style={{ color: category === option ? colors.fgAccent : colors.fgSecondary }}
+            >
               {itemCategoryLabels[option]}
             </AppText>
           </Pressable>
@@ -110,39 +148,81 @@ function NewItem({ onClose }: { onClose: () => void }) {
       </View>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Button label="Cancelar" variant="ghost" onPress={onClose} style={{ flex: 1 }} />
-        <Button label="Adicionar" onPress={() => void submit()} loading={busy} style={{ flex: 1 }} />
+        <Button
+          label="Adicionar"
+          onPress={() => void submit()}
+          loading={busy}
+          style={{ flex: 1 }}
+        />
       </View>
     </Card>
   );
 }
 
 function ItemRow({ item }: { item: CharacterItem }) {
-  const { canEditPlay, canEditSheet, setItems, run, abilities, setAbilities, sheet, characterId } = useSheet();
+  const { canEditPlay, canEditSheet, setItems, run, abilities, setAbilities, sheet, characterId } =
+    useSheet();
   const confirm = useConfirm();
 
   const change = async (delta: number) => {
-    setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, quantity: Math.max(0, entry.quantity + delta) } : entry)));
-    const saved = await run(() => adjustCharacterItemQuantity(getSupabase(), item.id, delta), `${item.name}: quantidade não salva`);
+    setItems((current) =>
+      current.map((entry) =>
+        entry.id === item.id ? { ...entry, quantity: Math.max(0, entry.quantity + delta) } : entry,
+      ),
+    );
+    const saved = await run(
+      () => adjustCharacterItemQuantity(getSupabase(), item.id, delta),
+      `${item.name}: quantidade não salva`,
+    );
     setItems((current) => current.map((entry) => (entry.id === item.id ? (saved ?? item) : entry)));
   };
 
   const toggleEquipped = async () => {
     const next = !item.isEquipped;
-    const ok = await run(() => setCharacterItemEquipped(getSupabase(), item.id, next), `${item.name}: alteração não salva`);
+    const ok = await run(
+      () => setCharacterItemEquipped(getSupabase(), item.id, next),
+      `${item.name}: alteração não salva`,
+    );
     if (ok === undefined) return;
-    setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, isEquipped: next } : entry)));
+    setItems((current) =>
+      current.map((entry) => (entry.id === item.id ? { ...entry, isEquipped: next } : entry)),
+    );
     // Arma do SRD equipada sem ataque na ficha: a ficha ganha o ataque.
     const weapon = next ? findSrdWeaponByName(item.name) : undefined;
-    if (!weapon || !canEditSheet || abilities.some((entry) => entry.kind === 'attack' && entry.name.toLowerCase() === weapon.name.toLowerCase())) return;
+    if (
+      !weapon ||
+      !canEditSheet ||
+      abilities.some(
+        (entry) =>
+          entry.kind === 'attack' && entry.name.toLowerCase() === weapon.name.toLowerCase(),
+      )
+    )
+      return;
     const attack = weaponAttackEntry(weapon, sheet);
-    const created = await run(() => createCharacterAbility(getSupabase(), characterId, { ...attack, data: { ...attack.data }, resourceId: null }), 'O ataque não foi criado');
+    const created = await run(
+      () =>
+        createCharacterAbility(getSupabase(), characterId, {
+          ...attack,
+          data: { ...attack.data },
+          resourceId: null,
+        }),
+      'O ataque não foi criado',
+    );
     if (created) setAbilities((current) => [...current, created]);
   };
 
   const remove = async () => {
-    const confirmed = await confirm({ title: `Excluir “${item.name}”?`, message: 'O item sai do inventário.', confirmLabel: 'Excluir', tone: 'danger' });
+    const confirmed = await confirm({
+      title: `Excluir “${item.name}”?`,
+      message: 'O item sai do inventário.',
+      confirmLabel: 'Excluir',
+      tone: 'danger',
+    });
     if (!confirmed) return;
-    const ok = await run(() => deleteCharacterItem(getSupabase(), item.id), 'O item não foi removido');
+    const ok = await run(
+      () => deleteCharacterItem(getSupabase(), item.id),
+      'O item não foi removido',
+    );
     if (ok !== undefined) setItems((current) => current.filter((entry) => entry.id !== item.id));
   };
 
@@ -155,20 +235,41 @@ function ItemRow({ item }: { item: CharacterItem }) {
         accessibilityState={{ checked: item.isEquipped, disabled: !canEditPlay }}
         accessibilityLabel={`${item.name} equipado`}
         hitSlop={8}
-        style={[styles.equip, item.isEquipped && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+        style={[
+          styles.equip,
+          item.isEquipped && { backgroundColor: colors.primary, borderColor: colors.primary },
+        ]}
       />
       <View style={{ flex: 1 }}>
         <AppText numberOfLines={1}>{item.name}</AppText>
         {item.isEquipped ? <Badge label="Equipado" tone="brand" /> : null}
       </View>
-      {canEditPlay ? <IconButton icon={<Minus size={14} color={colors.fg} />} accessibilityLabel={`Diminuir ${item.name}`} disabled={item.quantity <= 0} onPress={() => void change(-1)} /> : null}
-      <AppText style={{ minWidth: 28, textAlign: 'center' }} accessibilityLabel={`Quantidade ${item.quantity}`}>
+      {canEditPlay ? (
+        <IconButton
+          icon={<Minus size={14} color={colors.fg} />}
+          accessibilityLabel={`Diminuir ${item.name}`}
+          disabled={item.quantity <= 0}
+          onPress={() => void change(-1)}
+        />
+      ) : null}
+      <AppText
+        style={{ minWidth: 28, textAlign: 'center' }}
+        accessibilityLabel={`Quantidade ${item.quantity}`}
+      >
         {item.quantity}
       </AppText>
       {canEditPlay ? (
         <>
-          <IconButton icon={<Plus size={14} color={colors.fg} />} accessibilityLabel={`Aumentar ${item.name}`} onPress={() => void change(1)} />
-          <IconButton icon={<Trash2 size={14} color={colors.fgMuted} />} accessibilityLabel={`Excluir ${item.name}`} onPress={() => void remove()} />
+          <IconButton
+            icon={<Plus size={14} color={colors.fg} />}
+            accessibilityLabel={`Aumentar ${item.name}`}
+            onPress={() => void change(1)}
+          />
+          <IconButton
+            icon={<Trash2 size={14} color={colors.fgMuted} />}
+            accessibilityLabel={`Excluir ${item.name}`}
+            onPress={() => void remove()}
+          />
         </>
       ) : null}
     </View>
@@ -183,9 +284,25 @@ export function InventorySection() {
     <View style={{ gap: spacing[4] }}>
       <Coins />
       <AppText variant="muted">
-        Carga: {totalWeight(items).toLocaleString('pt-BR')} de {(metric ? derived.carryingCapacity.kilograms : derived.carryingCapacity.pounds).toLocaleString('pt-BR')} {metric ? 'kg' : 'lb'}
+        Carga: {totalWeight(items).toLocaleString('pt-BR')} de{' '}
+        {(metric
+          ? derived.carryingCapacity.kilograms
+          : derived.carryingCapacity.pounds
+        ).toLocaleString('pt-BR')}{' '}
+        {metric ? 'kg' : 'lb'}
       </AppText>
-      {canEditPlay ? adding ? <NewItem onClose={() => setAdding(false)} /> : <Button label="Adicionar item" variant="secondary" icon={<Plus size={16} color={colors.fg} />} onPress={() => setAdding(true)} /> : null}
+      {canEditPlay ? (
+        adding ? (
+          <NewItem onClose={() => setAdding(false)} />
+        ) : (
+          <Button
+            label="Adicionar item"
+            variant="secondary"
+            icon={<Plus size={16} color={colors.fg} />}
+            onPress={() => setAdding(true)}
+          />
+        )
+      ) : null}
       {items.length === 0 ? <AppText variant="muted">Mochila vazia.</AppText> : null}
       {groupByCategory(items).map((group) => (
         <Card key={group.category}>
@@ -200,9 +317,40 @@ export function InventorySection() {
 }
 
 const styles = StyleSheet.create({
-  coin: { width: '100%', height: 44, textAlign: 'center', color: colors.fg, fontSize: 16, borderWidth: 1, borderColor: colors.lineStrong, borderRadius: radii.md, backgroundColor: colors.sunken },
-  chip: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 12, borderRadius: radii.full, borderWidth: 1, borderColor: colors.lineStrong },
+  coin: {
+    width: '100%',
+    height: 44,
+    textAlign: 'center',
+    color: colors.fg,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: colors.lineStrong,
+    borderRadius: radii.md,
+    backgroundColor: colors.sunken,
+  },
+  chip: {
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.lineStrong,
+  },
   chipSelected: { borderColor: colors.parchmentEdge, backgroundColor: '#3D1520' },
-  item: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 48, borderBottomWidth: 1, borderBottomColor: colors.line },
-  equip: { width: 22, height: 22, borderRadius: 4, borderWidth: 2, borderColor: colors.lineStrong, marginRight: 6 },
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    minHeight: 48,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+  },
+  equip: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: colors.lineStrong,
+    marginRight: 6,
+  },
 });

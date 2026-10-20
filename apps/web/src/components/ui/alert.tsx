@@ -41,7 +41,9 @@ export function Alert({ tone = 'info', title, children, action, className }: Ale
       <span className="mt-0.5 shrink-0">{style.icon}</span>
       <div className="min-w-0 flex-1">
         {title ? <p className="font-semibold">{title}</p> : null}
-        {children ? <div className={cx('text-fg-secondary', title ? 'mt-1' : undefined)}>{children}</div> : null}
+        {children ? (
+          <div className={cx('text-fg-secondary', title ? 'mt-1' : undefined)}>{children}</div>
+        ) : null}
       </div>
       {action ? <div className="shrink-0 self-center">{action}</div> : null}
     </div>

@@ -12,7 +12,17 @@ import { routes } from '@/lib/routes';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 /** Exclusão definitiva do personagem (qualquer sistema); pede para digitar o nome. */
-export function DeleteCharacterCard({ characterId, name, portraitPath, className }: { characterId: string; name: string; portraitPath: string | null; className?: string }) {
+export function DeleteCharacterCard({
+  characterId,
+  name,
+  portraitPath,
+  className,
+}: {
+  characterId: string;
+  name: string;
+  portraitPath: string | null;
+  className?: string;
+}) {
   const router = useRouter();
   const remove = async () => {
     const client = getSupabaseBrowserClient();
@@ -27,10 +37,17 @@ export function DeleteCharacterCard({ characterId, name, portraitPath, className
   };
   return (
     <Card className={className ?? 'border-ember-400/40'}>
-      <CardHeader title="Excluir personagem" description="Apaga a ficha, o inventário, as habilidades e o histórico. Não pode ser desfeito." />
+      <CardHeader
+        title="Excluir personagem"
+        description="Apaga a ficha, o inventário, as habilidades e o histórico. Não pode ser desfeito."
+      />
       <ConfirmDialog
         trigger={(open) => (
-          <Button variant="danger" onClick={open} icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}>
+          <Button
+            variant="danger"
+            onClick={open}
+            icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
+          >
             Excluir definitivamente
           </Button>
         )}

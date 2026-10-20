@@ -14,7 +14,15 @@ interface CharacterCardProps {
   className?: string;
 }
 
-export function CharacterCard({ href, name, subtitle, portraitUrl, meta, updatedAt, className }: CharacterCardProps) {
+export function CharacterCard({
+  href,
+  name,
+  subtitle,
+  portraitUrl,
+  meta,
+  updatedAt,
+  className,
+}: CharacterCardProps) {
   return (
     <Link
       href={href}

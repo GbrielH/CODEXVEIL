@@ -10,7 +10,13 @@ import { LiveBadge, SaveStatus } from '@/components/ui/save-status';
 import { campaignPath } from '@/lib/routes';
 import { useSheet } from './context';
 
-export function SheetHeader({ saveStatus, liveStatus }: { saveStatus: AutosaveStatus; liveStatus: RealtimeStatus }) {
+export function SheetHeader({
+  saveStatus,
+  liveStatus,
+}: {
+  saveStatus: AutosaveStatus;
+  liveStatus: RealtimeStatus;
+}) {
   const { character, permissions, name, setName, sheet, derived } = useSheet();
   const summary = dnd5eSystem.summarize(sheet);
 
@@ -21,7 +27,10 @@ export function SheetHeader({ saveStatus, liveStatus }: { saveStatus: AutosaveSt
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone="parchment">D&amp;D 5e</Badge>
           {character.campaign ? (
-            <Link href={campaignPath(character.campaign.id) as Route} className="text-xs text-fg-secondary underline-offset-4 hover:underline">
+            <Link
+              href={campaignPath(character.campaign.id) as Route}
+              className="text-xs text-fg-secondary underline-offset-4 hover:underline"
+            >
               {character.campaign.name}
             </Link>
           ) : (
@@ -54,11 +63,15 @@ export function SheetHeader({ saveStatus, liveStatus }: { saveStatus: AutosaveSt
           </div>
           <div>
             <dt className="text-[11px] uppercase tracking-wider text-fg-muted">Proficiência</dt>
-            <dd className="tabular font-display text-xl text-fg-accent">+{derived.proficiencyBonus}</dd>
+            <dd className="tabular font-display text-xl text-fg-accent">
+              +{derived.proficiencyBonus}
+            </dd>
           </div>
         </dl>
         <div className="flex flex-col items-start gap-1 sm:items-end">
-          {permissions.canEditSheet || permissions.canEditPlay ? <SaveStatus status={saveStatus} /> : null}
+          {permissions.canEditSheet || permissions.canEditPlay ? (
+            <SaveStatus status={saveStatus} />
+          ) : null}
           <LiveBadge status={liveStatus} />
         </div>
       </div>

@@ -15,7 +15,14 @@ interface FieldProps extends Omit<TextInputProps, 'style'> {
  * Campo de texto com rótulo, dica e erro anunciados por leitores de tela. Campos de senha
  * (`secureTextEntry`) ganham um botão para mostrar ou ocultar o que foi digitado.
  */
-export function Field({ label, error, hint, multiline = false, secureTextEntry, ...props }: FieldProps) {
+export function Field({
+  label,
+  error,
+  hint,
+  multiline = false,
+  secureTextEntry,
+  ...props
+}: FieldProps) {
   const [focused, setFocused] = useState(false);
   const [visible, setVisible] = useState(false);
   const isPassword = Boolean(secureTextEntry);
@@ -65,7 +72,11 @@ export function Field({ label, error, hint, multiline = false, secureTextEntry, 
             hitSlop={6}
             style={({ pressed }) => [styles.toggle, pressed && { backgroundColor: colors.hover }]}
           >
-            {visible ? <EyeOff size={20} color={colors.fgMuted} /> : <Eye size={20} color={colors.fgMuted} />}
+            {visible ? (
+              <EyeOff size={20} color={colors.fgMuted} />
+            ) : (
+              <Eye size={20} color={colors.fgMuted} />
+            )}
           </Pressable>
         </View>
       ) : (
@@ -109,7 +120,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radii.md,
   },
-  multiline: { minHeight: 110, paddingTop: spacing[3], fontFamily: fonts.serif, fontSize: 17, lineHeight: 24 },
+  multiline: {
+    minHeight: 110,
+    paddingTop: spacing[3],
+    fontFamily: fonts.serif,
+    fontSize: 17,
+    lineHeight: 24,
+  },
   focused: { borderColor: colors.focus },
   invalid: { borderColor: '#E26D5A' },
   readOnly: { opacity: 0.75 },

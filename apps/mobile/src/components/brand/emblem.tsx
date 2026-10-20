@@ -13,7 +13,13 @@ export function Emblem({ size = 40 }: { size?: number }) {
   return (
     <View aria-hidden>
       <Svg width={size} height={size} viewBox={EMBLEM_VIEWBOX}>
-        <Path d={emblemPaths.arch} fill={c.veil} stroke={c.outline} strokeWidth={2} strokeLinejoin="round" />
+        <Path
+          d={emblemPaths.arch}
+          fill={c.veil}
+          stroke={c.outline}
+          strokeWidth={2}
+          strokeLinejoin="round"
+        />
         <Path d={emblemPaths.opening} fill={c.opening} />
         <Path d={emblemPaths.star} fill={c.star} />
         <Path d={emblemPaths.bookLeft} fill={c.pages} />
@@ -27,9 +33,23 @@ export function Emblem({ size = 40 }: { size?: number }) {
 /** Logotipo tipográfico: emblema + nome em capitulares. */
 export function Wordmark({ size = 40 }: { size?: number }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }} accessible accessibilityLabel="Codexveil">
+    <View
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
+      accessible
+      accessibilityLabel="Codexveil"
+    >
       <Emblem size={size} />
-      <AppText style={{ fontFamily: fonts.display, fontSize: size * 0.5, letterSpacing: 3, color: colors.fgAccent, textTransform: 'uppercase' }}>Codexveil</AppText>
+      <AppText
+        style={{
+          fontFamily: fonts.display,
+          fontSize: size * 0.5,
+          letterSpacing: 3,
+          color: colors.fgAccent,
+          textTransform: 'uppercase',
+        }}
+      >
+        Codexveil
+      </AppText>
     </View>
   );
 }

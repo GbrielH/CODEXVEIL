@@ -49,13 +49,22 @@ function RootNavigator() {
           <Stack.Screen name="(app)/campanha/[id]/index" options={{ title: 'Campanha' }} />
           <Stack.Screen name="(app)/campanha/[id]/dados" options={{ title: 'Dados' }} />
           <Stack.Screen name="(app)/campanha/[id]/biblioteca" options={{ title: 'Biblioteca' }} />
-          <Stack.Screen name="(app)/campanha/[id]/criatura/[creatureId]" options={{ title: 'Registro' }} />
+          <Stack.Screen
+            name="(app)/campanha/[id]/criatura/[creatureId]"
+            options={{ title: 'Registro' }}
+          />
           <Stack.Screen name="(app)/campanha/[id]/item/[itemId]" options={{ title: 'Item' }} />
           <Stack.Screen name="(app)/campanha/[id]/anotacoes" options={{ title: 'Anotações' }} />
-          <Stack.Screen name="(app)/campanha/nova" options={{ title: 'Nova campanha', presentation: 'modal' }} />
+          <Stack.Screen
+            name="(app)/campanha/nova"
+            options={{ title: 'Nova campanha', presentation: 'modal' }}
+          />
           <Stack.Screen name="(app)/convite" options={{ title: 'Convite' }} />
           <Stack.Screen name="(app)/personagem/[id]" options={{ title: 'Ficha' }} />
-          <Stack.Screen name="(app)/personagem/novo" options={{ title: 'Novo personagem', presentation: 'modal' }} />
+          <Stack.Screen
+            name="(app)/personagem/novo"
+            options={{ title: 'Novo personagem', presentation: 'modal' }}
+          />
           <Stack.Screen name="(app)/sessao/[id]/index" options={{ title: 'Sessão' }} />
         </Stack.Protected>
         <Stack.Protected guard={!signedIn}>

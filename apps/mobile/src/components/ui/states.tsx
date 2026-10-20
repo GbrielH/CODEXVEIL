@@ -14,7 +14,17 @@ export function LoadingState({ label = 'Carregando…' }: { label?: string }) {
   );
 }
 
-export function EmptyState({ title, description, action, icon }: { title: string; description?: string; action?: ReactNode; icon?: ReactNode }) {
+export function EmptyState({
+  title,
+  description,
+  action,
+  icon,
+}: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+  icon?: ReactNode;
+}) {
   return (
     <View style={styles.frame}>
       {icon}
@@ -33,7 +43,10 @@ export function EmptyState({ title, description, action, icon }: { title: string
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <View style={[styles.frame, { borderColor: 'rgba(226, 109, 90, 0.4)' }]} accessibilityRole="alert">
+    <View
+      style={[styles.frame, { borderColor: 'rgba(226, 109, 90, 0.4)' }]}
+      accessibilityRole="alert"
+    >
       <CircleAlert color="#E26D5A" size={28} />
       <AppText variant="heading" style={{ textAlign: 'center' }}>
         Algo deu errado
@@ -61,14 +74,40 @@ export function ForbiddenState({ message }: { message: string }) {
 type Tone = 'info' | 'success' | 'warning' | 'danger';
 
 const tones: Record<Tone, { background: string; border: string; icon: ReactNode }> = {
-  info: { background: colors.infoBg, border: 'rgba(127, 167, 217, 0.4)', icon: <Info size={18} color="#A5C2E6" /> },
-  success: { background: colors.successBg, border: 'rgba(111, 179, 138, 0.4)', icon: <CircleCheck size={18} color="#8CC7A3" /> },
-  warning: { background: colors.warningBg, border: 'rgba(217, 165, 74, 0.4)', icon: <TriangleAlert size={18} color="#E6BE74" /> },
-  danger: { background: colors.dangerBg, border: 'rgba(226, 109, 90, 0.45)', icon: <CircleAlert size={18} color="#EC9384" /> },
+  info: {
+    background: colors.infoBg,
+    border: 'rgba(127, 167, 217, 0.4)',
+    icon: <Info size={18} color="#A5C2E6" />,
+  },
+  success: {
+    background: colors.successBg,
+    border: 'rgba(111, 179, 138, 0.4)',
+    icon: <CircleCheck size={18} color="#8CC7A3" />,
+  },
+  warning: {
+    background: colors.warningBg,
+    border: 'rgba(217, 165, 74, 0.4)',
+    icon: <TriangleAlert size={18} color="#E6BE74" />,
+  },
+  danger: {
+    background: colors.dangerBg,
+    border: 'rgba(226, 109, 90, 0.45)',
+    icon: <CircleAlert size={18} color="#EC9384" />,
+  },
 };
 
 /** Aviso em linha (resultado de ações, sessão expirada, modo somente leitura). */
-export function Notice({ tone = 'info', title, message, action }: { tone?: Tone; title?: string; message: string; action?: ReactNode }) {
+export function Notice({
+  tone = 'info',
+  title,
+  message,
+  action,
+}: {
+  tone?: Tone;
+  title?: string;
+  message: string;
+  action?: ReactNode;
+}) {
   const style = tones[tone];
   return (
     <View
@@ -89,7 +128,13 @@ export function Notice({ tone = 'info', title, message, action }: { tone?: Tone;
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing[3], paddingVertical: spacing[12] },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing[3],
+    paddingVertical: spacing[12],
+  },
   frame: {
     alignItems: 'center',
     gap: spacing[3],
@@ -100,5 +145,11 @@ const styles = StyleSheet.create({
     borderColor: colors.lineStrong,
     borderRadius: radii.lg,
   },
-  notice: { flexDirection: 'row', gap: spacing[3], borderWidth: 1, borderRadius: radii.md, padding: spacing[3] },
+  notice: {
+    flexDirection: 'row',
+    gap: spacing[3],
+    borderWidth: 1,
+    borderRadius: radii.md,
+    padding: spacing[3],
+  },
 });

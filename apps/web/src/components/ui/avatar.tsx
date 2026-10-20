@@ -27,7 +27,10 @@ export function Avatar({ name, size = 'md', className }: AvatarProps) {
     className,
   );
   return (
-    <span className={cx(classes, 'bg-wine-900 font-display font-semibold text-wine-200')} aria-hidden="true">
+    <span
+      className={cx(classes, 'bg-wine-900 font-display font-semibold text-wine-200')}
+      aria-hidden="true"
+    >
       {initialsOf(name)}
     </span>
   );

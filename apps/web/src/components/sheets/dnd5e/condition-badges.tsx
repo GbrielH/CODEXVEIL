@@ -8,7 +8,8 @@ import {
 } from '@codexveil/rpg-systems/dnd5e';
 import { cx } from '@/lib/cx';
 
-const badgeBase = 'inline-flex shrink-0 items-center rounded border px-1 text-[10px] leading-4 font-semibold tracking-wide uppercase';
+const badgeBase =
+  'inline-flex shrink-0 items-center rounded border px-1 text-[10px] leading-4 font-semibold tracking-wide uppercase';
 
 /**
  * Selo do efeito das condições numa jogada: "Falha" (falha automática), "Vant." ou "Desv.".
@@ -26,7 +27,10 @@ export function RollEffectBadge({
   if (autoFail.length > 0) {
     const description = `Falha automática (${autoFail.join(', ')})`;
     return (
-      <span title={description} className={cx(badgeBase, 'border-ember-400/50 bg-danger-bg text-ember-300', className)}>
+      <span
+        title={description}
+        className={cx(badgeBase, 'border-ember-400/50 bg-danger-bg text-ember-300', className)}
+      >
         <span aria-hidden="true">Falha</span>
         <span className="sr-only">{description}</span>
       </span>
@@ -38,7 +42,10 @@ export function RollEffectBadge({
   const description = describeRollSources(sources).join('; ');
   if (mode === 'cancelled') {
     return (
-      <span title={`${description}. Vantagem e desvantagem se anulam.`} className={cx(badgeBase, 'border-line-strong text-fg-muted', className)}>
+      <span
+        title={`${description}. Vantagem e desvantagem se anulam.`}
+        className={cx(badgeBase, 'border-line-strong text-fg-muted', className)}
+      >
         <span aria-hidden="true">Anulam</span>
         <span className="sr-only">{description}. Vantagem e desvantagem se anulam.</span>
       </span>
@@ -50,7 +57,9 @@ export function RollEffectBadge({
       title={description}
       className={cx(
         badgeBase,
-        shown === 'advantage' ? 'border-verdigris-400/50 bg-success-bg text-verdigris-300' : 'border-amber-400/50 bg-warning-bg text-amber-300',
+        shown === 'advantage'
+          ? 'border-verdigris-400/50 bg-success-bg text-verdigris-300'
+          : 'border-amber-400/50 bg-warning-bg text-amber-300',
         className,
       )}
     >
@@ -67,11 +76,22 @@ export function RollEffectBadge({
 }
 
 /** Penalidade de Exaustão já descontada do valor mostrado. */
-export function PenaltyBadge({ penalty, source, className }: { penalty: number; source: string; className?: string }) {
+export function PenaltyBadge({
+  penalty,
+  source,
+  className,
+}: {
+  penalty: number;
+  source: string;
+  className?: string;
+}) {
   if (penalty <= 0) return null;
   const description = `Já inclui −${penalty} (${source})`;
   return (
-    <span title={description} className={cx(badgeBase, 'border-amber-400/50 bg-warning-bg text-amber-300', className)}>
+    <span
+      title={description}
+      className={cx(badgeBase, 'border-amber-400/50 bg-warning-bg text-amber-300', className)}
+    >
       <span aria-hidden="true">−{penalty}</span>
       <span className="sr-only">{description}</span>
     </span>

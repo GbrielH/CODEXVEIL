@@ -31,7 +31,14 @@ interface HealthBarProps {
  * Barra de vida com cor por estado (saudável, ferido, em perigo, caído). O estado também
  * é escrito em texto, para não depender só da cor.
  */
-export function HealthBar({ current, max, temp = 0, showValues = true, size = 'sm', className }: HealthBarProps) {
+export function HealthBar({
+  current,
+  max,
+  temp = 0,
+  showValues = true,
+  size = 'sm',
+  className,
+}: HealthBarProps) {
   const value = current ?? 0;
   const status = healthStatus(value, max);
   const percent = max && max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
@@ -40,7 +47,10 @@ export function HealthBar({ current, max, temp = 0, showValues = true, size = 's
   return (
     <div className={cx('flex flex-col gap-1', className)}>
       <div
-        className={cx('flex overflow-hidden rounded-full bg-sunken ring-1 ring-line', size === 'md' ? 'h-3' : 'h-2')}
+        className={cx(
+          'flex overflow-hidden rounded-full bg-sunken ring-1 ring-line',
+          size === 'md' ? 'h-3' : 'h-2',
+        )}
         role="meter"
         aria-label="Pontos de vida"
         aria-valuemin={0}
@@ -48,8 +58,13 @@ export function HealthBar({ current, max, temp = 0, showValues = true, size = 's
         aria-valuenow={value}
         aria-valuetext={`${value} de ${max ?? '?'} pontos de vida${temp > 0 ? `, mais ${temp} temporários` : ''} — ${healthStatusLabels[status]}`}
       >
-        <div className={cx('transition-[width] duration-300 ease-codex', barColors[status])} style={{ width: `${percent}%` }} />
-        {tempPercent > 0 ? <div className="bg-hp-temp" style={{ width: `${tempPercent}%` }} /> : null}
+        <div
+          className={cx('transition-[width] duration-300 ease-codex', barColors[status])}
+          style={{ width: `${percent}%` }}
+        />
+        {tempPercent > 0 ? (
+          <div className="bg-hp-temp" style={{ width: `${tempPercent}%` }} />
+        ) : null}
       </div>
       {showValues ? (
         <div className="flex items-center justify-between gap-2 text-xs">

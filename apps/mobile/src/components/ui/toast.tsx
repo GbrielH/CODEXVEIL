@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radii, spacing } from '@/lib/theme';
@@ -28,7 +36,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const nextId = useRef(1);
   const insets = useSafeAreaInsets();
 
-  const dismiss = useCallback((id: number) => setMessages((current) => current.filter((message) => message.id !== id)), []);
+  const dismiss = useCallback(
+    (id: number) => setMessages((current) => current.filter((message) => message.id !== id)),
+    [],
+  );
   const show = useCallback(
     (message: Omit<ToastMessage, 'id'>) => {
       const id = nextId.current++;
@@ -55,7 +66,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <View style={[styles.dot, { backgroundColor: dotColors[message.tone] }]} />
             <View style={{ flex: 1 }}>
               <AppText style={{ fontWeight: '600' }}>{message.title}</AppText>
-              {message.description ? <AppText variant="muted">{message.description}</AppText> : null}
+              {message.description ? (
+                <AppText variant="muted">{message.description}</AppText>
+              ) : null}
             </View>
           </Pressable>
         ))}

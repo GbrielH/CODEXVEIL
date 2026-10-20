@@ -3,7 +3,10 @@ import { cx } from '@/lib/cx';
 /** Separador ornamental: filete com losango central. */
 export function Divider({ className, label }: { className?: string; label?: string }) {
   return (
-    <div className={cx('flex items-center gap-3 text-parchment-400/70', className)} role="separator">
+    <div
+      className={cx('flex items-center gap-3 text-parchment-400/70', className)}
+      role="separator"
+    >
       <span className="h-px flex-1 bg-linear-to-r from-transparent to-parchment-400/40" />
       {label ? (
         <span className="eyebrow">{label}</span>

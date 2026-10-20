@@ -13,7 +13,16 @@ import {
   type DiceRollResult,
 } from '@codexveil/domain';
 import { Dices, EyeOff } from 'lucide-react';
-import { createContext, useCallback, useContext, useEffect, useId, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { Button } from '@/components/ui/button';
 import { controlClasses } from '@/components/ui/control-classes';
 import { useToast } from '@/components/ui/toast';
@@ -21,6 +30,7 @@ import { cx } from '@/lib/cx';
 import { failureMessage } from '@/lib/client-errors';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
+import { CampaignColorsProvider, useCampaignColors } from './campaign-colors';
 import { DiceTray, type TrayRoll } from './dice-tray';
 
 export interface RollRequest {
@@ -31,7 +41,10 @@ export interface RollRequest {
   secret?: boolean;
 }
 
-export type ShownRoll = Pick<DiceRollResult, 'expression' | 'mode' | 'dice' | 'modifier' | 'total'> & {
+export type ShownRoll = Pick<
+  DiceRollResult,
+  'expression' | 'mode' | 'dice' | 'modifier' | 'total'
+> & {
   label: string;
   secret: boolean;
 };
@@ -54,13 +67,19 @@ function fromServer(roll: DiceRoll): ShownRoll {
  * Rolagens da ficha e da campanha. Em campanha, o dado é rolado no servidor e vai para o
  * mural do mestre; sem campanha, rola no próprio navegador.
  */
-export function DiceProvider({
-  campaignId,
-  characterId = null,
-  enabled = true,
-  sessionGate = false,
-  children,
-}: {
+export function DiceProvider(props: DiceProviderProps) {
+  const outer = useCampaignColors();
+  if (props.campaignId && !outer) {
+    return (
+      <CampaignColorsProvider campaignId={props.campaignId}>
+        <DiceProviderInner {...props} />
+      </CampaignColorsProvider>
+    );
+  }
+  return <DiceProviderInner {...props} />;
+}
+
+interface DiceProviderProps {
   campaignId: string | null;
   characterId?: string | null;
   /** Desligado: os botões de rolar somem (ex.: ficha de outro jogador). */
@@ -71,8 +90,18 @@ export function DiceProvider({
    */
   sessionGate?: boolean;
   children: ReactNode;
-}) {
+}
+
+function DiceProviderInner({
+  campaignId,
+  characterId = null,
+  enabled = true,
+  sessionGate = false,
+  children,
+}: DiceProviderProps) {
   const { toast } = useToast();
+  const colors = useCampaignColors();
+  const needsColor = Boolean(campaignId && colors && colors.userId && !colors.myColor);
   const [pending, setPending] = useState<TrayRoll | null>(null);
   const [physical, setPhysical] = useState(false);
   const gated = Boolean(campaignId && sessionGate);
@@ -104,6 +133,15 @@ export function DiceProvider({
     async (request: RollRequest): Promise<ShownRoll | null> => {
       const mode = request.mode ?? 'normal';
       let shown: ShownRoll | null = null;
+      if (needsColor) {
+        toast({
+          tone: 'warning',
+          title: 'Escolha a cor dos seus dados',
+          description:
+            'Sem cor não é possível rolar. Escolha na caixinha de dados no canto (o mestre escolhe primeiro).',
+        });
+        return null;
+      }
       try {
         if (campaignId && sessionGate) {
           const session = await getSessionState(getSupabaseBrowserClient(), campaignId);
@@ -135,7 +173,11 @@ export function DiceProvider({
           shown = { ...local, label: request.label ?? '', secret: false };
         }
       } catch (error) {
-        toast({ tone: 'danger', title: 'Os dados não foram rolados', description: failureMessage(error, 'Confira a expressão e tente de novo.') });
+        toast({
+          tone: 'danger',
+          title: 'Os dados não foram rolados',
+          description: failureMessage(error, 'Confira a expressão e tente de novo.'),
+        });
         return null;
       }
       // Vai para a caixinha de dados 3D no canto (com fila curta se chegarem várias).
@@ -148,10 +190,13 @@ export function DiceProvider({
       });
       return shown;
     },
-    [campaignId, characterId, sessionGate, toast],
+    [campaignId, characterId, sessionGate, toast, needsColor],
   );
 
-  const value = useMemo(() => (enabled ? { roll, campaignId, physical } : null), [roll, campaignId, enabled, physical]);
+  const value = useMemo(
+    () => (enabled ? { roll, campaignId, physical } : null),
+    [roll, campaignId, enabled, physical],
+  );
   return (
     <DiceContext.Provider value={value}>
       {children}
@@ -188,9 +233,15 @@ export function RollButton({
   // Dados físicos: sem botão de rolar; só a indicação do dado a rolar na mesa.
   if (dice.physical) {
     return (
-      <span className={cx('inline-flex items-center gap-1', className)} title={`Role na mesa: ${expression}`}>
+      <span
+        className={cx('inline-flex items-center gap-1', className)}
+        title={`Role na mesa: ${expression}`}
+      >
         {children}
-        <span className="rounded border border-amber-400/40 px-1 text-[11px] text-amber-300">🎲 {expression}{mode !== 'normal' ? ` (${diceRollModeLabels[mode].toLowerCase()})` : ''}</span>
+        <span className="rounded border border-amber-400/40 px-1 text-[11px] text-amber-300">
+          🎲 {expression}
+          {mode !== 'normal' ? ` (${diceRollModeLabels[mode].toLowerCase()})` : ''}
+        </span>
       </span>
     );
   }
@@ -198,7 +249,10 @@ export function RollButton({
     <button
       type="button"
       disabled={busy}
-      title={title ?? `Rolar ${expression}${mode !== 'normal' ? ` com ${diceRollModeLabels[mode].toLowerCase()}` : ''}`}
+      title={
+        title ??
+        `Rolar ${expression}${mode !== 'normal' ? ` com ${diceRollModeLabels[mode].toLowerCase()}` : ''}`
+      }
       aria-label={`Rolar ${label} (${expression}${mode !== 'normal' ? `, ${diceRollModeLabels[mode].toLowerCase()}` : ''})`}
       onClick={async () => {
         setBusy(true);
@@ -216,7 +270,13 @@ export function RollButton({
 }
 
 /** Painel de rolagem livre: dados rápidos, expressão, vantagem e rolagem secreta. */
-export function DicePanel({ isGm, characterName }: { isGm: boolean; characterName?: string | null }) {
+export function DicePanel({
+  isGm,
+  characterName,
+}: {
+  isGm: boolean;
+  characterName?: string | null;
+}) {
   const dice = useDice();
   const id = useId();
   const [expression, setExpression] = useState('1d20');
@@ -242,7 +302,14 @@ export function DicePanel({ isGm, characterName }: { isGm: boolean; characterNam
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-2" role="group" aria-label="Dados rápidos">
         {COMMON_DICE.map((sides) => (
-          <Button key={sides} variant="secondary" size="sm" disabled={busy} onClick={() => void go(`1d${sides}`)} className="min-w-14">
+          <Button
+            key={sides}
+            variant="secondary"
+            size="sm"
+            disabled={busy}
+            onClick={() => void go(`1d${sides}`)}
+            className="min-w-14"
+          >
             d{sides}
           </Button>
         ))}
@@ -270,7 +337,9 @@ export function DicePanel({ isGm, characterName }: { isGm: boolean; characterNam
               className={controlClasses(!valid, 'h-11 font-mono text-sm')}
             />
             <p id={`${id}-expression-hint`} className="text-xs text-fg-muted">
-              {valid ? 'Some dados e bônus: 1d20+5, 2d6+1d4+3, d100.' : 'Use dados como 1d20+5 (até 100 dados).'}
+              {valid
+                ? 'Some dados e bônus: 1d20+5, 2d6+1d4+3, d100.'
+                : 'Use dados como 1d20+5 (até 100 dados).'}
             </p>
           </div>
           <div className="flex flex-col gap-1.5">
@@ -297,7 +366,9 @@ export function DicePanel({ isGm, characterName }: { isGm: boolean; characterNam
               onClick={() => setMode(option)}
               className={cx(
                 'h-9 rounded-full border px-3 text-sm transition-colors',
-                mode === option ? 'border-parchment-300/70 bg-parchment-200/10 text-fg-accent' : 'border-line text-fg-secondary hover:bg-hover',
+                mode === option
+                  ? 'border-parchment-300/70 bg-parchment-200/10 text-fg-accent'
+                  : 'border-line text-fg-secondary hover:bg-hover',
               )}
             >
               {diceRollModeLabels[option]}
@@ -305,14 +376,24 @@ export function DicePanel({ isGm, characterName }: { isGm: boolean; characterNam
           ))}
           {inCampaign ? (
             <label className="ml-auto flex items-center gap-2 text-sm text-fg-secondary">
-              <input type="checkbox" checked={secret} onChange={(event) => setSecret(event.target.checked)} className="h-4 w-4 accent-wine-500" />
+              <input
+                type="checkbox"
+                checked={secret}
+                onChange={(event) => setSecret(event.target.checked)}
+                className="h-4 w-4 accent-wine-500"
+              />
               <EyeOff className="h-4 w-4" aria-hidden="true" />
               {isGm ? 'Secreta (só mestres)' : 'Só para o mestre'}
             </label>
           ) : null}
         </div>
         <div>
-          <Button type="submit" loading={busy} disabled={!valid} icon={<Dices className="h-4 w-4" aria-hidden="true" />}>
+          <Button
+            type="submit"
+            loading={busy}
+            disabled={!valid}
+            icon={<Dices className="h-4 w-4" aria-hidden="true" />}
+          >
             Rolar{characterName ? ` como ${characterName}` : ''}
           </Button>
         </div>
@@ -322,10 +403,24 @@ export function DicePanel({ isGm, characterName }: { isGm: boolean; characterNam
           aria-live="polite"
           className={cx(
             'flex items-center gap-4 rounded-lg border px-4 py-3',
-            natural === 20 ? 'border-verdigris-400/60 bg-success-bg' : natural === 1 ? 'border-ember-400/60 bg-danger-bg' : 'border-line-strong bg-raised',
+            natural === 20
+              ? 'border-verdigris-400/60 bg-success-bg'
+              : natural === 1
+                ? 'border-ember-400/60 bg-danger-bg'
+                : 'border-line-strong bg-raised',
           )}
         >
-          <span key={`${last.total}-${last.expression}-${describeDiceRoll(last)}`} className={cx('tabular animate-pop font-display text-4xl', natural === 20 ? 'text-verdigris-300' : natural === 1 ? 'text-ember-300' : 'text-fg-accent')}>
+          <span
+            key={`${last.total}-${last.expression}-${describeDiceRoll(last)}`}
+            className={cx(
+              'tabular animate-pop font-display text-4xl',
+              natural === 20
+                ? 'text-verdigris-300'
+                : natural === 1
+                  ? 'text-ember-300'
+                  : 'text-fg-accent',
+            )}
+          >
             {last.total}
           </span>
           <span className="min-w-0 text-sm">
@@ -334,7 +429,11 @@ export function DicePanel({ isGm, characterName }: { isGm: boolean; characterNam
             <span className="block text-xs text-fg-muted">
               {last.mode !== 'normal' ? `${diceRollModeLabels[last.mode]} · ` : ''}
               {natural === 20 ? '20 natural · ' : natural === 1 ? '1 natural · ' : ''}
-              {inCampaign ? (last.secret ? 'Rolagem secreta' : 'Visível para a mesa') : 'Rolagem local (sem campanha)'}
+              {inCampaign
+                ? last.secret
+                  ? 'Rolagem secreta'
+                  : 'Visível para a mesa'
+                : 'Rolagem local (sem campanha)'}
             </span>
           </span>
         </output>

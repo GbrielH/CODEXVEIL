@@ -4,8 +4,10 @@ import { useState, type InputHTMLAttributes } from 'react';
 import { cx } from '@/lib/cx';
 import { defaultWidth } from './control-classes';
 
-interface NumberInputProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type' | 'min' | 'max'> {
+interface NumberInputProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'value' | 'onChange' | 'type' | 'min' | 'max'
+> {
   value: number | null;
   /** Chamado com o número já validado (ao sair do campo ou pressionar Enter). */
   onCommit: (value: number | null) => void;

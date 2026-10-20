@@ -8,13 +8,30 @@ import { colors, fonts, palette, radii, spacing } from '@/lib/theme';
 
 function initials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
-  return (words.length > 1 ? `${words[0]![0]}${words[words.length - 1]![0]}` : (words[0]?.slice(0, 2) ?? '?')).toUpperCase();
+  return (
+    words.length > 1
+      ? `${words[0]![0]}${words[words.length - 1]![0]}`
+      : (words[0]?.slice(0, 2) ?? '?')
+  ).toUpperCase();
 }
 
 /** Campanha com a capa no topo (ou um fundo com as iniciais, sem imagem). */
-export function CampaignCoverCard({ campaign, coverUrl, onPress }: { campaign: CampaignSummary; coverUrl: string | null; onPress: () => void }) {
+export function CampaignCoverCard({
+  campaign,
+  coverUrl,
+  onPress,
+}: {
+  campaign: CampaignSummary;
+  coverUrl: string | null;
+  onPress: () => void;
+}) {
   const role = campaign.isOwner ? 'Mestre responsável' : campaignRoleLabels[campaign.role];
-  const details = [findSystem(campaign.systemId)?.shortName, `${campaign.memberCount} participante${campaign.memberCount === 1 ? '' : 's'}`].filter(Boolean).join(' · ');
+  const details = [
+    findSystem(campaign.systemId)?.shortName,
+    `${campaign.memberCount} participante${campaign.memberCount === 1 ? '' : 's'}`,
+  ]
+    .filter(Boolean)
+    .join(' · ');
   return (
     <Pressable
       onPress={onPress}
@@ -23,7 +40,12 @@ export function CampaignCoverCard({ campaign, coverUrl, onPress }: { campaign: C
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
     >
       {coverUrl ? (
-        <Image source={{ uri: coverUrl }} accessibilityIgnoresInvertColors style={styles.cover} resizeMode="cover" />
+        <Image
+          source={{ uri: coverUrl }}
+          accessibilityIgnoresInvertColors
+          style={styles.cover}
+          resizeMode="cover"
+        />
       ) : (
         <View style={[styles.cover, styles.placeholder]}>
           <AppText style={styles.initials}>{initials(campaign.name)}</AppText>
@@ -35,7 +57,9 @@ export function CampaignCoverCard({ campaign, coverUrl, onPress }: { campaign: C
       <View style={styles.body}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
           <Badge label={role} tone={campaign.role === 'gm' ? 'brand' : 'neutral'} />
-          {campaign.status === 'archived' ? <Badge label={campaignStatusLabels.archived} tone="warning" /> : null}
+          {campaign.status === 'archived' ? (
+            <Badge label={campaignStatusLabels.archived} tone="warning" />
+          ) : null}
         </View>
         <AppText style={styles.title} numberOfLines={2}>
           {campaign.name}
@@ -49,9 +73,19 @@ export function CampaignCoverCard({ campaign, coverUrl, onPress }: { campaign: C
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: radii.xl, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.card, overflow: 'hidden' },
+  card: {
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.card,
+    overflow: 'hidden',
+  },
   cover: { width: '100%', aspectRatio: 16 / 9 },
-  placeholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: palette.wine[950] },
+  placeholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.wine[950],
+  },
   placeholderIcon: { position: 'absolute', right: spacing[3], bottom: spacing[3] },
   initials: { fontFamily: fonts.displayBold, fontSize: 34, color: 'rgba(228, 216, 189, 0.7)' },
   body: { padding: spacing[3], gap: 6 },

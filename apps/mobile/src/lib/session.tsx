@@ -40,7 +40,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     supabase.auth
       .getSession()
       .then(({ data }) => {
-        setState({ status: data.session ? 'signed-in' : 'signed-out', ...fromSession(data.session), expired: false });
+        setState({
+          status: data.session ? 'signed-in' : 'signed-out',
+          ...fromSession(data.session),
+          expired: false,
+        });
       })
       .catch(() => setState({ status: 'signed-out', userId: null, email: null, expired: false }));
 
@@ -67,7 +71,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     await getSupabase().auth.signOut();
   };
 
-  return <SessionContext.Provider value={{ ...state, signOut }}>{children}</SessionContext.Provider>;
+  return (
+    <SessionContext.Provider value={{ ...state, signOut }}>{children}</SessionContext.Provider>
+  );
 }
 
 export function useSession(): SessionState {

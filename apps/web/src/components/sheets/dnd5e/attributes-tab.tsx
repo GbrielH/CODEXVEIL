@@ -56,12 +56,20 @@ function AbilityScores() {
   return (
     <section aria-label="Atributos" className="grid grid-cols-3 gap-3 sm:grid-cols-6">
       {ABILITIES.map((ability) => (
-        <div key={ability} className="ornate flex flex-col items-center gap-2 rounded-lg border border-line bg-card px-2 py-3 shadow-card">
+        <div
+          key={ability}
+          className="ornate flex flex-col items-center gap-2 rounded-lg border border-line bg-card px-2 py-3 shadow-card"
+        >
           <label htmlFor={`${id}-${ability}`} className="text-center">
-            <span className="block font-display text-xs tracking-[0.2em] text-fg-secondary">{abilityLabels[ability].abbreviation}</span>
+            <span className="block font-display text-xs tracking-[0.2em] text-fg-secondary">
+              {abilityLabels[ability].abbreviation}
+            </span>
             <span className="block text-[11px] text-fg-muted">{abilityLabels[ability].name}</span>
           </label>
-          <span className="tabular font-display text-3xl leading-none text-fg-accent" aria-label={`Modificador ${formatModifier(derived.abilityModifiers[ability])}`}>
+          <span
+            className="tabular font-display text-3xl leading-none text-fg-accent"
+            aria-label={`Modificador ${formatModifier(derived.abilityModifiers[ability])}`}
+          >
             {formatModifier(derived.abilityModifiers[ability])}
           </span>
           <NumberInput
@@ -71,7 +79,10 @@ function AbilityScores() {
             max={ABILITY_SCORE_MAX}
             disabled={!permissions.canEditSheet}
             onCommit={(value) =>
-              updateSheet((current) => ({ ...current, abilities: { ...current.abilities, [ability]: value ?? 10 } }))
+              updateSheet((current) => ({
+                ...current,
+                abilities: { ...current.abilities, [ability]: value ?? 10 },
+              }))
             }
             className="h-9 w-16 text-base"
           />
@@ -88,7 +99,10 @@ function SavingThrows() {
   const setSave = (ability: Ability, patch: Partial<{ proficient: boolean; bonus: number }>) =>
     updateSheet((current) => ({
       ...current,
-      savingThrows: { ...current.savingThrows, [ability]: { ...current.savingThrows[ability], ...patch } },
+      savingThrows: {
+        ...current.savingThrows,
+        [ability]: { ...current.savingThrows[ability], ...patch },
+      },
     }));
 
   return (
@@ -118,14 +132,22 @@ function SavingThrows() {
               className="h-9 w-14 text-sm"
             />
             <span className="flex w-24 shrink-0 items-center justify-end gap-1">
-              <RollEffectBadge sources={effects.savingThrows[ability].rolls} autoFail={effects.savingThrows[ability].autoFail} />
+              <RollEffectBadge
+                sources={effects.savingThrows[ability].rolls}
+                autoFail={effects.savingThrows[ability].autoFail}
+              />
               <PenaltyBadge penalty={penalty} source={`Exaustão ${effects.exhaustionLevel}`} />
               <RollButton
                 expression={d20Expression(derived.savingThrows[ability] - penalty)}
                 label={`Resistência de ${abilityLabels[ability].name}`}
                 mode={rollModeFrom(effects.savingThrows[ability].rolls)}
               >
-                <span className={cx('tabular block w-10 text-right font-display text-lg', penalty > 0 ? 'text-amber-300' : 'text-fg-accent')}>
+                <span
+                  className={cx(
+                    'tabular block w-10 text-right font-display text-lg',
+                    penalty > 0 ? 'text-amber-300' : 'text-fg-accent',
+                  )}
+                >
                   {formatModifier(derived.savingThrows[ability] - penalty)}
                 </span>
               </RollButton>
@@ -134,7 +156,8 @@ function SavingThrows() {
         ))}
       </ul>
       <p className="mt-3 text-xs text-fg-muted">
-        Marque as proficiências. O campo do meio soma bônus de itens ou magias. Selos indicam efeitos de condições ativas.
+        Marque as proficiências. O campo do meio soma bônus de itens ou magias. Selos indicam
+        efeitos de condições ativas.
       </p>
     </Card>
   );
@@ -155,12 +178,20 @@ function SkillsTable() {
           const definition = skillDefinitions[skill];
           return (
             <li key={skill} className="flex items-center gap-2 py-1.5">
-              <span className={cx('w-5 text-center text-sm', entry.proficiency === 'none' ? 'text-fg-subtle' : 'text-fg-brand')} aria-hidden="true">
+              <span
+                className={cx(
+                  'w-5 text-center text-sm',
+                  entry.proficiency === 'none' ? 'text-fg-subtle' : 'text-fg-brand',
+                )}
+                aria-hidden="true"
+              >
                 {proficiencyMarks[entry.proficiency]}
               </span>
               <span className="min-w-0 flex-1 text-sm">
                 {definition.label}
-                <span className="ml-1 text-xs text-fg-muted">({abilityLabels[definition.ability].abbreviation})</span>
+                <span className="ml-1 text-xs text-fg-muted">
+                  ({abilityLabels[definition.ability].abbreviation})
+                </span>
               </span>
               <Select
                 aria-label={`Proficiência em ${definition.label}`}
@@ -169,7 +200,13 @@ function SkillsTable() {
                 onChange={(event) =>
                   updateSheet((current) => ({
                     ...current,
-                    skills: { ...current.skills, [skill]: { ...current.skills[skill], proficiency: event.target.value as ProficiencyLevel } },
+                    skills: {
+                      ...current.skills,
+                      [skill]: {
+                        ...current.skills[skill],
+                        proficiency: event.target.value as ProficiencyLevel,
+                      },
+                    },
                   }))
                 }
                 size="sm"
@@ -190,7 +227,10 @@ function SkillsTable() {
                 onCommit={(value) =>
                   updateSheet((current) => ({
                     ...current,
-                    skills: { ...current.skills, [skill]: { ...current.skills[skill], bonus: value ?? 0 } },
+                    skills: {
+                      ...current.skills,
+                      [skill]: { ...current.skills[skill], bonus: value ?? 0 },
+                    },
                   }))
                 }
                 className="h-9 w-12 text-xs"
@@ -203,7 +243,12 @@ function SkillsTable() {
                   label={skillDefinitions[skill].label}
                   mode={rollModeFrom(effects.abilityChecks)}
                 >
-                  <span className={cx('tabular block w-10 text-right font-display text-lg', penalty > 0 ? 'text-amber-300' : 'text-fg-accent')}>
+                  <span
+                    className={cx(
+                      'tabular block w-10 text-right font-display text-lg',
+                      penalty > 0 ? 'text-amber-300' : 'text-fg-accent',
+                    )}
+                  >
                     {formatModifier(derived.skills[skill].bonus - penalty)}
                   </span>
                 </RollButton>
@@ -223,25 +268,50 @@ function CombatBasics() {
     updateSheet((current) => ({ ...current, combat: { ...current.combat, ...patch } }));
   return (
     <Card>
-      <CardHeader title="Combate" description="Valores base informados por você; a iniciativa soma a Destreza." />
+      <CardHeader
+        title="Combate"
+        description="Valores base informados por você; a iniciativa soma a Destreza."
+      />
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
           <label htmlFor={`${id}-ac`} className="text-sm font-medium">
             Classe de armadura
           </label>
-          <NumberInput id={`${id}-ac`} value={sheet.combat.armorClass} min={0} max={50} disabled={!permissions.canEditSheet} onCommit={(value) => setCombat({ armorClass: value ?? 10 })} />
+          <NumberInput
+            id={`${id}-ac`}
+            value={sheet.combat.armorClass}
+            min={0}
+            max={50}
+            disabled={!permissions.canEditSheet}
+            onCommit={(value) => setCombat({ armorClass: value ?? 10 })}
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor={`${id}-init`} className="text-sm font-medium">
             Bônus de iniciativa
           </label>
-          <NumberInput id={`${id}-init`} value={sheet.combat.initiativeBonus} min={-30} max={30} disabled={!permissions.canEditSheet} onCommit={(value) => setCombat({ initiativeBonus: value ?? 0 })} />
+          <NumberInput
+            id={`${id}-init`}
+            value={sheet.combat.initiativeBonus}
+            min={-30}
+            max={30}
+            disabled={!permissions.canEditSheet}
+            onCommit={(value) => setCombat({ initiativeBonus: value ?? 0 })}
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor={`${id}-speed`} className="text-sm font-medium">
             Deslocamento
           </label>
-          <NumberInput id={`${id}-speed`} value={sheet.combat.speed} min={0} max={1000} decimal disabled={!permissions.canEditSheet} onCommit={(value) => setCombat({ speed: value ?? 0 })} />
+          <NumberInput
+            id={`${id}-speed`}
+            value={sheet.combat.speed}
+            min={0}
+            max={1000}
+            decimal
+            disabled={!permissions.canEditSheet}
+            onCommit={(value) => setCombat({ speed: value ?? 0 })}
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor={`${id}-unit`} className="text-sm font-medium">
@@ -287,7 +357,11 @@ function Spellcasting() {
             value={sheet.spellcasting.ability ?? ''}
             disabled={!permissions.canEditSheet}
             onChange={(event) =>
-              setCasting({ ability: event.target.value ? (event.target.value as (typeof SPELLCASTING_ABILITIES)[number]) : null })
+              setCasting({
+                ability: event.target.value
+                  ? (event.target.value as (typeof SPELLCASTING_ABILITIES)[number])
+                  : null,
+              })
             }
           >
             <option value="">Nenhum</option>
@@ -302,13 +376,27 @@ function Spellcasting() {
           <label htmlFor={`${id}-dc`} className="text-sm font-medium">
             Bônus na CD
           </label>
-          <NumberInput id={`${id}-dc`} value={sheet.spellcasting.saveDcBonus} min={-30} max={30} disabled={!permissions.canEditSheet} onCommit={(value) => setCasting({ saveDcBonus: value ?? 0 })} />
+          <NumberInput
+            id={`${id}-dc`}
+            value={sheet.spellcasting.saveDcBonus}
+            min={-30}
+            max={30}
+            disabled={!permissions.canEditSheet}
+            onCommit={(value) => setCasting({ saveDcBonus: value ?? 0 })}
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor={`${id}-attack`} className="text-sm font-medium">
             Bônus no ataque
           </label>
-          <NumberInput id={`${id}-attack`} value={sheet.spellcasting.attackBonus} min={-30} max={30} disabled={!permissions.canEditSheet} onCommit={(value) => setCasting({ attackBonus: value ?? 0 })} />
+          <NumberInput
+            id={`${id}-attack`}
+            value={sheet.spellcasting.attackBonus}
+            min={-30}
+            max={30}
+            disabled={!permissions.canEditSheet}
+            onCommit={(value) => setCasting({ attackBonus: value ?? 0 })}
+          />
         </div>
       </div>
     </Card>

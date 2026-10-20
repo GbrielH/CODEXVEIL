@@ -15,7 +15,10 @@ export interface PickerOption {
 
 /** Comparação sem acentos e sem diferenciar maiúsculas. */
 function normalize(text: string): string {
-  return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+  return text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
 }
 
 interface PickerSheetProps {
@@ -35,14 +38,25 @@ interface PickerSheetProps {
  * Lista de opções em painel inferior, com a identidade visual do app e busca por digitação
  * (sem acentos). Substitui o seletor nativo, que segue o tema do aparelho.
  */
-export function PickerSheet({ visible, title, hint, options, selected, onSelect, onClose, searchThreshold = 6 }: PickerSheetProps) {
+export function PickerSheet({
+  visible,
+  title,
+  hint,
+  options,
+  selected,
+  onSelect,
+  onClose,
+  searchThreshold = 6,
+}: PickerSheetProps) {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const searchable = options.length > searchThreshold;
   const filtered = useMemo(() => {
     const term = normalize(query.trim());
     if (!term) return options;
-    return options.filter((option) => normalize(`${option.label} ${option.description ?? ''}`).includes(term));
+    return options.filter((option) =>
+      normalize(`${option.label} ${option.description ?? ''}`).includes(term),
+    );
   }, [options, query]);
 
   const close = () => {
@@ -51,16 +65,34 @@ export function PickerSheet({ visible, title, hint, options, selected, onSelect,
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={close}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      onRequestClose={close}
+    >
       <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityRole="button" accessibilityLabel="Fechar a lista" />
-        <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing[3] }]} accessibilityViewIsModal>
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={close}
+          accessibilityRole="button"
+          accessibilityLabel="Fechar a lista"
+        />
+        <View
+          style={[styles.sheet, { paddingBottom: insets.bottom + spacing[3] }]}
+          accessibilityViewIsModal
+        >
           <View style={styles.handle} />
           <View style={styles.header}>
             <AppText variant="heading" accessibilityRole="header" style={{ flex: 1 }}>
               {title}
             </AppText>
-            <IconButton icon={<X size={18} color={colors.fgSecondary} />} accessibilityLabel="Fechar" onPress={close} />
+            <IconButton
+              icon={<X size={18} color={colors.fgSecondary} />}
+              accessibilityLabel="Fechar"
+              onPress={close}
+            />
           </View>
           {hint ? (
             <AppText variant="small" style={{ color: colors.fgMuted }}>
@@ -87,7 +119,11 @@ export function PickerSheet({ visible, title, hint, options, selected, onSelect,
             keyExtractor={(option) => option.value}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{ gap: 2, paddingBottom: spacing[2] }}
-            ListEmptyComponent={<AppText variant="muted" style={{ padding: spacing[3] }}>Nenhuma opção encontrada.</AppText>}
+            ListEmptyComponent={
+              <AppText variant="muted" style={{ padding: spacing[3] }}>
+                Nenhuma opção encontrada.
+              </AppText>
+            }
             renderItem={({ item }) => {
               const isSelected = item.value === selected;
               return (
@@ -100,11 +136,25 @@ export function PickerSheet({ visible, title, hint, options, selected, onSelect,
                   disabled={item.disabled}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: isSelected, disabled: Boolean(item.disabled) }}
-                  style={({ pressed }) => [styles.option, isSelected && styles.optionSelected, pressed && { backgroundColor: colors.hover }, item.disabled && { opacity: 0.45 }]}
+                  style={({ pressed }) => [
+                    styles.option,
+                    isSelected && styles.optionSelected,
+                    pressed && { backgroundColor: colors.hover },
+                    item.disabled && { opacity: 0.45 },
+                  ]}
                 >
                   <View style={{ flex: 1, gap: 2 }}>
-                    <AppText style={{ color: isSelected ? colors.fgAccent : colors.fg, fontFamily: fonts.sansMedium }}>{item.label}</AppText>
-                    {item.description ? <AppText variant="small">{item.description}</AppText> : null}
+                    <AppText
+                      style={{
+                        color: isSelected ? colors.fgAccent : colors.fg,
+                        fontFamily: fonts.sansMedium,
+                      }}
+                    >
+                      {item.label}
+                    </AppText>
+                    {item.description ? (
+                      <AppText variant="small">{item.description}</AppText>
+                    ) : null}
                   </View>
                   {isSelected ? <Check size={18} color={colors.fgAccent} /> : null}
                 </Pressable>
@@ -145,7 +195,10 @@ export function PickerField({
         accessibilityHint="Abre a lista de opções"
         style={({ pressed }) => [styles.trigger, pressed && { backgroundColor: colors.hover }]}
       >
-        <AppText style={{ flex: 1, color: current ? colors.fg : colors.fgSubtle }} numberOfLines={1}>
+        <AppText
+          style={{ flex: 1, color: current ? colors.fg : colors.fgSubtle }}
+          numberOfLines={1}
+        >
           {current?.label ?? placeholder}
         </AppText>
         <ChevronDown size={18} color={colors.fgMuted} />
@@ -180,7 +233,13 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(133, 50, 68, 0.9)',
     backgroundColor: colors.raised,
   },
-  handle: { alignSelf: 'center', width: 44, height: 4, borderRadius: 2, backgroundColor: colors.lineStrong },
+  handle: {
+    alignSelf: 'center',
+    width: 44,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.lineStrong,
+  },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   search: {
     flexDirection: 'row',
@@ -192,7 +251,13 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     backgroundColor: colors.sunken,
   },
-  searchInput: { flex: 1, height: minTouchTarget, color: colors.fg, fontFamily: fonts.sans, fontSize: 16 },
+  searchInput: {
+    flex: 1,
+    height: minTouchTarget,
+    color: colors.fg,
+    fontFamily: fonts.sans,
+    fontSize: 16,
+  },
   option: {
     flexDirection: 'row',
     alignItems: 'center',

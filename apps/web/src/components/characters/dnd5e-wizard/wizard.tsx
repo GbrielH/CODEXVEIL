@@ -84,8 +84,15 @@ const CLEAR_ON_CLASS = ['class.', 'subclass.', 'spells.', 'asi.', 'epic.', 'equi
 const CLEAR_ON_BACKGROUND = ['background.', 'equipment.background'];
 const CLEAR_ON_SPECIES = ['species.'];
 
-function without(selections: Dnd5eDraft['selections'], prefixes: string[]): Dnd5eDraft['selections'] {
-  return Object.fromEntries(Object.entries(selections).filter(([key]) => !prefixes.some((prefix) => key.startsWith(prefix))));
+function without(
+  selections: Dnd5eDraft['selections'],
+  prefixes: string[],
+): Dnd5eDraft['selections'] {
+  return Object.fromEntries(
+    Object.entries(selections).filter(
+      ([key]) => !prefixes.some((prefix) => key.startsWith(prefix)),
+    ),
+  );
 }
 
 function subscribeStorage(onChange: () => void) {
@@ -120,23 +127,45 @@ function contextFor(campaign: WizardCampaign | undefined): Dnd5eCreationContext 
     : PERSONAL_SHEET_CONTEXT;
 }
 
-export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, defaultCampaignId, storageKey, lockCampaign = false }: WizardProps) {
+export function Dnd5eCreationWizard({
+  campaigns,
+  books,
+  personalPackIds,
+  defaultCampaignId,
+  storageKey,
+  lockCampaign = false,
+}: WizardProps) {
   const router = useRouter();
   const [campaignId, setCampaignId] = useState(defaultCampaignId);
   const campaign = campaigns.find((entry) => entry.id === campaignId);
   const context = useMemo(() => contextFor(campaign), [campaign]);
   const [draft, setDraft] = useState<Dnd5eDraft>(() =>
-    createDnd5eDraft({ level: campaign?.rules.startingLevel ?? 1, abilityMethod: contextFor(campaign).abilityScoreMethods[0] ?? 'standard_array' }),
+    createDnd5eDraft({
+      level: campaign?.rules.startingLevel ?? 1,
+      abilityMethod: contextFor(campaign).abilityScoreMethods[0] ?? 'standard_array',
+    }),
   );
   // Livros: na campanha, os do mestre; na ficha pessoal, só os importados que estão marcados no
   // seletor de livros (um livro desmarcado não traz nada para a criação).
   const packIds = useMemo(
-    () => (campaign ? campaign.packIds : personalPackIds.filter((id) => draft.sourcebooks.includes(books[id]?.book.id ?? ''))),
+    () =>
+      campaign
+        ? campaign.packIds
+        : personalPackIds.filter((id) => draft.sourcebooks.includes(books[id]?.book.id ?? '')),
     [campaign, personalPackIds, books, draft.sourcebooks],
   );
-  const bookSources = useMemo(() => packIds.map((id) => books[id]).filter((source): source is BookContentSource => Boolean(source)), [packIds, books]);
+  const bookSources = useMemo(
+    () =>
+      packIds
+        .map((id) => books[id])
+        .filter((source): source is BookContentSource => Boolean(source)),
+    [packIds, books],
+  );
   const bookContent = useMemo(() => buildDnd5eBookContent(bookSources), [bookSources]);
-  const bookNames = useMemo(() => Object.fromEntries(bookSources.map((source) => [source.book.id, source.book.name])), [bookSources]);
+  const bookNames = useMemo(
+    () => Object.fromEntries(bookSources.map((source) => [source.book.id, source.book.name])),
+    [bookSources],
+  );
   // As regras de criação consultam o SRD e os livros da campanha escolhida.
   setActiveDnd5eBookContent(bookContent);
   const [rolls, setRolls] = useState<RollState>(EMPTY_ROLLS);
@@ -147,7 +176,11 @@ export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, default
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const topRef = useRef<HTMLDivElement>(null);
-  const saved = useSyncExternalStore(subscribeStorage, () => readStorage(storageKey), () => null);
+  const saved = useSyncExternalStore(
+    subscribeStorage,
+    () => readStorage(storageKey),
+    () => null,
+  );
 
   useEffect(() => {
     if (!dirty) return;
@@ -165,7 +198,11 @@ export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, default
       }
       const storedCampaign = campaigns.find((entry) => entry.id === stored.campaignId);
       setCampaignId(storedCampaign ? stored.campaignId : '');
-      setDraft(storedCampaign ? { ...parsed.data, level: storedCampaign.rules.startingLevel } : parsed.data);
+      setDraft(
+        storedCampaign
+          ? { ...parsed.data, level: storedCampaign.rules.startingLevel }
+          : parsed.data,
+      );
       setRolls(stored.rolls ?? EMPTY_ROLLS);
       if ((DND5E_STEPS as readonly string[]).includes(stored.step)) setStep(stored.step);
       setDirty(true);
@@ -176,9 +213,15 @@ export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, default
 
   const specs = useMemo(() => listDnd5eChoices(draft), [draft, bookContent]); // eslint-disable-line react-hooks/exhaustive-deps
   const issues = useMemo(() => validateDnd5eDraft(draft, context), [draft, context, bookContent]); // eslint-disable-line react-hooks/exhaustive-deps
-  const issueMap = useMemo(() => new Map(issues.map((issue) => [issue.path, issue.message])), [issues]);
+  const issueMap = useMemo(
+    () => new Map(issues.map((issue) => [issue.path, issue.message])),
+    [issues],
+  );
   const steps = useMemo(
-    () => DND5E_STEPS.filter((entry) => entry !== 'spells' || specs.some((spec) => spec.step === 'spells')),
+    () =>
+      DND5E_STEPS.filter(
+        (entry) => entry !== 'spells' || specs.some((spec) => spec.step === 'spells'),
+      ),
     [specs],
   );
   const stepIssues = (target: Dnd5eStep) => issues.filter((issue) => issue.step === target);
@@ -252,7 +295,13 @@ export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, default
   const stepSpecs = specs.filter((spec) => spec.step === step);
   const renderSpecs = () =>
     stepSpecs.map((spec) => (
-      <ChoiceField key={spec.id} spec={spec} value={draft.selections[spec.id]} error={errorFor(spec.id)} onChange={(value) => setSelection(spec.id, value)} />
+      <ChoiceField
+        key={spec.id}
+        spec={spec}
+        value={draft.selections[spec.id]}
+        error={errorFor(spec.id)}
+        onChange={(value) => setSelection(spec.id, value)}
+      />
     ));
 
   return (
@@ -262,7 +311,12 @@ export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, default
           tone="info"
           action={
             <span className="flex flex-wrap gap-2">
-              <Button size="sm" variant="secondary" icon={<RotateCcw className="h-4 w-4" aria-hidden="true" />} onClick={continueSaved}>
+              <Button
+                size="sm"
+                variant="secondary"
+                icon={<RotateCcw className="h-4 w-4" aria-hidden="true" />}
+                onClick={continueSaved}
+              >
                 Continuar rascunho
               </Button>
               <Button size="sm" variant="ghost" onClick={discardSaved}>
@@ -289,11 +343,15 @@ export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, default
                   aria-current={current ? 'step' : undefined}
                   className={cx(
                     'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs whitespace-nowrap',
-                    current ? 'border-parchment-300/70 bg-parchment-200/10 text-fg' : 'border-line text-fg-secondary hover:bg-hover',
+                    current
+                      ? 'border-parchment-300/70 bg-parchment-200/10 text-fg'
+                      : 'border-line text-fg-secondary hover:bg-hover',
                   )}
                 >
                   {done ? <Check className="h-3.5 w-3.5 text-success" aria-hidden="true" /> : null}
-                  {warn ? <AlertTriangle className="h-3.5 w-3.5 text-warning" aria-hidden="true" /> : null}
+                  {warn ? (
+                    <AlertTriangle className="h-3.5 w-3.5 text-warning" aria-hidden="true" />
+                  ) : null}
                   <span className="tabular text-fg-subtle">{position + 1}</span>
                   {dnd5eStepLabels[entry]}
                 </button>
@@ -346,7 +404,10 @@ export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, default
                     ))}
                   </ul>
                   <div className="mt-3 border-t border-line pt-3">
-                    <SourcebookLinks ids={campaign.rules.sourcebooks} label="Livros escolhidos pelo mestre:" />
+                    <SourcebookLinks
+                      ids={campaign.rules.sourcebooks}
+                      label="Livros escolhidos pelo mestre:"
+                    />
                   </div>
                 </div>
               ) : (
@@ -369,13 +430,21 @@ export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, default
               {/* Ficha pessoal: o jogador escolhe os livros; numa campanha, valem os do mestre. */}
               {campaign ? null : (
                 <div className="rounded-md border border-line bg-card/60 p-4">
-                  <SourcebookPicker audience="character" selected={draft.sourcebooks} onChange={(sourcebooks) => update({ sourcebooks })} />
+                  <SourcebookPicker
+                    audience="character"
+                    selected={draft.sourcebooks}
+                    onChange={(sourcebooks) => update({ sourcebooks })}
+                  />
                 </div>
               )}
               <p className="text-sm text-fg-muted">
-                O passo a passo segue a criação de personagem do SRD 5.2: classe, origem (antecedente, espécie e idiomas), atributos,
-                alinhamento e detalhes. Aparecem as opções do SRD
-                {bookSources.length > 0 ? ` e dos livros ${campaign ? 'liberados pelo mestre' : 'que você importou'}: ${bookSources.map((source) => source.book.name).join(', ')}` : ''}.
+                O passo a passo segue a criação de personagem do SRD 5.2: classe, origem
+                (antecedente, espécie e idiomas), atributos, alinhamento e detalhes. Aparecem as
+                opções do SRD
+                {bookSources.length > 0
+                  ? ` e dos livros ${campaign ? 'liberados pelo mestre' : 'que você importou'}: ${bookSources.map((source) => source.book.name).join(', ')}`
+                  : ''}
+                .
               </p>
             </div>
           ) : null}
@@ -386,12 +455,24 @@ export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, default
                 value={draft.classId}
                 onSelect={(id) =>
                   edit((current) =>
-                    current.classId === id ? current : { ...current, classId: id, selections: without(current.selections, CLEAR_ON_CLASS) },
+                    current.classId === id
+                      ? current
+                      : {
+                          ...current,
+                          classId: id,
+                          selections: without(current.selections, CLEAR_ON_CLASS),
+                        },
                   )
                 }
               />
               {errorFor('classId') ? <Alert tone="danger">{errorFor('classId')}</Alert> : null}
-              {classDef ? <ClassDetails classDef={classDef} level={draft.level} subclass={draftSubclass(draft)} /> : null}
+              {classDef ? (
+                <ClassDetails
+                  classDef={classDef}
+                  level={draft.level}
+                  subclass={draftSubclass(draft)}
+                />
+              ) : null}
               {renderSpecs()}
             </div>
           ) : null}
@@ -402,11 +483,19 @@ export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, default
                 value={draft.backgroundId}
                 onSelect={(id) =>
                   edit((current) =>
-                    current.backgroundId === id ? current : { ...current, backgroundId: id, selections: without(current.selections, CLEAR_ON_BACKGROUND) },
+                    current.backgroundId === id
+                      ? current
+                      : {
+                          ...current,
+                          backgroundId: id,
+                          selections: without(current.selections, CLEAR_ON_BACKGROUND),
+                        },
                   )
                 }
               />
-              {errorFor('backgroundId') ? <Alert tone="danger">{errorFor('backgroundId')}</Alert> : null}
+              {errorFor('backgroundId') ? (
+                <Alert tone="danger">{errorFor('backgroundId')}</Alert>
+              ) : null}
               {renderSpecs()}
             </div>
           ) : null}
@@ -417,12 +506,20 @@ export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, default
                 value={draft.speciesId}
                 onSelect={(id) =>
                   edit((current) =>
-                    current.speciesId === id ? current : { ...current, speciesId: id, selections: without(current.selections, CLEAR_ON_SPECIES) },
+                    current.speciesId === id
+                      ? current
+                      : {
+                          ...current,
+                          speciesId: id,
+                          selections: without(current.selections, CLEAR_ON_SPECIES),
+                        },
                   )
                 }
               />
               {errorFor('speciesId') ? <Alert tone="danger">{errorFor('speciesId')}</Alert> : null}
-              {draft.speciesId ? <SpeciesDetails speciesId={draft.speciesId} level={draft.level} /> : null}
+              {draft.speciesId ? (
+                <SpeciesDetails speciesId={draft.speciesId} level={draft.level} />
+              ) : null}
               {renderSpecs()}
             </div>
           ) : null}
@@ -442,7 +539,9 @@ export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, default
                 classDef={classDef}
                 rolls={rolls}
                 error={errorFor('baseScores') ?? errorFor('abilityMethod')}
-                onMethod={(method: AbilityScoreMethod, scores) => update({ abilityMethod: method, baseScores: scores })}
+                onMethod={(method: AbilityScoreMethod, scores) =>
+                  update({ abilityMethod: method, baseScores: scores })
+                }
                 onScores={(scores) => update({ baseScores: scores })}
                 onRolls={(next) => {
                   setDirty(true);
@@ -464,7 +563,12 @@ export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, default
 
           {step === 'details' ? (
             <div className="flex flex-col gap-6">
-              <AlignmentPicker value={draft.alignment} allowEvil={context.allowEvilAlignments} error={errorFor('alignment')} onChange={(alignment) => update({ alignment })} />
+              <AlignmentPicker
+                value={draft.alignment}
+                allowEvil={context.allowEvilAlignments}
+                error={errorFor('alignment')}
+                onChange={(alignment) => update({ alignment })}
+              />
               <DetailsFields draft={draft} onChange={(details) => update({ details })} />
             </div>
           ) : null}
@@ -477,16 +581,28 @@ export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, default
           ) : null}
 
           {showErrors && step !== 'review' && stepIssues(step).length > 0 ? (
-            <Alert tone="warning">Há {stepIssues(step).length} pendência(s) neste passo. Confira as mensagens acima.</Alert>
+            <Alert tone="warning">
+              Há {stepIssues(step).length} pendência(s) neste passo. Confira as mensagens acima.
+            </Alert>
           ) : null}
           {submitError ? <Alert tone="danger">{submitError}</Alert> : null}
 
           <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:flex-row sm:justify-between">
-            <Button variant="ghost" icon={<ChevronLeft className="h-4 w-4" aria-hidden="true" />} onClick={back} disabled={index <= 0}>
+            <Button
+              variant="ghost"
+              icon={<ChevronLeft className="h-4 w-4" aria-hidden="true" />}
+              onClick={back}
+              disabled={index <= 0}
+            >
               Voltar
             </Button>
             {step === 'review' ? (
-              <Button icon={<Sparkles className="h-4 w-4" aria-hidden="true" />} onClick={submit} loading={pending} disabled={issues.length > 0}>
+              <Button
+                icon={<Sparkles className="h-4 w-4" aria-hidden="true" />}
+                onClick={submit}
+                loading={pending}
+                disabled={issues.length > 0}
+              >
                 Criar personagem
               </Button>
             ) : (
@@ -510,7 +626,8 @@ function IssueList({ issues, onGo }: { issues: DraftIssue[]; onGo: (step: Dnd5eS
   return (
     <div className="rounded-md border border-amber-400/40 bg-warning-bg p-4">
       <h3 className="mb-2 flex items-center gap-2 text-base">
-        <AlertTriangle className="h-4 w-4 text-warning" aria-hidden="true" /> Pendências ({issues.length})
+        <AlertTriangle className="h-4 w-4 text-warning" aria-hidden="true" /> Pendências (
+        {issues.length})
       </h3>
       <ul className="flex flex-col gap-1.5 text-sm">
         {issues.map((issue) => (
@@ -538,12 +655,16 @@ function SummaryPanel({ draft, campaignName }: { draft: Dnd5eDraft; campaignName
           {classDef ? `${classDef.name} ${draft.level}` : `Nível ${draft.level}`}
           {draftSubclass(draft) ? ` · ${draftSubclass(draft)?.name}` : ''}
         </p>
-        <p className="text-xs text-fg-muted">{campaignName ? `Campanha: ${campaignName}` : 'Ficha pessoal'}</p>
+        <p className="text-xs text-fg-muted">
+          {campaignName ? `Campanha: ${campaignName}` : 'Ficha pessoal'}
+        </p>
         {combat ? (
           <div className="flex flex-wrap gap-2">
             <Badge tone="parchment">PV {combat.hitPointMax}</Badge>
             <Badge tone="parchment">CA {combat.armorClass}</Badge>
-            <Badge tone="parchment">{String(Math.round(combat.speedFeet * 0.3 * 10) / 10).replace('.', ',')} m</Badge>
+            <Badge tone="parchment">
+              {String(Math.round(combat.speedFeet * 0.3 * 10) / 10).replace('.', ',')} m
+            </Badge>
           </div>
         ) : null}
         {scores ? (

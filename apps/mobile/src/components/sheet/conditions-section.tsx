@@ -55,7 +55,11 @@ function Rules({ condition }: { condition: Dnd5eActiveCondition }) {
         <AppText variant="small" style={{ color: colors.fgMuted }}>
           Regras da condição
         </AppText>
-        {open ? <ChevronUp size={14} color={colors.fgMuted} /> : <ChevronDown size={14} color={colors.fgMuted} />}
+        {open ? (
+          <ChevronUp size={14} color={colors.fgMuted} />
+        ) : (
+          <ChevronDown size={14} color={colors.fgMuted} />
+        )}
       </Pressable>
       {open ? (
         <View style={styles.rules}>
@@ -78,7 +82,16 @@ function Rules({ condition }: { condition: Dnd5eActiveCondition }) {
  * por outras e os efeitos que a ficha aplica sozinha.
  */
 export function ConditionsSection() {
-  const { conditions, conditionEffects, canEditPlay, fullConditionList, abilities, characterId, run, reloadPlayState } = useSheet();
+  const {
+    conditions,
+    conditionEffects,
+    canEditPlay,
+    fullConditionList,
+    abilities,
+    characterId,
+    run,
+    reloadPlayState,
+  } = useSheet();
   const toast = useToast();
   const [picking, setPicking] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
@@ -91,7 +104,9 @@ export function ConditionsSection() {
   const byKey = new Map(conditions.map((condition) => [condition.key, condition]));
   const timed = conditions.some((condition) => condition.roundsRemaining !== null);
   const effectLines = describeDnd5eConditionEffects(conditionEffects);
-  const implied = conditionEffects.conditions.filter((condition) => condition.impliedBy && !byKey.has(condition.key));
+  const implied = conditionEffects.conditions.filter(
+    (condition) => condition.impliedBy && !byKey.has(condition.key),
+  );
   const definition = chosen ? findDnd5eCondition(chosen) : undefined;
   const key = chosen === CUSTOM_CONDITION ? customName.trim() : (chosen ?? '');
   const rounds = duration === 'custom' ? parseRounds(customRounds) : duration;
@@ -99,16 +114,25 @@ export function ConditionsSection() {
 
   // O jogador vê só as condições que o personagem pode se aplicar; o mestre vê todas.
   const available = fullConditionList
-    ? dnd5eConditions.map((condition) => ({ key: condition.key, label: condition.label, sources: [] as string[] }))
+    ? dnd5eConditions.map((condition) => ({
+        key: condition.key,
+        label: condition.label,
+        sources: [] as string[],
+      }))
     : dnd5eSelfConditionOptions(abilities.map((ability) => ability.name));
   const options: PickerOption[] = [
     ...available.map((condition) => ({
       value: condition.key,
       label: byKey.has(condition.key) ? `${condition.label} (já aplicada)` : condition.label,
       description:
-        (findDnd5eCondition(condition.key)?.summary ?? '') + (condition.sources.length > 0 ? ` Origem: ${condition.sources.join(', ')}.` : ''),
+        (findDnd5eCondition(condition.key)?.summary ?? '') +
+        (condition.sources.length > 0 ? ` Origem: ${condition.sources.join(', ')}.` : ''),
     })),
-    { value: CUSTOM_CONDITION, label: 'Outra (personalizada)', description: 'Sem efeitos automáticos.' },
+    {
+      value: CUSTOM_CONDITION,
+      label: 'Outra (personalizada)',
+      description: 'Sem efeitos automáticos.',
+    },
   ];
 
   const resetForm = () => {
@@ -129,7 +153,17 @@ export function ConditionsSection() {
   const apply = async () => {
     if (!key || roundsInvalid) return;
     setBusy(true);
-    const ok = await run(() => applyCharacterCondition(getSupabase(), characterId, key, definition?.maxLevel ? level : null, rounds), 'A condição não foi aplicada');
+    const ok = await run(
+      () =>
+        applyCharacterCondition(
+          getSupabase(),
+          characterId,
+          key,
+          definition?.maxLevel ? level : null,
+          rounds,
+        ),
+      'A condição não foi aplicada',
+    );
     setBusy(false);
     if (ok === undefined) return;
     resetForm();
@@ -139,17 +173,23 @@ export function ConditionsSection() {
   const remove = async (condition: CharacterCondition) => {
     const left = await run(async () => {
       await removeCharacterCondition(getSupabase(), condition.id);
-      const remaining = conditions.filter((entry) => entry.id !== condition.id).map((entry) => entry.key);
+      const remaining = conditions
+        .filter((entry) => entry.id !== condition.id)
+        .map((entry) => entry.key);
       return applyLeftovers([condition.key], remaining);
     }, 'A condição não foi removida');
     if (left === undefined) return;
     await reloadPlayState();
-    if (left.length > 0) toast({ tone: 'info', title: `Continua ${left.map(labelOf).join(' e ')}.` });
+    if (left.length > 0)
+      toast({ tone: 'info', title: `Continua ${left.map(labelOf).join(' e ')}.` });
   };
 
   const changeLevel = async (condition: CharacterCondition, next: number) => {
     const ok = await run(
-      () => (next <= 0 ? removeCharacterCondition(getSupabase(), condition.id) : setCharacterConditionLevel(getSupabase(), condition.id, next)),
+      () =>
+        next <= 0
+          ? removeCharacterCondition(getSupabase(), condition.id)
+          : setCharacterConditionLevel(getSupabase(), condition.id, next),
       'O nível não foi alterado',
     );
     if (ok !== undefined) await reloadPlayState();
@@ -159,7 +199,9 @@ export function ConditionsSection() {
     setBusy(true);
     const result = await run(async () => {
       const ended = await tickCharacterConditions(getSupabase(), characterId);
-      const remaining = conditions.filter((condition) => !ended.includes(condition.key)).map((condition) => condition.key);
+      const remaining = conditions
+        .filter((condition) => !ended.includes(condition.key))
+        .map((condition) => condition.key);
       const left = await applyLeftovers(ended, remaining);
       return { ended, left };
     }, 'A rodada não foi registrada');
@@ -168,8 +210,13 @@ export function ConditionsSection() {
     await reloadPlayState();
     toast({
       tone: 'info',
-      title: result.ended.length > 0 ? `Terminou: ${result.ended.map(labelOf).join(', ')}.` : 'Rodada registrada.',
-      ...(result.left.length > 0 ? { description: `Continua ${result.left.map(labelOf).join(' e ')}.` } : {}),
+      title:
+        result.ended.length > 0
+          ? `Terminou: ${result.ended.map(labelOf).join(', ')}.`
+          : 'Rodada registrada.',
+      ...(result.left.length > 0
+        ? { description: `Continua ${result.left.map(labelOf).join(' e ')}.` }
+        : {}),
     });
   };
 
@@ -180,11 +227,19 @@ export function ConditionsSection() {
           Condições
         </AppText>
         {canEditPlay && timed ? (
-          <Button label="Passar rodada" compact variant="secondary" loading={busy} icon={<Hourglass size={14} color={colors.fg} />} onPress={() => void passRound()} />
+          <Button
+            label="Passar rodada"
+            compact
+            variant="secondary"
+            loading={busy}
+            icon={<Hourglass size={14} color={colors.fg} />}
+            onPress={() => void passRound()}
+          />
         ) : null}
       </View>
       <AppText variant="small" style={{ color: colors.fgMuted }}>
-        Regras do SRD 5.2.1. A duração diminui no fim de cada turno do personagem; no combate, acompanha os turnos do mestre.
+        Regras do SRD 5.2.1. A duração diminui no fim de cada turno do personagem; no combate,
+        acompanha os turnos do mestre.
       </AppText>
 
       {conditions.length === 0 ? <AppText variant="muted">Nenhuma condição ativa.</AppText> : null}
@@ -196,11 +251,15 @@ export function ConditionsSection() {
           <View key={condition.id} style={styles.condition}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing[2] }}>
               <View style={{ flex: 1, gap: 4 }}>
-                <AppText style={{ color: '#E6BE74', fontFamily: fonts.sansSemiBold }}>{label}</AppText>
+                <AppText style={{ color: '#E6BE74', fontFamily: fonts.sansSemiBold }}>
+                  {label}
+                </AppText>
                 <View style={styles.duration}>
                   <Hourglass size={12} color={colors.fgSecondary} />
                   <AppText variant="small">
-                    {condition.roundsRemaining === null ? 'até ser removida' : `${formatDnd5eConditionRounds(condition.roundsRemaining)} restantes`}
+                    {condition.roundsRemaining === null
+                      ? 'até ser removida'
+                      : `${formatDnd5eConditionRounds(condition.roundsRemaining)} restantes`}
                   </AppText>
                 </View>
                 {view?.suppressedBy ? (
@@ -208,7 +267,9 @@ export function ConditionsSection() {
                     Sem efeito: imunidade ({view.suppressedBy}).
                   </AppText>
                 ) : (
-                  <AppText variant="small">{info?.summary ?? 'Condição personalizada, sem efeitos automáticos.'}</AppText>
+                  <AppText variant="small">
+                    {info?.summary ?? 'Condição personalizada, sem efeitos automáticos.'}
+                  </AppText>
                 )}
                 {info?.includes?.length ? (
                   <AppText variant="small" style={{ color: colors.fgMuted }}>
@@ -218,7 +279,11 @@ export function ConditionsSection() {
                 {view ? <Rules condition={view} /> : null}
               </View>
               {canEditPlay ? (
-                <IconButton icon={<X size={16} color={colors.fgSecondary} />} accessibilityLabel={`Remover ${label}`} onPress={() => void remove(condition)} />
+                <IconButton
+                  icon={<X size={16} color={colors.fgSecondary} />}
+                  accessibilityLabel={`Remover ${label}`}
+                  onPress={() => void remove(condition)}
+                />
               ) : null}
             </View>
             {canEditPlay && info?.maxLevel ? (
@@ -226,7 +291,11 @@ export function ConditionsSection() {
                 <AppText variant="small" style={{ flex: 1 }}>
                   Nível {condition.level ?? 1} de {info.maxLevel}
                 </AppText>
-                <IconButton icon={<Minus size={16} color={colors.fg} />} accessibilityLabel={`Diminuir ${info.label}`} onPress={() => void changeLevel(condition, (condition.level ?? 1) - 1)} />
+                <IconButton
+                  icon={<Minus size={16} color={colors.fg} />}
+                  accessibilityLabel={`Diminuir ${info.label}`}
+                  onPress={() => void changeLevel(condition, (condition.level ?? 1) - 1)}
+                />
                 <IconButton
                   icon={<Plus size={16} color={colors.fg} />}
                   accessibilityLabel={`Aumentar ${info.label}`}
@@ -246,7 +315,9 @@ export function ConditionsSection() {
               · imposta por {condition.impliedBy}
             </AppText>
           </AppText>
-          {condition.definition ? <AppText variant="small">{condition.definition.summary}</AppText> : null}
+          {condition.definition ? (
+            <AppText variant="small">{condition.definition.summary}</AppText>
+          ) : null}
           <Rules condition={condition} />
         </View>
       ))}
@@ -256,7 +327,13 @@ export function ConditionsSection() {
           <AppText variant="eyebrow">Efeitos em vigor</AppText>
           {effectLines.map((line) => (
             <AppText key={`${line.label}-${line.detail}`} variant="small">
-              <AppText variant="small" style={{ fontFamily: fonts.sansSemiBold, color: line.severe ? '#EC9384' : colors.fg }}>
+              <AppText
+                variant="small"
+                style={{
+                  fontFamily: fonts.sansSemiBold,
+                  color: line.severe ? '#EC9384' : colors.fg,
+                }}
+              >
                 {line.label}:{' '}
               </AppText>
               {line.detail}
@@ -270,10 +347,20 @@ export function ConditionsSection() {
 
       {canEditPlay ? (
         chosen === null ? (
-          <Button label="Aplicar condição" compact variant="secondary" icon={<Plus size={14} color={colors.fg} />} onPress={() => setPicking(true)} />
+          <Button
+            label="Aplicar condição"
+            compact
+            variant="secondary"
+            icon={<Plus size={14} color={colors.fg} />}
+            onPress={() => setPicking(true)}
+          />
         ) : (
           <View style={styles.form}>
-            <AppText style={{ fontFamily: fonts.sansSemiBold }}>{chosen === CUSTOM_CONDITION ? 'Condição personalizada' : (definition?.label ?? chosen)}</AppText>
+            <AppText style={{ fontFamily: fonts.sansSemiBold }}>
+              {chosen === CUSTOM_CONDITION
+                ? 'Condição personalizada'
+                : (definition?.label ?? chosen)}
+            </AppText>
             {definition ? <AppText variant="small">{definition.summary}</AppText> : null}
             {chosen === CUSTOM_CONDITION ? (
               <TextInput
@@ -289,22 +376,38 @@ export function ConditionsSection() {
             {definition?.maxLevel ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
                 <AppText style={{ flex: 1 }}>Nível</AppText>
-                <IconButton icon={<Minus size={16} color={colors.fg} />} accessibilityLabel="Diminuir nível" disabled={level <= 1} onPress={() => setLevel((current) => Math.max(1, current - 1))} />
+                <IconButton
+                  icon={<Minus size={16} color={colors.fg} />}
+                  accessibilityLabel="Diminuir nível"
+                  disabled={level <= 1}
+                  onPress={() => setLevel((current) => Math.max(1, current - 1))}
+                />
                 <AppText variant="number">{level}</AppText>
                 <IconButton
                   icon={<Plus size={16} color={colors.fg} />}
                   accessibilityLabel="Aumentar nível"
                   disabled={level >= definition.maxLevel}
-                  onPress={() => setLevel((current) => Math.min(definition.maxLevel ?? 1, current + 1))}
+                  onPress={() =>
+                    setLevel((current) => Math.min(definition.maxLevel ?? 1, current + 1))
+                  }
                 />
               </View>
             ) : null}
             <AppText style={{ fontFamily: fonts.sansMedium, fontSize: 14 }}>Duração</AppText>
             <View style={styles.chips}>
               {dnd5eConditionDurations.map((preset) => (
-                <Chip key={preset.label} label={preset.label} selected={duration === preset.rounds} onPress={() => setDuration(preset.rounds)} />
+                <Chip
+                  key={preset.label}
+                  label={preset.label}
+                  selected={duration === preset.rounds}
+                  onPress={() => setDuration(preset.rounds)}
+                />
               ))}
-              <Chip label="Outra (em rodadas)" selected={duration === 'custom'} onPress={() => setDuration('custom')} />
+              <Chip
+                label="Outra (em rodadas)"
+                selected={duration === 'custom'}
+                onPress={() => setDuration('custom')}
+              />
             </View>
             {duration === 'custom' ? (
               <TextInput
@@ -314,12 +417,29 @@ export function ConditionsSection() {
                 placeholder="Rodadas"
                 placeholderTextColor={colors.fgSubtle}
                 accessibilityLabel="Quantidade de rodadas"
-                style={[styles.input, { width: 120 }, roundsInvalid && customRounds !== '' && { borderColor: '#E26D5A' }]}
+                style={[
+                  styles.input,
+                  { width: 120 },
+                  roundsInvalid && customRounds !== '' && { borderColor: '#E26D5A' },
+                ]}
               />
             ) : null}
             <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-              <Button label="Cancelar" compact variant="ghost" onPress={resetForm} style={{ flex: 1 }} />
-              <Button label="Aplicar" compact loading={busy} disabled={!key || roundsInvalid} onPress={() => void apply()} style={{ flex: 1 }} />
+              <Button
+                label="Cancelar"
+                compact
+                variant="ghost"
+                onPress={resetForm}
+                style={{ flex: 1 }}
+              />
+              <Button
+                label="Aplicar"
+                compact
+                loading={busy}
+                disabled={!key || roundsInvalid}
+                onPress={() => void apply()}
+                style={{ flex: 1 }}
+              />
             </View>
           </View>
         )
@@ -328,7 +448,11 @@ export function ConditionsSection() {
       <PickerSheet
         visible={picking}
         title="Aplicar condição"
-        hint={fullConditionList ? undefined : 'Condições que o personagem pode se aplicar (ações comuns, habilidades e magias da ficha). As demais são aplicadas pelo mestre.'}
+        hint={
+          fullConditionList
+            ? undefined
+            : 'Condições que o personagem pode se aplicar (ações comuns, habilidades e magias da ficha). As demais são aplicadas pelo mestre.'
+        }
         options={options}
         onClose={() => setPicking(false)}
         onSelect={(value) => {
@@ -343,28 +467,102 @@ export function ConditionsSection() {
   );
 }
 
-function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+function Chip({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="radio"
       accessibilityState={{ selected }}
-      style={({ pressed }) => [styles.chip, selected && styles.chipSelected, pressed && { backgroundColor: colors.hover }]}
+      style={({ pressed }) => [
+        styles.chip,
+        selected && styles.chipSelected,
+        pressed && { backgroundColor: colors.hover },
+      ]}
     >
-      <AppText style={{ fontSize: 13, color: selected ? colors.fgAccent : colors.fgSecondary }}>{label}</AppText>
+      <AppText style={{ fontSize: 13, color: selected ? colors.fgAccent : colors.fgSecondary }}>
+        {label}
+      </AppText>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  condition: { gap: spacing[2], padding: 10, borderRadius: radii.md, borderWidth: 1, borderColor: 'rgba(217, 165, 74, 0.3)', backgroundColor: colors.warningBg },
-  implied: { gap: 4, padding: 10, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line },
-  duration: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: radii.full, borderWidth: 1, borderColor: 'rgba(217, 165, 74, 0.3)' },
-  rules: { gap: 4, paddingLeft: 10, borderLeftWidth: 1, borderLeftColor: 'rgba(217, 165, 74, 0.3)' },
-  effects: { gap: 6, padding: spacing[3], borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.sunken },
-  form: { gap: spacing[2], padding: spacing[3], borderRadius: radii.md, borderWidth: 1, borderColor: colors.lineStrong },
-  input: { height: 44, paddingHorizontal: spacing[3], color: colors.fg, fontFamily: fonts.sans, fontSize: 16, borderWidth: 1, borderColor: colors.lineStrong, borderRadius: radii.md, backgroundColor: colors.sunken },
+  condition: {
+    gap: spacing[2],
+    padding: 10,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: 'rgba(217, 165, 74, 0.3)',
+    backgroundColor: colors.warningBg,
+  },
+  implied: {
+    gap: 4,
+    padding: 10,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  duration: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: 'rgba(217, 165, 74, 0.3)',
+  },
+  rules: {
+    gap: 4,
+    paddingLeft: 10,
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(217, 165, 74, 0.3)',
+  },
+  effects: {
+    gap: 6,
+    padding: spacing[3],
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.sunken,
+  },
+  form: {
+    gap: spacing[2],
+    padding: spacing[3],
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.lineStrong,
+  },
+  input: {
+    height: 44,
+    paddingHorizontal: spacing[3],
+    color: colors.fg,
+    fontFamily: fonts.sans,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: colors.lineStrong,
+    borderRadius: radii.md,
+    backgroundColor: colors.sunken,
+  },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.full, borderWidth: 1, borderColor: colors.lineStrong },
-  chipSelected: { borderColor: 'rgba(206, 191, 157, 0.7)', backgroundColor: 'rgba(228, 216, 189, 0.08)' },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.lineStrong,
+  },
+  chipSelected: {
+    borderColor: 'rgba(206, 191, 157, 0.7)',
+    backgroundColor: 'rgba(228, 216, 189, 0.08)',
+  },
 });

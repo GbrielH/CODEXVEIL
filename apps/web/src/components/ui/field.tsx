@@ -16,7 +16,15 @@ interface FieldShellProps {
 }
 
 /** Rótulo, dica e mensagem de erro ligados ao controle por `aria-describedby`. */
-export function FieldShell({ id, label, hint, error, required, children, className }: FieldShellProps) {
+export function FieldShell({
+  id,
+  label,
+  hint,
+  error,
+  required,
+  children,
+  className,
+}: FieldShellProps) {
   return (
     <div className={cx('flex flex-col gap-1.5', className)}>
       <label htmlFor={id} className="text-sm font-medium text-fg">
@@ -56,9 +64,25 @@ interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'id
   fieldClassName?: string;
 }
 
-export function TextField({ id, label, hint, error, required, fieldClassName, className, ...props }: TextFieldProps) {
+export function TextField({
+  id,
+  label,
+  hint,
+  error,
+  required,
+  fieldClassName,
+  className,
+  ...props
+}: TextFieldProps) {
   return (
-    <FieldShell id={id} label={label} hint={hint} error={error} required={required} className={fieldClassName}>
+    <FieldShell
+      id={id}
+      label={label}
+      hint={hint}
+      error={error}
+      required={required}
+      className={fieldClassName}
+    >
       <input
         id={id}
         required={required}
@@ -91,7 +115,14 @@ export function TextareaField({
   ...props
 }: TextareaFieldProps) {
   return (
-    <FieldShell id={id} label={label} hint={hint} error={error} required={required} className={fieldClassName}>
+    <FieldShell
+      id={id}
+      label={label}
+      hint={hint}
+      error={error}
+      required={required}
+      className={fieldClassName}
+    >
       <textarea
         id={id}
         rows={rows}
@@ -114,9 +145,25 @@ interface SelectFieldProps extends Omit<SelectProps, 'id' | 'invalid'> {
 }
 
 /** Seletor com rótulo: lista com a identidade visual do sistema e busca por digitação. */
-export function SelectField({ id, label, hint, error, required, fieldClassName, children, ...props }: SelectFieldProps) {
+export function SelectField({
+  id,
+  label,
+  hint,
+  error,
+  required,
+  fieldClassName,
+  children,
+  ...props
+}: SelectFieldProps) {
   return (
-    <FieldShell id={id} label={label} hint={hint} error={error} required={required} className={fieldClassName}>
+    <FieldShell
+      id={id}
+      label={label}
+      hint={hint}
+      error={error}
+      required={required}
+      className={fieldClassName}
+    >
       <Select
         id={id}
         required={required}

@@ -10,8 +10,15 @@ import {
   type CharacterResource,
   type ResourceDisplay,
 } from '@codexveil/database';
-import { RESOURCE_RECOVERIES, resourceRecoveryLabels, type ResourceRecovery } from '@codexveil/domain';
-import { dnd5eLongRestConditionChanges, isDedicatedResourceKey } from '@codexveil/rpg-systems/dnd5e';
+import {
+  RESOURCE_RECOVERIES,
+  resourceRecoveryLabels,
+  type ResourceRecovery,
+} from '@codexveil/domain';
+import {
+  dnd5eLongRestConditionChanges,
+  isDedicatedResourceKey,
+} from '@codexveil/rpg-systems/dnd5e';
 import { fieldErrorsFrom, resourceSchema, type FieldErrors } from '@codexveil/validation';
 import { BedDouble, Coffee, Minus, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useId, useState } from 'react';
@@ -51,7 +58,12 @@ export function ResourceTracks() {
         description="Dados de vida, espaços de magia e usos de habilidades."
         action={
           permissions.canEditPlay ? (
-            <Button size="sm" variant="secondary" onClick={() => setEditing('new')} icon={<Plus className="h-4 w-4" aria-hidden="true" />}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setEditing('new')}
+              icon={<Plus className="h-4 w-4" aria-hidden="true" />}
+            >
               Novo
             </Button>
           ) : undefined
@@ -90,7 +102,12 @@ function ResourceRow({ resource, onEdit }: { resource: CharacterResource; onEdit
           <CheckboxTrack resource={resource} />
         </div>
         {permissions.canEditPlay ? (
-          <Button size="icon" variant="ghost" onClick={onEdit} aria-label={`Editar ${resource.label}`}>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={onEdit}
+            aria-label={`Editar ${resource.label}`}
+          >
             <Pencil className="h-4 w-4" aria-hidden="true" />
           </Button>
         ) : null}
@@ -104,13 +121,27 @@ function ResourceRow({ resource, onEdit }: { resource: CharacterResource; onEdit
         <p className="truncate text-sm text-fg">{resource.label}</p>
         <p className="text-xs text-fg-muted">{resourceRecoveryLabels[resource.recovery]}</p>
       </div>
-      <span className={cx('tabular min-w-14 text-right font-display text-lg text-fg-accent', pending && 'opacity-70')} aria-live="polite">
+      <span
+        className={cx(
+          'tabular min-w-14 text-right font-display text-lg text-fg-accent',
+          pending && 'opacity-70',
+        )}
+        aria-live="polite"
+      >
         {resource.current}
-        <span className="text-sm text-fg-muted">{resource.max === null ? '' : ` / ${resource.max}`}</span>
+        <span className="text-sm text-fg-muted">
+          {resource.max === null ? '' : ` / ${resource.max}`}
+        </span>
       </span>
       {permissions.canEditPlay ? (
         <div className="flex">
-          <Button size="icon" variant="ghost" onClick={() => adjustResource(resource, 'spend', 1)} disabled={resource.current <= 0} aria-label={`Gastar 1 de ${resource.label}`}>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => adjustResource(resource, 'spend', 1)}
+            disabled={resource.current <= 0}
+            aria-label={`Gastar 1 de ${resource.label}`}
+          >
             <Minus className="h-4 w-4" aria-hidden="true" />
           </Button>
           <Button
@@ -122,7 +153,12 @@ function ResourceRow({ resource, onEdit }: { resource: CharacterResource; onEdit
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
           </Button>
-          <Button size="icon" variant="ghost" onClick={onEdit} aria-label={`Editar ${resource.label}`}>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={onEdit}
+            aria-label={`Editar ${resource.label}`}
+          >
             <Pencil className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
@@ -141,8 +177,10 @@ function RestControls() {
         // SRD 5.2.1: terminar um Descanso Longo remove 1 nível de Exaustão.
         if (kind === 'long_rest') {
           const changes = dnd5eLongRestConditionChanges(conditions);
-          for (const entry of changes.update) await setCharacterConditionLevel(client, entry.id, entry.level);
-          for (const conditionId of changes.remove) await removeCharacterCondition(client, conditionId);
+          for (const entry of changes.update)
+            await setCharacterConditionLevel(client, entry.id, entry.level);
+          for (const conditionId of changes.remove)
+            await removeCharacterCondition(client, conditionId);
         }
         return count;
       },
@@ -155,7 +193,12 @@ function RestControls() {
     <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
       <ConfirmDialog
         trigger={(open) => (
-          <Button size="sm" variant="secondary" onClick={open} icon={<Coffee className="h-4 w-4" aria-hidden="true" />}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={open}
+            icon={<Coffee className="h-4 w-4" aria-hidden="true" />}
+          >
             Descanso curto
           </Button>
         )}
@@ -167,7 +210,12 @@ function RestControls() {
       />
       <ConfirmDialog
         trigger={(open) => (
-          <Button size="sm" variant="secondary" onClick={open} icon={<BedDouble className="h-4 w-4" aria-hidden="true" />}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={open}
+            icon={<BedDouble className="h-4 w-4" aria-hidden="true" />}
+          >
             Descanso longo
           </Button>
         )}
@@ -189,11 +237,23 @@ interface ResourceForm {
   display: ResourceDisplay;
 }
 
-function ResourceFormModal({ resource, onClose }: { resource: CharacterResource | 'new' | null; onClose: () => void }) {
+function ResourceFormModal({
+  resource,
+  onClose,
+}: {
+  resource: CharacterResource | 'new' | null;
+  onClose: () => void;
+}) {
   const { character, setResources, run } = useSheet();
   const id = useId();
   const isNew = resource === 'new';
-  const [form, setForm] = useState<ResourceForm>({ label: '', current: 0, max: 1, recovery: 'long_rest', display: 'pool' });
+  const [form, setForm] = useState<ResourceForm>({
+    label: '',
+    current: 0,
+    max: 1,
+    recovery: 'long_rest',
+    display: 'pool',
+  });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
   const [openedFor, setOpenedFor] = useState<CharacterResource | 'new' | null>(null);
@@ -204,7 +264,13 @@ function ResourceFormModal({ resource, onClose }: { resource: CharacterResource 
     setErrors({});
     setForm(
       resource && resource !== 'new'
-        ? { label: resource.label, current: resource.current, max: resource.max, recovery: resource.recovery, display: resource.display }
+        ? {
+            label: resource.label,
+            current: resource.current,
+            max: resource.max,
+            recovery: resource.recovery,
+            display: resource.display,
+          }
         : { label: '', current: 1, max: 1, recovery: 'long_rest', display: 'pool' },
     );
   }
@@ -223,7 +289,10 @@ function ResourceFormModal({ resource, onClose }: { resource: CharacterResource 
         isNew || !resource
           ? createCharacterResource(client, character.id, fields)
           : updateCharacterResource(client, resource.id, fields),
-      { success: isNew ? 'Recurso criado.' : 'Recurso atualizado.', failure: 'Não foi possível salvar o recurso' },
+      {
+        success: isNew ? 'Recurso criado.' : 'Recurso atualizado.',
+        failure: 'Não foi possível salvar o recurso',
+      },
     );
     setBusy(false);
     if (!saved) return;
@@ -245,7 +314,12 @@ function ResourceFormModal({ resource, onClose }: { resource: CharacterResource 
   };
 
   return (
-    <Modal open={resource !== null} onClose={onClose} title={isNew ? 'Novo recurso' : 'Editar recurso'} busy={busy}>
+    <Modal
+      open={resource !== null}
+      onClose={onClose}
+      title={isNew ? 'Novo recurso' : 'Editar recurso'}
+      busy={busy}
+    >
       <form
         noValidate
         className="flex flex-col gap-4"
@@ -269,14 +343,28 @@ function ResourceFormModal({ resource, onClose }: { resource: CharacterResource 
             <label htmlFor={`${id}-current`} className="text-sm font-medium">
               Atual
             </label>
-            <NumberInput id={`${id}-current`} value={form.current} min={0} max={99_999} onCommit={(value) => setForm((current) => ({ ...current, current: value }))} invalid={Boolean(errors.current)} />
+            <NumberInput
+              id={`${id}-current`}
+              value={form.current}
+              min={0}
+              max={99_999}
+              onCommit={(value) => setForm((current) => ({ ...current, current: value }))}
+              invalid={Boolean(errors.current)}
+            />
             {errors.current ? <p className="text-xs text-danger">{errors.current}</p> : null}
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor={`${id}-max`} className="text-sm font-medium">
               Máximo
             </label>
-            <NumberInput id={`${id}-max`} value={form.max} min={0} max={99_999} allowEmpty onCommit={(value) => setForm((current) => ({ ...current, max: value }))} />
+            <NumberInput
+              id={`${id}-max`}
+              value={form.max}
+              min={0}
+              max={99_999}
+              allowEmpty
+              onCommit={(value) => setForm((current) => ({ ...current, max: value }))}
+            />
             <p className="text-xs text-fg-muted">Vazio = sem limite.</p>
           </div>
         </div>
@@ -285,7 +373,12 @@ function ResourceFormModal({ resource, onClose }: { resource: CharacterResource 
             id={`${id}-recovery`}
             label="Recupera em"
             value={form.recovery}
-            onChange={(event) => setForm((current) => ({ ...current, recovery: event.target.value as ResourceRecovery }))}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                recovery: event.target.value as ResourceRecovery,
+              }))
+            }
           >
             {RESOURCE_RECOVERIES.map((recovery) => (
               <option key={recovery} value={recovery}>
@@ -297,7 +390,9 @@ function ResourceFormModal({ resource, onClose }: { resource: CharacterResource 
             id={`${id}-display`}
             label="Exibição"
             value={form.display}
-            onChange={(event) => setForm((current) => ({ ...current, display: event.target.value as ResourceDisplay }))}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, display: event.target.value as ResourceDisplay }))
+            }
           >
             <option value="pool">Contador</option>
             <option value="checkboxes">Caixas de marcação</option>
@@ -307,7 +402,12 @@ function ResourceFormModal({ resource, onClose }: { resource: CharacterResource 
           {!isNew && resource ? (
             <ConfirmDialog
               trigger={(open) => (
-                <Button variant="danger" size="sm" onClick={open} icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={open}
+                  icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
+                >
                   Excluir
                 </Button>
               )}

@@ -33,7 +33,12 @@ import { DiceProvider } from '@/components/dice/dice-roller';
 import { useAutosave } from '@/lib/use-autosave';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
-import { SheetContext, type SheetCharacter, type SheetContextValue, type SheetPermissions } from './context';
+import {
+  SheetContext,
+  type SheetCharacter,
+  type SheetContextValue,
+  type SheetPermissions,
+} from './context';
 import { AttributesTab } from './attributes-tab';
 import { FeaturesTab } from './features-tab';
 import { InventoryTab } from './inventory-tab';
@@ -94,10 +99,15 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
     initial: { name: character.name, sheet: props.sheet },
     version: character.version,
     save: async (draft, expectedVersion) => {
-      const result = await saveCharacterSheet(getSupabaseBrowserClient(), character.id, expectedVersion, {
-        name: draft.name.trim(),
-        sheet: draft.sheet,
-      });
+      const result = await saveCharacterSheet(
+        getSupabaseBrowserClient(),
+        character.id,
+        expectedVersion,
+        {
+          name: draft.name.trim(),
+          sheet: draft.sheet,
+        },
+      );
       return result.version;
     },
     validate: validateDraft,
@@ -115,7 +125,11 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
         // Ações sem retorno (excluir, equipar…) também precisam sinalizar sucesso: `undefined` é falha.
         return result === undefined ? (true as T) : result;
       } catch (error) {
-        toast({ tone: 'danger', title: messages.failure, description: failureMessage(error, 'Tente novamente.') });
+        toast({
+          tone: 'danger',
+          title: messages.failure,
+          description: failureMessage(error, 'Tente novamente.'),
+        });
         return undefined;
       }
     },
@@ -152,10 +166,16 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
       try {
         optimistic = { ...resource, ...applyTrackOperation(resource, operation, amount) };
       } catch {
-        toast({ tone: 'warning', title: 'Valor inválido', description: 'Use um número inteiro maior ou igual a zero.' });
+        toast({
+          tone: 'warning',
+          title: 'Valor inválido',
+          description: 'Use um número inteiro maior ou igual a zero.',
+        });
         return;
       }
-      setResources((current) => current.map((item) => (item.id === resource.id ? optimistic : item)));
+      setResources((current) =>
+        current.map((item) => (item.id === resource.id ? optimistic : item)),
+      );
       const count = (inFlight.current.get(resource.id) ?? 0) + 1;
       inFlight.current.set(resource.id, count);
       setPendingResourceIds(new Set(inFlight.current.keys()));
@@ -219,7 +239,11 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
         toast({ tone: 'info', title: 'Ficha recarregada com a versão mais recente.' });
       }
     } catch (error) {
-      toast({ tone: 'danger', title: 'Não foi possível resolver o conflito', description: failureMessage(error, 'Tente novamente.') });
+      toast({
+        tone: 'danger',
+        title: 'Não foi possível resolver o conflito',
+        description: failureMessage(error, 'Tente novamente.'),
+      });
     }
   };
 
@@ -299,7 +323,9 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
               {saveState.message} Suas alterações continuam nesta tela.
             </Alert>
           ) : null}
-          {saveState.status === 'invalid' ? <Alert tone="warning">{saveState.message}</Alert> : null}
+          {saveState.status === 'invalid' ? (
+            <Alert tone="warning">{saveState.message}</Alert>
+          ) : null}
           {readOnlyReason ? <Alert tone="info">{readOnlyReason}</Alert> : null}
 
           <Tabs
@@ -336,15 +362,44 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
                     <AttributesTab />
                   ),
               },
-              { value: 'inventario', label: 'Inventário', icon: <Backpack className="h-4 w-4" aria-hidden="true" />, content: <InventoryTab /> },
-              ...(props.variant === 'campaign' ? [] : [
-              { value: 'habilidades', label: 'Habilidades e magias', icon: <Sparkles className="h-4 w-4" aria-hidden="true" />, content: <FeaturesTab /> },
-              { value: 'historia', label: 'Personagem', icon: <Feather className="h-4 w-4" aria-hidden="true" />, content: <StoryTab /> },
-              { value: 'evolucao', label: 'Evolução', icon: <Hourglass className="h-4 w-4" aria-hidden="true" />, content: <ProgressTab /> },
-              ...(permissions.isOwner || permissions.canEditSheet
-                ? [{ value: 'ajustes', label: 'Ajustes', icon: <Settings className="h-4 w-4" aria-hidden="true" />, content: <SettingsTab campaigns={props.campaigns} /> }]
-                : []),
-              ]),
+              {
+                value: 'inventario',
+                label: 'Inventário',
+                icon: <Backpack className="h-4 w-4" aria-hidden="true" />,
+                content: <InventoryTab />,
+              },
+              ...(props.variant === 'campaign'
+                ? []
+                : [
+                    {
+                      value: 'habilidades',
+                      label: 'Habilidades e magias',
+                      icon: <Sparkles className="h-4 w-4" aria-hidden="true" />,
+                      content: <FeaturesTab />,
+                    },
+                    {
+                      value: 'historia',
+                      label: 'Personagem',
+                      icon: <Feather className="h-4 w-4" aria-hidden="true" />,
+                      content: <StoryTab />,
+                    },
+                    {
+                      value: 'evolucao',
+                      label: 'Evolução',
+                      icon: <Hourglass className="h-4 w-4" aria-hidden="true" />,
+                      content: <ProgressTab />,
+                    },
+                    ...(permissions.isOwner || permissions.canEditSheet
+                      ? [
+                          {
+                            value: 'ajustes',
+                            label: 'Ajustes',
+                            icon: <Settings className="h-4 w-4" aria-hidden="true" />,
+                            content: <SettingsTab campaigns={props.campaigns} />,
+                          },
+                        ]
+                      : []),
+                  ]),
             ]}
           />
         </div>

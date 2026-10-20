@@ -20,7 +20,15 @@ interface ModalProps {
  * Janela modal com o elemento nativo <dialog>: foco preso, Esc fecha e o restante da
  * página fica inerte. Mesmo padrão do ConfirmDialog.
  */
-export function Modal({ open, onClose, title, description, children, size = 'md', busy = false }: ModalProps) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  description,
+  children,
+  size = 'md',
+  busy = false,
+}: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const descriptionId = useId();

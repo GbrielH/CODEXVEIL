@@ -10,8 +10,23 @@ import {
   updateCharacterItem,
   type CharacterItem,
 } from '@codexveil/database';
-import { ITEM_CATEGORIES, groupByCategory, itemCategoryLabels, totalWeight, type ItemCategory } from '@codexveil/domain';
-import { CURRENCIES, currencyLabels, currencyResource, currencyResourceKey, findSrdWeaponByName, totalInGold, weaponAttackEntry, type Currency } from '@codexveil/rpg-systems/dnd5e';
+import {
+  ITEM_CATEGORIES,
+  groupByCategory,
+  itemCategoryLabels,
+  totalWeight,
+  type ItemCategory,
+} from '@codexveil/domain';
+import {
+  CURRENCIES,
+  currencyLabels,
+  currencyResource,
+  currencyResourceKey,
+  findSrdWeaponByName,
+  totalInGold,
+  weaponAttackEntry,
+  type Currency,
+} from '@codexveil/rpg-systems/dnd5e';
 import { fieldErrorsFrom, inventoryItemSchema, type FieldErrors } from '@codexveil/validation';
 import { Backpack, Coins, Minus, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useId, useState } from 'react';
@@ -43,8 +58,11 @@ export function InventoryTab() {
 function CoinsCard() {
   const { resources, adjustResource, permissions, character, setResources, run } = useSheet();
   const id = useId();
-  const coinResource = (coin: Currency) => resources.find((resource) => resource.key === currencyResourceKey(coin));
-  const amounts = Object.fromEntries(CURRENCIES.map((coin) => [coin, coinResource(coin)?.current ?? 0])) as Record<Currency, number>;
+  const coinResource = (coin: Currency) =>
+    resources.find((resource) => resource.key === currencyResourceKey(coin));
+  const amounts = Object.fromEntries(
+    CURRENCIES.map((coin) => [coin, coinResource(coin)?.current ?? 0]),
+  ) as Record<Currency, number>;
 
   const setAmount = async (coin: Currency, value: number) => {
     const existing = coinResource(coin);
@@ -54,7 +72,12 @@ function CoinsCard() {
     }
     // Personagens antigos podem não ter a trilha da moeda: ela é criada na primeira alteração.
     const created = await run(
-      () => createCharacterResource(getSupabaseBrowserClient(), character.id, currencyResource(coin, value)),
+      () =>
+        createCharacterResource(
+          getSupabaseBrowserClient(),
+          character.id,
+          currencyResource(coin, value),
+        ),
       { failure: `${currencyLabels[coin].name}: valor não salvo` },
     );
     if (created) setResources((current) => [...current, created]);
@@ -62,7 +85,11 @@ function CoinsCard() {
 
   return (
     <Card>
-      <CardHeader icon={<Coins className="h-5 w-5" aria-hidden="true" />} title="Moedas" description={`Total ≈ ${totalInGold(amounts).toLocaleString('pt-BR')} PO`} />
+      <CardHeader
+        icon={<Coins className="h-5 w-5" aria-hidden="true" />}
+        title="Moedas"
+        description={`Total ≈ ${totalInGold(amounts).toLocaleString('pt-BR')} PO`}
+      />
       <div className="grid grid-cols-5 gap-2">
         {CURRENCIES.map((coin) => (
           <div key={coin} className="flex flex-col items-center gap-1">
@@ -98,51 +125,95 @@ function LoadCard() {
     <Card>
       <CardHeader icon={<Backpack className="h-5 w-5" aria-hidden="true" />} title="Carga" />
       <p className="tabular text-sm text-fg-secondary">
-        <strong className="text-fg">{carried.toLocaleString('pt-BR')}</strong> de {capacity.toLocaleString('pt-BR')} {unit}
+        <strong className="text-fg">{carried.toLocaleString('pt-BR')}</strong> de{' '}
+        {capacity.toLocaleString('pt-BR')} {unit}
       </p>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-sunken ring-1 ring-line" aria-hidden="true">
-        <div className={cx('h-full', percent > 100 || carried > capacity ? 'bg-hp-critical' : 'bg-parchment-400')} style={{ width: `${percent}%` }} />
+      <div
+        className="mt-2 h-2 overflow-hidden rounded-full bg-sunken ring-1 ring-line"
+        aria-hidden="true"
+      >
+        <div
+          className={cx(
+            'h-full',
+            percent > 100 || carried > capacity ? 'bg-hp-critical' : 'bg-parchment-400',
+          )}
+          style={{ width: `${percent}%` }}
+        />
       </div>
-      <p className="mt-2 text-xs text-fg-muted">Capacidade = Força × {metric ? '7,5 kg' : '15 lb'}. Pesos informados na unidade da ficha.</p>
+      <p className="mt-2 text-xs text-fg-muted">
+        Capacidade = Força × {metric ? '7,5 kg' : '15 lb'}. Pesos informados na unidade da ficha.
+      </p>
     </Card>
   );
 }
 
 function ItemsCard() {
-  const { items, permissions, setItems, run, abilities, setAbilities, sheet, character } = useSheet();
+  const { items, permissions, setItems, run, abilities, setAbilities, sheet, character } =
+    useSheet();
   const { toast } = useToast();
   const [editing, setEditing] = useState<CharacterItem | 'new' | null>(null);
   const groups = groupByCategory(items);
 
   const changeQuantity = async (item: CharacterItem, delta: number) => {
-    setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, quantity: Math.max(0, entry.quantity + delta) } : entry)));
-    const saved = await run(() => adjustCharacterItemQuantity(getSupabaseBrowserClient(), item.id, delta), {
-      failure: `${item.name}: quantidade não salva`,
-    });
+    setItems((current) =>
+      current.map((entry) =>
+        entry.id === item.id ? { ...entry, quantity: Math.max(0, entry.quantity + delta) } : entry,
+      ),
+    );
+    const saved = await run(
+      () => adjustCharacterItemQuantity(getSupabaseBrowserClient(), item.id, delta),
+      {
+        failure: `${item.name}: quantidade não salva`,
+      },
+    );
     setItems((current) => current.map((entry) => (entry.id === item.id ? (saved ?? item) : entry)));
   };
 
   const toggleEquipped = async (item: CharacterItem) => {
     const next = !item.isEquipped;
-    setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, isEquipped: next } : entry)));
-    const ok = await run(() => setCharacterItemEquipped(getSupabaseBrowserClient(), item.id, next), {
-      failure: `${item.name}: alteração não salva`,
-    });
+    setItems((current) =>
+      current.map((entry) => (entry.id === item.id ? { ...entry, isEquipped: next } : entry)),
+    );
+    const ok = await run(
+      () => setCharacterItemEquipped(getSupabaseBrowserClient(), item.id, next),
+      {
+        failure: `${item.name}: alteração não salva`,
+      },
+    );
     if (ok === undefined) {
       setItems((current) => current.map((entry) => (entry.id === item.id ? item : entry)));
       return;
     }
     // Arma do SRD equipada sem ataque na ficha: a ficha ganha o ataque.
     const weapon = next ? findSrdWeaponByName(item.name) : undefined;
-    if (!weapon || abilities.some((entry) => entry.kind === 'attack' && entry.name.toLowerCase() === weapon.name.toLowerCase())) return;
+    if (
+      !weapon ||
+      abilities.some(
+        (entry) =>
+          entry.kind === 'attack' && entry.name.toLowerCase() === weapon.name.toLowerCase(),
+      )
+    )
+      return;
     if (!permissions.canEditSheet) {
-      toast({ tone: 'info', title: `${weapon.name} equipada`, description: 'Peça ao mestre para liberar a edição da ficha para criar o ataque.' });
+      toast({
+        tone: 'info',
+        title: `${weapon.name} equipada`,
+        description: 'Peça ao mestre para liberar a edição da ficha para criar o ataque.',
+      });
       return;
     }
     const attack = weaponAttackEntry(weapon, sheet);
     const created = await run(
-      () => createCharacterAbility(getSupabaseBrowserClient(), character.id, { ...attack, data: { ...attack.data }, resourceId: null }),
-      { success: `Ataque com ${weapon.name} adicionado à ficha.`, failure: 'O ataque não foi criado' },
+      () =>
+        createCharacterAbility(getSupabaseBrowserClient(), character.id, {
+          ...attack,
+          data: { ...attack.data },
+          resourceId: null,
+        }),
+      {
+        success: `Ataque com ${weapon.name} adicionado à ficha.`,
+        failure: 'O ataque não foi criado',
+      },
     );
     if (created) setAbilities((current) => [...current, created]);
   };
@@ -153,7 +224,11 @@ function ItemsCard() {
         title="Itens"
         action={
           permissions.canEditPlay ? (
-            <Button size="sm" onClick={() => setEditing('new')} icon={<Plus className="h-4 w-4" aria-hidden="true" />}>
+            <Button
+              size="sm"
+              onClick={() => setEditing('new')}
+              icon={<Plus className="h-4 w-4" aria-hidden="true" />}
+            >
               Adicionar item
             </Button>
           ) : undefined
@@ -194,22 +269,48 @@ function ItemsCard() {
                       </p>
                       {item.description || item.weight !== null ? (
                         <p className="truncate text-xs text-fg-muted">
-                          {[item.weight !== null ? `${item.weight.toLocaleString('pt-BR')} cada` : null, item.description].filter(Boolean).join(' · ')}
+                          {[
+                            item.weight !== null
+                              ? `${item.weight.toLocaleString('pt-BR')} cada`
+                              : null,
+                            item.description,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
                         </p>
                       ) : null}
                     </div>
                     {permissions.canEditPlay ? (
                       <div className="flex items-center">
-                        <Button size="icon" variant="ghost" disabled={item.quantity <= 0} onClick={() => void changeQuantity(item, -1)} aria-label={`Diminuir ${item.name}`}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          disabled={item.quantity <= 0}
+                          onClick={() => void changeQuantity(item, -1)}
+                          aria-label={`Diminuir ${item.name}`}
+                        >
                           <Minus className="h-4 w-4" aria-hidden="true" />
                         </Button>
-                        <span className="tabular w-8 text-center text-sm" aria-label={`Quantidade: ${item.quantity}`}>
+                        <span
+                          className="tabular w-8 text-center text-sm"
+                          aria-label={`Quantidade: ${item.quantity}`}
+                        >
                           {item.quantity}
                         </span>
-                        <Button size="icon" variant="ghost" onClick={() => void changeQuantity(item, 1)} aria-label={`Aumentar ${item.name}`}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => void changeQuantity(item, 1)}
+                          aria-label={`Aumentar ${item.name}`}
+                        >
                           <Plus className="h-4 w-4" aria-hidden="true" />
                         </Button>
-                        <Button size="icon" variant="ghost" onClick={() => setEditing(item)} aria-label={`Editar ${item.name}`}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setEditing(item)}
+                          aria-label={`Editar ${item.name}`}
+                        >
                           <Pencil className="h-4 w-4" aria-hidden="true" />
                         </Button>
                       </div>
@@ -238,9 +339,23 @@ interface ItemForm {
   isEquipped: boolean;
 }
 
-const emptyItem: ItemForm = { name: '', category: 'gear', quantity: 1, weight: null, description: '', notes: '', isEquipped: false };
+const emptyItem: ItemForm = {
+  name: '',
+  category: 'gear',
+  quantity: 1,
+  weight: null,
+  description: '',
+  notes: '',
+  isEquipped: false,
+};
 
-function ItemFormModal({ item, onClose }: { item: CharacterItem | 'new' | null; onClose: () => void }) {
+function ItemFormModal({
+  item,
+  onClose,
+}: {
+  item: CharacterItem | 'new' | null;
+  onClose: () => void;
+}) {
   const { character, setItems, run } = useSheet();
   const id = useId();
   const isNew = item === 'new';
@@ -254,7 +369,15 @@ function ItemFormModal({ item, onClose }: { item: CharacterItem | 'new' | null; 
     setErrors({});
     setForm(
       item && item !== 'new'
-        ? { name: item.name, category: item.category, quantity: item.quantity, weight: item.weight, description: item.description, notes: item.notes, isEquipped: item.isEquipped }
+        ? {
+            name: item.name,
+            category: item.category,
+            quantity: item.quantity,
+            weight: item.weight,
+            description: item.description,
+            notes: item.notes,
+            isEquipped: item.isEquipped,
+          }
         : emptyItem,
     );
   }
@@ -268,12 +391,20 @@ function ItemFormModal({ item, onClose }: { item: CharacterItem | 'new' | null; 
     setBusy(true);
     const client = getSupabaseBrowserClient();
     const saved = await run(
-      () => (isNew || !item ? createCharacterItem(client, character.id, parsed.data) : updateCharacterItem(client, item.id, parsed.data)),
-      { success: isNew ? 'Item adicionado.' : 'Item atualizado.', failure: 'Não foi possível salvar o item' },
+      () =>
+        isNew || !item
+          ? createCharacterItem(client, character.id, parsed.data)
+          : updateCharacterItem(client, item.id, parsed.data),
+      {
+        success: isNew ? 'Item adicionado.' : 'Item atualizado.',
+        failure: 'Não foi possível salvar o item',
+      },
     );
     setBusy(false);
     if (!saved) return;
-    setItems((current) => (isNew ? [...current, saved] : current.map((entry) => (entry.id === saved.id ? saved : entry))));
+    setItems((current) =>
+      isNew ? [...current, saved] : current.map((entry) => (entry.id === saved.id ? saved : entry)),
+    );
     onClose();
   };
 
@@ -289,7 +420,13 @@ function ItemFormModal({ item, onClose }: { item: CharacterItem | 'new' | null; 
   };
 
   return (
-    <Modal open={item !== null} onClose={onClose} title={isNew ? 'Novo item' : 'Editar item'} busy={busy} size="lg">
+    <Modal
+      open={item !== null}
+      onClose={onClose}
+      title={isNew ? 'Novo item' : 'Editar item'}
+      busy={busy}
+      size="lg"
+    >
       <form
         noValidate
         className="flex flex-col gap-4"
@@ -299,8 +436,23 @@ function ItemFormModal({ item, onClose }: { item: CharacterItem | 'new' | null; 
         }}
       >
         <div className="grid gap-4 sm:grid-cols-[1fr_12rem]">
-          <TextField id={`${id}-name`} label="Nome" required maxLength={120} value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} error={errors.name} />
-          <SelectField id={`${id}-category`} label="Categoria" value={form.category} onChange={(event) => setForm((current) => ({ ...current, category: event.target.value as ItemCategory }))}>
+          <TextField
+            id={`${id}-name`}
+            label="Nome"
+            required
+            maxLength={120}
+            value={form.name}
+            onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+            error={errors.name}
+          />
+          <SelectField
+            id={`${id}-category`}
+            label="Categoria"
+            value={form.category}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, category: event.target.value as ItemCategory }))
+            }
+          >
             {ITEM_CATEGORIES.map((category) => (
               <option key={category} value={category}>
                 {itemCategoryLabels[category]}
@@ -313,25 +465,70 @@ function ItemFormModal({ item, onClose }: { item: CharacterItem | 'new' | null; 
             <label htmlFor={`${id}-quantity`} className="text-sm font-medium">
               Quantidade
             </label>
-            <NumberInput id={`${id}-quantity`} value={form.quantity} min={0} max={99_999} onCommit={(value) => setForm((current) => ({ ...current, quantity: value }))} invalid={Boolean(errors.quantity)} />
+            <NumberInput
+              id={`${id}-quantity`}
+              value={form.quantity}
+              min={0}
+              max={99_999}
+              onCommit={(value) => setForm((current) => ({ ...current, quantity: value }))}
+              invalid={Boolean(errors.quantity)}
+            />
             {errors.quantity ? <p className="text-xs text-danger">{errors.quantity}</p> : null}
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor={`${id}-weight`} className="text-sm font-medium">
               Peso unitário
             </label>
-            <NumberInput id={`${id}-weight`} value={form.weight} min={0} max={100_000} decimal allowEmpty onCommit={(value) => setForm((current) => ({ ...current, weight: value }))} />
+            <NumberInput
+              id={`${id}-weight`}
+              value={form.weight}
+              min={0}
+              max={100_000}
+              decimal
+              allowEmpty
+              onCommit={(value) => setForm((current) => ({ ...current, weight: value }))}
+            />
             <p className="text-xs text-fg-muted">Opcional.</p>
           </div>
         </div>
-        <TextareaField id={`${id}-description`} label="Descrição" rows={3} maxLength={4000} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} error={errors.description} />
-        <TextareaField id={`${id}-notes`} label="Observações" rows={2} maxLength={2000} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} error={errors.notes} />
-        <CheckboxField id={`${id}-equipped`} label="Equipado" checked={form.isEquipped} onChange={(event) => setForm((current) => ({ ...current, isEquipped: event.target.checked }))} />
+        <TextareaField
+          id={`${id}-description`}
+          label="Descrição"
+          rows={3}
+          maxLength={4000}
+          value={form.description}
+          onChange={(event) =>
+            setForm((current) => ({ ...current, description: event.target.value }))
+          }
+          error={errors.description}
+        />
+        <TextareaField
+          id={`${id}-notes`}
+          label="Observações"
+          rows={2}
+          maxLength={2000}
+          value={form.notes}
+          onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
+          error={errors.notes}
+        />
+        <CheckboxField
+          id={`${id}-equipped`}
+          label="Equipado"
+          checked={form.isEquipped}
+          onChange={(event) =>
+            setForm((current) => ({ ...current, isEquipped: event.target.checked }))
+          }
+        />
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
           {!isNew && item ? (
             <ConfirmDialog
               trigger={(open) => (
-                <Button variant="danger" size="sm" onClick={open} icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={open}
+                  icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
+                >
                   Excluir
                 </Button>
               )}

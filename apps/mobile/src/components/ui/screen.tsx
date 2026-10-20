@@ -1,5 +1,12 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { colors, palette, spacing } from '@/lib/theme';
@@ -22,7 +29,17 @@ interface ScreenProps {
  * Estrutura padrão das telas: fundo carvão, rolagem com "puxar para atualizar",
  * teclado sem cobrir campos e margens confortáveis para telas pequenas.
  */
-export function Screen({ children, title, eyebrow, subtitle, headerAction, refreshing = false, onRefresh, edges = ['bottom'], scroll = true }: ScreenProps) {
+export function Screen({
+  children,
+  title,
+  eyebrow,
+  subtitle,
+  headerAction,
+  refreshing = false,
+  onRefresh,
+  edges = ['bottom'],
+  scroll = true,
+}: ScreenProps) {
   const header =
     title || eyebrow ? (
       <View style={styles.header}>
@@ -41,12 +58,25 @@ export function Screen({ children, title, eyebrow, subtitle, headerAction, refre
 
   return (
     <SafeAreaView style={styles.safe} edges={edges}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         {scroll ? (
           <ScrollView
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
-            refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.fgAccent} colors={[palette.wine[500]]} progressBackgroundColor={colors.raised} /> : undefined}
+            refreshControl={
+              onRefresh ? (
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={colors.fgAccent}
+                  colors={[palette.wine[500]]}
+                  progressBackgroundColor={colors.raised}
+                />
+              ) : undefined
+            }
           >
             <Animated.View entering={FadeInDown.duration(320)} style={{ gap: spacing[4] }}>
               {header}
@@ -67,5 +97,10 @@ export function Screen({ children, title, eyebrow, subtitle, headerAction, refre
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing[4], paddingBottom: spacing[12], gap: spacing[4] },
-  header: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing[3], paddingBottom: spacing[1] },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: spacing[3],
+    paddingBottom: spacing[1],
+  },
 });

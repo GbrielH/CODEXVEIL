@@ -131,6 +131,26 @@ export async function listCampaignDiceColors(client: CodexveilClient, campaignId
   return Object.fromEntries((data ?? []).filter((row) => row.dice_color).map((row) => [row.user_id, row.dice_color as string]));
 }
 
+export interface DicePalette {
+  members: { userId: string; role: 'gm' | 'player'; color: string | null }[];
+  /** Personagem da campanha → dono (para pintar o nome com a cor do dono). */
+  characterOwners: Record<string, string>;
+}
+
+/** Cores de todos os participantes e os donos dos personagens da campanha. */
+export async function getCampaignDicePalette(client: CodexveilClient, campaignId: string): Promise<DicePalette> {
+  const [members, characters] = await Promise.all([
+    client.from('campaign_members').select('user_id, role, dice_color').eq('campaign_id', campaignId),
+    client.from('characters').select('id, owner_id').eq('campaign_id', campaignId),
+  ]);
+  if (members.error) throw toAppError(members.error);
+  if (characters.error) throw toAppError(characters.error);
+  return {
+    members: (members.data ?? []).map((row) => ({ userId: row.user_id, role: row.role === 'gm' ? 'gm' : 'player', color: row.dice_color })),
+    characterOwners: Object.fromEntries((characters.data ?? []).map((row) => [row.id, row.owner_id])),
+  };
+}
+
 /** Escolhe a cor dos próprios dados nesta campanha. */
 export async function setMyDiceColor(client: CodexveilClient, campaignId: string, color: string): Promise<void> {
   const { error } = await client.rpc('set_my_dice_color', { p_campaign_id: campaignId, p_color: color });

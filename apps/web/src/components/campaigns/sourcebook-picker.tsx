@@ -1,6 +1,12 @@
 'use client';
 
-import { DND5E_SOURCEBOOKS, SOURCEBOOK_CATEGORIES, dnd5eOfficialLinks, sourcebookCategoryLabels, sourcebookUrl } from '@codexveil/rpg-systems/dnd5e';
+import {
+  DND5E_SOURCEBOOKS,
+  SOURCEBOOK_CATEGORIES,
+  dnd5eOfficialLinks,
+  sourcebookCategoryLabels,
+  sourcebookUrl,
+} from '@codexveil/rpg-systems/dnd5e';
 import { ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { useId, useState } from 'react';
@@ -19,7 +25,6 @@ export interface CampaignBookOption {
   entryCounts: Record<string, number>;
 }
 
-
 interface SourcebookPickerProps {
   selected: readonly string[];
   onChange: (ids: string[]) => void;
@@ -36,17 +41,32 @@ interface SourcebookPickerProps {
  * Sistema base (só o SRD) ou com livros oficiais escolhidos por categoria. Os livros são pagos:
  * cada um leva à página oficial, e as fontes gratuitas ficam com o link direto.
  */
-export function SourcebookPicker({ selected, onChange, audience, fieldName, modeFieldName, books = [] }: SourcebookPickerProps) {
+export function SourcebookPicker({
+  selected,
+  onChange,
+  audience,
+  fieldName,
+  modeFieldName,
+  books = [],
+}: SourcebookPickerProps) {
   const imported = new Set(books.map((book) => book.bookKey));
   const id = useId();
   const [mode, setMode] = useState<'base' | 'expanded'>(selected.length > 0 ? 'expanded' : 'base');
-  const toggle = (bookId: string, checked: boolean) => onChange(checked ? [...selected, bookId] : selected.filter((entry) => entry !== bookId));
+  const toggle = (bookId: string, checked: boolean) =>
+    onChange(checked ? [...selected, bookId] : selected.filter((entry) => entry !== bookId));
   /** Marca ou desmarca todos os livros de um grupo de uma vez. */
   const toggleGroup = (ids: readonly string[], checked: boolean) =>
-    onChange(checked ? [...new Set([...selected, ...ids])] : selected.filter((entry) => !ids.includes(entry)));
+    onChange(
+      checked
+        ? [...new Set([...selected, ...ids])]
+        : selected.filter((entry) => !ids.includes(entry)),
+    );
   const selectAll = (key: string, ids: readonly string[]) =>
     ids.length > 1 ? (
-      <label htmlFor={`${id}-all-${key}`} className="flex w-fit cursor-pointer items-center gap-2 text-xs font-medium text-fg-secondary">
+      <label
+        htmlFor={`${id}-all-${key}`}
+        className="flex w-fit cursor-pointer items-center gap-2 text-xs font-medium text-fg-secondary"
+      >
         <input
           id={`${id}-all-${key}`}
           type="checkbox"
@@ -96,7 +116,12 @@ export function SourcebookPicker({ selected, onChange, audience, fieldName, mode
           .map((link, index) => (
             <span key={link.url}>
               {index > 0 ? ' · ' : ''}
-              <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-fg-brand underline-offset-2 hover:underline">
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-fg-brand underline-offset-2 hover:underline"
+              >
                 {link.label}
               </a>
             </span>
@@ -107,10 +132,15 @@ export function SourcebookPicker({ selected, onChange, audience, fieldName, mode
           {books.length > 0 ? (
             <div className="flex flex-col gap-3 rounded-md border border-parchment-300/40 bg-parchment-200/5 p-3">
               <p className="text-sm font-medium text-fg">Livros importados (com conteúdo)</p>
-              {SOURCEBOOK_CATEGORIES.filter((category) => books.some((book) => book.category === category)).map((category) => (
+              {SOURCEBOOK_CATEGORIES.filter((category) =>
+                books.some((book) => book.category === category),
+              ).map((category) => (
                 <div key={category} className="flex flex-col gap-2">
                   <p className="eyebrow">{sourcebookCategoryLabels[category].name}</p>
-                  {selectAll(`own-${category}`, books.filter((book) => book.category === category).map((book) => book.bookKey))}
+                  {selectAll(
+                    `own-${category}`,
+                    books.filter((book) => book.category === category).map((book) => book.bookKey),
+                  )}
                   <div className="grid gap-2 sm:grid-cols-2 @3xl:grid-cols-3">
                     {books
                       .filter((book) => book.category === category)
@@ -121,7 +151,12 @@ export function SourcebookPicker({ selected, onChange, audience, fieldName, mode
                           {...(fieldName ? { name: fieldName } : {})}
                           value={book.bookKey}
                           label={book.name}
-                          description={[describeBookCounts(book.entryCounts), book.edition === '2024' ? 'regras de 2024' : ''].filter(Boolean).join(' · ')}
+                          description={[
+                            describeBookCounts(book.entryCounts),
+                            book.edition === '2024' ? 'regras de 2024' : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
                           checked={selected.includes(book.bookKey)}
                           onChange={(event) => toggle(book.bookKey, event.target.checked)}
                         />
@@ -133,30 +168,48 @@ export function SourcebookPicker({ selected, onChange, audience, fieldName, mode
           ) : (
             <p className="rounded-md border border-line p-3 text-sm text-fg-muted">
               Nenhum livro importado ainda. Em{' '}
-              <Link href={routes.books} className="text-fg-brand underline-offset-2 hover:underline">
+              <Link
+                href={routes.books}
+                className="text-fg-brand underline-offset-2 hover:underline"
+              >
                 Meus livros
               </Link>{' '}
-              você importa o conteúdo dos seus livros; ele aparece aqui, na criação de personagens e na biblioteca.
+              você importa o conteúdo dos seus livros; ele aparece aqui, na criação de personagens e
+              na biblioteca.
             </p>
           )}
-          <p className="text-xs text-fg-muted">Outros livros oficiais (sem conteúdo no Codexveil, só registram o que vale na mesa):</p>
+          <p className="text-xs text-fg-muted">
+            Outros livros oficiais (sem conteúdo no Codexveil, só registram o que vale na mesa):
+          </p>
           {SOURCEBOOK_CATEGORIES.map((category) => (
-            <details key={category} className="rounded-md border border-line px-3 py-2" open={books.length === 0 && (category === 'core' || category === 'player')}>
+            <details
+              key={category}
+              className="rounded-md border border-line px-3 py-2"
+              open={books.length === 0 && (category === 'core' || category === 'player')}
+            >
               <summary className="cursor-pointer text-sm font-medium text-fg">
                 {sourcebookCategoryLabels[category].name}
                 <span className="ml-2 text-xs text-fg-muted">
-                  {DND5E_SOURCEBOOKS.filter((book) => book.category === category && selected.includes(book.id)).length || ''}
+                  {DND5E_SOURCEBOOKS.filter(
+                    (book) => book.category === category && selected.includes(book.id),
+                  ).length || ''}
                 </span>
               </summary>
-              <p className="mt-1 text-xs text-fg-muted">{sourcebookCategoryLabels[category].description}</p>
+              <p className="mt-1 text-xs text-fg-muted">
+                {sourcebookCategoryLabels[category].description}
+              </p>
               <div className="mt-2">
                 {selectAll(
                   category,
-                  DND5E_SOURCEBOOKS.filter((book) => book.category === category && !imported.has(book.id)).map((book) => book.id),
+                  DND5E_SOURCEBOOKS.filter(
+                    (book) => book.category === category && !imported.has(book.id),
+                  ).map((book) => book.id),
                 )}
               </div>
               <div className="mt-2 grid gap-2 sm:grid-cols-2 @3xl:grid-cols-3">
-                {DND5E_SOURCEBOOKS.filter((book) => book.category === category && !imported.has(book.id)).map((book) => (
+                {DND5E_SOURCEBOOKS.filter(
+                  (book) => book.category === category && !imported.has(book.id),
+                ).map((book) => (
                   <CheckboxField
                     key={book.id}
                     id={`${id}-book-${book.id}`}
@@ -194,14 +247,20 @@ export function SourcebookPicker({ selected, onChange, audience, fieldName, mode
 
 /** Livros escolhidos (pelo mestre ou na ficha), cada um com o link da página oficial. */
 export function SourcebookLinks({ ids, label }: { ids: readonly string[]; label: string }) {
-  if (ids.length === 0) return <p className="text-sm text-fg-muted">Sistema base: só o SRD 5.2.1, gratuito.</p>;
+  if (ids.length === 0)
+    return <p className="text-sm text-fg-muted">Sistema base: só o SRD 5.2.1, gratuito.</p>;
   return (
     <p className="text-sm text-fg-secondary">
       {label}{' '}
       {ids.map((bookId, index) => (
         <span key={bookId}>
           {index > 0 ? ' · ' : ''}
-          <a href={sourcebookUrl(bookId)} target="_blank" rel="noopener noreferrer" className="text-fg-brand underline-offset-2 hover:underline">
+          <a
+            href={sourcebookUrl(bookId)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-fg-brand underline-offset-2 hover:underline"
+          >
             {DND5E_SOURCEBOOKS.find((book) => book.id === bookId)?.name ?? bookId}
           </a>
         </span>

@@ -5,7 +5,11 @@ import { Fragment, type ReactNode } from 'react';
  * **negrito** e *itálico*. Nada vira HTML: o texto do pacote é exibido como texto.
  */
 export function BookText({ body, className }: { body: string; className?: string }) {
-  return <div className={className ?? 'flex flex-col gap-3 text-sm leading-relaxed text-fg-secondary'}>{blocks(body)}</div>;
+  return (
+    <div className={className ?? 'flex flex-col gap-3 text-sm leading-relaxed text-fg-secondary'}>
+      {blocks(body)}
+    </div>
+  );
 }
 
 /** Parágrafos simples (descrições de magias, itens e monstros). */
@@ -49,7 +53,10 @@ function parse(body: string): Block[] {
     }
     if (line.startsWith('|')) {
       flush();
-      const cells = line.replace(/^\||\|$/g, '').split('|').map((cell) => cell.trim());
+      const cells = line
+        .replace(/^\||\|$/g, '')
+        .split('|')
+        .map((cell) => cell.trim());
       // Linha separadora do cabeçalho ("| --- | --- |").
       if (cells.every((cell) => /^:?-{2,}:?$/.test(cell))) continue;
       const tail = last();
@@ -92,7 +99,10 @@ function blocks(body: string): ReactNode[] {
               <thead>
                 <tr>
                   {head?.map((cell, position) => (
-                    <th key={position} className="border-b border-line-strong px-2 py-1.5 font-medium text-fg">
+                    <th
+                      key={position}
+                      className="border-b border-line-strong px-2 py-1.5 font-medium text-fg"
+                    >
                       {inline(cell)}
                     </th>
                   ))}
@@ -130,7 +140,8 @@ function inline(text: string): ReactNode {
         </strong>
       );
     }
-    if (part.startsWith('*') && part.endsWith('*') && part.length > 2) return <em key={index}>{part.slice(1, -1)}</em>;
+    if (part.startsWith('*') && part.endsWith('*') && part.length > 2)
+      return <em key={index}>{part.slice(1, -1)}</em>;
     if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
       return (
         <code key={index} className="rounded bg-sunken px-1 text-xs">

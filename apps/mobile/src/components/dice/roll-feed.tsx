@@ -17,7 +17,15 @@ function timeLabel(iso: string): string {
 }
 
 /** Mural de rolagens da campanha, ao vivo (o RLS decide o que cada um vê). */
-export function RollFeed({ campaignId, canClear = false, limit = 40 }: { campaignId: string; canClear?: boolean; limit?: number }) {
+export function RollFeed({
+  campaignId,
+  canClear = false,
+  limit = 40,
+}: {
+  campaignId: string;
+  canClear?: boolean;
+  limit?: number;
+}) {
   const toast = useToast();
   const confirm = useConfirm();
   const [rolls, setRolls] = useState<DiceRoll[] | null>(null);
@@ -46,10 +54,19 @@ export function RollFeed({ campaignId, canClear = false, limit = 40 }: { campaig
     };
   }, [campaignId, limit]);
 
-  const live = useRealtimeRefresh(`rolagens:${campaignId}`, [{ table: 'dice_rolls', filter: `campaign_id=eq.${campaignId}` }], () => void reload());
+  const live = useRealtimeRefresh(
+    `rolagens:${campaignId}`,
+    [{ table: 'dice_rolls', filter: `campaign_id=eq.${campaignId}` }],
+    () => void reload(),
+  );
 
   const clear = async () => {
-    const ok = await confirm({ title: 'Limpar o mural?', message: 'Todas as rolagens desta campanha serão apagadas para todos.', confirmLabel: 'Limpar', tone: 'danger' });
+    const ok = await confirm({
+      title: 'Limpar o mural?',
+      message: 'Todas as rolagens desta campanha serão apagadas para todos.',
+      confirmLabel: 'Limpar',
+      tone: 'danger',
+    });
     if (!ok) return;
     try {
       await clearDiceRolls(getSupabase(), campaignId);
@@ -62,18 +79,29 @@ export function RollFeed({ campaignId, canClear = false, limit = 40 }: { campaig
   return (
     <View style={{ gap: spacing[2] }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-        <AppText variant="small" style={{ flex: 1, color: live === 'live' ? colors.success : colors.fgMuted }}>
+        <AppText
+          variant="small"
+          style={{ flex: 1, color: live === 'live' ? colors.success : colors.fgMuted }}
+        >
           {live === 'live' ? '● Ao vivo' : live === 'connecting' ? 'Conectando…' : 'Reconectando…'}
         </AppText>
         {canClear && rolls && rolls.length > 0 ? (
-          <Button label="Limpar" compact variant="ghost" icon={<Trash2 size={14} color={colors.fgSecondary} />} onPress={() => void clear()} />
+          <Button
+            label="Limpar"
+            compact
+            variant="ghost"
+            icon={<Trash2 size={14} color={colors.fgSecondary} />}
+            onPress={() => void clear()}
+          />
         ) : null}
       </View>
       {error ? <AppText style={{ color: '#EC9384' }}>{error}</AppText> : null}
       {rolls === null ? (
         <AppText variant="muted">Carregando…</AppText>
       ) : rolls.length === 0 ? (
-        <AppText variant="muted">Nenhuma rolagem ainda. As rolagens da mesa aparecem aqui na hora.</AppText>
+        <AppText variant="muted">
+          Nenhuma rolagem ainda. As rolagens da mesa aparecem aqui na hora.
+        </AppText>
       ) : (
         rolls.map((roll) => {
           const natural = naturalD20(roll);
@@ -81,12 +109,23 @@ export function RollFeed({ campaignId, canClear = false, limit = 40 }: { campaig
             <View key={roll.id} style={[styles.row, roll.visibility === 'gm' && styles.secret]}>
               <AppText
                 variant="number"
-                style={{ width: 52, textAlign: 'center', color: natural === 20 ? colors.success : natural === 1 ? colors.danger : colors.fgAccent }}
+                style={{
+                  width: 52,
+                  textAlign: 'center',
+                  color:
+                    natural === 20
+                      ? colors.success
+                      : natural === 1
+                        ? colors.danger
+                        : colors.fgAccent,
+                }}
               >
                 {roll.total}
               </AppText>
               <View style={{ flex: 1, gap: 2 }}>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+                <View
+                  style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}
+                >
                   <AppText style={{ fontFamily: fonts.sansMedium }}>{roll.rollerName}</AppText>
                   {roll.label ? <AppText variant="small">· {roll.label}</AppText> : null}
                   {roll.visibility === 'gm' ? <Badge label="Secreta" tone="brand" /> : null}

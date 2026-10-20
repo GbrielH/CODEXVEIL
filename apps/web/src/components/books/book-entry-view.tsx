@@ -19,9 +19,23 @@ import { Alert } from '@/components/ui/alert';
 import { BookParagraphs, BookText } from './book-text';
 
 /** Uma entrada do livro, conforme o tipo. Conteúdo que não segue o formato vira um aviso. */
-export function BookEntryView({ kind, name, data }: { kind: BookEntryKind; name: string; data: unknown }) {
+export function BookEntryView({
+  kind,
+  name,
+  data,
+}: {
+  kind: BookEntryKind;
+  name: string;
+  data: unknown;
+}) {
   const content = renderEntry(kind, name, data);
-  return content ?? <Alert tone="warning">Esta entrada não segue o formato do pacote e não pode ser exibida. Importe o livro de novo.</Alert>;
+  return (
+    content ?? (
+      <Alert tone="warning">
+        Esta entrada não segue o formato do pacote e não pode ser exibida. Importe o livro de novo.
+      </Alert>
+    )
+  );
 }
 
 function renderEntry(kind: BookEntryKind, name: string, raw: unknown): ReactNode | null {
@@ -39,24 +53,49 @@ function renderEntry(kind: BookEntryKind, name: string, raw: unknown): ReactNode
           <Facts
             items={[
               ['Dado de vida', data.hitDie],
-              ['Atributo principal', data.primaryAbilities.map((ability) => abilityLabels[ability].name).join(' e ')],
-              ['Testes de resistência', data.savingThrows.map((ability) => abilityLabels[ability].name).join(' e ')],
+              [
+                'Atributo principal',
+                data.primaryAbilities.map((ability) => abilityLabels[ability].name).join(' e '),
+              ],
+              [
+                'Testes de resistência',
+                data.savingThrows.map((ability) => abilityLabels[ability].name).join(' e '),
+              ],
               [
                 'Perícias',
                 data.skillChoices.count
                   ? `Escolha ${data.skillChoices.count}: ${data.skillChoices.options.map((skill) => skillDefinitions[skill].label).join(', ')}`
                   : '',
               ],
-              ['Armaduras', data.armor.map((armor) => ({ light: 'leves', medium: 'médias', heavy: 'pesadas', shield: 'escudos' })[armor]).join(', ')],
+              [
+                'Armaduras',
+                data.armor
+                  .map(
+                    (armor) =>
+                      ({ light: 'leves', medium: 'médias', heavy: 'pesadas', shield: 'escudos' })[
+                        armor
+                      ],
+                  )
+                  .join(', '),
+              ],
               ['Armas', data.weapons.martial === 'none' ? 'Simples' : 'Simples e marciais'],
               ['Ferramentas', data.tools],
               ['Equipamento inicial', data.equipment],
-              ['Subclasse', data.subclassLabel ? `${data.subclassLabel} (${data.subclassLevel}º nível)` : `${data.subclassLevel}º nível`],
+              [
+                'Subclasse',
+                data.subclassLabel
+                  ? `${data.subclassLabel} (${data.subclassLevel}º nível)`
+                  : `${data.subclassLevel}º nível`,
+              ],
               [
                 'Conjuração',
                 data.spellcasting
                   ? `${abilityLabels[data.spellcasting.ability].name} · lista ${spellListLabel(data.spellcasting.list)} · ${
-                      { full: 'conjurador completo', half: 'meio conjurador', pact: 'magia de pacto' }[data.spellcasting.progression]
+                      {
+                        full: 'conjurador completo',
+                        half: 'meio conjurador',
+                        pact: 'magia de pacto',
+                      }[data.spellcasting.progression]
                     }`
                   : '',
               ],
@@ -71,7 +110,9 @@ function renderEntry(kind: BookEntryKind, name: string, raw: unknown): ReactNode
       if (!data) return null;
       return (
         <div className="flex flex-col gap-5">
-          <p className="text-sm text-fg-muted">Subclasse de {findClass(data.classId)?.name ?? data.classId}.</p>
+          <p className="text-sm text-fg-muted">
+            Subclasse de {findClass(data.classId)?.name ?? data.classId}.
+          </p>
           {data.summary ? <BookText body={data.summary} /> : null}
           <Features title="Habilidades" features={data.features} />
           {data.alwaysPrepared.length > 0 ? (
@@ -80,7 +121,8 @@ function renderEntry(kind: BookEntryKind, name: string, raw: unknown): ReactNode
               <ul className="flex flex-col gap-1 text-sm text-fg-secondary">
                 {data.alwaysPrepared.map((group) => (
                   <li key={group.level}>
-                    <span className="font-medium text-fg">{group.level}º nível:</span> {group.spells.map(spellLabel).join(', ')}
+                    <span className="font-medium text-fg">{group.level}º nível:</span>{' '}
+                    {group.spells.map(spellLabel).join(', ')}
                   </li>
                 ))}
               </ul>
@@ -98,7 +140,12 @@ function renderEntry(kind: BookEntryKind, name: string, raw: unknown): ReactNode
           <Facts
             items={[
               ['Tipo de criatura', data.creatureType],
-              ['Tamanho', data.sizes.map((size) => ({ small: 'Pequeno', medium: 'Médio' })[size]).join(' ou ')],
+              [
+                'Tamanho',
+                data.sizes
+                  .map((size) => ({ small: 'Pequeno', medium: 'Médio' })[size])
+                  .join(' ou '),
+              ],
               ['Deslocamento', formatDistance(data.speed, 'm')],
               ['Truques', data.cantrips.map(spellLabel).join(', ')],
             ]}
@@ -111,7 +158,12 @@ function renderEntry(kind: BookEntryKind, name: string, raw: unknown): ReactNode
                 {data.lineage.options.map((option) => (
                   <li key={option.id} className="rounded-md border border-line bg-card/60 p-3">
                     <p className="font-medium text-fg">{option.name}</p>
-                    {option.description ? <BookText body={option.description} className="mt-1 flex flex-col gap-2 text-sm text-fg-secondary" /> : null}
+                    {option.description ? (
+                      <BookText
+                        body={option.description}
+                        className="mt-1 flex flex-col gap-2 text-sm text-fg-secondary"
+                      />
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -141,7 +193,8 @@ function renderEntry(kind: BookEntryKind, name: string, raw: unknown): ReactNode
             </section>
           ) : null}
           <p className="text-xs text-fg-subtle">
-            Nas regras de 2024, antecedentes de livros antigos aumentam atributos à escolha e dão um talento de origem escolhido pelo jogador.
+            Nas regras de 2024, antecedentes de livros antigos aumentam atributos à escolha e dão um
+            talento de origem escolhido pelo jogador.
           </p>
         </div>
       );
@@ -155,7 +208,10 @@ function renderEntry(kind: BookEntryKind, name: string, raw: unknown): ReactNode
             items={[
               ['Categoria', featCategoryLabels[data.category]],
               ['Pré-requisito', data.prerequisite],
-              ['Aumento de atributo', data.abilityIncrease.map((ability) => abilityLabels[ability].name).join(' ou ')],
+              [
+                'Aumento de atributo',
+                data.abilityIncrease.map((ability) => abilityLabels[ability].name).join(' ou '),
+              ],
               ['Repetível', data.repeatable ? 'Sim' : ''],
             ]}
           />
@@ -169,7 +225,8 @@ function renderEntry(kind: BookEntryKind, name: string, raw: unknown): ReactNode
       return (
         <div className="flex flex-col gap-4">
           <p className="text-sm text-fg-muted">
-            {data.level === 0 ? 'Truque' : `${data.level}º círculo`} de {spellSchoolLabels[data.school].toLowerCase()}
+            {data.level === 0 ? 'Truque' : `${data.level}º círculo`} de{' '}
+            {spellSchoolLabels[data.school].toLowerCase()}
             {data.ritual ? ' (ritual)' : ''}
           </p>
           <Facts
@@ -192,7 +249,9 @@ function renderEntry(kind: BookEntryKind, name: string, raw: unknown): ReactNode
       const levels = [...new Set(data.spells.map((spell) => spell.level))].sort((a, b) => a - b);
       return (
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-fg-muted">Magias acrescentadas à lista de {spellListLabel(data.list)}.</p>
+          <p className="text-sm text-fg-muted">
+            Magias acrescentadas à lista de {spellListLabel(data.list)}.
+          </p>
           {levels.map((level) => (
             <section key={level}>
               <h3 className="eyebrow mb-1">{level === 0 ? 'Truques' : `${level}º círculo`}</h3>
@@ -265,12 +324,20 @@ function Features({ title, features }: { title: string; features: readonly BookF
         {[...features]
           .sort((a, b) => a.level - b.level)
           .map((feature, index) => (
-            <li key={`${feature.level}-${feature.name}-${index}`} className="rounded-md border border-line bg-card/60 p-3">
+            <li
+              key={`${feature.level}-${feature.name}-${index}`}
+              className="rounded-md border border-line bg-card/60 p-3"
+            >
               <p className="font-medium text-fg">
                 <span className="mr-2 text-xs text-fg-accent tabular">{feature.level}º</span>
                 {feature.name}
               </p>
-              {feature.description ? <BookText body={feature.description} className="mt-1 flex flex-col gap-2 text-sm text-fg-secondary" /> : null}
+              {feature.description ? (
+                <BookText
+                  body={feature.description}
+                  className="mt-1 flex flex-col gap-2 text-sm text-fg-secondary"
+                />
+              ) : null}
             </li>
           ))}
       </ul>

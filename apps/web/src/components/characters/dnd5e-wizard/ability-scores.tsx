@@ -33,7 +33,10 @@ export interface RollState {
   assignment: Partial<Record<Ability, number>>;
 }
 
-export const EMPTY_ROLLS: RollState = { pool: [null, null, null, null, null, null], assignment: {} };
+export const EMPTY_ROLLS: RollState = {
+  pool: [null, null, null, null, null, null],
+  assignment: {},
+};
 
 type Scores = Dnd5eDraft['baseScores'];
 
@@ -48,16 +51,37 @@ interface AbilityScoresProps {
   onRolls: (rolls: RollState) => void;
 }
 
-const emptyScores = (): Scores => ({ str: null, dex: null, con: null, int: null, wis: null, cha: null });
+const emptyScores = (): Scores => ({
+  str: null,
+  dex: null,
+  con: null,
+  int: null,
+  wis: null,
+  cha: null,
+});
 
-export function AbilityScores({ draft, methods, classDef, rolls, error, onMethod, onScores, onRolls }: AbilityScoresProps) {
+export function AbilityScores({
+  draft,
+  methods,
+  classDef,
+  rolls,
+  error,
+  onMethod,
+  onScores,
+  onRolls,
+}: AbilityScoresProps) {
   const method = draft.abilityMethod;
   const scores = draft.baseScores;
   const final = finalAbilityScores(draft);
 
   const chooseMethod = (next: AbilityScoreMethod) => {
     if (next === method) return;
-    onMethod(next, next === 'point_buy' ? (Object.fromEntries(ABILITIES.map((ability) => [ability, POINT_BUY_MIN])) as Scores) : emptyScores());
+    onMethod(
+      next,
+      next === 'point_buy'
+        ? (Object.fromEntries(ABILITIES.map((ability) => [ability, POINT_BUY_MIN])) as Scores)
+        : emptyScores(),
+    );
   };
 
   return (
@@ -72,11 +96,15 @@ export function AbilityScores({ draft, methods, classDef, rolls, error, onMethod
             onClick={() => chooseMethod(entry)}
             className={cx(
               'flex flex-col gap-1 rounded-md border p-3 text-left text-sm',
-              entry === method ? 'border-parchment-300/70 bg-parchment-200/10' : 'border-line hover:bg-hover',
+              entry === method
+                ? 'border-parchment-300/70 bg-parchment-200/10'
+                : 'border-line hover:bg-hover',
             )}
           >
             <span className="font-medium text-fg">{abilityScoreMethodLabels[entry].name}</span>
-            <span className="text-xs leading-relaxed text-fg-muted">{abilityScoreMethodLabels[entry].description}</span>
+            <span className="text-xs leading-relaxed text-fg-muted">
+              {abilityScoreMethodLabels[entry].description}
+            </span>
           </button>
         ))}
       </div>
@@ -118,8 +146,17 @@ export function AbilityScores({ draft, methods, classDef, rolls, error, onMethod
                     {abilityLabels[ability].name}
                   </th>
                   <td className="tabular py-1.5 pr-2">{base ?? '—'}</td>
-                  <td className={cx('tabular py-1.5 pr-2', value !== base && value !== null && 'text-fg-accent')}>{value ?? '—'}</td>
-                  <td className="tabular py-1.5">{value === null ? '—' : formatModifier(abilityModifier(value))}</td>
+                  <td
+                    className={cx(
+                      'tabular py-1.5 pr-2',
+                      value !== base && value !== null && 'text-fg-accent',
+                    )}
+                  >
+                    {value ?? '—'}
+                  </td>
+                  <td className="tabular py-1.5">
+                    {value === null ? '—' : formatModifier(abilityModifier(value))}
+                  </td>
                 </tr>
               );
             })}
@@ -130,9 +167,19 @@ export function AbilityScores({ draft, methods, classDef, rolls, error, onMethod
   );
 }
 
-function StandardArray({ scores, classDef, onScores }: { scores: Scores; classDef: ClassDefinition | undefined; onScores: (scores: Scores) => void }) {
+function StandardArray({
+  scores,
+  classDef,
+  onScores,
+}: {
+  scores: Scores;
+  classDef: ClassDefinition | undefined;
+  onScores: (scores: Scores) => void;
+}) {
   const id = useId();
-  const used = ABILITIES.map((ability) => scores[ability]).filter((value): value is number => value !== null);
+  const used = ABILITIES.map((ability) => scores[ability]).filter(
+    (value): value is number => value !== null,
+  );
   const remaining = [...STANDARD_ARRAY].filter((value) => {
     const times = STANDARD_ARRAY.filter((entry) => entry === value).length;
     return used.filter((entry) => entry === value).length < times;
@@ -141,29 +188,52 @@ function StandardArray({ scores, classDef, onScores }: { scores: Scores; classDe
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-fg-muted">
-          Valores livres: <span className="tabular text-fg">{remaining.length ? remaining.join(', ') : 'nenhum'}</span>
+          Valores livres:{' '}
+          <span className="tabular text-fg">
+            {remaining.length ? remaining.join(', ') : 'nenhum'}
+          </span>
         </p>
         {classDef ? (
-          <Button size="sm" variant="secondary" icon={<Sparkles className="h-4 w-4" aria-hidden="true" />} onClick={() => onScores({ ...classDef.standardArray })}>
+          <Button
+            size="sm"
+            variant="secondary"
+            icon={<Sparkles className="h-4 w-4" aria-hidden="true" />}
+            onClick={() => onScores({ ...classDef.standardArray })}
+          >
             Sugestão para {classDef.name}
           </Button>
         ) : null}
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {ABILITIES.map((ability) => (
-          <label key={ability} htmlFor={`${id}-${ability}`} className="flex flex-col gap-1.5 text-sm">
+          <label
+            key={ability}
+            htmlFor={`${id}-${ability}`}
+            className="flex flex-col gap-1.5 text-sm"
+          >
             <span className="font-medium text-fg">{abilityLabels[ability].name}</span>
             <Select
               id={`${id}-${ability}`}
               value={scores[ability] ?? ''}
-              onChange={(event) => onScores({ ...scores, [ability]: event.target.value ? Number(event.target.value) : null })}
+              onChange={(event) =>
+                onScores({
+                  ...scores,
+                  [ability]: event.target.value ? Number(event.target.value) : null,
+                })
+              }
             >
               <option value="">—</option>
               {STANDARD_ARRAY.map((value, index) => {
-                const takenElsewhere = ABILITIES.filter((other) => other !== ability && scores[other] === value).length;
+                const takenElsewhere = ABILITIES.filter(
+                  (other) => other !== ability && scores[other] === value,
+                ).length;
                 const available = STANDARD_ARRAY.filter((entry) => entry === value).length;
                 return (
-                  <option key={`${value}-${index}`} value={value} disabled={takenElsewhere >= available}>
+                  <option
+                    key={`${value}-${index}`}
+                    value={value}
+                    disabled={takenElsewhere >= available}
+                  >
                     {value}
                   </option>
                 );
@@ -187,17 +257,27 @@ function PointBuy({ scores, onScores }: { scores: Scores; onScores: (scores: Sco
   return (
     <div className="flex flex-col gap-3">
       <p className={cx('text-sm', left < 0 ? 'text-danger' : 'text-fg-muted')}>
-        Pontos restantes: <span className="tabular font-medium text-fg">{left}</span> de {POINT_BUY_BUDGET}
+        Pontos restantes: <span className="tabular font-medium text-fg">{left}</span> de{' '}
+        {POINT_BUY_BUDGET}
       </p>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {ABILITIES.map((ability) => {
           const value = scores[ability] ?? POINT_BUY_MIN;
           const nextCost = (POINT_BUY_COSTS[value + 1] ?? Infinity) - (POINT_BUY_COSTS[value] ?? 0);
           return (
-            <div key={ability} className="flex items-center justify-between gap-3 rounded-md border border-line px-3 py-2">
+            <div
+              key={ability}
+              className="flex items-center justify-between gap-3 rounded-md border border-line px-3 py-2"
+            >
               <span className="text-sm text-fg">{abilityLabels[ability].name}</span>
               <div className="flex items-center gap-2">
-                <Button size="icon" variant="ghost" aria-label={`Diminuir ${abilityLabels[ability].name}`} disabled={value <= POINT_BUY_MIN} onClick={() => step(ability, -1)}>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label={`Diminuir ${abilityLabels[ability].name}`}
+                  disabled={value <= POINT_BUY_MIN}
+                  onClick={() => step(ability, -1)}
+                >
                   <Minus className="h-4 w-4" aria-hidden="true" />
                 </Button>
                 <span className="tabular w-8 text-center text-lg">{value}</span>
@@ -215,7 +295,9 @@ function PointBuy({ scores, onScores }: { scores: Scores; onScores: (scores: Sco
           );
         })}
       </div>
-      <p className="text-xs text-fg-subtle">Custos: 8 = 0, 9 = 1, 10 = 2, 11 = 3, 12 = 4, 13 = 5, 14 = 7, 15 = 9.</p>
+      <p className="text-xs text-fg-subtle">
+        Custos: 8 = 0, 9 = 1, 10 = 2, 11 = 3, 12 = 4, 13 = 5, 14 = 7, 15 = 9.
+      </p>
     </div>
   );
 }
@@ -243,10 +325,13 @@ function RandomScores({
       ) as Scores,
     );
   };
-  const rollAll = () => apply({ pool: Array.from({ length: 6 }, () => rollAbilityScore()), assignment: {} });
+  const rollAll = () =>
+    apply({ pool: Array.from({ length: 6 }, () => rollAbilityScore()), assignment: {} });
   const setPool = (index: number, text: string) => {
     const value = text === '' ? null : Math.trunc(Number(text));
-    const pool = rolls.pool.map((entry, position) => (position === index ? (Number.isFinite(value) ? value : null) : entry));
+    const pool = rolls.pool.map((entry, position) =>
+      position === index ? (Number.isFinite(value) ? value : null) : entry,
+    );
     apply({ ...rolls, pool });
   };
   const assign = (ability: Ability, text: string) => {
@@ -260,10 +345,16 @@ function RandomScores({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <Button variant="secondary" icon={<Dices className="h-4 w-4" aria-hidden="true" />} onClick={rollAll}>
+        <Button
+          variant="secondary"
+          icon={<Dices className="h-4 w-4" aria-hidden="true" />}
+          onClick={rollAll}
+        >
           Rolar 4d6 seis vezes
         </Button>
-        <p className="text-xs text-fg-muted">Ou digite os totais rolados na mesa ({RANDOM_SCORE_MIN} a {RANDOM_SCORE_MAX}).</p>
+        <p className="text-xs text-fg-muted">
+          Ou digite os totais rolados na mesa ({RANDOM_SCORE_MIN} a {RANDOM_SCORE_MAX}).
+        </p>
       </div>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
         {rolls.pool.map((value, index) => (
@@ -280,7 +371,11 @@ function RandomScores({
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {ABILITIES.map((ability) => (
-          <label key={ability} htmlFor={`${id}-${ability}`} className="flex flex-col gap-1.5 text-sm">
+          <label
+            key={ability}
+            htmlFor={`${id}-${ability}`}
+            className="flex flex-col gap-1.5 text-sm"
+          >
             <span className="font-medium text-fg">{abilityLabels[ability].name}</span>
             <Select
               id={`${id}-${ability}`}
@@ -290,7 +385,11 @@ function RandomScores({
               <option value="">—</option>
               {rolls.pool.map((value, index) =>
                 value === null ? null : (
-                  <option key={index} value={index} disabled={taken.has(index) && rolls.assignment[ability] !== index}>
+                  <option
+                    key={index}
+                    value={index}
+                    disabled={taken.has(index) && rolls.assignment[ability] !== index}
+                  >
                     {value} (rolagem {index + 1})
                   </option>
                 ),
@@ -300,7 +399,9 @@ function RandomScores({
         ))}
       </div>
       <p className="sr-only" aria-live="polite">
-        {ABILITIES.map((ability) => `${abilityLabels[ability].name} ${scores[ability] ?? 'sem valor'}`).join(', ')}
+        {ABILITIES.map(
+          (ability) => `${abilityLabels[ability].name} ${scores[ability] ?? 'sem valor'}`,
+        ).join(', ')}
       </p>
     </div>
   );

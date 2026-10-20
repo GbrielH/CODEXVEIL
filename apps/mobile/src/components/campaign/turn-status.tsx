@@ -3,6 +3,7 @@ import { turnModeLabels } from '@codexveil/domain';
 import { dnd5eActions, dnd5eTurnGuides } from '@codexveil/rpg-systems/dnd5e';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { ColorDot, useDicePalette } from '@/components/dice/dice-color';
 import { AppText, Badge, Card } from '@/components/ui/primitives';
 import { useRealtimeRefresh } from '@/lib/hooks';
 import { getSupabase } from '@/lib/supabase';
@@ -12,8 +13,17 @@ import { colors, fonts, radii, spacing } from '@/lib/theme';
  * Turno atual da campanha (modo, rodada, de quem é a vez e a ordem), ao vivo. Na vez do
  * próprio personagem, lembra o que dá para fazer no turno. Some quando não há turnos.
  */
-export function TurnStatus({ campaignId, ownCharacterId = null, systemId }: { campaignId: string; ownCharacterId?: string | null; systemId: string }) {
+export function TurnStatus({
+  campaignId,
+  ownCharacterId = null,
+  systemId,
+}: {
+  campaignId: string;
+  ownCharacterId?: string | null;
+  systemId: string;
+}) {
   const [turn, setTurn] = useState<CampaignTurn | null>(null);
+  const palette = useDicePalette(campaignId);
 
   const reload = useCallback(async () => {
     try {
@@ -35,7 +45,11 @@ export function TurnStatus({ campaignId, ownCharacterId = null, systemId }: { ca
     };
   }, [campaignId]);
 
-  useRealtimeRefresh(`turno:${campaignId}`, [{ table: 'campaign_turns', filter: `campaign_id=eq.${campaignId}` }], () => void reload());
+  useRealtimeRefresh(
+    `turno:${campaignId}`,
+    [{ table: 'campaign_turns', filter: `campaign_id=eq.${campaignId}` }],
+    () => void reload(),
+  );
 
   if (!turn) return null;
   const mine = ownCharacterId !== null && turn.activeCharacterId === ownCharacterId;
@@ -52,7 +66,8 @@ export function TurnStatus({ campaignId, ownCharacterId = null, systemId }: { ca
       </View>
       {active ? (
         <AppText variant={mine ? 'title' : 'body'} accessibilityLiveRegion="polite">
-          {mine ? 'É a sua vez!' : turn.activeName ? `Vez de ${turn.activeName}` : 'Vez do mestre'} · rodada {turn.round}
+          {mine ? 'É a sua vez!' : turn.activeName ? `Vez de ${turn.activeName}` : 'Vez do mestre'}{' '}
+          · rodada {turn.round}
         </AppText>
       ) : (
         <AppText variant="muted">O mestre está preparando a ordem dos turnos.</AppText>
@@ -60,8 +75,23 @@ export function TurnStatus({ campaignId, ownCharacterId = null, systemId }: { ca
       {turn.order.length > 0 ? (
         <View style={styles.order} accessibilityLabel="Ordem dos turnos">
           {turn.order.map((entry, index) => (
-            <View key={entry.id} style={[styles.pill, entry.current && styles.current, entry.defeated && { opacity: 0.55 }]}>
-              <AppText variant="small" style={{ color: entry.current ? colors.fgAccent : colors.fgSecondary, textDecorationLine: entry.defeated ? 'line-through' : 'none' }}>
+            <View
+              key={entry.id}
+              style={[
+                styles.pill,
+                styles.pillRow,
+                entry.current && styles.current,
+                entry.defeated && { opacity: 0.55 },
+              ]}
+            >
+              <ColorDot color={palette.colorOfCharacter(entry.characterId)} />
+              <AppText
+                variant="small"
+                style={{
+                  color: entry.current ? colors.fgAccent : colors.fgSecondary,
+                  textDecorationLine: entry.defeated ? 'line-through' : 'none',
+                }}
+              >
                 {index + 1}. {entry.name}
               </AppText>
             </View>
@@ -90,7 +120,21 @@ export function TurnStatus({ campaignId, ownCharacterId = null, systemId }: { ca
 
 const styles = StyleSheet.create({
   order: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  pill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radii.full, borderWidth: 1, borderColor: colors.line },
+  pillRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  pill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
   current: { borderColor: colors.parchmentEdge, backgroundColor: 'rgba(80, 22, 36, 0.6)' },
-  guide: { gap: 4, padding: spacing[3], borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.sunken },
+  guide: {
+    gap: 4,
+    padding: spacing[3],
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.sunken,
+  },
 });

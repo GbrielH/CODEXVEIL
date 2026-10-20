@@ -38,7 +38,13 @@ function setTheme(theme: Theme) {
 }
 
 /** Alterna entre o tema escuro (padrão) e o claro; a escolha fica salva neste navegador. */
-export function ThemeToggle({ compact = false, className }: { compact?: boolean; className?: string }) {
+export function ThemeToggle({
+  compact = false,
+  className,
+}: {
+  compact?: boolean;
+  className?: string;
+}) {
   const theme = useSyncExternalStore(subscribe, currentTheme, (): Theme => 'dark');
   const next: Theme = theme === 'light' ? 'dark' : 'light';
   const label = next === 'light' ? 'Usar tema claro' : 'Usar tema escuro';

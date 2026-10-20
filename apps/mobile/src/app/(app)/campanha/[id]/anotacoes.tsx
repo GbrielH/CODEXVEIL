@@ -1,4 +1,12 @@
-import { createCampaignNote, deleteCampaignNote, getCampaign, listCampaignNotes, setCampaignNotePinned, updateCampaignNote, type CampaignNote } from '@codexveil/database';
+import {
+  createCampaignNote,
+  deleteCampaignNote,
+  getCampaign,
+  listCampaignNotes,
+  setCampaignNotePinned,
+  updateCampaignNote,
+  type CampaignNote,
+} from '@codexveil/database';
 import { CONTENT_VISIBILITIES, visibilityLabels, type ContentVisibility } from '@codexveil/domain';
 import { fieldErrorsFrom, noteSchema, type FieldErrors } from '@codexveil/validation';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -28,7 +36,14 @@ interface NoteForm {
   isPinned: boolean;
 }
 
-const emptyForm: NoteForm = { id: null, version: 1, title: '', body: '', visibility: 'members', isPinned: false };
+const emptyForm: NoteForm = {
+  id: null,
+  version: 1,
+  title: '',
+  body: '',
+  visibility: 'members',
+  isPinned: false,
+};
 
 /** Anotações da campanha: públicas, só para mestres ou pessoais. */
 export default function NotesScreen() {
@@ -52,7 +67,10 @@ export default function NotesScreen() {
   if (!data) {
     return (
       <Screen>
-        <EmptyState title="Campanha não encontrada" description="Ela não existe ou você não participa dela." />
+        <EmptyState
+          title="Campanha não encontrada"
+          description="Ela não existe ou você não participa dela."
+        />
       </Screen>
     );
   }
@@ -75,20 +93,33 @@ export default function NotesScreen() {
       setForm(null);
       reload();
     } catch (cause) {
-      toast({ tone: 'danger', title: 'A anotação não foi salva', description: failureMessage(cause) });
+      toast({
+        tone: 'danger',
+        title: 'A anotação não foi salva',
+        description: failureMessage(cause),
+      });
     } finally {
       setBusy(false);
     }
   };
 
   const remove = async (note: CampaignNote) => {
-    const ok = await confirm({ title: `Excluir “${note.title}”?`, message: 'A anotação será apagada para todos.', confirmLabel: 'Excluir', tone: 'danger' });
+    const ok = await confirm({
+      title: `Excluir “${note.title}”?`,
+      message: 'A anotação será apagada para todos.',
+      confirmLabel: 'Excluir',
+      tone: 'danger',
+    });
     if (!ok) return;
     try {
       await deleteCampaignNote(getSupabase(), note.id);
       reload();
     } catch (cause) {
-      toast({ tone: 'danger', title: 'A anotação não foi excluída', description: failureMessage(cause) });
+      toast({
+        tone: 'danger',
+        title: 'A anotação não foi excluída',
+        description: failureMessage(cause),
+      });
     }
   };
 
@@ -99,26 +130,64 @@ export default function NotesScreen() {
         form ? (
           <Card>
             <AppText variant="heading">{form.id ? 'Editar anotação' : 'Nova anotação'}</AppText>
-            <Field label="Título" value={form.title} maxLength={120} onChangeText={(title) => setForm({ ...form, title })} error={errors.title} />
-            <Field label="Texto" value={form.body} multiline maxLength={20000} onChangeText={(body) => setForm({ ...form, body })} error={errors.body} />
+            <Field
+              label="Título"
+              value={form.title}
+              maxLength={120}
+              onChangeText={(title) => setForm({ ...form, title })}
+              error={errors.title}
+            />
+            <Field
+              label="Texto"
+              value={form.body}
+              multiline
+              maxLength={20000}
+              onChangeText={(body) => setForm({ ...form, body })}
+              error={errors.body}
+            />
             <AppText variant="small" style={{ color: colors.fg }}>
               Quem vê
             </AppText>
             <ChipRow>
               {CONTENT_VISIBILITIES.map((visibility) => (
-                <Chip key={visibility} label={visibilityLabels[visibility]} selected={form.visibility === visibility} onPress={() => setForm({ ...form, visibility })} />
+                <Chip
+                  key={visibility}
+                  label={visibilityLabels[visibility]}
+                  selected={form.visibility === visibility}
+                  onPress={() => setForm({ ...form, visibility })}
+                />
               ))}
             </ChipRow>
             <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-              <Button label="Cancelar" variant="ghost" onPress={() => setForm(null)} style={{ flex: 1 }} />
-              <Button label="Salvar" loading={busy} onPress={() => void save()} style={{ flex: 1 }} />
+              <Button
+                label="Cancelar"
+                variant="ghost"
+                onPress={() => setForm(null)}
+                style={{ flex: 1 }}
+              />
+              <Button
+                label="Salvar"
+                loading={busy}
+                onPress={() => void save()}
+                style={{ flex: 1 }}
+              />
             </View>
           </Card>
         ) : (
-          <Button label="Nova anotação" variant="secondary" icon={<Plus size={16} color={colors.fg} />} onPress={() => setForm(emptyForm)} />
+          <Button
+            label="Nova anotação"
+            variant="secondary"
+            icon={<Plus size={16} color={colors.fg} />}
+            onPress={() => setForm(emptyForm)}
+          />
         )
       ) : null}
-      {notes.length === 0 ? <EmptyState title="Nenhuma anotação" description="Registre pistas, nomes e decisões da mesa." /> : null}
+      {notes.length === 0 ? (
+        <EmptyState
+          title="Nenhuma anotação"
+          description="Registre pistas, nomes e decisões da mesa."
+        />
+      ) : null}
       {notes.map((note) => {
         const mine = note.authorId === userId;
         const canEdit = canWrite && (mine || campaign.role === 'gm');
@@ -131,12 +200,26 @@ export default function NotesScreen() {
               </AppText>
               {mine && canWrite ? (
                 <IconButton
-                  icon={note.isPinned ? <PinOff size={16} color={colors.fgAccent} /> : <Pin size={16} color={colors.fgSecondary} />}
-                  accessibilityLabel={note.isPinned ? `Desafixar ${note.title}` : `Fixar ${note.title} no topo`}
+                  icon={
+                    note.isPinned ? (
+                      <PinOff size={16} color={colors.fgAccent} />
+                    ) : (
+                      <Pin size={16} color={colors.fgSecondary} />
+                    )
+                  }
+                  accessibilityLabel={
+                    note.isPinned ? `Desafixar ${note.title}` : `Fixar ${note.title} no topo`
+                  }
                   onPress={() =>
                     void setCampaignNotePinned(getSupabase(), note, userId, !note.isPinned)
                       .then(reload)
-                      .catch((cause: unknown) => toast({ tone: 'danger', title: 'Não foi possível fixar', description: failureMessage(cause) }))
+                      .catch((cause: unknown) =>
+                        toast({
+                          tone: 'danger',
+                          title: 'Não foi possível fixar',
+                          description: failureMessage(cause),
+                        }),
+                      )
                   }
                 />
               ) : null}
@@ -145,14 +228,36 @@ export default function NotesScreen() {
                   <IconButton
                     icon={<Pencil size={16} color={colors.fgSecondary} />}
                     accessibilityLabel={`Editar ${note.title}`}
-                    onPress={() => setForm({ id: note.id, version: note.version, title: note.title, body: note.body, visibility: note.visibility, isPinned: note.isPinned })}
+                    onPress={() =>
+                      setForm({
+                        id: note.id,
+                        version: note.version,
+                        title: note.title,
+                        body: note.body,
+                        visibility: note.visibility,
+                        isPinned: note.isPinned,
+                      })
+                    }
                   />
-                  <IconButton icon={<Trash2 size={16} color={colors.fgSecondary} />} accessibilityLabel={`Excluir ${note.title}`} onPress={() => void remove(note)} />
+                  <IconButton
+                    icon={<Trash2 size={16} color={colors.fgSecondary} />}
+                    accessibilityLabel={`Excluir ${note.title}`}
+                    onPress={() => void remove(note)}
+                  />
                 </>
               ) : null}
             </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-              <Badge label={note.visibility === 'members' ? 'Geral' : note.visibility === 'author' ? 'Pessoal' : visibilityLabels[note.visibility]} tone={note.visibility === 'members' ? 'neutral' : 'brand'} />
+              <Badge
+                label={
+                  note.visibility === 'members'
+                    ? 'Geral'
+                    : note.visibility === 'author'
+                      ? 'Pessoal'
+                      : visibilityLabels[note.visibility]
+                }
+                tone={note.visibility === 'members' ? 'neutral' : 'brand'}
+              />
               <AppText variant="small">por {mine ? 'você' : note.authorName}</AppText>
             </View>
             {note.body ? <AppText variant="serif">{note.body}</AppText> : null}

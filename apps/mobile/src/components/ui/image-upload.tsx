@@ -52,7 +52,10 @@ export function ImageUploadButtons({
     const bucket = getSupabase().storage.from(CAMPAIGN_MEDIA_BUCKET);
     const path = pathFor(randomName(picked.extension));
     try {
-      const { error } = await bucket.upload(path, picked.bytes, { contentType: picked.mimeType, upsert: false });
+      const { error } = await bucket.upload(path, picked.bytes, {
+        contentType: picked.mimeType,
+        upsert: false,
+      });
       if (error) throw error;
       try {
         await apply(path);
@@ -86,8 +89,25 @@ export function ImageUploadButtons({
   return (
     <View style={{ gap: spacing[2] }}>
       <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-        <Button label={currentPath ? 'Trocar imagem' : label} compact variant="secondary" loading={busy} icon={<ImageUp size={14} color={colors.fg} />} onPress={() => void upload()} style={{ flex: 1 }} />
-        {currentPath ? <Button label="Remover" compact variant="ghost" disabled={busy} icon={<Trash2 size={14} color={colors.fgSecondary} />} onPress={() => void remove()} /> : null}
+        <Button
+          label={currentPath ? 'Trocar imagem' : label}
+          compact
+          variant="secondary"
+          loading={busy}
+          icon={<ImageUp size={14} color={colors.fg} />}
+          onPress={() => void upload()}
+          style={{ flex: 1 }}
+        />
+        {currentPath ? (
+          <Button
+            label="Remover"
+            compact
+            variant="ghost"
+            disabled={busy}
+            icon={<Trash2 size={14} color={colors.fgSecondary} />}
+            onPress={() => void remove()}
+          />
+        ) : null}
       </View>
       {message ? (
         <AppText variant="small" style={{ color: '#EC9384' }} accessibilityLiveRegion="polite">

@@ -4,7 +4,11 @@
  * autorização acontece no banco (RLS), igual à web.
  */
 import { AppError } from '@codexveil/domain';
-import { parseSupabasePublicConfig, type CodexveilClient, type Database } from '@codexveil/database';
+import {
+  parseSupabasePublicConfig,
+  type CodexveilClient,
+  type Database,
+} from '@codexveil/database';
 import { createClient, processLock } from '@supabase/supabase-js';
 import Storage from 'expo-sqlite/kv-store';
 import { AppState, type AppStateStatus } from 'react-native';
@@ -13,26 +17,36 @@ import { AppState, type AppStateStatus } from 'react-native';
 export const supabaseConfig = parseSupabasePublicConfig({
   url: process.env.EXPO_PUBLIC_SUPABASE_URL,
   publishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-  names: { url: 'EXPO_PUBLIC_SUPABASE_URL', publishableKey: 'EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY' },
+  names: {
+    url: 'EXPO_PUBLIC_SUPABASE_URL',
+    publishableKey: 'EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+  },
 });
 
 /** Endereço do site (links de convite e de redefinição de senha abrem no navegador). */
-export const siteUrl = (process.env.EXPO_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '');
+export const siteUrl = (process.env.EXPO_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(
+  /\/+$/,
+  '',
+);
 
 let client: CodexveilClient | undefined;
 
 export function getSupabase(): CodexveilClient {
   if (!supabaseConfig.ok) throw new AppError('not_configured');
-  client ??= createClient<Database>(supabaseConfig.config.url, supabaseConfig.config.publishableKey, {
-    auth: {
-      // Sessão guardada no armazenamento privado do app (SQLite), renovada automaticamente.
-      storage: Storage,
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: false,
-      lock: processLock,
+  client ??= createClient<Database>(
+    supabaseConfig.config.url,
+    supabaseConfig.config.publishableKey,
+    {
+      auth: {
+        // Sessão guardada no armazenamento privado do app (SQLite), renovada automaticamente.
+        storage: Storage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+        lock: processLock,
+      },
     },
-  });
+  );
   return client;
 }
 

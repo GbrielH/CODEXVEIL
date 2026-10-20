@@ -47,21 +47,57 @@ export default function SignInScreen() {
         </AppText>
       </View>
       <ConfigNotice />
-      {expired ? <Notice tone="warning" title="Sessão expirada" message="Sua sessão terminou. Entre novamente para continuar." /> : null}
+      {expired ? (
+        <Notice
+          tone="warning"
+          title="Sessão expirada"
+          message="Sua sessão terminou. Entre novamente para continuar."
+        />
+      ) : null}
       <Card ornate>
         <AppText variant="heading" accessibilityRole="header">
           Entrar
         </AppText>
         {message ? <Notice tone="danger" message={message} /> : null}
-        <Field label="E-mail" value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" error={errors.email} />
-        <Field label="Senha" value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" textContentType="password" error={errors.password} onSubmitEditing={() => void submit()} />
-        <Button label="Entrar" onPress={() => void submit()} loading={busy} disabled={!supabaseConfig.ok} />
-        <Link href="/recuperar-senha" style={{ color: colors.fgSecondary, textAlign: 'center', paddingVertical: 8 }}>
+        <Field
+          label="E-mail"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          autoComplete="email"
+          keyboardType="email-address"
+          textContentType="emailAddress"
+          error={errors.email}
+        />
+        <Field
+          label="Senha"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoComplete="current-password"
+          textContentType="password"
+          error={errors.password}
+          onSubmitEditing={() => void submit()}
+        />
+        <Button
+          label="Entrar"
+          onPress={() => void submit()}
+          loading={busy}
+          disabled={!supabaseConfig.ok}
+        />
+        <Link
+          href="/recuperar-senha"
+          style={{ color: colors.fgSecondary, textAlign: 'center', paddingVertical: 8 }}
+        >
           Esqueci minha senha
         </Link>
       </Card>
       <Divider />
-      <Button label="Criar uma conta" variant="secondary" onPress={() => router.push('/cadastro')} />
+      <Button
+        label="Criar uma conta"
+        variant="secondary"
+        onPress={() => router.push('/cadastro')}
+      />
     </Screen>
   );
 }

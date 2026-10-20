@@ -1,7 +1,10 @@
 import { toAppError } from '@codexveil/database';
 
 /** Mensagem segura e compreensível para qualquer falha (Supabase, rede, validação). */
-export function failureMessage(error: unknown, fallback = 'Algo deu errado. Tente novamente.'): string {
+export function failureMessage(
+  error: unknown,
+  fallback = 'Algo deu errado. Tente novamente.',
+): string {
   const appError = toAppError(error);
   if (appError.code === 'unknown') {
     console.error(error);

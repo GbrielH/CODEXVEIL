@@ -16,7 +16,17 @@ export function characterClassId(systemId: string, sheet: unknown): string | nul
 }
 
 /** Avatar do personagem: ícone da classe num selo vinho, ou a inicial do nome. */
-export function CharacterAvatar({ name, systemId, sheet, size = 44 }: { name: string; systemId: string; sheet: unknown; size?: number }) {
+export function CharacterAvatar({
+  name,
+  systemId,
+  sheet,
+  size = 44,
+}: {
+  name: string;
+  systemId: string;
+  sheet: unknown;
+  size?: number;
+}) {
   const classId = characterClassId(systemId, sheet);
   return (
     <View
@@ -32,9 +42,18 @@ export function CharacterAvatar({ name, systemId, sheet, size = 44 }: { name: st
       }}
     >
       {classId ? (
-        <CharacterIcon kind="class" id={classId} color={colors.fgAccent} size={Math.round(size * 0.6)} />
+        <CharacterIcon
+          kind="class"
+          id={classId}
+          color={colors.fgAccent}
+          size={Math.round(size * 0.6)}
+        />
       ) : (
-        <AppText style={{ fontFamily: fonts.displayBold, fontSize: size * 0.42, color: colors.fgAccent }}>{name.trim().charAt(0).toUpperCase() || '?'}</AppText>
+        <AppText
+          style={{ fontFamily: fonts.displayBold, fontSize: size * 0.42, color: colors.fgAccent }}
+        >
+          {name.trim().charAt(0).toUpperCase() || '?'}
+        </AppText>
       )}
     </View>
   );

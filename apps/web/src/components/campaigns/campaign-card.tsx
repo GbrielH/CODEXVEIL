@@ -9,7 +9,13 @@ import { formatRelative, pluralize } from '@/lib/format';
 import { CampaignCover } from './campaign-cover';
 
 /** Cartão da campanha com a capa (ou o fundo com as iniciais) no topo. */
-export function CampaignCard({ campaign, coverUrl }: { campaign: CampaignSummary; coverUrl: string | null }) {
+export function CampaignCard({
+  campaign,
+  coverUrl,
+}: {
+  campaign: CampaignSummary;
+  coverUrl: string | null;
+}) {
   const system = findSystem(campaign.systemId);
   const archived = campaign.status === 'archived';
   return (
@@ -22,12 +28,24 @@ export function CampaignCard({ campaign, coverUrl }: { campaign: CampaignSummary
       )}
     >
       <div className="relative">
-        <CampaignCover url={coverUrl} name={campaign.name} className="aspect-[16/9] w-full transition-transform duration-300 group-hover:scale-[1.02]" />
-        <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-card to-transparent" aria-hidden="true" />
+        <CampaignCover
+          url={coverUrl}
+          name={campaign.name}
+          className="aspect-[16/9] w-full transition-transform duration-300 group-hover:scale-[1.02]"
+        />
+        <span
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-card to-transparent"
+          aria-hidden="true"
+        />
       </div>
       <div className="flex flex-1 flex-col p-5 pt-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone={campaign.role === 'gm' ? 'brand' : 'neutral'} icon={campaign.role === 'gm' ? <Crown className="h-3 w-3" aria-hidden="true" /> : undefined}>
+          <Badge
+            tone={campaign.role === 'gm' ? 'brand' : 'neutral'}
+            icon={
+              campaign.role === 'gm' ? <Crown className="h-3 w-3" aria-hidden="true" /> : undefined
+            }
+          >
             {campaign.isOwner ? 'Mestre responsável' : campaignRoleLabels[campaign.role]}
           </Badge>
           {archived ? (
@@ -36,7 +54,9 @@ export function CampaignCard({ campaign, coverUrl }: { campaign: CampaignSummary
             </Badge>
           ) : null}
         </div>
-        <h3 className="mt-3 text-lg leading-snug group-hover:text-parchment-100">{campaign.name}</h3>
+        <h3 className="mt-3 text-lg leading-snug group-hover:text-parchment-100">
+          {campaign.name}
+        </h3>
         {campaign.description ? (
           <p className="mt-1 line-clamp-2 text-sm text-fg-muted">{campaign.description}</p>
         ) : null}

@@ -50,7 +50,15 @@ function Rows({ rows }: { rows: [string, string][] }) {
 }
 
 /** Especificações da magia: dados da ficha e o que o SRD diz (dano, resistência, área…). */
-export function SpellDetails({ name, data, description }: { name: string; data: Dnd5eSpellData; description: string }) {
+export function SpellDetails({
+  name,
+  data,
+  description,
+}: {
+  name: string;
+  data: Dnd5eSpellData;
+  description: string;
+}) {
   const texts = useSrdSpellTexts();
   const [showText, setShowText] = useState(false);
   const srd = texts?.[name] ?? null;
@@ -64,16 +72,31 @@ export function SpellDetails({ name, data, description }: { name: string; data: 
           ['Alcance', data.range],
           ['Componentes', data.components],
           ['Duração', data.duration],
-          ['Especial', [data.concentration ? 'Concentração' : null, data.ritual ? 'Ritual' : null].filter(Boolean).join(' · ')],
+          [
+            'Especial',
+            [data.concentration ? 'Concentração' : null, data.ritual ? 'Ritual' : null]
+              .filter(Boolean)
+              .join(' · '),
+          ],
           ...summary.map((line): [string, string] => [line.label, line.value]),
         ]}
       />
       {description ? <AppText variant="serif">{description}</AppText> : null}
       {srd && !description ? (
         <View style={{ gap: spacing[1] }}>
-          <Pressable onPress={() => setShowText((value) => !value)} accessibilityRole="button" accessibilityState={{ expanded: showText }} hitSlop={8}>
-            <AppText variant="small" style={{ color: colors.fgAccent, fontFamily: fonts.sansMedium }}>
-              {showText ? 'Ocultar o texto do SRD' : 'Ver o texto completo do SRD 5.2.1 (em inglês)'}
+          <Pressable
+            onPress={() => setShowText((value) => !value)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showText }}
+            hitSlop={8}
+          >
+            <AppText
+              variant="small"
+              style={{ color: colors.fgAccent, fontFamily: fonts.sansMedium }}
+            >
+              {showText
+                ? 'Ocultar o texto do SRD'
+                : 'Ver o texto completo do SRD 5.2.1 (em inglês)'}
             </AppText>
           </Pressable>
           {showText
@@ -89,7 +112,15 @@ export function SpellDetails({ name, data, description }: { name: string; data: 
   );
 }
 
-export function AttackDetails({ attack, data, bonus }: { attack: CharacterAbility; data: Dnd5eAttackData; bonus: string }) {
+export function AttackDetails({
+  attack,
+  data,
+  bonus,
+}: {
+  attack: CharacterAbility;
+  data: Dnd5eAttackData;
+  bonus: string;
+}) {
   return (
     <View style={{ gap: spacing[2] }}>
       <Rows

@@ -30,7 +30,12 @@ interface RevealPanelProps {
  * Lore da sessão na mesa do mestre: tudo nasce oculto e cada trecho (texto, imagem de NPC,
  * frase…) é liberado aos jogadores com um clique. Eles veem os trechos na aba Sessão.
  */
-export function RevealPanel({ sessionId, isPublished, isActive, blocks: initial }: RevealPanelProps) {
+export function RevealPanel({
+  sessionId,
+  isPublished,
+  isActive,
+  blocks: initial,
+}: RevealPanelProps) {
   const { toast } = useToast();
   const [blocks, setBlocks] = useState(initial);
   const [published, setPublished] = useState(isPublished);
@@ -47,10 +52,19 @@ export function RevealPanel({ sessionId, isPublished, isActive, blocks: initial 
         await publishSession(client, sessionId);
         setPublished(true);
       }
-      setBlocks((current) => current.map((entry) => (entry.id === block.id ? { ...entry, visibility: next } : entry)));
-      toast({ tone: 'success', title: next === 'members' ? 'Liberado para os jogadores.' : 'Ocultado dos jogadores.' });
+      setBlocks((current) =>
+        current.map((entry) => (entry.id === block.id ? { ...entry, visibility: next } : entry)),
+      );
+      toast({
+        tone: 'success',
+        title: next === 'members' ? 'Liberado para os jogadores.' : 'Ocultado dos jogadores.',
+      });
     } catch (error) {
-      toast({ tone: 'danger', title: 'Não foi possível mudar o trecho', description: failureMessage(error, 'Tente novamente.') });
+      toast({
+        tone: 'danger',
+        title: 'Não foi possível mudar o trecho',
+        description: failureMessage(error, 'Tente novamente.'),
+      });
     } finally {
       setBusy(null);
     }
@@ -66,16 +80,29 @@ export function RevealPanel({ sessionId, isPublished, isActive, blocks: initial 
         description={`${released} de ${blocks.length} trechos liberados. Os jogadores veem os liberados na aba Sessão.`}
       />
       {blocks.length === 0 ? (
-        <p className="text-sm text-fg-muted">Escreva o roteiro da sessão no editor; cada bloco aparece aqui oculto, pronto para liberar.</p>
+        <p className="text-sm text-fg-muted">
+          Escreva o roteiro da sessão no editor; cada bloco aparece aqui oculto, pronto para
+          liberar.
+        </p>
       ) : (
         <ul className="flex max-h-[28rem] flex-col gap-2 overflow-y-auto pr-1">
           {blocks.map((block) => {
             const open = block.visibility === 'members';
             return (
-              <li key={block.id} className={cx('flex items-start gap-3 rounded-md border px-3 py-2', open ? 'border-parchment-300/50 bg-wine-900/30' : 'border-line')}>
+              <li
+                key={block.id}
+                className={cx(
+                  'flex items-start gap-3 rounded-md border px-3 py-2',
+                  open ? 'border-parchment-300/50 bg-wine-900/30' : 'border-line',
+                )}
+              >
                 {block.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element -- URL assinada temporária.
-                  <img src={block.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded object-cover" />
+                  <img
+                    src={block.imageUrl}
+                    alt=""
+                    className="h-12 w-12 shrink-0 rounded object-cover"
+                  />
                 ) : null}
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-fg-muted">{block.label}</p>
@@ -86,7 +113,13 @@ export function RevealPanel({ sessionId, isPublished, isActive, blocks: initial 
                   variant={open ? 'ghost' : 'secondary'}
                   disabled={!isActive}
                   loading={busy === block.id}
-                  icon={open ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+                  icon={
+                    open ? (
+                      <EyeOff className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="h-4 w-4" aria-hidden="true" />
+                    )
+                  }
                   onClick={() => void toggle(block)}
                 >
                   {open ? 'Ocultar' : 'Liberar'}

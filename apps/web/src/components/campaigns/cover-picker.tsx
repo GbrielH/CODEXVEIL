@@ -18,9 +18,12 @@ export function CoverPicker({ name }: { name: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => () => {
-    if (preview) URL.revokeObjectURL(preview);
-  }, [preview]);
+  useEffect(
+    () => () => {
+      if (preview) URL.revokeObjectURL(preview);
+    },
+    [preview],
+  );
 
   const choose = async (original: File) => {
     setError(null);
@@ -51,7 +54,11 @@ export function CoverPicker({ name }: { name: string }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm font-medium text-fg">Capa da campanha</p>
-      <CampaignCover url={preview} name={name} className="aspect-[16/9] w-full rounded-md border border-line" />
+      <CampaignCover
+        url={preview}
+        name={name}
+        className="aspect-[16/9] w-full rounded-md border border-line"
+      />
       <input
         ref={pickerRef}
         id={id}
@@ -64,18 +71,39 @@ export function CoverPicker({ name }: { name: string }) {
         }}
       />
       {/* Campo enviado com o formulário: recebe a imagem já reduzida. */}
-      <input ref={fieldRef} type="file" name="cover" className="hidden" tabIndex={-1} aria-hidden="true" />
+      <input
+        ref={fieldRef}
+        type="file"
+        name="cover"
+        className="hidden"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="secondary" loading={busy} onClick={() => pickerRef.current?.click()} icon={<ImageUp className="h-4 w-4" aria-hidden="true" />}>
+        <Button
+          size="sm"
+          variant="secondary"
+          loading={busy}
+          onClick={() => pickerRef.current?.click()}
+          icon={<ImageUp className="h-4 w-4" aria-hidden="true" />}
+        >
           {preview ? 'Trocar imagem' : 'Escolher imagem'}
         </Button>
         {preview ? (
-          <Button size="sm" variant="ghost" onClick={clear} icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={clear}
+            icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
+          >
             Remover
           </Button>
         ) : null}
       </div>
-      <p className="text-xs text-fg-muted">Opcional. Aparece no painel e na lista de campanhas de todos os participantes. PNG, JPEG ou WebP.</p>
+      <p className="text-xs text-fg-muted">
+        Opcional. Aparece no painel e na lista de campanhas de todos os participantes. PNG, JPEG ou
+        WebP.
+      </p>
       {error ? (
         <p className="text-xs font-medium text-danger" role="alert">
           {error}

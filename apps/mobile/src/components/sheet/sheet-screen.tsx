@@ -14,7 +14,14 @@ import {
   type CharacterResource,
 } from '@codexveil/database';
 import { applyTrackOperation, type TrackOperation } from '@codexveil/domain';
-import { computeDnd5eDerived, dnd5eConditionEffects, dnd5eSheetSchema, dnd5eSystem, parseDnd5eSheet, type Dnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
+import {
+  computeDnd5eDerived,
+  dnd5eConditionEffects,
+  dnd5eSheetSchema,
+  dnd5eSystem,
+  parseDnd5eSheet,
+  type Dnd5eSheet,
+} from '@codexveil/rpg-systems/dnd5e';
 import { useRef, useState } from 'react';
 import { Image, View } from 'react-native';
 import { Button } from '@/components/ui/button';
@@ -78,10 +85,13 @@ export function SheetScreen(props: SheetScreenProps) {
   const autosave = useAutosave<Dnd5eSheet>({
     initial: props.sheet,
     version: character.version,
-    save: async (sheet, version) => (await saveCharacterSheet(getSupabase(), character.id, version, { sheet })).version,
+    save: async (sheet, version) =>
+      (await saveCharacterSheet(getSupabase(), character.id, version, { sheet })).version,
     validate: (sheet) => {
       const parsed = dnd5eSheetSchema.safeParse(sheet);
-      return parsed.success ? null : `Valor fora das regras: ${parsed.error.issues[0]?.message ?? ''}`;
+      return parsed.success
+        ? null
+        : `Valor fora das regras: ${parsed.error.issues[0]?.message ?? ''}`;
     },
   });
   const sheet = autosave.value;
@@ -91,15 +101,28 @@ export function SheetScreen(props: SheetScreenProps) {
   const reloadPlayState = async () => {
     try {
       const supabase = getSupabase();
-      const [nextResources, nextConditions] = await Promise.all([listCharacterResources(supabase, character.id), listCharacterConditions(supabase, character.id)]);
-      setResources((current) => nextResources.map((resource) => (inFlight.current.has(resource.id) ? (current.find((item) => item.id === resource.id) ?? resource) : resource)));
+      const [nextResources, nextConditions] = await Promise.all([
+        listCharacterResources(supabase, character.id),
+        listCharacterConditions(supabase, character.id),
+      ]);
+      setResources((current) =>
+        nextResources.map((resource) =>
+          inFlight.current.has(resource.id)
+            ? (current.find((item) => item.id === resource.id) ?? resource)
+            : resource,
+        ),
+      );
       setConditions(nextConditions);
     } catch (error) {
       console.error(error);
     }
   };
 
-  const adjustResource = (resource: CharacterResource, operation: TrackOperation, amount: number) => {
+  const adjustResource = (
+    resource: CharacterResource,
+    operation: TrackOperation,
+    amount: number,
+  ) => {
     let optimistic: CharacterResource;
     try {
       optimistic = { ...resource, ...applyTrackOperation(resource, operation, amount) };
@@ -121,7 +144,11 @@ export function SheetScreen(props: SheetScreenProps) {
       })
       .catch((error: unknown) => {
         inFlight.current.delete(resource.id);
-        toast({ tone: 'danger', title: `${resource.label}: alteração NÃO salva`, description: failureMessage(error) });
+        toast({
+          tone: 'danger',
+          title: `${resource.label}: alteração NÃO salva`,
+          description: failureMessage(error),
+        });
         void reloadPlayState();
       });
   };
@@ -163,7 +190,11 @@ export function SheetScreen(props: SheetScreenProps) {
       if (keepMine) await autosave.overwrite(state.version);
       else autosave.reset(parseDnd5eSheet(state.sheet), state.version);
     } catch (error) {
-      toast({ tone: 'danger', title: 'Não foi possível resolver o conflito', description: failureMessage(error) });
+      toast({
+        tone: 'danger',
+        title: 'Não foi possível resolver o conflito',
+        description: failureMessage(error),
+      });
     }
   };
 
@@ -196,95 +227,165 @@ export function SheetScreen(props: SheetScreenProps) {
     <SheetContext.Provider value={context}>
       {/* Rolagens da ficha são testes do jogador: ficam no aparelho e não vão para o mural. */}
       <DiceProvider campaignId={null} characterId={character.id} enabled={props.canEditPlay}>
-      <Screen eyebrow={character.campaign?.name ?? 'Sem campanha'} title={character.name} subtitle={`${summary.subtitle} · ${character.ownerName}`}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-          <Badge label={`Nível ${derived.level}`} tone="parchment" />
-          <Badge label={`Proficiência +${derived.proficiencyBonus}`} tone="neutral" />
-          {props.canEditSheet || props.canEditPlay ? <Badge label={statusLabels[autosave.state.status]} tone={autosave.state.status === 'error' ? 'danger' : autosave.state.status === 'saved' ? 'success' : 'warning'} /> : null}
-          <AppText variant="small" style={{ color: live === 'live' ? colors.success : colors.fgMuted }}>
-            {live === 'live' ? '● Ao vivo' : live === 'connecting' ? '○ Conectando…' : '○ Reconectando…'}
-          </AppText>
-        </View>
-
-        {autosave.state.status === 'conflict' ? (
-          <Notice
-            tone="warning"
-            title="Ficha alterada em outro lugar"
-            message="Suas alterações ainda não foram gravadas. Escolha qual versão manter."
-            action={
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                <Button label="Usar a salva" compact variant="secondary" onPress={() => void resolveConflict(false)} />
-                <Button label="Manter as minhas" compact onPress={() => void resolveConflict(true)} />
-              </View>
-            }
-          />
-        ) : null}
-        {autosave.state.status === 'error' ? (
-          <Notice tone="danger" title="Alterações não salvas" message={autosave.state.message ?? ''} action={<Button label="Tentar de novo" compact variant="secondary" onPress={() => void autosave.retry()} />} />
-        ) : null}
-        {autosave.state.status === 'invalid' ? <Notice tone="warning" message={autosave.state.message ?? ''} /> : null}
-        {!props.canEditPlay ? (
-          <Notice message={character.campaign?.status === 'archived' ? 'Campanha arquivada: ficha somente para consulta.' : 'Você está consultando a ficha de outro jogador.'} />
-        ) : !props.canEditSheet ? (
-          <Notice message="O mestre travou a construção das fichas. Vida, recursos e inventário seguem editáveis." />
-        ) : null}
-
-        {props.portraitUrl || props.canEditSheet ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            {props.portraitUrl ? (
-              <Image source={{ uri: props.portraitUrl }} accessibilityLabel={`Retrato de ${character.name}`} style={{ width: 72, height: 72, borderRadius: 36 }} />
+        <Screen
+          eyebrow={character.campaign?.name ?? 'Sem campanha'}
+          title={character.name}
+          subtitle={`${summary.subtitle} · ${character.ownerName}`}
+        >
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+            <Badge label={`Nível ${derived.level}`} tone="parchment" />
+            <Badge label={`Proficiência +${derived.proficiencyBonus}`} tone="neutral" />
+            {props.canEditSheet || props.canEditPlay ? (
+              <Badge
+                label={statusLabels[autosave.state.status]}
+                tone={
+                  autosave.state.status === 'error'
+                    ? 'danger'
+                    : autosave.state.status === 'saved'
+                      ? 'success'
+                      : 'warning'
+                }
+              />
             ) : null}
-            {props.canEditSheet ? (
-              <View style={{ flex: 1 }}>
-                <ImageUploadButtons
-                  preset="portrait"
-                  label="Enviar retrato"
-                  currentPath={character.portraitPath}
-                  pathFor={(fileName) => characterPortraitPath(character.id, fileName)}
-                  apply={async (path) => autosave.adoptVersion(await setCharacterPortrait(getSupabase(), character.id, path))}
-                  onDone={() => {
-                    toast({ tone: 'success', title: 'Retrato atualizado.' });
-                    props.onReload();
-                  }}
-                />
-              </View>
-            ) : null}
+            <AppText
+              variant="small"
+              style={{ color: live === 'live' ? colors.success : colors.fgMuted }}
+            >
+              {live === 'live'
+                ? '● Ao vivo'
+                : live === 'connecting'
+                  ? '○ Conectando…'
+                  : '○ Reconectando…'}
+            </AppText>
           </View>
-        ) : null}
 
-        {character.campaign && character.campaign.status === 'active' && tab === 'jogo' ? (
-          <TurnPlay campaignId={character.campaign.id} />
-        ) : null}
+          {autosave.state.status === 'conflict' ? (
+            <Notice
+              tone="warning"
+              title="Ficha alterada em outro lugar"
+              message="Suas alterações ainda não foram gravadas. Escolha qual versão manter."
+              action={
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                  <Button
+                    label="Usar a salva"
+                    compact
+                    variant="secondary"
+                    onPress={() => void resolveConflict(false)}
+                  />
+                  <Button
+                    label="Manter as minhas"
+                    compact
+                    onPress={() => void resolveConflict(true)}
+                  />
+                </View>
+              }
+            />
+          ) : null}
+          {autosave.state.status === 'error' ? (
+            <Notice
+              tone="danger"
+              title="Alterações não salvas"
+              message={autosave.state.message ?? ''}
+              action={
+                <Button
+                  label="Tentar de novo"
+                  compact
+                  variant="secondary"
+                  onPress={() => void autosave.retry()}
+                />
+              }
+            />
+          ) : null}
+          {autosave.state.status === 'invalid' ? (
+            <Notice tone="warning" message={autosave.state.message ?? ''} />
+          ) : null}
+          {!props.canEditPlay ? (
+            <Notice
+              message={
+                character.campaign?.status === 'archived'
+                  ? 'Campanha arquivada: ficha somente para consulta.'
+                  : 'Você está consultando a ficha de outro jogador.'
+              }
+            />
+          ) : !props.canEditSheet ? (
+            <Notice message="O mestre travou a construção das fichas. Vida, recursos e inventário seguem editáveis." />
+          ) : null}
 
-        <Segmented<Tab>
-          accessibilityLabel="Seções da ficha"
-          value={tab}
-          onChange={setTab}
-          options={[
-            { value: 'jogo', label: 'Jogo' },
-            { value: 'atributos', label: 'Atributos' },
-            { value: 'inventario', label: 'Inventário' },
-            // Na campanha, as habilidades ficam divididas entre Jogo (usáveis) e Atributos (passivas).
-            ...(inCampaign ? [] : [{ value: 'habilidades' as const, label: 'Habilidades' }]),
-            { value: 'personagem', label: 'Personagem' },
-            { value: 'evolucao', label: 'Evolução' },
-          ]}
-        />
-        {tab === 'jogo' ? <PlaySection /> : null}
-        {tab === 'jogo' && inCampaign ? <FeaturesSection show="usable" /> : null}
-        {tab === 'atributos' ? <AttributesSection /> : null}
-        {tab === 'atributos' && inCampaign ? <FeaturesSection show="passive" /> : null}
-        {tab === 'inventario' ? <InventorySection /> : null}
-        {tab === 'habilidades' && !inCampaign ? <FeaturesSection /> : null}
-        {tab === 'personagem' ? <StorySection /> : null}
-        {tab === 'evolucao' ? (
-          <EvolutionSection
-            characterName={character.name}
-            gate={{ inCampaign: Boolean(character.campaign), isGm: character.viewer.membership?.role === 'gm', isOwner: character.viewer.isOwner, grantedLevel: character.grantedLevel }}
+          {props.portraitUrl || props.canEditSheet ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              {props.portraitUrl ? (
+                <Image
+                  source={{ uri: props.portraitUrl }}
+                  accessibilityLabel={`Retrato de ${character.name}`}
+                  style={{ width: 72, height: 72, borderRadius: 36 }}
+                />
+              ) : null}
+              {props.canEditSheet ? (
+                <View style={{ flex: 1 }}>
+                  <ImageUploadButtons
+                    preset="portrait"
+                    label="Enviar retrato"
+                    currentPath={character.portraitPath}
+                    pathFor={(fileName) => characterPortraitPath(character.id, fileName)}
+                    apply={async (path) =>
+                      autosave.adoptVersion(
+                        await setCharacterPortrait(getSupabase(), character.id, path),
+                      )
+                    }
+                    onDone={() => {
+                      toast({ tone: 'success', title: 'Retrato atualizado.' });
+                      props.onReload();
+                    }}
+                  />
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+
+          {character.campaign && character.campaign.status === 'active' && tab === 'jogo' ? (
+            <TurnPlay campaignId={character.campaign.id} />
+          ) : null}
+
+          <Segmented<Tab>
+            accessibilityLabel="Seções da ficha"
+            value={tab}
+            onChange={setTab}
+            options={[
+              { value: 'jogo', label: 'Jogo' },
+              { value: 'atributos', label: 'Atributos' },
+              { value: 'inventario', label: 'Inventário' },
+              // Na campanha, as habilidades ficam divididas entre Jogo (usáveis) e Atributos (passivas).
+              ...(inCampaign ? [] : [{ value: 'habilidades' as const, label: 'Habilidades' }]),
+              { value: 'personagem', label: 'Personagem' },
+              { value: 'evolucao', label: 'Evolução' },
+            ]}
           />
-        ) : null}
-        {tab === 'personagem' && character.viewer.isOwner ? <DeleteCharacterCard characterId={character.id} name={character.name} portraitPath={character.portraitPath} /> : null}
-      </Screen>
+          {tab === 'jogo' ? <PlaySection /> : null}
+          {tab === 'jogo' && inCampaign ? <FeaturesSection show="usable" /> : null}
+          {tab === 'atributos' ? <AttributesSection /> : null}
+          {tab === 'atributos' && inCampaign ? <FeaturesSection show="passive" /> : null}
+          {tab === 'inventario' ? <InventorySection /> : null}
+          {tab === 'habilidades' && !inCampaign ? <FeaturesSection /> : null}
+          {tab === 'personagem' ? <StorySection /> : null}
+          {tab === 'evolucao' ? (
+            <EvolutionSection
+              characterName={character.name}
+              gate={{
+                inCampaign: Boolean(character.campaign),
+                isGm: character.viewer.membership?.role === 'gm',
+                isOwner: character.viewer.isOwner,
+                grantedLevel: character.grantedLevel,
+              }}
+            />
+          ) : null}
+          {tab === 'personagem' && character.viewer.isOwner ? (
+            <DeleteCharacterCard
+              characterId={character.id}
+              name={character.name}
+              portraitPath={character.portraitPath}
+            />
+          ) : null}
+        </Screen>
       </DiceProvider>
     </SheetContext.Provider>
   );

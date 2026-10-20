@@ -31,7 +31,10 @@ export function StatBlockView({ name, statBlock }: { name: string; statBlock: Dn
   ] as const;
 
   return (
-    <section aria-label={`Estatísticas de ${name}`} className="parchment ornate rounded-lg px-5 py-4 text-ink">
+    <section
+      aria-label={`Estatísticas de ${name}`}
+      className="parchment ornate rounded-lg px-5 py-4 text-ink"
+    >
       <h3 className="font-display text-xl text-wine-800">{name}</h3>
       <p className="text-sm italic text-ink-muted">
         {creatureSizeLabels[statBlock.size]}
@@ -67,7 +70,8 @@ export function StatBlockView({ name, statBlock }: { name: string; statBlock: Dn
           <div key={ability}>
             <dt className="font-semibold">{abilityLabels[ability].abbreviation}</dt>
             <dd className="tabular">
-              {statBlock.abilities[ability]} ({formatModifier(abilityModifier(statBlock.abilities[ability]))})
+              {statBlock.abilities[ability]} (
+              {formatModifier(abilityModifier(statBlock.abilities[ability]))})
             </dd>
           </div>
         ))}
@@ -95,11 +99,14 @@ export function StatBlockView({ name, statBlock }: { name: string; statBlock: Dn
         .filter(([, entries]) => entries.length > 0)
         .map(([title, entries]) => (
           <div key={title} className="mt-3">
-            <h4 className="border-b border-wine-700/40 font-display text-base text-wine-800">{title}</h4>
+            <h4 className="border-b border-wine-700/40 font-display text-base text-wine-800">
+              {title}
+            </h4>
             <ul className="mt-1 flex flex-col gap-1.5 text-sm">
               {entries.map((entry, index) => (
                 <li key={index}>
-                  <strong className="italic">{entry.name}.</strong> <span className="whitespace-pre-line">{entry.description}</span>
+                  <strong className="italic">{entry.name}.</strong>{' '}
+                  <span className="whitespace-pre-line">{entry.description}</span>
                 </li>
               ))}
             </ul>

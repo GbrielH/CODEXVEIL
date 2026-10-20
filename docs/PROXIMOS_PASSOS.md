@@ -430,6 +430,18 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-20 — cor dos dados obrigatória e nome colorido
+
+- Sem cor escolhida ninguém rola dado (gatilho `dice_rolls_require_color`, erro `CVCOR`); o
+  mestre escolhe primeiro; cada cor é de uma só pessoa da mesa.
+- Site: faixa obrigatória no topo da campanha, paleta com cores já usadas desativadas e nome do
+  personagem com bolinha e sublinhado na cor do dono (grupo, mesa do mestre, combate, turnos).
+- App (vai por OTA, sem APK): cartão de cor no painel da campanha e na tela de dados; bolinha da
+  cor na ordem dos turnos.
+- Os avisos de resultado subiram para o topo da tela para não cobrir a caixinha de dados 3D.
+- Verificado: `pnpm check` 20/20 (banco 141 testes, com teste novo da regra); migração aplicada.
+  Não verificado no navegador nem no aparelho.
+
 ### 2026-10-20 — dados 3D no site com cor por jogador
 
 - Caixinha recolhível no canto com dados 3D (`components/dice/dice-tray.tsx`) no lugar da

@@ -8,7 +8,11 @@ import {
   signedMediaUrls,
 } from '@codexveil/database';
 import { canEditCharacterPlayState, canEditCharacterSheet } from '@codexveil/domain';
-import { buildDnd5eBookContent, parseDnd5eSheet, setActiveDnd5eBookContent } from '@codexveil/rpg-systems/dnd5e';
+import {
+  buildDnd5eBookContent,
+  parseDnd5eSheet,
+  setActiveDnd5eBookContent,
+} from '@codexveil/rpg-systems/dnd5e';
 import { parseT20Sheet } from '@codexveil/rpg-systems/tormenta20';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { SheetScreen } from '@/components/sheet/sheet-screen';
@@ -36,10 +40,23 @@ export default function CharacterScreen() {
     const images = await signedMediaUrls(supabase, [character.portraitPath]);
     // Livros para a subida de nível (subclasses, talentos e magias), como no site.
     const books =
-      character.systemId === 'dnd5e' && canEditCharacterSheet(characterAccessInput(character)) ? await sheetBookSources(supabase, userId, character) : [];
+      character.systemId === 'dnd5e' && canEditCharacterSheet(characterAccessInput(character))
+        ? await sheetBookSources(supabase, userId, character)
+        : [];
     const t20Books =
-      character.systemId === 'tormenta20' && canEditCharacterSheet(characterAccessInput(character)) ? await sheetT20Sources(supabase, userId, character) : [];
-    return { character, resources, conditions, items, abilities, books, t20Books, portraitUrl: character.portraitPath ? (images[character.portraitPath] ?? null) : null };
+      character.systemId === 'tormenta20' && canEditCharacterSheet(characterAccessInput(character))
+        ? await sheetT20Sources(supabase, userId, character)
+        : [];
+    return {
+      character,
+      resources,
+      conditions,
+      items,
+      abilities,
+      books,
+      t20Books,
+      portraitUrl: character.portraitPath ? (images[character.portraitPath] ?? null) : null,
+    };
   }, `${id}:${userId}`);
 
   if (loading) return <LoadingState label="Abrindo a ficha…" />;
@@ -47,7 +64,10 @@ export default function CharacterScreen() {
   if (!data) {
     return (
       <Screen>
-        <EmptyState title="Ficha não encontrada" description="Ela não existe ou você não tem acesso a ela." />
+        <EmptyState
+          title="Ficha não encontrada"
+          description="Ela não existe ou você não tem acesso a ela."
+        />
       </Screen>
     );
   }
@@ -56,7 +76,9 @@ export default function CharacterScreen() {
     try {
       t20Sheet = parseT20Sheet(data.character.sheet);
     } catch {
-      return <ErrorState message="Os dados desta ficha não seguem o formato do Tormenta20. Nada foi alterado." />;
+      return (
+        <ErrorState message="Os dados desta ficha não seguem o formato do Tormenta20. Nada foi alterado." />
+      );
     }
     const t20Access = characterAccessInput(data.character);
     return (
@@ -64,10 +86,19 @@ export default function CharacterScreen() {
         <Stack.Screen options={{ title: data.character.name }} />
         <T20MobileSheet
           key={data.character.id}
-          character={{ id: data.character.id, name: data.character.name, version: data.character.version }}
+          character={{
+            id: data.character.id,
+            name: data.character.name,
+            version: data.character.version,
+          }}
           campaignId={data.character.campaign?.id ?? null}
           portraitPath={data.character.portraitPath}
-          gate={{ inCampaign: Boolean(data.character.campaign), isGm: data.character.viewer.membership?.role === 'gm', isOwner: data.character.viewer.isOwner, grantedLevel: data.character.grantedLevel }}
+          gate={{
+            inCampaign: Boolean(data.character.campaign),
+            isGm: data.character.viewer.membership?.role === 'gm',
+            isOwner: data.character.viewer.isOwner,
+            grantedLevel: data.character.grantedLevel,
+          }}
           sheet={t20Sheet}
           resources={data.resources}
           conditions={data.conditions}
@@ -83,7 +114,10 @@ export default function CharacterScreen() {
   if (data.character.systemId !== 'dnd5e') {
     return (
       <Screen>
-        <EmptyState title="Sistema não suportado" description="Esta versão do app ainda não tem fichas para este sistema." />
+        <EmptyState
+          title="Sistema não suportado"
+          description="Esta versão do app ainda não tem fichas para este sistema."
+        />
       </Screen>
     );
   }
@@ -92,7 +126,9 @@ export default function CharacterScreen() {
   try {
     sheet = parseDnd5eSheet(data.character.sheet);
   } catch {
-    return <ErrorState message="Os dados desta ficha não seguem o formato esperado. Nada foi alterado." />;
+    return (
+      <ErrorState message="Os dados desta ficha não seguem o formato esperado. Nada foi alterado." />
+    );
   }
 
   // A ficha e a subida de nível consultam o SRD e os livros liberados.
@@ -111,7 +147,9 @@ export default function CharacterScreen() {
         abilities={data.abilities}
         canEditSheet={canEditCharacterSheet(access)}
         canEditPlay={canEditCharacterPlayState(access)}
-        fullConditionList={data.character.viewer.membership?.role === 'gm' || data.character.campaign === null}
+        fullConditionList={
+          data.character.viewer.membership?.role === 'gm' || data.character.campaign === null
+        }
         portraitUrl={data.portraitUrl}
         onReload={reload}
       />

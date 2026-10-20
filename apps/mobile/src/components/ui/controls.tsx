@@ -1,6 +1,13 @@
 import { Check } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { colors, fonts, minTouchTarget, palette, radii, spacing } from '@/lib/theme';
 import { AppText } from './primitives';
 
@@ -23,16 +30,33 @@ export function Chip({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole={role}
-      accessibilityState={role === 'button' ? { disabled } : { selected, checked: role === 'checkbox' ? selected : undefined, disabled }}
+      accessibilityState={
+        role === 'button'
+          ? { disabled }
+          : { selected, checked: role === 'checkbox' ? selected : undefined, disabled }
+      }
       hitSlop={4}
-      style={({ pressed }) => [styles.chip, selected && styles.chipSelected, pressed && { backgroundColor: colors.hover }, disabled && { opacity: 0.5 }]}
+      style={({ pressed }) => [
+        styles.chip,
+        selected && styles.chipSelected,
+        pressed && { backgroundColor: colors.hover },
+        disabled && { opacity: 0.5 },
+      ]}
     >
-      <AppText style={{ fontSize: 13, color: selected ? colors.fgAccent : colors.fgSecondary }}>{label}</AppText>
+      <AppText style={{ fontSize: 13, color: selected ? colors.fgAccent : colors.fgSecondary }}>
+        {label}
+      </AppText>
     </Pressable>
   );
 }
 
-export function ChipRow({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+export function ChipRow({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
   return <View style={[styles.chips, style]}>{children}</View>;
 }
 
@@ -57,9 +81,15 @@ export function CheckRow({
       accessibilityRole="checkbox"
       accessibilityState={{ checked, disabled }}
       accessibilityLabel={description ? `${label}. ${description}` : label}
-      style={({ pressed }) => [styles.check, pressed && { backgroundColor: colors.hover }, disabled && { opacity: 0.55 }]}
+      style={({ pressed }) => [
+        styles.check,
+        pressed && { backgroundColor: colors.hover },
+        disabled && { opacity: 0.55 },
+      ]}
     >
-      <View style={[styles.box, checked && styles.boxChecked]}>{checked ? <Check size={14} color={colors.primaryFg} /> : null}</View>
+      <View style={[styles.box, checked && styles.boxChecked]}>
+        {checked ? <Check size={14} color={colors.primaryFg} /> : null}
+      </View>
       <View style={{ flex: 1, gap: 2 }}>
         <AppText style={{ fontFamily: fonts.sansMedium }}>{label}</AppText>
         {description ? <AppText variant="small">{description}</AppText> : null}
@@ -86,7 +116,10 @@ export function NumberField({
 }) {
   return (
     <View style={{ gap: 6 }}>
-      <AppText variant="small" style={{ color: colors.fg, fontFamily: fonts.sansMedium, fontSize: 14 }}>
+      <AppText
+        variant="small"
+        style={{ color: colors.fg, fontFamily: fonts.sansMedium, fontSize: 14 }}
+      >
         {label}
       </AppText>
       <TextInput
@@ -112,8 +145,17 @@ export function NumberField({
 
 const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.full, borderWidth: 1, borderColor: colors.lineStrong },
-  chipSelected: { borderColor: 'rgba(206, 191, 157, 0.7)', backgroundColor: 'rgba(228, 216, 189, 0.08)' },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.lineStrong,
+  },
+  chipSelected: {
+    borderColor: 'rgba(206, 191, 157, 0.7)',
+    backgroundColor: 'rgba(228, 216, 189, 0.08)',
+  },
   check: {
     flexDirection: 'row',
     alignItems: 'center',

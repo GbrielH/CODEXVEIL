@@ -16,12 +16,22 @@ import { useSheet } from './context';
 
 function parseAmount(text: string): number | null {
   const value = Number(text.trim());
-  return Number.isInteger(value) && value >= 0 && value <= 1_000_000 && text.trim() !== '' ? value : null;
+  return Number.isInteger(value) && value >= 0 && value <= 1_000_000 && text.trim() !== ''
+    ? value
+    : null;
 }
 
 /** Controle de vida pensado para uso durante a sessão: poucos toques, números grandes. */
 export function HpTracker() {
-  const { resources, adjustResource, pendingResourceIds, permissions, character, setResources, run } = useSheet();
+  const {
+    resources,
+    adjustResource,
+    pendingResourceIds,
+    permissions,
+    character,
+    setResources,
+    run,
+  } = useSheet();
   const hp = resources.find((resource) => resource.key === DND5E_RESOURCE_KEYS.hitPoints);
   const inputId = useId();
   const [amount, setAmount] = useState('');
@@ -34,7 +44,9 @@ export function HpTracker() {
     return (
       <Card>
         <h2 className="text-lg">Pontos de vida</h2>
-        <p className="mt-2 text-sm text-fg-muted">Este personagem ainda não tem uma trilha de vida.</p>
+        <p className="mt-2 text-sm text-fg-muted">
+          Este personagem ainda não tem uma trilha de vida.
+        </p>
         {!disabled ? (
           <Button
             className="mt-3"
@@ -93,7 +105,9 @@ export function HpTracker() {
       </div>
 
       <div className="mt-3 flex items-end gap-3" aria-live="polite">
-        <span className="tabular font-display text-5xl leading-none text-fg-accent">{hp.current}</span>
+        <span className="tabular font-display text-5xl leading-none text-fg-accent">
+          {hp.current}
+        </span>
         <span className="tabular pb-1 text-xl text-fg-muted">/ {hp.max ?? '—'}</span>
         {hp.temp > 0 ? (
           <span className="mb-1 inline-flex items-center gap-1 rounded-full border border-arcane-400/40 bg-info-bg px-2 py-0.5 text-xs text-arcane-300">
@@ -107,7 +121,14 @@ export function HpTracker() {
           </span>
         ) : null}
       </div>
-      <HealthBar current={hp.current} max={hp.max} temp={hp.temp} size="md" showValues={false} className="mt-3" />
+      <HealthBar
+        current={hp.current}
+        max={hp.max}
+        temp={hp.temp}
+        size="md"
+        showValues={false}
+        className="mt-3"
+      />
 
       {!disabled ? (
         <>
@@ -132,13 +153,25 @@ export function HpTracker() {
                 className="tabular h-11 w-full rounded-md border border-line-strong bg-sunken px-2 text-center text-lg text-fg focus-visible:border-parchment-300"
                 placeholder="0"
               />
-              <Button variant="danger" onClick={() => apply('damage')} icon={<HeartCrack className="h-4 w-4" aria-hidden="true" />}>
+              <Button
+                variant="danger"
+                onClick={() => apply('damage')}
+                icon={<HeartCrack className="h-4 w-4" aria-hidden="true" />}
+              >
                 Dano
               </Button>
-              <Button variant="secondary" onClick={() => apply('heal')} icon={<Heart className="h-4 w-4" aria-hidden="true" />}>
+              <Button
+                variant="secondary"
+                onClick={() => apply('heal')}
+                icon={<Heart className="h-4 w-4" aria-hidden="true" />}
+              >
                 Cura
               </Button>
-              <Button variant="secondary" onClick={() => apply('set_temp')} icon={<Shield className="h-4 w-4" aria-hidden="true" />}>
+              <Button
+                variant="secondary"
+                onClick={() => apply('set_temp')}
+                icon={<Shield className="h-4 w-4" aria-hidden="true" />}
+              >
                 Temp.
               </Button>
             </div>
@@ -200,8 +233,16 @@ export function HpTracker() {
             <label htmlFor={`${inputId}-max`} className="text-sm font-medium">
               Novo máximo
             </label>
-            <NumberInput id={`${inputId}-max`} value={newMax} onCommit={setNewMax} min={0} max={1_000_000} />
-            <p className="text-xs text-fg-muted">Se a vida atual passar do novo máximo, ela é reduzida.</p>
+            <NumberInput
+              id={`${inputId}-max`}
+              value={newMax}
+              onCommit={setNewMax}
+              min={0}
+              max={1_000_000}
+            />
+            <p className="text-xs text-fg-muted">
+              Se a vida atual passar do novo máximo, ela é reduzida.
+            </p>
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setMaxOpen(false)}>
@@ -216,14 +257,31 @@ export function HpTracker() {
 }
 
 /** Caixas de marcação para trilhas pequenas (testes contra a morte, inspiração). */
-export function CheckboxTrack({ resource, label, tone = 'neutral' }: { resource: CharacterResource; label?: string; tone?: 'neutral' | 'success' | 'danger' }) {
+export function CheckboxTrack({
+  resource,
+  label,
+  tone = 'neutral',
+}: {
+  resource: CharacterResource;
+  label?: string;
+  tone?: 'neutral' | 'success' | 'danger';
+}) {
   const { adjustResource, permissions } = useSheet();
   const max = resource.max ?? 0;
-  const color = tone === 'success' ? 'bg-success border-success' : tone === 'danger' ? 'bg-danger border-danger' : 'bg-parchment-300 border-parchment-300';
+  const color =
+    tone === 'success'
+      ? 'bg-success border-success'
+      : tone === 'danger'
+        ? 'bg-danger border-danger'
+        : 'bg-parchment-300 border-parchment-300';
   return (
     <div className="flex items-center gap-3">
       <span className="min-w-0 flex-1 text-sm text-fg-secondary">{label ?? resource.label}</span>
-      <div className="flex gap-1.5" role="group" aria-label={`${label ?? resource.label}: ${resource.current} de ${max}`}>
+      <div
+        className="flex gap-1.5"
+        role="group"
+        aria-label={`${label ?? resource.label}: ${resource.current} de ${max}`}
+      >
         {Array.from({ length: max }, (_, index) => {
           const filled = index < resource.current;
           return (
@@ -233,7 +291,13 @@ export function CheckboxTrack({ resource, label, tone = 'neutral' }: { resource:
               disabled={!permissions.canEditPlay}
               aria-pressed={filled}
               aria-label={`${label ?? resource.label} ${index + 1}`}
-              onClick={() => adjustResource(resource, 'set_current', filled && resource.current === index + 1 ? index : index + 1)}
+              onClick={() =>
+                adjustResource(
+                  resource,
+                  'set_current',
+                  filled && resource.current === index + 1 ? index : index + 1,
+                )
+              }
               className={cx(
                 'h-7 w-7 rounded-full border-2 transition-colors disabled:cursor-not-allowed',
                 filled ? color : 'border-line-strong bg-sunken hover:border-silver-400',
@@ -248,14 +312,24 @@ export function CheckboxTrack({ resource, label, tone = 'neutral' }: { resource:
 
 function DeathSaves() {
   const { resources } = useSheet();
-  const successes = resources.find((resource) => resource.key === DND5E_RESOURCE_KEYS.deathSaveSuccesses);
-  const failures = resources.find((resource) => resource.key === DND5E_RESOURCE_KEYS.deathSaveFailures);
-  const inspiration = resources.find((resource) => resource.key === DND5E_RESOURCE_KEYS.heroicInspiration);
+  const successes = resources.find(
+    (resource) => resource.key === DND5E_RESOURCE_KEYS.deathSaveSuccesses,
+  );
+  const failures = resources.find(
+    (resource) => resource.key === DND5E_RESOURCE_KEYS.deathSaveFailures,
+  );
+  const inspiration = resources.find(
+    (resource) => resource.key === DND5E_RESOURCE_KEYS.heroicInspiration,
+  );
   if (!successes && !failures && !inspiration) return null;
   return (
     <div className="mt-5 flex flex-col gap-2 border-t border-line pt-4">
-      {successes ? <CheckboxTrack resource={successes} label="Sucessos contra a morte" tone="success" /> : null}
-      {failures ? <CheckboxTrack resource={failures} label="Falhas contra a morte" tone="danger" /> : null}
+      {successes ? (
+        <CheckboxTrack resource={successes} label="Sucessos contra a morte" tone="success" />
+      ) : null}
+      {failures ? (
+        <CheckboxTrack resource={failures} label="Falhas contra a morte" tone="danger" />
+      ) : null}
       {inspiration ? (
         <div className="flex items-center gap-2">
           <Sparkle className="h-4 w-4 text-parchment-300" aria-hidden="true" />

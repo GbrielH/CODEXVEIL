@@ -32,7 +32,9 @@ export function NavLink({ href, icon, label, variant }: NavLinkProps) {
           active ? 'text-fg-accent' : 'text-fg-muted hover:text-fg',
         )}
       >
-        <span className={cx('rounded-full px-4 py-1 transition-colors', active && 'bg-wine-900')}>{icon}</span>
+        <span className={cx('rounded-full px-4 py-1 transition-colors', active && 'bg-wine-900')}>
+          {icon}
+        </span>
         {label}
       </Link>
     );
@@ -49,9 +51,14 @@ export function NavLink({ href, icon, label, variant }: NavLinkProps) {
       )}
     >
       {active ? (
-        <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-parchment-300" aria-hidden="true" />
+        <span
+          className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-parchment-300"
+          aria-hidden="true"
+        />
       ) : null}
-      <span className={active ? 'text-fg-brand' : 'text-fg-muted group-hover:text-fg-secondary'}>{icon}</span>
+      <span className={active ? 'text-fg-brand' : 'text-fg-muted group-hover:text-fg-secondary'}>
+        {icon}
+      </span>
       <span className="truncate group-data-[collapsed=true]/shell:sr-only">{label}</span>
     </Link>
   );

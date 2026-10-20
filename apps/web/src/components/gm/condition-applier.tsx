@@ -30,7 +30,9 @@ export function ConditionChip({
   onRemove?: (() => void) | undefined;
   removeLabel: string;
 }) {
-  const summary = findSystem(systemId)?.conditions.find((condition) => condition.key === conditionKey)?.summary;
+  const summary = findSystem(systemId)?.conditions.find(
+    (condition) => condition.key === conditionKey,
+  )?.summary;
   const duration = conditionRoundsLabel(systemId, rounds);
   return (
     <span
@@ -38,13 +40,20 @@ export function ConditionChip({
       className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-warning-bg py-0.5 pr-1 pl-2.5 text-xs text-amber-300"
     >
       {label}
-      {rounds !== null ? <span className="tabular text-[10px] text-fg-secondary">· {rounds} rod.</span> : null}
+      {rounds !== null ? (
+        <span className="tabular text-[10px] text-fg-secondary">· {rounds} rod.</span>
+      ) : null}
       <span className="sr-only">
         {' '}
         ({duration}){summary ? `. ${summary}` : ''}
       </span>
       {onRemove ? (
-        <button type="button" onClick={onRemove} className="rounded-full p-0.5 hover:bg-amber-400/20" aria-label={removeLabel}>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="rounded-full p-0.5 hover:bg-amber-400/20"
+          aria-label={removeLabel}
+        >
           <X className="h-3 w-3" aria-hidden="true" />
         </button>
       ) : null}
@@ -74,10 +83,13 @@ export function ConditionApplier({
   const [busy, setBusy] = useState(false);
   if (!system) return null;
 
-  const rounds = duration === CUSTOM_DURATION ? parseRounds(custom) : duration ? Number(duration) : null;
+  const rounds =
+    duration === CUSTOM_DURATION ? parseRounds(custom) : duration ? Number(duration) : null;
   const invalid = duration === CUSTOM_DURATION && rounds === null;
   // Condições graduais (ex.: Exaustão) podem ser aplicadas de novo para subir de nível.
-  const available = system.conditions.filter((condition) => (allowLevels && condition.maxLevel) || !appliedKeys.includes(condition.key));
+  const available = system.conditions.filter(
+    (condition) => (allowLevels && condition.maxLevel) || !appliedKeys.includes(condition.key),
+  );
 
   const submit = async () => {
     if (!key || invalid) return;
@@ -94,7 +106,13 @@ export function ConditionApplier({
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <Select size="sm" aria-label={`Aplicar condição em ${targetName}`} value={key} onChange={(event) => setKey(event.target.value)} className="w-40">
+      <Select
+        size="sm"
+        aria-label={`Aplicar condição em ${targetName}`}
+        value={key}
+        onChange={(event) => setKey(event.target.value)}
+        className="w-40"
+      >
         <option value="">+ condição</option>
         {available.map((condition) => (
           <option key={condition.key} value={condition.key}>
@@ -105,9 +123,18 @@ export function ConditionApplier({
       </Select>
       {key ? (
         <>
-          <Select size="sm" aria-label={`Duração da condição em ${targetName}`} value={duration} onChange={(event) => setDuration(event.target.value)} className="w-52">
+          <Select
+            size="sm"
+            aria-label={`Duração da condição em ${targetName}`}
+            value={duration}
+            onChange={(event) => setDuration(event.target.value)}
+            className="w-52"
+          >
             {system.conditionDurations.map((preset) => (
-              <option key={preset.label} value={preset.rounds === null ? '' : String(preset.rounds)}>
+              <option
+                key={preset.label}
+                value={preset.rounds === null ? '' : String(preset.rounds)}
+              >
                 {preset.label}
               </option>
             ))}
@@ -121,10 +148,20 @@ export function ConditionApplier({
               value={custom}
               onChange={(event) => setCustom(event.target.value)}
               aria-invalid={invalid && custom !== '' ? true : undefined}
-              className={controlClasses(invalid && custom !== '', 'tabular h-8 w-20 px-2 text-center text-xs')}
+              className={controlClasses(
+                invalid && custom !== '',
+                'tabular h-8 w-20 px-2 text-center text-xs',
+              )}
             />
           ) : null}
-          <Button size="sm" variant="secondary" loading={busy} disabled={invalid} onClick={() => void submit()} icon={<Plus className="h-4 w-4" aria-hidden="true" />}>
+          <Button
+            size="sm"
+            variant="secondary"
+            loading={busy}
+            disabled={invalid}
+            onClick={() => void submit()}
+            icon={<Plus className="h-4 w-4" aria-hidden="true" />}
+          >
             Aplicar
           </Button>
         </>

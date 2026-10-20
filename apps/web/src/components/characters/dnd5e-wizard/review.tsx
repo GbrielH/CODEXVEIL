@@ -38,10 +38,16 @@ export function CharacterReview({ draft }: { draft: Dnd5eDraft }) {
   const { sheet, derived, combat, resources, abilities, items } = preview;
   const hp = resources.find((resource) => resource.key === 'hp');
   const gold = resources.find((resource) => resource.key === 'currency_gp')?.current ?? 0;
-  const tracks = resources.filter((resource) => !isDedicatedResourceKey(resource.key) && !resource.key.startsWith('hit_dice_'));
+  const tracks = resources.filter(
+    (resource) => !isDedicatedResourceKey(resource.key) && !resource.key.startsWith('hit_dice_'),
+  );
   const spells = abilities.filter((entry) => entry.kind === 'spell');
   const attacks = abilities.filter((entry) => entry.kind === 'attack');
-  const proficientSkills = SKILLS.filter((skill) => sheet.skills[skill].proficiency === 'proficient' || sheet.skills[skill].proficiency === 'expertise');
+  const proficientSkills = SKILLS.filter(
+    (skill) =>
+      sheet.skills[skill].proficiency === 'proficient' ||
+      sheet.skills[skill].proficiency === 'expertise',
+  );
   const klass = sheet.identity.classes[0];
   const imagePrompt = characterImagePrompt({
     system: 'D&D 5e',
@@ -51,7 +57,9 @@ export function CharacterReview({ draft }: { draft: Dnd5eDraft }) {
     level: klass?.level ?? null,
     background: sheet.identity.background,
     alignment: sheet.identity.alignment,
-    strengths: [...ABILITIES].sort((a, b) => sheet.abilities[b] - sheet.abilities[a]).map((ability) => abilityLabels[ability].name),
+    strengths: [...ABILITIES]
+      .sort((a, b) => sheet.abilities[b] - sheet.abilities[a])
+      .map((ability) => abilityLabels[ability].name),
     equipment: items.filter((item) => item.isEquipped).map((item) => item.name),
     appearance: draft.details.appearance,
     personality: [draft.details.personality, draft.details.ideals].filter(Boolean).join(' '),
@@ -63,7 +71,14 @@ export function CharacterReview({ draft }: { draft: Dnd5eDraft }) {
       <header className="flex flex-col gap-1">
         <h2 className="text-2xl">{draft.name || 'Sem nome'}</h2>
         <p className="text-sm text-fg-secondary">
-          {[sheet.identity.species, klass ? `${klass.name} ${klass.level}${klass.subclass ? ` · ${klass.subclass}` : ''}` : '', sheet.identity.background, sheet.identity.alignment]
+          {[
+            sheet.identity.species,
+            klass
+              ? `${klass.name} ${klass.level}${klass.subclass ? ` · ${klass.subclass}` : ''}`
+              : '',
+            sheet.identity.background,
+            sheet.identity.alignment,
+          ]
             .filter(Boolean)
             .join(' · ')}
         </p>
@@ -97,9 +112,17 @@ export function CharacterReview({ draft }: { draft: Dnd5eDraft }) {
                     {abilityLabels[ability].name}
                   </th>
                   <td className="tabular py-1.5">{sheet.abilities[ability]}</td>
-                  <td className="tabular py-1.5">{formatModifier(derived.abilityModifiers[ability])}</td>
+                  <td className="tabular py-1.5">
+                    {formatModifier(derived.abilityModifiers[ability])}
+                  </td>
                   <td className="tabular py-1.5 text-right">
-                    {sheet.savingThrows[ability].proficient ? <Badge tone="brand">TR {formatModifier(derived.savingThrows[ability])}</Badge> : <span className="text-fg-subtle">TR {formatModifier(derived.savingThrows[ability])}</span>}
+                    {sheet.savingThrows[ability].proficient ? (
+                      <Badge tone="brand">TR {formatModifier(derived.savingThrows[ability])}</Badge>
+                    ) : (
+                      <span className="text-fg-subtle">
+                        TR {formatModifier(derived.savingThrows[ability])}
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -116,9 +139,15 @@ export function CharacterReview({ draft }: { draft: Dnd5eDraft }) {
                 <li key={skill} className="flex justify-between gap-2 border-b border-line py-1">
                   <span>
                     {skillDefinitions[skill].label}
-                    {sheet.skills[skill].proficiency === 'expertise' ? <span className="ml-1 text-xs text-fg-accent">({proficiencyLevelLabels.expertise})</span> : null}
+                    {sheet.skills[skill].proficiency === 'expertise' ? (
+                      <span className="ml-1 text-xs text-fg-accent">
+                        ({proficiencyLevelLabels.expertise})
+                      </span>
+                    ) : null}
                   </span>
-                  <span className="tabular text-fg-accent">{formatModifier(derived.skills[skill].bonus)}</span>
+                  <span className="tabular text-fg-accent">
+                    {formatModifier(derived.skills[skill].bonus)}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -145,7 +174,10 @@ export function CharacterReview({ draft }: { draft: Dnd5eDraft }) {
               const bonus = attackRollBonus(data, derived);
               const damageModifier = attackDamageModifier(data.ability, sheet.abilities);
               return (
-                <li key={attack.name} className="flex items-center justify-between gap-3 rounded-md border border-line px-3 py-2 text-sm">
+                <li
+                  key={attack.name}
+                  className="flex items-center justify-between gap-3 rounded-md border border-line px-3 py-2 text-sm"
+                >
                   <span className="min-w-0">
                     <span className="block truncate text-fg">{attack.name}</span>
                     <span className="text-xs text-fg-muted">{data.range}</span>
@@ -153,7 +185,8 @@ export function CharacterReview({ draft }: { draft: Dnd5eDraft }) {
                   <span className="tabular text-right text-xs text-fg-secondary">
                     <span className="block text-sm text-fg-accent">{formatModifier(bonus)}</span>
                     {data.damage}
-                    {damageModifier ? ` ${formatModifier(damageModifier)}` : ''} {data.damageType.toLowerCase()}
+                    {damageModifier ? ` ${formatModifier(damageModifier)}` : ''}{' '}
+                    {data.damageType.toLowerCase()}
                   </span>
                 </li>
               );
@@ -170,7 +203,11 @@ export function CharacterReview({ draft }: { draft: Dnd5eDraft }) {
               <li key={track.key}>
                 <Badge tone="parchment">
                   {track.label}: {track.max}
-                  {track.recovery === 'short_rest' ? ' (descanso curto)' : track.recovery === 'long_rest' ? ' (descanso longo)' : ''}
+                  {track.recovery === 'short_rest'
+                    ? ' (descanso curto)'
+                    : track.recovery === 'long_rest'
+                      ? ' (descanso longo)'
+                      : ''}
                 </Badge>
               </li>
             ))}
@@ -189,9 +226,12 @@ export function CharacterReview({ draft }: { draft: Dnd5eDraft }) {
                 <li key={`${entry.source}-${entry.name}`}>
                   <details className="rounded-md border border-line px-3 py-2 text-sm open:bg-raised/40">
                     <summary className="cursor-pointer">
-                      <span className="text-fg">{entry.name}</span> <span className="text-xs text-fg-subtle">{entry.source}</span>
+                      <span className="text-fg">{entry.name}</span>{' '}
+                      <span className="text-xs text-fg-subtle">{entry.source}</span>
                     </summary>
-                    <p className="mt-2 whitespace-pre-line leading-relaxed text-fg-secondary">{entry.description}</p>
+                    <p className="mt-2 whitespace-pre-line leading-relaxed text-fg-secondary">
+                      {entry.description}
+                    </p>
                   </details>
                 </li>
               ))}
@@ -207,16 +247,25 @@ export function CharacterReview({ draft }: { draft: Dnd5eDraft }) {
             {spells.map((spell) => {
               const data = dnd5eSpellDataSchema.parse(spell.data);
               return (
-                <li key={spell.name} className="flex justify-between gap-2 border-b border-line py-1">
-                  <span className={data.prepared ? 'text-fg' : 'text-fg-muted'}>{spellNamePt(spell.name)}</span>
-                  <span className="text-xs text-fg-subtle">{data.circle === 0 ? 'Truque' : `${data.circle}º`}</span>
+                <li
+                  key={spell.name}
+                  className="flex justify-between gap-2 border-b border-line py-1"
+                >
+                  <span className={data.prepared ? 'text-fg' : 'text-fg-muted'}>
+                    {spellNamePt(spell.name)}
+                  </span>
+                  <span className="text-xs text-fg-subtle">
+                    {data.circle === 0 ? 'Truque' : `${data.circle}º`}
+                  </span>
                 </li>
               );
             })}
           </ul>
           {derived.spellcasting ? (
             <p className="mt-2 text-xs text-fg-muted">
-              CD das magias {derived.spellcasting.saveDc} · ataque mágico {formatModifier(derived.spellcasting.attackBonus)} ({abilityLabels[derived.spellcasting.ability].name}).
+              CD das magias {derived.spellcasting.saveDc} · ataque mágico{' '}
+              {formatModifier(derived.spellcasting.attackBonus)} (
+              {abilityLabels[derived.spellcasting.ability].name}).
             </p>
           ) : null}
         </section>
@@ -225,7 +274,9 @@ export function CharacterReview({ draft }: { draft: Dnd5eDraft }) {
       <section>
         <h3 className="eyebrow mb-2">Inventário</h3>
         {items.length === 0 ? (
-          <p className="text-sm text-fg-muted">Sem itens (escolha o equipamento ou o ouro inicial).</p>
+          <p className="text-sm text-fg-muted">
+            Sem itens (escolha o equipamento ou o ouro inicial).
+          </p>
         ) : (
           <ul className="grid gap-1 text-sm sm:grid-cols-2">
             {items.map((item) => (

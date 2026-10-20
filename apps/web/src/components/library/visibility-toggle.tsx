@@ -19,7 +19,12 @@ interface VisibilityToggleProps {
 }
 
 /** Oculta ou libera um NPC/monstro para os jogadores, sem abrir o editor. */
-export function VisibilityToggle({ creatureId, name, visibility, compact = false }: VisibilityToggleProps) {
+export function VisibilityToggle({
+  creatureId,
+  name,
+  visibility,
+  compact = false,
+}: VisibilityToggleProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [current, setCurrent] = useState(visibility);
@@ -35,11 +40,18 @@ export function VisibilityToggle({ creatureId, name, visibility, compact = false
       setCurrent(next);
       toast({
         tone: 'success',
-        title: next === 'members' ? `${name} foi liberado aos jogadores.` : `${name} foi ocultado dos jogadores.`,
+        title:
+          next === 'members'
+            ? `${name} foi liberado aos jogadores.`
+            : `${name} foi ocultado dos jogadores.`,
       });
       router.refresh();
     } catch (error) {
-      toast({ tone: 'danger', title: 'A visibilidade não mudou', description: failureMessage(error, 'Tente novamente.') });
+      toast({
+        tone: 'danger',
+        title: 'A visibilidade não mudou',
+        description: failureMessage(error, 'Tente novamente.'),
+      });
     } finally {
       setBusy(false);
     }
@@ -50,7 +62,13 @@ export function VisibilityToggle({ creatureId, name, visibility, compact = false
       variant={hidden ? 'secondary' : 'ghost'}
       size={compact ? 'icon' : 'sm'}
       loading={busy}
-      icon={busy ? undefined : hidden ? <Eye className="h-4 w-4" aria-hidden="true" /> : <EyeOff className="h-4 w-4" aria-hidden="true" />}
+      icon={
+        busy ? undefined : hidden ? (
+          <Eye className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <EyeOff className="h-4 w-4" aria-hidden="true" />
+        )
+      }
       aria-label={`${label}: ${name}`}
       title={label}
       onClick={() => void toggle()}

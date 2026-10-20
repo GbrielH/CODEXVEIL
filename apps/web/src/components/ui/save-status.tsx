@@ -34,7 +34,11 @@ export function SaveStatus({ status, className }: { status: AutosaveStatus; clas
       aria-live="polite"
       className={cx(
         'inline-flex items-center gap-1.5 text-xs font-medium',
-        status === 'error' ? 'text-danger' : status === 'saved' ? 'text-fg-muted' : 'text-fg-secondary',
+        status === 'error'
+          ? 'text-danger'
+          : status === 'saved'
+            ? 'text-fg-muted'
+            : 'text-fg-secondary',
         className,
       )}
     >
@@ -47,7 +51,11 @@ export function SaveStatus({ status, className }: { status: AutosaveStatus; clas
 /** Selo de conexão em tempo real. */
 export function LiveBadge({ status }: { status: 'connecting' | 'live' | 'offline' }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-fg-muted" role="status" aria-live="polite">
+    <span
+      className="inline-flex items-center gap-1.5 text-xs text-fg-muted"
+      role="status"
+      aria-live="polite"
+    >
       <span
         className={cx(
           'h-2 w-2 rounded-full',

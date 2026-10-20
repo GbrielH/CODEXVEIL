@@ -26,19 +26,35 @@ export default function ItemScreen() {
   if (!data) {
     return (
       <Screen>
-        <EmptyState title="Item não encontrado" description="Ele não existe ou ainda não foi revelado." />
+        <EmptyState
+          title="Item não encontrado"
+          description="Ele não existe ou ainda não foi revelado."
+        />
       </Screen>
     );
   }
   const item = data;
   return (
-    <Screen eyebrow={itemCategoryLabels[item.category]} title={item.name} subtitle={[item.rarity, item.value ? `Valor: ${item.value}` : null].filter(Boolean).join(' · ') || undefined} refreshing={refreshing} onRefresh={reload}>
+    <Screen
+      eyebrow={itemCategoryLabels[item.category]}
+      title={item.name}
+      subtitle={
+        [item.rarity, item.value ? `Valor: ${item.value}` : null].filter(Boolean).join(' · ') ||
+        undefined
+      }
+      refreshing={refreshing}
+      onRefresh={reload}
+    >
       <Stack.Screen options={{ title: item.name }} />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {item.requiresAttunement ? <Badge label="Exige sintonia" tone="brand" /> : null}
         {item.srdName ? <Badge label="SRD 5.2.1" tone="parchment" /> : null}
       </View>
-      {item.description ? <AppText variant="serif">{item.description}</AppText> : <AppText variant="muted">Sem descrição.</AppText>}
+      {item.description ? (
+        <AppText variant="serif">{item.description}</AppText>
+      ) : (
+        <AppText variant="muted">Sem descrição.</AppText>
+      )}
     </Screen>
   );
 }

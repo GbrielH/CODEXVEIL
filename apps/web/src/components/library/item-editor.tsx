@@ -1,7 +1,17 @@
 'use client';
 
-import { giveCampaignItem, setCampaignItemVisibility, updateCampaignItem, type CampaignItem } from '@codexveil/database';
-import { ITEM_CATEGORIES, itemCategoryLabels, type ItemCategory, type SharedVisibility } from '@codexveil/domain';
+import {
+  giveCampaignItem,
+  setCampaignItemVisibility,
+  updateCampaignItem,
+  type CampaignItem,
+} from '@codexveil/database';
+import {
+  ITEM_CATEGORIES,
+  itemCategoryLabels,
+  type ItemCategory,
+  type SharedVisibility,
+} from '@codexveil/domain';
 import { campaignItemSchema, fieldErrorsFrom, type FieldErrors } from '@codexveil/validation';
 import { Eye, EyeOff, Gift, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -17,7 +27,15 @@ import { failureMessage } from '@/lib/client-errors';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 /** Oculta ou revela o item aos jogadores, direto da lista. */
-export function ItemVisibilityToggle({ itemId, name, visibility }: { itemId: string; name: string; visibility: SharedVisibility }) {
+export function ItemVisibilityToggle({
+  itemId,
+  name,
+  visibility,
+}: {
+  itemId: string;
+  name: string;
+  visibility: SharedVisibility;
+}) {
   const router = useRouter();
   const { toast } = useToast();
   const [current, setCurrent] = useState(visibility);
@@ -31,10 +49,20 @@ export function ItemVisibilityToggle({ itemId, name, visibility }: { itemId: str
     try {
       await setCampaignItemVisibility(getSupabaseBrowserClient(), itemId, next);
       setCurrent(next);
-      toast({ tone: 'success', title: next === 'members' ? `${name} foi liberado aos jogadores.` : `${name} foi ocultado dos jogadores.` });
+      toast({
+        tone: 'success',
+        title:
+          next === 'members'
+            ? `${name} foi liberado aos jogadores.`
+            : `${name} foi ocultado dos jogadores.`,
+      });
       router.refresh();
     } catch (error) {
-      toast({ tone: 'danger', title: 'A visibilidade não mudou', description: failureMessage(error, 'Tente novamente.') });
+      toast({
+        tone: 'danger',
+        title: 'A visibilidade não mudou',
+        description: failureMessage(error, 'Tente novamente.'),
+      });
     } finally {
       setBusy(false);
     }
@@ -45,7 +73,13 @@ export function ItemVisibilityToggle({ itemId, name, visibility }: { itemId: str
       variant={hidden ? 'secondary' : 'ghost'}
       size="sm"
       loading={busy}
-      icon={busy ? undefined : hidden ? <Eye className="h-4 w-4" aria-hidden="true" /> : <EyeOff className="h-4 w-4" aria-hidden="true" />}
+      icon={
+        busy ? undefined : hidden ? (
+          <Eye className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <EyeOff className="h-4 w-4" aria-hidden="true" />
+        )
+      }
       aria-label={`${label}: ${name}`}
       title={label}
       onClick={() => void toggle()}
@@ -86,7 +120,10 @@ export function ItemEditor({ item }: { item: CampaignItem }) {
   const set = (patch: Partial<ItemForm>) => setForm((current) => ({ ...current, ...patch }));
 
   const save = async () => {
-    const parsed = campaignItemSchema.safeParse({ ...form, visibility: form.revealed ? 'members' : 'gm' });
+    const parsed = campaignItemSchema.safeParse({
+      ...form,
+      visibility: form.revealed ? 'members' : 'gm',
+    });
     if (!parsed.success) {
       setErrors(fieldErrorsFrom(parsed.error));
       return;
@@ -98,7 +135,11 @@ export function ItemEditor({ item }: { item: CampaignItem }) {
       toast({ tone: 'success', title: 'Item salvo.' });
       router.refresh();
     } catch (error) {
-      toast({ tone: 'danger', title: 'O item não foi salvo', description: failureMessage(error, 'Tente novamente.') });
+      toast({
+        tone: 'danger',
+        title: 'O item não foi salvo',
+        description: failureMessage(error, 'Tente novamente.'),
+      });
     } finally {
       setBusy(false);
     }
@@ -106,7 +147,10 @@ export function ItemEditor({ item }: { item: CampaignItem }) {
 
   return (
     <Card ornate>
-      <CardHeader title="Editar item" description="As cópias já entregues aos personagens não mudam." />
+      <CardHeader
+        title="Editar item"
+        description="As cópias já entregues aos personagens não mudam."
+      />
       <form
         noValidate
         className="flex flex-col gap-4"
@@ -115,8 +159,21 @@ export function ItemEditor({ item }: { item: CampaignItem }) {
           void save();
         }}
       >
-        <TextField id={`${id}-name`} label="Nome" required maxLength={120} value={form.name} onChange={(event) => set({ name: event.target.value })} error={errors.name} />
-        <SelectField id={`${id}-category`} label="Categoria" value={form.category} onChange={(event) => set({ category: event.target.value as ItemCategory })}>
+        <TextField
+          id={`${id}-name`}
+          label="Nome"
+          required
+          maxLength={120}
+          value={form.name}
+          onChange={(event) => set({ name: event.target.value })}
+          error={errors.name}
+        />
+        <SelectField
+          id={`${id}-category`}
+          label="Categoria"
+          value={form.category}
+          onChange={(event) => set({ category: event.target.value as ItemCategory })}
+        >
           {ITEM_CATEGORIES.map((category) => (
             <option key={category} value={category}>
               {itemCategoryLabels[category]}
@@ -124,14 +181,37 @@ export function ItemEditor({ item }: { item: CampaignItem }) {
           ))}
         </SelectField>
         <div className="grid gap-3 sm:grid-cols-2">
-          <TextField id={`${id}-rarity`} label="Raridade" maxLength={60} value={form.rarity} onChange={(event) => set({ rarity: event.target.value })} error={errors.rarity} />
-          <TextField id={`${id}-value`} label="Valor" maxLength={60} value={form.value} onChange={(event) => set({ value: event.target.value })} error={errors.value} />
+          <TextField
+            id={`${id}-rarity`}
+            label="Raridade"
+            maxLength={60}
+            value={form.rarity}
+            onChange={(event) => set({ rarity: event.target.value })}
+            error={errors.rarity}
+          />
+          <TextField
+            id={`${id}-value`}
+            label="Valor"
+            maxLength={60}
+            value={form.value}
+            onChange={(event) => set({ value: event.target.value })}
+            error={errors.value}
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor={`${id}-weight`} className="text-sm font-medium">
             Peso <span className="font-normal text-fg-muted">(unidade das fichas)</span>
           </label>
-          <NumberInput id={`${id}-weight`} value={form.weight} min={0} max={100_000} decimal allowEmpty onCommit={(value) => set({ weight: value })} className="w-32" />
+          <NumberInput
+            id={`${id}-weight`}
+            value={form.weight}
+            min={0}
+            max={100_000}
+            decimal
+            allowEmpty
+            onCommit={(value) => set({ weight: value })}
+            className="w-32"
+          />
         </div>
         <TextareaField
           id={`${id}-description`}
@@ -142,8 +222,18 @@ export function ItemEditor({ item }: { item: CampaignItem }) {
           onChange={(event) => set({ description: event.target.value })}
           error={errors.description}
         />
-        <CheckboxField id={`${id}-attunement`} label="Exige sintonia" checked={form.requiresAttunement} onChange={(event) => set({ requiresAttunement: event.target.checked })} />
-        <CheckboxField id={`${id}-revealed`} label="Revelar aos jogadores" checked={form.revealed} onChange={(event) => set({ revealed: event.target.checked })} />
+        <CheckboxField
+          id={`${id}-attunement`}
+          label="Exige sintonia"
+          checked={form.requiresAttunement}
+          onChange={(event) => set({ requiresAttunement: event.target.checked })}
+        />
+        <CheckboxField
+          id={`${id}-revealed`}
+          label="Revelar aos jogadores"
+          checked={form.revealed}
+          onChange={(event) => set({ revealed: event.target.checked })}
+        />
         <div>
           <Button type="submit" loading={busy}>
             Salvar item
@@ -155,7 +245,13 @@ export function ItemEditor({ item }: { item: CampaignItem }) {
 }
 
 /** Entrega uma cópia do item ao inventário de um personagem da campanha. */
-export function GiveItemCard({ item, party }: { item: CampaignItem; party: { id: string; name: string; ownerName: string }[] }) {
+export function GiveItemCard({
+  item,
+  party,
+}: {
+  item: CampaignItem;
+  party: { id: string; name: string; ownerName: string }[];
+}) {
   const { toast } = useToast();
   const id = useId();
   const [characterId, setCharacterId] = useState(party[0]?.id ?? '');
@@ -170,7 +266,11 @@ export function GiveItemCard({ item, party }: { item: CampaignItem; party: { id:
       await giveCampaignItem(getSupabaseBrowserClient(), item, target.id, quantity);
       toast({ tone: 'success', title: `${item.name} foi para o inventário de ${target.name}.` });
     } catch (error) {
-      toast({ tone: 'danger', title: 'O item não foi entregue', description: failureMessage(error, 'Tente novamente.') });
+      toast({
+        tone: 'danger',
+        title: 'O item não foi entregue',
+        description: failureMessage(error, 'Tente novamente.'),
+      });
     } finally {
       setBusy(false);
     }
@@ -178,12 +278,21 @@ export function GiveItemCard({ item, party }: { item: CampaignItem; party: { id:
 
   return (
     <Card>
-      <CardHeader icon={<Gift className="h-5 w-5" aria-hidden="true" />} title="Entregar a um personagem" description="Uma cópia vai para o inventário da ficha." />
+      <CardHeader
+        icon={<Gift className="h-5 w-5" aria-hidden="true" />}
+        title="Entregar a um personagem"
+        description="Uma cópia vai para o inventário da ficha."
+      />
       {party.length === 0 ? (
         <p className="text-sm text-fg-muted">Nenhum personagem na campanha ainda.</p>
       ) : (
         <div className="flex flex-col gap-3">
-          <SelectField id={`${id}-character`} label="Personagem" value={characterId} onChange={(event) => setCharacterId(event.target.value)}>
+          <SelectField
+            id={`${id}-character`}
+            label="Personagem"
+            value={characterId}
+            onChange={(event) => setCharacterId(event.target.value)}
+          >
             {party.map((character) => (
               <option key={character.id} value={character.id}>
                 {character.name} ({character.ownerName})
@@ -194,10 +303,22 @@ export function GiveItemCard({ item, party }: { item: CampaignItem; party: { id:
             <label htmlFor={`${id}-quantity`} className="text-sm font-medium">
               Quantidade
             </label>
-            <NumberInput id={`${id}-quantity`} value={quantity} min={1} max={99_999} onCommit={setQuantity} className="w-28" />
+            <NumberInput
+              id={`${id}-quantity`}
+              value={quantity}
+              min={1}
+              max={99_999}
+              onCommit={setQuantity}
+              className="w-28"
+            />
           </div>
           <div>
-            <Button onClick={() => void give()} loading={busy} disabled={!characterId || !quantity} icon={<Gift className="h-4 w-4" aria-hidden="true" />}>
+            <Button
+              onClick={() => void give()}
+              loading={busy}
+              disabled={!characterId || !quantity}
+              icon={<Gift className="h-4 w-4" aria-hidden="true" />}
+            >
               Entregar
             </Button>
           </div>
@@ -207,13 +328,28 @@ export function GiveItemCard({ item, party }: { item: CampaignItem; party: { id:
   );
 }
 
-export function DeleteItemCard({ campaignId, itemId, name }: { campaignId: string; itemId: string; name: string }) {
+export function DeleteItemCard({
+  campaignId,
+  itemId,
+  name,
+}: {
+  campaignId: string;
+  itemId: string;
+  name: string;
+}) {
   return (
     <Card className="border-ember-400/40">
-      <CardHeader title="Excluir item" description="Sai da biblioteca. As cópias nos inventários continuam." />
+      <CardHeader
+        title="Excluir item"
+        description="Sai da biblioteca. As cópias nos inventários continuam."
+      />
       <ConfirmDialog
         trigger={(open) => (
-          <Button variant="danger" onClick={open} icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}>
+          <Button
+            variant="danger"
+            onClick={open}
+            icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
+          >
             Excluir item
           </Button>
         )}

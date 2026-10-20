@@ -109,7 +109,13 @@ interface SessionEditorProps {
   options: EditorOptions;
 }
 
-export function SessionEditor({ campaignId, session, initialBlocks, initialImageUrls, options }: SessionEditorProps) {
+export function SessionEditor({
+  campaignId,
+  session,
+  initialBlocks,
+  initialImageUrls,
+  options,
+}: SessionEditorProps) {
   const { toast } = useToast();
   const [blocks, setBlocks] = useState<StoredSessionBlock[]>(initialBlocks);
   const [imageUrls, setImageUrls] = useState(initialImageUrls);
@@ -142,7 +148,10 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
 
   // Aviso no app dos jogadores: quando a sessão publicada ganha (ou muda de) data e fica salva,
   // o aviso sai depois de alguns segundos sem novas mudanças. O servidor não repete a mesma data.
-  const notifyKey = meta.state.status === 'saved' && meta.value.isPublished && meta.value.scheduledAt ? meta.value.scheduledAt : null;
+  const notifyKey =
+    meta.state.status === 'saved' && meta.value.isPublished && meta.value.scheduledAt
+      ? meta.value.scheduledAt
+      : null;
   const initialNotifyKey = useRef(notifyKey);
   const pendingNotify = useRef(false);
   useEffect(() => {
@@ -152,7 +161,10 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
       pendingNotify.current = false;
       void notifySessionScheduled(getSupabaseBrowserClient(), session.id).then((result) => {
         if (result && result.sent > 0) {
-          toast({ tone: 'success', title: `Aviso da sessão enviado a ${result.sent} ${result.sent === 1 ? 'aparelho' : 'aparelhos'} da mesa.` });
+          toast({
+            tone: 'success',
+            title: `Aviso da sessão enviado a ${result.sent} ${result.sent === 1 ? 'aparelho' : 'aparelhos'} da mesa.`,
+          });
         }
       });
     }, 8000);
@@ -160,7 +172,8 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
   }, [notifyKey, session.id, toast]);
   useEffect(
     () => () => {
-      if (pendingNotify.current) void notifySessionScheduled(getSupabaseBrowserClient(), session.id);
+      if (pendingNotify.current)
+        void notifySessionScheduled(getSupabaseBrowserClient(), session.id);
     },
     [session.id],
   );
@@ -193,13 +206,20 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
     const next = moveItem(blocks, from, to);
     const moved = next[to];
     if (!moved) return;
-    const position = positionBetween(next[to - 1]?.position ?? null, next[to + 1]?.position ?? null);
+    const position = positionBetween(
+      next[to - 1]?.position ?? null,
+      next[to + 1]?.position ?? null,
+    );
     next[to] = { ...moved, position };
     setBlocks(next);
     const client = getSupabaseBrowserClient();
     try {
       if (needsRenumbering(next.map((block) => block.position))) {
-        await reorderSessionBlocks(client, session.id, next.map((block) => block.id));
+        await reorderSessionBlocks(
+          client,
+          session.id,
+          next.map((block) => block.id),
+        );
         setBlocks(next.map((block, order) => ({ ...block, position: (order + 1) * 1024 })));
       } else {
         await updateSessionBlock(client, moved.id, { position });
@@ -219,19 +239,37 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
     setBlocks((current) => current.filter((block) => block.id !== blockId));
   };
 
-  const onLocalChange = (blockId: string, draft: { visibility: SharedVisibility; content: SessionBlockContent }) =>
-    setBlocks((current) => current.map((block) => (block.id === blockId ? { ...block, ...draft } : block)));
+  const onLocalChange = (
+    blockId: string,
+    draft: { visibility: SharedVisibility; content: SessionBlockContent },
+  ) =>
+    setBlocks((current) =>
+      current.map((block) => (block.id === blockId ? { ...block, ...draft } : block)),
+    );
 
   // Referências para a pré-visualização, montadas a partir das opções já carregadas.
   const previewReferences: BlockReferences = {
-    creatures: Object.fromEntries(options.creatures.map((creature) => [creature.id, { name: creature.name, subtitle: creature.subtitle, kind: creature.kind }])),
-    characters: Object.fromEntries(options.characters.map((character) => [character.id, { name: character.name }])),
-    sessions: Object.fromEntries(options.sessions.map((entry) => [entry.id, { title: entry.title, number: entry.number }])),
+    creatures: Object.fromEntries(
+      options.creatures.map((creature) => [
+        creature.id,
+        { name: creature.name, subtitle: creature.subtitle, kind: creature.kind },
+      ]),
+    ),
+    characters: Object.fromEntries(
+      options.characters.map((character) => [character.id, { name: character.name }]),
+    ),
+    sessions: Object.fromEntries(
+      options.sessions.map((entry) => [entry.id, { title: entry.title, number: entry.number }]),
+    ),
     notes: Object.fromEntries(options.notes.map((note) => [note.id, { title: note.title }])),
   };
 
   const insertMenu = (index: number) => (
-    <div className="rounded-lg border border-line-strong bg-raised p-3" role="group" aria-label="Escolha o tipo de bloco">
+    <div
+      className="rounded-lg border border-line-strong bg-raised p-3"
+      role="group"
+      aria-label="Escolha o tipo de bloco"
+    >
       <div className="mb-2 flex items-center justify-between">
         <p className="text-sm font-medium">Inserir bloco</p>
         <Button size="sm" variant="ghost" onClick={() => setInsertAt(null)}>
@@ -240,7 +278,15 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
       </div>
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
         {blockMenu.map((entry) => (
-          <Button key={entry.type} size="sm" variant="secondary" className="justify-start" icon={entry.icon} disabled={structureBusy} onClick={() => void insertBlock(entry.type, index)}>
+          <Button
+            key={entry.type}
+            size="sm"
+            variant="secondary"
+            className="justify-start"
+            icon={entry.icon}
+            disabled={structureBusy}
+            onClick={() => void insertBlock(entry.type, index)}
+          >
             {blockTypeLabels[entry.type]}
           </Button>
         ))}
@@ -269,7 +315,15 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
             </Alert>
           ) : null}
           <div className="flex flex-col gap-4">
-            <TextField id="session-title" label="Título" maxLength={120} value={meta.value.title} onChange={(event) => meta.update((current) => ({ ...current, title: event.target.value }))} />
+            <TextField
+              id="session-title"
+              label="Título"
+              maxLength={120}
+              value={meta.value.title}
+              onChange={(event) =>
+                meta.update((current) => ({ ...current, title: event.target.value }))
+              }
+            />
             <DateTimeField
               id="session-date"
               label="Data e hora"
@@ -282,9 +336,15 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
               label="Publicada para os jogadores"
               description="Jogadores veem o resumo e os blocos públicos. Blocos privados nunca são enviados a eles. Com data marcada, quem usa o app recebe um aviso."
               checked={meta.value.isPublished}
-              onChange={(event) => meta.update((current) => ({ ...current, isPublished: event.target.checked }))}
+              onChange={(event) =>
+                meta.update((current) => ({ ...current, isPublished: event.target.checked }))
+              }
             />
-            <SessionModeFields mode={meta.value.mode} physicalDice={meta.value.physicalDice} onChange={(next) => meta.update((current) => ({ ...current, ...next }))} />
+            <SessionModeFields
+              mode={meta.value.mode}
+              physicalDice={meta.value.physicalDice}
+              onChange={(next) => meta.update((current) => ({ ...current, ...next }))}
+            />
             <TextareaField
               id="session-recap"
               label="Resumo para os jogadores"
@@ -292,22 +352,41 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
               maxLength={20000}
               hint="Visível aos jogadores quando a sessão estiver publicada."
               value={meta.value.recap}
-              onChange={(event) => meta.update((current) => ({ ...current, recap: event.target.value }))}
+              onChange={(event) =>
+                meta.update((current) => ({ ...current, recap: event.target.value }))
+              }
             />
           </div>
         </Card>
         <p className="text-xs text-fg-muted">
-          {blocks.length} blocos · {publicCount} públicos · {blocks.length - publicCount} privados. Tudo é salvo automaticamente.
+          {blocks.length} blocos · {publicCount} públicos · {blocks.length - publicCount} privados.
+          Tudo é salvo automaticamente.
         </p>
       </aside>
 
       <section aria-label="Roteiro" className="flex min-w-0 flex-col gap-4">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-md border border-line-strong p-0.5" role="group" aria-label="Modo do editor">
-            <Button size="sm" variant={mode === 'edit' ? 'secondary' : 'ghost'} aria-pressed={mode === 'edit'} onClick={() => setMode('edit')} icon={<PencilLine className="h-4 w-4" aria-hidden="true" />}>
+          <div
+            className="flex rounded-md border border-line-strong p-0.5"
+            role="group"
+            aria-label="Modo do editor"
+          >
+            <Button
+              size="sm"
+              variant={mode === 'edit' ? 'secondary' : 'ghost'}
+              aria-pressed={mode === 'edit'}
+              onClick={() => setMode('edit')}
+              icon={<PencilLine className="h-4 w-4" aria-hidden="true" />}
+            >
               Editar
             </Button>
-            <Button size="sm" variant={mode === 'preview' ? 'secondary' : 'ghost'} aria-pressed={mode === 'preview'} onClick={() => setMode('preview')} icon={<Eye className="h-4 w-4" aria-hidden="true" />}>
+            <Button
+              size="sm"
+              variant={mode === 'preview' ? 'secondary' : 'ghost'}
+              aria-pressed={mode === 'preview'}
+              onClick={() => setMode('preview')}
+              icon={<Eye className="h-4 w-4" aria-hidden="true" />}
+            >
               Ver como jogador
             </Button>
           </div>
@@ -316,18 +395,30 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
         {mode === 'preview' ? (
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
             <Alert tone="info">
-              Pré-visualização do que os jogadores recebem{meta.value.isPublished ? '' : ' quando a sessão for publicada'}: somente blocos públicos.
+              Pré-visualização do que os jogadores recebem
+              {meta.value.isPublished ? '' : ' quando a sessão for publicada'}: somente blocos
+              públicos.
             </Alert>
             {blocks
               .filter((block) => block.visibility === 'members')
               .map((block) => (
-                <BlockRenderer key={block.id} block={block} campaignId={campaignId} references={previewReferences} imageUrls={imageUrls} showVisibility={false} />
+                <BlockRenderer
+                  key={block.id}
+                  block={block}
+                  campaignId={campaignId}
+                  references={previewReferences}
+                  imageUrls={imageUrls}
+                  showVisibility={false}
+                />
               ))}
           </div>
         ) : (
           <>
             {blocks.length === 0 ? (
-              <EmptyState title="Roteiro vazio" description="Comece por um título, uma narração ou uma nota privada." />
+              <EmptyState
+                title="Roteiro vazio"
+                description="Comece por um título, uma narração ou uma nota privada."
+              />
             ) : (
               <ol className="flex flex-col gap-3">
                 {blocks.map((block, index) =>
@@ -347,7 +438,9 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
                         onMove={(from, to) => void moveBlock(from, to)}
                         onRemove={removeBlock}
                         onInsertBelow={() => setInsertAt(index + 1)}
-                        onImageUrl={(path, url) => setImageUrls((current) => ({ ...current, [path]: url }))}
+                        onImageUrl={(path, url) =>
+                          setImageUrls((current) => ({ ...current, [path]: url }))
+                        }
                         dragHandlers={{
                           onDragStart: (event) => {
                             event.dataTransfer.effectAllowed = 'move';
@@ -371,10 +464,15 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
                           },
                         }}
                       />
-                      {insertAt === index + 1 && insertAt < blocks.length ? <li>{insertMenu(index + 1)}</li> : null}
+                      {insertAt === index + 1 && insertAt < blocks.length ? (
+                        <li>{insertMenu(index + 1)}</li>
+                      ) : null}
                     </Fragment>
                   ) : (
-                    <li key={block.id} className="rounded-lg border border-ember-400/40 bg-card p-4 text-sm text-fg-muted">
+                    <li
+                      key={block.id}
+                      className="rounded-lg border border-ember-400/40 bg-card p-4 text-sm text-fg-muted"
+                    >
                       Bloco “{block.type}” em formato desconhecido — não é editável nesta versão.
                     </li>
                   ),
@@ -384,7 +482,12 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
             {insertAt === blocks.length ? (
               insertMenu(blocks.length)
             ) : (
-              <Button variant="secondary" className="self-center" onClick={() => setInsertAt(blocks.length)} disabled={structureBusy}>
+              <Button
+                variant="secondary"
+                className="self-center"
+                onClick={() => setInsertAt(blocks.length)}
+                disabled={structureBusy}
+              >
                 Adicionar bloco ao final
               </Button>
             )}

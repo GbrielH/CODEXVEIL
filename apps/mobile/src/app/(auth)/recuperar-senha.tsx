@@ -11,7 +11,9 @@ import { getSupabase, siteUrl, supabaseConfig } from '@/lib/supabase';
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [result, setResult] = useState<{ tone: 'success' | 'danger'; message: string } | null>(null);
+  const [result, setResult] = useState<{ tone: 'success' | 'danger'; message: string } | null>(
+    null,
+  );
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
@@ -32,15 +34,35 @@ export default function ForgotPasswordScreen() {
       setResult({ tone: 'danger', message: authErrorMessage(error) });
       return;
     }
-    setResult({ tone: 'success', message: 'Se houver uma conta com esse e-mail, você receberá um link para escolher uma nova senha.' });
+    setResult({
+      tone: 'success',
+      message:
+        'Se houver uma conta com esse e-mail, você receberá um link para escolher uma nova senha.',
+    });
   };
 
   return (
-    <Screen title="Recuperar senha" subtitle="Enviaremos um link para você escolher uma nova senha.">
+    <Screen
+      title="Recuperar senha"
+      subtitle="Enviaremos um link para você escolher uma nova senha."
+    >
       {result ? <Notice tone={result.tone} message={result.message} /> : null}
       <Card>
-        <Field label="E-mail da conta" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" error={errors.email} />
-        <Button label="Enviar link" onPress={() => void submit()} loading={busy} disabled={!supabaseConfig.ok} />
+        <Field
+          label="E-mail da conta"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          autoComplete="email"
+          error={errors.email}
+        />
+        <Button
+          label="Enviar link"
+          onPress={() => void submit()}
+          loading={busy}
+          disabled={!supabaseConfig.ok}
+        />
       </Card>
     </Screen>
   );

@@ -64,7 +64,9 @@ export function SpellDetails({ name, data, description, full = false }: SpellDet
   const texts = useSrdSpellTexts();
   const srd = texts?.[name] ?? null;
   const summary = srd ? summarizeSrdSpell(srd) : [];
-  const flags = [data.concentration ? 'Concentração' : null, data.ritual ? 'Ritual' : null].filter(Boolean).join(' · ');
+  const flags = [data.concentration ? 'Concentração' : null, data.ritual ? 'Ritual' : null]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <div className="flex flex-col gap-2">
@@ -76,7 +78,12 @@ export function SpellDetails({ name, data, description, full = false }: SpellDet
       )}
       <DetailGrid
         rows={[
-          ...(full ? ([['Escola', data.school ? spellSchoolLabels[data.school] : '']] as [string, string][]) : []),
+          ...(full
+            ? ([['Escola', data.school ? spellSchoolLabels[data.school] : '']] as [
+                string,
+                string,
+              ][])
+            : []),
           ['Conjuração', data.castingTime],
           ['Alcance', data.range],
           ['Componentes', data.components],
@@ -86,14 +93,22 @@ export function SpellDetails({ name, data, description, full = false }: SpellDet
         ]}
       />
       {description ? (
-        <p className={full ? 'whitespace-pre-line font-serif leading-relaxed text-fg-secondary' : 'line-clamp-6 whitespace-pre-line text-xs text-fg-secondary'}>
+        <p
+          className={
+            full
+              ? 'whitespace-pre-line font-serif leading-relaxed text-fg-secondary'
+              : 'line-clamp-6 whitespace-pre-line text-xs text-fg-secondary'
+          }
+        >
           {description}
         </p>
       ) : null}
       {srd && !description ? (
         full ? (
           <details className="text-xs">
-            <summary className="cursor-pointer text-fg-muted hover:text-fg-secondary">Texto completo do SRD 5.2.1 (em inglês)</summary>
+            <summary className="cursor-pointer text-fg-muted hover:text-fg-secondary">
+              Texto completo do SRD 5.2.1 (em inglês)
+            </summary>
             <div className="mt-1.5 flex flex-col gap-1.5 border-l border-line-strong pl-3 text-fg-secondary">
               {srd.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
@@ -113,7 +128,13 @@ export function SpellDetails({ name, data, description, full = false }: SpellDet
 }
 
 /** Habilidade, talento ou traço: origem, usos e descrição. */
-export function FeatureDetails({ feature, resource }: { feature: CharacterAbility; resource: CharacterResource | undefined }) {
+export function FeatureDetails({
+  feature,
+  resource,
+}: {
+  feature: CharacterAbility;
+  resource: CharacterResource | undefined;
+}) {
   return (
     <div className="flex flex-col gap-2">
       <div>
@@ -123,11 +144,18 @@ export function FeatureDetails({ feature, resource }: { feature: CharacterAbilit
       <DetailGrid
         rows={[
           ['Origem', feature.source],
-          ['Usos', resource ? `${resource.current}${resource.max === null ? '' : ` de ${resource.max}`}` : ''],
+          [
+            'Usos',
+            resource
+              ? `${resource.current}${resource.max === null ? '' : ` de ${resource.max}`}`
+              : '',
+          ],
         ]}
       />
       {feature.description ? (
-        <p className="line-clamp-[10] whitespace-pre-line text-xs text-fg-secondary">{feature.description}</p>
+        <p className="line-clamp-[10] whitespace-pre-line text-xs text-fg-secondary">
+          {feature.description}
+        </p>
       ) : (
         <p className="text-xs text-fg-muted">Sem descrição.</p>
       )}
@@ -136,7 +164,15 @@ export function FeatureDetails({ feature, resource }: { feature: CharacterAbilit
 }
 
 /** Ataque: bônus, dano, alcance e atributo. */
-export function AttackDetails({ attack, data, bonus }: { attack: CharacterAbility; data: Dnd5eAttackData; bonus: string }) {
+export function AttackDetails({
+  attack,
+  data,
+  bonus,
+}: {
+  attack: CharacterAbility;
+  data: Dnd5eAttackData;
+  bonus: string;
+}) {
   return (
     <div className="flex flex-col gap-2">
       <p className="font-display text-base text-fg-accent">{attack.name}</p>
@@ -149,7 +185,11 @@ export function AttackDetails({ attack, data, bonus }: { attack: CharacterAbilit
           ['Proficiente', data.proficient ? 'Sim' : 'Não'],
         ]}
       />
-      {attack.description ? <p className="line-clamp-6 whitespace-pre-line text-xs text-fg-secondary">{attack.description}</p> : null}
+      {attack.description ? (
+        <p className="line-clamp-6 whitespace-pre-line text-xs text-fg-secondary">
+          {attack.description}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -23,15 +23,39 @@ const HEAD = characterIcons.species.dragonborn?.d ?? '';
  * fogo em chamas que crescem, esfriam de âmbar para vinho e somem. Sem animação quando a pessoa
  * prefere movimento reduzido.
  */
-export function DragonLoader({ label = 'Carregando…', size = 'md', className }: { label?: string; size?: 'sm' | 'md' | 'lg'; className?: string }) {
+export function DragonLoader({
+  label = 'Carregando…',
+  size = 'md',
+  className,
+}: {
+  label?: string;
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+}) {
   return (
-    <div role="status" className={cx('flex flex-col items-center justify-center gap-3 py-10 text-fg-secondary', className)}>
+    <div
+      role="status"
+      className={cx(
+        'flex flex-col items-center justify-center gap-3 py-10 text-fg-secondary',
+        className,
+      )}
+    >
       <svg
         viewBox="0 0 1000 512"
         aria-hidden="true"
-        className={cx('dragon-loader overflow-visible', size === 'sm' ? 'w-28' : size === 'lg' ? 'w-72' : 'w-48')}
+        className={cx(
+          'dragon-loader overflow-visible',
+          size === 'sm' ? 'w-28' : size === 'lg' ? 'w-72' : 'w-48',
+        )}
       >
-        <ellipse className="dragon-glow" cx="660" cy="335" rx="300" ry="80" fill="var(--color-amber-400)" />
+        <ellipse
+          className="dragon-glow"
+          cx="660"
+          cy="335"
+          rx="300"
+          ry="80"
+          fill="var(--color-amber-400)"
+        />
         <g transform="translate(440 332)">
           {FLAMES.map((flame) => (
             <path
@@ -39,7 +63,13 @@ export function DragonLoader({ label = 'Carregando…', size = 'md', className }
               className="dragon-flame"
               d={FLAME_PATH}
               fill={flame.color}
-              style={{ '--delay': `${flame.delay}s`, '--fx': `${flame.x}px`, '--fy': `${flame.y}px` } as CSSProperties}
+              style={
+                {
+                  '--delay': `${flame.delay}s`,
+                  '--fx': `${flame.x}px`,
+                  '--fy': `${flame.y}px`,
+                } as CSSProperties
+              }
             />
           ))}
         </g>

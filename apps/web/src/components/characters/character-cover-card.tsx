@@ -18,7 +18,15 @@ interface CharacterCoverCardProps {
 }
 
 /** Personagem com o retrato em destaque (ou o ícone da classe), no padrão dos cartões de campanha. */
-export function CharacterCoverCard({ href, name, subtitle, portraitUrl, classId, meta, updatedAt }: CharacterCoverCardProps) {
+export function CharacterCoverCard({
+  href,
+  name,
+  subtitle,
+  portraitUrl,
+  classId,
+  meta,
+  updatedAt,
+}: CharacterCoverCardProps) {
   return (
     <Link
       href={href}
@@ -31,7 +39,11 @@ export function CharacterCoverCard({ href, name, subtitle, portraitUrl, classId,
         {portraitUrl ? (
           <span className="block aspect-[4/3] w-full overflow-hidden bg-wine-950">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={portraitUrl} alt="" className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]" />
+            <img
+              src={portraitUrl}
+              alt=""
+              className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
+            />
           </span>
         ) : (
           <span
@@ -39,16 +51,27 @@ export function CharacterCoverCard({ href, name, subtitle, portraitUrl, classId,
             aria-hidden="true"
           >
             {classId ? (
-              <CharacterIcon kind="class" id={classId} className="h-20 w-20 text-parchment-300/70" />
+              <CharacterIcon
+                kind="class"
+                id={classId}
+                className="h-20 w-20 text-parchment-300/70"
+              />
             ) : (
-              <span className="font-display text-5xl font-semibold text-parchment-300/70">{initialsOf(name)}</span>
+              <span className="font-display text-5xl font-semibold text-parchment-300/70">
+                {initialsOf(name)}
+              </span>
             )}
           </span>
         )}
-        <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-card to-transparent" aria-hidden="true" />
+        <span
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-card to-transparent"
+          aria-hidden="true"
+        />
       </div>
       <div className="flex flex-1 flex-col p-5 pt-3">
-        <p className="truncate font-display text-lg leading-tight text-fg-accent group-hover:text-parchment-100">{name}</p>
+        <p className="truncate font-display text-lg leading-tight text-fg-accent group-hover:text-parchment-100">
+          {name}
+        </p>
         <p className="truncate text-sm text-fg-secondary">{subtitle}</p>
         <p className="mt-auto truncate pt-2 text-xs text-fg-muted">
           {meta}

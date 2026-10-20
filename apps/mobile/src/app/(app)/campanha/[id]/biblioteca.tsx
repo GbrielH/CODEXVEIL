@@ -24,7 +24,10 @@ export default function LibraryScreen() {
     const supabase = getSupabase();
     const campaign = await getCampaign(supabase, id, userId);
     if (!campaign) return null;
-    const [creatures, items] = await Promise.all([listCreatures(supabase, campaign.id), listCampaignItems(supabase, campaign.id)]);
+    const [creatures, items] = await Promise.all([
+      listCreatures(supabase, campaign.id),
+      listCampaignItems(supabase, campaign.id),
+    ]);
     return { campaign, creatures, items };
   }, `${id}:${userId}`);
 
@@ -33,7 +36,10 @@ export default function LibraryScreen() {
   if (!data) {
     return (
       <Screen>
-        <EmptyState title="Campanha não encontrada" description="Ela não existe ou você não participa dela." />
+        <EmptyState
+          title="Campanha não encontrada"
+          description="Ela não existe ou você não participa dela."
+        />
       </Screen>
     );
   }
@@ -53,29 +59,53 @@ export default function LibraryScreen() {
         onChange={setTab}
         accessibilityLabel="Seções da biblioteca"
       />
-      <AppText variant="muted">O que o mestre já revelou ao grupo. Cadastro e revelação ficam no site.</AppText>
+      <AppText variant="muted">
+        O que o mestre já revelou ao grupo. Cadastro e revelação ficam no site.
+      </AppText>
       {tab === 'items' ? (
         items.length === 0 ? (
-          <EmptyState title="Nada revelado ainda" description="Quando o mestre revelar itens, eles aparecerão aqui." />
+          <EmptyState
+            title="Nada revelado ainda"
+            description="Quando o mestre revelar itens, eles aparecerão aqui."
+          />
         ) : (
           items.map((item) => (
             <ListRow
               key={item.id}
               title={item.name}
-              subtitle={[itemCategoryLabels[item.category], item.rarity, item.requiresAttunement ? 'sintonia' : null].filter(Boolean).join(' · ')}
-              onPress={() => router.push({ pathname: '/campanha/[id]/item/[itemId]', params: { id: campaign.id, itemId: item.id } })}
+              subtitle={[
+                itemCategoryLabels[item.category],
+                item.rarity,
+                item.requiresAttunement ? 'sintonia' : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+              onPress={() =>
+                router.push({
+                  pathname: '/campanha/[id]/item/[itemId]',
+                  params: { id: campaign.id, itemId: item.id },
+                })
+              }
             />
           ))
         )
       ) : shown.length === 0 ? (
-        <EmptyState title="Nada revelado ainda" description="Quando o mestre revelar NPCs ou criaturas, eles aparecerão aqui." />
+        <EmptyState
+          title="Nada revelado ainda"
+          description="Quando o mestre revelar NPCs ou criaturas, eles aparecerão aqui."
+        />
       ) : (
         shown.map((creature) => (
           <ListRow
             key={creature.id}
             title={creature.name}
             subtitle={creature.subtitle || undefined}
-            onPress={() => router.push({ pathname: '/campanha/[id]/criatura/[creatureId]', params: { id: campaign.id, creatureId: creature.id } })}
+            onPress={() =>
+              router.push({
+                pathname: '/campanha/[id]/criatura/[creatureId]',
+                params: { id: campaign.id, creatureId: creature.id },
+              })
+            }
           />
         ))
       )}

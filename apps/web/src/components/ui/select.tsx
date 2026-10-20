@@ -36,15 +36,29 @@ function textOf(node: ReactNode): string {
 }
 
 /** Lê as opções declaradas como <option> (e <optgroup>), como num <select> comum. */
-function collectOptions(children: ReactNode, group: string | null = null, out: SelectOption[] = []): SelectOption[] {
+function collectOptions(
+  children: ReactNode,
+  group: string | null = null,
+  out: SelectOption[] = [],
+): SelectOption[] {
   Children.forEach(children, (child) => {
     if (!isValidElement(child)) return;
-    const props = child.props as { children?: ReactNode; value?: string | number; disabled?: boolean; label?: string };
+    const props = child.props as {
+      children?: ReactNode;
+      value?: string | number;
+      disabled?: boolean;
+      label?: string;
+    };
     if (child.type === Fragment) collectOptions(props.children, group, out);
     else if (child.type === 'optgroup') collectOptions(props.children, props.label ?? null, out);
     else if (child.type === 'option') {
       const label = textOf(props.children);
-      out.push({ value: props.value === undefined ? label : String(props.value), label, disabled: Boolean(props.disabled), group });
+      out.push({
+        value: props.value === undefined ? label : String(props.value),
+        label,
+        disabled: Boolean(props.disabled),
+        group,
+      });
     }
   });
   return out;
@@ -52,7 +66,10 @@ function collectOptions(children: ReactNode, group: string | null = null, out: S
 
 /** Comparação sem acentos e sem diferenciar maiúsculas. */
 function normalize(text: string): string {
-  return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+  return text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
 }
 
 interface Placement {
@@ -63,7 +80,10 @@ interface Placement {
   bottom?: number;
 }
 
-type NativeSelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'multiple' | 'size' | 'children' | 'className'>;
+type NativeSelectProps = Omit<
+  SelectHTMLAttributes<HTMLSelectElement>,
+  'multiple' | 'size' | 'children' | 'className'
+>;
 
 export interface SelectProps extends NativeSelectProps {
   children: ReactNode;
@@ -170,7 +190,11 @@ export function Select({
   const show = (initialQuery = '') => {
     if (disabled) return;
     setQuery(initialQuery);
-    setActiveValue(selected && !selected.disabled ? selected.value : (options.find((option) => !option.disabled)?.value ?? null));
+    setActiveValue(
+      selected && !selected.disabled
+        ? selected.value
+        : (options.find((option) => !option.disabled)?.value ?? null),
+    );
     setPortalTarget(buttonRef.current?.closest('dialog') ?? document.body);
     place();
     setOpen(true);
@@ -201,7 +225,6 @@ export function Select({
     };
   }, [open, close, place]);
 
-
   const commit = (option: SelectOption) => {
     if (option.disabled) return;
     const select = nativeRef.current;
@@ -217,7 +240,12 @@ export function Select({
   const move = (delta: number) => {
     if (enabled.length === 0) return;
     const position = enabled.findIndex((option) => option.value === activeValue);
-    const next = position === -1 ? (delta > 0 ? 0 : enabled.length - 1) : (position + delta + enabled.length) % enabled.length;
+    const next =
+      position === -1
+        ? delta > 0
+          ? 0
+          : enabled.length - 1
+        : (position + delta + enabled.length) % enabled.length;
     setActiveValue(enabled[next]?.value ?? null);
   };
 
@@ -239,7 +267,13 @@ export function Select({
     if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
       event.preventDefault();
       show();
-    } else if (searchable && event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    } else if (
+      searchable &&
+      event.key.length === 1 &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey
+    ) {
       event.preventDefault();
       show(event.key);
     }
@@ -249,7 +283,8 @@ export function Select({
   const activeDescendant = activeOption ? optionId(activeOption) : undefined;
 
   useEffect(() => {
-    if (open && activeDescendant) document.getElementById(activeDescendant)?.scrollIntoView({ block: 'nearest' });
+    if (open && activeDescendant)
+      document.getElementById(activeDescendant)?.scrollIntoView({ block: 'nearest' });
   }, [open, activeDescendant]);
 
   const popover =
@@ -258,7 +293,13 @@ export function Select({
           <div
             ref={popoverRef}
             className="fixed z-[70] flex flex-col overflow-hidden rounded-md border border-line-strong bg-raised shadow-[0_18px_40px_-12px_rgb(0_0_0/0.85)]"
-            style={{ left: placement.left, width: placement.width, maxHeight: placement.maxHeight, top: placement.top, bottom: placement.bottom }}
+            style={{
+              left: placement.left,
+              width: placement.width,
+              maxHeight: placement.maxHeight,
+              top: placement.top,
+              bottom: placement.bottom,
+            }}
           >
             {searchable ? (
               <div className="flex items-center gap-2 border-b border-line px-3">
@@ -279,7 +320,10 @@ export function Select({
                   onChange={(event) => {
                     setQuery(event.target.value);
                     const term = normalize(event.target.value.trim());
-                    const first = options.find((option) => !option.disabled && (!term || normalize(option.label).includes(term)));
+                    const first = options.find(
+                      (option) =>
+                        !option.disabled && (!term || normalize(option.label).includes(term)),
+                    );
                     setActiveValue(first?.value ?? null);
                   }}
                   onKeyDown={onListKeyDown}
@@ -298,7 +342,9 @@ export function Select({
               onKeyDown={searchable ? undefined : onListKeyDown}
               className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1 focus:outline-none"
             >
-              {filtered.length === 0 ? <li className="px-3 py-2 text-sm text-fg-muted">Nenhuma opção encontrada.</li> : null}
+              {filtered.length === 0 ? (
+                <li className="px-3 py-2 text-sm text-fg-muted">Nenhuma opção encontrada.</li>
+              ) : null}
               {filtered.map((option, index) => {
                 const isSelected = option.value === current;
                 const isActive = option.value === activeValue;
@@ -306,7 +352,10 @@ export function Select({
                 return (
                   <Fragment key={`${option.value}-${index}`}>
                     {groupStart ? (
-                      <li role="presentation" className="px-3 pt-2 pb-1 font-display text-[11px] tracking-[0.18em] text-fg-subtle uppercase">
+                      <li
+                        role="presentation"
+                        className="px-3 pt-2 pb-1 font-display text-[11px] tracking-[0.18em] text-fg-subtle uppercase"
+                      >
                         {option.group}
                       </li>
                     ) : null}
@@ -327,7 +376,9 @@ export function Select({
                       )}
                     >
                       <span className="min-w-0 flex-1">{option.label || ' '}</span>
-                      {isSelected ? <Check className="h-4 w-4 shrink-0 text-fg-accent" aria-hidden="true" /> : null}
+                      {isSelected ? (
+                        <Check className="h-4 w-4 shrink-0 text-fg-accent" aria-hidden="true" />
+                      ) : null}
                     </li>
                   </Fragment>
                 );
@@ -355,11 +406,22 @@ export function Select({
         onKeyDown={onButtonKeyDown}
         className={controlClasses(
           invalid,
-          cx('flex items-center justify-between gap-2 text-left', size === 'sm' ? 'h-8 px-2.5 text-xs' : 'h-11 text-sm'),
+          cx(
+            'flex items-center justify-between gap-2 text-left',
+            size === 'sm' ? 'h-8 px-2.5 text-xs' : 'h-11 text-sm',
+          ),
         )}
       >
-        <span className={cx('min-w-0 flex-1 truncate', !selected && 'text-fg-subtle')}>{selected?.label || placeholder}</span>
-        <ChevronDown className={cx('h-4 w-4 shrink-0 text-fg-muted transition-transform', open && 'rotate-180')} aria-hidden="true" />
+        <span className={cx('min-w-0 flex-1 truncate', !selected && 'text-fg-subtle')}>
+          {selected?.label || placeholder}
+        </span>
+        <ChevronDown
+          className={cx(
+            'h-4 w-4 shrink-0 text-fg-muted transition-transform',
+            open && 'rotate-180',
+          )}
+          aria-hidden="true"
+        />
       </button>
       <select
         ref={nativeRef}

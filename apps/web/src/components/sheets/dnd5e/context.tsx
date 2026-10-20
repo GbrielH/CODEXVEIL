@@ -60,7 +60,10 @@ export interface SheetContextValue {
    * Executa uma operação no banco mostrando o resultado. Devolve `undefined` em caso de
    * falha (a mensagem já foi exibida) — nada é dado como salvo sem confirmação.
    */
-  run: <T>(action: () => Promise<T>, messages: { success?: string; failure: string }) => Promise<T | undefined>;
+  run: <T>(
+    action: () => Promise<T>,
+    messages: { success?: string; failure: string },
+  ) => Promise<T | undefined>;
   /** A gravação do retrato muda a versão da ficha sem conflitar com o rascunho local. */
   adoptVersion: (version: number) => void;
 }

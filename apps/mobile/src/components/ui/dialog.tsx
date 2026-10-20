@@ -45,9 +45,20 @@ export function DialogProvider({ children }: { children: ReactNode }) {
   return (
     <DialogContext.Provider value={confirm}>
       {children}
-      <Modal visible={current !== null} transparent animationType="fade" statusBarTranslucent onRequestClose={() => finish(false)}>
+      <Modal
+        visible={current !== null}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => finish(false)}
+      >
         <View style={styles.backdrop}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => finish(false)} accessibilityRole="button" accessibilityLabel="Cancelar" />
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => finish(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Cancelar"
+          />
           {current ? (
             <View style={styles.card} accessibilityViewIsModal>
               <View style={styles.cornerTop} />
@@ -58,7 +69,12 @@ export function DialogProvider({ children }: { children: ReactNode }) {
               <Divider style={{ marginVertical: 0 }} />
               <AppText style={styles.message}>{current.message}</AppText>
               <View style={styles.actions}>
-                <Button label={current.cancelLabel ?? 'Cancelar'} variant="secondary" onPress={() => finish(false)} style={{ flex: 1 }} />
+                <Button
+                  label={current.cancelLabel ?? 'Cancelar'}
+                  variant="secondary"
+                  onPress={() => finish(false)}
+                  style={{ flex: 1 }}
+                />
                 <Button
                   label={current.confirmLabel}
                   variant={current.tone === 'danger' ? 'danger' : 'primary'}

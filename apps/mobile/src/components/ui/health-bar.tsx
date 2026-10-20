@@ -12,7 +12,17 @@ const barColors: Record<HealthStatus, string> = {
 };
 
 /** Barra de vida com o estado também escrito em texto (não depende só da cor). */
-export function HealthBar({ current, max, temp = 0, showValues = true }: { current: number; max: number | null; temp?: number; showValues?: boolean }) {
+export function HealthBar({
+  current,
+  max,
+  temp = 0,
+  showValues = true,
+}: {
+  current: number;
+  max: number | null;
+  temp?: number;
+  showValues?: boolean;
+}) {
   const status = healthStatus(current, max);
   const percent = max && max > 0 ? Math.min(100, (current / max) * 100) : 0;
   const tempPercent = max && max > 0 ? Math.min(100 - percent, (temp / max) * 100) : 0;
@@ -25,7 +35,9 @@ export function HealthBar({ current, max, temp = 0, showValues = true }: { curre
     >
       <View style={styles.track}>
         <View style={{ width: `${percent}%`, backgroundColor: barColors[status] }} />
-        {tempPercent > 0 ? <View style={{ width: `${tempPercent}%`, backgroundColor: colors.hpTemp }} /> : null}
+        {tempPercent > 0 ? (
+          <View style={{ width: `${tempPercent}%`, backgroundColor: colors.hpTemp }} />
+        ) : null}
       </View>
       {showValues ? (
         <View style={styles.row}>
@@ -43,6 +55,14 @@ export function HealthBar({ current, max, temp = 0, showValues = true }: { curre
 }
 
 const styles = StyleSheet.create({
-  track: { height: 8, borderRadius: 4, overflow: 'hidden', flexDirection: 'row', backgroundColor: colors.sunken, borderWidth: 1, borderColor: colors.line },
+  track: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    backgroundColor: colors.sunken,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
 });

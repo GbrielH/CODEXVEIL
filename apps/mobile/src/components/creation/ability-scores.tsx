@@ -29,10 +29,20 @@ export interface RollState {
   assignment: Partial<Record<Ability, number>>;
 }
 
-export const EMPTY_ROLLS: RollState = { pool: [null, null, null, null, null, null], assignment: {} };
+export const EMPTY_ROLLS: RollState = {
+  pool: [null, null, null, null, null, null],
+  assignment: {},
+};
 
 type Scores = Dnd5eDraft['baseScores'];
-const emptyScores = (): Scores => ({ str: null, dex: null, con: null, int: null, wis: null, cha: null });
+const emptyScores = (): Scores => ({
+  str: null,
+  dex: null,
+  con: null,
+  int: null,
+  wis: null,
+  cha: null,
+});
 
 interface Props {
   draft: Dnd5eDraft;
@@ -45,28 +55,64 @@ interface Props {
   onRolls: (rolls: RollState) => void;
 }
 
-function ValueChip({ label, selected, disabled, onPress }: { label: string; selected: boolean; disabled?: boolean; onPress: () => void }) {
+function ValueChip({
+  label,
+  selected,
+  disabled,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  disabled?: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="radio"
       accessibilityState={{ selected, disabled: Boolean(disabled) }}
-      style={({ pressed }) => [styles.value, selected && styles.valueSelected, pressed && { backgroundColor: colors.hover }, disabled && { opacity: 0.35 }]}
+      style={({ pressed }) => [
+        styles.value,
+        selected && styles.valueSelected,
+        pressed && { backgroundColor: colors.hover },
+        disabled && { opacity: 0.35 },
+      ]}
     >
-      <AppText style={{ fontFamily: fonts.sansMedium, color: selected ? colors.fgAccent : colors.fgSecondary }}>{label}</AppText>
+      <AppText
+        style={{
+          fontFamily: fonts.sansMedium,
+          color: selected ? colors.fgAccent : colors.fgSecondary,
+        }}
+      >
+        {label}
+      </AppText>
     </Pressable>
   );
 }
 
-export function AbilityScoresField({ draft, methods, classDef, rolls, error, onMethod, onScores, onRolls }: Props) {
+export function AbilityScoresField({
+  draft,
+  methods,
+  classDef,
+  rolls,
+  error,
+  onMethod,
+  onScores,
+  onRolls,
+}: Props) {
   const scores = draft.baseScores;
   const final = finalAbilityScores(draft);
   const method = draft.abilityMethod;
 
   const choose = (next: AbilityScoreMethod) => {
     if (next === method) return;
-    onMethod(next, next === 'point_buy' ? (Object.fromEntries(ABILITIES.map((ability) => [ability, POINT_BUY_MIN])) as Scores) : emptyScores());
+    onMethod(
+      next,
+      next === 'point_buy'
+        ? (Object.fromEntries(ABILITIES.map((ability) => [ability, POINT_BUY_MIN])) as Scores)
+        : emptyScores(),
+    );
   };
 
   const applyRolls = (next: RollState) => {
@@ -86,11 +132,22 @@ export function AbilityScoresField({ draft, methods, classDef, rolls, error, onM
   return (
     <View style={{ gap: spacing[3] }}>
       {methods.map((entry) => (
-        <OptionCard key={entry} selected={entry === method} title={abilityScoreMethodLabels[entry].name} description={abilityScoreMethodLabels[entry].description} onPress={() => choose(entry)} />
+        <OptionCard
+          key={entry}
+          selected={entry === method}
+          title={abilityScoreMethodLabels[entry].name}
+          description={abilityScoreMethodLabels[entry].description}
+          onPress={() => choose(entry)}
+        />
       ))}
 
       {method === 'standard_array' && classDef ? (
-        <Button label={`Usar a sugestão para ${classDef.name}`} variant="secondary" compact onPress={() => onScores({ ...classDef.standardArray })} />
+        <Button
+          label={`Usar a sugestão para ${classDef.name}`}
+          variant="secondary"
+          compact
+          onPress={() => onScores({ ...classDef.standardArray })}
+        />
       ) : null}
       {method === 'point_buy' ? (
         <AppText variant="muted">
@@ -103,7 +160,12 @@ export function AbilityScoresField({ draft, methods, classDef, rolls, error, onM
             label="Rolar 4d6 seis vezes"
             variant="secondary"
             icon={<Dices size={16} color={colors.fg} />}
-            onPress={() => applyRolls({ pool: Array.from({ length: 6 }, () => rollAbilityScore()), assignment: {} })}
+            onPress={() =>
+              applyRolls({
+                pool: Array.from({ length: 6 }, () => rollAbilityScore()),
+                assignment: {},
+              })
+            }
           />
           <AppText variant="small">Ou digite os totais rolados na mesa (3 a 18).</AppText>
           <View style={styles.pool}>
@@ -113,7 +175,12 @@ export function AbilityScoresField({ draft, methods, classDef, rolls, error, onM
                 value={value === null ? '' : String(value)}
                 onChangeText={(text) => {
                   const number = text.trim() === '' ? null : Math.trunc(Number(text));
-                  applyRolls({ ...rolls, pool: rolls.pool.map((entry, position) => (position === index ? (Number.isFinite(number) ? number : null) : entry)) });
+                  applyRolls({
+                    ...rolls,
+                    pool: rolls.pool.map((entry, position) =>
+                      position === index ? (Number.isFinite(number) ? number : null) : entry,
+                    ),
+                  });
                 }}
                 keyboardType="number-pad"
                 accessibilityLabel={`Rolagem ${index + 1}`}
@@ -130,17 +197,33 @@ export function AbilityScoresField({ draft, methods, classDef, rolls, error, onM
         return (
           <View key={ability} style={styles.row}>
             <View style={styles.rowHeader}>
-              <AppText style={{ flex: 1, fontFamily: fonts.sansMedium }}>{abilityLabels[ability].name}</AppText>
+              <AppText style={{ flex: 1, fontFamily: fonts.sansMedium }}>
+                {abilityLabels[ability].name}
+              </AppText>
               <AppText variant="number" style={{ fontSize: 18 }}>
                 {total ?? '—'}
               </AppText>
-              <AppText variant="muted">{total === null ? '' : formatModifier(abilityModifier(total))}</AppText>
+              <AppText variant="muted">
+                {total === null ? '' : formatModifier(abilityModifier(total))}
+              </AppText>
             </View>
             {method === 'standard_array' ? (
               <View style={styles.values}>
                 {STANDARD_ARRAY.map((value) => {
-                  const taken = ABILITIES.some((other) => other !== ability && scores[other] === value);
-                  return <ValueChip key={value} label={String(value)} selected={base === value} disabled={taken} onPress={() => onScores({ ...scores, [ability]: base === value ? null : value })} />;
+                  const taken = ABILITIES.some(
+                    (other) => other !== ability && scores[other] === value,
+                  );
+                  return (
+                    <ValueChip
+                      key={value}
+                      label={String(value)}
+                      selected={base === value}
+                      disabled={taken}
+                      onPress={() =>
+                        onScores({ ...scores, [ability]: base === value ? null : value })
+                      }
+                    />
+                  );
                 })}
               </View>
             ) : null}
@@ -150,7 +233,12 @@ export function AbilityScoresField({ draft, methods, classDef, rolls, error, onM
                   icon={<Minus size={18} color={colors.fg} />}
                   accessibilityLabel={`Diminuir ${abilityLabels[ability].name}`}
                   disabled={(base ?? POINT_BUY_MIN) <= POINT_BUY_MIN}
-                  onPress={() => onScores({ ...scores, [ability]: Math.max(POINT_BUY_MIN, (base ?? POINT_BUY_MIN) - 1) })}
+                  onPress={() =>
+                    onScores({
+                      ...scores,
+                      [ability]: Math.max(POINT_BUY_MIN, (base ?? POINT_BUY_MIN) - 1),
+                    })
+                  }
                 />
                 <AppText variant="number">{base ?? POINT_BUY_MIN}</AppText>
                 <IconButton
@@ -158,9 +246,16 @@ export function AbilityScoresField({ draft, methods, classDef, rolls, error, onM
                   accessibilityLabel={`Aumentar ${abilityLabels[ability].name}`}
                   disabled={
                     (base ?? POINT_BUY_MIN) >= POINT_BUY_MAX ||
-                    (POINT_BUY_COSTS[(base ?? POINT_BUY_MIN) + 1] ?? Infinity) - (POINT_BUY_COSTS[base ?? POINT_BUY_MIN] ?? 0) > POINT_BUY_BUDGET - cost
+                    (POINT_BUY_COSTS[(base ?? POINT_BUY_MIN) + 1] ?? Infinity) -
+                      (POINT_BUY_COSTS[base ?? POINT_BUY_MIN] ?? 0) >
+                      POINT_BUY_BUDGET - cost
                   }
-                  onPress={() => onScores({ ...scores, [ability]: Math.min(POINT_BUY_MAX, (base ?? POINT_BUY_MIN) + 1) })}
+                  onPress={() =>
+                    onScores({
+                      ...scores,
+                      [ability]: Math.min(POINT_BUY_MAX, (base ?? POINT_BUY_MIN) + 1),
+                    })
+                  }
                 />
               </View>
             ) : null}
@@ -172,7 +267,9 @@ export function AbilityScoresField({ draft, methods, classDef, rolls, error, onM
                       key={index}
                       label={String(value)}
                       selected={rolls.assignment[ability] === index}
-                      disabled={Object.entries(rolls.assignment).some(([other, position]) => other !== ability && position === index)}
+                      disabled={Object.entries(rolls.assignment).some(
+                        ([other, position]) => other !== ability && position === index,
+                      )}
                       onPress={() => {
                         const assignment = { ...rolls.assignment };
                         if (assignment[ability] === index) delete assignment[ability];
@@ -190,7 +287,9 @@ export function AbilityScoresField({ draft, methods, classDef, rolls, error, onM
       <AppText variant="small" style={{ color: colors.fgSubtle }}>
         O número grande já inclui os aumentos do antecedente e dos talentos.
       </AppText>
-      {error ? <AppText style={{ color: '#EC9384', fontFamily: fonts.sansMedium }}>{error}</AppText> : null}
+      {error ? (
+        <AppText style={{ color: '#EC9384', fontFamily: fonts.sansMedium }}>{error}</AppText>
+      ) : null}
     </View>
   );
 }
@@ -199,8 +298,19 @@ const styles = StyleSheet.create({
   row: { gap: spacing[2], borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing[2] },
   rowHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   values: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  value: { minWidth: 44, minHeight: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: radii.md },
-  valueSelected: { borderColor: 'rgba(206, 191, 157, 0.7)', backgroundColor: 'rgba(228, 216, 189, 0.08)' },
+  value: {
+    minWidth: 44,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.md,
+  },
+  valueSelected: {
+    borderColor: 'rgba(206, 191, 157, 0.7)',
+    backgroundColor: 'rgba(228, 216, 189, 0.08)',
+  },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
   pool: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   poolInput: {

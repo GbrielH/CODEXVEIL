@@ -6,7 +6,15 @@ import { cx } from '@/lib/cx';
  * Capa da campanha (URL assinada de curta duração do Storage privado) ou, sem imagem, um
  * fundo com as iniciais no visual do Codexveil. O tamanho vem de `className`.
  */
-export function CampaignCover({ url, name, className }: { url: string | null; name: string; className?: string }) {
+export function CampaignCover({
+  url,
+  name,
+  className,
+}: {
+  url: string | null;
+  name: string;
+  className?: string;
+}) {
   if (url) {
     return (
       <span className={cx('relative block overflow-hidden bg-wine-950', className)}>
@@ -24,7 +32,9 @@ export function CampaignCover({ url, name, className }: { url: string | null; na
       aria-hidden="true"
     >
       <ScrollText className="absolute right-3 bottom-3 h-6 w-6 text-parchment-300/25" />
-      <span className="font-display text-4xl font-semibold text-parchment-300/70">{name.trim() ? initialsOf(name) : '?'}</span>
+      <span className="font-display text-4xl font-semibold text-parchment-300/70">
+        {name.trim() ? initialsOf(name) : '?'}
+      </span>
     </span>
   );
 }

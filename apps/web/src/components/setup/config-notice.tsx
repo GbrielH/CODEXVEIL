@@ -10,8 +10,8 @@ export function ConfigNotice() {
   return (
     <Alert tone="warning" title="Configuração pendente">
       <p>
-        O backend (Supabase) ainda não foi conectado neste ambiente, então contas e campanhas
-        não estão disponíveis. Defina as variáveis em <code>apps/web/.env.local</code> conforme o
+        O backend (Supabase) ainda não foi conectado neste ambiente, então contas e campanhas não
+        estão disponíveis. Defina as variáveis em <code>apps/web/.env.local</code> conforme o
         README.
       </p>
       <ul className="mt-2 list-disc pl-5">

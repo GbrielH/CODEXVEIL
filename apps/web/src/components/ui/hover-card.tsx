@@ -36,7 +36,11 @@ export function HoverCard({ content, children, className }: HoverCardProps) {
       if (!rect) return;
       const left = Math.max(8, Math.min(rect.left, window.innerWidth - CARD_WIDTH - 8));
       const below = window.innerHeight - rect.bottom;
-      setPlacement(below >= 300 || below >= rect.top ? { left, top: rect.bottom + GAP } : { left, bottom: window.innerHeight - rect.top + GAP });
+      setPlacement(
+        below >= 300 || below >= rect.top
+          ? { left, top: rect.bottom + GAP }
+          : { left, bottom: window.innerHeight - rect.top + GAP },
+      );
     }, OPEN_DELAY);
   };
   const hide = () => {

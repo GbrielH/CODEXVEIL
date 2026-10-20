@@ -19,7 +19,9 @@ export function SectionTabs({ tabs, label }: { tabs: SectionTab[]; label: string
     <nav aria-label={label} className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
       <ul className="flex min-w-max gap-1 border-b border-line">
         {tabs.map((tab) => {
-          const active = tab.exact ? pathname === tab.href : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+          const active = tab.exact
+            ? pathname === tab.href
+            : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           return (
             <li key={tab.href}>
               <Link

@@ -1,10 +1,19 @@
 'use client';
 
-import { endTurn, getCampaignCustomActions, getCampaignTurn, performTurnAction, tickCharacterConditions, type CampaignTurn, type CustomAction } from '@codexveil/database';
+import {
+  endTurn,
+  getCampaignCustomActions,
+  getCampaignTurn,
+  performTurnAction,
+  tickCharacterConditions,
+  type CampaignTurn,
+  type CustomAction,
+} from '@codexveil/database';
 import { findT20Condition } from '@codexveil/rpg-systems/tormenta20';
 import { turnModeLabels } from '@codexveil/domain';
 import { Hourglass } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { ColoredName } from '@/components/dice/campaign-colors';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { LiveBadge } from '@/components/ui/save-status';
@@ -18,7 +27,17 @@ import { useRealtimeRefresh } from '@/lib/use-realtime';
  * Turno do personagem de Tormenta20 na campanha: de quem é a vez, a ordem e "Encerrar turno",
  * que também tira 1 rodada das condições do personagem.
  */
-export function T20TurnCard({ campaignId, characterId, canAct, onConditionsEnded }: { campaignId: string; characterId: string; canAct: boolean; onConditionsEnded: (keys: string[]) => void }) {
+export function T20TurnCard({
+  campaignId,
+  characterId,
+  canAct,
+  onConditionsEnded,
+}: {
+  campaignId: string;
+  characterId: string;
+  canAct: boolean;
+  onConditionsEnded: (keys: string[]) => void;
+}) {
   const { toast } = useToast();
   const [turn, setTurn] = useState<CampaignTurn | null>(null);
   const [busy, setBusy] = useState(false);
@@ -55,7 +74,11 @@ export function T20TurnCard({ campaignId, characterId, canAct, onConditionsEnded
     };
   }, [campaignId]);
 
-  const live = useRealtimeRefresh(`turno-t20:${campaignId}`, [{ table: 'campaign_turns', filter: `campaign_id=eq.${campaignId}` }], () => void reload());
+  const live = useRealtimeRefresh(
+    `turno-t20:${campaignId}`,
+    [{ table: 'campaign_turns', filter: `campaign_id=eq.${campaignId}` }],
+    () => void reload(),
+  );
 
   if (!turn) return null;
   const mine = turn.activeCharacterId === characterId && turn.status === 'active';
@@ -67,10 +90,20 @@ export function T20TurnCard({ campaignId, characterId, canAct, onConditionsEnded
       await endTurn(client, turn.encounterId);
       const ended = await tickCharacterConditions(client, characterId);
       onConditionsEnded(ended);
-      toast({ tone: 'success', title: 'Turno encerrado.', description: ended.length ? `Terminou: ${ended.map((key) => findT20Condition(key)?.label ?? key).join(', ')}.` : undefined });
+      toast({
+        tone: 'success',
+        title: 'Turno encerrado.',
+        description: ended.length
+          ? `Terminou: ${ended.map((key) => findT20Condition(key)?.label ?? key).join(', ')}.`
+          : undefined,
+      });
       await reload();
     } catch (error) {
-      toast({ tone: 'danger', title: 'O turno não foi encerrado', description: failureMessage(error, 'Tente novamente.') });
+      toast({
+        tone: 'danger',
+        title: 'O turno não foi encerrado',
+        description: failureMessage(error, 'Tente novamente.'),
+      });
     } finally {
       setBusy(false);
     }
@@ -81,7 +114,15 @@ export function T20TurnCard({ campaignId, characterId, canAct, onConditionsEnded
       <CardHeader
         icon={<Hourglass className="h-5 w-5" aria-hidden="true" />}
         title={`${turnModeLabels[turn.mode]}${turn.status === 'active' ? ` · rodada ${turn.round}` : ''}`}
-        description={turn.status === 'active' ? (mine ? 'É a sua vez!' : turn.activeName ? `Vez de ${turn.activeName}` : 'Vez do mestre') : 'O mestre está preparando a ordem.'}
+        description={
+          turn.status === 'active'
+            ? mine
+              ? 'É a sua vez!'
+              : turn.activeName
+                ? `Vez de ${turn.activeName}`
+                : 'Vez do mestre'
+            : 'O mestre está preparando a ordem.'
+        }
         action={<LiveBadge status={live} />}
       />
       {turn.order.length ? (
@@ -89,9 +130,15 @@ export function T20TurnCard({ campaignId, characterId, canAct, onConditionsEnded
           {turn.order.map((entry, index) => (
             <li
               key={entry.id}
-              className={cx('rounded-full border px-2.5 py-1 text-xs', entry.current ? 'border-parchment-300/70 bg-wine-900/60 text-fg-accent' : 'border-line text-fg-secondary', entry.defeated && 'line-through opacity-60')}
+              className={cx(
+                'rounded-full border px-2.5 py-1 text-xs',
+                entry.current
+                  ? 'border-parchment-300/70 bg-wine-900/60 text-fg-accent'
+                  : 'border-line text-fg-secondary',
+                entry.defeated && 'line-through opacity-60',
+              )}
             >
-              {index + 1}. {entry.name}
+              {index + 1}. <ColoredName characterId={entry.characterId}>{entry.name}</ColoredName>
             </li>
           ))}
         </ol>
@@ -112,10 +159,29 @@ export function T20TurnCard({ campaignId, characterId, canAct, onConditionsEnded
                   if (!me) return;
                   setBusy(true);
                   try {
-                    const done = await performTurnAction(getSupabaseBrowserClient(), { combatantId: me.id, kind: action.kind, label: action.name, targetCombatantId: null, grantsAction: false, rollExpression: action.roll || null, manualTotal: null });
-                    toast({ tone: 'success', title: action.name, description: done.rollTotal !== null ? `Resultado: ${done.rollTotal}` : action.description || undefined });
+                    const done = await performTurnAction(getSupabaseBrowserClient(), {
+                      combatantId: me.id,
+                      kind: action.kind,
+                      label: action.name,
+                      targetCombatantId: null,
+                      grantsAction: false,
+                      rollExpression: action.roll || null,
+                      manualTotal: null,
+                    });
+                    toast({
+                      tone: 'success',
+                      title: action.name,
+                      description:
+                        done.rollTotal !== null
+                          ? `Resultado: ${done.rollTotal}`
+                          : action.description || undefined,
+                    });
                   } catch (error) {
-                    toast({ tone: 'danger', title: 'A ação não foi registrada', description: failureMessage(error, 'Tente novamente.') });
+                    toast({
+                      tone: 'danger',
+                      title: 'A ação não foi registrada',
+                      description: failureMessage(error, 'Tente novamente.'),
+                    });
                   } finally {
                     setBusy(false);
                   }

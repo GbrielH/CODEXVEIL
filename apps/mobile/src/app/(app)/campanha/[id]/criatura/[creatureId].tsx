@@ -1,6 +1,17 @@
-import { creatureImagePath, getCampaign, getCreature, setCreatureImage, signedMediaUrls } from '@codexveil/database';
+import {
+  creatureImagePath,
+  getCampaign,
+  getCreature,
+  setCreatureImage,
+  signedMediaUrls,
+} from '@codexveil/database';
 import { parseDnd5eStatBlock, type Dnd5eStatBlock } from '@codexveil/rpg-systems/dnd5e';
-import { T20_ATTRIBUTES, formatT20Bonus, parseT20StatBlock, t20AttributeLabels } from '@codexveil/rpg-systems/tormenta20';
+import {
+  T20_ATTRIBUTES,
+  formatT20Bonus,
+  parseT20StatBlock,
+  t20AttributeLabels,
+} from '@codexveil/rpg-systems/tormenta20';
 import { creatureKindLabels } from '@codexveil/validation';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Image } from 'react-native';
@@ -25,7 +36,11 @@ export default function CreatureScreen() {
     const creature = await getCreature(supabase, creatureId, campaign.role === 'gm');
     if (!creature || creature.campaignId !== campaign.id) return null;
     const images = await signedMediaUrls(supabase, [creature.imagePath]);
-    return { campaign, creature, imageUrl: creature.imagePath ? (images[creature.imagePath] ?? null) : null };
+    return {
+      campaign,
+      creature,
+      imageUrl: creature.imagePath ? (images[creature.imagePath] ?? null) : null,
+    };
   }, `${id}:${creatureId}:${userId}`);
 
   if (loading) return <LoadingState />;
@@ -33,7 +48,10 @@ export default function CreatureScreen() {
   if (!data) {
     return (
       <Screen>
-        <EmptyState title="Registro não encontrado" description="Ele não existe ou ainda não foi revelado." />
+        <EmptyState
+          title="Registro não encontrado"
+          description="Ele não existe ou ainda não foi revelado."
+        />
       </Screen>
     );
   }
@@ -48,14 +66,29 @@ export default function CreatureScreen() {
   }
 
   return (
-    <Screen eyebrow={creatureKindLabels[creature.kind]} title={creature.name} subtitle={creature.subtitle || undefined} refreshing={refreshing} onRefresh={reload}>
+    <Screen
+      eyebrow={creatureKindLabels[creature.kind]}
+      title={creature.name}
+      subtitle={creature.subtitle || undefined}
+      refreshing={refreshing}
+      onRefresh={reload}
+    >
       <Stack.Screen options={{ title: creature.name }} />
-      {imageUrl ? <Image source={{ uri: imageUrl }} accessibilityLabel={`Imagem de ${creature.name}`} style={{ width: '100%', aspectRatio: 1, borderRadius: radii.lg }} resizeMode="cover" /> : null}
+      {imageUrl ? (
+        <Image
+          source={{ uri: imageUrl }}
+          accessibilityLabel={`Imagem de ${creature.name}`}
+          style={{ width: '100%', aspectRatio: 1, borderRadius: radii.lg }}
+          resizeMode="cover"
+        />
+      ) : null}
       {/* Só o mestre envia a imagem (o Storage e o RLS conferem); jogadores a veem quando o registro é revelado. */}
       {campaign.role === 'gm' && campaign.status === 'active' ? (
         <Card>
           <AppText variant="eyebrow">Imagem</AppText>
-          <AppText variant="small">Os jogadores veem a imagem quando o registro é revelado.</AppText>
+          <AppText variant="small">
+            Os jogadores veem a imagem quando o registro é revelado.
+          </AppText>
           <ImageUploadButtons
             preset="creature"
             label={creature.imagePath ? 'Trocar imagem' : 'Enviar imagem'}
@@ -73,14 +106,30 @@ export default function CreatureScreen() {
             const stats = parseT20StatBlock(creature.gm.stats);
             return (
               <Card>
-                <AppText variant="eyebrow">{[stats.type, stats.challenge ? `ND ${stats.challenge}` : ''].filter(Boolean).join(' · ') || 'Ameaça'}</AppText>
-                <AppText>
-                  Defesa {stats.defense} · PV {stats.hitPoints} · Iniciativa {formatT20Bonus(stats.initiative)}
+                <AppText variant="eyebrow">
+                  {[stats.type, stats.challenge ? `ND ${stats.challenge}` : '']
+                    .filter(Boolean)
+                    .join(' · ') || 'Ameaça'}
                 </AppText>
-                {stats.speed ? <AppText variant="small">Deslocamento: {stats.speed}</AppText> : null}
-                <AppText variant="small">{T20_ATTRIBUTES.map((key) => `${t20AttributeLabels[key].abbreviation} ${stats.attributes[key] === null ? '—' : formatT20Bonus(stats.attributes[key])}`).join('  ')}</AppText>
-                {stats.melee ? <AppText variant="small">Corpo a corpo: {stats.melee}</AppText> : null}
-                {stats.ranged ? <AppText variant="small">À distância: {stats.ranged}</AppText> : null}
+                <AppText>
+                  Defesa {stats.defense} · PV {stats.hitPoints} · Iniciativa{' '}
+                  {formatT20Bonus(stats.initiative)}
+                </AppText>
+                {stats.speed ? (
+                  <AppText variant="small">Deslocamento: {stats.speed}</AppText>
+                ) : null}
+                <AppText variant="small">
+                  {T20_ATTRIBUTES.map(
+                    (key) =>
+                      `${t20AttributeLabels[key].abbreviation} ${stats.attributes[key] === null ? '—' : formatT20Bonus(stats.attributes[key])}`,
+                  ).join('  ')}
+                </AppText>
+                {stats.melee ? (
+                  <AppText variant="small">Corpo a corpo: {stats.melee}</AppText>
+                ) : null}
+                {stats.ranged ? (
+                  <AppText variant="small">À distância: {stats.ranged}</AppText>
+                ) : null}
                 {stats.abilities.map((ability) => (
                   <AppText key={ability.name} variant="small">
                     {ability.name}. {ability.text}

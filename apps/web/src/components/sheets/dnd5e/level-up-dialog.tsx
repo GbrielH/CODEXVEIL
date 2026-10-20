@@ -69,23 +69,38 @@ export function LevelUpButton() {
         setGranting(true);
         try {
           setGranted(await grantCharacterLevel(getSupabaseBrowserClient(), character.id));
-          toast({ tone: 'success', title: `Nível ${derived.level + 1} liberado para ${character.name}.`, description: 'O jogador escolhe as melhorias na aba Evolução.' });
+          toast({
+            tone: 'success',
+            title: `Nível ${derived.level + 1} liberado para ${character.name}.`,
+            description: 'O jogador escolhe as melhorias na aba Evolução.',
+          });
         } catch (error) {
-          toast({ tone: 'danger', title: 'O nível não foi liberado', description: failureMessage(error, 'Tente novamente.') });
+          toast({
+            tone: 'danger',
+            title: 'O nível não foi liberado',
+            description: failureMessage(error, 'Tente novamente.'),
+          });
         } finally {
           setGranting(false);
         }
       };
       return pending ? (
-        <span className="text-sm text-amber-300">Nível {granted} liberado: aguardando o jogador escolher as melhorias.</span>
+        <span className="text-sm text-amber-300">
+          Nível {granted} liberado: aguardando o jogador escolher as melhorias.
+        </span>
       ) : (
-        <Button icon={<TrendingUp className="h-4 w-4" aria-hidden="true" />} loading={granting} onClick={() => void grant()}>
+        <Button
+          icon={<TrendingUp className="h-4 w-4" aria-hidden="true" />}
+          loading={granting}
+          onClick={() => void grant()}
+        >
           Liberar nível {derived.level + 1}
         </Button>
       );
     }
     if (!permissions.isOwner) return null;
-    if (!pending) return <span className="text-sm text-fg-muted">O mestre libera o próximo nível.</span>;
+    if (!pending)
+      return <span className="text-sm text-fg-muted">O mestre libera o próximo nível.</span>;
   } else if (!permissions.canEditSheet) {
     return null;
   }
@@ -112,7 +127,16 @@ export function LevelUpButton() {
 }
 
 function LevelUpPanel({ onClose }: { onClose: () => void }) {
-  const { character, sheet, resources, abilities, updateSheet, setAbilities, reloadResources, run } = useSheet();
+  const {
+    character,
+    sheet,
+    resources,
+    abilities,
+    updateSheet,
+    setAbilities,
+    reloadResources,
+    run,
+  } = useSheet();
   const id = useId();
   // Classe que sobe: a posição de uma classe da ficha ou "nova:<classe>" (multiclasse).
   const [target, setTarget] = useState('0');
@@ -120,7 +144,10 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
   const classIndex = newClassId ? 0 : Number(target);
   const knownNames = useMemo(() => abilities.map((entry) => entry.name), [abilities]);
   const multiclassOptions = useMemo(() => dnd5eMulticlassOptions(sheet), [sheet]);
-  const plan = useMemo(() => planDnd5eLevelUp(sheet, classIndex, knownNames, newClassId), [sheet, classIndex, knownNames, newClassId]);
+  const plan = useMemo(
+    () => planDnd5eLevelUp(sheet, classIndex, knownNames, newClassId),
+    [sheet, classIndex, knownNames, newClassId],
+  );
 
   const [hpMethod, setHpMethod] = useState<'average' | 'roll'>('average');
   const [rolled, setRolled] = useState<number | null>(null);
@@ -130,7 +157,12 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
   const [featId, setFeatId] = useState('');
   const [featAbility, setFeatAbility] = useState<Ability | ''>('');
   const [featSkills, setFeatSkills] = useState<(Skill | '')[]>(['', '', '']);
-  const [initiate, setInitiate] = useState<MagicInitiateChoice>({ list: '', cantrips: [], spell: '', ability: '' });
+  const [initiate, setInitiate] = useState<MagicInitiateChoice>({
+    list: '',
+    cantrips: [],
+    spell: '',
+    ability: '',
+  });
   const [cantrips, setCantrips] = useState<string[]>([]);
   const [spells, setSpells] = useState<string[]>([]);
   const [invocations, setInvocations] = useState<string[]>([]);
@@ -145,12 +177,17 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
   let improvement: AbilityImprovement | null = null;
   if (plan.abilityScoreImprovement) {
     if (mode === 'plus_two') improvement = { kind: 'plus_two', ability: first };
-    else if (mode === 'plus_one_each') improvement = { kind: 'plus_one_each', abilities: [first, second] };
-    else if (featId) improvement = { kind: 'feat', featId, ...(featAbility ? { ability: featAbility } : {}) };
+    else if (mode === 'plus_one_each')
+      improvement = { kind: 'plus_one_each', abilities: [first, second] };
+    else if (featId)
+      improvement = { kind: 'feat', featId, ...(featAbility ? { ability: featAbility } : {}) };
   }
   const choices: Dnd5eLevelUpChoices = {
     // A rolagem vale uma vez só: depois de rolar, não dá para trocar pela média nem rolar de novo.
-    hitPoints: hpMethod === 'roll' ? { method: 'roll', die: Math.min(rolled ?? 0, plan.hitDieSides) } : { method: 'average' },
+    hitPoints:
+      hpMethod === 'roll'
+        ? { method: 'roll', die: Math.min(rolled ?? 0, plan.hitDieSides) }
+        : { method: 'average' },
     improvement,
     cantrips,
     spells,
@@ -203,7 +240,12 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
         }
         const hp = byKey.get(DND5E_RESOURCE_KEYS.hitPoints);
         if (hp && hp.max !== null) {
-          await adjustCharacterResource(supabase, hp.id, 'set_max', hp.max + result.hitPointsGained);
+          await adjustCharacterResource(
+            supabase,
+            hp.id,
+            'set_max',
+            hp.max + result.hitPointsGained,
+          );
           await adjustCharacterResource(supabase, hp.id, 'heal', result.hitPointsGained);
         }
         const existingNames = new Set(abilities.map((entry) => `${entry.kind}:${entry.name}`));
@@ -221,10 +263,17 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
             }),
           );
         }
-        await addCharacterEvent(supabase, character.id, { kind: 'level_up', summary: result.summary, data: { classIndex: plan.classIndex, level: plan.newTotalLevel } });
+        await addCharacterEvent(supabase, character.id, {
+          kind: 'level_up',
+          summary: result.summary,
+          data: { classIndex: plan.classIndex, level: plan.newTotalLevel },
+        });
         return saved;
       },
-      { success: `${character.name} subiu para o nível ${plan.newTotalLevel}.`, failure: 'A subida de nível não foi concluída' },
+      {
+        success: `${character.name} subiu para o nível ${plan.newTotalLevel}.`,
+        failure: 'A subida de nível não foi concluída',
+      },
     );
     setBusy(false);
     if (!created) return;
@@ -251,24 +300,38 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
         <label htmlFor={`${id}-class`} className="text-sm font-medium">
           Classe que sobe de nível
         </label>
-        <Select id={`${id}-class`} value={target} onChange={(event) => resetChoices(event.target.value)}>
+        <Select
+          id={`${id}-class`}
+          value={target}
+          onChange={(event) => resetChoices(event.target.value)}
+        >
           <optgroup label="Suas classes">
             {sheet.identity.classes.map((entry, index) => (
-              <option key={`${entry.name}-${index}`} value={String(index)} disabled={entry.level >= 20}>
+              <option
+                key={`${entry.name}-${index}`}
+                value={String(index)}
+                disabled={entry.level >= 20}
+              >
                 {entry.name || 'Sem nome'} {entry.level} → {entry.level + 1}
               </option>
             ))}
           </optgroup>
           <optgroup label="Nova classe (multiclasse)">
             {multiclassOptions.map((option) => (
-              <option key={option.classDef.id} value={`nova:${option.classDef.id}`} disabled={option.blocked.length > 0}>
-                {option.classDef.name} 1{option.blocked.length > 0 ? ' · requisito não atendido' : ''}
+              <option
+                key={option.classDef.id}
+                value={`nova:${option.classDef.id}`}
+                disabled={option.blocked.length > 0}
+              >
+                {option.classDef.name} 1
+                {option.blocked.length > 0 ? ' · requisito não atendido' : ''}
               </option>
             ))}
           </optgroup>
         </Select>
         <p className="text-xs text-fg-muted">
-          Multiclasse (SRD 5.2.1): 13 ou mais no atributo principal da classe nova e das que você já tem.
+          Multiclasse (SRD 5.2.1): 13 ou mais no atributo principal da classe nova e das que você já
+          tem.
         </p>
         {blockedOptions.length > 0 ? (
           <details className="text-xs text-fg-muted">
@@ -287,16 +350,26 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
       {plan.multiclass ? (
         <Section title="Nova classe">
           <p className="text-sm text-fg-secondary">
-            {plan.className} entra no 1º nível, com dado de vida {plan.classDef?.hitDie}. Os testes de resistência continuam os da
-            primeira classe.
-            {[plan.multiclass.training.armor, plan.multiclass.training.weapons, plan.multiclass.training.tools].some(Boolean)
+            {plan.className} entra no 1º nível, com dado de vida {plan.classDef?.hitDie}. Os testes
+            de resistência continuam os da primeira classe.
+            {[
+              plan.multiclass.training.armor,
+              plan.multiclass.training.weapons,
+              plan.multiclass.training.tools,
+            ].some(Boolean)
               ? ` Treinamento novo: ${[plan.multiclass.training.armor, plan.multiclass.training.weapons, plan.multiclass.training.tools].filter(Boolean).join('; ')}.`
               : ''}
           </p>
-          {plan.multiclass.skillOptions.length > 0 || plan.multiclass.instrumentOptions.length > 0 ? (
+          {plan.multiclass.skillOptions.length > 0 ||
+          plan.multiclass.instrumentOptions.length > 0 ? (
             <div className="grid gap-2 sm:grid-cols-2">
               {plan.multiclass.skillOptions.length > 0 ? (
-                <Select aria-label="Perícia da nova classe" value={multiclassSkill} placeholder="Perícia" onChange={(event) => setMulticlassSkill(event.target.value as Skill)}>
+                <Select
+                  aria-label="Perícia da nova classe"
+                  value={multiclassSkill}
+                  placeholder="Perícia"
+                  onChange={(event) => setMulticlassSkill(event.target.value as Skill)}
+                >
                   <option value="">Perícia</option>
                   {plan.multiclass.skillOptions.map((skill) => (
                     <option key={skill} value={skill}>
@@ -306,7 +379,12 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
                 </Select>
               ) : null}
               {plan.multiclass.instrumentOptions.length > 0 ? (
-                <Select aria-label="Instrumento musical" value={multiclassInstrument} placeholder="Instrumento musical" onChange={(event) => setMulticlassInstrument(event.target.value)}>
+                <Select
+                  aria-label="Instrumento musical"
+                  value={multiclassInstrument}
+                  placeholder="Instrumento musical"
+                  onChange={(event) => setMulticlassInstrument(event.target.value)}
+                >
                   <option value="">Instrumento musical</option>
                   {plan.multiclass.instrumentOptions.map((instrument) => (
                     <option key={instrument.id} value={instrument.id}>
@@ -322,12 +400,18 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
 
       {plan.subclass ? (
         <Alert tone="info" title={`Subclasse: ${plan.subclass.name}`}>
-          {plan.subclass.description} Outras subclasses aparecem aqui quando o mestre libera livros na campanha.
+          {plan.subclass.description} Outras subclasses aparecem aqui quando o mestre libera livros
+          na campanha.
         </Alert>
       ) : null}
       {plan.subclassOptions.length > 0 ? (
         <Section title="Subclasse">
-          <Select aria-label="Subclasse" value={subclassId} placeholder="Escolha a subclasse" onChange={(event) => setSubclassId(event.target.value)}>
+          <Select
+            aria-label="Subclasse"
+            value={subclassId}
+            placeholder="Escolha a subclasse"
+            onChange={(event) => setSubclassId(event.target.value)}
+          >
             <option value="">Escolha a subclasse</option>
             {plan.subclassOptions.map((option) => (
               <option key={option.id} value={option.id}>
@@ -338,14 +422,18 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
           </Select>
           {chosenSubclass ? (
             <div className="flex flex-col gap-2">
-              <p className="text-xs whitespace-pre-line text-fg-muted">{chosenSubclass.description}</p>
+              <p className="text-xs whitespace-pre-line text-fg-muted">
+                {chosenSubclass.description}
+              </p>
               <ul className="flex flex-col gap-2">
                 {chosenSubclass.features
                   .filter((feature) => feature.level <= plan.newClassLevel)
                   .map((feature) => (
                     <li key={feature.name} className="rounded-md border border-line bg-sunken p-3">
                       <p className="text-sm font-medium text-fg">{feature.name}</p>
-                      <p className="mt-0.5 text-xs whitespace-pre-line text-fg-muted">{feature.description}</p>
+                      <p className="mt-0.5 text-xs whitespace-pre-line text-fg-muted">
+                        {feature.description}
+                      </p>
                     </li>
                   ))}
               </ul>
@@ -378,10 +466,20 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
             disabled={rolled !== null}
             label={`Média: ${Math.floor(plan.hitDieSides / 2) + 1}`}
           />
-          <Choice name={`${id}-hp`} checked={hpMethod === 'roll'} onChange={() => setHpMethod('roll')} label={`Rolar 1d${plan.hitDieSides}`} />
+          <Choice
+            name={`${id}-hp`}
+            checked={hpMethod === 'roll'}
+            onChange={() => setHpMethod('roll')}
+            label={`Rolar 1d${plan.hitDieSides}`}
+          />
           {hpMethod === 'roll' ? (
             rolled === null ? (
-              <Button size="sm" variant="secondary" icon={<Dices className="h-4 w-4" aria-hidden="true" />} onClick={() => setRolled(rollDiceLocally(`1d${plan.hitDieSides}`)?.total ?? null)}>
+              <Button
+                size="sm"
+                variant="secondary"
+                icon={<Dices className="h-4 w-4" aria-hidden="true" />}
+                onClick={() => setRolled(rollDiceLocally(`1d${plan.hitDieSides}`)?.total ?? null)}
+              >
                 Rolar (uma vez)
               </Button>
             ) : (
@@ -392,23 +490,58 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
           ) : null}
         </div>
         <p className="mt-2 text-sm text-fg-secondary">
-          Máximo de PV <strong className="text-fg">+{result.hitPointsGained}</strong> (inclui o modificador de Constituição
-          {plan.conModifier !== 0 ? ` de ${plan.conModifier > 0 ? '+' : ''}${plan.conModifier}` : ''}).
+          Máximo de PV <strong className="text-fg">+{result.hitPointsGained}</strong> (inclui o
+          modificador de Constituição
+          {plan.conModifier !== 0
+            ? ` de ${plan.conModifier > 0 ? '+' : ''}${plan.conModifier}`
+            : ''}
+          ).
         </p>
       </Section>
 
       {plan.abilityScoreImprovement ? (
-        <Section title={plan.epicBoon ? 'Dádiva épica ou talento' : 'Aumento no Valor de Atributo ou talento'}>
+        <Section
+          title={
+            plan.epicBoon ? 'Dádiva épica ou talento' : 'Aumento no Valor de Atributo ou talento'
+          }
+        >
           <div className="flex flex-wrap gap-2">
-            <Choice name={`${id}-asi`} checked={mode === 'plus_two'} onChange={() => setMode('plus_two')} label="+2 em um atributo" />
-            <Choice name={`${id}-asi`} checked={mode === 'plus_one_each'} onChange={() => setMode('plus_one_each')} label="+1 em dois" />
-            <Choice name={`${id}-asi`} checked={mode === 'feat'} onChange={() => setMode('feat')} label="Talento" />
+            <Choice
+              name={`${id}-asi`}
+              checked={mode === 'plus_two'}
+              onChange={() => setMode('plus_two')}
+              label="+2 em um atributo"
+            />
+            <Choice
+              name={`${id}-asi`}
+              checked={mode === 'plus_one_each'}
+              onChange={() => setMode('plus_one_each')}
+              label="+1 em dois"
+            />
+            <Choice
+              name={`${id}-asi`}
+              checked={mode === 'feat'}
+              onChange={() => setMode('feat')}
+              label="Talento"
+            />
           </div>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {mode !== 'feat' ? (
-              <AbilitySelect label="Atributo" value={first} onChange={setFirst} scores={sheet.abilities} />
+              <AbilitySelect
+                label="Atributo"
+                value={first}
+                onChange={setFirst}
+                scores={sheet.abilities}
+              />
             ) : null}
-            {mode === 'plus_one_each' ? <AbilitySelect label="Segundo atributo" value={second} onChange={setSecond} scores={sheet.abilities} /> : null}
+            {mode === 'plus_one_each' ? (
+              <AbilitySelect
+                label="Segundo atributo"
+                value={second}
+                onChange={setSecond}
+                scores={sheet.abilities}
+              />
+            ) : null}
             {mode === 'feat' ? (
               <Select
                 aria-label="Talento"
@@ -438,7 +571,12 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
               </Select>
             ) : null}
             {mode === 'feat' && featIncrease ? (
-              <Select aria-label="Atributo do talento" value={featAbility} placeholder="Atributo +1" onChange={(event) => setFeatAbility(event.target.value as Ability)}>
+              <Select
+                aria-label="Atributo do talento"
+                value={featAbility}
+                placeholder="Atributo +1"
+                onChange={(event) => setFeatAbility(event.target.value as Ability)}
+              >
                 <option value="">Atributo +1</option>
                 {featIncrease.abilities.map((ability) => (
                   <option key={ability} value={ability}>
@@ -448,8 +586,16 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
               </Select>
             ) : null}
           </div>
-          {mode === 'feat' && featId ? <p className="mt-2 text-xs text-fg-muted">{featOptions.find((feat) => feat.id === featId)?.description}</p> : null}
-          {mode === 'feat' && featOptions.length === 0 ? <p className="mt-2 text-sm text-fg-muted">Nenhum talento disponível para este personagem.</p> : null}
+          {mode === 'feat' && featId ? (
+            <p className="mt-2 text-xs text-fg-muted">
+              {featOptions.find((feat) => feat.id === featId)?.description}
+            </p>
+          ) : null}
+          {mode === 'feat' && featOptions.length === 0 ? (
+            <p className="mt-2 text-sm text-fg-muted">
+              Nenhum talento disponível para este personagem.
+            </p>
+          ) : null}
           {mode === 'feat' && featId === 'skilled' ? (
             <div className="mt-3 grid gap-2 sm:grid-cols-3">
               {featSkills.map((value, position) => (
@@ -458,7 +604,13 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
                   aria-label={`Perícia ${position + 1} do talento Habilidoso`}
                   value={value}
                   placeholder={`Perícia ${position + 1}`}
-                  onChange={(event) => setFeatSkills((current) => current.map((entry, index) => (index === position ? (event.target.value as Skill) : entry)))}
+                  onChange={(event) =>
+                    setFeatSkills((current) =>
+                      current.map((entry, index) =>
+                        index === position ? (event.target.value as Skill) : entry,
+                      ),
+                    )
+                  }
                 >
                   <option value="">{`Perícia ${position + 1}`}</option>
                   {skilledFeatOptions(sheet)
@@ -479,7 +631,14 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
                   aria-label="Lista do Iniciado em Magia"
                   value={initiate.list}
                   placeholder="Lista de magias"
-                  onChange={(event) => setInitiate((current) => ({ ...current, list: event.target.value as MagicInitiateList, cantrips: [], spell: '' }))}
+                  onChange={(event) =>
+                    setInitiate((current) => ({
+                      ...current,
+                      list: event.target.value as MagicInitiateList,
+                      cantrips: [],
+                      spell: '',
+                    }))
+                  }
                 >
                   <option value="">Lista de magias</option>
                   {MAGIC_INITIATE_LISTS.map((list) => (
@@ -492,7 +651,12 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
                   aria-label="Atributo de conjuração"
                   value={initiate.ability}
                   placeholder="Atributo de conjuração"
-                  onChange={(event) => setInitiate((current) => ({ ...current, ability: event.target.value as MagicInitiateChoice['ability'] }))}
+                  onChange={(event) =>
+                    setInitiate((current) => ({
+                      ...current,
+                      ability: event.target.value as MagicInitiateChoice['ability'],
+                    }))
+                  }
                 >
                   <option value="">Atributo de conjuração</option>
                   {(['int', 'wis', 'cha'] as const).map((ability) => (
@@ -509,14 +673,18 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
                     count={2}
                     options={magicInitiateOptions(initiate.list, knownNames).cantrips}
                     value={[...initiate.cantrips]}
-                    onChange={(cantripsChosen) => setInitiate((current) => ({ ...current, cantrips: cantripsChosen }))}
+                    onChange={(cantripsChosen) =>
+                      setInitiate((current) => ({ ...current, cantrips: cantripsChosen }))
+                    }
                   />
                   <SpellPicker
                     title="Magia de 1º círculo do Iniciado em Magia"
                     count={1}
                     options={magicInitiateOptions(initiate.list, knownNames).spells}
                     value={initiate.spell ? [initiate.spell] : []}
-                    onChange={(chosen) => setInitiate((current) => ({ ...current, spell: chosen[0] ?? '' }))}
+                    onChange={(chosen) =>
+                      setInitiate((current) => ({ ...current, spell: chosen[0] ?? '' }))
+                    }
                   />
                 </>
               ) : null}
@@ -525,10 +693,22 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
         </Section>
       ) : null}
 
-      {plan.newCantrips > 0 ? <SpellPicker title="Truques novos" count={plan.newCantrips} options={plan.cantripOptions} value={cantrips} onChange={setCantrips} /> : null}
+      {plan.newCantrips > 0 ? (
+        <SpellPicker
+          title="Truques novos"
+          count={plan.newCantrips}
+          options={plan.cantripOptions}
+          value={cantrips}
+          onChange={setCantrips}
+        />
+      ) : null}
       {plan.newSpells > 0 ? (
         <SpellPicker
-          title={plan.classDef?.spellcasting?.spellbook ? 'Magias para o grimório' : 'Magias preparadas a mais'}
+          title={
+            plan.classDef?.spellcasting?.spellbook
+              ? 'Magias para o grimório'
+              : 'Magias preparadas a mais'
+          }
           hint={`Até o ${plan.maxSpellCircle}º círculo.`}
           count={plan.newSpells}
           options={plan.spellOptions}
@@ -540,7 +720,11 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
         <OptionPicker
           title="Invocações Místicas"
           count={plan.newInvocations}
-          options={plan.invocationOptions.map((option) => ({ id: option.id, name: option.name, description: option.description }))}
+          options={plan.invocationOptions.map((option) => ({
+            id: option.id,
+            name: option.name,
+            description: option.description,
+          }))}
           value={invocations}
           onChange={setInvocations}
         />
@@ -549,13 +733,20 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
         <OptionPicker
           title="Metamagia"
           count={plan.newMetamagic}
-          options={plan.metamagicOptions.map((option) => ({ id: option.id, name: option.name, description: option.description }))}
+          options={plan.metamagicOptions.map((option) => ({
+            id: option.id,
+            name: option.name,
+            description: option.description,
+          }))}
           value={metamagic}
           onChange={setMetamagic}
         />
       ) : null}
       {plan.newWeaponMasteries > 0 ? (
-        <Alert tone="info" title={`Maestria em mais ${plan.newWeaponMasteries} arma${plan.newWeaponMasteries > 1 ? 's' : ''}`}>
+        <Alert
+          tone="info"
+          title={`Maestria em mais ${plan.newWeaponMasteries} arma${plan.newWeaponMasteries > 1 ? 's' : ''}`}
+        >
           Registre a arma escolhida no ataque correspondente da aba Habilidades.
         </Alert>
       ) : null}
@@ -587,7 +778,12 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
         <Button variant="ghost" onClick={onClose} disabled={busy}>
           Cancelar
         </Button>
-        <Button icon={<Sparkles className="h-4 w-4" aria-hidden="true" />} loading={busy} disabled={result.issues.length > 0} onClick={() => void apply()}>
+        <Button
+          icon={<Sparkles className="h-4 w-4" aria-hidden="true" />}
+          loading={busy}
+          disabled={result.issues.length > 0}
+          onClick={() => void apply()}
+        >
           Aplicar nível {plan.newTotalLevel}
         </Button>
       </div>
@@ -604,18 +800,51 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function Choice({ name, checked, onChange, label, disabled }: { name: string; checked: boolean; onChange: () => void; label: string; disabled?: boolean }) {
+function Choice({
+  name,
+  checked,
+  onChange,
+  label,
+  disabled,
+}: {
+  name: string;
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+  disabled?: boolean;
+}) {
   return (
     <label className="flex cursor-pointer items-center gap-2 rounded-md border border-line bg-sunken px-3 py-1.5 text-sm has-[:checked]:border-wine-500 has-[:checked]:text-fg has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
-      <input type="radio" name={name} checked={checked} onChange={onChange} disabled={disabled} className="accent-wine-500" />
+      <input
+        type="radio"
+        name={name}
+        checked={checked}
+        onChange={onChange}
+        disabled={disabled}
+        className="accent-wine-500"
+      />
       {label}
     </label>
   );
 }
 
-function AbilitySelect({ label, value, onChange, scores }: { label: string; value: Ability; onChange: (ability: Ability) => void; scores: Record<Ability, number> }) {
+function AbilitySelect({
+  label,
+  value,
+  onChange,
+  scores,
+}: {
+  label: string;
+  value: Ability;
+  onChange: (ability: Ability) => void;
+  scores: Record<Ability, number>;
+}) {
   return (
-    <Select aria-label={label} value={value} onChange={(event) => onChange(event.target.value as Ability)}>
+    <Select
+      aria-label={label}
+      value={value}
+      onChange={(event) => onChange(event.target.value as Ability)}
+    >
       {ABILITIES.map((ability) => (
         <option key={ability} value={ability} disabled={scores[ability] >= 20}>
           {abilityLabels[ability].name} ({scores[ability]})
@@ -630,10 +859,28 @@ function toggle(list: string[], value: string, limit: number): string[] {
   return list.length >= limit ? list : [...list, value];
 }
 
-function SpellPicker({ title, hint, count, options, value, onChange }: { title: string; hint?: string; count: number; options: readonly BookSpell[]; value: string[]; onChange: (next: string[]) => void }) {
+function SpellPicker({
+  title,
+  hint,
+  count,
+  options,
+  value,
+  onChange,
+}: {
+  title: string;
+  hint?: string;
+  count: number;
+  options: readonly BookSpell[];
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
   const [query, setQuery] = useState('');
   const term = query.trim().toLowerCase();
-  const filtered = term ? options.filter((spell) => `${spellNamePt(spell.name)} ${spell.name}`.toLowerCase().includes(term)) : options;
+  const filtered = term
+    ? options.filter((spell) =>
+        `${spellNamePt(spell.name)} ${spell.name}`.toLowerCase().includes(term),
+      )
+    : options;
   return (
     <Section title={`${title} (${value.length}/${count})`}>
       {hint ? <p className="text-xs text-fg-muted">{hint}</p> : null}
@@ -651,7 +898,13 @@ function SpellPicker({ title, hint, count, options, value, onChange }: { title: 
           return (
             <li key={spell.name} className="border-b border-line last:border-b-0">
               <label className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm">
-                <input type="checkbox" checked={checked} disabled={!checked && value.length >= count} onChange={() => onChange(toggle(value, spell.name, count))} className="accent-wine-500" />
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={!checked && value.length >= count}
+                  onChange={() => onChange(toggle(value, spell.name, count))}
+                  className="accent-wine-500"
+                />
                 <span className="flex-1">{spellNamePt(spell.name)}</span>
                 <span className="text-xs text-fg-muted">
                   {spell.level === 0 ? 'Truque' : `${spell.level}º`} · {spell.castingTime}
@@ -661,13 +914,27 @@ function SpellPicker({ title, hint, count, options, value, onChange }: { title: 
             </li>
           );
         })}
-        {filtered.length === 0 ? <li className="px-3 py-2 text-sm text-fg-muted">Nenhuma magia encontrada.</li> : null}
+        {filtered.length === 0 ? (
+          <li className="px-3 py-2 text-sm text-fg-muted">Nenhuma magia encontrada.</li>
+        ) : null}
       </ul>
     </Section>
   );
 }
 
-function OptionPicker({ title, count, options, value, onChange }: { title: string; count: number; options: { id: string; name: string; description: string }[]; value: string[]; onChange: (next: string[]) => void }) {
+function OptionPicker({
+  title,
+  count,
+  options,
+  value,
+  onChange,
+}: {
+  title: string;
+  count: number;
+  options: { id: string; name: string; description: string }[];
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
   return (
     <Section title={`${title} (${value.length}/${count})`}>
       <ul className="max-h-56 overflow-y-auto rounded-md border border-line">
@@ -676,7 +943,13 @@ function OptionPicker({ title, count, options, value, onChange }: { title: strin
           return (
             <li key={option.id} className="border-b border-line last:border-b-0">
               <label className="flex cursor-pointer items-start gap-2 px-3 py-2 text-sm">
-                <input type="checkbox" checked={checked} disabled={!checked && value.length >= count} onChange={() => onChange(toggle(value, option.id, count))} className="mt-1 accent-wine-500" />
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={!checked && value.length >= count}
+                  onChange={() => onChange(toggle(value, option.id, count))}
+                  className="mt-1 accent-wine-500"
+                />
                 <span>
                   <span className="font-medium text-fg">{option.name}</span>
                   <span className="block text-xs text-fg-muted">{option.description}</span>

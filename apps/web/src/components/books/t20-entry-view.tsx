@@ -1,4 +1,10 @@
-import { T20_SKILLS, safeT20BookEntryData, t20AttributeLabels, t20SizeLabels, type T20BookEntryKind } from '@codexveil/rpg-systems/tormenta20';
+import {
+  T20_SKILLS,
+  safeT20BookEntryData,
+  t20AttributeLabels,
+  t20SizeLabels,
+  type T20BookEntryKind,
+} from '@codexveil/rpg-systems/tormenta20';
 import { BookText } from './book-text';
 
 /** Uma linha "rótulo: valor" (só quando há valor). */
@@ -12,7 +18,13 @@ function Field({ label, value }: { label: string; value: string | number | null 
   );
 }
 
-function Named({ title, items }: { title: string; items: readonly { name: string; text: string; level?: number; prerequisite?: string }[] }) {
+function Named({
+  title,
+  items,
+}: {
+  title: string;
+  items: readonly { name: string; text: string; level?: number; prerequisite?: string }[];
+}) {
   if (items.length === 0) return null;
   return (
     <section className="flex flex-col gap-3">
@@ -25,7 +37,9 @@ function Named({ title, items }: { title: string; items: readonly { name: string
               {item.name}
             </p>
             <BookText body={item.text} />
-            {item.prerequisite ? <p className="mt-1 text-xs text-fg-muted">Pré-requisito: {item.prerequisite}</p> : null}
+            {item.prerequisite ? (
+              <p className="mt-1 text-xs text-fg-muted">Pré-requisito: {item.prerequisite}</p>
+            ) : null}
           </li>
         ))}
       </ul>
@@ -43,16 +57,30 @@ export function T20BookEntryView({ kind, data }: { kind: string; data: unknown }
     case 'species': {
       const race = safeT20BookEntryData('species', data);
       if (!race) break;
-      const fixed = Object.entries(race.attributes).map(([attr, value]) => `${t20AttributeLabels[attr as keyof typeof t20AttributeLabels].name} ${sign(value)}`);
+      const fixed = Object.entries(race.attributes).map(
+        ([attr, value]) =>
+          `${t20AttributeLabels[attr as keyof typeof t20AttributeLabels].name} ${sign(value)}`,
+      );
       const choice = race.attributeChoice
         ? `+${race.attributeChoice.value} em ${race.attributeChoice.count} atributos diferentes${race.attributeChoice.exclude.length ? ` (exceto ${race.attributeChoice.exclude.map((a) => t20AttributeLabels[a].abbreviation).join(', ')})` : ''}`
         : '';
-      const variants = race.variants.map((variant) => `${variant.name}: ${Object.entries(variant.attributes).map(([a, v]) => `${t20AttributeLabels[a as keyof typeof t20AttributeLabels].abbreviation} ${sign(v)}`).join(', ')}`);
+      const variants = race.variants.map(
+        (variant) =>
+          `${variant.name}: ${Object.entries(variant.attributes)
+            .map(
+              ([a, v]) =>
+                `${t20AttributeLabels[a as keyof typeof t20AttributeLabels].abbreviation} ${sign(v)}`,
+            )
+            .join(', ')}`,
+      );
       return (
         <div className="flex flex-col gap-5">
           <BookText body={race.summary} />
           <dl className="grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-[auto_1fr]">
-            <Field label="Atributos" value={[choice, ...fixed, ...variants].filter(Boolean).join('; ')} />
+            <Field
+              label="Atributos"
+              value={[choice, ...fixed, ...variants].filter(Boolean).join('; ')}
+            />
             <Field label="Tamanho" value={t20SizeLabels[race.size]} />
             <Field label="Deslocamento" value={`${String(race.speed).replace('.', ',')} m`} />
           </dl>
@@ -67,14 +95,19 @@ export function T20BookEntryView({ kind, data }: { kind: string; data: unknown }
         <div className="flex flex-col gap-5">
           <BookText body={klass.summary} />
           <dl className="grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-[auto_1fr]">
-            <Field label="Pontos de vida" value={`${klass.pvInitial} + Constituição no 1º nível; ${klass.pvPerLevel} + Constituição por nível`} />
+            <Field
+              label="Pontos de vida"
+              value={`${klass.pvInitial} + Constituição no 1º nível; ${klass.pvPerLevel} + Constituição por nível`}
+            />
             <Field label="Pontos de mana" value={`${klass.pmPerLevel} por nível`} />
             <Field
               label="Perícias"
               value={[
                 ...klass.skillsFixed.map(skillName),
                 ...klass.skillsFixedChoices.map((options) => options.map(skillName).join(' ou ')),
-                klass.skillsChoice.count ? `mais ${klass.skillsChoice.count} entre ${klass.skillsChoice.options.map(skillName).join(', ')}` : '',
+                klass.skillsChoice.count
+                  ? `mais ${klass.skillsChoice.count} entre ${klass.skillsChoice.options.map(skillName).join(', ')}`
+                  : '',
               ]
                 .filter(Boolean)
                 .join(', ')}
@@ -83,7 +116,9 @@ export function T20BookEntryView({ kind, data }: { kind: string; data: unknown }
             {klass.spellcasting ? (
               <Field
                 label="Magias"
-                value={`${klass.spellcasting.type === 'arcana' ? 'Arcanas' : 'Divinas'} (${t20AttributeLabels[klass.spellcasting.attribute].name}); círculos nos níveis ${Object.entries(klass.spellcasting.circles)
+                value={`${klass.spellcasting.type === 'arcana' ? 'Arcanas' : 'Divinas'} (${t20AttributeLabels[klass.spellcasting.attribute].name}); círculos nos níveis ${Object.entries(
+                  klass.spellcasting.circles,
+                )
                   .map(([circle, level]) => `${circle}º: ${level}º`)
                   .join(', ')}`}
               />
@@ -103,7 +138,16 @@ export function T20BookEntryView({ kind, data }: { kind: string; data: unknown }
               </ol>
             </section>
           ) : null}
-          <Named title="Habilidades de classe" items={klass.abilities.flatMap((ability) => [ability, ...ability.options.map((option) => ({ ...option, name: `${ability.name}: ${option.name}` }))])} />
+          <Named
+            title="Habilidades de classe"
+            items={klass.abilities.flatMap((ability) => [
+              ability,
+              ...ability.options.map((option) => ({
+                ...option,
+                name: `${ability.name}: ${option.name}`,
+              })),
+            ])}
+          />
           <Named title="Poderes da classe" items={klass.powers} />
           {klass.sections.map((section) => (
             <section key={section.title} className="flex flex-col gap-2">
@@ -135,11 +179,17 @@ export function T20BookEntryView({ kind, data }: { kind: string; data: unknown }
       return (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-fg-muted">
-            {power.group === 'concedidos' ? 'Poder concedido' : power.group === 'classe' ? 'Poder de classe' : `Poder de ${power.group}`}
+            {power.group === 'concedidos'
+              ? 'Poder concedido'
+              : power.group === 'classe'
+                ? 'Poder de classe'
+                : `Poder de ${power.group}`}
             {power.owners.length ? ` · ${power.owners.join(', ')}` : ''}
           </p>
           <BookText body={power.text} />
-          {power.prerequisite ? <p className="text-sm text-fg-muted">Pré-requisito: {power.prerequisite}</p> : null}
+          {power.prerequisite ? (
+            <p className="text-sm text-fg-muted">Pré-requisito: {power.prerequisite}</p>
+          ) : null}
         </div>
       );
     }
@@ -161,7 +211,13 @@ export function T20BookEntryView({ kind, data }: { kind: string; data: unknown }
             <Field label="Resistência" value={spell.resistance} />
           </dl>
           <BookText body={spell.text} />
-          <Named title="Aprimoramentos" items={spell.upgrades.map((upgrade) => ({ name: `+${upgrade.cost} PM`, text: upgrade.text }))} />
+          <Named
+            title="Aprimoramentos"
+            items={spell.upgrades.map((upgrade) => ({
+              name: `+${upgrade.cost} PM`,
+              text: upgrade.text,
+            }))}
+          />
         </div>
       );
     }
@@ -194,8 +250,14 @@ export function T20BookEntryView({ kind, data }: { kind: string; data: unknown }
             <Field label="Crítico" value={item.critical} />
             <Field label="Alcance" value={item.range} />
             <Field label="Tipo de dano" value={item.damageType} />
-            <Field label="Bônus na Defesa" value={item.defense !== undefined ? `+${item.defense}` : ''} />
-            <Field label="Penalidade de armadura" value={item.penalty !== undefined ? item.penalty : ''} />
+            <Field
+              label="Bônus na Defesa"
+              value={item.defense !== undefined ? `+${item.defense}` : ''}
+            />
+            <Field
+              label="Penalidade de armadura"
+              value={item.penalty !== undefined ? item.penalty : ''}
+            />
             <Field label="Efeito" value={item.effect} />
           </dl>
           <BookText body={item.text} />
@@ -236,7 +298,10 @@ export function T20BookEntryView({ kind, data }: { kind: string; data: unknown }
             <Field
               label="Atributos"
               value={Object.entries(threat.attributes)
-                .map(([a, v]) => `${t20AttributeLabels[a as keyof typeof t20AttributeLabels].abbreviation} ${v === null ? '—' : sign(v)}`)
+                .map(
+                  ([a, v]) =>
+                    `${t20AttributeLabels[a as keyof typeof t20AttributeLabels].abbreviation} ${v === null ? '—' : sign(v)}`,
+                )
                 .join(', ')}
             />
             <Field label="Perícias" value={threat.skills} />

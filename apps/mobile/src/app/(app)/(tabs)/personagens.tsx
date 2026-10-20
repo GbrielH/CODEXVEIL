@@ -17,18 +17,37 @@ export default function CharactersScreen() {
   const { data, error, loading, refreshing, reload } = useAsyncData(async () => {
     const supabase = getSupabase();
     const characters = await listMyCharacters(supabase, userId);
-    const portraits = await signedMediaUrls(supabase, characters.map((character) => character.portraitPath));
-    return characters.map((character) => ({ character, portraitUrl: character.portraitPath ? (portraits[character.portraitPath] ?? null) : null }));
+    const portraits = await signedMediaUrls(
+      supabase,
+      characters.map((character) => character.portraitPath),
+    );
+    return characters.map((character) => ({
+      character,
+      portraitUrl: character.portraitPath ? (portraits[character.portraitPath] ?? null) : null,
+    }));
   }, userId);
 
   if (loading) return <LoadingState />;
 
   return (
-    <Screen title="Personagens" subtitle="Suas fichas, com ou sem campanha." refreshing={refreshing} onRefresh={reload}>
-      <Button label="Novo personagem" icon={<Plus size={16} color={colors.primaryFg} />} onPress={() => router.push('/personagem/novo')} />
+    <Screen
+      title="Personagens"
+      subtitle="Suas fichas, com ou sem campanha."
+      refreshing={refreshing}
+      onRefresh={reload}
+    >
+      <Button
+        label="Novo personagem"
+        icon={<Plus size={16} color={colors.primaryFg} />}
+        onPress={() => router.push('/personagem/novo')}
+      />
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
       {data && data.length === 0 ? (
-        <EmptyState icon={<Swords size={28} color={colors.fgSecondary} />} title="Nenhum personagem ainda" description="Crie seu primeiro personagem. Você pode vinculá-lo a uma campanha depois." />
+        <EmptyState
+          icon={<Swords size={28} color={colors.fgSecondary} />}
+          title="Nenhum personagem ainda"
+          description="Crie seu primeiro personagem. Você pode vinculá-lo a uma campanha depois."
+        />
       ) : null}
       {data?.map(({ character, portraitUrl }) => (
         <CharacterCoverCard
@@ -39,7 +58,9 @@ export default function CharactersScreen() {
           subtitle={summarizeSheet(character.systemId, character.sheet).subtitle}
           meta={character.campaignName ?? 'Sem campanha'}
           portraitUrl={portraitUrl}
-          onPress={() => router.push({ pathname: '/personagem/[id]', params: { id: character.id } })}
+          onPress={() =>
+            router.push({ pathname: '/personagem/[id]', params: { id: character.id } })
+          }
         />
       ))}
     </Screen>

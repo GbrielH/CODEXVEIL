@@ -3,13 +3,17 @@ import { findSystem } from '@codexveil/rpg-systems';
 import { Archive, Crown } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
+import { CampaignColorsProvider, DiceColorRequired } from '@/components/dice/campaign-colors';
 import { SectionTabs, type SectionTab } from '@/components/layout/section-tabs';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { loadCampaignOrNotFound } from '@/lib/campaigns';
 import { routes } from '@/lib/routes';
 
-export default async function CampaignLayout({ children, params }: LayoutProps<'/campanhas/[campaignId]'>) {
+export default async function CampaignLayout({
+  children,
+  params,
+}: LayoutProps<'/campanhas/[campaignId]'>) {
   const { campaignId } = await params;
   const { campaign } = await loadCampaignOrNotFound(campaignId);
   const base = `/campanhas/${campaign.id}`;
@@ -36,34 +40,40 @@ export default async function CampaignLayout({ children, params }: LayoutProps<'
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <Link href={routes.campaigns} className="text-sm text-fg-muted hover:text-fg">
-          ← Campanhas
-        </Link>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Badge tone={isGm ? 'brand' : 'neutral'} icon={isGm ? <Crown className="h-3 w-3" aria-hidden="true" /> : undefined}>
-            {campaign.isOwner ? 'Mestre responsável' : campaignRoleLabels[campaign.role]}
-          </Badge>
-          <Badge tone="parchment">{system?.shortName ?? campaign.systemId}</Badge>
-          {campaign.status === 'archived' ? (
-            <Badge tone="warning" icon={<Archive className="h-3 w-3" aria-hidden="true" />}>
-              Arquivada
+    <CampaignColorsProvider campaignId={campaign.id}>
+      <div className="flex flex-col gap-6">
+        <div>
+          <Link href={routes.campaigns} className="text-sm text-fg-muted hover:text-fg">
+            ← Campanhas
+          </Link>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Badge
+              tone={isGm ? 'brand' : 'neutral'}
+              icon={isGm ? <Crown className="h-3 w-3" aria-hidden="true" /> : undefined}
+            >
+              {campaign.isOwner ? 'Mestre responsável' : campaignRoleLabels[campaign.role]}
             </Badge>
-          ) : null}
+            <Badge tone="parchment">{system?.shortName ?? campaign.systemId}</Badge>
+            {campaign.status === 'archived' ? (
+              <Badge tone="warning" icon={<Archive className="h-3 w-3" aria-hidden="true" />}>
+                Arquivada
+              </Badge>
+            ) : null}
+          </div>
+          <h1 className="mt-2 text-2xl leading-tight sm:text-3xl">{campaign.name}</h1>
         </div>
-        <h1 className="mt-2 text-2xl leading-tight sm:text-3xl">{campaign.name}</h1>
+
+        {campaign.status === 'archived' ? (
+          <Alert tone="warning" title="Campanha arquivada">
+            Os dados estão preservados, mas nada pode ser alterado. O mestre responsável pode
+            reabri-la nas configurações.
+          </Alert>
+        ) : null}
+
+        <SectionTabs tabs={tabs} label="Seções da campanha" />
+        {campaign.status === 'active' ? <DiceColorRequired /> : null}
+        {children}
       </div>
-
-      {campaign.status === 'archived' ? (
-        <Alert tone="warning" title="Campanha arquivada">
-          Os dados estão preservados, mas nada pode ser alterado. O mestre responsável pode reabri-la nas
-          configurações.
-        </Alert>
-      ) : null}
-
-      <SectionTabs tabs={tabs} label="Seções da campanha" />
-      {children}
-    </div>
+    </CampaignColorsProvider>
   );
 }

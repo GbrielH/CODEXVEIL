@@ -1,6 +1,11 @@
 'use client';
 
-import { ADVANCEMENT_MODES, findClassByName, listClasses, type Dnd5eClass } from '@codexveil/rpg-systems/dnd5e';
+import {
+  ADVANCEMENT_MODES,
+  findClassByName,
+  listClasses,
+  type Dnd5eClass,
+} from '@codexveil/rpg-systems/dnd5e';
 import { useId } from 'react';
 import { CharacterIcon } from '@/components/characters/character-icon';
 import { Badge } from '@/components/ui/badge';
@@ -35,15 +40,38 @@ function IdentityCard() {
     <Card>
       <CardHeader title="Identidade" />
       <div className="grid gap-4 sm:grid-cols-2">
-        <TextField id={`${id}-species`} label="Espécie" maxLength={60} readOnly={readOnly} value={sheet.identity.species} onChange={(event) => setIdentity({ species: event.target.value })} />
-        <TextField id={`${id}-background`} label="Antecedente" maxLength={60} readOnly={readOnly} value={sheet.identity.background} onChange={(event) => setIdentity({ background: event.target.value })} />
-        <TextField id={`${id}-alignment`} label="Alinhamento" maxLength={40} readOnly={readOnly} value={sheet.identity.alignment} onChange={(event) => setIdentity({ alignment: event.target.value })} />
+        <TextField
+          id={`${id}-species`}
+          label="Espécie"
+          maxLength={60}
+          readOnly={readOnly}
+          value={sheet.identity.species}
+          onChange={(event) => setIdentity({ species: event.target.value })}
+        />
+        <TextField
+          id={`${id}-background`}
+          label="Antecedente"
+          maxLength={60}
+          readOnly={readOnly}
+          value={sheet.identity.background}
+          onChange={(event) => setIdentity({ background: event.target.value })}
+        />
+        <TextField
+          id={`${id}-alignment`}
+          label="Alinhamento"
+          maxLength={40}
+          readOnly={readOnly}
+          value={sheet.identity.alignment}
+          onChange={(event) => setIdentity({ alignment: event.target.value })}
+        />
         <SelectField
           id={`${id}-advancement`}
           label="Evolução"
           disabled={readOnly}
           value={sheet.identity.advancement}
-          onChange={(event) => setIdentity({ advancement: event.target.value as (typeof ADVANCEMENT_MODES)[number] })}
+          onChange={(event) =>
+            setIdentity({ advancement: event.target.value as (typeof ADVANCEMENT_MODES)[number] })
+          }
         >
           {ADVANCEMENT_MODES.map((mode) => (
             <option key={mode} value={mode}>
@@ -69,13 +97,21 @@ function ClassesCard() {
   const setClass = (index: number, patch: Partial<Dnd5eClass>) =>
     updateSheet((current) => ({
       ...current,
-      identity: { ...current.identity, classes: current.identity.classes.map((entry, position) => (position === index ? { ...entry, ...patch } : entry)) },
+      identity: {
+        ...current.identity,
+        classes: current.identity.classes.map((entry, position) =>
+          position === index ? { ...entry, ...patch } : entry,
+        ),
+      },
     }));
   const taken = new Set(classes.map((entry) => findClassByName(entry.name)?.id).filter(Boolean));
 
   return (
     <Card>
-      <CardHeader title="Classes" description={`Nível total ${derived.level}. Multiclasse: até 4 classes. Para subir de nível, use a aba Evolução.`} />
+      <CardHeader
+        title="Classes"
+        description={`Nível total ${derived.level}. Multiclasse: até 4 classes. Para subir de nível, use a aba Evolução.`}
+      />
       <ul className="flex flex-col gap-3">
         {classes.map((entry, index) => {
           const classDef = findClassByName(entry.name);
@@ -83,14 +119,22 @@ function ClassesCard() {
           return (
             <li key={index} className="flex flex-col gap-3 rounded-md border border-line p-3">
               <div className="flex items-center gap-3">
-                {classDef ? <CharacterIcon kind="class" id={classDef.id} className="h-9 w-9 text-fg-accent" /> : null}
+                {classDef ? (
+                  <CharacterIcon kind="class" id={classDef.id} className="h-9 w-9 text-fg-accent" />
+                ) : null}
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-fg">
                     {classDef?.name ?? (entry.name || 'Classe não definida')}
-                    <span className="ml-2 text-sm font-normal text-fg-muted">{entry.level}º nível</span>
+                    <span className="ml-2 text-sm font-normal text-fg-muted">
+                      {entry.level}º nível
+                    </span>
                   </p>
                   <p className="text-sm text-fg-muted">
-                    {entry.subclass ? `Subclasse: ${entry.subclass}` : entry.level < 3 ? 'Subclasse no 3º nível' : 'Sem subclasse'}
+                    {entry.subclass
+                      ? `Subclasse: ${entry.subclass}`
+                      : entry.level < 3
+                        ? 'Subclasse no 3º nível'
+                        : 'Sem subclasse'}
                   </p>
                 </div>
                 <Badge tone="parchment">Dado de vida {classDef?.hitDie ?? entry.hitDie}</Badge>
@@ -117,7 +161,10 @@ function ClassesCard() {
                     ))}
                 </SelectField>
               ) : null}
-              {canEdit && classDef && entry.level >= 3 && !subclasses.some((option) => option.name === entry.subclass) ? (
+              {canEdit &&
+              classDef &&
+              entry.level >= 3 &&
+              !subclasses.some((option) => option.name === entry.subclass) ? (
                 <SelectField
                   id={`${id}-${index}-subclass`}
                   label="Escolha a subclasse"
@@ -140,9 +187,9 @@ function ClassesCard() {
         })}
       </ul>
       <p className="mt-3 text-xs text-fg-muted">
-        Classe, nível e subclasse mudam pela subida de nível: escolha a classe que sobe ou uma classe nova (multiclasse) e a vida,
-        as habilidades, as magias e os recursos são recalculados pelas regras. Para trocar a classe inicial, crie o personagem de
-        novo pelo assistente.
+        Classe, nível e subclasse mudam pela subida de nível: escolha a classe que sobe ou uma
+        classe nova (multiclasse) e a vida, as habilidades, as magias e os recursos são recalculados
+        pelas regras. Para trocar a classe inicial, crie o personagem de novo pelo assistente.
       </p>
     </Card>
   );
@@ -168,11 +215,16 @@ function DetailsCard() {
       <h2 id={`${id}-cronica`} className="font-display text-xl text-ink">
         Crônica do personagem
       </h2>
-      <p className="mt-1 text-sm text-ink-muted">Registro de quem o personagem é. Tudo é salvo automaticamente.</p>
+      <p className="mt-1 text-sm text-ink-muted">
+        Registro de quem o personagem é. Tudo é salvo automaticamente.
+      </p>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         {fields.map((field) => (
           <div key={field.key} className={field.rows >= 6 ? 'md:col-span-2' : undefined}>
-            <label htmlFor={`${id}-${field.key}`} className="mb-1 block font-display text-sm font-semibold tracking-wide text-ink">
+            <label
+              htmlFor={`${id}-${field.key}`}
+              className="mb-1 block font-display text-sm font-semibold tracking-wide text-ink"
+            >
               {field.label}
             </label>
             <textarea
@@ -182,7 +234,10 @@ function DetailsCard() {
               readOnly={!permissions.canEditSheet}
               value={sheet.details[field.key]}
               onChange={(event) =>
-                updateSheet((current) => ({ ...current, details: { ...current.details, [field.key]: event.target.value } }))
+                updateSheet((current) => ({
+                  ...current,
+                  details: { ...current.details, [field.key]: event.target.value },
+                }))
               }
               className="w-full rounded-md border border-parchment-500/60 bg-parchment-50/80 px-3 py-2 font-serif text-base leading-relaxed text-ink shadow-[inset_0_1px_2px_rgb(43_36_32/0.12)] placeholder:text-ink-muted focus-visible:border-wine-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wine-400/40 read-only:bg-parchment-100/60"
             />
@@ -192,4 +247,3 @@ function DetailsCard() {
     </section>
   );
 }
-

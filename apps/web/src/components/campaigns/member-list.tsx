@@ -57,10 +57,17 @@ export function MemberList({
       const result = await setMemberRoleAction(campaignId, member.userId, nextRole);
       setBusyMember(null);
       if (!result.ok) {
-        toast({ tone: 'danger', title: 'Não foi possível alterar o papel', description: result.message });
+        toast({
+          tone: 'danger',
+          title: 'Não foi possível alterar o papel',
+          description: result.message,
+        });
         return;
       }
-      toast({ tone: 'success', title: `${member.displayName}: ${result.message ?? 'papel alterado'}` });
+      toast({
+        tone: 'success',
+        title: `${member.displayName}: ${result.message ?? 'papel alterado'}`,
+      });
       router.refresh();
     });
   };
@@ -70,24 +77,34 @@ export function MemberList({
       {members.map((member) => {
         const isSelf = member.userId === currentUserId;
         const canRemove =
-          isActive && !isSelf && !member.isOwner && (viewerIsOwner || (viewerIsGm && member.role === 'player'));
+          isActive &&
+          !isSelf &&
+          !member.isOwner &&
+          (viewerIsOwner || (viewerIsGm && member.role === 'player'));
         const canChangeRole = isActive && viewerIsOwner && !member.isOwner;
         const canTransfer = isActive && viewerIsOwner && !member.isOwner && member.role === 'gm';
         const canLeave = isSelf && !member.isOwner;
 
         return (
-          <li key={member.userId} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <li
+            key={member.userId}
+            className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+          >
             <div className="flex min-w-0 items-center gap-3">
               <Avatar name={member.displayName} />
               <div className="min-w-0">
                 <p className="truncate font-medium text-fg">
                   {member.displayName}
-                  {isSelf ? <span className="ml-1 text-sm font-normal text-fg-muted">(você)</span> : null}
+                  {isSelf ? (
+                    <span className="ml-1 text-sm font-normal text-fg-muted">(você)</span>
+                  ) : null}
                 </p>
                 <div className="mt-0.5 flex flex-wrap gap-1.5">
                   <Badge
                     tone={member.role === 'gm' ? 'brand' : 'neutral'}
-                    icon={member.isOwner ? <Crown className="h-3 w-3" aria-hidden="true" /> : undefined}
+                    icon={
+                      member.isOwner ? <Crown className="h-3 w-3" aria-hidden="true" /> : undefined
+                    }
                   >
                     {member.isOwner ? 'Mestre responsável' : campaignRoleLabels[member.role]}
                   </Badge>
@@ -116,9 +133,9 @@ export function MemberList({
                   title="Transferir a campanha?"
                   description={
                     <>
-                      <strong className="text-fg">{member.displayName}</strong> passará a ser o mestre
-                      responsável por “{campaignName}”. Você continuará como mestre, mas não poderá mais
-                      arquivar, excluir ou alterar papéis.
+                      <strong className="text-fg">{member.displayName}</strong> passará a ser o
+                      mestre responsável por “{campaignName}”. Você continuará como mestre, mas não
+                      poderá mais arquivar, excluir ou alterar papéis.
                     </>
                   }
                   confirmLabel="Transferir"

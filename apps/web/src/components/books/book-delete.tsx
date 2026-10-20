@@ -14,7 +14,12 @@ export function BookDeleteButton({ packId, name }: { packId: string; name: strin
   return (
     <ConfirmDialog
       trigger={(open) => (
-        <Button size="sm" variant="ghost" icon={<Trash2 className="h-4 w-4" aria-hidden="true" />} onClick={open}>
+        <Button
+          size="sm"
+          variant="ghost"
+          icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
+          onClick={open}
+        >
           Remover
         </Button>
       )}

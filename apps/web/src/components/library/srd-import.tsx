@@ -2,13 +2,24 @@
 
 import { Copy } from 'lucide-react';
 import { useId, useState, useTransition } from 'react';
-import { importSrdItemAction, importSrdMonsterAction } from '@/app/(app)/campanhas/[campaignId]/biblioteca/actions';
+import {
+  importSrdItemAction,
+  importSrdMonsterAction,
+} from '@/app/(app)/campanhas/[campaignId]/biblioteca/actions';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { SelectField } from '@/components/ui/field';
 
 /** Copia um monstro do SRD para a biblioteca, como NPC ou monstro. */
-export function SrdImportMonster({ campaignId, slug, defaultKind }: { campaignId: string; slug: string; defaultKind: 'npc' | 'monster' }) {
+export function SrdImportMonster({
+  campaignId,
+  slug,
+  defaultKind,
+}: {
+  campaignId: string;
+  slug: string;
+  defaultKind: 'npc' | 'monster';
+}) {
   const id = useId();
   const [kind, setKind] = useState(defaultKind);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +28,12 @@ export function SrdImportMonster({ campaignId, slug, defaultKind }: { campaignId
   return (
     <div className="flex flex-col gap-3">
       {error ? <Alert tone="danger">{error}</Alert> : null}
-      <SelectField id={`${id}-kind`} label="Copiar como" value={kind} onChange={(event) => setKind(event.target.value === 'npc' ? 'npc' : 'monster')}>
+      <SelectField
+        id={`${id}-kind`}
+        label="Copiar como"
+        value={kind}
+        onChange={(event) => setKind(event.target.value === 'npc' ? 'npc' : 'monster')}
+      >
         <option value="monster">Monstro</option>
         <option value="npc">NPC</option>
       </SelectField>

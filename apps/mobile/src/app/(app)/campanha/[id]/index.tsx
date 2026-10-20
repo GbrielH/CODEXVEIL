@@ -11,11 +11,26 @@ import {
 } from '@codexveil/database';
 import { campaignRoleLabels } from '@codexveil/domain';
 import { conditionLabel, findSystem, summarizeSheet } from '@codexveil/rpg-systems';
-import { dnd5eCampaignIssues, dnd5eCampaignLinks, parseDnd5eCampaignRules, parseDnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
+import {
+  dnd5eCampaignIssues,
+  dnd5eCampaignLinks,
+  parseDnd5eCampaignRules,
+  parseDnd5eSheet,
+} from '@codexveil/rpg-systems/dnd5e';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { BookOpen, CalendarClock, Dices, ExternalLink, NotebookPen, Swords, UserPlus, Users } from 'lucide-react-native';
+import {
+  BookOpen,
+  CalendarClock,
+  Dices,
+  ExternalLink,
+  NotebookPen,
+  Swords,
+  UserPlus,
+  Users,
+} from 'lucide-react-native';
 import { Image, Linking, StyleSheet, View } from 'react-native';
 import { TurnStatus } from '@/components/campaign/turn-status';
+import { DiceColorCard } from '@/components/dice/dice-color';
 import { CharacterAvatar } from '@/components/character-avatar';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/dialog';
@@ -51,7 +66,13 @@ export default function CampaignScreen() {
       listSessions(supabase, campaign.id),
     ]);
     const covers = await signedMediaUrls(supabase, [campaign.coverPath]);
-    return { campaign, members, party, sessions, coverUrl: campaign.coverPath ? (covers[campaign.coverPath] ?? null) : null };
+    return {
+      campaign,
+      members,
+      party,
+      sessions,
+      coverUrl: campaign.coverPath ? (covers[campaign.coverPath] ?? null) : null,
+    };
   }, `${id}:${userId}`);
 
   if (loading) return <LoadingState />;
@@ -59,7 +80,10 @@ export default function CampaignScreen() {
   if (!data) {
     return (
       <Screen>
-        <EmptyState title="Campanha não encontrada" description="Ela não existe ou você não participa dela." />
+        <EmptyState
+          title="Campanha não encontrada"
+          description="Ela não existe ou você não participa dela."
+        />
       </Screen>
     );
   }
@@ -72,15 +96,24 @@ export default function CampaignScreen() {
   // O próprio personagem fica no destaque; a lista mostra os outros (se o mestre liberar as fichas).
   const others = party.filter((character) => character.id !== ownCharacter?.id);
   const system = findSystem(campaign.systemId);
-  const creationRules = system ? system.describeCampaignRules(system.parseCampaignRules(campaign.characterRules)) : [];
+  const creationRules = system
+    ? system.describeCampaignRules(system.parseCampaignRules(campaign.characterRules))
+    : [];
   // O app é a ficha de jogo: as regras de criação só aparecem enquanto o personagem do jogador
   // não existe ou ainda não cumpre as regras do mestre (o mestre as vê no site).
-  const ownIssues = ownCharacter && campaign.systemId === 'dnd5e' ? characterRuleIssues(ownCharacter.name, ownCharacter.sheet, campaign.characterRules) : [];
+  const ownIssues =
+    ownCharacter && campaign.systemId === 'dnd5e'
+      ? characterRuleIssues(ownCharacter.name, ownCharacter.sheet, campaign.characterRules)
+      : [];
   const campaignLinks =
     campaign.systemId === 'dnd5e'
-      ? dnd5eCampaignLinks(system?.officialLinks ?? [], parseDnd5eCampaignRules(campaign.characterRules).sourcebooks)
+      ? dnd5eCampaignLinks(
+          system?.officialLinks ?? [],
+          parseDnd5eCampaignRules(campaign.characterRules).sourcebooks,
+        )
       : (system?.officialLinks ?? []);
-  const showCreationRules = !isGm && creationRules.length > 0 && (!ownCharacter || ownIssues.length > 0);
+  const showCreationRules =
+    !isGm && creationRules.length > 0 && (!ownCharacter || ownIssues.length > 0);
 
   const leave = async () => {
     const confirmed = await confirm({
@@ -109,13 +142,21 @@ export default function CampaignScreen() {
     >
       <Stack.Screen options={{ title: campaign.name }} />
       {coverUrl ? (
-        <Image source={{ uri: coverUrl }} accessibilityLabel={`Capa de ${campaign.name}`} style={styles.cover} resizeMode="cover" />
+        <Image
+          source={{ uri: coverUrl }}
+          accessibilityLabel={`Capa de ${campaign.name}`}
+          style={styles.cover}
+          resizeMode="cover"
+        />
       ) : null}
+      {isActive ? <DiceColorCard campaignId={campaign.id} /> : null}
       {/* Só o mestre troca a capa (o Storage confere); ela aparece no painel de todos. */}
       {isGm && isActive ? (
         <Card>
           <AppText variant="eyebrow">Capa da campanha</AppText>
-          <AppText variant="small">Aparece no painel e na lista de campanhas de todos os participantes.</AppText>
+          <AppText variant="small">
+            Aparece no painel e na lista de campanhas de todos os participantes.
+          </AppText>
           <ImageUploadButtons
             preset="scene"
             label="Enviar capa"
@@ -129,7 +170,13 @@ export default function CampaignScreen() {
           />
         </Card>
       ) : null}
-      {!isActive ? <Notice tone="warning" title="Campanha arquivada" message="Os dados estão preservados, mas nada pode ser alterado." /> : null}
+      {!isActive ? (
+        <Notice
+          tone="warning"
+          title="Campanha arquivada"
+          message="Os dados estão preservados, mas nada pode ser alterado."
+        />
+      ) : null}
       {campaign.description ? (
         <Card>
           <AppText variant="serif">{campaign.description}</AppText>
@@ -147,12 +194,22 @@ export default function CampaignScreen() {
       ) : null}
 
       {ownCharacter ? (
-        <HeroCard onPress={() => router.push({ pathname: '/personagem/[id]', params: { id: ownCharacter.id } })} accessibilityLabel={`Abrir a ficha de ${ownCharacter.name}`}>
+        <HeroCard
+          onPress={() =>
+            router.push({ pathname: '/personagem/[id]', params: { id: ownCharacter.id } })
+          }
+          accessibilityLabel={`Abrir a ficha de ${ownCharacter.name}`}
+        >
           <AppText variant="eyebrow" style={{ color: colors.fgBrand }}>
             Meu personagem
           </AppText>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <CharacterAvatar name={ownCharacter.name} systemId={ownCharacter.systemId} sheet={ownCharacter.sheet} size={56} />
+            <CharacterAvatar
+              name={ownCharacter.name}
+              systemId={ownCharacter.systemId}
+              sheet={ownCharacter.sheet}
+              size={56}
+            />
             <View style={{ flex: 1, gap: 2 }}>
               <AppText variant="title" numberOfLines={1}>
                 {ownCharacter.name}
@@ -166,60 +223,120 @@ export default function CampaignScreen() {
           {ownCharacter.conditions.length > 0 ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
               {ownCharacter.conditions.map((condition) => (
-                <Badge key={condition.id} label={conditionLabel(ownCharacter.systemId, condition.key, condition.level)} tone="warning" />
+                <Badge
+                  key={condition.id}
+                  label={conditionLabel(ownCharacter.systemId, condition.key, condition.level)}
+                  tone="warning"
+                />
               ))}
             </View>
           ) : null}
           <QuickActions>
-            <QuickAction primary icon={<Swords size={16} color={colors.primaryFg} />} label="Ficha e turno" onPress={() => router.push({ pathname: '/personagem/[id]', params: { id: ownCharacter.id } })} />
-            <QuickAction icon={<Dices size={16} color={colors.fg} />} label="Dados" onPress={() => router.push({ pathname: '/campanha/[id]/dados', params: { id: campaign.id } })} />
+            <QuickAction
+              primary
+              icon={<Swords size={16} color={colors.primaryFg} />}
+              label="Ficha e turno"
+              onPress={() =>
+                router.push({ pathname: '/personagem/[id]', params: { id: ownCharacter.id } })
+              }
+            />
+            <QuickAction
+              icon={<Dices size={16} color={colors.fg} />}
+              label="Dados"
+              onPress={() =>
+                router.push({ pathname: '/campanha/[id]/dados', params: { id: campaign.id } })
+              }
+            />
           </QuickActions>
         </HeroCard>
       ) : isActive && !isGm ? (
         <HeroCard>
           <AppText variant="heading">Você ainda não tem personagem aqui</AppText>
-          <AppText variant="muted">Crie um seguindo as regras da mesa ou vincule um existente pela ficha.</AppText>
-          <Button label="Criar personagem" icon={<UserPlus size={16} color={colors.primaryFg} />} onPress={() => router.push({ pathname: '/personagem/novo', params: { campanha: campaign.id } })} />
+          <AppText variant="muted">
+            Crie um seguindo as regras da mesa ou vincule um existente pela ficha.
+          </AppText>
+          <Button
+            label="Criar personagem"
+            icon={<UserPlus size={16} color={colors.primaryFg} />}
+            onPress={() =>
+              router.push({ pathname: '/personagem/novo', params: { campanha: campaign.id } })
+            }
+          />
         </HeroCard>
       ) : null}
 
-      <TurnStatus campaignId={campaign.id} ownCharacterId={ownCharacter?.id ?? null} systemId={campaign.systemId} />
+      <TurnStatus
+        campaignId={campaign.id}
+        ownCharacterId={ownCharacter?.id ?? null}
+        systemId={campaign.systemId}
+      />
 
       <NavGrid>
-        <NavTile icon={<Dices size={20} color={colors.fgAccent} />} label="Dados" hint="Rolar e ver o mural" onPress={() => router.push({ pathname: '/campanha/[id]/dados', params: { id: campaign.id } })} />
+        <NavTile
+          icon={<Dices size={20} color={colors.fgAccent} />}
+          label="Dados"
+          hint="Rolar e ver o mural"
+          onPress={() =>
+            router.push({ pathname: '/campanha/[id]/dados', params: { id: campaign.id } })
+          }
+        />
         <NavTile
           icon={<BookOpen size={20} color={colors.fgAccent} />}
           label="Biblioteca"
           hint="NPCs, monstros e itens revelados"
-          onPress={() => router.push({ pathname: '/campanha/[id]/biblioteca', params: { id: campaign.id } })}
+          onPress={() =>
+            router.push({ pathname: '/campanha/[id]/biblioteca', params: { id: campaign.id } })
+          }
         />
         <NavTile
           icon={<NotebookPen size={20} color={colors.fgAccent} />}
           label="Anotações"
-          onPress={() => router.push({ pathname: '/campanha/[id]/anotacoes', params: { id: campaign.id } })}
+          onPress={() =>
+            router.push({ pathname: '/campanha/[id]/anotacoes', params: { id: campaign.id } })
+          }
         />
       </NavGrid>
 
-      {isGm ? <Notice tone="info" message="Ferramentas do mestre (mesa, sessões, convites e biblioteca) ficam no site; o app é para jogar." /> : null}
+      {isGm ? (
+        <Notice
+          tone="info"
+          message="Ferramentas do mestre (mesa, sessões, convites e biblioteca) ficam no site; o app é para jogar."
+        />
+      ) : null}
 
       {isGm || others.length > 0 || campaign.settings.partySheetsVisible ? (
         <>
-          <SectionHeader icon={<Users size={14} color={colors.fgAccent} />} title={isGm ? `Grupo (${party.length})` : 'Companheiros'} />
+          <SectionHeader
+            icon={<Users size={14} color={colors.fgAccent} />}
+            title={isGm ? `Grupo (${party.length})` : 'Companheiros'}
+          />
           {others.length === 0 ? (
-            <AppText variant="muted">{isGm ? 'Nenhum personagem ainda. Os jogadores criam os personagens.' : 'Ainda não há personagens de outros jogadores.'}</AppText>
+            <AppText variant="muted">
+              {isGm
+                ? 'Nenhum personagem ainda. Os jogadores criam os personagens.'
+                : 'Ainda não há personagens de outros jogadores.'}
+            </AppText>
           ) : null}
           {others.map((character) => {
             const hp = character.resources.find((resource) => resource.display === 'health');
             return (
               <View key={character.id} style={styles.member}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <CharacterAvatar name={character.name} systemId={character.systemId} sheet={character.sheet} />
+                  <CharacterAvatar
+                    name={character.name}
+                    systemId={character.systemId}
+                    sheet={character.sheet}
+                  />
                   <View style={{ flex: 1 }}>
-                    <AppText style={{ fontFamily: fonts.sansSemiBold, fontSize: 16, color: colors.fg }} numberOfLines={1}>
+                    <AppText
+                      style={{ fontFamily: fonts.sansSemiBold, fontSize: 16, color: colors.fg }}
+                      numberOfLines={1}
+                    >
                       {character.name}
                     </AppText>
                     <AppText variant="small" numberOfLines={1}>
-                      {summarizeSheet(character.systemId, character.sheet).subtitle} · {character.ownerName}
+                      {summarizeSheet(character.systemId, character.sheet).subtitle} ·{' '}
+                      {character.ownerName}
                     </AppText>
                   </View>
                 </View>
@@ -227,7 +344,11 @@ export default function CampaignScreen() {
                 {character.conditions.length > 0 ? (
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
                     {character.conditions.map((condition) => (
-                      <Badge key={condition.id} label={conditionLabel(character.systemId, condition.key, condition.level)} tone="warning" />
+                      <Badge
+                        key={condition.id}
+                        label={conditionLabel(character.systemId, condition.key, condition.level)}
+                        tone="warning"
+                      />
                     ))}
                   </View>
                 ) : null}
@@ -239,12 +360,19 @@ export default function CampaignScreen() {
 
       <SectionHeader icon={<CalendarClock size={14} color={colors.fgAccent} />} title="Sessões" />
       <Card>
-        {sessions.length === 0 ? <AppText variant="muted">{isGm ? 'Nenhuma sessão criada.' : 'Nenhuma sessão publicada ainda.'}</AppText> : null}
+        {sessions.length === 0 ? (
+          <AppText variant="muted">
+            {isGm ? 'Nenhuma sessão criada.' : 'Nenhuma sessão publicada ainda.'}
+          </AppText>
+        ) : null}
         {sessions.map((session) => (
           <ListRow
             key={session.id}
             title={`Sessão ${session.number}: ${session.title}`}
-            subtitle={sessionStatusLabels[session.status] + (isGm && !session.isPublished ? ' · não publicada' : '')}
+            subtitle={
+              sessionStatusLabels[session.status] +
+              (isGm && !session.isPublished ? ' · não publicada' : '')
+            }
             onPress={() => router.push({ pathname: '/sessao/[id]', params: { id: session.id } })}
           />
         ))}
@@ -252,8 +380,13 @@ export default function CampaignScreen() {
 
       {campaignLinks.length > 0 ? (
         <Card>
-          <SectionHeader icon={<ExternalLink size={14} color={colors.fgAccent} />} title="Links oficiais" />
-          <AppText variant="muted">Dúvidas de regras? Os sites oficiais do sistema (conteúdo da editora, em inglês).</AppText>
+          <SectionHeader
+            icon={<ExternalLink size={14} color={colors.fgAccent} />}
+            title="Links oficiais"
+          />
+          <AppText variant="muted">
+            Dúvidas de regras? Os sites oficiais do sistema (conteúdo da editora, em inglês).
+          </AppText>
           {campaignLinks.map((link) => (
             <ListRow
               key={link.url}
@@ -270,28 +403,57 @@ export default function CampaignScreen() {
       <Card>
         <SectionHeader icon={<Users size={14} color={colors.fgAccent} />} title="Participantes" />
         {members.map((member) => (
-          <View key={member.userId} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 }}>
+          <View
+            key={member.userId}
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingVertical: 4,
+            }}
+          >
             <AppText>
               {member.displayName}
               {member.userId === userId ? ' (você)' : ''}
             </AppText>
-            <Badge label={member.isOwner ? 'Mestre responsável' : campaignRoleLabels[member.role]} tone={member.role === 'gm' ? 'brand' : 'neutral'} />
+            <Badge
+              label={member.isOwner ? 'Mestre responsável' : campaignRoleLabels[member.role]}
+              tone={member.role === 'gm' ? 'brand' : 'neutral'}
+            />
           </View>
         ))}
-        {!campaign.isOwner ? <Button label="Sair da campanha" variant="danger" compact onPress={() => void leave()} /> : null}
+        {!campaign.isOwner ? (
+          <Button label="Sair da campanha" variant="danger" compact onPress={() => void leave()} />
+        ) : null}
       </Card>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  member: { gap: spacing[2], padding: 14, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.card },
-  cover: { width: '100%', aspectRatio: 16 / 9, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.line },
+  member: {
+    gap: spacing[2],
+    padding: 14,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.card,
+  },
+  cover: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
 });
 
 function characterRuleIssues(name: string, sheet: unknown, rules: unknown): string[] {
   try {
-    return dnd5eCampaignIssues({ name, sheet: parseDnd5eSheet(sheet) }, parseDnd5eCampaignRules(rules));
+    return dnd5eCampaignIssues(
+      { name, sheet: parseDnd5eSheet(sheet) },
+      parseDnd5eCampaignRules(rules),
+    );
   } catch {
     return ['A ficha não pôde ser lida.'];
   }

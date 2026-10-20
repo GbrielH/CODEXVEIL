@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createCharacter, createSession, createTable } from '../support/fixtures';
+import { addMember, createCampaign, createCharacter, createSession, createTable } from '../support/fixtures';
 import { TestDatabase, expectSqlError } from '../support/pglite';
 
 let db: TestDatabase;
@@ -44,6 +44,24 @@ async function setupFight(options: { inProgress?: boolean } = {}) {
   );
   return { ...table, session: session.id, lyra, encounter: encounter.id, lyraCombatant: lyraCombatant?.id ?? '', goblinCombatant: goblinCombatant?.id ?? '' };
 }
+
+describe('cor dos dados', () => {
+  it('o mestre escolhe primeiro, cada cor é de uma pessoa e sem cor não se rola', async () => {
+    const gm = await db.createUser('Mestre da cor');
+    const player = await db.createUser('Jogador da cor');
+    const other = await db.createUser('Outra jogadora');
+    const campaign = await createCampaign(db, gm, 'Mesa colorida');
+    await addMember(db, campaign.id, player);
+    await addMember(db, campaign.id, other);
+    await expectSqlError(db.as(gm, (s) => s.query(`select public.roll_dice($1, '1d20')`, [campaign.id])), 'CVCOR');
+    await expectSqlError(db.as(player, (s) => s.query(`select public.set_my_dice_color($1, '#2f7d4a')`, [campaign.id])), 'CVCOR');
+    await db.as(gm, (s) => s.query(`select public.set_my_dice_color($1, '#7a1f2b')`, [campaign.id]));
+    await db.as(gm, (s) => s.query(`select public.roll_dice($1, '1d20')`, [campaign.id]));
+    await expectSqlError(db.as(player, (s) => s.query(`select public.set_my_dice_color($1, '#7A1F2B')`, [campaign.id])), 'CVCOR');
+    await db.as(player, (s) => s.query(`select public.set_my_dice_color($1, '#2f7d4a')`, [campaign.id]));
+    await expectSqlError(db.as(other, (s) => s.query(`select public.set_my_dice_color($1, null)`, [campaign.id])), '22023');
+  });
+});
 
 describe('sessão em andamento', () => {
   it('jogadores só rolam dados com a sessão iniciada; o mestre rola sempre', async () => {

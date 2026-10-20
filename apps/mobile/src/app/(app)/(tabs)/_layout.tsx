@@ -11,7 +11,12 @@ export default function TabsLayout() {
         headerShadowVisible: false,
         headerTintColor: colors.fgAccent,
         headerTitleStyle: { fontFamily: fonts.display },
-        tabBarStyle: { backgroundColor: colors.raised, borderTopColor: colors.line, minHeight: 64, paddingTop: 6 },
+        tabBarStyle: {
+          backgroundColor: colors.raised,
+          borderTopColor: colors.line,
+          minHeight: 64,
+          paddingTop: 6,
+        },
         tabBarActiveBackgroundColor: 'rgba(87, 31, 43, 0.35)',
         tabBarItemStyle: { borderRadius: 14, marginHorizontal: 6, marginVertical: 4 },
         tabBarActiveTintColor: colors.fgAccent,
@@ -22,11 +27,41 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.canvas },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Painel', tabBarIcon: ({ color, size }) => <LayoutDashboard color={color} size={size} /> }} />
-      <Tabs.Screen name="campanhas" options={{ title: 'Campanhas', tabBarIcon: ({ color, size }) => <ScrollText color={color} size={size} /> }} />
-      <Tabs.Screen name="personagens" options={{ title: 'Personagens', tabBarIcon: ({ color, size }) => <Swords color={color} size={size} /> }} />
-      <Tabs.Screen name="comunidade" options={{ title: 'Comunidade', tabBarIcon: ({ color, size }) => <Puzzle color={color} size={size} /> }} />
-      <Tabs.Screen name="perfil" options={{ title: 'Perfil', tabBarIcon: ({ color, size }) => <UserRound color={color} size={size} /> }} />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Painel',
+          tabBarIcon: ({ color, size }) => <LayoutDashboard color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="campanhas"
+        options={{
+          title: 'Campanhas',
+          tabBarIcon: ({ color, size }) => <ScrollText color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="personagens"
+        options={{
+          title: 'Personagens',
+          tabBarIcon: ({ color, size }) => <Swords color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="comunidade"
+        options={{
+          title: 'Comunidade',
+          tabBarIcon: ({ color, size }) => <Puzzle color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="perfil"
+        options={{
+          title: 'Perfil',
+          tabBarIcon: ({ color, size }) => <UserRound color={color} size={size} />,
+        }}
+      />
     </Tabs>
   );
 }

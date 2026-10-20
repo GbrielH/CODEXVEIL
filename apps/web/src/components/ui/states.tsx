@@ -57,7 +57,13 @@ export function ForbiddenState({ title = 'Acesso restrito', ...props }: Partial<
   );
 }
 
-export function LoadingState({ label = 'Carregando…', className }: { label?: string; className?: string }) {
+export function LoadingState({
+  label = 'Carregando…',
+  className,
+}: {
+  label?: string;
+  className?: string;
+}) {
   return <DragonLoader label={label} size="sm" className={className} />;
 }
 

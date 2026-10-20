@@ -14,7 +14,13 @@ import {
   type CharacterItem,
   type CharacterResource,
 } from '@codexveil/database';
-import { groupByCategory, itemCategoryLabels, rollDiceLocally, type DiceRollMode, type TrackOperation } from '@codexveil/domain';
+import {
+  groupByCategory,
+  itemCategoryLabels,
+  rollDiceLocally,
+  type DiceRollMode,
+  type TrackOperation,
+} from '@codexveil/domain';
 import {
   T20_ATTRIBUTES,
   T20_RESOURCE_KEYS,
@@ -125,13 +131,24 @@ function T20SheetBody(props: Props) {
   const toggleEquipped = async (item: CharacterItem) => {
     try {
       await setCharacterItemEquipped(getSupabase(), item.id, !item.isEquipped);
-      setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, isEquipped: !entry.isEquipped } : entry)));
+      setItems((current) =>
+        current.map((entry) =>
+          entry.id === item.id ? { ...entry, isEquipped: !entry.isEquipped } : entry,
+        ),
+      );
     } catch (error) {
       toast({ tone: 'danger', title: failureMessage(error) });
     }
   };
   const content = useMemo(() => buildT20Content(props.sources), [props.sources]);
-  const derived = useMemo(() => computeT20Derived(sheet, conditions.map((entry) => entry.key)), [sheet, conditions]);
+  const derived = useMemo(
+    () =>
+      computeT20Derived(
+        sheet,
+        conditions.map((entry) => entry.key),
+      ),
+    [sheet, conditions],
+  );
   const track = (key: string) => resources.find((entry) => entry.key === key);
   const value = Math.max(1, Number(amount) || 1);
 
@@ -142,7 +159,11 @@ function T20SheetBody(props: Props) {
       const saved = await adjustCharacterResource(getSupabase(), target.id, operation, quantity);
       setResources((current) => current.map((entry) => (entry.id === saved.id ? saved : entry)));
     } catch (error) {
-      toast({ tone: 'danger', title: 'Não foi possível atualizar', description: failureMessage(error) });
+      toast({
+        tone: 'danger',
+        title: 'Não foi possível atualizar',
+        description: failureMessage(error),
+      });
     }
   };
   const roll = (label: string, bonus: number) => {
@@ -152,7 +173,12 @@ function T20SheetBody(props: Props) {
       return;
     }
     const result = rollDiceLocally(expression, rollMode);
-    if (result) toast({ tone: 'info', title: `${label}: ${result.total}`, description: `1d20 (${result.total - bonus}) ${formatT20Bonus(bonus)}` });
+    if (result)
+      toast({
+        tone: 'info',
+        title: `${label}: ${result.total}`,
+        description: `1d20 (${result.total - bonus}) ${formatT20Bonus(bonus)}`,
+      });
   };
 
   const hp = track(T20_RESOURCE_KEYS.hitPoints);
@@ -160,18 +186,29 @@ function T20SheetBody(props: Props) {
   const money = track(T20_RESOURCE_KEYS.money);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.canvas }} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.canvas }}
+      contentContainerStyle={styles.content}
+    >
       <Card ornate>
         <AppText variant="eyebrow">Tormenta20 · nível {derived.level}</AppText>
         <AppText variant="title">{props.character.name}</AppText>
         <AppText variant="small">
-          {[sheet.identity.race, sheet.identity.classes.map((entry) => `${entry.name} ${entry.level}`).join(' / '), sheet.identity.origin].filter(Boolean).join(' · ')}
+          {[
+            sheet.identity.race,
+            sheet.identity.classes.map((entry) => `${entry.name} ${entry.level}`).join(' / '),
+            sheet.identity.origin,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
         </AppText>
         <View style={styles.stats}>
           <Badge label={`Defesa ${derived.defense}`} tone="parchment" />
           <Badge label={`Iniciativa ${formatT20Bonus(derived.initiative)}`} tone="parchment" />
           <Badge label={`${String(derived.speed).replace('.', ',')} m`} tone="parchment" />
-          {derived.spellDc !== null ? <Badge label={`CD ${derived.spellDc}`} tone="parchment" /> : null}
+          {derived.spellDc !== null ? (
+            <Badge label={`CD ${derived.spellDc}`} tone="parchment" />
+          ) : null}
         </View>
       </Card>
 
@@ -192,15 +229,31 @@ function T20SheetBody(props: Props) {
         <Card>
           <AppText variant="heading">Evolução</AppText>
           <AppText>
-            Nível {derived.level} · {sheet.identity.classes.map((entry) => `${entry.name} ${entry.level}`).join(' / ')}
+            Nível {derived.level} ·{' '}
+            {sheet.identity.classes.map((entry) => `${entry.name} ${entry.level}`).join(' / ')}
           </AppText>
           <AppText variant="small">
-            {props.gate.inCampaign ? 'Na campanha, o mestre libera o próximo nível e você escolhe as melhorias aqui.' : 'Suba de nível escolhendo as melhorias do nível novo.'}
+            {props.gate.inCampaign
+              ? 'Na campanha, o mestre libera o próximo nível e você escolhe as melhorias aqui.'
+              : 'Suba de nível escolhendo as melhorias do nível novo.'}
           </AppText>
-          <LevelGate characterId={props.character.id} characterName={props.character.name} level={derived.level} canEditSheet={props.canEditSheet} gate={props.gate} onLevelUp={() => setLevelUp(true)} />
+          <LevelGate
+            characterId={props.character.id}
+            characterName={props.character.name}
+            level={derived.level}
+            canEditSheet={props.canEditSheet}
+            gate={props.gate}
+            onLevelUp={() => setLevelUp(true)}
+          />
         </Card>
       ) : null}
-      {tab === 'evolucao' && props.gate.isOwner ? <DeleteCharacterCard characterId={props.character.id} name={props.character.name} portraitPath={props.portraitPath} /> : null}
+      {tab === 'evolucao' && props.gate.isOwner ? (
+        <DeleteCharacterCard
+          characterId={props.character.id}
+          name={props.character.name}
+          portraitPath={props.portraitPath}
+        />
+      ) : null}
 
       {tab === 'jogo' && props.campaignId ? (
         <T20TurnCard
@@ -209,7 +262,13 @@ function T20SheetBody(props: Props) {
           canAct={props.canEditPlay}
           onConditionsEnded={(ended) =>
             setConditions((current) =>
-              current.filter((entry) => !ended.includes(entry.key)).map((entry) => (entry.roundsRemaining !== null ? { ...entry, roundsRemaining: Math.max(0, entry.roundsRemaining - 1) } : entry)),
+              current
+                .filter((entry) => !ended.includes(entry.key))
+                .map((entry) =>
+                  entry.roundsRemaining !== null
+                    ? { ...entry, roundsRemaining: Math.max(0, entry.roundsRemaining - 1) }
+                    : entry,
+                ),
             )
           }
         />
@@ -217,24 +276,67 @@ function T20SheetBody(props: Props) {
       {tab === 'jogo' ? (
         <>
           {[
-            { key: T20_RESOURCE_KEYS.hitPoints, label: 'Pontos de Vida', minus: 'Dano', minusOp: 'damage' as const, plus: 'Cura', data: hp },
-            { key: T20_RESOURCE_KEYS.manaPoints, label: 'Pontos de Mana', minus: 'Gastar', minusOp: 'spend' as const, plus: 'Recuperar', data: pm },
+            {
+              key: T20_RESOURCE_KEYS.hitPoints,
+              label: 'Pontos de Vida',
+              minus: 'Dano',
+              minusOp: 'damage' as const,
+              plus: 'Cura',
+              data: hp,
+            },
+            {
+              key: T20_RESOURCE_KEYS.manaPoints,
+              label: 'Pontos de Mana',
+              minus: 'Gastar',
+              minusOp: 'spend' as const,
+              plus: 'Recuperar',
+              data: pm,
+            },
           ].map((entry) =>
             entry.data ? (
               <Card key={entry.key}>
                 <AppText style={{ fontFamily: fonts.sansMedium }}>{entry.label}</AppText>
-                <HealthBar current={entry.data.current} max={entry.data.max} temp={entry.data.temp} />
+                <HealthBar
+                  current={entry.data.current}
+                  max={entry.data.max}
+                  temp={entry.data.temp}
+                />
                 {props.canEditPlay ? (
                   <View style={styles.row}>
-                    <TextInput value={amount} onChangeText={setAmount} keyboardType="number-pad" accessibilityLabel="Quantidade" style={styles.input} />
-                    <Button label={entry.minus} variant="secondary" compact onPress={() => void adjust(entry.key, entry.minusOp, value)} />
-                    <Button label={entry.plus} variant="secondary" compact onPress={() => void adjust(entry.key, 'heal', value)} />
+                    <TextInput
+                      value={amount}
+                      onChangeText={setAmount}
+                      keyboardType="number-pad"
+                      accessibilityLabel="Quantidade"
+                      style={styles.input}
+                    />
+                    <Button
+                      label={entry.minus}
+                      variant="secondary"
+                      compact
+                      onPress={() => void adjust(entry.key, entry.minusOp, value)}
+                    />
+                    <Button
+                      label={entry.plus}
+                      variant="secondary"
+                      compact
+                      onPress={() => void adjust(entry.key, 'heal', value)}
+                    />
                   </View>
                 ) : null}
               </Card>
             ) : null,
           )}
-          {props.canEditPlay ? <RestCard level={derived.level} onRest={async (gain) => { await adjust(T20_RESOURCE_KEYS.hitPoints, 'heal', gain); await adjust(T20_RESOURCE_KEYS.manaPoints, 'heal', gain); toast({ tone: 'success', title: `Descanso: +${gain} PV e PM.` }); }} /> : null}
+          {props.canEditPlay ? (
+            <RestCard
+              level={derived.level}
+              onRest={async (gain) => {
+                await adjust(T20_RESOURCE_KEYS.hitPoints, 'heal', gain);
+                await adjust(T20_RESOURCE_KEYS.manaPoints, 'heal', gain);
+                toast({ tone: 'success', title: `Descanso: +${gain} PV e PM.` });
+              }}
+            />
+          ) : null}
           <Card>
             <AppText style={{ fontFamily: fonts.sansMedium }}>Condições</AppText>
             {conditions.length === 0 ? <AppText variant="small">Nenhuma.</AppText> : null}
@@ -243,9 +345,13 @@ function T20SheetBody(props: Props) {
                 <View style={{ flex: 1 }}>
                   <AppText>
                     {findT20Condition(condition.key)?.label ?? condition.key}
-                    {condition.roundsRemaining !== null ? ` · ${condition.roundsRemaining === 1 ? '1 rodada' : `${condition.roundsRemaining} rodadas`}` : ''}
+                    {condition.roundsRemaining !== null
+                      ? ` · ${condition.roundsRemaining === 1 ? '1 rodada' : `${condition.roundsRemaining} rodadas`}`
+                      : ''}
                   </AppText>
-                  <AppText variant="small">{findT20Condition(condition.key)?.summary ?? ''}</AppText>
+                  <AppText variant="small">
+                    {findT20Condition(condition.key)?.summary ?? ''}
+                  </AppText>
                 </View>
                 {props.canEditPlay ? (
                   <Button
@@ -255,7 +361,9 @@ function T20SheetBody(props: Props) {
                     onPress={async () => {
                       try {
                         await removeCharacterCondition(getSupabase(), condition.id);
-                        setConditions((current) => current.filter((entry) => entry.id !== condition.id));
+                        setConditions((current) =>
+                          current.filter((entry) => entry.id !== condition.id),
+                        );
                       } catch (error) {
                         toast({ tone: 'danger', title: failureMessage(error) });
                       }
@@ -276,7 +384,15 @@ function T20SheetBody(props: Props) {
                   placeholder="Rodadas"
                   placeholderTextColor={colors.fgMuted}
                   accessibilityLabel="Duração em rodadas"
-                  style={{ minWidth: 80, borderWidth: 1, borderColor: colors.line, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, color: colors.fg }}
+                  style={{
+                    minWidth: 80,
+                    borderWidth: 1,
+                    borderColor: colors.line,
+                    borderRadius: 8,
+                    paddingHorizontal: 8,
+                    paddingVertical: 6,
+                    color: colors.fg,
+                  }}
                 />
               </View>
             ) : null}
@@ -291,9 +407,17 @@ function T20SheetBody(props: Props) {
                     setConditions((current) =>
                       current
                         .filter((entry) => !ended.includes(entry.key))
-                        .map((entry) => (entry.roundsRemaining !== null ? { ...entry, roundsRemaining: Math.max(0, entry.roundsRemaining - 1) } : entry)),
+                        .map((entry) =>
+                          entry.roundsRemaining !== null
+                            ? { ...entry, roundsRemaining: Math.max(0, entry.roundsRemaining - 1) }
+                            : entry,
+                        ),
                     );
-                    if (ended.length) toast({ tone: 'info', title: `Terminou: ${ended.map((key) => findT20Condition(key)?.label ?? key).join(', ')}.` });
+                    if (ended.length)
+                      toast({
+                        tone: 'info',
+                        title: `Terminou: ${ended.map((key) => findT20Condition(key)?.label ?? key).join(', ')}.`,
+                      });
                   } catch (error) {
                     toast({ tone: 'danger', title: failureMessage(error) });
                   }
@@ -307,14 +431,29 @@ function T20SheetBody(props: Props) {
                 onChange={async (key) => {
                   try {
                     const rounds = condRounds && Number(condRounds) > 0 ? Number(condRounds) : null;
-                    await applyCharacterCondition(getSupabase(), props.character.id, key, null, rounds);
-                    setConditions((current) => [...current, { id: `local-${key}`, key, level: null, note: '', roundsRemaining: rounds }]);
+                    await applyCharacterCondition(
+                      getSupabase(),
+                      props.character.id,
+                      key,
+                      null,
+                      rounds,
+                    );
+                    setConditions((current) => [
+                      ...current,
+                      { id: `local-${key}`, key, level: null, note: '', roundsRemaining: rounds },
+                    ]);
                     setCondRounds('');
                   } catch (error) {
                     toast({ tone: 'danger', title: failureMessage(error) });
                   }
                 }}
-                options={t20Conditions.filter((definition) => !conditions.some((entry) => entry.key === definition.key)).map((definition) => ({ value: definition.key, label: definition.label, description: definition.summary }))}
+                options={t20Conditions
+                  .filter((definition) => !conditions.some((entry) => entry.key === definition.key))
+                  .map((definition) => ({
+                    value: definition.key,
+                    label: definition.label,
+                    description: definition.summary,
+                  }))}
               />
             ) : null}
           </Card>
@@ -339,14 +478,24 @@ function T20SheetBody(props: Props) {
         <Card>
           <View style={styles.stats}>
             {T20_ATTRIBUTES.map((key) => (
-              <Pressable key={key} onPress={() => roll(t20AttributeLabels[key].name, derived.attributes[key])} style={styles.attr} accessibilityRole="button">
+              <Pressable
+                key={key}
+                onPress={() => roll(t20AttributeLabels[key].name, derived.attributes[key])}
+                style={styles.attr}
+                accessibilityRole="button"
+              >
                 <AppText variant="small">{t20AttributeLabels[key].abbreviation}</AppText>
                 <AppText variant="number">{formatT20Bonus(derived.attributes[key])}</AppText>
               </Pressable>
             ))}
           </View>
           {Object.values(derived.skills).map((skill) => (
-            <Pressable key={skill.skill} onPress={() => skill.usable && roll(skill.label, skill.total)} style={[styles.row, { paddingVertical: 6, opacity: skill.usable ? 1 : 0.5 }]} accessibilityRole="button">
+            <Pressable
+              key={skill.skill}
+              onPress={() => skill.usable && roll(skill.label, skill.total)}
+              style={[styles.row, { paddingVertical: 6, opacity: skill.usable ? 1 : 0.5 }]}
+              accessibilityRole="button"
+            >
               <AppText style={{ flex: 1, color: skill.trained ? colors.fgAccent : colors.fg }}>
                 {skill.trained ? '● ' : '○ '}
                 {skill.label}
@@ -374,15 +523,26 @@ function T20SheetBody(props: Props) {
                   onPress={() => {
                     const cost = t20AbilityCost(ability);
                     if (cost > 0 && (track(T20_RESOURCE_KEYS.manaPoints)?.current ?? 0) < cost) {
-                      toast({ tone: 'warning', title: `PM insuficientes para ${ability.name} (${cost} PM).` });
+                      toast({
+                        tone: 'warning',
+                        title: `PM insuficientes para ${ability.name} (${cost} PM).`,
+                      });
                       return;
                     }
                     if (cost > 0) void adjust(T20_RESOURCE_KEYS.manaPoints, 'spend', cost);
                     const label = `${ability.kind === 'spell' ? 'Lançou' : 'Usou'}: ${ability.name}`;
-                    const diceText = /\b\d{0,2}d\d{1,3}(?:\s*[+-]\s*\d+)?\b/i.exec(ability.description ?? '')?.[0]?.replace(/\s+/g, '');
+                    const diceText = /\b\d{0,2}d\d{1,3}(?:\s*[+-]\s*\d+)?\b/i
+                      .exec(ability.description ?? '')?.[0]
+                      ?.replace(/\s+/g, '');
                     if (diceText && dice) void dice.roll({ expression: diceText, label });
-                    else toast({ tone: 'success', title: label, description: cost > 0 ? `−${cost} PM` : undefined });
-                    if (props.campaignId) void logT20TurnUse(props.campaignId, props.character.id, label);
+                    else
+                      toast({
+                        tone: 'success',
+                        title: label,
+                        description: cost > 0 ? `−${cost} PM` : undefined,
+                      });
+                    if (props.campaignId)
+                      void logT20TurnUse(props.campaignId, props.character.id, label);
                   }}
                 />
               ) : null}
@@ -395,8 +555,14 @@ function T20SheetBody(props: Props) {
         <>
           <Card>
             <AppText variant="heading">Carga</AppText>
-            <AppText variant="small" style={{ color: usedSpaces > derived.carryCapacity ? palette.ember[300] : colors.fgSecondary }}>
-              {usedSpaces.toLocaleString('pt-BR')} de {derived.carryCapacity} espaços{usedSpaces > derived.carryCapacity ? ' (sobrecarregado)' : ''}
+            <AppText
+              variant="small"
+              style={{
+                color: usedSpaces > derived.carryCapacity ? palette.ember[300] : colors.fgSecondary,
+              }}
+            >
+              {usedSpaces.toLocaleString('pt-BR')} de {derived.carryCapacity} espaços
+              {usedSpaces > derived.carryCapacity ? ' (sobrecarregado)' : ''}
             </AppText>
           </Card>
           {editingItem ? (
@@ -404,15 +570,27 @@ function T20SheetBody(props: Props) {
               key={editingItem.id}
               characterId={props.character.id}
               item={editingItem}
-              onCreated={(saved) => setItems((current) => current.map((entry) => (entry.id === saved.id ? saved : entry)))}
+              onCreated={(saved) =>
+                setItems((current) =>
+                  current.map((entry) => (entry.id === saved.id ? saved : entry)),
+                )
+              }
               onClose={() => setEditingItem(null)}
             />
           ) : null}
           {props.canEditPlay ? (
             addingItem ? (
-              <T20NewItem characterId={props.character.id} onCreated={(item) => setItems((current) => [...current, item])} onClose={() => setAddingItem(false)} />
+              <T20NewItem
+                characterId={props.character.id}
+                onCreated={(item) => setItems((current) => [...current, item])}
+                onClose={() => setAddingItem(false)}
+              />
             ) : (
-              <Button label="Adicionar item" variant="secondary" onPress={() => setAddingItem(true)} />
+              <Button
+                label="Adicionar item"
+                variant="secondary"
+                onPress={() => setAddingItem(true)}
+              />
             )
           ) : null}
           {items.length === 0 ? (
@@ -431,17 +609,52 @@ function T20SheetBody(props: Props) {
                       {item.isEquipped ? ' · equipado' : ''}
                     </AppText>
                     {item.description || item.weight !== null ? (
-                      <AppText variant="small">{[item.weight !== null ? `${item.weight.toLocaleString('pt-BR')} espaço(s) cada` : null, item.description].filter(Boolean).join(' · ')}</AppText>
+                      <AppText variant="small">
+                        {[
+                          item.weight !== null
+                            ? `${item.weight.toLocaleString('pt-BR')} espaço(s) cada`
+                            : null,
+                          item.description,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </AppText>
                     ) : null}
                   </View>
                   {props.canEditPlay ? (
                     <>
-                      <Button label={item.isEquipped ? 'Tirar' : 'Equipar'} variant="ghost" compact onPress={() => void toggleEquipped(item)} />
-                      <Button label="−" variant="ghost" compact disabled={item.quantity <= 0} onPress={() => void changeQuantity(item, -1)} />
+                      <Button
+                        label={item.isEquipped ? 'Tirar' : 'Equipar'}
+                        variant="ghost"
+                        compact
+                        onPress={() => void toggleEquipped(item)}
+                      />
+                      <Button
+                        label="−"
+                        variant="ghost"
+                        compact
+                        disabled={item.quantity <= 0}
+                        onPress={() => void changeQuantity(item, -1)}
+                      />
                       <AppText>{item.quantity}</AppText>
-                      <Button label="+" variant="ghost" compact onPress={() => void changeQuantity(item, 1)} />
-                      <Button label="Editar" variant="ghost" compact onPress={() => setEditingItem(item)} />
-                      <Button label="Excluir" variant="ghost" compact onPress={() => void removeItem(item)} />
+                      <Button
+                        label="+"
+                        variant="ghost"
+                        compact
+                        onPress={() => void changeQuantity(item, 1)}
+                      />
+                      <Button
+                        label="Editar"
+                        variant="ghost"
+                        compact
+                        onPress={() => setEditingItem(item)}
+                      />
+                      <Button
+                        label="Excluir"
+                        variant="ghost"
+                        compact
+                        onPress={() => void removeItem(item)}
+                      />
                     </>
                   ) : (
                     <AppText>× {item.quantity}</AppText>
@@ -470,17 +683,39 @@ function T20SheetBody(props: Props) {
               ] as const) {
                 const target = track(key);
                 if (!target || gain <= 0) continue;
-                await adjustCharacterResource(client, target.id, 'set_max', (target.max ?? 0) + gain);
+                await adjustCharacterResource(
+                  client,
+                  target.id,
+                  'set_max',
+                  (target.max ?? 0) + gain,
+                );
                 const healed = await adjustCharacterResource(client, target.id, 'heal', gain);
-                setResources((current) => current.map((entry) => (entry.id === healed.id ? healed : entry)));
+                setResources((current) =>
+                  current.map((entry) => (entry.id === healed.id ? healed : entry)),
+                );
               }
               const created: CharacterAbility[] = [];
               for (const entry of result.abilities) {
-                created.push(await createCharacterAbility(client, props.character.id, { kind: entry.kind, name: entry.name, source: entry.source, description: entry.description, data: entry.data as CharacterAbility['data'], resourceId: null }));
+                created.push(
+                  await createCharacterAbility(client, props.character.id, {
+                    kind: entry.kind,
+                    name: entry.name,
+                    source: entry.source,
+                    description: entry.description,
+                    data: entry.data as CharacterAbility['data'],
+                    resourceId: null,
+                  }),
+                );
               }
               // Ficha por último: numa campanha com edição bloqueada, o nível liberado é o que permite criar as habilidades.
-              const saved = await saveCharacterSheet(client, props.character.id, version, { sheet: result.sheet });
-              await addCharacterEvent(client, props.character.id, { kind: 'level_up', summary: result.summary, data: { level: plan.newTotalLevel } });
+              const saved = await saveCharacterSheet(client, props.character.id, version, {
+                sheet: result.sheet,
+              });
+              await addCharacterEvent(client, props.character.id, {
+                kind: 'level_up',
+                summary: result.summary,
+                data: { level: plan.newTotalLevel },
+              });
               setSheet(result.sheet);
               setVersion(saved.version);
               setAbilities((current) => [...current, ...created]);
@@ -505,35 +740,63 @@ function RestCard({ level, onRest }: { level: number; onRest: (gain: number) => 
         label="Descanso"
         value={quality}
         onChange={(value) => setQuality(value as T20RestQuality)}
-        options={(Object.keys(T20_REST_QUALITY) as T20RestQuality[]).map((key) => ({ value: key, label: `${T20_REST_QUALITY[key].label} (+${t20RestRecovery(level, key)})` }))}
+        options={(Object.keys(T20_REST_QUALITY) as T20RestQuality[]).map((key) => ({
+          value: key,
+          label: `${T20_REST_QUALITY[key].label} (+${t20RestRecovery(level, key)})`,
+        }))}
       />
-      <Button label="Descansar" variant="secondary" onPress={() => void onRest(t20RestRecovery(level, quality))} />
+      <Button
+        label="Descansar"
+        variant="secondary"
+        onPress={() => void onRest(t20RestRecovery(level, quality))}
+      />
     </Card>
   );
 }
 
-function LevelUpModal({ content, sheet, onClose, onApply }: { content: ReturnType<typeof buildT20Content>; sheet: T20Sheet; onClose: () => void; onApply: (choices: T20LevelUpChoices) => Promise<string | null> }) {
+function LevelUpModal({
+  content,
+  sheet,
+  onClose,
+  onApply,
+}: {
+  content: ReturnType<typeof buildT20Content>;
+  sheet: T20Sheet;
+  onClose: () => void;
+  onApply: (choices: T20LevelUpChoices) => Promise<string | null>;
+}) {
   const plan = useMemo(() => planT20LevelUp(content, sheet, 0), [content, sheet]);
   const [powerId, setPowerId] = useState('');
   const [spellIds, setSpellIds] = useState<string[]>([]);
   const [attribute, setAttribute] = useState<T20LevelUpChoices['attribute']>('');
   const [featureChoices, setFeatureChoices] = useState<Record<string, string>>({});
   const [skills, setSkills] = useState<T20Skill[]>([]);
-  const preview = applyT20LevelUp(sheet, plan, { powerId, spellIds, attribute, featureChoices, skills });
+  const preview = applyT20LevelUp(sheet, plan, {
+    powerId,
+    spellIds,
+    attribute,
+    featureChoices,
+    skills,
+  });
   const chosenPower = plan.powerOptions.find((power) => power.id === powerId);
   const skillPick = chosenPower ? t20PowerSkillPick(chosenPower) : null;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   return (
     <Modal visible animationType="slide" onRequestClose={onClose}>
-      <ScrollView style={{ flex: 1, backgroundColor: colors.canvas }} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: colors.canvas }}
+        contentContainerStyle={styles.content}
+      >
         <AppText variant="title">
           Nível {plan.newTotalLevel}: {plan.classDef?.name ?? 'classe'} {plan.newClassLevel}
         </AppText>
         <AppText>
           +{preview.sheet.hitPoints.max - sheet.hitPoints.max} PV e +{plan.manaPointsGained} PM.
         </AppText>
-        {plan.tableText ? <AppText variant="small">Neste nível (tabela da classe): {plan.tableText}.</AppText> : null}
+        {plan.tableText ? (
+          <AppText variant="small">Neste nível (tabela da classe): {plan.tableText}.</AppText>
+        ) : null}
         {plan.abilities.map((ability) => (
           <Card key={ability.name}>
             <AppText style={{ fontFamily: fonts.sansMedium }}>{ability.name}</AppText>
@@ -547,8 +810,14 @@ function LevelUpModal({ content, sheet, onClose, onApply }: { content: ReturnTyp
             key={choice.ability}
             label={`${choice.ability}: escolha`}
             value={featureChoices[choice.ability] ?? ''}
-            onChange={(id) => setFeatureChoices((current) => ({ ...current, [choice.ability]: id }))}
-            options={choice.options.map((option) => ({ value: option.id, label: option.name, description: option.text.slice(0, 140) }))}
+            onChange={(id) =>
+              setFeatureChoices((current) => ({ ...current, [choice.ability]: id }))
+            }
+            options={choice.options.map((option) => ({
+              value: option.id,
+              label: option.name,
+              description: option.text.slice(0, 140),
+            }))}
           />
         ))}
         {plan.powerChoice ? (
@@ -559,7 +828,14 @@ function LevelUpModal({ content, sheet, onClose, onApply }: { content: ReturnTyp
               setPowerId(value);
               setSkills([]);
             }}
-            options={plan.powerOptions.map((power) => ({ value: power.id, label: power.name, description: power.problems.length ? `Falta ${power.problems.join(', ')}` : power.text.slice(0, 140), disabled: power.problems.length > 0 }))}
+            options={plan.powerOptions.map((power) => ({
+              value: power.id,
+              label: power.name,
+              description: power.problems.length
+                ? `Falta ${power.problems.join(', ')}`
+                : power.text.slice(0, 140),
+              disabled: power.problems.length > 0,
+            }))}
           />
         ) : null}
         {skillPick ? (
@@ -574,8 +850,14 @@ function LevelUpModal({ content, sheet, onClose, onApply }: { content: ReturnTyp
                   key={skill}
                   label={`${T20_SKILLS[skill].label}${blocked ? ' (já treinada)' : ''}`}
                   checked={skills.includes(skill)}
-                  disabled={blocked || (!skills.includes(skill) && skills.length >= skillPick.count)}
-                  onChange={(checked) => setSkills((current) => (checked ? [...current, skill] : current.filter((entry) => entry !== skill)))}
+                  disabled={
+                    blocked || (!skills.includes(skill) && skills.length >= skillPick.count)
+                  }
+                  onChange={(checked) =>
+                    setSkills((current) =>
+                      checked ? [...current, skill] : current.filter((entry) => entry !== skill),
+                    )
+                  }
                 />
               );
             })}
@@ -589,7 +871,9 @@ function LevelUpModal({ content, sheet, onClose, onApply }: { content: ReturnTyp
             options={T20_ATTRIBUTES.map((key) => ({
               value: key,
               label: `${t20AttributeLabels[key].name} (${formatT20Bonus(sheet.attributes[key])} → ${formatT20Bonus(sheet.attributes[key] + 1)})`,
-              description: plan.blockedAttributes.includes(key) ? 'Já aumentado neste patamar' : undefined,
+              description: plan.blockedAttributes.includes(key)
+                ? 'Já aumentado neste patamar'
+                : undefined,
               disabled: plan.blockedAttributes.includes(key),
             }))}
           />
@@ -601,7 +885,11 @@ function LevelUpModal({ content, sheet, onClose, onApply }: { content: ReturnTyp
                 label={`${spell.name} (${spell.circle}º)`}
                 checked={spellIds.includes(spell.id)}
                 disabled={!spellIds.includes(spell.id) && spellIds.length >= plan.newSpells}
-                onChange={(checked) => setSpellIds((current) => (checked ? [...current, spell.id] : current.filter((id) => id !== spell.id)))}
+                onChange={(checked) =>
+                  setSpellIds((current) =>
+                    checked ? [...current, spell.id] : current.filter((id) => id !== spell.id),
+                  )
+                }
               />
             ))
           : null}
@@ -628,6 +916,21 @@ const styles = StyleSheet.create({
   content: { padding: spacing[4], gap: spacing[4], paddingBottom: spacing[8] },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginVertical: spacing[2] },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
-  input: { width: 64, borderWidth: 1, borderColor: colors.line, borderRadius: 8, color: colors.fg, paddingHorizontal: 8, paddingVertical: 6 },
-  attr: { width: 64, alignItems: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: 8, paddingVertical: 6 },
+  input: {
+    width: 64,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 8,
+    color: colors.fg,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  attr: {
+    width: 64,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 8,
+    paddingVertical: 6,
+  },
 });

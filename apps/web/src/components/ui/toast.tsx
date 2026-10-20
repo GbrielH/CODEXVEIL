@@ -1,7 +1,15 @@
 'use client';
 
 import { X } from 'lucide-react';
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { cx } from '@/lib/cx';
 
 export type ToastTone = 'success' | 'info' | 'warning' | 'danger';
@@ -60,7 +68,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       <div
-        className="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-4 lg:bottom-6 lg:items-end lg:pr-6"
+        className="pointer-events-none fixed inset-x-0 top-4 z-[60] flex flex-col items-center gap-2 px-4 lg:items-end lg:pr-6"
         aria-live="polite"
         aria-relevant="additions"
       >
@@ -73,10 +81,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               toneStyles[message.tone],
             )}
           >
-            <span className={cx('mt-1.5 h-2 w-2 shrink-0 rounded-full', toneDot[message.tone])} aria-hidden="true" />
+            <span
+              className={cx('mt-1.5 h-2 w-2 shrink-0 rounded-full', toneDot[message.tone])}
+              aria-hidden="true"
+            />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-fg">{message.title}</p>
-              {message.description ? <p className="mt-0.5 text-sm text-fg-muted">{message.description}</p> : null}
+              {message.description ? (
+                <p className="mt-0.5 text-sm text-fg-muted">{message.description}</p>
+              ) : null}
             </div>
             <button
               type="button"

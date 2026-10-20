@@ -31,7 +31,10 @@ export interface RollRequest {
   secret?: boolean;
 }
 
-export type ShownRoll = Pick<DiceRollResult, 'expression' | 'mode' | 'dice' | 'modifier' | 'total'> & { label: string; secret: boolean };
+export type ShownRoll = Pick<
+  DiceRollResult,
+  'expression' | 'mode' | 'dice' | 'modifier' | 'total'
+> & { label: string; secret: boolean };
 
 interface DiceContextValue {
   roll: (request: RollRequest) => Promise<ShownRoll | null>;
@@ -84,7 +87,11 @@ export function DiceProvider({
           shown = { ...local, label: request.label ?? '', secret: false };
         }
       } catch (cause) {
-        toast({ tone: 'danger', title: 'Os dados não foram rolados', description: failureMessage(cause) });
+        toast({
+          tone: 'danger',
+          title: 'Os dados não foram rolados',
+          description: failureMessage(cause),
+        });
         return null;
       }
       // Uma rolagem nova substitui a animação anterior (só uma por vez na tela).
@@ -140,7 +147,12 @@ export function RollButton({
       accessibilityRole="button"
       accessibilityLabel={`Rolar ${label} (${expression}${mode !== 'normal' ? `, ${diceRollModeLabels[mode].toLowerCase()}` : ''})`}
       hitSlop={6}
-      style={({ pressed }) => [{ borderRadius: radii.md }, style, pressed && { backgroundColor: colors.hover }, busy && { opacity: 0.6 }]}
+      style={({ pressed }) => [
+        { borderRadius: radii.md },
+        style,
+        pressed && { backgroundColor: colors.hover },
+        busy && { opacity: 0.6 },
+      ]}
     >
       {children}
     </Pressable>
@@ -148,7 +160,13 @@ export function RollButton({
 }
 
 /** Rolagem livre: dados rápidos, expressão, vantagem e rolagem secreta. */
-export function DicePanel({ isGm, characterName }: { isGm: boolean; characterName?: string | null }) {
+export function DicePanel({
+  isGm,
+  characterName,
+}: {
+  isGm: boolean;
+  characterName?: string | null;
+}) {
   const dice = useDice();
   const [expression, setExpression] = useState('1d20');
   const [label, setLabel] = useState('');
@@ -172,20 +190,49 @@ export function DicePanel({ isGm, characterName }: { isGm: boolean; characterNam
     <View style={{ gap: spacing[3] }}>
       <View style={styles.quick} accessibilityLabel="Dados rápidos">
         {COMMON_DICE.map((sides) => (
-          <Button key={sides} label={`d${sides}`} compact variant="secondary" disabled={busy} onPress={() => void go(`1d${sides}`)} style={styles.die} />
+          <Button
+            key={sides}
+            label={`d${sides}`}
+            compact
+            variant="secondary"
+            disabled={busy}
+            onPress={() => void go(`1d${sides}`)}
+            style={styles.die}
+          />
         ))}
       </View>
-      <Field label="Expressão" value={expression} onChangeText={setExpression} autoCapitalize="none" autoCorrect={false} error={valid ? undefined : 'Use dados como 1d20+5 (até 100 dados).'} hint="Ex.: 1d20+5, 2d6+1d4+3, d100." />
-      <Field label="Para quê (opcional)" value={label} onChangeText={setLabel} maxLength={80} placeholder="Ex.: Percepção" />
+      <Field
+        label="Expressão"
+        value={expression}
+        onChangeText={setExpression}
+        autoCapitalize="none"
+        autoCorrect={false}
+        error={valid ? undefined : 'Use dados como 1d20+5 (até 100 dados).'}
+        hint="Ex.: 1d20+5, 2d6+1d4+3, d100."
+      />
+      <Field
+        label="Para quê (opcional)"
+        value={label}
+        onChangeText={setLabel}
+        maxLength={80}
+        placeholder="Ex.: Percepção"
+      />
       <ChipRow>
         {DICE_ROLL_MODES.map((option) => (
-          <Chip key={option} label={diceRollModeLabels[option]} selected={mode === option} onPress={() => setMode(option)} />
+          <Chip
+            key={option}
+            label={diceRollModeLabels[option]}
+            selected={mode === option}
+            onPress={() => setMode(option)}
+          />
         ))}
       </ChipRow>
       {inCampaign ? (
         <CheckRow
           label={isGm ? 'Rolagem secreta' : 'Só para o mestre'}
-          description={isGm ? 'Só os mestres veem o resultado.' : 'Só você e o mestre veem o resultado.'}
+          description={
+            isGm ? 'Só os mestres veem o resultado.' : 'Só você e o mestre veem o resultado.'
+          }
           checked={secret}
           onChange={setSecret}
         />
@@ -200,9 +247,19 @@ export function DicePanel({ isGm, characterName }: { isGm: boolean; characterNam
       {last ? (
         <View
           accessibilityLiveRegion="polite"
-          style={[styles.result, natural === 20 ? { borderColor: colors.success } : natural === 1 ? { borderColor: colors.danger } : null]}
+          style={[
+            styles.result,
+            natural === 20
+              ? { borderColor: colors.success }
+              : natural === 1
+                ? { borderColor: colors.danger }
+                : null,
+          ]}
         >
-          <Animated.View key={`${last.total}-${last.expression}-${last.dice.map((group) => group.values.join(',')).join('|')}`} entering={ZoomIn.springify().damping(12)}>
+          <Animated.View
+            key={`${last.total}-${last.expression}-${last.dice.map((group) => group.values.join(',')).join('|')}`}
+            entering={ZoomIn.springify().damping(12)}
+          >
             <AppText variant="display">{last.total}</AppText>
           </Animated.View>
           <View style={{ flex: 1, gap: 2 }}>
@@ -211,7 +268,11 @@ export function DicePanel({ isGm, characterName }: { isGm: boolean; characterNam
             <AppText variant="small" style={{ color: colors.fgMuted }}>
               {last.mode !== 'normal' ? `${diceRollModeLabels[last.mode]} · ` : ''}
               {natural === 20 ? '20 natural · ' : natural === 1 ? '1 natural · ' : ''}
-              {inCampaign ? (last.secret ? 'Rolagem secreta' : 'Visível para a mesa') : 'Rolagem no aparelho'}
+              {inCampaign
+                ? last.secret
+                  ? 'Rolagem secreta'
+                  : 'Visível para a mesa'
+                : 'Rolagem no aparelho'}
             </AppText>
           </View>
         </View>

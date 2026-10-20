@@ -78,7 +78,8 @@ interface BlockEditorProps {
 
 /** Um bloco do roteiro em edição, com salvamento automático próprio. */
 export function BlockEditor(props: BlockEditorProps) {
-  const { block, index, total, onLocalChange, onMove, onRemove, onInsertBelow, dragHandlers } = props;
+  const { block, index, total, onLocalChange, onMove, onRemove, onInsertBelow, dragHandlers } =
+    props;
   const autosave = useAutosave<BlockDraft>({
     initial: { visibility: block.visibility, content: block.content },
     version: 0,
@@ -123,14 +124,32 @@ export function BlockEditor(props: BlockEditorProps) {
         >
           <GripVertical className="h-5 w-5" />
         </span>
-        <span className="text-xs font-semibold uppercase tracking-wider text-fg-secondary">{blockTypeLabels[draft.content.type]}</span>
-        <VisibilityToggle value={draft.visibility} locked={forcedPrivate} onChange={(visibility) => change({ visibility })} />
+        <span className="text-xs font-semibold uppercase tracking-wider text-fg-secondary">
+          {blockTypeLabels[draft.content.type]}
+        </span>
+        <VisibilityToggle
+          value={draft.visibility}
+          locked={forcedPrivate}
+          onChange={(visibility) => change({ visibility })}
+        />
         <SaveStatus status={autosave.state.status} className="ml-auto" />
         <div className="flex items-center">
-          <Button size="icon" variant="ghost" disabled={index === 0} onClick={() => onMove(index, index - 1)} aria-label="Mover bloco para cima">
+          <Button
+            size="icon"
+            variant="ghost"
+            disabled={index === 0}
+            onClick={() => onMove(index, index - 1)}
+            aria-label="Mover bloco para cima"
+          >
             <ArrowUp className="h-4 w-4" aria-hidden="true" />
           </Button>
-          <Button size="icon" variant="ghost" disabled={index === total - 1} onClick={() => onMove(index, index + 1)} aria-label="Mover bloco para baixo">
+          <Button
+            size="icon"
+            variant="ghost"
+            disabled={index === total - 1}
+            onClick={() => onMove(index, index + 1)}
+            aria-label="Mover bloco para baixo"
+          >
             <ArrowDown className="h-4 w-4" aria-hidden="true" />
           </Button>
           <ConfirmDialog
@@ -161,7 +180,12 @@ export function BlockEditor(props: BlockEditorProps) {
       <ContentFields {...props} content={draft.content} onChange={setContent} />
 
       <div className="mt-3 flex justify-center opacity-70 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
-        <Button size="sm" variant="ghost" onClick={onInsertBelow} icon={<Plus className="h-4 w-4" aria-hidden="true" />}>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onInsertBelow}
+          icon={<Plus className="h-4 w-4" aria-hidden="true" />}
+        >
           Inserir bloco abaixo
         </Button>
       </div>
@@ -169,10 +193,22 @@ export function BlockEditor(props: BlockEditorProps) {
   );
 }
 
-function VisibilityToggle({ value, locked, onChange }: { value: SharedVisibility; locked: boolean; onChange: (value: SharedVisibility) => void }) {
+function VisibilityToggle({
+  value,
+  locked,
+  onChange,
+}: {
+  value: SharedVisibility;
+  locked: boolean;
+  onChange: (value: SharedVisibility) => void;
+}) {
   const name = useId();
   if (locked) {
-    return <span className="rounded-full border border-wine-400/50 bg-wine-950 px-2 py-0.5 text-[11px] text-wine-200">Sempre privado</span>;
+    return (
+      <span className="rounded-full border border-wine-400/50 bg-wine-950 px-2 py-0.5 text-[11px] text-wine-200">
+        Sempre privado
+      </span>
+    );
   }
   return (
     <fieldset className="flex overflow-hidden rounded-full border border-line-strong text-[11px]">
@@ -187,10 +223,21 @@ function VisibilityToggle({ value, locked, onChange }: { value: SharedVisibility
           key={option.value}
           className={cx(
             'cursor-pointer px-2.5 py-1 transition-colors focus-within:ring-2 focus-within:ring-parchment-300',
-            value === option.value ? (option.value === 'gm' ? 'bg-wine-800 text-wine-100' : 'bg-hover text-fg') : 'text-fg-muted hover:text-fg',
+            value === option.value
+              ? option.value === 'gm'
+                ? 'bg-wine-800 text-wine-100'
+                : 'bg-hover text-fg'
+              : 'text-fg-muted hover:text-fg',
           )}
         >
-          <input type="radio" name={name} value={option.value} checked={value === option.value} onChange={() => onChange(option.value)} className="sr-only" />
+          <input
+            type="radio"
+            name={name}
+            value={option.value}
+            checked={value === option.value}
+            onChange={() => onChange(option.value)}
+            className="sr-only"
+          />
           {option.label}
         </label>
       ))}
@@ -203,7 +250,17 @@ interface ContentFieldsProps extends BlockEditorProps {
   onChange: (content: SessionBlockContent) => void;
 }
 
-function Labeled({ label, htmlFor, children, className }: { label: string; htmlFor: string; children: ReactNode; className?: string }) {
+function Labeled({
+  label,
+  htmlFor,
+  children,
+  className,
+}: {
+  label: string;
+  htmlFor: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <div className={cx('flex flex-col gap-1', className)}>
       <label htmlFor={htmlFor} className="text-xs font-medium text-fg-secondary">
@@ -229,7 +286,11 @@ function ContentFields(props: ContentFieldsProps) {
           maxLength={200}
           placeholder={content.type === 'heading' ? 'Título da seção' : 'Subtítulo'}
           onChange={(event) => onChange({ type: content.type, data: { text: event.target.value } })}
-          className={cx(inputClass, 'h-12 font-display', content.type === 'heading' ? 'text-2xl' : 'text-lg')}
+          className={cx(
+            inputClass,
+            'h-12 font-display',
+            content.type === 'heading' ? 'text-2xl' : 'text-lg',
+          )}
         />
       );
     case 'paragraph':
@@ -241,9 +302,17 @@ function ContentFields(props: ContentFieldsProps) {
           value={content.data.text}
           maxLength={20000}
           rows={Math.min(16, Math.max(3, content.data.text.split('\n').length + 1))}
-          placeholder={content.type === 'gm_note' ? 'Segredos, revelações futuras, motivações ocultas…' : 'Escreva a narração ou os acontecimentos…'}
+          placeholder={
+            content.type === 'gm_note'
+              ? 'Segredos, revelações futuras, motivações ocultas…'
+              : 'Escreva a narração ou os acontecimentos…'
+          }
           onChange={(event) => onChange({ type: content.type, data: { text: event.target.value } })}
-          className={cx(inputClass, 'py-2 font-serif text-lg leading-relaxed', content.type === 'gm_note' && 'border-dashed border-wine-400/60')}
+          className={cx(
+            inputClass,
+            'py-2 font-serif text-lg leading-relaxed',
+            content.type === 'gm_note' && 'border-dashed border-wine-400/60',
+          )}
         />
       );
     case 'callout':
@@ -254,8 +323,13 @@ function ContentFields(props: ContentFieldsProps) {
               <Select
                 id={`${id}-tone`}
                 value={content.data.tone}
-                onChange={(event) => onChange({ type: 'callout', data: { ...content.data, tone: event.target.value as CalloutTone } })}
-                >
+                onChange={(event) =>
+                  onChange({
+                    type: 'callout',
+                    data: { ...content.data, tone: event.target.value as CalloutTone },
+                  })
+                }
+              >
                 {CALLOUT_TONES.map((tone) => (
                   <option key={tone} value={tone}>
                     {calloutToneLabels[tone]}
@@ -268,7 +342,12 @@ function ContentFields(props: ContentFieldsProps) {
                 id={`${id}-title`}
                 value={content.data.title ?? ''}
                 maxLength={200}
-                onChange={(event) => onChange({ type: 'callout', data: { ...content.data, title: event.target.value || null } })}
+                onChange={(event) =>
+                  onChange({
+                    type: 'callout',
+                    data: { ...content.data, title: event.target.value || null },
+                  })
+                }
                 className={cx(inputClass, 'h-11')}
               />
             </Labeled>
@@ -280,7 +359,9 @@ function ContentFields(props: ContentFieldsProps) {
               value={content.data.text}
               maxLength={20000}
               rows={4}
-              onChange={(event) => onChange({ type: 'callout', data: { ...content.data, text: event.target.value } })}
+              onChange={(event) =>
+                onChange({ type: 'callout', data: { ...content.data, text: event.target.value } })
+              }
               className={cx(inputClass, 'py-2 font-serif leading-relaxed')}
             />
           </Labeled>
@@ -297,7 +378,15 @@ function ContentFields(props: ContentFieldsProps) {
             <Select
               id={`${id}-style`}
               value={content.data.style}
-              onChange={(event) => onChange({ type: 'list', data: { ...content.data, style: event.target.value === 'numbered' ? 'numbered' : 'bulleted' } })}
+              onChange={(event) =>
+                onChange({
+                  type: 'list',
+                  data: {
+                    ...content.data,
+                    style: event.target.value === 'numbered' ? 'numbered' : 'bulleted',
+                  },
+                })
+              }
             >
               <option value="bulleted">Marcadores</option>
               <option value="numbered">Numerada</option>
@@ -309,7 +398,12 @@ function ContentFields(props: ContentFieldsProps) {
               autoFocus={autoFocus}
               value={content.data.items.join('\n')}
               rows={Math.min(14, Math.max(3, content.data.items.length + 1))}
-              onChange={(event) => onChange({ type: 'list', data: { ...content.data, items: event.target.value.split('\n').slice(0, 200) } })}
+              onChange={(event) =>
+                onChange({
+                  type: 'list',
+                  data: { ...content.data, items: event.target.value.split('\n').slice(0, 200) },
+                })
+              }
               className={cx(inputClass, 'py-2 leading-relaxed')}
             />
           </Labeled>
@@ -328,7 +422,13 @@ function ContentFields(props: ContentFieldsProps) {
                   onChange={(event) =>
                     onChange({
                       type: 'checklist',
-                      data: { items: content.data.items.map((entry) => (entry.id === item.id ? { ...entry, checked: event.target.checked } : entry)) },
+                      data: {
+                        items: content.data.items.map((entry) =>
+                          entry.id === item.id
+                            ? { ...entry, checked: event.target.checked }
+                            : entry,
+                        ),
+                      },
                     })
                   }
                   className="h-5 w-5 shrink-0 accent-wine-500"
@@ -341,7 +441,11 @@ function ContentFields(props: ContentFieldsProps) {
                   onChange={(event) =>
                     onChange({
                       type: 'checklist',
-                      data: { items: content.data.items.map((entry) => (entry.id === item.id ? { ...entry, text: event.target.value } : entry)) },
+                      data: {
+                        items: content.data.items.map((entry) =>
+                          entry.id === item.id ? { ...entry, text: event.target.value } : entry,
+                        ),
+                      },
                     })
                   }
                   className={cx(inputClass, 'h-10 text-sm')}
@@ -350,7 +454,12 @@ function ContentFields(props: ContentFieldsProps) {
                   size="icon"
                   variant="ghost"
                   aria-label={`Remover item ${itemIndex + 1}`}
-                  onClick={() => onChange({ type: 'checklist', data: { items: content.data.items.filter((entry) => entry.id !== item.id) } })}
+                  onClick={() =>
+                    onChange({
+                      type: 'checklist',
+                      data: { items: content.data.items.filter((entry) => entry.id !== item.id) },
+                    })
+                  }
                 >
                   <X className="h-4 w-4" aria-hidden="true" />
                 </Button>
@@ -362,7 +471,14 @@ function ContentFields(props: ContentFieldsProps) {
             variant="ghost"
             className="self-start"
             disabled={content.data.items.length >= 200}
-            onClick={() => onChange({ type: 'checklist', data: { items: [...content.data.items, { id: newItemId(), text: '', checked: false }] } })}
+            onClick={() =>
+              onChange({
+                type: 'checklist',
+                data: {
+                  items: [...content.data.items, { id: newItemId(), text: '', checked: false }],
+                },
+              })
+            }
             icon={<Plus className="h-4 w-4" aria-hidden="true" />}
           >
             Adicionar item
@@ -375,11 +491,19 @@ function ContentFields(props: ContentFieldsProps) {
       const choices = options.creatures.filter((creature) => creature.kind === kind);
       return (
         <div className="grid gap-3 sm:grid-cols-2">
-          <Labeled label={kind === 'npc' ? 'NPC da biblioteca' : 'Monstro da biblioteca'} htmlFor={`${id}-target`}>
+          <Labeled
+            label={kind === 'npc' ? 'NPC da biblioteca' : 'Monstro da biblioteca'}
+            htmlFor={`${id}-target`}
+          >
             <Select
               id={`${id}-target`}
               value={content.data.creatureId}
-              onChange={(event) => onChange({ type: content.type, data: { ...content.data, creatureId: event.target.value } })}
+              onChange={(event) =>
+                onChange({
+                  type: content.type,
+                  data: { ...content.data, creatureId: event.target.value },
+                })
+              }
             >
               <option value="">Escolha…</option>
               {choices.map((creature) => (
@@ -389,14 +513,23 @@ function ContentFields(props: ContentFieldsProps) {
                 </option>
               ))}
             </Select>
-            {choices.length === 0 ? <span className="text-xs text-fg-muted">Cadastre registros na Biblioteca da campanha.</span> : null}
+            {choices.length === 0 ? (
+              <span className="text-xs text-fg-muted">
+                Cadastre registros na Biblioteca da campanha.
+              </span>
+            ) : null}
           </Labeled>
           <Labeled label="Observação (opcional)" htmlFor={`${id}-note`}>
             <input
               id={`${id}-note`}
               value={content.data.note ?? ''}
               maxLength={500}
-              onChange={(event) => onChange({ type: content.type, data: { ...content.data, note: event.target.value || null } })}
+              onChange={(event) =>
+                onChange({
+                  type: content.type,
+                  data: { ...content.data, note: event.target.value || null },
+                })
+              }
             />
           </Labeled>
         </div>
@@ -409,7 +542,12 @@ function ContentFields(props: ContentFieldsProps) {
             <Select
               id={`${id}-target`}
               value={content.data.characterId}
-              onChange={(event) => onChange({ type: 'character_ref', data: { ...content.data, characterId: event.target.value } })}
+              onChange={(event) =>
+                onChange({
+                  type: 'character_ref',
+                  data: { ...content.data, characterId: event.target.value },
+                })
+              }
             >
               <option value="">Escolha…</option>
               {options.characters.map((character) => (
@@ -424,7 +562,12 @@ function ContentFields(props: ContentFieldsProps) {
               id={`${id}-note`}
               value={content.data.note ?? ''}
               maxLength={500}
-              onChange={(event) => onChange({ type: 'character_ref', data: { ...content.data, note: event.target.value || null } })}
+              onChange={(event) =>
+                onChange({
+                  type: 'character_ref',
+                  data: { ...content.data, note: event.target.value || null },
+                })
+              }
             />
           </Labeled>
         </div>
@@ -432,7 +575,10 @@ function ContentFields(props: ContentFieldsProps) {
     case 'content_ref': {
       const targets =
         content.data.kind === 'session'
-          ? options.sessions.map((session) => ({ id: session.id, label: `Sessão ${session.number}: ${session.title}` }))
+          ? options.sessions.map((session) => ({
+              id: session.id,
+              label: `Sessão ${session.number}: ${session.title}`,
+            }))
           : options.notes.map((note) => ({ id: note.id, label: note.title }));
       return (
         <div className="grid gap-3 sm:grid-cols-[10rem_1fr_1fr]">
@@ -440,7 +586,16 @@ function ContentFields(props: ContentFieldsProps) {
             <Select
               id={`${id}-kind`}
               value={content.data.kind}
-              onChange={(event) => onChange({ type: 'content_ref', data: { ...content.data, kind: event.target.value === 'note' ? 'note' : 'session', targetId: '' } })}
+              onChange={(event) =>
+                onChange({
+                  type: 'content_ref',
+                  data: {
+                    ...content.data,
+                    kind: event.target.value === 'note' ? 'note' : 'session',
+                    targetId: '',
+                  },
+                })
+              }
             >
               <option value="session">Sessão</option>
               <option value="note">Anotação</option>
@@ -450,7 +605,12 @@ function ContentFields(props: ContentFieldsProps) {
             <Select
               id={`${id}-target`}
               value={content.data.targetId}
-              onChange={(event) => onChange({ type: 'content_ref', data: { ...content.data, targetId: event.target.value } })}
+              onChange={(event) =>
+                onChange({
+                  type: 'content_ref',
+                  data: { ...content.data, targetId: event.target.value },
+                })
+              }
             >
               <option value="">Escolha…</option>
               {targets.map((target) => (
@@ -465,7 +625,12 @@ function ContentFields(props: ContentFieldsProps) {
               id={`${id}-note`}
               value={content.data.note ?? ''}
               maxLength={500}
-              onChange={(event) => onChange({ type: 'content_ref', data: { ...content.data, note: event.target.value || null } })}
+              onChange={(event) =>
+                onChange({
+                  type: 'content_ref',
+                  data: { ...content.data, note: event.target.value || null },
+                })
+              }
             />
           </Labeled>
         </div>
@@ -474,7 +639,14 @@ function ContentFields(props: ContentFieldsProps) {
   }
 }
 
-function ImageFields({ content, onChange, campaignId, sessionId, imageUrls, onImageUrl }: ContentFieldsProps & { content: Extract<SessionBlockContent, { type: 'image' }> }) {
+function ImageFields({
+  content,
+  onChange,
+  campaignId,
+  sessionId,
+  imageUrls,
+  onImageUrl,
+}: ContentFieldsProps & { content: Extract<SessionBlockContent, { type: 'image' }> }) {
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -491,7 +663,11 @@ function ImageFields({ content, onChange, campaignId, sessionId, imageUrls, onIm
         setError(prepared.message);
         return;
       }
-      const path = sessionImagePath(campaignId, sessionId, `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`);
+      const path = sessionImagePath(
+        campaignId,
+        sessionId,
+        `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`,
+      );
       const { error: uploadError } = await client.storage
         .from(CAMPAIGN_MEDIA_BUCKET)
         .upload(path, prepared.file, { contentType: prepared.mimeType, upsert: false });
@@ -511,9 +687,15 @@ function ImageFields({ content, onChange, campaignId, sessionId, imageUrls, onIm
     <div className="flex flex-col gap-3">
       {url ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={url} alt={content.data.alt} className="max-h-72 w-full rounded-md border border-line object-contain" />
+        <img
+          src={url}
+          alt={content.data.alt}
+          className="max-h-72 w-full rounded-md border border-line object-contain"
+        />
       ) : (
-        <div className="flex h-32 items-center justify-center rounded-md border border-dashed border-line-strong text-sm text-fg-muted">Nenhuma imagem enviada</div>
+        <div className="flex h-32 items-center justify-center rounded-md border border-dashed border-line-strong text-sm text-fg-muted">
+          Nenhuma imagem enviada
+        </div>
       )}
       <div className="flex flex-wrap items-center gap-2">
         <input
@@ -527,7 +709,13 @@ function ImageFields({ content, onChange, campaignId, sessionId, imageUrls, onIm
             if (file) void upload(file);
           }}
         />
-        <Button size="sm" variant="secondary" loading={busy} onClick={() => inputRef.current?.click()} icon={<ImageUp className="h-4 w-4" aria-hidden="true" />}>
+        <Button
+          size="sm"
+          variant="secondary"
+          loading={busy}
+          onClick={() => inputRef.current?.click()}
+          icon={<ImageUp className="h-4 w-4" aria-hidden="true" />}
+        >
           {content.data.path ? 'Trocar imagem' : 'Enviar imagem'}
         </Button>
         <span className="text-xs text-fg-muted">PNG, JPEG ou WebP, até 5 MB.</span>
@@ -543,7 +731,9 @@ function ImageFields({ content, onChange, campaignId, sessionId, imageUrls, onIm
             id={`${id}-alt`}
             value={content.data.alt}
             maxLength={300}
-            onChange={(event) => onChange({ type: 'image', data: { ...content.data, alt: event.target.value } })}
+            onChange={(event) =>
+              onChange({ type: 'image', data: { ...content.data, alt: event.target.value } })
+            }
           />
         </Labeled>
         <Labeled label="Legenda (opcional)" htmlFor={`${id}-caption`}>
@@ -551,7 +741,12 @@ function ImageFields({ content, onChange, campaignId, sessionId, imageUrls, onIm
             id={`${id}-caption`}
             value={content.data.caption ?? ''}
             maxLength={500}
-            onChange={(event) => onChange({ type: 'image', data: { ...content.data, caption: event.target.value || null } })}
+            onChange={(event) =>
+              onChange({
+                type: 'image',
+                data: { ...content.data, caption: event.target.value || null },
+              })
+            }
           />
         </Labeled>
       </div>

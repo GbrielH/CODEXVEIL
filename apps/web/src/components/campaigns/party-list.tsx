@@ -2,6 +2,7 @@ import type { PartyCharacter } from '@codexveil/database';
 import { conditionLabel, summarizeSheet } from '@codexveil/rpg-systems';
 import type { Route } from 'next';
 import Link from 'next/link';
+import { ColoredName } from '@/components/dice/campaign-colors';
 import { HealthBar } from '@/components/characters/health-bar';
 import { Portrait } from '@/components/characters/portrait';
 import { Badge } from '@/components/ui/badge';
@@ -27,16 +28,24 @@ export function PartyList({ characters, portraits, currentUserId }: PartyListPro
               href={characterPath(character.id) as Route}
               className="flex h-full gap-3 rounded-md border border-line bg-raised p-3 transition-colors hover:border-parchment-400/40 hover:bg-hover"
             >
-              <Portrait name={character.name} url={character.portraitPath ? (portraits[character.portraitPath] ?? null) : null} size="sm" />
+              <Portrait
+                name={character.name}
+                url={character.portraitPath ? (portraits[character.portraitPath] ?? null) : null}
+                size="sm"
+              />
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-2 truncate font-medium text-fg">
-                  <span className="truncate">{character.name}</span>
+                  <ColoredName characterId={character.id} className="truncate">
+                    {character.name}
+                  </ColoredName>
                   {mine ? <Badge tone="brand">Seu</Badge> : null}
                 </p>
                 <p className="truncate text-xs text-fg-muted">
                   {summary.subtitle} · {character.ownerName}
                 </p>
-                {hp ? <HealthBar current={hp.current} max={hp.max} temp={hp.temp} className="mt-2" /> : null}
+                {hp ? (
+                  <HealthBar current={hp.current} max={hp.max} temp={hp.temp} className="mt-2" />
+                ) : null}
                 {character.conditions.length > 0 ? (
                   <p className="mt-1 flex flex-wrap gap-1">
                     {character.conditions.map((condition) => (

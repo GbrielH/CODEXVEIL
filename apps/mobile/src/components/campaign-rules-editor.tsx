@@ -25,29 +25,47 @@ interface Props {
 
 /** Regras de criação de personagens de D&D 5e definidas pelo mestre. */
 export function Dnd5eRulesEditor({ value, onChange, error }: Props) {
-  const setLevel = (level: number) => onChange({ ...value, startingLevel: Math.min(20, Math.max(1, level)) });
+  const setLevel = (level: number) =>
+    onChange({ ...value, startingLevel: Math.min(20, Math.max(1, level)) });
   const toggleMethod = (method: (typeof ABILITY_SCORE_METHODS)[number]) => {
     const has = value.abilityScoreMethods.includes(method);
     onChange({
       ...value,
       abilityScoreMethods: has
         ? value.abilityScoreMethods.filter((entry) => entry !== method)
-        : ABILITY_SCORE_METHODS.filter((entry) => entry === method || value.abilityScoreMethods.includes(entry)),
+        : ABILITY_SCORE_METHODS.filter(
+            (entry) => entry === method || value.abilityScoreMethods.includes(entry),
+          ),
     });
   };
   return (
     <View style={styles.box}>
       <AppText variant="eyebrow">Criação de personagens</AppText>
-      <AppText variant="muted">Os jogadores criam os personagens num passo a passo com as regras do SRD 5.2 e as escolhas abaixo.</AppText>
+      <AppText variant="muted">
+        Os jogadores criam os personagens num passo a passo com as regras do SRD 5.2 e as escolhas
+        abaixo.
+      </AppText>
       <View style={styles.levelRow}>
         <AppText style={{ flex: 1 }}>Nível inicial</AppText>
-        <IconButton icon={<Minus size={18} color={colors.fg} />} onPress={() => setLevel(value.startingLevel - 1)} accessibilityLabel="Diminuir nível inicial" disabled={value.startingLevel <= 1} />
+        <IconButton
+          icon={<Minus size={18} color={colors.fg} />}
+          onPress={() => setLevel(value.startingLevel - 1)}
+          accessibilityLabel="Diminuir nível inicial"
+          disabled={value.startingLevel <= 1}
+        />
         <AppText variant="number" accessibilityLabel={`Nível inicial ${value.startingLevel}`}>
           {value.startingLevel}º
         </AppText>
-        <IconButton icon={<Plus size={18} color={colors.fg} />} onPress={() => setLevel(value.startingLevel + 1)} accessibilityLabel="Aumentar nível inicial" disabled={value.startingLevel >= 20} />
+        <IconButton
+          icon={<Plus size={18} color={colors.fg} />}
+          onPress={() => setLevel(value.startingLevel + 1)}
+          accessibilityLabel="Aumentar nível inicial"
+          disabled={value.startingLevel >= 20}
+        />
       </View>
-      <AppText variant="small">O SRD recomenda o 1º nível, ou o 3º para grupos experientes.</AppText>
+      <AppText variant="small">
+        O SRD recomenda o 1º nível, ou o 3º para grupos experientes.
+      </AppText>
       <AppText style={{ fontFamily: fonts.sansMedium }}>Métodos de atributos permitidos</AppText>
       {ABILITY_SCORE_METHODS.map((method) => {
         const selected = value.abilityScoreMethods.includes(method);
@@ -59,7 +77,14 @@ export function Dnd5eRulesEditor({ value, onChange, error }: Props) {
             accessibilityState={{ checked: selected }}
             style={[styles.option, selected && styles.optionSelected]}
           >
-            <AppText style={{ fontFamily: fonts.sansMedium, color: selected ? colors.fgAccent : colors.fg }}>{abilityScoreMethodLabels[method].name}</AppText>
+            <AppText
+              style={{
+                fontFamily: fonts.sansMedium,
+                color: selected ? colors.fgAccent : colors.fg,
+              }}
+            >
+              {abilityScoreMethodLabels[method].name}
+            </AppText>
             <AppText variant="small">{abilityScoreMethodLabels[method].description}</AppText>
           </Pressable>
         );
@@ -71,24 +96,54 @@ export function Dnd5eRulesEditor({ value, onChange, error }: Props) {
         accessibilityState={{ checked: value.allowEvilAlignments }}
         style={[styles.option, value.allowEvilAlignments && styles.optionSelected]}
       >
-        <AppText style={{ fontFamily: fonts.sansMedium }}>{value.allowEvilAlignments ? 'Alinhamentos malignos liberados' : 'Sem alinhamentos malignos'}</AppText>
-        <AppText variant="small">O SRD pressupõe personagens que não são malignos. Toque para alternar.</AppText>
+        <AppText style={{ fontFamily: fonts.sansMedium }}>
+          {value.allowEvilAlignments
+            ? 'Alinhamentos malignos liberados'
+            : 'Sem alinhamentos malignos'}
+        </AppText>
+        <AppText variant="small">
+          O SRD pressupõe personagens que não são malignos. Toque para alternar.
+        </AppText>
       </Pressable>
-      <SourcebookChips audience="campaign" selected={value.sourcebooks} onChange={(sourcebooks) => onChange({ ...value, sourcebooks })} />
+      <SourcebookChips
+        audience="campaign"
+        selected={value.sourcebooks}
+        onChange={(sourcebooks) => onChange({ ...value, sourcebooks })}
+      />
     </View>
   );
 }
 
 /** Sistema base (só o SRD) ou com livros oficiais escolhidos por categoria (mesa ou ficha pessoal). */
-export function SourcebookChips({ selected, onChange, audience }: { selected: readonly string[]; onChange: (ids: string[]) => void; audience: 'campaign' | 'character' }) {
+export function SourcebookChips({
+  selected,
+  onChange,
+  audience,
+}: {
+  selected: readonly string[];
+  onChange: (ids: string[]) => void;
+  audience: 'campaign' | 'character';
+}) {
   const [expanded, setExpanded] = useState(selected.length > 0);
-  const toggle = (id: string) => onChange(selected.includes(id) ? selected.filter((entry) => entry !== id) : [...selected, id]);
+  const toggle = (id: string) =>
+    onChange(selected.includes(id) ? selected.filter((entry) => entry !== id) : [...selected, id]);
   return (
     <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
       <AppText style={{ fontFamily: fonts.sansMedium }}>Conteúdo do sistema</AppText>
       <ChipRow>
-        <Chip label="Sistema base" selected={!expanded} onPress={() => { setExpanded(false); onChange([]); }} />
-        <Chip label="Base + livros oficiais" selected={expanded} onPress={() => setExpanded(true)} />
+        <Chip
+          label="Sistema base"
+          selected={!expanded}
+          onPress={() => {
+            setExpanded(false);
+            onChange([]);
+          }}
+        />
+        <Chip
+          label="Base + livros oficiais"
+          selected={expanded}
+          onPress={() => setExpanded(true)}
+        />
       </ChipRow>
       <AppText variant="small">
         {expanded
@@ -103,26 +158,37 @@ export function SourcebookChips({ selected, onChange, audience }: { selected: re
         ))}
       {expanded
         ? SOURCEBOOK_CATEGORIES.map((category) => {
-            const ids = DND5E_SOURCEBOOKS.filter((book) => book.category === category).map((book) => book.id);
+            const ids = DND5E_SOURCEBOOKS.filter((book) => book.category === category).map(
+              (book) => book.id,
+            );
             const all = ids.every((id) => selected.includes(id));
             return (
-            <View key={category} style={{ gap: 6 }}>
-              <AppText variant="eyebrow">{sourcebookCategoryLabels[category].name}</AppText>
-              <ChipRow>
-                {ids.length > 1 ? (
-                  <Chip
-                    label={all ? 'Desmarcar todos' : 'Selecionar todos'}
-                    selected={all}
-                    onPress={() =>
-                      onChange(all ? selected.filter((id) => !ids.includes(id)) : [...new Set([...selected, ...ids])])
-                    }
-                  />
-                ) : null}
-                {DND5E_SOURCEBOOKS.filter((book) => book.category === category).map((book) => (
-                  <Chip key={book.id} label={book.name} selected={selected.includes(book.id)} onPress={() => toggle(book.id)} />
-                ))}
-              </ChipRow>
-            </View>
+              <View key={category} style={{ gap: 6 }}>
+                <AppText variant="eyebrow">{sourcebookCategoryLabels[category].name}</AppText>
+                <ChipRow>
+                  {ids.length > 1 ? (
+                    <Chip
+                      label={all ? 'Desmarcar todos' : 'Selecionar todos'}
+                      selected={all}
+                      onPress={() =>
+                        onChange(
+                          all
+                            ? selected.filter((id) => !ids.includes(id))
+                            : [...new Set([...selected, ...ids])],
+                        )
+                      }
+                    />
+                  ) : null}
+                  {DND5E_SOURCEBOOKS.filter((book) => book.category === category).map((book) => (
+                    <Chip
+                      key={book.id}
+                      label={book.name}
+                      selected={selected.includes(book.id)}
+                      onPress={() => toggle(book.id)}
+                    />
+                  ))}
+                </ChipRow>
+              </View>
             );
           })
         : null}
@@ -154,9 +220,24 @@ function OfficialLink({ label, url }: { label: string; url: string }) {
 }
 
 const styles = StyleSheet.create({
-  box: { gap: spacing[2], borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, padding: spacing[3] },
+  box: {
+    gap: spacing[2],
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.md,
+    padding: spacing[3],
+  },
   levelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
-  option: { borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, padding: spacing[3], gap: 2 },
-  optionSelected: { borderColor: 'rgba(206, 191, 157, 0.7)', backgroundColor: 'rgba(228, 216, 189, 0.08)' },
+  option: {
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.md,
+    padding: spacing[3],
+    gap: 2,
+  },
+  optionSelected: {
+    borderColor: 'rgba(206, 191, 157, 0.7)',
+    backgroundColor: 'rgba(228, 216, 189, 0.08)',
+  },
   link: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36 },
 });

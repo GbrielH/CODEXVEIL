@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { cx } from '@/lib/cx';
 
-export type BadgeTone = 'neutral' | 'brand' | 'parchment' | 'success' | 'warning' | 'danger' | 'info';
+export type BadgeTone =
+  'neutral' | 'brand' | 'parchment' | 'success' | 'warning' | 'danger' | 'info';
 
 const tones: Record<BadgeTone, string> = {
   neutral: 'border-line-strong bg-raised text-fg-secondary',

@@ -143,7 +143,14 @@ export function GmTable(props: GmTableProps) {
     setEntities: setEntitiesState,
     reload,
     fail: (title, error) => {
-      toast({ tone: 'danger', title, description: failureMessage(error, 'A alteração não foi salva. Os dados foram recarregados.') });
+      toast({
+        tone: 'danger',
+        title,
+        description: failureMessage(
+          error,
+          'A alteração não foi salva. Os dados foram recarregados.',
+        ),
+      });
       void reload();
     },
   };
@@ -153,20 +160,33 @@ export function GmTable(props: GmTableProps) {
       <header className="flex flex-col gap-3 rounded-lg border border-line bg-card p-4 shadow-card sm:flex-row sm:items-center">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={session.status === 'in_progress' ? 'brand' : 'parchment'}>{sessionStatusLabels[session.status]}</Badge>
+            <Badge tone={session.status === 'in_progress' ? 'brand' : 'parchment'}>
+              {sessionStatusLabels[session.status]}
+            </Badge>
             <LiveBadge status={live} />
-            {session.scheduledAt ? <span className="text-xs text-fg-muted">{formatDateTime(session.scheduledAt)}</span> : null}
+            {session.scheduledAt ? (
+              <span className="text-xs text-fg-muted">{formatDateTime(session.scheduledAt)}</span>
+            ) : null}
           </div>
           <h2 className="mt-1 truncate text-xl">
             Sessão {session.number}: {session.title}
           </h2>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ButtonLink href={sessionPath(campaignId, session.id) as Route} size="sm" variant="secondary" icon={<ScrollText className="h-4 w-4" aria-hidden="true" />}>
+          <ButtonLink
+            href={sessionPath(campaignId, session.id) as Route}
+            size="sm"
+            variant="secondary"
+            icon={<ScrollText className="h-4 w-4" aria-hidden="true" />}
+          >
             Roteiro
           </ButtonLink>
           {props.isActive ? (
-            <ButtonLink href={sessionPath(campaignId, session.id, '/editar') as Route} size="sm" variant="ghost">
+            <ButtonLink
+              href={sessionPath(campaignId, session.id, '/editar') as Route}
+              size="sm"
+              variant="ghost"
+            >
               Editar roteiro
             </ButtonLink>
           ) : null}
@@ -176,7 +196,11 @@ export function GmTable(props: GmTableProps) {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-6">
           <CombatTracker context={context} />
-          <PartyStatus context={context} portraits={props.portraits} currentUserId={props.currentUserId} />
+          <PartyStatus
+            context={context}
+            portraits={props.portraits}
+            currentUserId={props.currentUserId}
+          />
         </div>
         <div className="flex flex-col gap-6">
           <Card>
@@ -187,7 +211,9 @@ export function GmTable(props: GmTableProps) {
             />
             {props.isActive ? (
               <details className="mb-3 rounded-md border border-line bg-sunken/50 px-3 py-2">
-                <summary className="cursor-pointer text-sm font-medium text-fg-secondary">Rolar dados</summary>
+                <summary className="cursor-pointer text-sm font-medium text-fg-secondary">
+                  Rolar dados
+                </summary>
                 <div className="mt-3">
                   <DiceProvider campaignId={campaignId}>
                     <DicePanel isGm />
@@ -195,14 +221,30 @@ export function GmTable(props: GmTableProps) {
                 </div>
               </details>
             ) : null}
-            <RollFeed campaignId={campaignId} initialRolls={props.rolls} canClear={props.isActive} limit={30} compact />
+            <RollFeed
+              campaignId={campaignId}
+              initialRolls={props.rolls}
+              canClear={props.isActive}
+              limit={30}
+              compact
+            />
           </Card>
-          <RevealPanel sessionId={session.id} isPublished={props.sessionPublished} isActive={props.isActive} blocks={props.reveal} />
+          <RevealPanel
+            sessionId={session.id}
+            isPublished={props.sessionPublished}
+            isActive={props.isActive}
+            blocks={props.reveal}
+          />
           <ScenePanel context={context} library={props.library} />
           <Card>
-            <CardHeader icon={<BookOpen className="h-5 w-5" aria-hidden="true" />} title="Atalhos do roteiro" />
+            <CardHeader
+              icon={<BookOpen className="h-5 w-5" aria-hidden="true" />}
+              title="Atalhos do roteiro"
+            />
             {props.outline.length === 0 ? (
-              <p className="text-sm text-fg-muted">Títulos e notas privadas do roteiro aparecem aqui para consulta rápida.</p>
+              <p className="text-sm text-fg-muted">
+                Títulos e notas privadas do roteiro aparecem aqui para consulta rápida.
+              </p>
             ) : (
               <ul className="flex flex-col gap-1">
                 {props.outline.map((entry) => (
@@ -217,8 +259,12 @@ export function GmTable(props: GmTableProps) {
                             : 'flex items-center gap-1.5 truncate rounded px-2 py-1 pl-5 text-sm text-wine-200 hover:bg-hover'
                       }
                     >
-                      {entry.type === 'gm_note' ? <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : null}
-                      <span className="truncate">{entry.text || (entry.type === 'gm_note' ? 'Nota privada' : 'Sem título')}</span>
+                      {entry.type === 'gm_note' ? (
+                        <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      ) : null}
+                      <span className="truncate">
+                        {entry.text || (entry.type === 'gm_note' ? 'Nota privada' : 'Sem título')}
+                      </span>
                     </Link>
                   </li>
                 ))}
@@ -230,22 +276,34 @@ export function GmTable(props: GmTableProps) {
               icon={<NotebookPen className="h-5 w-5" aria-hidden="true" />}
               title="Anotações importantes"
               action={
-                <ButtonLink href={campaignPath(campaignId, '/anotacoes') as Route} size="sm" variant="ghost">
+                <ButtonLink
+                  href={campaignPath(campaignId, '/anotacoes') as Route}
+                  size="sm"
+                  variant="ghost"
+                >
                   Todas
                 </ButtonLink>
               }
             />
             {props.notes.length === 0 ? (
-              <p className="text-sm text-fg-muted">Fixe anotações ou marque-as como “somente mestres” para vê-las aqui.</p>
+              <p className="text-sm text-fg-muted">
+                Fixe anotações ou marque-as como “somente mestres” para vê-las aqui.
+              </p>
             ) : (
               <ul className="flex flex-col gap-3">
                 {props.notes.map((note) => (
                   <li key={note.id} className="rounded-md border border-line bg-raised px-3 py-2">
                     <p className="flex items-center gap-1.5 text-sm font-medium text-fg-accent">
-                      {note.visibility !== 'members' ? <Lock className="h-3.5 w-3.5" aria-label="Privada" /> : null}
+                      {note.visibility !== 'members' ? (
+                        <Lock className="h-3.5 w-3.5" aria-label="Privada" />
+                      ) : null}
                       {note.title}
                     </p>
-                    {note.body ? <p className="mt-1 line-clamp-4 whitespace-pre-line text-sm text-fg-secondary">{note.body}</p> : null}
+                    {note.body ? (
+                      <p className="mt-1 line-clamp-4 whitespace-pre-line text-sm text-fg-secondary">
+                        {note.body}
+                      </p>
+                    ) : null}
                   </li>
                 ))}
               </ul>

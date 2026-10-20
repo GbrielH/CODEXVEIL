@@ -15,12 +15,23 @@ interface ListRowProps {
 }
 
 /** Linha tocável usada em listas de campanhas, personagens e sessões. */
-export function ListRow({ title, subtitle, meta, leading, trailing, onPress, accessibilityHint }: ListRowProps) {
+export function ListRow({
+  title,
+  subtitle,
+  meta,
+  leading,
+  trailing,
+  onPress,
+  accessibilityHint,
+}: ListRowProps) {
   const content = (
     <>
       {leading}
       <View style={{ flex: 1, gap: 2 }}>
-        <AppText style={{ fontFamily: fonts.sansSemiBold, fontSize: 16, lineHeight: 21, color: colors.fg }} numberOfLines={1}>
+        <AppText
+          style={{ fontFamily: fonts.sansSemiBold, fontSize: 16, lineHeight: 21, color: colors.fg }}
+          numberOfLines={1}
+        >
           {title}
         </AppText>
         {subtitle ? (

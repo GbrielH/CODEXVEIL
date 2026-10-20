@@ -47,7 +47,15 @@ function thrownDice(roll: ShownRoll): Thrown[] {
   return list.slice(0, MAX_THROWN_DICE);
 }
 
-function Die({ die, index, natural }: { die: Thrown; index: number; natural: 'crit' | 'fumble' | null }) {
+function Die({
+  die,
+  index,
+  natural,
+}: {
+  die: Thrown;
+  index: number;
+  natural: 'crit' | 'fumble' | null;
+}) {
   const [face, setFace] = useState(() => 1 + Math.floor(Math.random() * die.sides));
   const [landed, setLanded] = useState(false);
 
@@ -69,21 +77,41 @@ function Die({ die, index, natural }: { die: Thrown; index: number; natural: 'cr
 
   return (
     <div
-      className={cx('animate-die-throw relative h-24 w-24 sm:h-32 sm:w-32', !die.kept && landed && 'opacity-40')}
+      className={cx(
+        'animate-die-throw relative h-24 w-24 sm:h-32 sm:w-32',
+        !die.kept && landed && 'opacity-40',
+      )}
       style={{ animationDelay: `${index * 90}ms` }}
     >
-      <svg viewBox="0 0 100 100" className="h-full w-full drop-shadow-[0_12px_18px_rgba(0,0,0,0.55)]" aria-hidden="true">
+      <svg
+        viewBox="0 0 100 100"
+        className="h-full w-full drop-shadow-[0_12px_18px_rgba(0,0,0,0.55)]"
+        aria-hidden="true"
+      >
         <polygon
           points={diePoints(die.sides)}
           strokeLinejoin="round"
           strokeWidth="4"
           className={cx(
-            natural === 'crit' && landed ? 'fill-verdigris-900 stroke-verdigris-300' : natural === 'fumble' && landed ? 'fill-ember-900 stroke-ember-300' : 'fill-wine-800 stroke-parchment-300',
+            natural === 'crit' && landed
+              ? 'fill-verdigris-900 stroke-verdigris-300'
+              : natural === 'fumble' && landed
+                ? 'fill-ember-900 stroke-ember-300'
+                : 'fill-wine-800 stroke-parchment-300',
           )}
         />
       </svg>
-      <span className={cx('tabular absolute inset-0 flex items-center justify-center font-display text-4xl text-parchment-200 sm:text-5xl', landed && 'animate-pop')}>{face}</span>
-      <span className="absolute -bottom-5 left-0 right-0 text-center text-xs text-fg-muted">d{die.sides}</span>
+      <span
+        className={cx(
+          'tabular absolute inset-0 flex items-center justify-center font-display text-4xl text-parchment-200 sm:text-5xl',
+          landed && 'animate-pop',
+        )}
+      >
+        {face}
+      </span>
+      <span className="absolute -bottom-5 left-0 right-0 text-center text-xs text-fg-muted">
+        d{die.sides}
+      </span>
     </div>
   );
 }
@@ -92,7 +120,13 @@ function Die({ die, index, natural }: { die: Thrown; index: number; natural: 'cr
  * Dados grandes caindo e girando no meio da tela (sem caixa). Mostra até `MAX_THROWN_DICE`
  * dados; some sozinho e não bloqueia cliques.
  */
-export function DiceThrow({ roll, onDone }: { roll: ShownRoll & { key: number }; onDone: () => void }) {
+export function DiceThrow({
+  roll,
+  onDone,
+}: {
+  roll: ShownRoll & { key: number };
+  onDone: () => void;
+}) {
   const dice = thrownDice(roll);
   const extra = roll.dice.reduce((sum, group) => sum + group.values.length, 0) - dice.length;
   const d20 = roll.dice.find((group) => group.sides === 20 && group.kept.length === 1);
@@ -110,7 +144,10 @@ export function DiceThrow({ roll, onDone }: { roll: ShownRoll & { key: number };
 
   if (dice.length === 0) return null;
   return (
-    <div className="pointer-events-none fixed inset-0 z-[60] flex flex-col items-center justify-center gap-8" aria-hidden="true">
+    <div
+      className="pointer-events-none fixed inset-0 z-[60] flex flex-col items-center justify-center gap-8"
+      aria-hidden="true"
+    >
       <div className="flex max-w-[90vw] flex-wrap items-center justify-center gap-6">
         {dice.map((die, index) => (
           <Die key={`${roll.key}-${index}`} die={die} index={index} natural={natural} />

@@ -20,7 +20,12 @@ export const SESSION_CHANNEL = 'sessoes';
 // Com o app aberto, o aviso aparece como notificação também.
 Notifications.setNotificationHandler({
   handleNotification: () =>
-    Promise.resolve({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
+    Promise.resolve({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
 });
 
 export type PushSetupResult = 'registered' | 'disabled' | 'denied' | 'unsupported' | 'unavailable';
@@ -43,16 +48,22 @@ async function ensureChannel(): Promise<void> {
  * Registra o aparelho para receber avisos (pede a permissão na primeira vez). Falhas não
  * atrapalham o uso do app: o resultado diz o que aconteceu.
  */
-export async function registerForPush(options: { askPermission: boolean } = { askPermission: true }): Promise<PushSetupResult> {
+export async function registerForPush(
+  options: { askPermission: boolean } = { askPermission: true },
+): Promise<PushSetupResult> {
   if (Platform.OS === 'web' || !Device.isDevice) return 'unsupported';
   if (!(await isPushEnabled())) return 'disabled';
   try {
     await ensureChannel();
     let permission = await Notifications.getPermissionsAsync();
-    if (!permission.granted && permission.canAskAgain && options.askPermission) permission = await Notifications.requestPermissionsAsync();
+    if (!permission.granted && permission.canAskAgain && options.askPermission)
+      permission = await Notifications.requestPermissionsAsync();
     if (!permission.granted) return 'denied';
-    const projectId = (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId;
-    const { data: token } = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
+    const projectId = (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)
+      ?.eas?.projectId;
+    const { data: token } = await Notifications.getExpoPushTokenAsync(
+      projectId ? { projectId } : undefined,
+    );
     await registerPushToken(getSupabase(), token, Platform.OS === 'ios' ? 'ios' : 'android');
     await Storage.setItem(TOKEN_KEY, token);
     return 'registered';
@@ -84,7 +95,10 @@ export async function setPushEnabled(enabled: boolean): Promise<PushSetupResult>
 }
 
 /** Sessão aberta por um toque no aviso (ou `null` se o aviso não for de sessão). */
-export function sessionIdFromNotification(response: Notifications.NotificationResponse | null): string | null {
-  const data = response?.notification.request.content.data as { type?: unknown; sessionId?: unknown } | undefined;
+export function sessionIdFromNotification(
+  response: Notifications.NotificationResponse | null,
+): string | null {
+  const data = response?.notification.request.content.data as
+    { type?: unknown; sessionId?: unknown } | undefined;
   return data?.type === 'session' && typeof data.sessionId === 'string' ? data.sessionId : null;
 }

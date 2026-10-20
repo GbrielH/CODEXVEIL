@@ -1,6 +1,6 @@
 /**
  * Converte erros do Supabase (PostgREST, Auth, rede) em `AppError` com códigos estáveis.
- * Os SQLSTATEs próprios (CVLIM, CVARC, CVGMC, CVSES, CVTRN) são definidos nas migrações.
+ * Os SQLSTATEs próprios (CVLIM, CVARC, CVGMC, CVSES, CVTRN, CVCOR) são definidos nas migrações.
  */
 import { AppError, limitReachedMessages, type LimitedResource } from '@codexveil/domain';
 
@@ -62,6 +62,7 @@ export function toAppError(error: unknown): AppError {
       case 'PGRST116':
         return new AppError('not_found', undefined, { cause: error });
       case 'CVSES':
+      case 'CVCOR':
       case 'CVTRN':
         // Mensagens escritas nas próprias migrações (sessão não iniciada, ação já usada…).
         return new AppError('forbidden', message, { cause: error });

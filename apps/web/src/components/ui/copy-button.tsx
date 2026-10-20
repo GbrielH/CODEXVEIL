@@ -26,7 +26,13 @@ export function CopyButton({ value, label }: { value: string; label: string }) {
         size="sm"
         variant="secondary"
         onClick={copy}
-        icon={copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
+        icon={
+          copied ? (
+            <Check className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <Copy className="h-4 w-4" aria-hidden="true" />
+          )
+        }
       >
         {copied ? 'Copiado' : label}
       </Button>

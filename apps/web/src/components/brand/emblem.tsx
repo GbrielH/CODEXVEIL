@@ -18,7 +18,13 @@ export function Emblem({ className, title }: EmblemProps) {
       aria-hidden={title ? undefined : true}
       aria-label={title}
     >
-      <path d={emblemPaths.arch} fill={c.veil} stroke={c.outline} strokeWidth="2" strokeLinejoin="round" />
+      <path
+        d={emblemPaths.arch}
+        fill={c.veil}
+        stroke={c.outline}
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
       <path d={emblemPaths.opening} fill={c.opening} />
       <path d={emblemPaths.star} fill={c.star} />
       <path d={emblemPaths.bookLeft} fill={c.pages} />

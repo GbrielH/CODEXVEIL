@@ -39,7 +39,13 @@ function useCollapsed(): boolean {
  * Moldura das áreas autenticadas. `data-collapsed` encolhe o menu lateral para só ícones (os
  * filhos reagem com as variantes `group-data-[collapsed=true]/shell:`).
  */
-export function ShellFrame({ motion, children }: { motion: 'system' | 'reduce'; children: ReactNode }) {
+export function ShellFrame({
+  motion,
+  children,
+}: {
+  motion: 'system' | 'reduce';
+  children: ReactNode;
+}) {
   const collapsed = useCollapsed();
   return (
     <div

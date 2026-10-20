@@ -31,7 +31,10 @@ export function Portrait({ name, url, size = 'md', className }: PortraitProps) {
     );
   }
   return (
-    <span className={cx(classes, 'font-display font-semibold text-parchment-300')} aria-hidden="true">
+    <span
+      className={cx(classes, 'font-display font-semibold text-parchment-300')}
+      aria-hidden="true"
+    >
       {initialsOf(name)}
     </span>
   );

@@ -14,10 +14,26 @@ interface PasswordFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
 }
 
 /** Campo de senha com botão para mostrar ou ocultar o que foi digitado. */
-export function PasswordField({ id, label, hint, error, required, fieldClassName, className, ...props }: PasswordFieldProps) {
+export function PasswordField({
+  id,
+  label,
+  hint,
+  error,
+  required,
+  fieldClassName,
+  className,
+  ...props
+}: PasswordFieldProps) {
   const [visible, setVisible] = useState(false);
   return (
-    <FieldShell id={id} label={label} hint={hint} error={error} required={required} className={fieldClassName}>
+    <FieldShell
+      id={id}
+      label={label}
+      hint={hint}
+      error={error}
+      required={required}
+      className={fieldClassName}
+    >
       <div className="relative">
         <input
           id={id}
@@ -39,7 +55,11 @@ export function PasswordField({ id, label, hint, error, required, fieldClassName
           aria-controls={id}
           className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-fg-muted transition-colors hover:text-fg focus-visible:text-fg focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgb(228_216_189/0.18)]"
         >
-          {visible ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
+          {visible ? (
+            <EyeOff className="h-5 w-5" aria-hidden="true" />
+          ) : (
+            <Eye className="h-5 w-5" aria-hidden="true" />
+          )}
         </button>
       </div>
     </FieldShell>

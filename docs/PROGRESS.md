@@ -5,6 +5,10 @@
 
 ## Estado atual
 
+**2026-10-20 (cor dos dados):** cor obrigatória para rolar, mestre primeiro, cores únicas e nome do
+personagem na cor do dono (site e app). Migração `20261020170000_dice_color_required.sql`
+aplicada. `pnpm check` 20/20. Sem teste visual.
+
 **2026-10-20 (dados 3D):** o site mostra as rolagens numa caixinha 3D no canto, com cor por
 jogador (migração `20261020160000_dice_colors.sql` aplicada). `pnpm check` 20/20. Sem teste
 visual no navegador nesta rodada. Próximo passo: grade da sessão (aguardando o escopo).

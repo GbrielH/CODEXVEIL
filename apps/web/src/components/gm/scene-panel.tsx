@@ -33,7 +33,13 @@ function formatBonus(value: number): string {
  * NPCs e monstros presentes na cena. Cada linha é uma instância independente: dano numa
  * instância não altera o registro da biblioteca nem as outras instâncias.
  */
-export function ScenePanel({ context, library }: { context: GmTableContext; library: LibraryOption[] }) {
+export function ScenePanel({
+  context,
+  library,
+}: {
+  context: GmTableContext;
+  library: LibraryOption[];
+}) {
   const { entities, setEntities, fail, canManage, session, campaignId, systemId } = context;
   const [adding, setAdding] = useState(false);
   const conditions = findSystem(systemId)?.conditions ?? [];
@@ -41,20 +47,42 @@ export function ScenePanel({ context, library }: { context: GmTableContext; libr
   const adjustHp = async (entity: SceneEntity, operation: 'damage' | 'heal', amount: number) => {
     const track = { current: entity.hpCurrent ?? 0, max: entity.hpMax, temp: entity.hpTemp };
     const next = operation === 'damage' ? applyDamage(track, amount) : applyHealing(track, amount);
-    setEntities((current) => current.map((item) => (item.id === entity.id ? { ...item, hpCurrent: next.current, hpTemp: next.temp } : item)));
+    setEntities((current) =>
+      current.map((item) =>
+        item.id === entity.id ? { ...item, hpCurrent: next.current, hpTemp: next.temp } : item,
+      ),
+    );
     try {
-      const saved = await adjustSceneEntityHp(getSupabaseBrowserClient(), entity.id, operation, amount);
+      const saved = await adjustSceneEntityHp(
+        getSupabaseBrowserClient(),
+        entity.id,
+        operation,
+        amount,
+      );
       setEntities((current) => current.map((item) => (item.id === saved.id ? saved : item)));
     } catch (error) {
       fail(`${entity.name}: vida não alterada`, error);
     }
   };
 
-  const setConditions = async (entity: SceneEntity, nextConditions: string[], nextRounds: Record<string, number>) => {
-    const conditionRounds = Object.fromEntries(Object.entries(nextRounds).filter(([key]) => nextConditions.includes(key)));
-    setEntities((current) => current.map((item) => (item.id === entity.id ? { ...item, conditions: nextConditions, conditionRounds } : item)));
+  const setConditions = async (
+    entity: SceneEntity,
+    nextConditions: string[],
+    nextRounds: Record<string, number>,
+  ) => {
+    const conditionRounds = Object.fromEntries(
+      Object.entries(nextRounds).filter(([key]) => nextConditions.includes(key)),
+    );
+    setEntities((current) =>
+      current.map((item) =>
+        item.id === entity.id ? { ...item, conditions: nextConditions, conditionRounds } : item,
+      ),
+    );
     try {
-      const saved = await updateSceneEntity(getSupabaseBrowserClient(), entity.id, { conditions: nextConditions, conditionRounds });
+      const saved = await updateSceneEntity(getSupabaseBrowserClient(), entity.id, {
+        conditions: nextConditions,
+        conditionRounds,
+      });
       setEntities((current) => current.map((item) => (item.id === saved.id ? saved : item)));
     } catch (error) {
       fail(`${entity.name}: condições não salvas`, error);
@@ -65,7 +93,9 @@ export function ScenePanel({ context, library }: { context: GmTableContext; libr
     const nextRounds = { ...entity.conditionRounds };
     if (rounds === null) delete nextRounds[key];
     else nextRounds[key] = rounds;
-    const nextConditions = entity.conditions.includes(key) ? entity.conditions : [...entity.conditions, key];
+    const nextConditions = entity.conditions.includes(key)
+      ? entity.conditions
+      : [...entity.conditions, key];
     return setConditions(entity, nextConditions, nextRounds);
   };
 
@@ -95,20 +125,33 @@ export function ScenePanel({ context, library }: { context: GmTableContext; libr
         description="NPCs e monstros presentes nesta sessão."
         action={
           canManage ? (
-            <Button size="sm" variant="secondary" onClick={() => setAdding(true)} icon={<Plus className="h-4 w-4" aria-hidden="true" />}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setAdding(true)}
+              icon={<Plus className="h-4 w-4" aria-hidden="true" />}
+            >
               Adicionar
             </Button>
           ) : undefined
         }
       />
       {entities.length === 0 ? (
-        <p className="text-sm text-fg-muted">Ninguém na cena. Adicione registros da biblioteca ou crie entidades rápidas.</p>
+        <p className="text-sm text-fg-muted">
+          Ninguém na cena. Adicione registros da biblioteca ou crie entidades rápidas.
+        </p>
       ) : (
         <ul className="flex flex-col divide-y divide-line">
           {entities.map((entity) => (
             <li key={entity.id} className="flex flex-col gap-2 py-3">
               <div className="flex items-start gap-3">
-                <span className="mt-0.5 text-fg-brand">{entity.kind === 'npc' ? <UserRound className="h-5 w-5" aria-hidden="true" /> : <Skull className="h-5 w-5" aria-hidden="true" />}</span>
+                <span className="mt-0.5 text-fg-brand">
+                  {entity.kind === 'npc' ? (
+                    <UserRound className="h-5 w-5" aria-hidden="true" />
+                  ) : (
+                    <Skull className="h-5 w-5" aria-hidden="true" />
+                  )}
+                </span>
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-2">
                     <span className="truncate font-medium text-fg">{entity.name}</span>
@@ -121,19 +164,33 @@ export function ScenePanel({ context, library }: { context: GmTableContext; libr
                       </span>
                     ) : null}
                     <span className="inline-flex items-center gap-1">
-                      <Zap className="h-3 w-3" aria-hidden="true" /> Iniciativa {formatBonus(entity.initiativeBonus)}
+                      <Zap className="h-3 w-3" aria-hidden="true" /> Iniciativa{' '}
+                      {formatBonus(entity.initiativeBonus)}
                     </span>
                   </p>
                   {entity.hpMax !== null || entity.hpCurrent !== null ? (
-                    <HealthBar current={entity.hpCurrent} max={entity.hpMax} temp={entity.hpTemp} className="mt-1.5" />
+                    <HealthBar
+                      current={entity.hpCurrent}
+                      max={entity.hpMax}
+                      temp={entity.hpTemp}
+                      className="mt-1.5"
+                    />
                   ) : null}
                 </div>
                 {canManage ? (
                   <div className="flex flex-col items-end gap-1">
-                    <HpQuickAdjust label={entity.name} onApply={(operation, amount) => void adjustHp(entity, operation, amount)} />
+                    <HpQuickAdjust
+                      label={entity.name}
+                      onApply={(operation, amount) => void adjustHp(entity, operation, amount)}
+                    />
                     <ConfirmDialog
                       trigger={(open) => (
-                        <Button size="sm" variant="ghost" onClick={open} icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={open}
+                          icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
+                        >
                           Remover
                         </Button>
                       )}
@@ -167,12 +224,21 @@ export function ScenePanel({ context, library }: { context: GmTableContext; libr
                   />
                 ) : null}
               </div>
-              {entity.notes ? <p className="pl-8 text-xs text-fg-secondary">{entity.notes}</p> : null}
+              {entity.notes ? (
+                <p className="pl-8 text-xs text-fg-secondary">{entity.notes}</p>
+              ) : null}
             </li>
           ))}
         </ul>
       )}
-      <AddEntityModal open={adding} onClose={() => setAdding(false)} context={context} library={library} sessionId={session.id} campaignId={campaignId} />
+      <AddEntityModal
+        open={adding}
+        onClose={() => setAdding(false)}
+        context={context}
+        library={library}
+        sessionId={session.id}
+        campaignId={campaignId}
+      />
     </Card>
   );
 }
@@ -196,7 +262,13 @@ function AddEntityModal({
   const [mode, setMode] = useState<'library' | 'custom'>(library.length > 0 ? 'library' : 'custom');
   const [creatureId, setCreatureId] = useState('');
   const [quantity, setQuantity] = useState<number | null>(1);
-  const [custom, setCustom] = useState<{ name: string; kind: 'npc' | 'monster'; hp: number | null; ac: number | null; init: number | null }>({ name: '', kind: 'monster', hp: null, ac: null, init: 0 });
+  const [custom, setCustom] = useState<{
+    name: string;
+    kind: 'npc' | 'monster';
+    hp: number | null;
+    ac: number | null;
+    init: number | null;
+  }>({ name: '', kind: 'monster', hp: null, ac: null, init: 0 });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -269,11 +341,27 @@ function AddEntityModal({
           void submit();
         }}
       >
-        <div className="flex rounded-md border border-line-strong p-0.5" role="group" aria-label="Origem">
-          <Button size="sm" className="flex-1" variant={mode === 'library' ? 'secondary' : 'ghost'} aria-pressed={mode === 'library'} onClick={() => setMode('library')}>
+        <div
+          className="flex rounded-md border border-line-strong p-0.5"
+          role="group"
+          aria-label="Origem"
+        >
+          <Button
+            size="sm"
+            className="flex-1"
+            variant={mode === 'library' ? 'secondary' : 'ghost'}
+            aria-pressed={mode === 'library'}
+            onClick={() => setMode('library')}
+          >
             Da biblioteca
           </Button>
-          <Button size="sm" className="flex-1" variant={mode === 'custom' ? 'secondary' : 'ghost'} aria-pressed={mode === 'custom'} onClick={() => setMode('custom')}>
+          <Button
+            size="sm"
+            className="flex-1"
+            variant={mode === 'custom' ? 'secondary' : 'ghost'}
+            aria-pressed={mode === 'custom'}
+            onClick={() => setMode('custom')}
+          >
             Entidade rápida
           </Button>
         </div>
@@ -284,8 +372,17 @@ function AddEntityModal({
         ) : null}
         {mode === 'library' ? (
           <>
-            {library.length === 0 ? <p className="text-sm text-fg-muted">A biblioteca está vazia. Cadastre registros na aba Biblioteca.</p> : null}
-            <SelectField id={`${id}-creature`} label="Registro" value={creatureId} onChange={(event) => setCreatureId(event.target.value)}>
+            {library.length === 0 ? (
+              <p className="text-sm text-fg-muted">
+                A biblioteca está vazia. Cadastre registros na aba Biblioteca.
+              </p>
+            ) : null}
+            <SelectField
+              id={`${id}-creature`}
+              label="Registro"
+              value={creatureId}
+              onChange={(event) => setCreatureId(event.target.value)}
+            >
               <option value="">Escolha…</option>
               {library.map((creature) => (
                 <option key={creature.id} value={creature.id}>
@@ -298,15 +395,39 @@ function AddEntityModal({
               <label htmlFor={`${id}-quantity`} className="text-sm font-medium">
                 Quantidade
               </label>
-              <NumberInput id={`${id}-quantity`} value={quantity} min={1} max={10} onCommit={setQuantity} />
+              <NumberInput
+                id={`${id}-quantity`}
+                value={quantity}
+                min={1}
+                max={10}
+                onCommit={setQuantity}
+              />
               <p className="text-xs text-fg-muted">Cada cópia tem vida própria.</p>
             </div>
           </>
         ) : (
           <>
             <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
-              <TextField id={`${id}-name`} label="Nome" maxLength={80} value={custom.name} onChange={(event) => setCustom((current) => ({ ...current, name: event.target.value }))} />
-              <SelectField id={`${id}-kind`} label="Tipo" value={custom.kind} onChange={(event) => setCustom((current) => ({ ...current, kind: event.target.value === 'npc' ? 'npc' : 'monster' }))}>
+              <TextField
+                id={`${id}-name`}
+                label="Nome"
+                maxLength={80}
+                value={custom.name}
+                onChange={(event) =>
+                  setCustom((current) => ({ ...current, name: event.target.value }))
+                }
+              />
+              <SelectField
+                id={`${id}-kind`}
+                label="Tipo"
+                value={custom.kind}
+                onChange={(event) =>
+                  setCustom((current) => ({
+                    ...current,
+                    kind: event.target.value === 'npc' ? 'npc' : 'monster',
+                  }))
+                }
+              >
                 <option value="monster">Monstro</option>
                 <option value="npc">NPC</option>
               </SelectField>
@@ -316,19 +437,39 @@ function AddEntityModal({
                 <label htmlFor={`${id}-hp`} className="text-sm font-medium">
                   PV
                 </label>
-                <NumberInput id={`${id}-hp`} value={custom.hp} min={0} max={1_000_000} allowEmpty onCommit={(hp) => setCustom((current) => ({ ...current, hp }))} />
+                <NumberInput
+                  id={`${id}-hp`}
+                  value={custom.hp}
+                  min={0}
+                  max={1_000_000}
+                  allowEmpty
+                  onCommit={(hp) => setCustom((current) => ({ ...current, hp }))}
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label htmlFor={`${id}-ac`} className="text-sm font-medium">
                   CA
                 </label>
-                <NumberInput id={`${id}-ac`} value={custom.ac} min={0} max={100} allowEmpty onCommit={(ac) => setCustom((current) => ({ ...current, ac }))} />
+                <NumberInput
+                  id={`${id}-ac`}
+                  value={custom.ac}
+                  min={0}
+                  max={100}
+                  allowEmpty
+                  onCommit={(ac) => setCustom((current) => ({ ...current, ac }))}
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label htmlFor={`${id}-init`} className="text-sm font-medium">
                   Iniciativa
                 </label>
-                <NumberInput id={`${id}-init`} value={custom.init} min={-50} max={50} onCommit={(init) => setCustom((current) => ({ ...current, init }))} />
+                <NumberInput
+                  id={`${id}-init`}
+                  value={custom.init}
+                  min={-50}
+                  max={50}
+                  onCommit={(init) => setCustom((current) => ({ ...current, init }))}
+                />
               </div>
             </div>
           </>
