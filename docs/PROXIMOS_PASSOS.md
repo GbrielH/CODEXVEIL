@@ -436,7 +436,11 @@ de segurança).
   a carta com as informações da campanha sobe e o envelope some (site: CSS em `globals.css`,
   página `convite/[codigo]`; app: `components/invite-letter.tsx`, por OTA). Com "reduzir
   movimento", a carta aparece direto.
-- Verificado: `pnpm check`. Animação não conferida visualmente no navegador nem no aparelho.
+- Correção no mesmo dia: a primeira versão do site ficava sobreposta e descentralizada. Refeita
+  como componente com etapas (`convite/[codigo]/invite-letter.tsx`): envelope centralizado, selo
+  some, aba abre, carta de pergaminho sai de dentro, envelope some e o convite aparece.
+  Conferido por capturas no Chrome headless (envelope fechado, aberto, final e largura de 360 px).
+  A versão do app não foi conferida no aparelho.
 
 ### 2026-10-20 — cor dos dados obrigatória e nome colorido
 
