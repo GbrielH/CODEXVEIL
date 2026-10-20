@@ -59,6 +59,18 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
     para gerar a imagem numa IA de preferência do jogador, com classe, raça, habilidades,
     personalidade, história, antecedente e demais dados; copiar ou ignorar.
 11. Depois: tradução do SRD (item 2 antigo) e assistente de IA (pedido de 2026-10-18).
+12. **Sistema da comunidade "Behind the Magic" (livro "Manual de Runas").** RPG de autoria de um
+    amigo do responsável, **original e com uso autorizado** (pode usar todo o conteúdo do livro:
+    regras, imagens, tudo). Diferente dos livros comerciais, ele vai **direto no Codexveil**, como
+    um sistema na aba **Sistemas da comunidade**. Requisitos:
+    - o sistema precisa ser **ativado** pelo usuário na aba Sistemas da comunidade; sem ativar, ele
+      não aparece ao criar campanha nem personagem;
+    - todas as regras, fichas, criação de personagem e imagens vêm do próprio livro;
+    - seguir o modelo dos sistemas existentes (`packages/rpg-systems/src/<id>/`, registro em
+      `registry.ts`, migração inserindo em `rpg_systems`, ficha e assistente no site e no app).
+    - PDF do livro (65 MB): **fora do repositório**, em `C:/Users/henri/Downloads/MANUAL DE RUNAS.pdf`.
+      Não foi versionado (o repositório é público e a publicação do PDF foi bloqueada pela proteção
+      do Claude Code); para outra máquina, copie o arquivo à mão.
 
 ### Estado em 2026-10-20 (feito e publicado)
 
