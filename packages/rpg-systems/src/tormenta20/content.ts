@@ -137,3 +137,11 @@ export function t20ChoiceOnlyPowers(klass: T20Item<'class'> | null): Set<string>
   for (const ability of klass?.abilities ?? []) for (const name of t20AbilityChoiceNames(ability)) names.add(plainT20(name));
   return names;
 }
+
+/** Custo em PM de usar um poder ou magia: o das magias (`data.cost`) ou o primeiro "N PM" do texto; 0 sem custo. */
+export function t20AbilityCost(ability: { kind: string; description?: string | null; data?: unknown }): number {
+  const data = ability.data as { cost?: number } | null | undefined;
+  if (ability.kind === 'spell') return data?.cost ?? 1;
+  const match = /(\d+)\s*PM\b/.exec(ability.description ?? '');
+  return match ? Number(match[1]) : 0;
+}

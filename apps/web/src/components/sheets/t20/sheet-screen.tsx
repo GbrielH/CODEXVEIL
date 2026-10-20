@@ -4,14 +4,14 @@ import {
   adjustCharacterResource,
   applyCharacterCondition,
   removeCharacterCondition,
+  tickCharacterConditions,
   saveCharacterSheet,
-  setCharacterItemEquipped,
   type CharacterAbility,
   type CharacterCondition,
   type CharacterItem,
   type CharacterResource,
 } from '@codexveil/database';
-import { rollDiceLocally, type TrackOperation } from '@codexveil/domain';
+import { rollDiceLocally, type DiceRollMode, type TrackOperation } from '@codexveil/domain';
 import {
   T20_ATTRIBUTES,
   T20_RESOURCE_KEYS,
@@ -28,17 +28,18 @@ import {
   type T20ContentSource,
   type T20RestQuality,
   type T20Sheet,
+  t20AbilityCost,
 } from '@codexveil/rpg-systems/tormenta20';
 import { Heart, Minus, Moon, Plus, Shield, Sparkles, X, Zap } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Alert } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { TextareaField } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
 import { Tabs } from '@/components/ui/tabs';
 import { DiceProvider, useDice } from '@/components/dice/dice-roller';
+import { T20Inventory } from './inventory';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
 import { cx } from '@/lib/cx';
@@ -86,6 +87,8 @@ function T20SheetBody(props: T20SheetScreenProps) {
   const { character, permissions } = props;
   const { toast } = useToast();
   const [tab, setTab] = useState('jogo');
+  // Seletor de três estados para as rolagens de d20: desvantagem, normal ou vantagem.
+  const [rollMode, setRollMode] = useState<DiceRollMode>('normal');
   const [sheet, setSheet] = useState(props.sheet);
   const [version, setVersion] = useState(character.version);
   const [resources, setResources] = useState(props.resources);
@@ -115,11 +118,23 @@ function T20SheetBody(props: T20SheetScreenProps) {
   const roll = (label: string, bonus: number) => {
     const expression = `1d20${bonus >= 0 ? '+' : ''}${bonus}`;
     if (dice) {
-      void dice.roll({ expression, label });
+      void dice.roll({ expression, label, mode: rollMode });
       return;
     }
-    const result = rollDiceLocally(expression);
+    const result = rollDiceLocally(expression, rollMode);
     if (result) toast({ tone: 'info', title: `${label}: ${result.total}`, description: `1d20 (${result.total - bonus}) ${formatT20Bonus(bonus)}` });
+  };
+
+  /** Usar um poder ou lançar uma magia na jogada: gasta os PM (se houver custo) e avisa a mesa. */
+  const activateAbility = (ability: CharacterAbility) => {
+    const cost = t20AbilityCost(ability);
+    const pmTrack = resource(T20_RESOURCE_KEYS.manaPoints);
+    if (cost > 0 && pmTrack && pmTrack.current < cost) {
+      toast({ tone: 'warning', title: `PM insuficientes para ${ability.name} (${cost} PM).` });
+      return;
+    }
+    if (cost > 0) void adjust(T20_RESOURCE_KEYS.manaPoints, 'spend', cost);
+    toast({ tone: 'success', title: `${ability.kind === 'spell' ? 'Lançou' : 'Usou'}: ${ability.name}`, description: cost > 0 ? `−${cost} PM` : undefined });
   };
 
   const hp = resource(T20_RESOURCE_KEYS.hitPoints);
@@ -195,9 +210,19 @@ function T20SheetBody(props: T20SheetScreenProps) {
           <ConditionsCard
             conditions={conditions}
             canEdit={permissions.canEditPlay}
-            onApply={async (key) => {
-              const ok = await run(() => applyCharacterCondition(getSupabaseBrowserClient(), character.id, key), 'Não foi possível aplicar a condição');
-              if (ok !== null) setConditions((current) => (current.some((entry) => entry.key === key) ? current : [...current, { id: `local-${key}`, key, level: null, note: '', roundsRemaining: null }]));
+            onApply={async (key, rounds) => {
+              const ok = await run(() => applyCharacterCondition(getSupabaseBrowserClient(), character.id, key, null, rounds), 'Não foi possível aplicar a condição');
+              if (ok !== null) setConditions((current) => (current.some((entry) => entry.key === key) ? current : [...current, { id: `local-${key}`, key, level: null, note: '', roundsRemaining: rounds }]));
+            }}
+            onTick={async () => {
+              const ended = await run(() => tickCharacterConditions(getSupabaseBrowserClient(), character.id), 'Não foi possível passar a rodada');
+              if (ended === null) return;
+              setConditions((current) =>
+                current
+                  .filter((entry) => !ended.includes(entry.key))
+                  .map((entry) => (entry.roundsRemaining !== null ? { ...entry, roundsRemaining: Math.max(0, entry.roundsRemaining - 1) } : entry)),
+              );
+              if (ended.length) toast({ tone: 'info', title: `Terminou: ${ended.map((key) => findT20Condition(key)?.label ?? key).join(', ')}.` });
             }}
             onRemove={async (condition) => {
               const ok = await run(() => removeCharacterCondition(getSupabaseBrowserClient(), condition.id), 'Não foi possível remover a condição');
@@ -210,6 +235,39 @@ function T20SheetBody(props: T20SheetScreenProps) {
               <p className="font-display text-2xl text-fg">T$ {money.current}</p>
             </Card>
           ) : null}
+        </div>
+      ) : null}
+
+      {tab === 'pericias' || tab === 'jogo' ? (
+        <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Modo da rolagem">
+          <span className="text-sm text-fg-muted">Rolagem:</span>
+          {(
+            [
+              ['disadvantage', 'Desvantagem'],
+              ['normal', 'Normal'],
+              ['advantage', 'Vantagem'],
+            ] as const
+          ).map(([mode, label]) => (
+            <button
+              key={mode}
+              type="button"
+              role="radio"
+              aria-checked={rollMode === mode}
+              onClick={() => setRollMode(mode)}
+              className={
+                rollMode === mode
+                  ? mode === 'advantage'
+                    ? 'rounded-full border border-verdigris-300/70 bg-verdigris-900/60 px-3 py-1 text-sm text-verdigris-300'
+                    : mode === 'disadvantage'
+                      ? 'rounded-full border border-ember-300/70 bg-ember-900/60 px-3 py-1 text-sm text-ember-300'
+                      : 'rounded-full border border-parchment-300/70 bg-parchment-200/10 px-3 py-1 text-sm text-fg-accent'
+                  : 'rounded-full border border-line px-3 py-1 text-sm text-fg-secondary hover:bg-hover'
+              }
+            >
+              {label}
+            </button>
+          ))}
+          <span className="text-xs text-fg-subtle">Rola 2d20 e fica com o maior (vantagem) ou o menor (desvantagem).</span>
         </div>
       ) : null}
 
@@ -258,7 +316,7 @@ function T20SheetBody(props: T20SheetScreenProps) {
         <div className="flex flex-col gap-6">
           {ABILITY_GROUPS.map((group) => {
             const list = abilities.filter((ability) => ability.kind === group.kind);
-            return list.length ? <AbilityList key={group.kind} title={group.title} abilities={list} /> : null;
+            return list.length ? <AbilityList key={group.kind} title={group.title} abilities={list} useLabel="Usar" onUse={permissions.canEditPlay ? activateAbility : undefined} /> : null;
           })}
           {abilities.some((ability) => ability.kind === 'spell') ? (
             <AbilityList
@@ -268,55 +326,14 @@ function T20SheetBody(props: T20SheetScreenProps) {
                 const data = ability.data as { circle?: number; cost?: number };
                 return data.circle ? `${data.circle}º círculo · ${data.cost ?? 1} PM` : '';
               }}
-              onUse={
-                permissions.canEditPlay && pm
-                  ? (ability) => {
-                      const cost = (ability.data as { cost?: number }).cost ?? 1;
-                      if (pm.current < cost) {
-                        toast({ tone: 'warning', title: `PM insuficientes para ${ability.name} (${cost} PM).` });
-                        return;
-                      }
-                      void adjust(T20_RESOURCE_KEYS.manaPoints, 'spend', cost);
-                    }
-                  : undefined
-              }
+              useLabel="Lançar"
+              onUse={permissions.canEditPlay ? activateAbility : undefined}
             />
           ) : null}
         </div>
       ) : null}
 
-      {tab === 'inventario' ? (
-        <Card>
-          <CardHeader title="Inventário" description={`Carga: até ${derived.carryCapacity} espaços.`} />
-          {items.length === 0 ? <p className="text-sm text-fg-muted">Sem itens.</p> : null}
-          <ul className="flex flex-col divide-y divide-line">
-            {items.map((item) => (
-              <li key={item.id} className="flex flex-wrap items-start justify-between gap-2 py-2">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-fg">
-                    {item.name}
-                    {item.quantity > 1 ? ` ×${item.quantity}` : ''}
-                    {item.isEquipped ? <Badge className="ml-2">Equipado</Badge> : null}
-                  </p>
-                  {item.description ? <p className="text-xs text-fg-muted">{item.description}</p> : null}
-                </div>
-                {permissions.canEditPlay && (item.category === 'weapon' || item.category === 'armor') ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={async () => {
-                      const ok = await run(() => setCharacterItemEquipped(getSupabaseBrowserClient(), item.id, !item.isEquipped), 'Não foi possível equipar');
-                      if (ok !== null) setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, isEquipped: !entry.isEquipped } : entry)));
-                    }}
-                  >
-                    {item.isEquipped ? 'Desequipar' : 'Equipar'}
-                  </Button>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      ) : null}
+      {tab === 'inventario' ? <T20Inventory characterId={character.id} items={items} setItems={setItems} canEdit={permissions.canEditPlay} capacity={derived.carryCapacity} /> : null}
 
       {tab === 'personagem' ? (
         <StoryCard
@@ -427,8 +444,22 @@ function RestCard({ level, canEdit, onRest }: { level: number; canEdit: boolean;
   );
 }
 
-function ConditionsCard({ conditions, canEdit, onApply, onRemove }: { conditions: CharacterCondition[]; canEdit: boolean; onApply: (key: string) => Promise<void>; onRemove: (condition: CharacterCondition) => Promise<void> }) {
+function ConditionsCard({
+  conditions,
+  canEdit,
+  onApply,
+  onRemove,
+  onTick,
+}: {
+  conditions: CharacterCondition[];
+  canEdit: boolean;
+  onApply: (key: string, rounds: number | null) => Promise<void>;
+  onRemove: (condition: CharacterCondition) => Promise<void>;
+  onTick: () => Promise<void>;
+}) {
   const [choice, setChoice] = useState('');
+  const [rounds, setRounds] = useState('');
+  const timed = conditions.some((condition) => condition.roundsRemaining !== null);
   return (
     <Card>
       <CardHeader title="Condições" description="Os efeitos numéricos (Defesa, perícias, deslocamento) já entram na ficha." />
@@ -439,7 +470,10 @@ function ConditionsCard({ conditions, canEdit, onApply, onRemove }: { conditions
           return (
             <li key={condition.id} className="flex items-start justify-between gap-2 rounded-md border border-amber-400/30 px-3 py-2">
               <div>
-                <p className="text-sm font-medium text-fg">{definition?.label ?? condition.key}</p>
+                <p className="text-sm font-medium text-fg">
+                  {definition?.label ?? condition.key}
+                  {condition.roundsRemaining !== null ? <span className="ml-2 text-xs text-amber-300">{condition.roundsRemaining === 1 ? '1 rodada' : `${condition.roundsRemaining} rodadas`}</span> : null}
+                </p>
                 {definition ? <p className="text-xs text-fg-muted">{definition.summary}</p> : null}
               </div>
               {canEdit ? (
@@ -461,34 +495,71 @@ function ConditionsCard({ conditions, canEdit, onApply, onRemove }: { conditions
                 </option>
               ))}
           </Select>
-          <Button size="sm" disabled={!choice} onClick={() => choice && void onApply(choice).then(() => setChoice(''))}>
+          <input
+            aria-label="Duração em rodadas (vazio = até remover)"
+            inputMode="numeric"
+            value={rounds}
+            onChange={(event) => setRounds(event.target.value.replace(/[^0-9]/g, '').slice(0, 3))}
+            placeholder="Rodadas"
+            className="h-9 w-24 rounded-md border border-line bg-sunken px-2 text-sm text-fg placeholder:text-fg-muted"
+          />
+          <Button
+            size="sm"
+            disabled={!choice}
+            onClick={() =>
+              choice &&
+              void onApply(choice, rounds && Number(rounds) > 0 ? Number(rounds) : null).then(() => {
+                setChoice('');
+                setRounds('');
+              })
+            }
+          >
             Aplicar
           </Button>
+          {timed ? (
+            <Button size="sm" variant="secondary" onClick={() => void onTick()}>
+              Passar rodada
+            </Button>
+          ) : null}
         </div>
       ) : null}
+      {canEdit ? <p className="mt-2 text-xs text-fg-muted">Rodadas: deixe vazio para durar até remover. &quot;Passar rodada&quot; tira 1 de cada condição e remove as que acabam.</p> : null}
     </Card>
   );
 }
 
-function AbilityList({ title, abilities, extra, onUse }: { title: string; abilities: CharacterAbility[]; extra?: (ability: CharacterAbility) => string; onUse?: (ability: CharacterAbility) => void }) {
+function AbilityList({
+  title,
+  abilities,
+  extra,
+  onUse,
+  useLabel = 'Usar',
+}: {
+  title: string;
+  abilities: CharacterAbility[];
+  extra?: (ability: CharacterAbility) => string;
+  onUse?: (ability: CharacterAbility) => void;
+  useLabel?: string;
+}) {
   return (
     <Card>
       <CardHeader title={title} />
       <ul className="flex flex-col gap-1">
         {abilities.map((ability) => (
-          <li key={ability.id}>
-            <details className="rounded-md border border-line px-3 py-2 text-sm open:bg-raised/40">
+          <li key={ability.id} className="flex items-start gap-2">
+            <details className="min-w-0 flex-1 rounded-md border border-line px-3 py-2 text-sm open:bg-raised/40">
               <summary className="cursor-pointer">
                 <span className="text-fg">{ability.name}</span>
                 <span className="ml-2 text-xs text-fg-muted">{[extra?.(ability), ability.source].filter(Boolean).join(' · ')}</span>
               </summary>
               <p className="mt-2 leading-relaxed whitespace-pre-line text-fg-secondary">{ability.description}</p>
-              {onUse ? (
-                <Button size="sm" variant="secondary" className="mt-2" icon={<Sparkles className="h-4 w-4" aria-hidden="true" />} onClick={() => onUse(ability)}>
-                  Lançar (gasta PM)
-                </Button>
-              ) : null}
             </details>
+            {onUse ? (
+              <Button size="sm" variant="secondary" className="mt-1 shrink-0" icon={<Sparkles className="h-4 w-4" aria-hidden="true" />} onClick={() => onUse(ability)}>
+                {useLabel}
+                {t20AbilityCost(ability) > 0 ? ` (${t20AbilityCost(ability)} PM)` : ''}
+              </Button>
+            ) : null}
           </li>
         ))}
       </ul>

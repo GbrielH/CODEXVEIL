@@ -89,17 +89,17 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
       `registry.ts`, migração inserindo em `rpg_systems`, ficha e assistente no site e no app).
     - PDF do livro (65 MB), versionado com autorização do responsável: [`docs/sistemas/behind-the-magic/MANUAL DE RUNAS.pdf`](sistemas/behind-the-magic/MANUAL%20DE%20RUNAS.pdf).
 
-## Correções do QA para Tormenta20 (2026-10-20, em andamento)
+## Correções do QA para Tormenta20 (2026-10-20, concluídas)
 
 1. **[Feito]** Criação: o benefício de origem "um poder de combate à sua escolha" abre a escolha do poder ali
    mesmo, abaixo de Poderes únicos.
 2. **[Feito]** Subida de nível: "Aumento de Atributo" abre a escolha do atributo e aplica o aumento.
 3. **[Feito]** Subida de nível: habilidades com escolha (ex.: Bênção da Justiça: Égide Sagrada ou Montaria
    Sagrada) já permitem escolher a opção.
-4. Condições: duração em rodadas ao aplicar, para o efeito sair sozinho.
-5. Rolagem com seletor de três estados: desvantagem / normal / vantagem.
-6. Poderes e magias: botão para usar na jogada (registrar/rolar).
-7. Inventário mais parecido com o do D&D.
+4. **[Feito]** Condições: duração em rodadas ao aplicar, para o efeito sair sozinho.
+5. **[Feito]** Rolagem com seletor de três estados: desvantagem / normal / vantagem.
+6. **[Feito]** Poderes e magias: botão para usar na jogada (registrar/rolar).
+7. **[Feito]** Inventário mais parecido com o do D&D.
 8. **[Feito]** Não mostrar habilidades de níveis ainda não alcançados.
 
 Feito (1, 2, 3 e 8): benefício genérico da origem abre a lista de poderes do grupo (combate,
@@ -107,6 +107,12 @@ destino…); "Aumento de Atributo" pede o atributo (+1, um por patamar; Constitu
 nível); habilidades com "escolha entre X e Y" pedem a opção; poderes que só vêm dessas escolhas
 (Égide Sagrada, Montaria Sagrada) saíram da lista de poderes da criação e da subida de nível.
 Site e app; testes em `tormenta20/level-up.test.ts`.
+
+Feito (4 a 7): condições com duração em rodadas e botão "Passar rodada" (remove as que acabam);
+seletor Desvantagem/Normal/Vantagem nas abas Jogo e Perícias (2d20, maior ou menor); botão
+"Usar"/"Lançar" em poderes, habilidades e magias (gasta os PM do custo lido no texto); inventário
+com carga em espaços, categorias, equipar, quantidade (+/−) e, no site, adicionar/editar/excluir.
+Armas e armaduras novas gravam os espaços do livro. Site e app.
 
 ### Estado em 2026-10-20 (feito e publicado)
 
@@ -391,6 +397,11 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-20 — QA do Tormenta20 (parte 2)
+
+- Itens 4 a 7 do QA (condições com rodadas, rolagem em 3 estados, usar poder/magia, inventário).
+  `pnpm check` 20/20; sem teste no navegador nem no aparelho.
 
 ### 2026-10-20 — QA do Tormenta20 (parte 1)
 

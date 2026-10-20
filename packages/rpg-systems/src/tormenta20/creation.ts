@@ -649,8 +649,13 @@ export function buildT20Character(content: T20Content, draft: T20Draft, sourcebo
 
   // Inventário: kit de todo aventureiro, armas, armadura, escudo e os itens da origem.
   const items: ItemTemplate[] = [];
-  const addItem = (name: string, category: ItemTemplate['category'], description = '', equipped = false) =>
-    items.push({ name: name.slice(0, 120), category, quantity: 1, weight: null, description: description.slice(0, 4000), notes: '', isEquipped: equipped, sortOrder: items.length });
+  // `weight` guarda os espaços do item (Tormenta20), lidos do livro quando houver.
+  const spacesOf = (item: T20Item<'equipment'> | undefined) => {
+    const value = Number.parseFloat((item?.spaces ?? '').replace(',', '.'));
+    return Number.isFinite(value) && value >= 0 ? value : null;
+  };
+  const addItem = (name: string, category: ItemTemplate['category'], description = '', equipped = false, spaces: number | null = null) =>
+    items.push({ name: name.slice(0, 120), category, quantity: 1, weight: spaces, description: description.slice(0, 4000), notes: '', isEquipped: equipped, sortOrder: items.length });
   addItem('Mochila', 'gear');
   addItem('Saco de dormir', 'gear');
   addItem('Traje de viajante', 'gear');
@@ -658,10 +663,10 @@ export function buildT20Character(content: T20Content, draft: T20Draft, sourcebo
     item ? [`Dano ${item.damage}`, `crítico ${item.critical}`, item.range && item.range !== '—' ? `alcance ${item.range}` : '', item.damageType].filter(Boolean).join(', ') : '';
   const simple = options.simple.find((item) => item.id === draft.equipment.simple);
   const martial = options.martial.find((item) => item.id === draft.equipment.martial);
-  if (simple) addItem(simple.name, 'weapon', weaponText(simple), true);
-  if (martial) addItem(martial.name, 'weapon', weaponText(martial), true);
-  if (armor) addItem(armor.name, 'armor', `Defesa +${armor.defense ?? 0}, penalidade ${armor.penalty ?? 0}`, true);
-  if (shield) addItem(shield.name, 'armor', `Defesa +${shield.defense ?? 0}, penalidade ${shield.penalty ?? 0}`, true);
+  if (simple) addItem(simple.name, 'weapon', weaponText(simple), true, spacesOf(simple));
+  if (martial) addItem(martial.name, 'weapon', weaponText(martial), true, spacesOf(martial));
+  if (armor) addItem(armor.name, 'armor', `Defesa +${armor.defense ?? 0}, penalidade ${armor.penalty ?? 0}`, true, spacesOf(armor));
+  if (shield) addItem(shield.name, 'armor', `Defesa +${shield.defense ?? 0}, penalidade ${shield.penalty ?? 0}`, true, spacesOf(shield));
   if (origin?.items) addItem(`Itens da origem (${origin.name})`, 'gear', origin.items);
 
   // Habilidades: raça, classe até o nível, poderes e magias.

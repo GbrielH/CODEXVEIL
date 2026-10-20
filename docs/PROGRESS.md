@@ -282,6 +282,9 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-20 (QA T20, parte 2):** itens 4 a 7 feitos; lista do QA concluída (`pnpm check`
+  20/20; sem teste no navegador nem no aparelho). Próximo: testes manuais do T20 e item 11
+  (tradução do SRD e assistente de IA). Adiados: [`MELHORIAS_FUTURAS.md`](MELHORIAS_FUTURAS.md).
 - **2026-10-20 (QA T20, parte 1):** itens 1, 2, 3 e 8 da lista do QA feitos (`pnpm check` 20/20;
   sem teste no navegador). Próximo: itens 4 a 7 (condições com rodadas, rolagem em 3 estados,
   usar poder/magia na jogada, inventário).

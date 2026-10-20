@@ -4,13 +4,16 @@ import {
   applyCharacterCondition,
   createCharacterAbility,
   removeCharacterCondition,
+  adjustCharacterItemQuantity,
+  setCharacterItemEquipped,
+  tickCharacterConditions,
   saveCharacterSheet,
   type CharacterAbility,
   type CharacterCondition,
   type CharacterItem,
   type CharacterResource,
 } from '@codexveil/database';
-import { rollDiceLocally, type TrackOperation } from '@codexveil/domain';
+import { groupByCategory, itemCategoryLabels, rollDiceLocally, type DiceRollMode, type TrackOperation } from '@codexveil/domain';
 import {
   T20_ATTRIBUTES,
   T20_RESOURCE_KEYS,
@@ -23,6 +26,7 @@ import {
   findT20Condition,
   formatT20Bonus,
   planT20LevelUp,
+  t20AbilityCost,
   t20AttributeLabels,
   t20Conditions,
   t20RestRecovery,
@@ -43,7 +47,7 @@ import { DiceProvider, useDice } from '@/components/dice/dice';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/errors';
 import { getSupabase } from '@/lib/supabase';
-import { colors, fonts, spacing } from '@/lib/theme';
+import { colors, fonts, palette, spacing } from '@/lib/theme';
 
 type Tab = 'jogo' | 'pericias' | 'poderes' | 'itens';
 
@@ -73,6 +77,8 @@ function T20SheetBody(props: Props) {
   const dice = useDice();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>('jogo');
+  // Seletor de três estados para as rolagens de d20: desvantagem, normal ou vantagem.
+  const [rollMode, setRollMode] = useState<DiceRollMode>('normal');
   const [sheet, setSheet] = useState(props.sheet);
   const [version, setVersion] = useState(props.character.version);
   const [resources, setResources] = useState(props.resources);
@@ -80,6 +86,25 @@ function T20SheetBody(props: Props) {
   const [abilities, setAbilities] = useState(props.abilities);
   const [amount, setAmount] = useState('1');
   const [levelUp, setLevelUp] = useState(false);
+  const [condRounds, setCondRounds] = useState('');
+  const [items, setItems] = useState(props.items);
+  const usedSpaces = items.reduce((sum, item) => sum + (item.weight ?? 0) * item.quantity, 0);
+  const changeQuantity = async (item: CharacterItem, delta: number) => {
+    try {
+      const saved = await adjustCharacterItemQuantity(getSupabase(), item.id, delta);
+      setItems((current) => current.map((entry) => (entry.id === item.id ? saved : entry)));
+    } catch (error) {
+      toast({ tone: 'danger', title: failureMessage(error) });
+    }
+  };
+  const toggleEquipped = async (item: CharacterItem) => {
+    try {
+      await setCharacterItemEquipped(getSupabase(), item.id, !item.isEquipped);
+      setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, isEquipped: !entry.isEquipped } : entry)));
+    } catch (error) {
+      toast({ tone: 'danger', title: failureMessage(error) });
+    }
+  };
   const content = useMemo(() => buildT20Content(props.sources), [props.sources]);
   const derived = useMemo(() => computeT20Derived(sheet, conditions.map((entry) => entry.key)), [sheet, conditions]);
   const track = (key: string) => resources.find((entry) => entry.key === key);
@@ -98,10 +123,10 @@ function T20SheetBody(props: Props) {
   const roll = (label: string, bonus: number) => {
     const expression = `1d20${bonus >= 0 ? '+' : ''}${bonus}`;
     if (dice) {
-      void dice.roll({ expression, label });
+      void dice.roll({ expression, label, mode: rollMode });
       return;
     }
-    const result = rollDiceLocally(expression);
+    const result = rollDiceLocally(expression, rollMode);
     if (result) toast({ tone: 'info', title: `${label}: ${result.total}`, description: `1d20 (${result.total - bonus}) ${formatT20Bonus(bonus)}` });
   };
 
@@ -165,7 +190,10 @@ function T20SheetBody(props: Props) {
             {conditions.map((condition) => (
               <View key={condition.id} style={styles.row}>
                 <View style={{ flex: 1 }}>
-                  <AppText>{findT20Condition(condition.key)?.label ?? condition.key}</AppText>
+                  <AppText>
+                    {findT20Condition(condition.key)?.label ?? condition.key}
+                    {condition.roundsRemaining !== null ? ` · ${condition.roundsRemaining === 1 ? '1 rodada' : `${condition.roundsRemaining} rodadas`}` : ''}
+                  </AppText>
                   <AppText variant="small">{findT20Condition(condition.key)?.summary ?? ''}</AppText>
                 </View>
                 {props.canEditPlay ? (
@@ -186,13 +214,51 @@ function T20SheetBody(props: Props) {
               </View>
             ))}
             {props.canEditPlay ? (
+              <View style={styles.row}>
+                <AppText variant="small" style={{ flex: 1 }}>
+                  Duração em rodadas (vazio = até remover)
+                </AppText>
+                <TextInput
+                  value={condRounds}
+                  onChangeText={(text) => setCondRounds(text.replace(/[^0-9]/g, '').slice(0, 3))}
+                  keyboardType="number-pad"
+                  placeholder="Rodadas"
+                  placeholderTextColor={colors.fgMuted}
+                  accessibilityLabel="Duração em rodadas"
+                  style={{ minWidth: 80, borderWidth: 1, borderColor: colors.line, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, color: colors.fg }}
+                />
+              </View>
+            ) : null}
+            {props.canEditPlay && conditions.some((entry) => entry.roundsRemaining !== null) ? (
+              <Button
+                label="Passar rodada"
+                variant="secondary"
+                compact
+                onPress={async () => {
+                  try {
+                    const ended = await tickCharacterConditions(getSupabase(), props.character.id);
+                    setConditions((current) =>
+                      current
+                        .filter((entry) => !ended.includes(entry.key))
+                        .map((entry) => (entry.roundsRemaining !== null ? { ...entry, roundsRemaining: Math.max(0, entry.roundsRemaining - 1) } : entry)),
+                    );
+                    if (ended.length) toast({ tone: 'info', title: `Terminou: ${ended.map((key) => findT20Condition(key)?.label ?? key).join(', ')}.` });
+                  } catch (error) {
+                    toast({ tone: 'danger', title: failureMessage(error) });
+                  }
+                }}
+              />
+            ) : null}
+            {props.canEditPlay ? (
               <PickerField
                 label="Aplicar condição"
                 value=""
                 onChange={async (key) => {
                   try {
-                    await applyCharacterCondition(getSupabase(), props.character.id, key);
-                    setConditions((current) => [...current, { id: `local-${key}`, key, level: null, note: '', roundsRemaining: null }]);
+                    const rounds = condRounds && Number(condRounds) > 0 ? Number(condRounds) : null;
+                    await applyCharacterCondition(getSupabase(), props.character.id, key, null, rounds);
+                    setConditions((current) => [...current, { id: `local-${key}`, key, level: null, note: '', roundsRemaining: rounds }]);
+                    setCondRounds('');
                   } catch (error) {
                     toast({ tone: 'danger', title: failureMessage(error) });
                   }
@@ -203,6 +269,19 @@ function T20SheetBody(props: Props) {
           </Card>
           {money ? <Badge label={`T$ ${money.current}`} tone="parchment" /> : null}
         </>
+      ) : null}
+
+      {tab === 'pericias' || tab === 'jogo' ? (
+        <Segmented<DiceRollMode>
+          value={rollMode}
+          onChange={setRollMode}
+          accessibilityLabel="Modo da rolagem"
+          options={[
+            { value: 'disadvantage', label: 'Desvantagem' },
+            { value: 'normal', label: 'Normal' },
+            { value: 'advantage', label: 'Vantagem' },
+          ]}
+        />
       ) : null}
 
       {tab === 'pericias' ? (
@@ -236,15 +315,19 @@ function T20SheetBody(props: Props) {
               <AppText variant="serif" numberOfLines={8}>
                 {ability.description}
               </AppText>
-              {ability.kind === 'spell' && props.canEditPlay && pm ? (
+              {props.canEditPlay ? (
                 <Button
-                  label={`Lançar (${(ability.data as { cost?: number }).cost ?? 1} PM)`}
+                  label={`${ability.kind === 'spell' ? 'Lançar' : 'Usar'}${t20AbilityCost(ability) > 0 ? ` (${t20AbilityCost(ability)} PM)` : ''}`}
                   variant="secondary"
                   compact
                   onPress={() => {
-                    const cost = (ability.data as { cost?: number }).cost ?? 1;
-                    if ((track(T20_RESOURCE_KEYS.manaPoints)?.current ?? 0) < cost) toast({ tone: 'warning', title: 'PM insuficientes.' });
-                    else void adjust(T20_RESOURCE_KEYS.manaPoints, 'spend', cost);
+                    const cost = t20AbilityCost(ability);
+                    if (cost > 0 && (track(T20_RESOURCE_KEYS.manaPoints)?.current ?? 0) < cost) {
+                      toast({ tone: 'warning', title: `PM insuficientes para ${ability.name} (${cost} PM).` });
+                      return;
+                    }
+                    if (cost > 0) void adjust(T20_RESOURCE_KEYS.manaPoints, 'spend', cost);
+                    toast({ tone: 'success', title: `${ability.kind === 'spell' ? 'Lançou' : 'Usou'}: ${ability.name}`, description: cost > 0 ? `−${cost} PM` : undefined });
                   }}
                 />
               ) : null}
@@ -254,19 +337,47 @@ function T20SheetBody(props: Props) {
       ) : null}
 
       {tab === 'itens' ? (
-        <Card>
-          {props.items.length === 0 ? <AppText variant="small">Sem itens.</AppText> : null}
-          {props.items.map((item) => (
-            <View key={item.id} style={{ paddingVertical: 6 }}>
-              <AppText>
-                {item.name}
-                {item.quantity > 1 ? ` ×${item.quantity}` : ''}
-                {item.isEquipped ? ' (equipado)' : ''}
-              </AppText>
-              {item.description ? <AppText variant="small">{item.description}</AppText> : null}
-            </View>
+        <>
+          <Card>
+            <AppText variant="heading">Carga</AppText>
+            <AppText variant="small" style={{ color: usedSpaces > derived.carryCapacity ? palette.ember[300] : colors.fgSecondary }}>
+              {usedSpaces.toLocaleString('pt-BR')} de {derived.carryCapacity} espaços{usedSpaces > derived.carryCapacity ? ' (sobrecarregado)' : ''}
+            </AppText>
+          </Card>
+          {items.length === 0 ? (
+            <Card>
+              <AppText variant="small">Sem itens. Adicione itens pela ficha no site.</AppText>
+            </Card>
+          ) : null}
+          {groupByCategory(items).map((group) => (
+            <Card key={group.category}>
+              <AppText variant="eyebrow">{itemCategoryLabels[group.category]}</AppText>
+              {group.items.map((item) => (
+                <View key={item.id} style={[styles.row, { paddingVertical: 6 }]}>
+                  <View style={{ flex: 1 }}>
+                    <AppText>
+                      {item.name}
+                      {item.isEquipped ? ' · equipado' : ''}
+                    </AppText>
+                    {item.description || item.weight !== null ? (
+                      <AppText variant="small">{[item.weight !== null ? `${item.weight.toLocaleString('pt-BR')} espaço(s) cada` : null, item.description].filter(Boolean).join(' · ')}</AppText>
+                    ) : null}
+                  </View>
+                  {props.canEditPlay ? (
+                    <>
+                      <Button label={item.isEquipped ? 'Tirar' : 'Equipar'} variant="ghost" compact onPress={() => void toggleEquipped(item)} />
+                      <Button label="−" variant="ghost" compact disabled={item.quantity <= 0} onPress={() => void changeQuantity(item, -1)} />
+                      <AppText>{item.quantity}</AppText>
+                      <Button label="+" variant="ghost" compact onPress={() => void changeQuantity(item, 1)} />
+                    </>
+                  ) : (
+                    <AppText>× {item.quantity}</AppText>
+                  )}
+                </View>
+              ))}
+            </Card>
           ))}
-        </Card>
+        </>
       ) : null}
 
       {levelUp ? (
