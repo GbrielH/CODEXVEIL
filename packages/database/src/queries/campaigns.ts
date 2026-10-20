@@ -36,6 +36,8 @@ export interface CampaignDetail extends CampaignSummary {
   ownerName: string;
   settings: CampaignSettings;
   turnSettings: CampaignTurnSettings;
+  /** Ações de combate criadas pelo mestre. */
+  customActions: CustomAction[];
   createdAt: string;
 }
 
@@ -85,7 +87,7 @@ export async function getCampaign(
   const { data, error } = await client
     .from('campaigns')
     .select(
-      'id, name, description, system_id, status, cover_path, owner_id, party_sheets_visible, players_can_edit_sheets, default_turn_mode, default_turn_order, players_see_turn_order, character_rules, created_at, updated_at, archived_at, owner:profiles!campaigns_owner_id_fkey(display_name), members:campaign_members(count), membership:campaign_members!inner(role, user_id)',
+      'id, name, description, system_id, status, cover_path, owner_id, party_sheets_visible, players_can_edit_sheets, default_turn_mode, default_turn_order, players_see_turn_order, custom_actions, character_rules, created_at, updated_at, archived_at, owner:profiles!campaigns_owner_id_fkey(display_name), members:campaign_members(count), membership:campaign_members!inner(role, user_id)',
     )
     .eq('id', campaignId)
     .eq('membership.user_id', userId)
@@ -112,6 +114,7 @@ export async function getCampaign(
       partySheetsVisible: data.party_sheets_visible,
       playersCanEditSheets: data.players_can_edit_sheets,
     },
+    customActions: parseCustomActions(data.custom_actions),
     turnSettings: {
       defaultMode: (TURN_MODES as readonly string[]).includes(data.default_turn_mode) ? (data.default_turn_mode as TurnMode) : 'combat',
       defaultOrder: data.default_turn_order === 'manual' ? 'manual' : 'initiative',
@@ -277,4 +280,48 @@ export function transferCampaignOwnership(
       p_new_owner_id: newOwnerId,
     }),
   );
+}
+
+/** Ação de combate personalizada do mestre (aparece para os jogadores no turno). */
+export interface CustomAction {
+  id: string;
+  name: string;
+  kind: 'action' | 'bonus_action' | 'reaction' | 'movement' | 'free';
+  description: string;
+  /** Dado rolado ao usar (ex.: "1d20+3"); vazio = sem rolagem. */
+  roll: string;
+}
+
+const CUSTOM_ACTION_KINDS = ['action', 'bonus_action', 'reaction', 'movement', 'free'] as const;
+
+export function parseCustomActions(raw: unknown): CustomAction[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+    .map((entry) => ({
+      id: (typeof entry.id === 'string' ? entry.id : ''),
+      name: (typeof entry.name === 'string' ? entry.name : '').slice(0, 80),
+      kind: (CUSTOM_ACTION_KINDS as readonly string[]).includes(String(entry.kind)) ? (entry.kind as CustomAction['kind']) : 'action',
+      description: (typeof entry.description === 'string' ? entry.description : '').slice(0, 1000),
+      roll: (typeof entry.roll === 'string' ? entry.roll : '').slice(0, 40),
+    }))
+    .filter((entry) => entry.id && entry.name);
+}
+
+/** Mestre: grava as ações de combate personalizadas da campanha. */
+export async function updateCampaignCustomActions(client: CodexveilClient, campaignId: string, actions: readonly CustomAction[]): Promise<void> {
+  const { data, error } = await client
+    .from('campaigns')
+    .update({ custom_actions: actions.slice(0, 40) as unknown as Json })
+    .eq('id', campaignId)
+    .select('id');
+  if (error) throw toAppError(error);
+  if (data.length === 0) throw new AppError('forbidden');
+}
+
+/** Ações de combate personalizadas da campanha (para o turno dos jogadores). */
+export async function getCampaignCustomActions(client: CodexveilClient, campaignId: string): Promise<CustomAction[]> {
+  const { data, error } = await client.from('campaigns').select('custom_actions').eq('id', campaignId).maybeSingle();
+  if (error) throw toAppError(error);
+  return parseCustomActions(data?.custom_actions);
 }

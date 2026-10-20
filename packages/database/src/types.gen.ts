@@ -401,6 +401,7 @@ export type Database = {
           character_rules: Json;
           cover_path: string | null;
           created_at: string;
+          custom_actions: Json;
           default_turn_mode: string;
           default_turn_order: string;
           description: string;
@@ -419,6 +420,7 @@ export type Database = {
           character_rules?: Json;
           cover_path?: string | null;
           created_at?: string;
+          custom_actions?: Json;
           default_turn_mode?: string;
           default_turn_order?: string;
           description?: string;
@@ -437,6 +439,7 @@ export type Database = {
           character_rules?: Json;
           cover_path?: string | null;
           created_at?: string;
+          custom_actions?: Json;
           default_turn_mode?: string;
           default_turn_order?: string;
           description?: string;

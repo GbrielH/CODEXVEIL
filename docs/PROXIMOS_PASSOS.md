@@ -96,7 +96,7 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
    coisa (acerto do ataque, dano…). Online: dados virtuais ligados automaticamente (e, depois, o
    grid da sessão).
 2. **Grid da sessão** (próxima grande etapa, para sessões online).
-3. **Ação de combate personalizada** criada pelo mestre.
+3. **[Feito em 2026-10-20] Ação de combate personalizada** criada pelo mestre.
 4. **[Feito em 2026-10-20]** Subida de nível: poder "Treinamento em Perícia" abre a escolha da perícia, como no Aumento de
    Atributo.
 5. **[Feito em 2026-10-20]** Benefícios de origem: breve descrição de cada perícia/poder.
@@ -429,6 +429,13 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-20 — Ações de combate personalizadas
+
+- Configurações da campanha: o mestre cria ações (nome, tipo, descrição, dado opcional). Elas
+  aparecem na lista "O que fazer" do turno (D&D) e como botões no cartão de turno (T20), e ficam
+  registradas nas ações do turno. Migração `20261020150000_custom_actions.sql` aplicada.
+  `pnpm check` 20/20.
 
 ### 2026-10-20 — Aba Sessão do mestre, biblioteca por sistema e combate só com turnos
 

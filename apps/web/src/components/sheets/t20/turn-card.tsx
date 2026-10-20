@@ -1,6 +1,6 @@
 'use client';
 
-import { endTurn, getCampaignTurn, tickCharacterConditions, type CampaignTurn } from '@codexveil/database';
+import { endTurn, getCampaignCustomActions, getCampaignTurn, performTurnAction, tickCharacterConditions, type CampaignTurn, type CustomAction } from '@codexveil/database';
 import { findT20Condition } from '@codexveil/rpg-systems/tormenta20';
 import { turnModeLabels } from '@codexveil/domain';
 import { Hourglass } from 'lucide-react';
@@ -22,6 +22,18 @@ export function T20TurnCard({ campaignId, characterId, canAct, onConditionsEnded
   const { toast } = useToast();
   const [turn, setTurn] = useState<CampaignTurn | null>(null);
   const [busy, setBusy] = useState(false);
+  const [customActions, setCustomActions] = useState<CustomAction[]>([]);
+  useEffect(() => {
+    let active = true;
+    getCampaignCustomActions(getSupabaseBrowserClient(), campaignId)
+      .then((list) => {
+        if (active) setCustomActions(list);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [campaignId]);
 
   const reload = useCallback(async () => {
     try {
@@ -83,6 +95,38 @@ export function T20TurnCard({ campaignId, characterId, canAct, onConditionsEnded
             </li>
           ))}
         </ol>
+      ) : null}
+      {mine && canAct && customActions.length ? (
+        <div className="mb-3 flex flex-col gap-1.5">
+          <p className="text-xs text-fg-muted">Ações da mesa (criadas pelo mestre):</p>
+          <div className="flex flex-wrap gap-2">
+            {customActions.map((action) => (
+              <Button
+                key={action.id}
+                size="sm"
+                variant="secondary"
+                title={action.description}
+                disabled={busy}
+                onClick={async () => {
+                  const me = turn.order.find((entry) => entry.characterId === characterId);
+                  if (!me) return;
+                  setBusy(true);
+                  try {
+                    const done = await performTurnAction(getSupabaseBrowserClient(), { combatantId: me.id, kind: action.kind, label: action.name, targetCombatantId: null, grantsAction: false, rollExpression: action.roll || null, manualTotal: null });
+                    toast({ tone: 'success', title: action.name, description: done.rollTotal !== null ? `Resultado: ${done.rollTotal}` : action.description || undefined });
+                  } catch (error) {
+                    toast({ tone: 'danger', title: 'A ação não foi registrada', description: failureMessage(error, 'Tente novamente.') });
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                {action.name}
+                {action.roll ? ` (🎲 ${action.roll})` : ''}
+              </Button>
+            ))}
+          </div>
+        </div>
       ) : null}
       {mine && canAct ? (
         <Button loading={busy} onClick={() => void finish()}>

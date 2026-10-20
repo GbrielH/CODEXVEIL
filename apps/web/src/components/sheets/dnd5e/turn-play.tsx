@@ -5,6 +5,8 @@ import {
   applyCharacterCondition,
   endTurn,
   getCampaignTurn,
+  getCampaignCustomActions,
+  type CustomAction,
   getSessionState,
   listTurnActions,
   performTurnAction,
@@ -73,6 +75,19 @@ export function TurnPlay() {
   const [playing, setPlaying] = useState(true);
   const [physicalDice, setPhysicalDice] = useState(false);
   const [manual, setManual] = useState('');
+  const [customActions, setCustomActions] = useState<CustomAction[]>([]);
+  useEffect(() => {
+    if (!campaignId) return;
+    let active = true;
+    getCampaignCustomActions(getSupabaseBrowserClient(), campaignId)
+      .then((list) => {
+        if (active) setCustomActions(list);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [campaignId]);
 
   const reload = useCallback(async () => {
     if (!campaignId) return;
@@ -151,12 +166,16 @@ export function TurnPlay() {
         if (cost) list.push({ key: ability.id, label: ability.name, kind: cost.kind, grantsAction: cost.grantsAction, roll: null, ability });
       }
     }
+    // Ações criadas pelo mestre para esta campanha.
+    for (const custom of customActions) {
+      list.push({ key: `custom:${custom.id}`, label: custom.name, kind: custom.kind, grantsAction: false, roll: custom.roll || null, ability: null });
+    }
     for (const key of DND5E_ACTIONS) {
       if (key === 'attack' || key === 'magic') continue;
       list.push({ key: `acao:${key}`, label: dnd5eActions[key].label, kind: 'action', grantsAction: false, roll: null, ability: null });
     }
     return list;
-  }, [abilities, items, derived, sheet.abilities]);
+  }, [abilities, items, derived, sheet.abilities, customActions]);
 
   if (!campaignId || !turn || character.campaign?.status !== 'active') return null;
 

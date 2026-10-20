@@ -9,6 +9,7 @@ import { loadCampaignOrNotFound } from '@/lib/campaigns';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { DangerZone } from './danger-zone';
 import { CampaignSettingsForm } from './settings-form';
+import { CustomActionsForm } from './custom-actions-form';
 import { TurnSettingsForm } from './turn-settings-form';
 
 export const metadata: Metadata = { title: 'Configurações da campanha' };
@@ -65,6 +66,14 @@ export default async function CampaignSettingsPage({ params }: PageProps<'/campa
           description="Como a mesa do mestre começa os turnos (combate, exploração, investigação ou interação social)."
         />
         <TurnSettingsForm campaignId={campaign.id} initial={campaign.turnSettings} disabled={archived} />
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Ações de combate personalizadas"
+          description="Crie ações próprias da sua mesa (nome, tipo, descrição e dado opcional). Elas aparecem para os jogadores na hora do turno."
+        />
+        <CustomActionsForm campaignId={campaign.id} initial={campaign.customActions} disabled={archived} />
       </Card>
 
       {campaign.isOwner ? (

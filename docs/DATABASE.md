@@ -166,6 +166,9 @@ Migração `20261018120000_gameplay_turns.sql`:
 - Índices únicos `characters_one_per_player_idx` e `campaign_notes_one_pinned_idx` (duplicatas
   antigas são desvinculadas/desafixadas antes).
 
+Migração `20261020150000_custom_actions.sql`: `campaigns.custom_actions` (lista JSON de ações
+criadas pelo mestre, até 40; só o mestre atualiza).
+
 Migração `20261020140000_session_mode.sql`: `sessions.mode` (`presencial`/`online`; online nunca
 com `physical_dice`, por CHECK) e `campaign_session_state` passa a devolver `mode`.
 
