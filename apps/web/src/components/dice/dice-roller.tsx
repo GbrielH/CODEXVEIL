@@ -13,13 +13,14 @@ import {
   type DiceRollResult,
 } from '@codexveil/domain';
 import { Dices, EyeOff } from 'lucide-react';
-import { createContext, useCallback, useContext, useId, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { controlClasses } from '@/components/ui/control-classes';
 import { useToast } from '@/components/ui/toast';
 import { cx } from '@/lib/cx';
 import { failureMessage } from '@/lib/client-errors';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { useRealtimeRefresh } from '@/lib/use-realtime';
 import { DiceThrow } from './dice-throw';
 
 export interface RollRequest {
@@ -39,6 +40,8 @@ interface DiceContextValue {
   /** Rola e mostra o resultado (no mural da campanha, quando houver). */
   roll: (request: RollRequest) => Promise<ShownRoll | null>;
   campaignId: string | null;
+  /** Sessão presencial com dados físicos: os dados virtuais somem e a ficha só indica o que rolar. */
+  physical: boolean;
 }
 
 const DiceContext = createContext<DiceContextValue | null>(null);
@@ -71,6 +74,31 @@ export function DiceProvider({
 }) {
   const { toast } = useToast();
   const [throwing, setThrowing] = useState<(ShownRoll & { key: number }) | null>(null);
+  const [physical, setPhysical] = useState(false);
+  const gated = Boolean(campaignId && sessionGate);
+  useEffect(() => {
+    if (!gated || !campaignId) return;
+    let active = true;
+    getSessionState(getSupabaseBrowserClient(), campaignId)
+      .then((state) => {
+        if (active) setPhysical(state.playing && state.physicalDice);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [gated, campaignId]);
+  useRealtimeRefresh(
+    `dados-fisicos:${campaignId ?? 'nenhuma'}`,
+    [{ table: 'sessions', filter: `campaign_id=eq.${campaignId ?? ''}` }],
+    () => {
+      if (!campaignId) return;
+      void getSessionState(getSupabaseBrowserClient(), campaignId)
+        .then((state) => setPhysical(state.playing && state.physicalDice))
+        .catch(() => undefined);
+    },
+    gated,
+  );
   const clearThrow = useCallback(() => setThrowing(null), []);
 
   const roll = useCallback(
@@ -124,7 +152,7 @@ export function DiceProvider({
     [campaignId, characterId, sessionGate, toast],
   );
 
-  const value = useMemo(() => (enabled ? { roll, campaignId } : null), [roll, campaignId, enabled]);
+  const value = useMemo(() => (enabled ? { roll, campaignId, physical } : null), [roll, campaignId, enabled, physical]);
   return (
     <DiceContext.Provider value={value}>
       {children}
@@ -158,6 +186,15 @@ export function RollButton({
   const dice = useDice();
   const [busy, setBusy] = useState(false);
   if (!dice || !expression) return <>{children}</>;
+  // Dados físicos: sem botão de rolar; só a indicação do dado a rolar na mesa.
+  if (dice.physical) {
+    return (
+      <span className={cx('inline-flex items-center gap-1', className)} title={`Role na mesa: ${expression}`}>
+        {children}
+        <span className="rounded border border-amber-400/40 px-1 text-[11px] text-amber-300">🎲 {expression}{mode !== 'normal' ? ` (${diceRollModeLabels[mode].toLowerCase()})` : ''}</span>
+      </span>
+    );
+  }
   return (
     <button
       type="button"

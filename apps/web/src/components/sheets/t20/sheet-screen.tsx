@@ -135,6 +135,11 @@ function T20SheetBody(props: T20SheetScreenProps) {
 
   const roll = (label: string, bonus: number) => {
     const expression = `1d20${bonus >= 0 ? '+' : ''}${bonus}`;
+    // Dados físicos: o jogador rola na mesa; a ficha só diz que dado rolar.
+    if (dice?.physical) {
+      toast({ tone: 'info', title: `${label}: role ${rollMode === 'normal' ? '1d20' : '2d20 (' + (rollMode === 'advantage' ? 'maior' : 'menor') + ')'} ${formatT20Bonus(bonus)} na mesa` });
+      return;
+    }
     if (dice) {
       void dice.roll({ expression, label, mode: rollMode });
       return;

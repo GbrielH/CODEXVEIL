@@ -16,9 +16,12 @@ export const sessionCreateSchema = z.object({
   title: requiredText('o título da sessão', 1, 120),
   scheduledAt: z.iso.datetime({ offset: true, error: 'Data inválida.' }).nullable().default(null),
   isPublished: z.boolean().default(false),
+  /** Presencial (o mestre escolhe dados físicos ou virtuais) ou online (dados virtuais). */
+  mode: z.enum(['presencial', 'online']).default('presencial'),
   /** Dados presenciais: a mesa rola dados físicos e o app não rola nas ações. */
   physicalDice: z.boolean().default(false),
 });
+export type SessionMode = 'presencial' | 'online';
 export type SessionCreateInput = z.input<typeof sessionCreateSchema>;
 export type SessionCreate = z.output<typeof sessionCreateSchema>;
 

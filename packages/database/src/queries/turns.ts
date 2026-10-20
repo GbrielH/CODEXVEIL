@@ -59,13 +59,15 @@ export interface SessionState {
   playing: boolean;
   /** A sessão em andamento usa dados presenciais. */
   physicalDice: boolean;
+  /** Modo da sessão em andamento. */
+  mode: 'presencial' | 'online';
 }
 
 export async function getSessionState(client: CodexveilClient, campaignId: string): Promise<SessionState> {
   const { data, error } = await client.rpc('campaign_session_state', { p_campaign_id: campaignId });
   if (error) throw toAppError(error);
-  const state = (data ?? {}) as { playing?: boolean; physicalDice?: boolean };
-  return { playing: state.playing === true, physicalDice: state.physicalDice === true };
+  const state = (data ?? {}) as { playing?: boolean; physicalDice?: boolean; mode?: string };
+  return { playing: state.playing === true, physicalDice: state.physicalDice === true, mode: state.mode === 'online' ? 'online' : 'presencial' };
 }
 
 /** A campanha tem sessão em andamento? (Jogadores só rolam e agem nela.) */

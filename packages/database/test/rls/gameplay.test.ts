@@ -92,7 +92,7 @@ describe('ações do turno', () => {
     const { gm, player, session, campaign, lyraCombatant, goblinCombatant } = await setupFight();
     await db.as(gm, (s) => s.query(`update public.sessions set physical_dice = true where id = $1`, [session]));
     const state = await db.as(player, (s) => s.one<{ state: { playing: boolean; physicalDice: boolean } }>(`select public.campaign_session_state($1) as state`, [campaign.id]));
-    expect(state.state).toEqual({ playing: true, physicalDice: true });
+    expect(state.state).toEqual({ playing: true, physicalDice: true, mode: 'presencial' });
     const attack = await db.as(player, (s) =>
       s.one<{ roll_id: string | null; roll_total: number | null; roll_detail: string | null }>(
         `select * from public.perform_turn_action($1, 'action', 'Atacar: Machado', $2, false, '1d20+5', 'normal', 17)`,

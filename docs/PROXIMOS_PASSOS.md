@@ -91,7 +91,7 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
 
 ## Pedidos de 2026-10-20 (depois da tradução do SRD, nesta ordem)
 
-1. **Sessão presencial ou online** na campanha. Presencial: o mestre escolhe dados físicos ou
+1. **[Feito em 2026-10-20] Sessão presencial ou online** na campanha. Presencial: o mestre escolhe dados físicos ou
    virtuais; com dados físicos, os dados virtuais somem e a ficha mostra que dado rolar em cada
    coisa (acerto do ataque, dano…). Online: dados virtuais ligados automaticamente (e, depois, o
    grid da sessão).
@@ -429,6 +429,14 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-20 — Sessão presencial ou online
+
+- Sessão (nova e editor): tipo Presencial (dados virtuais ou físicos) ou Online (dados virtuais
+  sempre). Com dados físicos, a ficha (site) troca os botões de rolar por "🎲 1d20+5" e o painel de
+  dados avisa para rolar na mesa; no T20, o clique diz que dado rolar. Migração
+  `20261020140000_session_mode.sql` aplicada (CHECK: online nunca usa dados físicos).
+  `pnpm check` 20/20. O app ainda não troca os botões pela indicação.
 
 ### 2026-10-20 — Tradução do SRD
 

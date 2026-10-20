@@ -29,8 +29,10 @@ export interface SessionSummary {
   scheduledAt: string | null;
   status: SessionStatus;
   isPublished: boolean;
-  /** A mesa rola dados físicos nesta sessão. */
+  /** A mesa rola dados físicos nesta sessão (só presencial). */
   physicalDice: boolean;
+  /** Presencial ou online (online sempre usa dados virtuais). */
+  mode: 'presencial' | 'online';
   updatedAt: string;
 }
 
@@ -47,7 +49,7 @@ export const sessionStatusLabels: Record<SessionStatus, string> = {
 };
 
 const SESSION_COLUMNS =
-  'id, campaign_id, number, title, scheduled_at, status, is_published, physical_dice, recap, version, created_at, updated_at' as const;
+  'id, campaign_id, number, title, scheduled_at, status, is_published, physical_dice, mode, recap, version, created_at, updated_at' as const;
 
 type SessionRow = Pick<
   Tables<'sessions'>,
@@ -59,6 +61,7 @@ type SessionRow = Pick<
   | 'status'
   | 'is_published'
   | 'physical_dice'
+  | 'mode'
   | 'recap'
   | 'version'
   | 'created_at'
@@ -75,6 +78,7 @@ function toSessionDetail(row: SessionRow): SessionDetail {
     status: row.status,
     isPublished: row.is_published,
     physicalDice: row.physical_dice,
+    mode: row.mode === 'online' ? 'online' : 'presencial',
     recap: row.recap,
     version: row.version,
     createdAt: row.created_at,
@@ -139,7 +143,8 @@ export async function createSession(
       title: input.title,
       scheduled_at: input.scheduledAt,
       is_published: input.isPublished,
-      physical_dice: input.physicalDice,
+      mode: input.mode,
+      physical_dice: input.mode === 'online' ? false : input.physicalDice,
     })
     .select('id')
     .single();
@@ -160,7 +165,8 @@ export async function updateSession(
       title: input.title,
       scheduled_at: input.scheduledAt,
       is_published: input.isPublished,
-      physical_dice: input.physicalDice,
+      mode: input.mode,
+      physical_dice: input.mode === 'online' ? false : input.physicalDice,
       recap: input.recap,
     })
     .eq('id', sessionId)

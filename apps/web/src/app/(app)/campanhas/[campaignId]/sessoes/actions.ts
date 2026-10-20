@@ -27,6 +27,7 @@ export async function createSessionAction(
     title: readText(formData, 'title'),
     scheduledAt: scheduledAt === undefined ? 'data-invalida' : scheduledAt,
     isPublished: formData.get('isPublished') === 'on',
+    mode: formData.get('mode') === 'online' ? ('online' as const) : ('presencial' as const),
     physicalDice: formData.get('physicalDice') === 'on',
   };
   const parsed = sessionCreateSchema.safeParse(raw);

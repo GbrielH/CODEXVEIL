@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
+import { SessionModeFields, type SessionModeValue } from '@/components/sessions/session-mode-fields';
 import { Alert } from '@/components/ui/alert';
 import { DateTimeField } from '@/components/ui/date-time-field';
 import { CheckboxField, TextField } from '@/components/ui/field';
@@ -10,6 +11,7 @@ import { createSessionAction } from './actions';
 
 export function NewSessionForm({ campaignId, suggestedTitle }: { campaignId: string; suggestedTitle: string }) {
   const [state, action] = useActionState(createSessionAction.bind(null, campaignId), idleFormState);
+  const [sessionMode, setSessionMode] = useState<{ mode: SessionModeValue; physicalDice: boolean }>({ mode: 'presencial', physicalDice: false });
   return (
     <form action={action} noValidate className="flex flex-col gap-4">
       {state.message ? <Alert tone="danger">{state.message}</Alert> : null}
@@ -37,12 +39,7 @@ export function NewSessionForm({ campaignId, suggestedTitle }: { campaignId: str
         label="Publicar para os jogadores"
         description="Jogadores veem apenas sessões publicadas, e só os blocos públicos. Notas privadas nunca são enviadas a eles."
       />
-      <CheckboxField
-        id="physicalDice"
-        name="physicalDice"
-        label="Dados presenciais"
-        description="Para mesas presenciais: os jogadores rolam dados físicos e o app não rola nas ações. Dá para mudar depois, no editor da sessão."
-      />
+      <SessionModeFields mode={sessionMode.mode} physicalDice={sessionMode.physicalDice} onChange={setSessionMode} inputs />
       <div>
         <SubmitButton pendingLabel="Criando…">Criar e abrir o editor</SubmitButton>
       </div>

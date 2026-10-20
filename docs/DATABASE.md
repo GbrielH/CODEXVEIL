@@ -166,6 +166,9 @@ Migração `20261018120000_gameplay_turns.sql`:
 - Índices únicos `characters_one_per_player_idx` e `campaign_notes_one_pinned_idx` (duplicatas
   antigas são desvinculadas/desafixadas antes).
 
+Migração `20261020140000_session_mode.sql`: `sessions.mode` (`presencial`/`online`; online nunca
+com `physical_dice`, por CHECK) e `campaign_session_state` passa a devolver `mode`.
+
 Migração `20261020130000_level_grants.sql` (subida de nível na campanha): `characters.granted_level`
 (nível liberado pelo mestre, só muda pela RPC `grant_character_level`); gatilho
 `characters_level_guard` impede o jogador de passar do nível liberado (SQLSTATE `CVLVL`); com

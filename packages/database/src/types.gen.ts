@@ -1401,6 +1401,7 @@ export type Database = {
           created_by: string | null;
           id: string;
           is_published: boolean;
+          mode: string;
           number: number;
           physical_dice: boolean;
           recap: string;
@@ -1416,6 +1417,7 @@ export type Database = {
           created_by?: string | null;
           id?: string;
           is_published?: boolean;
+          mode?: string;
           number?: number;
           physical_dice?: boolean;
           recap?: string;
@@ -1431,6 +1433,7 @@ export type Database = {
           created_by?: string | null;
           id?: string;
           is_published?: boolean;
+          mode?: string;
           number?: number;
           physical_dice?: boolean;
           recap?: string;

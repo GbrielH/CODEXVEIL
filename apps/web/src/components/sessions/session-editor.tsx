@@ -46,6 +46,7 @@ import { DateTimeField } from '@/components/ui/date-time-field';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CheckboxField, TextareaField, TextField } from '@/components/ui/field';
+import { SessionModeFields, type SessionModeValue } from './session-mode-fields';
 import { SaveStatus } from '@/components/ui/save-status';
 import { EmptyState } from '@/components/ui/states';
 import { useToast } from '@/components/ui/toast';
@@ -78,6 +79,7 @@ interface SessionMeta {
   title: string;
   scheduledAt: string;
   isPublished: boolean;
+  mode: SessionModeValue;
   physicalDice: boolean;
   recap: string;
 }
@@ -88,7 +90,8 @@ function toUpdate(meta: SessionMeta) {
     title: meta.title,
     scheduledAt: scheduledAt === undefined ? 'data-invalida' : scheduledAt,
     isPublished: meta.isPublished,
-    physicalDice: meta.physicalDice,
+    mode: meta.mode,
+    physicalDice: meta.mode === 'online' ? false : meta.physicalDice,
     recap: meta.recap,
   };
 }
@@ -122,6 +125,7 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
       title: session.title,
       scheduledAt: toBrasiliaInput(session.scheduledAt),
       isPublished: session.isPublished,
+      mode: session.mode,
       physicalDice: session.physicalDice,
       recap: session.recap,
     },
@@ -280,13 +284,7 @@ export function SessionEditor({ campaignId, session, initialBlocks, initialImage
               checked={meta.value.isPublished}
               onChange={(event) => meta.update((current) => ({ ...current, isPublished: event.target.checked }))}
             />
-            <CheckboxField
-              id="session-physical-dice"
-              label="Dados presenciais"
-              description="A mesa rola dados físicos nesta sessão: as ações do turno não rolam no app, e o jogador pode anotar o resultado do dado. Vale só para esta sessão."
-              checked={meta.value.physicalDice}
-              onChange={(event) => meta.update((current) => ({ ...current, physicalDice: event.target.checked }))}
-            />
+            <SessionModeFields mode={meta.value.mode} physicalDice={meta.value.physicalDice} onChange={(next) => meta.update((current) => ({ ...current, ...next }))} />
             <TextareaField
               id="session-recap"
               label="Resumo para os jogadores"

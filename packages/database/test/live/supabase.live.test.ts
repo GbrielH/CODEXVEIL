@@ -345,6 +345,7 @@ describe.skipIf(!live)('Supabase real (integração)', () => {
       title: '[TESTE] Sessão 1',
       scheduledAt: null,
       isPublished: false,
+      mode: 'presencial',
       physicalDice: false,
     });
     await createSessionBlock(gm.client, {
@@ -370,6 +371,7 @@ describe.skipIf(!live)('Supabase real (integração)', () => {
       title: '[TESTE] Sessão 1',
       scheduledAt: null,
       isPublished: true,
+      mode: 'presencial',
       physicalDice: false,
       recap: '',
     });
