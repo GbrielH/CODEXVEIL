@@ -120,6 +120,7 @@ export async function CharacterSheet({ characterId, variant = 'full' }: { charac
           portraitUrl: character.portraitPath ? (portraits[character.portraitPath] ?? null) : null,
           campaign: character.campaign ? { id: character.campaign.id, name: character.campaign.name } : null,
           grantedLevel: character.grantedLevel,
+          portraitPath: character.portraitPath,
         }}
         sheet={sheet}
         resources={resources}

@@ -31,6 +31,7 @@ import { colors } from '@/lib/theme';
 import { DiceProvider } from '@/components/dice/dice';
 import { AttributesSection } from './attributes-section';
 import { SheetContext, type MobileSheetContext } from './context';
+import { DeleteCharacterCard } from './delete-character';
 import { EvolutionSection } from './evolution-section';
 import { FeaturesSection } from './features-section';
 import { InventorySection } from './inventory-section';
@@ -282,6 +283,7 @@ export function SheetScreen(props: SheetScreenProps) {
             gate={{ inCampaign: Boolean(character.campaign), isGm: character.viewer.membership?.role === 'gm', isOwner: character.viewer.isOwner, grantedLevel: character.grantedLevel }}
           />
         ) : null}
+        {tab === 'personagem' && character.viewer.isOwner ? <DeleteCharacterCard characterId={character.id} name={character.name} portraitPath={character.portraitPath} /> : null}
       </Screen>
       </DiceProvider>
     </SheetContext.Provider>

@@ -45,6 +45,7 @@ import { AppText, Badge, Card } from '@/components/ui/primitives';
 import { Segmented } from '@/components/ui/segmented';
 import { Notice } from '@/components/ui/states';
 import { DiceProvider, useDice } from '@/components/dice/dice';
+import { DeleteCharacterCard } from '@/components/sheet/delete-character';
 import { LevelGate, type LevelGateInfo } from '@/components/sheet/level-gate';
 import { T20NewItem } from './new-item';
 import { T20TurnCard, logT20TurnUse } from './turn-card';
@@ -69,6 +70,7 @@ interface Props {
   gate: LevelGateInfo;
   /** Campanha do personagem (turno e registro de uso), ou `null`. */
   campaignId: string | null;
+  portraitPath: string | null;
 }
 
 /** Ficha do Tormenta20 no app: vida, mana, condições, testes, poderes, magias, itens e subida de nível. */
@@ -194,6 +196,7 @@ function T20SheetBody(props: Props) {
           <LevelGate characterId={props.character.id} characterName={props.character.name} level={derived.level} canEditSheet={props.canEditSheet} gate={props.gate} onLevelUp={() => setLevelUp(true)} />
         </Card>
       ) : null}
+      {tab === 'evolucao' && props.gate.isOwner ? <DeleteCharacterCard characterId={props.character.id} name={props.character.name} portraitPath={props.portraitPath} /> : null}
 
       {tab === 'jogo' && props.campaignId ? (
         <T20TurnCard

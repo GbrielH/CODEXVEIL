@@ -3,7 +3,12 @@
 Ideias aprovadas pelo responsável, mas **adiadas**. Antes de começar uma delas, mova-a para
 [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md).
 
-## Dado 3D de verdade (estilo app "Dice") — adiado em 2026-10-20
+## Dado 3D de verdade (estilo app "Dice") — retomado em 2026-10-20 (nova versão)
+
+**Pedido atualizado (2026-10-20):** os dados 3D giram numa **caixinha no canto da tela** (não no
+meio), e **cada jogador escolhe uma cor**, que é a cor dos dados dele (todos na mesa veem os dados
+de cada um na cor do dono). Precisa funcionar também no app.
+
 
 - Hoje (2026-10-20): dados grandes em 2D caem, quicam e giram no meio da tela (site e app), até 6
   por vez (`components/dice/dice-throw.tsx`).

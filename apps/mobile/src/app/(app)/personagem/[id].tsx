@@ -66,6 +66,7 @@ export default function CharacterScreen() {
           key={data.character.id}
           character={{ id: data.character.id, name: data.character.name, version: data.character.version }}
           campaignId={data.character.campaign?.id ?? null}
+          portraitPath={data.character.portraitPath}
           gate={{ inCampaign: Boolean(data.character.campaign), isGm: data.character.viewer.membership?.role === 'gm', isOwner: data.character.viewer.isOwner, grantedLevel: data.character.grantedLevel }}
           sheet={t20Sheet}
           resources={data.resources}

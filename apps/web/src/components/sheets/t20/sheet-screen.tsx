@@ -41,6 +41,7 @@ import { TextareaField } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
 import { Tabs } from '@/components/ui/tabs';
 import { DiceProvider, useDice } from '@/components/dice/dice-roller';
+import { DeleteCharacterCard } from '@/components/characters/delete-character';
 import { T20Inventory } from './inventory';
 import { T20TurnCard } from './turn-card';
 import { useToast } from '@/components/ui/toast';
@@ -50,7 +51,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { T20LevelUpButton } from './level-up';
 
 interface T20SheetScreenProps {
-  character: { id: string; name: string; ownerName: string; version: number; portraitUrl: string | null; campaign: { id: string; name: string } | null; grantedLevel: number };
+  character: { id: string; name: string; ownerName: string; version: number; portraitUrl: string | null; campaign: { id: string; name: string } | null; grantedLevel: number; portraitPath: string | null };
   sheet: T20Sheet;
   resources: CharacterResource[];
   conditions: CharacterCondition[];
@@ -385,6 +386,8 @@ function T20SheetBody(props: T20SheetScreenProps) {
           />
         </Card>
       ) : null}
+
+      {tab === 'personagem' && permissions.isOwner ? <DeleteCharacterCard characterId={character.id} name={character.name} portraitPath={character.portraitPath} /> : null}
 
       {tab === 'personagem' ? (
         <StoryCard
