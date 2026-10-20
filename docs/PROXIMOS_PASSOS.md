@@ -107,7 +107,7 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
    houver.
 9. **[Feito em 2026-10-20]** Combate do mestre: só a definição dos turnos (sem registrar ação/rolagem/alvo pelo painel); os
    jogadores conferem a ficha e ajustam a vida.
-10. Dado 3D numa caixinha no canto, com a cor escolhida por cada jogador (ver
+10. **[Feito em 2026-10-20 no site; app em melhorias futuras]** Dado 3D numa caixinha no canto, com a cor escolhida por cada jogador (ver
     [`MELHORIAS_FUTURAS.md`](MELHORIAS_FUTURAS.md)).
 
 ## Correções do QA para Tormenta20 (2026-10-20, concluídas)
@@ -429,6 +429,17 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-20 — dados 3D no site com cor por jogador
+
+- Caixinha recolhível no canto com dados 3D (`components/dice/dice-tray.tsx`) no lugar da
+  animação 2D do meio da tela; o dado para no valor sorteado pelo servidor; até 6 dados 3D por
+  rolagem; respeita "reduzir movimento".
+- Cada participante escolhe a cor dos dados na campanha (RPC `set_my_dice_color`); a mesa vê os
+  dados de cada um na cor do dono, em tempo real.
+- App: fica para um APK futuro (`MELHORIAS_FUTURAS.md`).
+- Verificado: `pnpm check` 20/20; migração aplicada em produção. Não verificado no navegador
+  com duas contas.
 
 ### 2026-10-20 — Ações de combate personalizadas
 

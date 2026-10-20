@@ -21,7 +21,7 @@ import { cx } from '@/lib/cx';
 import { failureMessage } from '@/lib/client-errors';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
-import { DiceThrow } from './dice-throw';
+import { DiceTray, type TrayRoll } from './dice-tray';
 
 export interface RollRequest {
   expression: string;
@@ -73,7 +73,7 @@ export function DiceProvider({
   children: ReactNode;
 }) {
   const { toast } = useToast();
-  const [throwing, setThrowing] = useState<(ShownRoll & { key: number }) | null>(null);
+  const [pending, setPending] = useState<TrayRoll | null>(null);
   const [physical, setPhysical] = useState(false);
   const gated = Boolean(campaignId && sessionGate);
   useEffect(() => {
@@ -99,7 +99,6 @@ export function DiceProvider({
     },
     gated,
   );
-  const clearThrow = useCallback(() => setThrowing(null), []);
 
   const roll = useCallback(
     async (request: RollRequest): Promise<ShownRoll | null> => {
@@ -139,8 +138,8 @@ export function DiceProvider({
         toast({ tone: 'danger', title: 'Os dados não foram rolados', description: failureMessage(error, 'Confira a expressão e tente de novo.') });
         return null;
       }
-      // Uma rolagem nova substitui a animação anterior (só uma por vez na tela).
-      setThrowing({ ...shown, key: Date.now() });
+      // Vai para a caixinha de dados 3D no canto (com fila curta se chegarem várias).
+      setPending({ key: `local-${Date.now()}`, roll: shown, rollerName: 'Você', userId: null });
       const natural = naturalD20(shown);
       toast({
         tone: natural === 20 ? 'success' : natural === 1 ? 'danger' : 'info',
@@ -156,7 +155,7 @@ export function DiceProvider({
   return (
     <DiceContext.Provider value={value}>
       {children}
-      {throwing ? <DiceThrow key={throwing.key} roll={throwing} onDone={clearThrow} /> : null}
+      {enabled ? <DiceTray campaignId={campaignId} pending={pending} /> : null}
     </DiceContext.Provider>
   );
 }

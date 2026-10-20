@@ -123,3 +123,16 @@ export async function clearDiceRolls(client: CodexveilClient, campaignId: string
   const { error } = await client.from('dice_rolls').delete().eq('campaign_id', campaignId);
   if (error) throw toAppError(error);
 }
+
+/** Cor dos dados 3D de cada participante da campanha (id do usuário → #rrggbb). */
+export async function listCampaignDiceColors(client: CodexveilClient, campaignId: string): Promise<Record<string, string>> {
+  const { data, error } = await client.from('campaign_members').select('user_id, dice_color').eq('campaign_id', campaignId);
+  if (error) throw toAppError(error);
+  return Object.fromEntries((data ?? []).filter((row) => row.dice_color).map((row) => [row.user_id, row.dice_color as string]));
+}
+
+/** Escolhe a cor dos próprios dados nesta campanha. */
+export async function setMyDiceColor(client: CodexveilClient, campaignId: string, color: string): Promise<void> {
+  const { error } = await client.rpc('set_my_dice_color', { p_campaign_id: campaignId, p_color: color });
+  if (error) throw toAppError(error);
+}

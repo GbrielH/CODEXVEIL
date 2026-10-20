@@ -3,7 +3,13 @@
 Ideias aprovadas pelo responsável, mas **adiadas**. Antes de começar uma delas, mova-a para
 [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md).
 
-## Dado 3D de verdade (estilo app "Dice") — retomado em 2026-10-20 (nova versão)
+## Dado 3D de verdade (estilo app "Dice") — site feito em 2026-10-20; falta o app
+
+**Feito no site (2026-10-20):** caixinha no canto inferior direito com dados 3D
+(`@3d-dice/dice-box-threejs`, MIT, carregada sob demanda), cor escolhida por cada jogador na
+campanha (`campaign_members.dice_color`) e rolagens dos outros em tempo real. **Pendente no app:**
+exige componente nativo (WebView ou GL), ou seja, APK novo (gasta um build da cota); por isso
+ficou como melhoria futura. No app continua a animação 2D.
 
 **Pedido atualizado (2026-10-20):** os dados 3D giram numa **caixinha no canto da tela** (não no
 meio), e **cada jogador escolhe uma cor**, que é a cor dos dados dele (todos na mesa veem os dados

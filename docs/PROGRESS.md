@@ -5,6 +5,10 @@
 
 ## Estado atual
 
+**2026-10-20 (dados 3D):** o site mostra as rolagens numa caixinha 3D no canto, com cor por
+jogador (migração `20261020160000_dice_colors.sql` aplicada). `pnpm check` 20/20. Sem teste
+visual no navegador nesta rodada. Próximo passo: grade da sessão (aguardando o escopo).
+
 As fases de 1 a 7 do plano estão implementadas. O MVP está **publicado**: site em
 <https://codexveil.vercel.app>, backend no projeto Supabase `CODEXVEIL` e APK gerado pelo EAS
 (veja [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md)). A API foi validada ao vivo por um teste de

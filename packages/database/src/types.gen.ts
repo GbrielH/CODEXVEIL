@@ -251,18 +251,21 @@ export type Database = {
       campaign_members: {
         Row: {
           campaign_id: string;
+          dice_color: string | null;
           joined_at: string;
           role: Database['public']['Enums']['campaign_role'];
           user_id: string;
         };
         Insert: {
           campaign_id: string;
+          dice_color?: string | null;
           joined_at?: string;
           role?: Database['public']['Enums']['campaign_role'];
           user_id: string;
         };
         Update: {
           campaign_id?: string;
+          dice_color?: string | null;
           joined_at?: string;
           role?: Database['public']['Enums']['campaign_role'];
           user_id?: string;
@@ -1800,6 +1803,13 @@ export type Database = {
         Args: {
           p_character_id: string;
           p_campaign_id: string;
+        };
+        Returns: undefined;
+      };
+      set_my_dice_color: {
+        Args: {
+          p_campaign_id: string;
+          p_color: string;
         };
         Returns: undefined;
       };

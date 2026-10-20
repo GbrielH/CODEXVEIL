@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@3d-dice/dice-box-threejs": "0.0.12",
     "@codexveil/database": "workspace:*",
     "@codexveil/domain": "workspace:*",
     "@codexveil/rpg-systems": "workspace:*",
