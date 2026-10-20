@@ -79,7 +79,7 @@ export default async function LibraryPage({ params, searchParams }: PageProps<'/
       <Notice value={query.aviso} />
       <div className={canManage ? 'grid gap-6 lg:grid-cols-[1fr_20rem]' : 'flex flex-col gap-6'}>
         <section aria-label="Registros da biblioteca" className="flex flex-col gap-4">
-          <LibraryNav campaignId={campaign.id} active={kind ?? 'all'} isGm={isGm} />
+          <LibraryNav campaignId={campaign.id} active={kind ?? 'all'} isGm={isGm} systemId={campaign.systemId} />
           {!isGm ? (
             <p className="text-sm text-fg-muted">Personagens e criaturas que o mestre já revelou ao grupo.</p>
           ) : null}

@@ -43,7 +43,6 @@ import { useToast } from '@/components/ui/toast';
 import { cx } from '@/lib/cx';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import type { GmTableContext } from './gm-table';
-import { GmTurnActions } from './turn-actions';
 
 interface RosterEntry extends Combatant {
   source: EncounterCombatant;
@@ -397,14 +396,11 @@ export function CombatTracker({ context }: { context: GmTableContext }) {
         </div>
       ) : null}
 
-      {activeEntry && canManage ? (
-        <GmTurnActions
-          campaignId={campaignId}
-          encounterId={encounter.id}
-          round={encounter.round}
-          actor={{ id: activeEntry.id, name: activeEntry.name }}
-          targets={ordered.filter((entry) => entry.id !== activeEntry.id && !entry.isDefeated).map((entry) => ({ id: entry.id, name: entry.name }))}
-        />
+      {/* Combate roleplay: o painel só define os turnos; cada um confere a ficha, rola e ajusta a vida. */}
+      {activeEntry ? (
+        <p className="rounded-md border border-parchment-300/40 bg-wine-900/30 px-3 py-2 text-sm">
+          Vez de <strong>{activeEntry.name}</strong>. Os jogadores conferem a ficha, rolam e ajustam a vida; você passa o turno quando terminarem.
+        </p>
       ) : null}
 
       <ol className="flex flex-col gap-1.5" aria-label="Ordem dos turnos">

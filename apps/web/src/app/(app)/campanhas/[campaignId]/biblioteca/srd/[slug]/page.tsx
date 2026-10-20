@@ -12,6 +12,8 @@ type Props = PageProps<'/campanhas/[campaignId]/biblioteca/srd/[slug]'>;
 
 async function load(campaignId: string, slug: string) {
   const { campaign } = await loadCampaignOrNotFound(campaignId);
+  // O SRD é de D&D 5e: outras mesas usam as ameaças e itens dos próprios livros.
+  if (campaign.systemId !== 'dnd5e') notFound();
   if (campaign.role !== 'gm' || campaign.systemId !== 'dnd5e') notFound();
   const monster = (await loadSrdMonsters()).find((entry) => srdSlug(entry.name) === slug);
   if (!monster) notFound();

@@ -61,7 +61,7 @@ export default async function ItemsPage({ params, searchParams }: PageProps<'/ca
       <Notice value={query.aviso} />
       <div className={canManage ? 'grid gap-6 lg:grid-cols-[1fr_22rem]' : 'flex flex-col gap-6'}>
         <section aria-label="Itens da campanha" className="flex min-w-0 flex-col gap-4">
-          <LibraryNav campaignId={campaign.id} active="items" isGm={isGm} />
+          <LibraryNav campaignId={campaign.id} active="items" isGm={isGm} systemId={campaign.systemId} />
           <p className="text-sm text-fg-muted">
             {isGm
               ? 'Itens criados por você (fora do livro) e itens mágicos copiados do SRD. Entregue-os aos personagens pela página do item.'
@@ -73,7 +73,9 @@ export default async function ItemsPage({ params, searchParams }: PageProps<'/ca
               title={isGm ? 'Nenhum item ainda' : 'Nada revelado ainda'}
               description={
                 isGm
-                  ? 'Crie um item ao lado ou copie um item mágico pela aba “Itens mágicos SRD”.'
+                  ? campaign.systemId === 'dnd5e'
+                    ? 'Crie um item ao lado ou copie um item mágico pela aba “Itens mágicos SRD”.'
+                    : 'Crie um item ao lado ou copie itens dos livros importados (aba Livros).'
                   : 'Quando o mestre revelar itens, eles aparecerão aqui.'
               }
             />

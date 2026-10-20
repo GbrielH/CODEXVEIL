@@ -100,12 +100,12 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
 4. **[Feito em 2026-10-20]** Subida de nível: poder "Treinamento em Perícia" abre a escolha da perícia, como no Aumento de
    Atributo.
 5. **[Feito em 2026-10-20]** Benefícios de origem: breve descrição de cada perícia/poder.
-6. Aba Sessão do mestre: mostrar a sessão montada e iniciada, com botão prático de liberar cada
+6. **[Feito em 2026-10-20]** Aba Sessão do mestre: mostrar a sessão montada e iniciada, com botão prático de liberar cada
    trecho aos jogadores ali mesmo.
 7. **[Feito em 2026-10-20]** Perícias já treinadas nas listas de escolha: elemento visual (não só desabilitar).
-8. Tormenta20: tirar Bestiário SRD e Itens mágicos SRD (de D&D) da biblioteca; usar os do T20 se
+8. **[Feito em 2026-10-20]** Tormenta20: tirar Bestiário SRD e Itens mágicos SRD (de D&D) da biblioteca; usar os do T20 se
    houver.
-9. Combate do mestre: só a definição dos turnos (sem registrar ação/rolagem/alvo pelo painel); os
+9. **[Feito em 2026-10-20]** Combate do mestre: só a definição dos turnos (sem registrar ação/rolagem/alvo pelo painel); os
    jogadores conferem a ficha e ajustam a vida.
 10. Dado 3D numa caixinha no canto, com a cor escolhida por cada jogador (ver
     [`MELHORIAS_FUTURAS.md`](MELHORIAS_FUTURAS.md)).
@@ -429,6 +429,15 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-20 — Aba Sessão do mestre, biblioteca por sistema e combate só com turnos
+
+- Aba Sessão: o mestre vê a sessão em andamento (ou a próxima, mesmo não publicada) com o painel
+  "Lore da sessão" e o botão Liberar/Ocultar por trecho, e abaixo o que os jogadores veem.
+- Biblioteca: em campanhas que não são de D&D, as abas do SRD somem (e as páginas dão 404); entra
+  o atalho "Ameaças e itens dos livros".
+- Combate do mestre: sem registrar ação, alvo ou rolagem pelo painel; só modo, ordem e passar o
+  turno. `pnpm check` 20/20.
 
 ### 2026-10-20 — Descrição dos benefícios de origem
 

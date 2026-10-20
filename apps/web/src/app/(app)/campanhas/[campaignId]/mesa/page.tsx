@@ -7,7 +7,6 @@ import {
   listDiceRolls,
   listSceneEntities,
   listSessionBlocks,
-  resolveBlockReferences,
   listSessions,
   pickCurrentSession,
   signedMediaUrls,
@@ -21,8 +20,7 @@ import { EmptyState, ForbiddenState } from '@/components/ui/states';
 import { loadCampaignOrNotFound } from '@/lib/campaigns';
 import { campaignPath } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import type { RevealBlock } from '@/components/gm/reveal-panel';
-import { blockLabel, blockPreview } from '@/lib/block-preview';
+import { loadRevealBlocks } from '@/lib/reveal-blocks';
 
 export const metadata: Metadata = { title: 'Mesa do mestre' };
 
@@ -62,22 +60,7 @@ export default async function GmTablePage({ params }: PageProps<'/campanhas/[cam
     listDiceRolls(supabase, campaign.id, 30),
   ]);
 
-  // Lore liberável: todos os blocos menos notas privadas e separadores.
-  const revealable = blocks.filter((block) => block.type !== 'gm_note' && block.type !== 'divider');
-  const [references, imageUrls] = await Promise.all([
-    resolveBlockReferences(supabase, revealable),
-    signedMediaUrls(
-      supabase,
-      revealable.map((block) => (block.content?.type === 'image' ? block.content.data.path : null)),
-    ),
-  ]);
-  const reveal: RevealBlock[] = revealable.map((block) => ({
-    id: block.id,
-    label: blockLabel(block),
-    preview: blockPreview(block, references),
-    imageUrl: block.content?.type === 'image' ? (imageUrls[block.content.data.path] ?? null) : null,
-    visibility: block.visibility,
-  }));
+  const reveal = await loadRevealBlocks(supabase, blocks);
 
   // Valores iniciais da instância na cena, calculados pelo módulo do sistema da campanha.
   const system = findSystem(campaign.systemId);

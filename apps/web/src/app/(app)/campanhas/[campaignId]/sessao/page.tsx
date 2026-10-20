@@ -1,26 +1,34 @@
-import { listSessionBlocks, listSessions, pickCurrentSession, resolveBlockReferences, signedMediaUrls } from '@codexveil/database';
-import type { Metadata } from 'next';
+import { listSessionBlocks, listSessions, pickCurrentSession, resolveBlockReferences, sessionStatusLabels, signedMediaUrls } from '@codexveil/database';
+import type { Metadata, Route } from 'next';
+import { RevealPanel } from '@/components/gm/reveal-panel';
 import { BlockRenderer } from '@/components/sessions/block-renderer';
-import { Alert } from '@/components/ui/alert';
+import { ButtonLink } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Divider } from '@/components/ui/divider';
 import { EmptyState } from '@/components/ui/states';
 import { loadCampaignOrNotFound } from '@/lib/campaigns';
+import { loadRevealBlocks } from '@/lib/reveal-blocks';
+import { campaignPath, sessionPath } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { LiveRefresh } from './live-refresh';
 
 export const metadata: Metadata = { title: 'Sessão' };
 
 /**
- * Aba Sessão: os trechos da lore que o mestre liberou na sessão atual, em tempo real.
- * Jogadores só recebem do banco os blocos liberados; o mestre vê aqui o mesmo que eles.
+ * Aba Sessão.
+ *   * Mestre: a sessão em andamento (ou a próxima) com toda a lore montada e um botão para
+ *     liberar cada trecho aos jogadores; abaixo, o que os jogadores estão vendo.
+ *   * Jogadores: os trechos liberados da sessão atual, em tempo real.
  */
 export default async function SessionTabPage({ params }: PageProps<'/campanhas/[campaignId]/sessao'>) {
   const { campaignId } = await params;
   const { campaign } = await loadCampaignOrNotFound(campaignId);
   const supabase = await createSupabaseServerClient();
-  const sessions = (await listSessions(supabase, campaign.id)).filter((session) => session.isPublished);
-  const session = pickCurrentSession(sessions) ?? [...sessions].sort((a, b) => b.number - a.number)[0] ?? null;
   const isGm = campaign.role === 'gm';
+  const all = await listSessions(supabase, campaign.id);
+  // O mestre vê também sessões ainda não publicadas; os jogadores só recebem as publicadas.
+  const sessions = isGm ? all : all.filter((session) => session.isPublished);
+  const session = pickCurrentSession(sessions) ?? [...sessions].sort((a, b) => b.number - a.number)[0] ?? null;
 
   if (!session) {
     return (
@@ -28,30 +36,52 @@ export default async function SessionTabPage({ params }: PageProps<'/campanhas/[
         <div className="flex justify-end">
           <LiveRefresh campaignId={campaign.id} />
         </div>
-        <EmptyState title="Nada liberado ainda" description="Quando o mestre liberar trechos da sessão (textos, imagens de NPCs, falas), eles aparecem aqui." />
+        <EmptyState
+          title={isGm ? 'Nenhuma sessão montada' : 'Nada liberado ainda'}
+          description={isGm ? 'Crie uma sessão e escreva o roteiro; aqui você libera cada trecho aos jogadores durante o jogo.' : 'Quando o mestre liberar trechos da sessão (textos, imagens de NPCs, falas), eles aparecem aqui.'}
+          action={isGm ? <ButtonLink href={campaignPath(campaign.id, '/sessoes') as Route}>Ir para as sessões</ButtonLink> : undefined}
+        />
       </div>
     );
   }
 
-  const blocks = (await listSessionBlocks(supabase, session.id)).filter((block) => block.visibility === 'members');
-  const [references, imageUrls] = await Promise.all([
+  const allBlocks = await listSessionBlocks(supabase, session.id);
+  const blocks = allBlocks.filter((block) => block.visibility === 'members');
+  const [references, imageUrls, reveal] = await Promise.all([
     resolveBlockReferences(supabase, blocks),
     signedMediaUrls(
       supabase,
       blocks.map((block) => (block.content?.type === 'image' ? block.content.data.path : null)),
     ),
+    isGm ? loadRevealBlocks(supabase, allBlocks) : Promise.resolve([]),
   ]);
 
   return (
     <article className="mx-auto flex w-full max-w-3xl flex-col gap-5">
       <header className="flex flex-wrap items-center gap-2 border-b border-line pb-4">
         <Badge tone="parchment">Sessão {session.number}</Badge>
+        {isGm ? <Badge tone={session.status === 'in_progress' ? 'brand' : 'neutral'}>{sessionStatusLabels[session.status]}</Badge> : null}
         <h2 className="min-w-0 flex-1 text-2xl leading-tight">{session.title}</h2>
+        {isGm ? (
+          <ButtonLink href={`${sessionPath(campaign.id, session.id)}/editar` as Route} variant="ghost" size="sm">
+            Editar roteiro
+          </ButtonLink>
+        ) : null}
         <LiveRefresh campaignId={campaign.id} />
       </header>
-      {isGm ? <Alert tone="info">Esta é a visão dos jogadores. Libere ou oculte trechos na Mesa do mestre.</Alert> : null}
+
+      {isGm ? (
+        <>
+          <RevealPanel sessionId={session.id} isPublished={session.isPublished} isActive={campaign.status === 'active'} blocks={reveal} />
+          <Divider label="O que os jogadores estão vendo" />
+        </>
+      ) : null}
+
       {blocks.length === 0 ? (
-        <EmptyState title="Nada liberado ainda" description="O mestre ainda não liberou trechos desta sessão. Eles aparecem aqui assim que forem liberados." />
+        <EmptyState
+          title="Nada liberado ainda"
+          description={isGm ? 'Use “Liberar” acima: o trecho aparece na hora na aba Sessão dos jogadores.' : 'O mestre ainda não liberou trechos desta sessão. Eles aparecem aqui assim que forem liberados.'}
+        />
       ) : (
         blocks.map((block) => <BlockRenderer key={block.id} block={block} campaignId={campaign.id} references={references} imageUrls={imageUrls} showVisibility={false} />)
       )}

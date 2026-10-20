@@ -40,6 +40,8 @@ function single(value: string | string[] | undefined): string {
 export default async function SrdItemsPage({ params, searchParams }: PageProps<'/campanhas/[campaignId]/biblioteca/srd-itens'>) {
   const [{ campaignId }, query] = await Promise.all([params, searchParams]);
   const { campaign } = await loadCampaignOrNotFound(campaignId);
+  // O SRD é de D&D 5e: outras mesas usam as ameaças e itens dos próprios livros.
+  if (campaign.systemId !== 'dnd5e') notFound();
   if (campaign.role !== 'gm' || campaign.systemId !== 'dnd5e') notFound();
 
   const term = single(query.q);
