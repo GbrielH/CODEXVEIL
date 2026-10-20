@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createCharacter, createSession, createTable } from '../support/fixtures';
+import { chooseDiceColors, createCharacter, createSession, createTable } from '../support/fixtures';
 import { TestDatabase, admin, expectSqlError, service } from '../support/pglite';
 
 let db: TestDatabase;
@@ -18,6 +18,7 @@ async function playing() {
   await db.as(table.gm, (s) =>
     s.query(`insert into public.sessions (campaign_id, title, is_published, status) values ($1, 'Em jogo', true, 'in_progress')`, [table.campaign.id]),
   );
+  await chooseDiceColors(db, table);
   return table;
 }
 

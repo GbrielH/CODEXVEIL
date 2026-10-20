@@ -118,10 +118,15 @@ export async function createTable(db: TestDatabase) {
   await addMember(db, campaign.id, coGm, 'gm');
   await addMember(db, campaign.id, player);
   await addMember(db, campaign.id, otherPlayer);
-  // Cor dos dados (obrigatória para rolar): o mestre escolhe primeiro.
-  const colors: [TestUser, string][] = [[gm, '#7a1f2b'], [coGm, '#d98e04'], [player, '#2f7d4a'], [otherPlayer, '#1f6f8b']];
+  const table = { gm, coGm, player, otherPlayer, outsider, campaign };
+  await chooseDiceColors(db, table);
+  return table;
+}
+
+/** Cor dos dados (obrigatória para rolar e zerada ao iniciar/encerrar sessão): o mestre primeiro. */
+export async function chooseDiceColors(db: TestDatabase, table: { gm: TestUser; coGm: TestUser; player: TestUser; otherPlayer: TestUser; campaign: { id: string } }) {
+  const colors: [TestUser, string][] = [[table.gm, '#7a1f2b'], [table.coGm, '#d98e04'], [table.player, '#2f7d4a'], [table.otherPlayer, '#1f6f8b']];
   for (const [actor, color] of colors) {
-    await db.as(actor, (s) => s.query(`select public.set_my_dice_color($1, $2)`, [campaign.id, color]));
+    await db.as(actor, (s) => s.query(`select public.set_my_dice_color($1, $2)`, [table.campaign.id, color]));
   }
-  return { gm, coGm, player, otherPlayer, outsider, campaign };
 }

@@ -1,6 +1,12 @@
 'use client';
 
-import { getCampaignDicePalette, setMyDiceColor, type DicePalette } from '@codexveil/database';
+import {
+  getCampaignDicePalette,
+  getSessionState,
+  setMyDiceColor,
+  type DicePalette,
+} from '@codexveil/database';
+import { DICE_COLORS, diceColorName, diceTextColor } from '@codexveil/domain';
 import {
   createContext,
   useCallback,
@@ -16,20 +22,7 @@ import { failureMessage } from '@/lib/client-errors';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
 
-export const DICE_COLORS = [
-  '#7a1f2b',
-  '#b23a48',
-  '#d98e04',
-  '#2f7d4a',
-  '#1f6f8b',
-  '#3b4cb8',
-  '#6b3fa0',
-  '#c2c2c8',
-  '#222226',
-  '#c46a2a',
-  '#d4568c',
-  '#5a8f29',
-];
+export { DICE_COLORS };
 
 interface CampaignColorsValue {
   campaignId: string;
@@ -39,6 +32,8 @@ interface CampaignColorsValue {
   /** O mestre já escolheu a cor (os jogadores só escolhem depois). */
   gmReady: boolean;
   isGm: boolean;
+  /** Sessão em andamento com dados virtuais: só nela a cor é escolhida (vale até o fim da sessão). */
+  needsDice: boolean;
   colorOfUser: (userId: string | null | undefined) => string | null;
   colorOfCharacter: (characterId: string | null | undefined) => string | null;
   /** Cores já usadas por outras pessoas da mesa. */
@@ -59,6 +54,13 @@ export function CampaignColorsProvider({
   const { toast } = useToast();
   const [palette, setPalette] = useState<DicePalette>({ members: [], characterOwners: {} });
   const [userId, setUserId] = useState<string | null>(null);
+  const [needsDice, setNeedsDice] = useState(false);
+
+  const reloadSession = useCallback(() => {
+    getSessionState(getSupabaseBrowserClient(), campaignId)
+      .then((state) => setNeedsDice(state.playing && !state.physicalDice))
+      .catch(() => undefined);
+  }, [campaignId]);
 
   const reload = useCallback(() => {
     getCampaignDicePalette(getSupabaseBrowserClient(), campaignId)
@@ -77,6 +79,11 @@ export function CampaignColorsProvider({
         if (active) setPalette(next);
       })
       .catch(() => undefined);
+    getSessionState(client, campaignId)
+      .then((state) => {
+        if (active) setNeedsDice(state.playing && !state.physicalDice);
+      })
+      .catch(() => undefined);
     return () => {
       active = false;
     };
@@ -86,6 +93,15 @@ export function CampaignColorsProvider({
     `cores-dados:${campaignId}`,
     [{ table: 'campaign_members', filter: `campaign_id=eq.${campaignId}` }],
     reload,
+  );
+  // Iniciar ou encerrar a sessão apaga as cores no servidor; recarrega as duas coisas.
+  useRealtimeRefresh(
+    `cores-sessao:${campaignId}`,
+    [{ table: 'sessions', filter: `campaign_id=eq.${campaignId}` }],
+    () => {
+      reloadSession();
+      reload();
+    },
   );
 
   const value = useMemo<CampaignColorsValue>(() => {
@@ -98,6 +114,7 @@ export function CampaignColorsProvider({
       userId,
       myColor: me?.color ?? null,
       isGm: me?.role === 'gm',
+      needsDice,
       gmReady: palette.members.some((member) => member.role === 'gm' && member.color),
       colorOfUser,
       colorOfCharacter: (id) => (id ? colorOfUser(palette.characterOwners[id]) : null),
@@ -127,7 +144,7 @@ export function CampaignColorsProvider({
         }
       },
     };
-  }, [palette, userId, campaignId, toast, reload]);
+  }, [palette, userId, campaignId, toast, reload, needsDice]);
 
   return <CampaignColorsContext.Provider value={value}>{children}</CampaignColorsContext.Provider>;
 }
@@ -136,41 +153,85 @@ export function useCampaignColors(): CampaignColorsValue | null {
   return useContext(CampaignColorsContext);
 }
 
-/** Paleta de cores: as já usadas por outras pessoas ficam indisponíveis. */
+/** Dado d20 desenhado na cor escolhida (usado na paleta e ao lado do nome do personagem). */
+export function DieIcon({ color, className }: { color: string; className?: string }) {
+  const ink = diceTextColor(color);
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={cx('shrink-0', className)}>
+      <polygon
+        points="12,1.5 21.5,6.8 21.5,17.2 12,22.5 2.5,17.2 2.5,6.8"
+        fill={color}
+        stroke="rgba(0,0,0,0.45)"
+        strokeWidth="1"
+        strokeLinejoin="round"
+      />
+      <polygon
+        points="12,6.2 17.6,15.6 6.4,15.6"
+        fill="rgba(255,255,255,0.16)"
+        stroke={ink}
+        strokeOpacity="0.45"
+        strokeWidth="0.8"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12 1.5 L12 6.2 M21.5 6.8 L17.6 15.6 M2.5 6.8 L6.4 15.6 M21.5 17.2 L17.6 15.6 M2.5 17.2 L6.4 15.6 M12 22.5 L17.6 15.6 M12 22.5 L6.4 15.6 M2.5 6.8 L12 6.2 L21.5 6.8"
+        fill="none"
+        stroke={ink}
+        strokeOpacity="0.3"
+        strokeWidth="0.7"
+      />
+      <text
+        x="12"
+        y="13.6"
+        textAnchor="middle"
+        fontSize="4.6"
+        fontWeight="700"
+        fill={ink}
+        fontFamily="ui-sans-serif, system-ui"
+      >
+        20
+      </text>
+    </svg>
+  );
+}
+
+/** Paleta: um dado de cada cor; as já usadas por outras pessoas ficam indisponíveis. */
 export function DiceColorPalette({ onPicked }: { onPicked?: () => void }) {
   const colors = useCampaignColors();
   if (!colors) return null;
   return (
-    <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Cor dos seus dados">
-      {DICE_COLORS.map((color) => {
-        const taken = colors.taken.has(color.toLowerCase());
-        const current = color === colors.myColor;
+    <div className="flex flex-wrap gap-1" role="radiogroup" aria-label="Cor dos seus dados">
+      {DICE_COLORS.map(({ hex, name }) => {
+        const taken = colors.taken.has(hex.toLowerCase());
+        const current = hex === colors.myColor;
         return (
           <button
-            key={color}
+            key={hex}
             type="button"
             role="radio"
             aria-checked={current}
-            aria-label={taken ? `Cor ${color} (já escolhida por outra pessoa)` : `Cor ${color}`}
+            aria-label={taken ? `${name} (já escolhida por outra pessoa)` : name}
+            title={taken ? `${name}: já escolhida` : name}
             disabled={taken}
-            onClick={() => void colors.choose(color).then((ok) => ok && onPicked?.())}
+            onClick={() => void colors.choose(hex).then((ok) => ok && onPicked?.())}
             className={cx(
-              'h-7 w-7 rounded-full border',
-              current ? 'border-parchment-200 ring-2 ring-parchment-300' : 'border-line-strong',
-              taken && 'cursor-not-allowed opacity-25',
+              'rounded-md p-0.5 transition-transform',
+              current ? 'bg-parchment-300/25 ring-2 ring-parchment-300' : 'hover:scale-110',
+              taken && 'cursor-not-allowed opacity-20 hover:scale-100',
             )}
-            style={{ backgroundColor: color }}
-          />
+          >
+            <DieIcon color={hex} className="h-8 w-8" />
+          </button>
         );
       })}
     </div>
   );
 }
 
-/** Faixa obrigatória enquanto a pessoa não escolheu a cor (sem cor não se rola dado). */
+/** Faixa obrigatória durante a sessão enquanto a pessoa não escolheu a cor (sem cor não rola). */
 export function DiceColorRequired() {
   const colors = useCampaignColors();
-  if (!colors || !colors.userId || colors.myColor) return null;
+  if (!colors || !colors.userId || !colors.needsDice || colors.myColor) return null;
   const waiting = !colors.isGm && !colors.gmReady;
   return (
     <section
@@ -178,19 +239,21 @@ export function DiceColorRequired() {
       aria-labelledby="cor-dados-obrigatoria"
     >
       <h2 id="cor-dados-obrigatoria" className="text-base font-medium text-fg">
-        {waiting ? 'Aguardando o mestre escolher a cor dos dados' : 'Escolha a cor dos seus dados'}
+        {waiting
+          ? 'Aguardando o mestre escolher a cor dos dados'
+          : 'Escolha a cor dos seus dados nesta sessão'}
       </h2>
       <p className="text-sm text-fg-secondary">
         {waiting
           ? 'O mestre escolhe primeiro; depois você escolhe a sua. Sem cor não é possível rolar dados.'
-          : 'Obrigatório para rolar. A cor aparece nos seus dados e no nome do seu personagem para toda a mesa.'}
+          : 'Obrigatório para rolar. Vale só para esta sessão: aparece nos seus dados e no nome do seu personagem para toda a mesa.'}
       </p>
       {waiting ? null : <DiceColorPalette />}
     </section>
   );
 }
 
-/** Nome do personagem com a cor dos dados do dono (bolinha + sublinhado). */
+/** Nome do personagem com o dado na cor do dono (e sublinhado na mesma cor). */
 export function ColoredName({
   characterId,
   userId,
@@ -208,12 +271,11 @@ export function ColoredName({
     : null;
   if (!color) return <span className={className}>{children}</span>;
   return (
-    <span className={cx('inline-flex min-w-0 items-center gap-1.5', className)}>
-      <span
-        aria-hidden="true"
-        className="h-2.5 w-2.5 shrink-0 rounded-full border border-black/30"
-        style={{ backgroundColor: color }}
-      />
+    <span
+      className={cx('inline-flex min-w-0 items-center gap-1.5', className)}
+      title={`Dados: ${diceColorName(color)}`}
+    >
+      <DieIcon color={color} className="h-4 w-4" />
       <span
         className="truncate underline decoration-2 underline-offset-4"
         style={{ textDecorationColor: color }}

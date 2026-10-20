@@ -430,6 +430,22 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-20 — cor dos dados por sessão, convite refeito e caixinha de dados
+
+- Cor dos dados vale só para a sessão: iniciar ou encerrar uma sessão apaga as cores (gatilho
+  `sessions_reset_dice_colors`); a escolha só aparece com sessão em andamento e dados virtuais.
+- 24 cores (lista única em `packages/domain`), e a paleta e o nome do personagem mostram um
+  dado d20 desenhado na cor, no lugar da bolinha (site e app).
+- Convite: centralizado na página; o próprio convite sai de dentro do envelope (camadas fundo →
+  convite → frente), o envelope desce e o convite cresce. Conferido com o componente real
+  renderizado no Chrome headless em cada etapa (fechado, aberto, saindo, final). Corrigido também
+  o convite que ficava invisível se a medida não chegasse (ex.: "reduzir movimento").
+- Caixinha de dados: resultado num balão logo acima dela (sai o aviso do topo), canvas 3D preso
+  à área (esticava a caixinha e escondia a borda de baixo), rolagens dos outros em tempo real e
+  marcador de cadeado nas rolagens "Apenas eu e o mestre" (o servidor já não as envia aos outros).
+- Verificado: `pnpm check` 20/20 (banco 142 testes; um teste de condições falhou uma vez por
+  tempo e passou ao repetir) e `pnpm build`. A caixinha não foi conferida no navegador real.
+
 ### 2026-10-20 — convite como carta que abre
 
 - Ao abrir um convite (código ou link), um envelope com o selo do Codexveil aparece, a aba abre,

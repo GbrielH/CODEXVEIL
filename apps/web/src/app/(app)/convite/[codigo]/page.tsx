@@ -54,7 +54,7 @@ export default async function InvitePreviewPage({ params }: PageProps<'/convite/
   const alreadyMember = preview.reason === 'already_member';
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-6 pt-4">
+    <div className="w-full">
       <InviteLetter>
         <Card ornate className="flex flex-col items-center gap-5 text-center">
           <Emblem className="emblem-glow h-14 w-14" />

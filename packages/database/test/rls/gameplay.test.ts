@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { addMember, createCampaign, createCharacter, createSession, createTable } from '../support/fixtures';
+import { addMember, chooseDiceColors, createCampaign, createCharacter, createSession, createTable } from '../support/fixtures';
 import { TestDatabase, expectSqlError } from '../support/pglite';
 
 let db: TestDatabase;
@@ -42,6 +42,7 @@ async function setupFight(options: { inProgress?: boolean } = {}) {
   await db.as(gm, (s) =>
     s.query(`update public.encounters set status = 'active', round = 1, active_combatant_id = $2 where id = $1`, [encounter.id, lyraCombatant?.id]),
   );
+  await chooseDiceColors(db, table);
   return { ...table, session: session.id, lyra, encounter: encounter.id, lyraCombatant: lyraCombatant?.id ?? '', goblinCombatant: goblinCombatant?.id ?? '' };
 }
 
@@ -60,6 +61,21 @@ describe('cor dos dados', () => {
     await expectSqlError(db.as(player, (s) => s.query(`select public.set_my_dice_color($1, '#7A1F2B')`, [campaign.id])), 'CVCOR');
     await db.as(player, (s) => s.query(`select public.set_my_dice_color($1, '#2f7d4a')`, [campaign.id]));
     await expectSqlError(db.as(other, (s) => s.query(`select public.set_my_dice_color($1, null)`, [campaign.id])), '22023');
+  });
+
+  it('as cores valem só para a sessão: iniciar ou encerrar apaga todas', async () => {
+    const { gm, player, campaign } = await createTable(db);
+    const colorOf = (actor: typeof gm) =>
+      db.as(actor, (s) => s.one<{ dice_color: string | null }>(`select dice_color from public.campaign_members where campaign_id = $1 and user_id = $2`, [campaign.id, actor.id]));
+    expect((await colorOf(player)).dice_color).toBe('#2f7d4a');
+    const session = await db.as(gm, (s) =>
+      s.one<{ id: string }>(`insert into public.sessions (campaign_id, title, is_published, status) values ($1, 'Noite 1', true, 'planned') returning id`, [campaign.id]),
+    );
+    await db.as(gm, (s) => s.query(`update public.sessions set status = 'in_progress' where id = $1`, [session.id]));
+    expect((await colorOf(player)).dice_color).toBeNull();
+    await db.as(gm, (s) => s.query(`select public.set_my_dice_color($1, '#7a1f2b')`, [campaign.id]));
+    await db.as(gm, (s) => s.query(`update public.sessions set status = 'completed' where id = $1`, [session.id]));
+    expect((await colorOf(gm)).dice_color).toBeNull();
   });
 });
 

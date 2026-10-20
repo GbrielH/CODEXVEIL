@@ -166,6 +166,9 @@ Migração `20261018120000_gameplay_turns.sql`:
 - Índices únicos `characters_one_per_player_idx` e `campaign_notes_one_pinned_idx` (duplicatas
   antigas são desvinculadas/desafixadas antes).
 
+Migração `20261020180000_dice_color_per_session.sql`: gatilho `sessions_reset_dice_colors` apaga
+`campaign_members.dice_color` da campanha quando uma sessão começa ou termina.
+
 Migração `20261020170000_dice_color_required.sql`: cor única por campanha (índice
 `campaign_members_dice_color_unique_idx`), `set_my_dice_color` exige que um mestre já tenha cor
 (jogadores) e recusa cor repetida ou vazia (`CVCOR`), e o gatilho `dice_rolls_require_color`

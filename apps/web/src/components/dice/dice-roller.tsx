@@ -181,13 +181,14 @@ function DiceProviderInner({
         return null;
       }
       // Vai para a caixinha de dados 3D no canto (com fila curta se chegarem várias).
-      setPending({ key: `local-${Date.now()}`, roll: shown, rollerName: 'Você', userId: null });
-      const natural = naturalD20(shown);
-      toast({
-        tone: natural === 20 ? 'success' : natural === 1 ? 'danger' : 'info',
-        title: `${shown.label ? `${shown.label}: ` : ''}${shown.total}${natural === 20 ? ' (20 natural!)' : natural === 1 ? ' (1 natural)' : ''}`,
-        description: `${describeDiceRoll(shown)}${shown.mode !== 'normal' ? ` · ${diceRollModeLabels[shown.mode]}` : ''}${shown.secret ? ' · secreta' : ''}`,
+      setPending({
+        key: `local-${Date.now()}`,
+        roll: shown,
+        rollerName: 'Você',
+        userId: null,
+        secret: shown.secret,
       });
+      // O resultado aparece no balão acima da caixinha de dados (sem aviso no topo da tela).
       return shown;
     },
     [campaignId, characterId, sessionGate, toast, needsColor],

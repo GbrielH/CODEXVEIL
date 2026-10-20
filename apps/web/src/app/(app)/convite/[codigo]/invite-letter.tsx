@@ -1,43 +1,109 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import { Emblem } from '@/components/brand/emblem';
 import { cx } from '@/lib/cx';
 
-type Phase = 'closed' | 'opening' | 'rising' | 'done';
+type Phase = 'closed' | 'opening' | 'pulling' | 'dropping' | 'growing' | 'done';
+
+/** Quando cada etapa começa (ms). */
+const TIMELINE: [Phase, number][] = [
+  ['opening', 500],
+  ['pulling', 1150],
+  ['dropping', 1950],
+  ['growing', 2550],
+  ['done', 3200],
+];
 
 /**
- * Convite como carta: o envelope fechado aparece centralizado, o selo some, a aba abre, a
- * carta (o conteúdo) sobe e o envelope desaparece. Com "reduzir movimento", a carta aparece direto.
+ * Convite como carta, centralizado na página:
+ *   1. envelope fechado com o selo; 2. o selo some e a aba abre;
+ *   3. o próprio convite sobe pela abertura (a parte de baixo continua dentro do bolso);
+ *   4. o envelope desce e some; 5. o convite cresce até o tamanho final.
+ * As camadas ficam no mesmo contexto de empilhamento (nenhum contêiner do envelope tem
+ * transform/opacity), para o convite ficar entre o fundo e a frente do envelope.
+ * Com "reduzir movimento", o convite aparece direto.
  */
 export function InviteLetter({ children }: { children: ReactNode }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const envelopeRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<Phase>('closed');
+  const [fit, setFit] = useState<{ scale: number; envHeight: number } | null>(null);
+
+  // Mede o convite e o envelope para o convite (reduzido) caber dentro do envelope; refaz a
+  // medida se algum dos dois mudar de tamanho (fontes e estilos carregando, janela redimensionada).
+  useLayoutEffect(() => {
+    const card = cardRef.current;
+    const envelope = envelopeRef.current;
+    if (!card || !envelope) return;
+    const measure = () => {
+      if (
+        !card.offsetWidth ||
+        !card.offsetHeight ||
+        !envelope.offsetWidth ||
+        !envelope.offsetHeight
+      )
+        return;
+      const scale = Math.min(
+        (envelope.offsetWidth * 0.86) / card.offsetWidth,
+        (envelope.offsetHeight * 0.86) / card.offsetHeight,
+        1,
+      );
+      setFit({ scale, envHeight: envelope.offsetHeight });
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(card);
+    observer.observe(envelope);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       const skip = window.setTimeout(() => setPhase('done'), 0);
       return () => window.clearTimeout(skip);
     }
-    const timers = [
-      window.setTimeout(() => setPhase('opening'), 500),
-      window.setTimeout(() => setPhase('rising'), 1300),
-      window.setTimeout(() => setPhase('done'), 2300),
-    ];
+    const timers = TIMELINE.map(([next, at]) => window.setTimeout(() => setPhase(next), at));
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, []);
 
-  const showLetter = phase === 'rising' || phase === 'done';
+  const animating = phase !== 'done';
+  const flapOpen = phase !== 'closed';
+  const outOfEnvelope = phase === 'growing' || phase === 'done';
+  const dropped = phase === 'dropping' || phase === 'growing';
+  const drop = dropped ? 'translateY(75vh)' : 'translateY(0)';
+  const layer: CSSProperties = { transform: drop, opacity: dropped ? 0 : 1 };
+
+  let cardStyle: CSSProperties = { opacity: 0 };
+  if (fit && !outOfEnvelope) {
+    // Dentro do envelope: reduzido e um pouco abaixo do centro; ao puxar, sobe pela abertura.
+    const lift =
+      phase === 'pulling' || phase === 'dropping' ? -fit.envHeight * 0.62 : fit.envHeight * 0.04;
+    cardStyle = { transform: `translateY(${lift}px) scale(${fit.scale})`, zIndex: 10 };
+  } else if (outOfEnvelope) {
+    cardStyle = { transform: 'translateY(0) scale(1)', zIndex: 30 };
+  }
+
+  const fade = 'transition-[transform,opacity] duration-[600ms] ease-in';
 
   return (
-    <div className="relative min-h-[30rem]">
+    <div className="relative flex min-h-[calc(100dvh-10rem)] w-full items-center justify-center py-8">
       <div
+        ref={cardRef}
         className={cx(
-          'transition-all duration-700 ease-out',
-          showLetter
-            ? 'translate-y-0 scale-100 opacity-100'
-            : 'pointer-events-none translate-y-10 scale-95 opacity-0',
+          'relative w-full max-w-xl',
+          // Fechado: sem transição, o convite já começa reduzido dentro do envelope.
+          phase !== 'closed' &&
+            'transition-transform duration-[650ms] ease-[cubic-bezier(0.3,0.7,0.3,1)]',
         )}
-        aria-hidden={!showLetter}
+        style={cardStyle}
+        inert={animating}
       >
         {children}
       </div>
@@ -45,16 +111,15 @@ export function InviteLetter({ children }: { children: ReactNode }) {
       {phase === 'done' ? null : (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-40 flex justify-center"
+          className="pointer-events-none absolute inset-0 flex items-center justify-center"
         >
-          <div
-            className={cx(
-              'relative aspect-[3/2] w-[min(24rem,92%)] transition-all duration-700 ease-in [perspective:1200px]',
-              phase === 'rising' ? 'translate-y-16 opacity-0' : 'translate-y-0 opacity-100',
-            )}
-          >
-            {/* Fundo do envelope. */}
-            <svg viewBox="0 0 300 200" className="absolute inset-0 h-full w-full drop-shadow-2xl">
+          <div ref={envelopeRef} className="relative aspect-[3/2] w-[min(26rem,90vw)]">
+            {/* Fundo (por dentro) do envelope: atrás do convite. */}
+            <svg
+              viewBox="0 0 300 200"
+              className={`absolute inset-0 z-0 h-full w-full drop-shadow-2xl ${fade}`}
+              style={layer}
+            >
               <rect
                 x="1"
                 y="1"
@@ -66,35 +131,14 @@ export function InviteLetter({ children }: { children: ReactNode }) {
                 strokeOpacity="0.45"
               />
             </svg>
-            {/* Carta de pergaminho: sobe de dentro do envelope quando a aba abre. */}
+            {/* Aba: fechada cobre o convite; aberta, gira para cima e fica atrás dele. */}
             <div
-              className={cx(
-                'parchment absolute inset-x-[8%] top-[6%] h-[80%] rounded-sm shadow-md transition-transform delay-300 duration-500 ease-out',
-                phase === 'closed' ? 'translate-y-0' : '-translate-y-[45%]',
-              )}
-            >
-              <div className="mx-auto mt-[8%] h-1.5 w-1/2 rounded bg-black/15" />
-              <div className="mx-auto mt-2 h-1 w-2/3 rounded bg-black/10" />
-              <div className="mx-auto mt-1.5 h-1 w-3/5 rounded bg-black/10" />
-            </div>
-            {/* Frente do envelope (laterais e bolso), na frente da carta. */}
-            <svg viewBox="0 0 300 200" className="absolute inset-0 h-full w-full">
-              <path d="M1 12 Q1 1 12 1 L150 108 L12 199 Q1 199 1 188 Z" fill="#3D1520" />
-              <path d="M299 12 Q299 1 288 1 L150 108 L288 199 Q299 199 299 188 Z" fill="#3D1520" />
-              <path
-                d="M1 188 L150 100 L299 188 Q299 199 288 199 L12 199 Q1 199 1 188 Z"
-                fill="#4A1A24"
-                stroke="#000"
-                strokeOpacity="0.2"
-              />
-            </svg>
-            {/* Aba: gira para trás a partir da borda de cima e fica atrás da carta. */}
-            <div
-              className={cx(
-                'absolute inset-x-0 top-0 h-[58%] origin-top transition-transform duration-500 ease-in-out',
-                phase === 'closed' ? 'z-10' : '-z-10',
-              )}
-              style={{ transform: phase === 'closed' ? 'rotateX(0deg)' : 'rotateX(180deg)' }}
+              className="absolute inset-x-0 top-0 h-[58%] origin-top transition-[transform,opacity] duration-500 ease-in-out"
+              style={{
+                transform: `${drop} perspective(1200px) rotateX(${flapOpen ? 180 : 0}deg)`,
+                opacity: dropped ? 0 : 1,
+                zIndex: flapOpen ? 5 : 25,
+              }}
             >
               <svg viewBox="0 0 300 116" preserveAspectRatio="none" className="h-full w-full">
                 <path
@@ -105,12 +149,28 @@ export function InviteLetter({ children }: { children: ReactNode }) {
                 />
               </svg>
             </div>
+            {/* Frente: laterais e bolso, na frente do convite. */}
+            <svg
+              viewBox="0 0 300 200"
+              className={`absolute inset-0 z-20 h-full w-full ${fade}`}
+              style={layer}
+            >
+              <path d="M1 12 Q1 1 12 1 L150 108 L12 199 Q1 199 1 188 Z" fill="#3D1520" />
+              <path d="M299 12 Q299 1 288 1 L150 108 L288 199 Q299 199 299 188 Z" fill="#3D1520" />
+              <path
+                d="M1 188 L150 100 L299 188 Q299 199 288 199 L12 199 Q1 199 1 188 Z"
+                fill="#4A1A24"
+                stroke="#000"
+                strokeOpacity="0.2"
+              />
+            </svg>
             {/* Selo de cera. */}
             <div
-              className={cx(
-                'absolute top-[58%] left-1/2 z-20 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-wine-300/60 bg-wine-700 shadow-lg transition-all duration-300',
-                phase === 'closed' ? 'scale-100 opacity-100' : 'scale-150 opacity-0',
-              )}
+              className="absolute top-[58%] left-1/2 z-[26] flex h-14 w-14 items-center justify-center rounded-full border-2 border-wine-300/60 bg-wine-700 shadow-lg transition-[transform,opacity] duration-300"
+              style={{
+                transform: `translate(-50%, -50%) scale(${flapOpen ? 1.5 : 1})`,
+                opacity: flapOpen ? 0 : 1,
+              }}
             >
               <Emblem className="h-8 w-8" />
             </div>

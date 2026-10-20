@@ -2,26 +2,32 @@
 
 import type { DiceRoll } from '@codexveil/database';
 import type DiceBox from '@3d-dice/dice-box-threejs';
-import { ChevronDown, ChevronUp, Dices } from 'lucide-react';
+import { describeDiceRoll, naturalD20 } from '@codexveil/domain';
+import { ChevronDown, ChevronUp, Dices, Lock } from 'lucide-react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { cx } from '@/lib/cx';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
-import { DICE_COLORS, DiceColorPalette, useCampaignColors } from './campaign-colors';
+import { DICE_COLORS, DiceColorPalette, DieIcon, useCampaignColors } from './campaign-colors';
 import type { ShownRoll } from './dice-roller';
 
 /** Limite de dados 3D por rolagem (o resto entra só no total), para não pesar no aparelho. */
 export const MAX_TRAY_DICE = 6;
 const SUPPORTED_SIDES = new Set([4, 6, 8, 10, 12, 20, 100]);
-const DEFAULT_COLOR = DICE_COLORS[0]!;
+const DEFAULT_COLOR = DICE_COLORS[0]!.hex;
 const STORAGE_KEY = 'codexveil:dice-tray-open';
 
 export interface TrayRoll {
   key: string;
-  roll: Pick<ShownRoll, 'dice' | 'total' | 'label'>;
+  roll: Pick<ShownRoll, 'dice' | 'total' | 'label' | 'expression' | 'mode' | 'modifier'>;
   rollerName: string;
   userId: string | null;
+  /** Rolagem "Apenas eu e o mestre": só quem rolou e o mestre recebem (o servidor filtra). */
+  secret: boolean;
 }
+
+/** Quanto tempo o balão com o resultado fica acima da caixinha. */
+const BUBBLE_MS = 7000;
 
 /** "2d20+1d6@3,17,4": a notação da biblioteca com o resultado já sorteado pelo servidor. */
 function notation(roll: TrayRoll['roll']): string | null {
@@ -157,7 +163,9 @@ export function DiceTray({
       if (!campaignId) return;
       void getSupabaseBrowserClient()
         .from('dice_rolls')
-        .select('id, user_id, roller_name, label, dice, total')
+        .select(
+          'id, user_id, roller_name, label, dice, total, expression, mode, modifier, visibility',
+        )
         .eq('campaign_id', campaignId)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -168,16 +176,35 @@ export function DiceTray({
             key: row.id,
             userId: row.user_id,
             rollerName: row.roller_name,
+            secret: row.visibility === 'gm',
             roll: {
               dice: row.dice as unknown as DiceRoll['dice'],
               total: row.total,
               label: row.label,
+              expression: row.expression,
+              mode: row.mode as DiceRoll['mode'],
+              modifier: row.modifier,
             },
           });
         });
     },
     Boolean(campaignId),
   );
+
+  const [bubbleKey, setBubbleKey] = useState<string | null>(null);
+  useEffect(() => {
+    if (!last) return;
+    const show = window.setTimeout(() => setBubbleKey(last.key), 0);
+    const hide = window.setTimeout(
+      () => setBubbleKey((current) => (current === last.key ? null : current)),
+      BUBBLE_MS,
+    );
+    return () => {
+      window.clearTimeout(show);
+      window.clearTimeout(hide);
+    };
+  }, [last]);
+  const natural = last ? naturalD20(last.roll) : null;
 
   const toggle = () => {
     setOpen((current) => {
@@ -191,57 +218,111 @@ export function DiceTray({
   };
 
   return (
-    <aside
-      aria-label="Dados"
-      className="fixed right-3 bottom-20 z-50 lg:bottom-3 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-lg border border-line-strong bg-raised/95 shadow-2xl backdrop-blur"
-    >
-      <div className="flex items-center gap-2 border-b border-line px-3 py-1.5">
-        <Dices className="h-4 w-4 text-fg-accent" aria-hidden="true" />
-        <span className="min-w-0 flex-1 truncate text-xs text-fg-secondary">
-          {last ? (
-            <>
-              <strong className="text-fg">{last.roll.total}</strong> · {last.rollerName}
-              {last.roll.label ? ` · ${last.roll.label}` : ''}
-            </>
-          ) : (
-            'Dados da mesa'
-          )}
-        </span>
-        {palette ? (
+    <div className="fixed right-3 bottom-20 z-50 flex w-[min(18rem,calc(100vw-1.5rem))] flex-col items-stretch gap-2 lg:bottom-4">
+      {/* Resultado da última rolagem, logo acima da caixinha. */}
+      <div aria-live="polite" className="min-h-0">
+        {last && bubbleKey === last.key ? (
+          <div
+            className={cx(
+              'animate-pop rounded-lg border bg-raised/95 px-3 py-2 shadow-xl backdrop-blur',
+              natural === 20
+                ? 'border-emerald-400/60'
+                : natural === 1
+                  ? 'border-red-400/60'
+                  : 'border-line-strong',
+            )}
+          >
+            <p className="flex items-baseline gap-2">
+              <span className="font-display text-2xl text-fg">{last.roll.total}</span>
+              <span className="min-w-0 flex-1 truncate text-sm text-fg-secondary">
+                {last.rollerName}
+                {last.roll.label ? ` · ${last.roll.label}` : ''}
+              </span>
+            </p>
+            <p className="truncate text-xs text-fg-muted">
+              {describeDiceRoll(last.roll)}
+              {natural === 20 ? ' · 20 natural!' : natural === 1 ? ' · 1 natural' : ''}
+            </p>
+            {last.secret ? (
+              <p className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-200">
+                <Lock className="h-3 w-3" aria-hidden="true" />
+                Apenas quem rolou e o mestre veem
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+      <aside
+        aria-label="Dados"
+        className="overflow-hidden rounded-lg border border-line-strong bg-raised/95 shadow-2xl backdrop-blur"
+      >
+        <div className="flex items-center gap-2 border-b border-line px-3 py-1.5">
+          <Dices className="h-4 w-4 text-fg-accent" aria-hidden="true" />
+          <span className="min-w-0 flex-1 truncate text-xs text-fg-secondary">
+            {last ? (
+              <>
+                {last.secret ? (
+                  <Lock className="mr-1 inline h-3 w-3 text-amber-300" aria-label="Secreta" />
+                ) : null}
+                <strong className="text-fg">{last.roll.total}</strong> · {last.rollerName}
+                {last.roll.label ? ` · ${last.roll.label}` : ''}
+              </>
+            ) : (
+              'Dados da mesa'
+            )}
+          </span>
+          {palette ? (
+            <button
+              type="button"
+              onClick={() => setPicking((current) => !current)}
+              aria-label="Escolher a cor dos seus dados"
+              title="Cor dos seus dados"
+              className="rounded p-0.5 hover:bg-hover"
+            >
+              {myColor ? (
+                <DieIcon color={myColor} className="h-5 w-5" />
+              ) : (
+                <span className="block h-5 w-5 rounded border border-dashed border-line-strong" />
+              )}
+            </button>
+          ) : null}
           <button
             type="button"
-            onClick={() => setPicking((current) => !current)}
-            aria-label="Escolher a cor dos seus dados"
-            title="Cor dos seus dados"
-            className="h-5 w-5 rounded-full border border-line-strong"
-            style={{ backgroundColor: myColor ?? 'transparent' }}
-          />
-        ) : null}
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={open ? 'Recolher os dados' : 'Abrir os dados'}
-          className="rounded p-0.5 text-fg-muted hover:text-fg"
-        >
-          {open ? (
-            <ChevronDown className="h-4 w-4" aria-hidden="true" />
-          ) : (
-            <ChevronUp className="h-4 w-4" aria-hidden="true" />
-          )}
-        </button>
-      </div>
-      {picking ? (
-        <div className="border-b border-line px-3 py-2">
-          <DiceColorPalette onPicked={() => setPicking(false)} />
+            onClick={toggle}
+            aria-label={open ? 'Recolher os dados' : 'Abrir os dados'}
+            className="rounded p-0.5 text-fg-muted hover:text-fg"
+          >
+            {open ? (
+              <ChevronDown className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <ChevronUp className="h-4 w-4" aria-hidden="true" />
+            )}
+          </button>
         </div>
-      ) : null}
-      <div id={containerId} className={cx('relative h-40 w-full', !open && 'hidden')}>
-        {!ready ? (
-          <p className="absolute inset-0 flex items-center justify-center text-xs text-fg-muted">
-            As rolagens aparecem aqui.
-          </p>
+        {picking ? (
+          <div className="border-b border-line px-3 py-2">
+            <DiceColorPalette onPicked={() => setPicking(false)} />
+          </div>
         ) : null}
-      </div>
-    </aside>
+        {/* O canvas da biblioteca fica preso ao tamanho da área (senão ele estica a caixinha). */}
+        <div
+          id={containerId}
+          className={cx(
+            'relative h-40 w-full overflow-hidden [&_canvas]:absolute [&_canvas]:inset-0 [&_canvas]:!h-full [&_canvas]:!w-full',
+            !open && 'hidden',
+          )}
+        >
+          {!ready ? (
+            <p className="absolute inset-0 flex items-center justify-center text-xs text-fg-muted">
+              As rolagens aparecem aqui.
+            </p>
+          ) : null}
+        </div>
+        <p className="flex items-center gap-1 border-t border-line px-3 py-1 text-[11px] text-fg-muted">
+          <Lock className="h-3 w-3" aria-hidden="true" /> = rolagem secreta (só quem rolou e o
+          mestre)
+        </p>
+      </aside>
+    </div>
   );
 }
