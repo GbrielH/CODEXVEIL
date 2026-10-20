@@ -9,11 +9,13 @@ import {
 } from '@codexveil/database';
 import { canEditCharacterPlayState, canEditCharacterSheet } from '@codexveil/domain';
 import { buildDnd5eBookContent, parseDnd5eSheet, setActiveDnd5eBookContent } from '@codexveil/rpg-systems/dnd5e';
+import { parseT20Sheet } from '@codexveil/rpg-systems/tormenta20';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { SheetScreen } from '@/components/sheet/sheet-screen';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states';
-import { sheetBookSources } from '@/lib/books';
+import { T20MobileSheet } from '@/components/t20/sheet';
+import { sheetBookSources, sheetT20Sources } from '@/lib/books';
 import { useAsyncData } from '@/lib/hooks';
 import { useUserId } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase';
@@ -35,7 +37,9 @@ export default function CharacterScreen() {
     // Livros para a subida de nível (subclasses, talentos e magias), como no site.
     const books =
       character.systemId === 'dnd5e' && canEditCharacterSheet(characterAccessInput(character)) ? await sheetBookSources(supabase, userId, character) : [];
-    return { character, resources, conditions, items, abilities, books, portraitUrl: character.portraitPath ? (images[character.portraitPath] ?? null) : null };
+    const t20Books =
+      character.systemId === 'tormenta20' && canEditCharacterSheet(characterAccessInput(character)) ? await sheetT20Sources(supabase, userId, character) : [];
+    return { character, resources, conditions, items, abilities, books, t20Books, portraitUrl: character.portraitPath ? (images[character.portraitPath] ?? null) : null };
   }, `${id}:${userId}`);
 
   if (loading) return <LoadingState label="Abrindo a ficha…" />;
@@ -45,6 +49,32 @@ export default function CharacterScreen() {
       <Screen>
         <EmptyState title="Ficha não encontrada" description="Ela não existe ou você não tem acesso a ela." />
       </Screen>
+    );
+  }
+  if (data.character.systemId === 'tormenta20') {
+    let t20Sheet;
+    try {
+      t20Sheet = parseT20Sheet(data.character.sheet);
+    } catch {
+      return <ErrorState message="Os dados desta ficha não seguem o formato do Tormenta20. Nada foi alterado." />;
+    }
+    const t20Access = characterAccessInput(data.character);
+    return (
+      <>
+        <Stack.Screen options={{ title: data.character.name }} />
+        <T20MobileSheet
+          key={data.character.id}
+          character={{ id: data.character.id, name: data.character.name, version: data.character.version }}
+          sheet={t20Sheet}
+          resources={data.resources}
+          conditions={data.conditions}
+          items={data.items}
+          abilities={data.abilities}
+          canEditSheet={canEditCharacterSheet(t20Access)}
+          canEditPlay={canEditCharacterPlayState(t20Access)}
+          sources={data.t20Books}
+        />
+      </>
     );
   }
   if (data.character.systemId !== 'dnd5e') {

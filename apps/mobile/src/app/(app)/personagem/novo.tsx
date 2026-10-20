@@ -56,7 +56,11 @@ import {
 import { SourcebookChips } from '@/components/campaign-rules-editor';
 import { CharacterIcon } from '@/components/creation/character-icon';
 import { ChoiceField, OptionCard } from '@/components/creation/choice-fields';
+import { T20MobileWizard } from '@/components/t20/wizard';
 import { Button } from '@/components/ui/button';
+import { Segmented } from '@/components/ui/segmented';
+import { loadT20Sources } from '@/lib/books';
+import { parseT20CampaignRules, type T20ContentSource } from '@codexveil/rpg-systems/tormenta20';
 import { Field } from '@/components/ui/field';
 import { AppText, Badge, Card } from '@/components/ui/primitives';
 import { LoadingState, Notice } from '@/components/ui/states';
@@ -90,14 +94,16 @@ async function loadCreationData(userId: string): Promise<CreationData> {
     (campaign) =>
       campaign.status === 'active' && campaign.role === 'player' && campaign.systemId === 'dnd5e',
   );
+  // Só livros de D&D aqui (o Tormenta20 tem o próprio assistente).
+  const isDnd = (pack: BookPackSummary) => (pack.systemId ?? 'dnd5e') === 'dnd5e';
   const [own, ...perCampaign] = await Promise.all([
-    listMyBookPacks(client, userId).then((packs) => packs.filter((pack) => pack.isReady)),
+    listMyBookPacks(client, userId).then((packs) => packs.filter((pack) => pack.isReady && isDnd(pack))),
     ...list.map((campaign) =>
       listCampaignBookPacks(
         client,
         campaign.ownerId,
         parseDnd5eCampaignRules(campaign.characterRules).sourcebooks,
-      ),
+      ).then((found) => found.filter(isDnd)),
     ),
   ]);
   const packs: BookPackSummary[] = [
@@ -164,22 +170,74 @@ function contextFor(campaign: PlayableCampaign | undefined): Dnd5eCreationContex
     : PERSONAL_SHEET_CONTEXT;
 }
 
+/** Campanhas de Tormenta20 em que o usuário é jogador e o conteúdo dos livros (dela ou do usuário). */
+async function loadT20Data(userId: string) {
+  const client = getSupabase();
+  const campaigns = (await listMyCampaigns(client, userId)).filter((campaign) => campaign.status === 'active' && campaign.role === 'player' && campaign.systemId === 'tormenta20');
+  const own = (await listMyBookPacks(client, userId)).filter((pack) => pack.isReady);
+  return { campaigns, own: await loadT20Sources(client, own) };
+}
+
 export default function NewCharacterScreen() {
   const params = useLocalSearchParams<{ campanha?: string }>();
   const userId = useUserId();
   const data = useAsyncData(() => loadCreationData(userId), userId);
+  const t20 = useAsyncData(() => loadT20Data(userId), `t20:${userId}`);
+  const [system, setSystem] = useState<'dnd5e' | 'tormenta20'>('dnd5e');
+  const [t20Campaign, setT20Campaign] = useState<string>('');
+  const [t20Sources, setT20Sources] = useState<T20ContentSource[] | null>(null);
+  const preT20 = t20.data?.campaigns.find((campaign) => campaign.id === params.campanha);
+  const activeSystem = preT20 ? 'tormenta20' : system;
 
-  if (data.loading) return <LoadingState label="Carregando suas campanhas e livros…" />;
+  if (data.loading || t20.loading) return <LoadingState label="Carregando suas campanhas e livros…" />;
+  const hasT20 = (t20.data?.campaigns.length ?? 0) > 0 || (t20.data?.own.length ?? 0) > 0;
+  if (activeSystem === 'tormenta20' && t20.data) {
+    const chosenId = preT20?.id ?? t20Campaign;
+    const chosen = t20.data.campaigns.find((campaign) => campaign.id === chosenId);
+    if (chosenId && !t20Sources) {
+      void (async () => {
+        const client = getSupabase();
+        const packs = chosen ? await listCampaignBookPacks(client, chosen.ownerId, parseDnd5eCampaignRules(chosen.characterRules).sourcebooks) : [];
+        setT20Sources(await loadT20Sources(client, packs));
+      })();
+      return <LoadingState label="Carregando os livros da campanha…" />;
+    }
+    if (!chosenId && t20Campaign === '') {
+      return (
+        <ScrollView style={{ flex: 1, backgroundColor: colors.canvas }} contentContainerStyle={styles.content}>
+          <Segmented value="tormenta20" onChange={(value) => setSystem(value)} accessibilityLabel="Sistema" options={[{ value: 'dnd5e', label: 'D&D 5e' }, { value: 'tormenta20', label: 'Tormenta20' }]} />
+          <AppText variant="title">Onde o personagem vai jogar?</AppText>
+          {t20.data.campaigns.map((campaign) => (
+            <OptionCard key={campaign.id} selected={false} title={campaign.name} description="Campanha de Tormenta20" onPress={() => { setT20Sources(null); setT20Campaign(campaign.id); }} />
+          ))}
+          <OptionCard selected={false} title="Ficha pessoal" description="Com os seus livros do Tormenta20." onPress={() => { setT20Sources(t20.data!.own); setT20Campaign('pessoal'); }} />
+        </ScrollView>
+      );
+    }
+    return (
+      <T20MobileWizard
+        campaign={chosen ? { id: chosen.id, name: chosen.name, rules: parseT20CampaignRules(chosen.characterRules) } : null}
+        sources={chosen ? (t20Sources ?? []) : t20.data.own}
+      />
+    );
+  }
   const loaded = data.data ?? { campaigns: [], books: {}, personalPackIds: [] };
   const preselected = loaded.campaigns.some((campaign) => campaign.id === params.campanha)
     ? (params.campanha ?? '')
     : '';
   return (
-    <Wizard
-      {...loaded}
-      defaultCampaignId={preselected}
-      loadError={data.error ? failureMessage(data.error) : null}
-    />
+    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+      {hasT20 ? (
+        <View style={{ padding: spacing[4], paddingBottom: 0 }}>
+          <Segmented value="dnd5e" onChange={(value) => setSystem(value)} accessibilityLabel="Sistema" options={[{ value: 'dnd5e', label: 'D&D 5e' }, { value: 'tormenta20', label: 'Tormenta20' }]} />
+        </View>
+      ) : null}
+      <Wizard
+        {...loaded}
+        defaultCampaignId={preselected}
+        loadError={data.error ? failureMessage(data.error) : null}
+      />
+    </View>
   );
 }
 
