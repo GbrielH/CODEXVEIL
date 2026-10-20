@@ -16,6 +16,7 @@ import {
   T20_ATTRIBUTES,
   T20_RESOURCE_KEYS,
   T20_REST_QUALITY,
+  buildT20Content,
   computeT20Derived,
   findT20Condition,
   formatT20Bonus,
@@ -24,6 +25,7 @@ import {
   t20RestRecovery,
   t20SizeLabels,
   t20TierLabels,
+  type T20ContentSource,
   type T20RestQuality,
   type T20Sheet,
 } from '@codexveil/rpg-systems/tormenta20';
@@ -40,6 +42,7 @@ import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
 import { cx } from '@/lib/cx';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { T20LevelUpButton } from './level-up';
 
 interface T20SheetScreenProps {
   character: { id: string; name: string; ownerName: string; version: number; portraitUrl: string | null; campaign: { id: string; name: string } | null };
@@ -49,6 +52,8 @@ interface T20SheetScreenProps {
   items: CharacterItem[];
   abilities: CharacterAbility[];
   permissions: { canEditSheet: boolean; canEditPlay: boolean };
+  /** Livros T20 da campanha (ou do dono), para a subida de nível. */
+  sources?: T20ContentSource[];
 }
 
 const ABILITY_GROUPS: { kind: CharacterAbility['kind']; title: string }[] = [
@@ -68,6 +73,8 @@ export function T20SheetScreen(props: T20SheetScreenProps) {
   const [resources, setResources] = useState(props.resources);
   const [conditions, setConditions] = useState(props.conditions);
   const [items, setItems] = useState(props.items);
+  const [abilities, setAbilities] = useState(props.abilities);
+  const content = useMemo(() => buildT20Content(props.sources ?? []), [props.sources]);
   const derived = useMemo(() => computeT20Derived(sheet, conditions.map((condition) => condition.key)), [sheet, conditions]);
   const resource = (key: string) => resources.find((entry) => entry.key === key);
 
@@ -114,6 +121,21 @@ export function T20SheetScreen(props: T20SheetScreenProps) {
               {character.campaign ? ` · Campanha: ${character.campaign.name}` : ' · Ficha pessoal'}
             </p>
           </div>
+          {permissions.canEditSheet ? (
+            <T20LevelUpButton
+              characterId={character.id}
+              content={content}
+              sheet={sheet}
+              version={version}
+              resources={resources}
+              onDone={(result) => {
+                setSheet(result.sheet);
+                setVersion(result.version);
+                setResources(result.resources);
+                setAbilities((current) => [...current, ...result.abilities]);
+              }}
+            />
+          ) : null}
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">
           <Stat icon={<Shield className="h-4 w-4" aria-hidden="true" />} label="Defesa" value={String(derived.defense)} />
@@ -212,13 +234,13 @@ export function T20SheetScreen(props: T20SheetScreenProps) {
       {tab === 'poderes' ? (
         <div className="flex flex-col gap-6">
           {ABILITY_GROUPS.map((group) => {
-            const list = props.abilities.filter((ability) => ability.kind === group.kind);
+            const list = abilities.filter((ability) => ability.kind === group.kind);
             return list.length ? <AbilityList key={group.kind} title={group.title} abilities={list} /> : null;
           })}
-          {props.abilities.some((ability) => ability.kind === 'spell') ? (
+          {abilities.some((ability) => ability.kind === 'spell') ? (
             <AbilityList
               title={`Magias${derived.spellDc === null ? '' : ` (CD ${derived.spellDc})`}`}
-              abilities={props.abilities.filter((ability) => ability.kind === 'spell')}
+              abilities={abilities.filter((ability) => ability.kind === 'spell')}
               extra={(ability) => {
                 const data = ability.data as { circle?: number; cost?: number };
                 return data.circle ? `${data.circle}º círculo · ${data.cost ?? 1} PM` : '';

@@ -15,7 +15,7 @@ import { parseT20Sheet } from '@codexveil/rpg-systems/tormenta20';
 import { Dnd5eSheetScreen } from '@/components/sheets/dnd5e/sheet-screen';
 import { T20SheetScreen } from '@/components/sheets/t20/sheet-screen';
 import { ErrorState } from '@/components/ui/states';
-import { campaignBookPacks, loadBookSources, ownReadyBookPacks } from '@/lib/books';
+import { campaignBookPacks, loadBookSources, loadT20Sources, ownReadyBookPacks } from '@/lib/books';
 import { loadCharacterOrNotFound } from '@/lib/characters';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -93,6 +93,13 @@ export async function CharacterSheet({ characterId, variant = 'full' }: { charac
       />
     );
   } else if (system?.id === 'tormenta20') {
+    // Livros para a subida de nível: os da campanha do personagem ou, em fichas pessoais, os do dono.
+    let t20Sources: Awaited<ReturnType<typeof loadT20Sources>> = [];
+    if (permissions.canEditSheet) {
+      const campaign = character.campaign ? await getCampaign(supabase, character.campaign.id, user.id) : null;
+      const packs = campaign ? await campaignBookPacks(supabase, campaign) : character.viewer.isOwner ? await ownReadyBookPacks(supabase, user.id) : [];
+      t20Sources = await loadT20Sources(supabase, packs);
+    }
     let sheet;
     try {
       sheet = parseT20Sheet(character.sheet);
@@ -115,6 +122,7 @@ export async function CharacterSheet({ characterId, variant = 'full' }: { charac
         items={items}
         abilities={abilities}
         permissions={{ canEditSheet: permissions.canEditSheet, canEditPlay: permissions.canEditPlay }}
+        sources={t20Sources}
       />
     ) : (
       <ErrorState title="Não foi possível abrir a ficha" description="Os dados desta ficha não seguem o formato do Tormenta20. Nada foi alterado." />

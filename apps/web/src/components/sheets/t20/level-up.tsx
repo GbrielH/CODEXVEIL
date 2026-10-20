@@ -1,0 +1,157 @@
+'use client';
+
+import { addCharacterEvent, adjustCharacterResource, createCharacterAbility, saveCharacterSheet, type CharacterAbility, type CharacterResource } from '@codexveil/database';
+import { T20_RESOURCE_KEYS, applyT20LevelUp, planT20LevelUp, type T20Content, type T20Sheet } from '@codexveil/rpg-systems/tormenta20';
+import { TrendingUp } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { CheckboxField, SelectField } from '@/components/ui/field';
+import { Modal } from '@/components/ui/modal';
+import { useToast } from '@/components/ui/toast';
+import { failureMessage } from '@/lib/client-errors';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+
+interface Props {
+  characterId: string;
+  content: T20Content;
+  sheet: T20Sheet;
+  version: number;
+  resources: CharacterResource[];
+  onDone: (result: { sheet: T20Sheet; version: number; resources: CharacterResource[]; abilities: CharacterAbility[] }) => void;
+}
+
+/** Botão e painel de subida de nível do Tormenta20. */
+export function T20LevelUpButton(props: Props) {
+  const [open, setOpen] = useState(false);
+  const level = props.sheet.identity.classes.reduce((sum, entry) => sum + entry.level, 0);
+  if (level >= 20 || props.sheet.identity.classes.length === 0) return null;
+  return (
+    <>
+      <Button icon={<TrendingUp className="h-4 w-4" aria-hidden="true" />} onClick={() => setOpen(true)}>
+        Subir de nível
+      </Button>
+      {open ? <Panel {...props} onClose={() => setOpen(false)} /> : null}
+    </>
+  );
+}
+
+function Panel({ characterId, content, sheet, version, resources, onDone, onClose }: Props & { onClose: () => void }) {
+  const { toast } = useToast();
+  const [classIndex, setClassIndex] = useState(0);
+  const [powerId, setPowerId] = useState('');
+  const [spellIds, setSpellIds] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const plan = useMemo(() => planT20LevelUp(content, sheet, classIndex), [content, sheet, classIndex]);
+  const result = applyT20LevelUp(sheet, plan, { powerId, spellIds });
+
+  const apply = async () => {
+    if (result.issues.length) return;
+    setBusy(true);
+    const client = getSupabaseBrowserClient();
+    try {
+      const saved = await saveCharacterSheet(client, characterId, version, { sheet: result.sheet });
+      const updated: CharacterResource[] = [];
+      for (const [key, gain] of [
+        [T20_RESOURCE_KEYS.hitPoints, plan.hitPointsGained],
+        [T20_RESOURCE_KEYS.manaPoints, plan.manaPointsGained],
+      ] as const) {
+        const track = resources.find((entry) => entry.key === key);
+        if (!track || gain <= 0) continue;
+        await adjustCharacterResource(client, track.id, 'set_max', (track.max ?? 0) + gain);
+        updated.push(await adjustCharacterResource(client, track.id, 'heal', gain));
+      }
+      const created: CharacterAbility[] = [];
+      for (const entry of result.abilities) {
+        created.push(
+          await createCharacterAbility(client, characterId, { kind: entry.kind, name: entry.name, source: entry.source, description: entry.description, data: entry.data as CharacterAbility['data'], resourceId: null }),
+        );
+      }
+      await addCharacterEvent(client, characterId, { kind: 'level_up', summary: result.summary, data: { level: plan.newTotalLevel } });
+      toast({ tone: 'success', title: `Nível ${plan.newTotalLevel}!` });
+      onDone({
+        sheet: result.sheet,
+        version: saved.version,
+        resources: resources.map((entry) => updated.find((item) => item.id === entry.id) ?? entry),
+        abilities: created,
+      });
+      onClose();
+    } catch (error) {
+      toast({ tone: 'danger', title: 'A subida de nível não foi concluída', description: failureMessage(error, 'Tente novamente.') });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal open onClose={onClose} busy={busy} size="lg" title={`Nível ${plan.newTotalLevel}: ${plan.classDef?.name ?? 'classe'} ${plan.newClassLevel}`} description="Regras do Tormenta20 e dos livros liberados.">
+      {sheet.identity.classes.length > 1 ? (
+        <SelectField id="t20-lu-class" label="Classe que sobe" value={String(classIndex)} onChange={(event) => setClassIndex(Number(event.target.value))}>
+          {sheet.identity.classes.map((entry, index) => (
+            <option key={`${entry.name}-${index}`} value={index}>
+              {entry.name} {entry.level} → {entry.level + 1}
+            </option>
+          ))}
+        </SelectField>
+      ) : null}
+      {!plan.classDef ? <Alert tone="warning">A classe não está nos livros liberados: só PV e PM sobem.</Alert> : null}
+      <p className="text-sm text-fg-secondary">
+        +{plan.hitPointsGained} PV e +{plan.manaPointsGained} PM.
+      </p>
+      {plan.abilities.length ? (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-semibold tracking-wider text-fg-muted uppercase">Habilidades novas</h3>
+          {plan.abilities.map((ability) => (
+            <details key={ability.name} className="rounded-md border border-line px-3 py-2 text-sm">
+              <summary className="cursor-pointer text-fg">{ability.name}</summary>
+              <p className="mt-2 whitespace-pre-line text-fg-secondary">{ability.text}</p>
+            </details>
+          ))}
+        </div>
+      ) : null}
+      {plan.powerChoice ? (
+        <div className="flex flex-col gap-1">
+          <SelectField id="t20-lu-power" label="Poder do nível" value={powerId} onChange={(event) => setPowerId(event.target.value)}>
+            <option value="">Escolha</option>
+            {plan.powerOptions.map((power) => (
+              <option key={power.id} value={power.id} disabled={power.problems.length > 0}>
+                {power.name}
+                {power.owners.length ? '' : ` (${power.group})`}
+                {power.problems.length ? ` — falta ${power.problems.join(', ')}` : ''}
+              </option>
+            ))}
+          </SelectField>
+          {powerId ? <p className="text-xs whitespace-pre-line text-fg-muted">{plan.powerOptions.find((power) => power.id === powerId)?.text}</p> : null}
+        </div>
+      ) : null}
+      {plan.newSpells > 0 ? (
+        <fieldset className="flex flex-col gap-1">
+          <legend className="mb-1 text-sm font-medium">
+            Magias novas ({spellIds.length}/{plan.newSpells})
+          </legend>
+          <div className="grid max-h-72 gap-1 overflow-y-auto sm:grid-cols-2">
+            {plan.spellOptions.map((spell) => (
+              <CheckboxField
+                key={spell.id}
+                id={`t20-lu-spell-${spell.id}`}
+                label={`${spell.name} · ${spell.circle}º`}
+                checked={spellIds.includes(spell.id)}
+                disabled={!spellIds.includes(spell.id) && spellIds.length >= plan.newSpells}
+                onChange={() => setSpellIds((current) => (current.includes(spell.id) ? current.filter((id) => id !== spell.id) : [...current, spell.id]))}
+              />
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
+      {result.issues.length ? <Alert tone="warning">{result.issues.join(' ')}</Alert> : null}
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" onClick={onClose} disabled={busy}>
+          Cancelar
+        </Button>
+        <Button loading={busy} disabled={result.issues.length > 0} onClick={() => void apply()}>
+          Aplicar nível {plan.newTotalLevel}
+        </Button>
+      </div>
+    </Modal>
+  );
+}

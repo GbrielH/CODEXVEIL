@@ -63,3 +63,4 @@ export { tormenta20License } from './license';
 export { t20OfficialLinks } from './links';
 export * from './content';
 export * from './creation';
+export * from './level-up';
