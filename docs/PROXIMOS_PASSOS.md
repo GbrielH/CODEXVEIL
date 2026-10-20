@@ -95,7 +95,7 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
    virtuais; com dados físicos, os dados virtuais somem e a ficha mostra que dado rolar em cada
    coisa (acerto do ataque, dano…). Online: dados virtuais ligados automaticamente (e, depois, o
    grid da sessão).
-2. **Grid da sessão** (próxima grande etapa, para sessões online).
+2. **Grid da sessão** (próxima grande etapa, para sessões online). Escopo definido em 2026-10-20 (com névoa de guerra e linha de visão opcional): ver [`GRID.md`](GRID.md). Ainda não iniciado.
 3. **[Feito em 2026-10-20] Ação de combate personalizada** criada pelo mestre.
 4. **[Feito em 2026-10-20]** Subida de nível: poder "Treinamento em Perícia" abre a escolha da perícia, como no Aumento de
    Atributo.
@@ -429,6 +429,13 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-20 — especificação da grade da sessão
+
+- Decisões do responsável registradas em [`GRID.md`](GRID.md): quadrados de 1,5 m, imagem ajustada
+  pelo mestre, vários mapas por sessão, tokens por porte (criação de criaturas passa a pedir o
+  tamanho), jogador move só o próprio token (também no app), névoa de guerra e linha de visão
+  opcional já na primeira versão. Implementação ainda não começou.
 
 ### 2026-10-20 — site e app alinhados (lado do jogador)
 
