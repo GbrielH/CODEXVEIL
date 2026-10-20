@@ -212,7 +212,8 @@ export async function BookEntryScreen({ reader, kindSlug, entryKey }: { reader: 
   }
   const indexHref = `${bookPath(reader.pack.id, '', reader.campaignId)}?tipo=${kindSlug}` as Route;
   const sectionHref = (section: BookEntryListing) => bookPath(reader.pack.id, `/${kindSlug}/${section.key}`, reader.campaignId) as Route;
-  const copyKind = reader.canCopy && reader.campaignId && reader.pack.systemId === 'dnd5e' && (kind === 'monster' || kind === 'magic_item') ? kind : null;
+  // D&D copia monstros e itens; Tormenta20, as ameaças (os itens T20 ainda não têm cópia).
+  const copyKind = reader.canCopy && reader.campaignId && (kind === 'monster' || (kind === 'magic_item' && reader.pack.systemId === 'dnd5e')) ? kind : null;
 
   return (
     <div className="flex flex-col gap-6">

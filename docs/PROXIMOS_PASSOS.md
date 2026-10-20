@@ -41,7 +41,7 @@ importado em Meus livros (fora do Git), como nos livros de D&D.
 | 4   | Ficha e jogo T20 (site)                         | **Feito (versão 1)** em 2026-10-19: `components/sheets/t20/sheet-screen.tsx` (ramo `tormenta20` em `character-sheet.tsx`): PV e PM com dano, cura e gasto, descanso pela qualidade, condições T20 com efeitos na ficha, atributos e perícias com rolagem 1d20, poderes, magias (lançar gasta PM), inventário com equipar e história. Falta: turnos e rolagens no mural da sessão, ataques com armas e edição de atributos/perícias. Não aberto no navegador. |
 | 5   | Subida de nível T20                             | **Feito** em 2026-10-20: `tormenta20/level-up.ts` (`planT20LevelUp`/`applyT20LevelUp`) e botão na ficha (`sheets/t20/level-up.tsx`): PV e PM do nível, habilidades novas, poder quando a tabela pede e magias novas. Testado com o pacote real (14 classes do 1º ao 6º). Sem multiclasse ainda.                                                                                                                                                              |
 | 6   | App (criação, ficha, subida de nível)           | **Feito (versão 1)** em 2026-10-20: `apps/mobile/src/components/t20/` (assistente e ficha com subida de nível); em "Novo personagem" o app escolhe D&D 5e ou Tormenta20 e depois a campanha. O assistente de D&D do app passou a ignorar livros de T20. Não testado no aparelho.                                                                                                                                                                             |
-| 7   | Mestre: ameaças no escudo e combate             | Não iniciado.                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| 7   | Mestre: ameaças no escudo e combate             | **Feito (versão 1)** em 2026-10-20: copiar ameaças T20 do livro para a biblioteca (aba Livros), ficha e editor de ameaça T20 no registro (`components/library/t20-threat.tsx`) e leitura no app. Cena e combate usam Defesa, PV e iniciativa pelo contrato do sistema. Conferido no pacote real: 80 ameaças. Não aberto no navegador.                                                                                                                        |
 
 ### Novo personagem: campanha primeiro (2026-10-19)
 
@@ -66,7 +66,7 @@ assistente do sistema, com os livros daquela campanha (ou os importados pelo usu
    `/personagens/novo` precisa escolher o assistente pelo sistema da campanha (hoje só lista
    campanhas `dnd5e`), e a ação do servidor deve validar com `t20DraftIssues` e criar com
    `createCharacter` (sistema `tormenta20`).
-4. **Próximo passo exato (marco 7):** mestre — ameaças T20 na biblioteca e no combate. Ficha T20 (feita) em `components/sheets/` (ramo `tormenta20` em `character-sheet.tsx`, usando
+4. **Próximo passo:** os 7 marcos do T20 estão feitos (versão 1). Pendências: multiclasse T20, ataques com armas na ficha, cópia de itens mágicos T20 e testes no navegador e no aparelho. Ficha T20 (feita) em `components/sheets/` (ramo `tormenta20` em `character-sheet.tsx`, usando
    `computeT20Derived`), subida de nível, app e mestre.
 
 ### Pendências conhecidas da extração

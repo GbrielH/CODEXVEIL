@@ -1,5 +1,7 @@
 import { getCreature, signedMediaUrls } from '@codexveil/database';
 import { parseDnd5eStatBlock } from '@codexveil/rpg-systems/dnd5e';
+import { parseT20StatBlock } from '@codexveil/rpg-systems/tormenta20';
+import { T20ThreatEditor, T20ThreatView } from '@/components/library/t20-threat';
 import { creatureKindLabels, uuidSchema } from '@codexveil/validation';
 import { EyeOff, Skull, UserRound } from 'lucide-react';
 import type { Metadata, Route } from 'next';
@@ -106,6 +108,13 @@ export default async function CreaturePage({ params }: Props) {
         ) : statBlock ? (
           <StatBlockView name={creature.name} statBlock={statBlock} />
         ) : null
+      ) : null}
+
+      {isGm && creature.gm && campaign.systemId === 'tormenta20' ? (
+        <>
+          <T20ThreatView name={creature.name} stats={parseT20StatBlock(creature.gm.stats)} />
+          {canManage ? <T20ThreatEditor creatureId={creature.id} stats={parseT20StatBlock(creature.gm.stats)} gm={{ notes: creature.gm.notes, secrets: creature.gm.secrets }} /> : null}
+        </>
       ) : null}
     </div>
   );

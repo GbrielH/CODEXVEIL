@@ -1,5 +1,6 @@
 import { creatureImagePath, getCampaign, getCreature, setCreatureImage, signedMediaUrls } from '@codexveil/database';
 import { parseDnd5eStatBlock, type Dnd5eStatBlock } from '@codexveil/rpg-systems/dnd5e';
+import { T20_ATTRIBUTES, formatT20Bonus, parseT20StatBlock, t20AttributeLabels } from '@codexveil/rpg-systems/tormenta20';
 import { creatureKindLabels } from '@codexveil/validation';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Image } from 'react-native';
@@ -67,6 +68,28 @@ export default function CreatureScreen() {
       ) : null}
       {creature.description ? <AppText variant="serif">{creature.description}</AppText> : null}
       {statBlock ? <StatBlockView name={creature.name} statBlock={statBlock} /> : null}
+      {creature.gm && campaign.systemId === 'tormenta20'
+        ? (() => {
+            const stats = parseT20StatBlock(creature.gm.stats);
+            return (
+              <Card>
+                <AppText variant="eyebrow">{[stats.type, stats.challenge ? `ND ${stats.challenge}` : ''].filter(Boolean).join(' · ') || 'Ameaça'}</AppText>
+                <AppText>
+                  Defesa {stats.defense} · PV {stats.hitPoints} · Iniciativa {formatT20Bonus(stats.initiative)}
+                </AppText>
+                {stats.speed ? <AppText variant="small">Deslocamento: {stats.speed}</AppText> : null}
+                <AppText variant="small">{T20_ATTRIBUTES.map((key) => `${t20AttributeLabels[key].abbreviation} ${stats.attributes[key] === null ? '—' : formatT20Bonus(stats.attributes[key])}`).join('  ')}</AppText>
+                {stats.melee ? <AppText variant="small">Corpo a corpo: {stats.melee}</AppText> : null}
+                {stats.ranged ? <AppText variant="small">À distância: {stats.ranged}</AppText> : null}
+                {stats.abilities.map((ability) => (
+                  <AppText key={ability.name} variant="small">
+                    {ability.name}. {ability.text}
+                  </AppText>
+                ))}
+              </Card>
+            );
+          })()
+        : null}
     </Screen>
   );
 }
