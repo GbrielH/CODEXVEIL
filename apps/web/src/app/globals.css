@@ -295,12 +295,45 @@
   opacity: 0;
 }
 
+/* Dado realista: cai do alto, quica e gira até parar no meio da tela. */
+@keyframes codex-die-throw {
+  0% {
+    transform: translateY(-70vh) rotate(-540deg) scale(0.7);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  55% {
+    transform: translateY(0) rotate(-40deg) scale(1.05);
+  }
+  70% {
+    transform: translateY(-6vh) rotate(-12deg) scale(1);
+  }
+  85% {
+    transform: translateY(0) rotate(6deg);
+  }
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+@utility animate-die-throw {
+  animation: codex-die-throw 1000ms cubic-bezier(0.3, 0.7, 0.4, 1) both;
+}
+
 @utility animate-pop {
   animation: codex-pop 360ms var(--ease-codex) both;
 }
 
 @utility animate-turn-glow {
   animation: codex-turn-glow 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-die-throw {
+    animation: none !important;
+  }
 }
 
 /* Movimento reduzido: o dragão fica parado no meio do sopro e as brasas somem. */

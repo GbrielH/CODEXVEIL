@@ -59,9 +59,12 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
    sessão); nova aba "Sessão" no site mostra os trechos liberados em tempo real (a antiga
    "Sessões" virou "Roteiros" para jogadores); no app, a leitura da sessão atualiza sozinha.
    Migração `20261020120000_session_reveal.sql` aplicada em produção em 2026-10-20.
-5. **Dados realistas.** Ao rolar (site e app), o dado aparece grande no meio da tela, cai e gira
+5. **[Feito em 2026-10-20] Dados realistas.** Ao rolar (site e app), o dado aparece grande no meio da tela, cai e gira
    (estilo app "Dice"), sem caixinha; com limite de dados simultâneos para não travar o aparelho.
-   Opcional se for inviável.
+   Opcional se for inviável. Feito: toda rolagem (site e app) mostra até 6 dados grandes caindo,
+   quicando e girando no meio da tela, sem caixa, com o número trocando até parar; 20 natural fica
+   verde e 1 natural vermelho; o total aparece embaixo e tudo some sozinho (no app, também com um
+   toque). Movimento reduzido do sistema desliga a queda.
 6. **Meus livros:** marcador do sistema de cada livro (D&D 5e, Tormenta20…).
 7. **Imagens das raças:** muitas raças aparecem com imagem básica de humano; revisar todas.
 8. **Botão "+1 nos três"** (aumento do antecedente) não responde ao clique; corrigir.
@@ -364,6 +367,11 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-20 — Dados realistas
+
+- Animação de dados na tela inteira (site: CSS; app: Reanimated + SVG, sem dependência nativa
+  nova). Limite de 6 dados animados. `pnpm check` 20/20; sem teste visual.
 
 ### 2026-10-20 — Aba Sessão
 

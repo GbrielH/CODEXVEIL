@@ -282,6 +282,8 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-20 (dados realistas):** item 5 feito (`pnpm check` 20/20; animação não conferida
+  no navegador nem no aparelho). Próximo: item 6 (selo do sistema em Meus livros).
 - **2026-10-20 (aba Sessão):** item 4 feito no código (`pnpm check` 20/20; sem teste no
   navegador). Migração `20261020120000_session_reveal.sql` aplicada em
   produção (`supabase db push`). Próximo: item 5 (dados realistas).

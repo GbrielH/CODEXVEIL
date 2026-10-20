@@ -22,6 +22,7 @@ import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/errors';
 import { getSupabase } from '@/lib/supabase';
 import { colors, radii, spacing } from '@/lib/theme';
+import { DiceThrow } from './dice-throw';
 
 export interface RollRequest {
   expression: string;
@@ -59,6 +60,8 @@ export function DiceProvider({
   children: ReactNode;
 }) {
   const toast = useToast();
+  const [throwing, setThrowing] = useState<(ShownRoll & { key: number }) | null>(null);
+  const clearThrow = useCallback(() => setThrowing(null), []);
   const roll = useCallback(
     async (request: RollRequest): Promise<ShownRoll | null> => {
       const mode = request.mode ?? 'normal';
@@ -84,6 +87,8 @@ export function DiceProvider({
         toast({ tone: 'danger', title: 'Os dados não foram rolados', description: failureMessage(cause) });
         return null;
       }
+      // Uma rolagem nova substitui a animação anterior (só uma por vez na tela).
+      setThrowing({ ...shown, key: Date.now() });
       const natural = naturalD20(shown);
       toast({
         tone: natural === 20 ? 'success' : natural === 1 ? 'danger' : 'info',
@@ -95,7 +100,12 @@ export function DiceProvider({
     [campaignId, characterId, toast],
   );
   const value = useMemo(() => (enabled ? { roll, campaignId } : null), [enabled, roll, campaignId]);
-  return <DiceContext.Provider value={value}>{children}</DiceContext.Provider>;
+  return (
+    <DiceContext.Provider value={value}>
+      {children}
+      {throwing ? <DiceThrow key={throwing.key} roll={throwing} onDone={clearThrow} /> : null}
+    </DiceContext.Provider>
+  );
 }
 
 export function useDice(): DiceContextValue | null {
