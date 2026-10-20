@@ -97,12 +97,12 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
    grid da sessão).
 2. **Grid da sessão** (próxima grande etapa, para sessões online).
 3. **Ação de combate personalizada** criada pelo mestre.
-4. Subida de nível: poder "Treinamento em Perícia" abre a escolha da perícia, como no Aumento de
+4. **[Feito em 2026-10-20]** Subida de nível: poder "Treinamento em Perícia" abre a escolha da perícia, como no Aumento de
    Atributo.
 5. Benefícios de origem: breve descrição de cada perícia/poder.
 6. Aba Sessão do mestre: mostrar a sessão montada e iniciada, com botão prático de liberar cada
    trecho aos jogadores ali mesmo.
-7. Perícias já treinadas nas listas de escolha: elemento visual (não só desabilitar).
+7. **[Feito em 2026-10-20]** Perícias já treinadas nas listas de escolha: elemento visual (não só desabilitar).
 8. Tormenta20: tirar Bestiário SRD e Itens mágicos SRD (de D&D) da biblioteca; usar os do T20 se
    houver.
 9. Combate do mestre: só a definição dos turnos (sem registrar ação/rolagem/alvo pelo painel); os
@@ -429,6 +429,14 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-20 — Poderes com perícia à escolha e perícias já treinadas
+
+- Regra geral pelo texto do poder: "treinado em uma/duas perícias a sua escolha" e "Escolha uma
+  perícia" (Treinamento em Perícia, Foco em Perícia, Conhecimento Enciclopédico, Educação
+  Privilegiada) pedem as perícias na subida de nível e na criação; poderes repetíveis aparecem de
+  novo. Perícias já treinadas aparecem com "✓ … · já treinada" e destaque. Site e app; teste novo
+  em `level-up.test.ts`. `pnpm check` 20/20.
 
 ### 2026-10-20 — Sessão presencial ou online
 

@@ -1,7 +1,21 @@
 'use client';
 
 import { addCharacterEvent, adjustCharacterResource, createCharacterAbility, grantCharacterLevel, saveCharacterSheet, type CharacterAbility, type CharacterResource } from '@codexveil/database';
-import { T20_ATTRIBUTES, T20_RESOURCE_KEYS, applyT20LevelUp, isT20AttributeIncrease, planT20LevelUp, t20AttributeLabels, type T20Attribute, type T20Content, type T20Sheet } from '@codexveil/rpg-systems/tormenta20';
+import {
+  T20_ATTRIBUTES,
+  T20_RESOURCE_KEYS,
+  T20_SKILLS,
+  T20_SKILL_IDS,
+  applyT20LevelUp,
+  isT20AttributeIncrease,
+  planT20LevelUp,
+  t20AttributeLabels,
+  t20PowerSkillPick,
+  type T20Attribute,
+  type T20Content,
+  type T20Sheet,
+  type T20Skill,
+} from '@codexveil/rpg-systems/tormenta20';
 import { TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Alert } from '@/components/ui/alert';
@@ -80,10 +94,12 @@ function Panel({ characterId, content, sheet, version, resources, onDone, onClos
   const [spellIds, setSpellIds] = useState<string[]>([]);
   const [attribute, setAttribute] = useState<T20Attribute | ''>('');
   const [featureChoices, setFeatureChoices] = useState<Record<string, string>>({});
+  const [skills, setSkills] = useState<T20Skill[]>([]);
   const [busy, setBusy] = useState(false);
   const plan = useMemo(() => planT20LevelUp(content, sheet, classIndex), [content, sheet, classIndex]);
-  const result = applyT20LevelUp(sheet, plan, { powerId, spellIds, attribute, featureChoices });
+  const result = applyT20LevelUp(sheet, plan, { powerId, spellIds, attribute, featureChoices, skills });
   const chosenPower = plan.powerOptions.find((power) => power.id === powerId);
+  const skillPick = chosenPower ? t20PowerSkillPick(chosenPower) : null;
   // PV ganhos de verdade (inclui o +1 PV por nível quando a Constituição aumenta).
   const hitPointsGained = result.sheet.hitPoints.max - sheet.hitPoints.max;
 
@@ -175,7 +191,10 @@ function Panel({ characterId, content, sheet, version, resources, onDone, onClos
       ))}
       {plan.powerChoice ? (
         <div className="flex flex-col gap-1">
-          <SelectField id="t20-lu-power" label="Poder do nível" value={powerId} onChange={(event) => setPowerId(event.target.value)}>
+          <SelectField id="t20-lu-power" label="Poder do nível" value={powerId} onChange={(event) => {
+              setPowerId(event.target.value);
+              setSkills([]);
+            }}>
             <option value="">Escolha</option>
             {plan.powerOptions.map((power) => (
               <option key={power.id} value={power.id} disabled={power.problems.length > 0}>
@@ -186,6 +205,29 @@ function Panel({ characterId, content, sheet, version, resources, onDone, onClos
             ))}
           </SelectField>
           {powerId ? <p className="text-xs whitespace-pre-line text-fg-muted">{chosenPower?.text}</p> : null}
+          {skillPick ? (
+            <fieldset className="flex flex-col gap-1">
+              <legend className="mb-1 text-sm font-medium">
+                Perícias ({skills.length}/{skillPick.count})
+              </legend>
+              <div className="grid max-h-60 gap-1 overflow-y-auto sm:grid-cols-2">
+                {T20_SKILL_IDS.map((skill) => {
+                  const trained = sheet.skills.trained.includes(skill);
+                  const blocked = skillPick.trains && trained;
+                  return (
+                    <CheckboxField
+                      key={skill}
+                      id={`t20-lu-skill-${skill}`}
+                      label={`${T20_SKILLS[skill].label}${blocked ? ' (já treinada)' : ''}`}
+                      checked={skills.includes(skill)}
+                      disabled={blocked || (!skills.includes(skill) && skills.length >= skillPick.count)}
+                      onChange={() => setSkills((current) => (current.includes(skill) ? current.filter((entry) => entry !== skill) : [...current, skill]))}
+                    />
+                  );
+                })}
+              </div>
+            </fieldset>
+          ) : null}
           {chosenPower && isT20AttributeIncrease(chosenPower.name) ? (
             <SelectField id="t20-lu-attribute" label="Atributo que aumenta (+1)" value={attribute} onChange={(event) => setAttribute(event.target.value as T20Attribute | '')}>
               <option value="">Escolha</option>

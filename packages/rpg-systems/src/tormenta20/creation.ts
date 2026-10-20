@@ -24,6 +24,8 @@ import {
   findT20Race,
   plainT20,
   isT20AttributeIncrease,
+  t20PowerRepeatable,
+  t20PowerSkillPick,
   t20ChoiceOnlyPowers,
   t20FeatureChoicesAt,
   type T20FeatureChoice,
@@ -98,6 +100,8 @@ export interface T20Draft {
   levelPowers: Record<string, string>;
   /** Nível → atributo do "Aumento de Atributo" escolhido como poder daquele nível. */
   levelPowerAttributes: Record<string, T20Attribute>;
+  /** Nível → perícias escolhidas para um poder como "Treinamento em Perícia". */
+  levelPowerSkills: Record<string, T20Skill[]>;
   /** `<nível>:<habilidade>` → id da opção (ex.: "5:Bênção da Justiça" → Égide Sagrada). */
   featureChoices: Record<string, string>;
   spellIds: string[];
@@ -141,6 +145,7 @@ export function createT20Draft(level = 1, method: T20AttributeMethodChoice = 'po
     grantedPowerId: '',
     levelPowers: {},
     levelPowerAttributes: {},
+    levelPowerSkills: {},
     featureChoices: {},
     spellIds: [],
     equipment: { simple: '', martial: '', armor: '', shield: false },
@@ -342,7 +347,18 @@ export function t20ExpertiseRule(content: T20Content, draft: T20Draft): { abilit
 }
 
 export function t20TrainedSkills(content: T20Content, draft: T20Draft): T20Skill[] {
-  return [...new Set([...t20GrantedSkills(content, draft), ...draft.classSkills, ...draft.intSkills, ...draft.raceSkills])];
+  return [...new Set([...t20GrantedSkills(content, draft), ...draft.classSkills, ...draft.intSkills, ...draft.raceSkills, ...t20LevelPowerTrainedSkills(content, draft)])];
+}
+
+/** Perícias treinadas por poderes de nível como "Treinamento em Perícia". */
+export function t20LevelPowerTrainedSkills(content: T20Content, draft: T20Draft): T20Skill[] {
+  const out: T20Skill[] = [];
+  for (const [level, id] of Object.entries(draft.levelPowers)) {
+    if (Number(level) > draft.level) continue;
+    const power = content.powers.find((entry) => entry.id === id);
+    if (power && t20PowerSkillPick(power)?.trains) out.push(...(draft.levelPowerSkills[level] ?? []));
+  }
+  return out;
 }
 
 function raceIsVersatile(race: T20Item<'species'> | undefined) {
@@ -605,8 +621,16 @@ export function t20DraftIssues(content: T20Content, draft: T20Draft, context: { 
     for (const choice of t20CreationFeatureChoices(content, draft)) {
       if (!choice.options.some((option) => option.id === draft.featureChoices[choice.key])) add('poderes', `featureChoices.${choice.key}`, `${choice.ability} (${choice.level}º nível): escolha uma opção.`);
     }
-    // "Aumento de Atributo" pode repetir; os outros poderes, não.
-    const repeated = Object.values(draft.levelPowers).filter((id, index, all) => all.indexOf(id) !== index && !isT20AttributeIncrease(content.powers.find((power) => power.id === id)?.name ?? ''));
+    for (const level of t20PowerLevels(klass, draft.level)) {
+      const chosen = content.powers.find((power) => power.id === draft.levelPowers[String(level)]);
+      const pick = chosen ? t20PowerSkillPick(chosen) : null;
+      if (chosen && pick && (draft.levelPowerSkills[String(level)] ?? []).length !== pick.count) add('poderes', `levelPowers.${level}`, `${chosen.name} (${level}º nível): escolha ${pick.count} perícia(s).`);
+    }
+    // Poderes repetíveis ("Aumento de Atributo", "Treinamento em Perícia") podem repetir; os outros, não.
+    const repeated = Object.values(draft.levelPowers).filter((id, index, all) => {
+      const power = content.powers.find((entry) => entry.id === id);
+      return all.indexOf(id) !== index && !(power && t20PowerRepeatable(power));
+    });
     if (repeated.length) add('poderes', 'levelPowers', 'O mesmo poder foi escolhido mais de uma vez.');
   }
 
@@ -689,6 +713,8 @@ export function buildT20Character(content: T20Content, draft: T20Draft, sourcebo
     if (power && attribute && isT20AttributeIncrease(power.name)) {
       const names: Record<T20Attribute, string> = { for: 'Força', des: 'Destreza', con: 'Constituição', int: 'Inteligência', sab: 'Sabedoria', car: 'Carisma' };
       powerRefs.push({ key: power.id, name: `${power.name} (${names[attribute]})`, source: `${klass.name} ${level}º nível`, level: Number(level), attribute });
+    } else if (power && t20PowerSkillPick(power) && (draft.levelPowerSkills[level] ?? []).length) {
+      powerRefs.push({ key: power.id, name: `${power.name} (${(draft.levelPowerSkills[level] ?? []).map((skill) => T20_SKILLS[skill].label).join(', ')})`, source: `${klass.name} ${level}º nível`, level: Number(level) });
     } else pushPower(power, `${klass.name} ${level}º nível`, Number(level));
   }
   const featurePicks = t20CreationFeatureChoices(content, draft).flatMap((choice) => {
@@ -853,6 +879,7 @@ const t20DraftSchema = z.object({
   grantedPowerId: shortText(160),
   levelPowers: z.record(z.string().max(4), z.string().trim().max(160)).catch({}),
   levelPowerAttributes: z.record(z.string().max(4), z.enum(T20_ATTRIBUTES)).catch({}),
+  levelPowerSkills: z.record(z.string().max(4), z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(3)).catch({}),
   featureChoices: z.record(z.string().max(220), z.string().trim().max(160)).catch({}),
   spellIds: idList(60),
   equipment: z

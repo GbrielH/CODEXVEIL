@@ -33,6 +33,7 @@ const content = buildT20Content([
         },
       },
       { kind: 'feat', key: 'aumento', name: 'Aumento de Atributo', data: { group: 'classe', owners: ['Paladino'], text: 'Você recebe +1 em um atributo.' } },
+      { kind: 'feat', key: 'treino', name: 'Treinamento em Perícia', data: { group: 'destino', text: 'Você se torna treinado em uma perícia a sua escolha. Você pode escolher este poder outras vezes para perícias diferentes.' } },
       { kind: 'feat', key: 'egide', name: 'Égide Sagrada', data: { group: 'classe', owners: ['Paladino'], text: 'Escudo sagrado.' } },
       { kind: 'feat', key: 'montaria', name: 'Montaria Sagrada', data: { group: 'classe', owners: ['Paladino'], text: 'Montaria.' } },
     ],
@@ -87,5 +88,18 @@ describe('Tormenta20 — subida de nível', () => {
     const draft = { ...createT20Draft(5), classId: paladino.id, levelPowers: { '4': aumento.id }, levelPowerAttributes: { '4': 'car' as const } };
     expect(t20CreationFeatureChoices(content, draft).map((choice) => choice.key)).toEqual(['5:Bênção da Justiça']);
     expect(t20FinalAttributes(content, draft).car).toBe(t20FinalAttributes(content, { ...draft, levelPowerAttributes: {} }).car + 1);
+  });
+
+  it('Treinamento em Perícia pede a perícia e a torna treinada (pode repetir)', () => {
+    const sheet = paladin(3);
+    const plan = planT20LevelUp(content, sheet);
+    const power = plan.powerOptions.find((option) => option.name === 'Treinamento em Perícia')!;
+    expect(applyT20LevelUp(sheet, plan, { powerId: power.id, spellIds: [] }).issues.join(' ')).toContain('Escolha 1 perícia');
+    const result = applyT20LevelUp(sheet, plan, { powerId: power.id, spellIds: [], skills: ['luta'] });
+    expect(result.issues).toEqual([]);
+    expect(result.sheet.skills.trained).toContain('luta');
+    expect(result.sheet.powers.at(-1)?.name).toBe('Treinamento em Perícia (Luta)');
+    const next = planT20LevelUp(content, parseT20Sheet({ ...result.sheet, identity: { ...result.sheet.identity, classes: [{ ...result.sheet.identity.classes[0]!, level: 3 }] } }));
+    expect(next.powerOptions.some((option) => option.name === 'Treinamento em Perícia')).toBe(true);
   });
 });

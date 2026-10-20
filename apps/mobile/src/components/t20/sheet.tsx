@@ -22,6 +22,10 @@ import {
   applyT20LevelUp,
   buildT20Content,
   isT20AttributeIncrease,
+  t20PowerSkillPick,
+  T20_SKILLS,
+  T20_SKILL_IDS,
+  type T20Skill,
   type T20LevelUpChoices,
   computeT20Derived,
   findT20Condition,
@@ -514,8 +518,10 @@ function LevelUpModal({ content, sheet, onClose, onApply }: { content: ReturnTyp
   const [spellIds, setSpellIds] = useState<string[]>([]);
   const [attribute, setAttribute] = useState<T20LevelUpChoices['attribute']>('');
   const [featureChoices, setFeatureChoices] = useState<Record<string, string>>({});
-  const preview = applyT20LevelUp(sheet, plan, { powerId, spellIds, attribute, featureChoices });
+  const [skills, setSkills] = useState<T20Skill[]>([]);
+  const preview = applyT20LevelUp(sheet, plan, { powerId, spellIds, attribute, featureChoices, skills });
   const chosenPower = plan.powerOptions.find((power) => power.id === powerId);
+  const skillPick = chosenPower ? t20PowerSkillPick(chosenPower) : null;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   return (
@@ -549,9 +555,31 @@ function LevelUpModal({ content, sheet, onClose, onApply }: { content: ReturnTyp
           <PickerField
             label="Poder do nível"
             value={powerId}
-            onChange={setPowerId}
+            onChange={(value) => {
+              setPowerId(value);
+              setSkills([]);
+            }}
             options={plan.powerOptions.map((power) => ({ value: power.id, label: power.name, description: power.problems.length ? `Falta ${power.problems.join(', ')}` : power.text.slice(0, 140), disabled: power.problems.length > 0 }))}
           />
+        ) : null}
+        {skillPick ? (
+          <View style={{ gap: 4 }}>
+            <AppText variant="small">
+              Perícias ({skills.length}/{skillPick.count})
+            </AppText>
+            {T20_SKILL_IDS.map((skill) => {
+              const blocked = skillPick.trains && sheet.skills.trained.includes(skill);
+              return (
+                <CheckRow
+                  key={skill}
+                  label={`${T20_SKILLS[skill].label}${blocked ? ' (já treinada)' : ''}`}
+                  checked={skills.includes(skill)}
+                  disabled={blocked || (!skills.includes(skill) && skills.length >= skillPick.count)}
+                  onChange={(checked) => setSkills((current) => (checked ? [...current, skill] : current.filter((entry) => entry !== skill)))}
+                />
+              );
+            })}
+          </View>
         ) : null}
         {chosenPower && isT20AttributeIncrease(chosenPower.name) ? (
           <PickerField
@@ -586,7 +614,7 @@ function LevelUpModal({ content, sheet, onClose, onApply }: { content: ReturnTyp
             loading={busy}
             onPress={async () => {
               setBusy(true);
-              setError(await onApply({ powerId, spellIds, attribute, featureChoices }));
+              setError(await onApply({ powerId, spellIds, attribute, featureChoices, skills }));
               setBusy(false);
             }}
           />

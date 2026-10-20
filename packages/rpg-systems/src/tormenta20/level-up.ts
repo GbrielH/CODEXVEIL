@@ -4,12 +4,12 @@
  * magias novas. A tela mostra o plano; `applyT20LevelUp` monta a ficha e as entradas novas.
  */
 import type { AbilityEntryTemplate } from '../types';
-import { findT20Class, isT20AttributeIncrease, plainT20, t20ChoiceOnlyPowers, t20FeatureChoicesAt, type T20Content, type T20FeatureChoice, type T20Item } from './content';
+import { findT20Class, isT20AttributeIncrease, plainT20, t20ChoiceOnlyPowers, t20FeatureChoicesAt, t20PowerRepeatable, t20PowerSkillPick, type T20Content, type T20FeatureChoice, type T20Item } from './content';
 import { t20MaxCircle, t20PrerequisiteProblems } from './creation';
 import { T20_ATTRIBUTES, type T20Attribute } from './attributes';
 import { t20Tier } from './progression';
 import type { T20Sheet } from './sheet';
-import { T20_SKILL_IDS } from './skills';
+import { T20_SKILLS, T20_SKILL_IDS, type T20Skill } from './skills';
 
 export interface T20LevelUpPlan {
   classIndex: number;
@@ -64,9 +64,9 @@ export function planT20LevelUp(content: T20Content, sheet: T20Sheet, classIndex 
     ? content.powers
         .filter((power) => power.owners.some((owner) => plainT20(owner) === plainT20(klass.name)) || ['combate', 'destino', 'magia', 'tormenta'].includes(power.group))
         .filter((power) => !choiceOnly.has(plainT20(power.name)))
-        // "Aumento de Atributo" pode ser escolhido várias vezes (uma opção só na lista); os outros, uma vez.
-        .filter((power) => isT20AttributeIncrease(power.name) || !knownPowers.some((name) => plainT20(name) === plainT20(power.name)))
-        .filter((power, index, list) => !isT20AttributeIncrease(power.name) || list.findIndex((entry) => isT20AttributeIncrease(entry.name)) === index)
+        // Poderes repetíveis ("Aumento de Atributo", "Treinamento em Perícia"…) aparecem uma vez na lista; os outros, só se ainda não os tiver.
+        .filter((power) => t20PowerRepeatable(power) || !knownPowers.some((name) => plainT20(name.replace(/\s*\(.*\)$/, '')) === plainT20(power.name)))
+        .filter((power, index, list) => !t20PowerRepeatable(power) || list.findIndex((entry) => plainT20(entry.name) === plainT20(power.name)) === index)
         .map((power) => ({
           ...power,
           problems: t20PrerequisiteProblems(power.prerequisite, { attributes: sheet.attributes, skills: trained, level: newTotalLevel, powers: knownPowers, content }),
@@ -119,6 +119,8 @@ export interface T20LevelUpChoices {
   attribute?: T20Attribute | '';
   /** Habilidade com escolha → id da opção escolhida. */
   featureChoices?: Record<string, string>;
+  /** Perícias escolhidas para um poder como "Treinamento em Perícia". */
+  skills?: readonly T20Skill[];
 }
 
 export function applyT20LevelUp(sheet: T20Sheet, plan: T20LevelUpPlan, choices: T20LevelUpChoices): T20LevelUpResult {
@@ -131,6 +133,12 @@ export function applyT20LevelUp(sheet: T20Sheet, plan: T20LevelUpPlan, choices: 
     if (!increase) issues.push('Escolha o atributo que vai aumentar.');
     else if (plan.blockedAttributes.includes(increase)) issues.push('Este atributo já recebeu um aumento neste patamar.');
   }
+  const skillPick = power ? t20PowerSkillPick(power) : null;
+  const pickedSkills = skillPick ? [...new Set(choices.skills ?? [])] : [];
+  if (skillPick) {
+    if (pickedSkills.length !== skillPick.count) issues.push(`Escolha ${skillPick.count} perícia(s) para ${power!.name}.`);
+    if (skillPick.trains && pickedSkills.some((skill) => sheet.skills.trained.includes(skill))) issues.push('Escolha perícias em que ainda não é treinado.');
+  }
   const picked = plan.featureChoices.map((choice) => ({ choice, option: choice.options.find((option) => option.id === choices.featureChoices?.[choice.ability]) }));
   for (const { choice, option } of picked) if (!option) issues.push(`${choice.ability}: escolha uma opção.`);
   const spells = plan.spellOptions.filter((spell) => choices.spellIds.includes(spell.id));
@@ -140,7 +148,8 @@ export function applyT20LevelUp(sheet: T20Sheet, plan: T20LevelUpPlan, choices: 
   const source = `${className} ${plan.newClassLevel}º nível`;
   const classes = sheet.identity.classes.map((entry, index) => (index === plan.classIndex ? { ...entry, level: plan.newClassLevel } : entry));
   const attributeNames: Record<T20Attribute, string> = { for: 'Força', des: 'Destreza', con: 'Constituição', int: 'Inteligência', sab: 'Sabedoria', car: 'Carisma' };
-  const powerName = power ? (increase ? `${power.name} (${attributeNames[increase]})` : power.name) : '';
+  const skillLabel = pickedSkills.map((skill) => T20_SKILLS[skill].label).join(', ');
+  const powerName = power ? (increase ? `${power.name} (${attributeNames[increase]})` : skillLabel ? `${power.name} (${skillLabel})` : power.name) : '';
   // +1 em Constituição vale para todos os níveis: +1 PV por nível de personagem.
   const conBonus = increase === 'con' ? plan.newTotalLevel : 0;
   const featurePowers = picked.flatMap(({ option }) => (option && !option.id.startsWith('opcao:') ? [{ key: option.id, name: option.name, source, level: plan.newTotalLevel }] : []));
@@ -148,6 +157,7 @@ export function applyT20LevelUp(sheet: T20Sheet, plan: T20LevelUpPlan, choices: 
     ...sheet,
     identity: { ...sheet.identity, classes },
     attributes: increase ? { ...sheet.attributes, [increase]: sheet.attributes[increase] + 1 } : sheet.attributes,
+    skills: skillPick?.trains && pickedSkills.length ? { ...sheet.skills, trained: [...new Set([...sheet.skills.trained, ...pickedSkills])] } : sheet.skills,
     hitPoints: { max: sheet.hitPoints.max + plan.hitPointsGained + conBonus },
     manaPoints: { max: sheet.manaPoints.max + plan.manaPointsGained },
     powers: [...sheet.powers, ...(power ? [{ key: power.id, name: powerName, source, level: plan.newTotalLevel, ...(increase ? { attribute: increase } : {}) }] : []), ...featurePowers],

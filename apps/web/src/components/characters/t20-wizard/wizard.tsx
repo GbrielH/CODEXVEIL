@@ -30,6 +30,8 @@ import {
   isT20AttributeIncrease,
   t20CreationFeatureChoices,
   t20ExpertiseRule,
+  t20PowerSkillPick,
+  T20_SKILL_IDS,
   t20GenericPowerGroups,
   t20GenericPowerOptions,
   t20GrantedPowers,
@@ -445,6 +447,18 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                       })}
                     </SelectField>
                     {chosen ? <p className="text-xs whitespace-pre-line text-fg-muted">{chosen.text}</p> : null}
+                    {chosen && t20PowerSkillPick(chosen) ? (
+                      <MultiPick
+                        label={`Perícias de ${chosen.name} (escolha ${t20PowerSkillPick(chosen)!.count})`}
+                        count={t20PowerSkillPick(chosen)!.count}
+                        options={T20_SKILL_IDS.map((skill) => {
+                          const trained = t20TrainedSkills(content, { ...draft, levelPowerSkills: { ...draft.levelPowerSkills, [String(level)]: [] } }).includes(skill);
+                          return { id: skill, name: `${T20_SKILLS[skill].label}${trained && t20PowerSkillPick(chosen)!.trains ? ' (já treinada)' : ''}`, disabled: trained && t20PowerSkillPick(chosen)!.trains };
+                        })}
+                        value={draft.levelPowerSkills[String(level)] ?? []}
+                        onChange={(value) => update({ levelPowerSkills: { ...draft.levelPowerSkills, [String(level)]: value as T20Skill[] } })}
+                      />
+                    ) : null}
                     {chosen && isT20AttributeIncrease(chosen.name) ? (
                       <SelectField
                         id={`t20-power-attr-${level}`}
@@ -666,7 +680,7 @@ function MultiPick({
 }: {
   label: string;
   count: number;
-  options: { id: string; name: string; description?: string; disabled?: boolean }[];
+  options: { id: string; name: string; description?: string; disabled?: boolean; note?: string }[];
   value: string[];
   onChange: (value: string[]) => void;
   error?: string | undefined;
@@ -696,7 +710,8 @@ function MultiPick({
           <CheckboxField
             key={option.id}
             id={`pick-${label}-${option.id}`}
-            label={option.name}
+            label={option.note ? `✓ ${option.name} · ${option.note}` : option.name}
+            className={option.note ? 'rounded-md bg-verdigris-900/40 px-1.5 text-verdigris-300' : undefined}
             description={option.description}
             checked={value.includes(option.id)}
             disabled={option.disabled || (!value.includes(option.id) && value.length >= count)}
@@ -811,7 +826,10 @@ function SkillsStep({
   const expertise = t20ExpertiseRule(content, draft);
   const optionsFor = (list: T20Skill[], own: T20Skill[]) => {
     const used = taken(own);
-    return list.map((skill) => ({ id: skill, name: T20_SKILLS[skill].label, disabled: used.has(skill) && !own.includes(skill) }));
+    return list.map((skill) => {
+      const already = used.has(skill) && !own.includes(skill);
+      return { id: skill, name: T20_SKILLS[skill].label, disabled: already, ...(already ? { note: 'já treinada' } : {}) };
+    });
   };
   return (
     <div className="flex flex-col gap-6">

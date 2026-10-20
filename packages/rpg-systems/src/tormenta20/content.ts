@@ -179,3 +179,21 @@ export function t20FeatureChoicesAt(content: T20Content, klass: T20Item<'class'>
     }))
     .filter((choice) => choice.options.length > 1);
 }
+
+/**
+ * Poder que pede perícias à escolha ("Você se torna treinado em uma perícia a sua escolha",
+ * "Escolha uma perícia…"): quantas e se o personagem passa a ser treinado nelas.
+ */
+export function t20PowerSkillPick(power: { text: string }): { count: number; trains: boolean } | null {
+  const text = plainT20(power.text);
+  const trained = /treinado em (uma|duas|tres) pericias? [^.]*a sua escolha/.exec(text);
+  if (trained) return { count: { uma: 1, duas: 2, tres: 3 }[trained[1] as 'uma' | 'duas' | 'tres'], trains: true };
+  if (/^escolha uma pericia/.test(text)) return { count: 1, trains: false };
+  return null;
+}
+
+/** Poder que pode ser escolhido mais de uma vez ("pode escolher este poder outras/várias vezes"). */
+export function t20PowerRepeatable(power: { name: string; text: string }): boolean {
+  return isT20AttributeIncrease(power.name) || /pode escolher este poder (outras|varias) vezes/.test(plainT20(power.text));
+}
+

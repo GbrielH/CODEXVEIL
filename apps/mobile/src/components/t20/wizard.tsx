@@ -29,6 +29,8 @@ import {
   isT20AttributeIncrease,
   t20CreationFeatureChoices,
   t20ExpertiseRule,
+  t20PowerSkillPick,
+  T20_SKILL_IDS,
   t20GenericPowerGroups,
   t20GenericPowerOptions,
   t20GrantedPowers,
@@ -173,7 +175,7 @@ export function T20MobileWizard({ campaign, sources }: { campaign: T20MobileCamp
   const taken = (own: string[]) => new Set([...t20GrantedSkills(content, draft), ...draft.classSkills, ...draft.intSkills, ...draft.raceSkills].filter((skill) => !own.includes(skill)));
   const skillOptions = (list: T20Skill[], own: T20Skill[]) => {
     const used = taken(own);
-    return list.map((skill) => ({ id: skill, name: T20_SKILLS[skill].label, disabled: used.has(skill) }));
+    return list.map((skill) => ({ id: skill, name: used.has(skill) ? `✓ ${T20_SKILLS[skill].label} · já treinada` : T20_SKILLS[skill].label, disabled: used.has(skill) }));
   };
 
   return (
@@ -413,6 +415,15 @@ export function T20MobileWizard({ campaign, sources }: { campaign: T20MobileCamp
                   return { value: power.id, label: power.name, description: problems.length ? `Falta ${problems.join(', ')}` : clip(power.text, 140), disabled: problems.length > 0 || (!isT20AttributeIncrease(power.name) && others.includes(power.name)) };
                 })}
               />
+              {chosen && t20PowerSkillPick(chosen)
+                ? multi(
+                    `Perícias de ${chosen.name}`,
+                    t20PowerSkillPick(chosen)!.count,
+                    T20_SKILL_IDS.filter((skill) => !t20PowerSkillPick(chosen)!.trains || !t20TrainedSkills(content, { ...draft, levelPowerSkills: { ...draft.levelPowerSkills, [String(level)]: [] } }).includes(skill)).map((skill) => ({ id: skill, name: T20_SKILLS[skill].label })),
+                    draft.levelPowerSkills[String(level)] ?? [],
+                    (value) => update({ levelPowerSkills: { ...draft.levelPowerSkills, [String(level)]: value as T20Skill[] } }),
+                  )
+                : null}
               {chosen && isT20AttributeIncrease(chosen.name) ? (
                 <PickerField
                   label={`Atributo que aumenta no ${level}º nível (+1)`}
