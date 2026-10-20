@@ -11,7 +11,9 @@ import {
 import { canEditCharacterPlayState, canEditCharacterSheet } from '@codexveil/domain';
 import { findSystem } from '@codexveil/rpg-systems';
 import { parseDnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
+import { parseT20Sheet } from '@codexveil/rpg-systems/tormenta20';
 import { Dnd5eSheetScreen } from '@/components/sheets/dnd5e/sheet-screen';
+import { T20SheetScreen } from '@/components/sheets/t20/sheet-screen';
 import { ErrorState } from '@/components/ui/states';
 import { campaignBookPacks, loadBookSources, ownReadyBookPacks } from '@/lib/books';
 import { loadCharacterOrNotFound } from '@/lib/characters';
@@ -89,6 +91,33 @@ export async function CharacterSheet({ characterId, variant = 'full' }: { charac
         title="Não foi possível abrir a ficha"
         description="Os dados desta ficha não seguem o formato esperado. Nada foi alterado; contate o suporte informando o personagem."
       />
+    );
+  } else if (system?.id === 'tormenta20') {
+    let sheet;
+    try {
+      sheet = parseT20Sheet(character.sheet);
+    } catch (error) {
+      console.error('[codexveil] ficha Tormenta20 inválida', character.id, error);
+    }
+    content = sheet ? (
+      <T20SheetScreen
+        character={{
+          id: character.id,
+          name: character.name,
+          ownerName: character.ownerName,
+          version: character.version,
+          portraitUrl: character.portraitPath ? (portraits[character.portraitPath] ?? null) : null,
+          campaign: character.campaign ? { id: character.campaign.id, name: character.campaign.name } : null,
+        }}
+        sheet={sheet}
+        resources={resources}
+        conditions={conditions}
+        items={items}
+        abilities={abilities}
+        permissions={{ canEditSheet: permissions.canEditSheet, canEditPlay: permissions.canEditPlay }}
+      />
+    ) : (
+      <ErrorState title="Não foi possível abrir a ficha" description="Os dados desta ficha não seguem o formato do Tormenta20. Nada foi alterado." />
     );
   } else {
     content = (
