@@ -409,6 +409,12 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-20 — Lacunas do Tormenta20
+
+- Ficha T20 (site e app) com cartão de turno na campanha: vez, ordem e "Encerrar turno" (tira 1
+  rodada das condições). "Usar"/"Lançar" rola o dado do texto (vai ao mural na campanha) e, na vez
+  do personagem, registra nas ações do turno. App: editar item do inventário T20. `pnpm check` 20/20.
+
 ### 2026-10-20 — Subida de nível só na aba Evolução, liberada pelo mestre
 
 - D&D e Tormenta20, site e app: o botão de subir de nível saiu da aba Personagem (e do cabeçalho

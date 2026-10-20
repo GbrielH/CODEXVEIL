@@ -1,4 +1,4 @@
-import { createCharacterItem, type CharacterItem } from '@codexveil/database';
+import { createCharacterItem, updateCharacterItem, type CharacterItem } from '@codexveil/database';
 import { ITEM_CATEGORIES, itemCategoryLabels, type ItemCategory } from '@codexveil/domain';
 import { fieldErrorsFrom, inventoryItemSchema, type FieldErrors } from '@codexveil/validation';
 import { useState } from 'react';
@@ -11,30 +11,41 @@ import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/errors';
 import { getSupabase } from '@/lib/supabase';
 
-/** Novo item no inventário do Tormenta20 (o campo "espaços" usa o peso do item). */
-export function T20NewItem({ characterId, onCreated, onClose }: { characterId: string; onCreated: (item: CharacterItem) => void; onClose: () => void }) {
+/** Novo item (ou edição de um item) no inventário do Tormenta20; o campo "espaços" usa o peso do item. */
+export function T20NewItem({
+  characterId,
+  item,
+  onCreated,
+  onClose,
+}: {
+  characterId: string;
+  /** Item existente: o formulário edita em vez de criar. */
+  item?: CharacterItem;
+  onCreated: (item: CharacterItem) => void;
+  onClose: () => void;
+}) {
   const toast = useToast();
-  const [name, setName] = useState('');
-  const [quantity, setQuantity] = useState('1');
-  const [spaces, setSpaces] = useState('1');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<ItemCategory>('gear');
+  const [name, setName] = useState(item?.name ?? '');
+  const [quantity, setQuantity] = useState(String(item?.quantity ?? 1));
+  const [spaces, setSpaces] = useState(item ? (item.weight === null ? '' : String(item.weight).replace('.', ',')) : '1');
+  const [description, setDescription] = useState(item?.description ?? '');
+  const [category, setCategory] = useState<ItemCategory>(item?.category ?? 'gear');
   const [errors, setErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
     const weight = spaces.trim() === '' ? null : Number(spaces.replace(',', '.'));
-    const parsed = inventoryItemSchema.safeParse({ name, quantity: Number(quantity), category, weight: Number.isFinite(weight) ? weight : null, description });
+    const parsed = inventoryItemSchema.safeParse({ name, quantity: Number(quantity), category, weight: Number.isFinite(weight) ? weight : null, description, notes: item?.notes ?? '', isEquipped: item?.isEquipped ?? false });
     if (!parsed.success) {
       setErrors(fieldErrorsFrom(parsed.error));
       return;
     }
     setBusy(true);
     try {
-      onCreated(await createCharacterItem(getSupabase(), characterId, parsed.data));
+      onCreated(item ? await updateCharacterItem(getSupabase(), item.id, parsed.data) : await createCharacterItem(getSupabase(), characterId, parsed.data));
       onClose();
     } catch (error) {
-      toast({ tone: 'danger', title: 'O item não foi adicionado', description: failureMessage(error) });
+      toast({ tone: 'danger', title: item ? 'O item não foi salvo' : 'O item não foi adicionado', description: failureMessage(error) });
     } finally {
       setBusy(false);
     }
@@ -42,7 +53,7 @@ export function T20NewItem({ characterId, onCreated, onClose }: { characterId: s
 
   return (
     <Card>
-      <AppText variant="heading">Novo item</AppText>
+      <AppText variant="heading">{item ? 'Editar item' : 'Novo item'}</AppText>
       <Field label="Nome" value={name} onChangeText={setName} maxLength={120} error={errors.name} />
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ flex: 1 }}>
@@ -60,7 +71,7 @@ export function T20NewItem({ characterId, onCreated, onClose }: { characterId: s
       </View>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Button label="Cancelar" variant="ghost" onPress={onClose} style={{ flex: 1 }} />
-        <Button label="Adicionar" onPress={() => void submit()} loading={busy} style={{ flex: 1 }} />
+        <Button label={item ? 'Salvar' : 'Adicionar'} onPress={() => void submit()} loading={busy} style={{ flex: 1 }} />
       </View>
     </Card>
   );

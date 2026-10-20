@@ -47,6 +47,7 @@ import { Notice } from '@/components/ui/states';
 import { DiceProvider, useDice } from '@/components/dice/dice';
 import { LevelGate, type LevelGateInfo } from '@/components/sheet/level-gate';
 import { T20NewItem } from './new-item';
+import { T20TurnCard, logT20TurnUse } from './turn-card';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/errors';
 import { getSupabase } from '@/lib/supabase';
@@ -66,6 +67,8 @@ interface Props {
   sources: T20ContentSource[];
   /** Campanha: o mestre libera o nível e o jogador escolhe as melhorias. */
   gate: LevelGateInfo;
+  /** Campanha do personagem (turno e registro de uso), ou `null`. */
+  campaignId: string | null;
 }
 
 /** Ficha do Tormenta20 no app: vida, mana, condições, testes, poderes, magias, itens e subida de nível. */
@@ -94,6 +97,7 @@ function T20SheetBody(props: Props) {
   const [condRounds, setCondRounds] = useState('');
   const [items, setItems] = useState(props.items);
   const [addingItem, setAddingItem] = useState(false);
+  const [editingItem, setEditingItem] = useState<CharacterItem | null>(null);
   const removeItem = async (item: CharacterItem) => {
     try {
       await deleteCharacterItem(getSupabase(), item.id);
@@ -191,6 +195,18 @@ function T20SheetBody(props: Props) {
         </Card>
       ) : null}
 
+      {tab === 'jogo' && props.campaignId ? (
+        <T20TurnCard
+          campaignId={props.campaignId}
+          characterId={props.character.id}
+          canAct={props.canEditPlay}
+          onConditionsEnded={(ended) =>
+            setConditions((current) =>
+              current.filter((entry) => !ended.includes(entry.key)).map((entry) => (entry.roundsRemaining !== null ? { ...entry, roundsRemaining: Math.max(0, entry.roundsRemaining - 1) } : entry)),
+            )
+          }
+        />
+      ) : null}
       {tab === 'jogo' ? (
         <>
           {[
@@ -355,7 +371,11 @@ function T20SheetBody(props: Props) {
                       return;
                     }
                     if (cost > 0) void adjust(T20_RESOURCE_KEYS.manaPoints, 'spend', cost);
-                    toast({ tone: 'success', title: `${ability.kind === 'spell' ? 'Lançou' : 'Usou'}: ${ability.name}`, description: cost > 0 ? `−${cost} PM` : undefined });
+                    const label = `${ability.kind === 'spell' ? 'Lançou' : 'Usou'}: ${ability.name}`;
+                    const diceText = /\b\d{0,2}d\d{1,3}(?:\s*[+-]\s*\d+)?\b/i.exec(ability.description ?? '')?.[0]?.replace(/\s+/g, '');
+                    if (diceText && dice) void dice.roll({ expression: diceText, label });
+                    else toast({ tone: 'success', title: label, description: cost > 0 ? `−${cost} PM` : undefined });
+                    if (props.campaignId) void logT20TurnUse(props.campaignId, props.character.id, label);
                   }}
                 />
               ) : null}
@@ -372,6 +392,15 @@ function T20SheetBody(props: Props) {
               {usedSpaces.toLocaleString('pt-BR')} de {derived.carryCapacity} espaços{usedSpaces > derived.carryCapacity ? ' (sobrecarregado)' : ''}
             </AppText>
           </Card>
+          {editingItem ? (
+            <T20NewItem
+              key={editingItem.id}
+              characterId={props.character.id}
+              item={editingItem}
+              onCreated={(saved) => setItems((current) => current.map((entry) => (entry.id === saved.id ? saved : entry)))}
+              onClose={() => setEditingItem(null)}
+            />
+          ) : null}
           {props.canEditPlay ? (
             addingItem ? (
               <T20NewItem characterId={props.character.id} onCreated={(item) => setItems((current) => [...current, item])} onClose={() => setAddingItem(false)} />
@@ -404,6 +433,7 @@ function T20SheetBody(props: Props) {
                       <Button label="−" variant="ghost" compact disabled={item.quantity <= 0} onPress={() => void changeQuantity(item, -1)} />
                       <AppText>{item.quantity}</AppText>
                       <Button label="+" variant="ghost" compact onPress={() => void changeQuantity(item, 1)} />
+                      <Button label="Editar" variant="ghost" compact onPress={() => setEditingItem(item)} />
                       <Button label="Excluir" variant="ghost" compact onPress={() => void removeItem(item)} />
                     </>
                   ) : (

@@ -5,6 +5,8 @@ import {
   applyCharacterCondition,
   removeCharacterCondition,
   tickCharacterConditions,
+  getCampaignTurn,
+  performTurnAction,
   saveCharacterSheet,
   type CharacterAbility,
   type CharacterCondition,
@@ -40,6 +42,7 @@ import { Select } from '@/components/ui/select';
 import { Tabs } from '@/components/ui/tabs';
 import { DiceProvider, useDice } from '@/components/dice/dice-roller';
 import { T20Inventory } from './inventory';
+import { T20TurnCard } from './turn-card';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
 import { cx } from '@/lib/cx';
@@ -82,8 +85,22 @@ export function T20SheetScreen(props: T20SheetScreenProps) {
   );
 }
 
+/** Registra o uso nas ações do turno, quando é a vez do personagem (silencioso fora dela). */
+async function logTurnUse(campaignId: string, characterId: string, label: string) {
+  try {
+    const client = getSupabaseBrowserClient();
+    const turn = await getCampaignTurn(client, campaignId);
+    const me = turn?.order.find((entry) => entry.characterId === characterId);
+    if (!turn || !me || turn.status !== 'active' || turn.activeCharacterId !== characterId) return;
+    await performTurnAction(client, { combatantId: me.id, kind: 'free', label, targetCombatantId: null, grantsAction: false, rollExpression: null, manualTotal: null });
+  } catch {
+    // Fora da vez ou sem sessão: o uso fica só na ficha.
+  }
+}
+
 function T20SheetBody(props: T20SheetScreenProps) {
   const dice = useDice();
+  const diceRoller = dice;
   const { character, permissions } = props;
   const { toast } = useToast();
   const [tab, setTab] = useState('jogo');
@@ -134,7 +151,13 @@ function T20SheetBody(props: T20SheetScreenProps) {
       return;
     }
     if (cost > 0) void adjust(T20_RESOURCE_KEYS.manaPoints, 'spend', cost);
-    toast({ tone: 'success', title: `${ability.kind === 'spell' ? 'Lançou' : 'Usou'}: ${ability.name}`, description: cost > 0 ? `−${cost} PM` : undefined });
+    const label = `${ability.kind === 'spell' ? 'Lançou' : 'Usou'}: ${ability.name}`;
+    // Mural da mesa: com dado no texto (ex.: "2d8"), a rolagem vai para o mural; na vez do
+    // personagem, o uso também entra nas ações do turno.
+    const dice = /\b\d{0,2}d\d{1,3}(?:\s*[+-]\s*\d+)?\b/i.exec(ability.description ?? '')?.[0]?.replace(/\s+/g, '');
+    if (dice && diceRoller) void diceRoller.roll({ expression: dice, label });
+    else toast({ tone: 'success', title: label, description: cost > 0 ? `−${cost} PM` : undefined });
+    if (character.campaign) void logTurnUse(character.campaign.id, character.id, label);
   };
 
   const hp = resource(T20_RESOURCE_KEYS.hitPoints);
@@ -183,6 +206,19 @@ function T20SheetBody(props: T20SheetScreenProps) {
           { value: 'evolucao', label: 'Evolução', content: null },
         ]}
       />
+
+      {tab === 'jogo' && character.campaign ? (
+        <T20TurnCard
+          campaignId={character.campaign.id}
+          characterId={character.id}
+          canAct={permissions.canEditPlay}
+          onConditionsEnded={(ended) =>
+            setConditions((current) =>
+              current.filter((entry) => !ended.includes(entry.key)).map((entry) => (entry.roundsRemaining !== null ? { ...entry, roundsRemaining: Math.max(0, entry.roundsRemaining - 1) } : entry)),
+            )
+          }
+        />
+      ) : null}
 
       {tab === 'jogo' ? (
         <div className="grid gap-6 lg:grid-cols-2">

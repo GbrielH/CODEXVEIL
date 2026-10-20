@@ -282,6 +282,8 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-20 (lacunas T20):** turno na ficha T20, "Usar" no mural e editar item no app
+  (`pnpm check` 20/20; sem teste no navegador). Próximo: tradução do SRD, depois Behind the Magic.
 - **2026-10-20 (subida de nível):** só na aba Evolução; na campanha o mestre libera o nível e o
   jogador escolhe as melhorias (banco garante; migração `20261020130000_level_grants.sql`
   aplicada; testes em `test/rls/level-grants.test.ts`).
