@@ -430,6 +430,16 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-20 — site e app alinhados (lado do jogador)
+
+- Regra do responsável: **o app é só para jogar; mestrar é só no site.** Controles de sessão,
+  liberar trechos, modo da sessão, criação de ações, mesa do mestre e biblioteca do SRD (que já
+  é só do mestre no site) não vão para o app.
+- App: as ações de combate criadas pelo mestre aparecem no turno do jogador (D&D na lista de
+  ações; Tormenta20 como botões, com rolagem), como no site. Vai por OTA.
+- Diferença que continua: dados 3D no app (precisa de APK; ver `MELHORIAS_FUTURAS.md`).
+- Verificado: `pnpm check`. Não conferido no aparelho.
+
 ### 2026-10-20 — cor dos dados por sessão, convite refeito e caixinha de dados
 
 - Cor dos dados vale só para a sessão: iniciar ou encerrar uma sessão apaga as cores (gatilho

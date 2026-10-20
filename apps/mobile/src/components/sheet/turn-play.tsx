@@ -6,6 +6,8 @@ import {
   getSessionState,
   listTurnActions,
   performTurnAction,
+  getCampaignCustomActions,
+  type CustomAction,
   tickCharacterConditions,
   type CampaignTurn,
   type CharacterAbility,
@@ -91,6 +93,18 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
   const [playing, setPlaying] = useState(true);
   const [physicalDice, setPhysicalDice] = useState(false);
   const [manual, setManual] = useState('');
+  const [customActions, setCustomActions] = useState<CustomAction[]>([]);
+  useEffect(() => {
+    let active = true;
+    getCampaignCustomActions(getSupabase(), campaignId)
+      .then((list) => {
+        if (active) setCustomActions(list);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [campaignId]);
 
   const reload = useCallback(async () => {
     try {
@@ -184,6 +198,17 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
           });
       }
     }
+    // Ações criadas pelo mestre para esta campanha.
+    for (const custom of customActions) {
+      list.push({
+        key: `custom:${custom.id}`,
+        label: custom.name,
+        kind: custom.kind,
+        grantsAction: false,
+        roll: custom.roll || null,
+        ability: null,
+      });
+    }
     for (const key of DND5E_ACTIONS) {
       if (key === 'attack' || key === 'magic') continue;
       list.push({
@@ -196,7 +221,7 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
       });
     }
     return list;
-  }, [abilities, items, derived, sheet.abilities]);
+  }, [abilities, items, derived, sheet.abilities, customActions]);
 
   if (!turn) return null;
   const me = turn.order.find((entry) => entry.characterId === characterId) ?? null;

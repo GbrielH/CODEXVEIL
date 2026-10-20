@@ -1,5 +1,7 @@
 import {
   endTurn,
+  getCampaignCustomActions,
+  type CustomAction,
   getCampaignTurn,
   performTurnAction,
   tickCharacterConditions,
@@ -9,6 +11,7 @@ import { turnModeLabels } from '@codexveil/domain';
 import { findT20Condition } from '@codexveil/rpg-systems/tormenta20';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { View } from 'react-native';
 import { AppText, Card } from '@/components/ui/primitives';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/errors';
@@ -51,6 +54,18 @@ export function T20TurnCard({
   const toast = useToast();
   const [turn, setTurn] = useState<CampaignTurn | null>(null);
   const [busy, setBusy] = useState(false);
+  const [customActions, setCustomActions] = useState<CustomAction[]>([]);
+  useEffect(() => {
+    let active = true;
+    getCampaignCustomActions(getSupabase(), campaignId)
+      .then((list) => {
+        if (active) setCustomActions(list);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [campaignId]);
 
   const reload = useCallback(async () => {
     try {
@@ -102,6 +117,54 @@ export function T20TurnCard({
             .map((entry, index) => `${index + 1}. ${entry.name}${entry.current ? ' ◂' : ''}`)
             .join('   ')}
         </AppText>
+      ) : null}
+      {mine && canAct && customActions.length ? (
+        <View style={{ gap: 6 }}>
+          <AppText variant="muted">Ações da mesa (criadas pelo mestre):</AppText>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            {customActions.map((action) => (
+              <Button
+                key={action.id}
+                compact
+                variant="secondary"
+                label={`${action.name}${action.roll ? ` (🎲 ${action.roll})` : ''}`}
+                disabled={busy}
+                onPress={async () => {
+                  const me = turn.order.find((entry) => entry.characterId === characterId);
+                  if (!me) return;
+                  setBusy(true);
+                  try {
+                    const done = await performTurnAction(getSupabase(), {
+                      combatantId: me.id,
+                      kind: action.kind,
+                      label: action.name,
+                      targetCombatantId: null,
+                      grantsAction: false,
+                      rollExpression: action.roll || null,
+                      manualTotal: null,
+                    });
+                    toast({
+                      tone: 'success',
+                      title: action.name,
+                      description:
+                        done.rollTotal !== null
+                          ? `Resultado: ${done.rollTotal}`
+                          : action.description || undefined,
+                    });
+                  } catch (error) {
+                    toast({
+                      tone: 'danger',
+                      title: 'A ação não foi registrada',
+                      description: failureMessage(error),
+                    });
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              />
+            ))}
+          </View>
+        </View>
       ) : null}
       {mine && canAct ? (
         <Button
