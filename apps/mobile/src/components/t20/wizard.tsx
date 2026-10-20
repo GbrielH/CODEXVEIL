@@ -69,9 +69,14 @@ const clip = (text: string, max = 200) => (text.length > max ? `${text.slice(0, 
 export function T20MobileWizard({ campaign, sources }: { campaign: T20MobileCampaign | null; sources: T20ContentSource[] }) {
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
-  const content = useMemo(() => buildT20Content(sources), [sources]);
   const methods = useMemo(() => campaign?.rules.attributeMethods ?? (['pontos', 'rolagem'] as const), [campaign]);
   const [draft, setDraft] = useState<T20Draft>(() => createT20Draft(campaign?.rules.startingLevel ?? 1, methods[0] ?? 'pontos'));
+  // Na campanha, os livros do mestre; na ficha pessoal, só os livros marcados no início.
+  const selectedSources = useMemo(
+    () => (campaign ? sources : sources.filter((source) => draft.sourcebooks.includes(source.book.id))),
+    [campaign, sources, draft.sourcebooks],
+  );
+  const content = useMemo(() => buildT20Content(selectedSources), [selectedSources]);
   const [step, setStep] = useState<T20Step>('inicio');
   const [attempted, setAttempted] = useState<Set<T20Step>>(new Set());
   const [busy, setBusy] = useState(false);
@@ -191,7 +196,27 @@ export function T20MobileWizard({ campaign, sources }: { campaign: T20MobileCamp
               options={Array.from({ length: 20 }, (_, position) => ({ value: String(position + 1), label: `${position + 1}º nível` }))}
             />
           )}
-          <AppText variant="small">Livros: {content.books.map((book) => book.name).join(', ')}.</AppText>
+          {campaign ? (
+            <AppText variant="small">Livros liberados pelo mestre: {content.books.map((book) => book.name).join(', ') || 'nenhum'}.</AppText>
+          ) : (
+            <View style={{ gap: spacing[2] }}>
+              <AppText style={{ fontFamily: fonts.sansMedium }}>Livros desta ficha</AppText>
+              <AppText variant="small">Só o conteúdo dos livros marcados aparece na criação.</AppText>
+              {sources.length === 0 ? <AppText variant="small">Nenhum livro de Tormenta20 importado.</AppText> : null}
+              {sources.map((source) => (
+                <CheckRow
+                  key={source.book.id}
+                  label={source.book.name}
+                  checked={draft.sourcebooks.includes(source.book.id)}
+                  onChange={(checked) =>
+                    update({
+                      sourcebooks: checked ? [...new Set([...draft.sourcebooks, source.book.id])] : draft.sourcebooks.filter((id) => id !== source.book.id),
+                    })
+                  }
+                />
+              ))}
+            </View>
+          )}
         </View>
       ) : null}
 

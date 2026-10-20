@@ -31,21 +31,31 @@ export async function loadT20Sources(client: CodexveilClient, packs: readonly Bo
 }
 
 /** Livros liberados na campanha (os do dono) ou, na ficha pessoal, os livros prontos do usuário. */
-async function packsFor(client: CodexveilClient, userId: string, character: { campaign: { id: string } | null; viewer: { isOwner: boolean } }) {
+type SheetCharacter = { campaign: { id: string } | null; viewer: { isOwner: boolean }; sheet?: unknown };
+
+/** Livros escolhidos na criação, gravados na ficha (`identity.sourcebooks`). */
+function sheetSourcebooks(sheet: unknown): string[] {
+  const identity = (sheet as { identity?: { sourcebooks?: unknown } } | null)?.identity;
+  return Array.isArray(identity?.sourcebooks) ? identity.sourcebooks.filter((id): id is string => typeof id === 'string') : [];
+}
+
+async function packsFor(client: CodexveilClient, userId: string, character: SheetCharacter) {
   if (character.campaign) {
     const campaign = await getCampaign(client, character.campaign.id, userId);
     if (!campaign) return [];
     return listCampaignBookPacks(client, campaign.ownerId, parseDnd5eCampaignRules(campaign.characterRules).sourcebooks);
   }
   if (!character.viewer.isOwner) return [];
-  return (await listMyBookPacks(client, userId)).filter((pack) => pack.isReady);
+  // Ficha pessoal: só os livros escolhidos na criação, entre os importados pelo dono.
+  const chosen = sheetSourcebooks(character.sheet);
+  return (await listMyBookPacks(client, userId)).filter((pack) => pack.isReady && chosen.includes(pack.bookKey));
 }
 
 /** Livros de uma ficha de D&D (para a subida de nível). Igual ao site (`character-sheet.tsx`). */
 export async function sheetBookSources(
   client: CodexveilClient,
   userId: string,
-  character: { campaign: { id: string } | null; viewer: { isOwner: boolean } },
+  character: SheetCharacter,
 ): Promise<BookContentSource[]> {
   return loadBookSources(client, await packsFor(client, userId, character));
 }
@@ -54,7 +64,7 @@ export async function sheetBookSources(
 export async function sheetT20Sources(
   client: CodexveilClient,
   userId: string,
-  character: { campaign: { id: string } | null; viewer: { isOwner: boolean } },
+  character: SheetCharacter,
 ): Promise<T20ContentSource[]> {
   return loadT20Sources(client, await packsFor(client, userId, character));
 }

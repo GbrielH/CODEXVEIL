@@ -125,15 +125,20 @@ export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, default
   const [campaignId, setCampaignId] = useState(defaultCampaignId);
   const campaign = campaigns.find((entry) => entry.id === campaignId);
   const context = useMemo(() => contextFor(campaign), [campaign]);
-  const packIds = campaign ? campaign.packIds : personalPackIds;
+  const [draft, setDraft] = useState<Dnd5eDraft>(() =>
+    createDnd5eDraft({ level: campaign?.rules.startingLevel ?? 1, abilityMethod: contextFor(campaign).abilityScoreMethods[0] ?? 'standard_array' }),
+  );
+  // Livros: na campanha, os do mestre; na ficha pessoal, só os importados que estão marcados no
+  // seletor de livros (um livro desmarcado não traz nada para a criação).
+  const packIds = useMemo(
+    () => (campaign ? campaign.packIds : personalPackIds.filter((id) => draft.sourcebooks.includes(books[id]?.book.id ?? ''))),
+    [campaign, personalPackIds, books, draft.sourcebooks],
+  );
   const bookSources = useMemo(() => packIds.map((id) => books[id]).filter((source): source is BookContentSource => Boolean(source)), [packIds, books]);
   const bookContent = useMemo(() => buildDnd5eBookContent(bookSources), [bookSources]);
   const bookNames = useMemo(() => Object.fromEntries(bookSources.map((source) => [source.book.id, source.book.name])), [bookSources]);
   // As regras de criação consultam o SRD e os livros da campanha escolhida.
   setActiveDnd5eBookContent(bookContent);
-  const [draft, setDraft] = useState<Dnd5eDraft>(() =>
-    createDnd5eDraft({ level: campaign?.rules.startingLevel ?? 1, abilityMethod: contextFor(campaign).abilityScoreMethods[0] ?? 'standard_array' }),
-  );
   const [rolls, setRolls] = useState<RollState>(EMPTY_ROLLS);
   const [step, setStep] = useState<Dnd5eStep>('start');
   const [attempted, setAttempted] = useState<Set<Dnd5eStep>>(new Set());

@@ -44,7 +44,9 @@ export async function createT20CharacterAction(input: unknown): Promise<CreateT2
       content = buildT20Content(sources);
       sourcebooks = sources.map((source) => source.book.id);
     } else {
-      const sources = await loadT20Sources(supabase, await ownReadyBookPacks(supabase, user.id));
+      // Ficha pessoal: só os livros marcados no assistente.
+      const own = await ownReadyBookPacks(supabase, user.id);
+      const sources = await loadT20Sources(supabase, own.filter((pack) => draft.sourcebooks.includes(pack.bookKey)));
       content = buildT20Content(sources);
       sourcebooks = sources.map((source) => source.book.id);
     }

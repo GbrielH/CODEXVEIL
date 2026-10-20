@@ -28,7 +28,9 @@
 
 Registrados sem implementar (pedido explícito: só documentar). Estado do que já existe no fim desta seção.
 
-1. **Livros: separação exata (EXTREMA IMPORTÂNCIA).** A escolha de livros na campanha e na ficha
+1. **[Feito em 2026-10-20]** **Livros: separação exata (EXTREMA IMPORTÂNCIA).** Ficha pessoal (D&D e
+   T20, site e app) usa só os livros marcados; ficha e subida de nível usam os livros gravados na
+   ficha (`identity.sourcebooks`); na campanha, os liberados pelo mestre. Texto original do pedido: A escolha de livros na campanha e na ficha
    serve para limitar o conteúdo. Hoje, depois de importar todos os livros, mesmo escolhendo só o
    D&D base aparecem espécies, raças, classes e antecedentes de todos os livros. Regra: um item que
    só existe no livro A só aparece se o livro A estiver selecionado; o mesmo para classes,
@@ -37,7 +39,9 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
    automática pelo que foi selecionado. Pontos a revisar: ficha pessoal (`draft.sourcebooks` vs.
    `ownReadyBookPacks`), `personalPackIds` no assistente, `sheetBookSources`/`sheetT20Sources` e o
    app (`novo.tsx` usa todos os livros prontos do usuário).
-2. **Regras de criação não mudam com mais livros.** Número de magias, habilidades, perícias etc.
+2. **[Conferido em 2026-10-20]** **Regras de criação não mudam com mais livros.** As quantidades
+   (magias, perícias, talentos, poderes) vêm da classe e do nível nos dois sistemas; livros só
+   ampliam as opções, e escolhas extras só quando o conteúdo do livro as concede. Pedido: Número de magias, habilidades, perícias etc.
    seguem a classe/nível; mais livros liberados não dão mais escolhas, a não ser que um livro
    selecionado conceda isso explicitamente.
 3. **Combate mais roleplay (menos automação).** Manter rolagem de dados e, para o mestre, a ordem

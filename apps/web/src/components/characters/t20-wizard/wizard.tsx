@@ -81,10 +81,15 @@ function d6(): number {
 /** Assistente de criação de personagem do Tormenta20, com as regras de `@codexveil/rpg-systems/tormenta20`. */
 export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
   const router = useRouter();
-  const content = useMemo(() => buildT20Content(sources), [sources]);
   const rules = campaign?.rules;
   const allowedMethods = useMemo(() => rules?.attributeMethods ?? (['pontos', 'rolagem'] as const), [rules]);
   const [draft, setDraft] = useState<T20Draft>(() => createT20Draft(rules?.startingLevel ?? 1, allowedMethods[0] ?? 'pontos'));
+  // Na campanha, os livros do mestre; na ficha pessoal, só os livros marcados abaixo.
+  const selectedSources = useMemo(
+    () => (campaign ? sources : sources.filter((source) => draft.sourcebooks.includes(source.book.id))),
+    [campaign, sources, draft.sourcebooks],
+  );
+  const content = useMemo(() => buildT20Content(selectedSources), [selectedSources]);
   const [step, setStep] = useState<T20Step>('inicio');
   const [attempted, setAttempted] = useState<Set<T20Step>>(new Set());
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -200,7 +205,33 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
                   ))}
                 </SelectField>
               )}
-              <p className="text-sm text-fg-muted">Livros usados: {content.books.map((book) => book.name).join(', ')}.</p>
+              {campaign ? (
+                <p className="text-sm text-fg-muted">Livros liberados pelo mestre: {content.books.map((book) => book.name).join(', ') || 'nenhum'}.</p>
+              ) : (
+                <div className="flex flex-col gap-2 rounded-md border border-line bg-card/60 p-4">
+                  <p className="text-sm font-medium text-fg">Livros desta ficha</p>
+                  <p className="text-xs text-fg-muted">Só o conteúdo dos livros marcados aparece na criação.</p>
+                  {sources.length === 0 ? (
+                    <p className="text-sm text-fg-muted">Nenhum livro de Tormenta20 importado em Meus livros.</p>
+                  ) : (
+                    sources.map((source) => (
+                      <CheckboxField
+                        key={source.book.id}
+                        id={`t20-book-${source.book.id}`}
+                        label={source.book.name}
+                        checked={draft.sourcebooks.includes(source.book.id)}
+                        onChange={(event) =>
+                          update({
+                            sourcebooks: event.target.checked
+                              ? [...new Set([...draft.sourcebooks, source.book.id])]
+                              : draft.sourcebooks.filter((id) => id !== source.book.id),
+                          })
+                        }
+                      />
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           ) : null}
 

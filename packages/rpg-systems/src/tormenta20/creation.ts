@@ -95,6 +95,8 @@ export interface T20Draft {
   appearance: string;
   personality: string;
   history: string;
+  /** Ficha pessoal: livros escolhidos (ids dos livros importados). Na campanha valem os do mestre. */
+  sourcebooks: string[];
 }
 
 export function createT20Draft(level = 1, method: T20AttributeMethodChoice = 'pontos'): T20Draft {
@@ -130,6 +132,7 @@ export function createT20Draft(level = 1, method: T20AttributeMethodChoice = 'po
     appearance: '',
     personality: '',
     history: '',
+    sourcebooks: [],
   };
 }
 
@@ -714,6 +717,7 @@ const t20DraftSchema = z.object({
   appearance: shortText(4000),
   personality: shortText(4000),
   history: shortText(20000),
+  sourcebooks: z.array(z.string().trim().min(1).max(80)).max(60).catch([]),
 });
 
 /** Rascunho vindo de fora (navegador): campos inválidos voltam ao padrão em vez de lançar. */

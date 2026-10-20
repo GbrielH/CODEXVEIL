@@ -43,11 +43,14 @@ export async function CharacterSheet({ characterId, variant = 'full' }: { charac
     isGm: character.viewer.membership?.role === 'gm',
   };
 
-  // Livros para a subida de nível: os liberados na campanha do personagem ou, em fichas pessoais, os do dono.
+  // Livros para a subida de nível: os liberados na campanha do personagem ou, em fichas pessoais, só os
+  // livros escolhidos na criação (gravados na ficha) entre os importados pelo dono.
+  const identity = (character.sheet as { identity?: { sourcebooks?: unknown } } | null)?.identity;
+  const sheetBooks = Array.isArray(identity?.sourcebooks) ? identity.sourcebooks.filter((id): id is string => typeof id === 'string') : [];
   let books: Awaited<ReturnType<typeof loadBookSources>> = [];
   if (permissions.canEditSheet && character.systemId === 'dnd5e') {
     const campaign = character.campaign ? await getCampaign(supabase, character.campaign.id, user.id) : null;
-    const packs = campaign ? await campaignBookPacks(supabase, campaign) : character.viewer.isOwner ? await ownReadyBookPacks(supabase, user.id) : [];
+    const packs = campaign ? await campaignBookPacks(supabase, campaign) : character.viewer.isOwner ? (await ownReadyBookPacks(supabase, user.id)).filter((pack) => sheetBooks.includes(pack.bookKey)) : [];
     books = await loadBookSources(supabase, packs);
   }
 
@@ -97,7 +100,7 @@ export async function CharacterSheet({ characterId, variant = 'full' }: { charac
     let t20Sources: Awaited<ReturnType<typeof loadT20Sources>> = [];
     if (permissions.canEditSheet) {
       const campaign = character.campaign ? await getCampaign(supabase, character.campaign.id, user.id) : null;
-      const packs = campaign ? await campaignBookPacks(supabase, campaign) : character.viewer.isOwner ? await ownReadyBookPacks(supabase, user.id) : [];
+      const packs = campaign ? await campaignBookPacks(supabase, campaign) : character.viewer.isOwner ? (await ownReadyBookPacks(supabase, user.id)).filter((pack) => sheetBooks.includes(pack.bookKey)) : [];
       t20Sources = await loadT20Sources(supabase, packs);
     }
     let sheet;
