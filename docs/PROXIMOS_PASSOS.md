@@ -58,8 +58,7 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
    cartão "Lore da sessão" com "Liberar"/"Ocultar" por trecho (o primeiro liberado publica a
    sessão); nova aba "Sessão" no site mostra os trechos liberados em tempo real (a antiga
    "Sessões" virou "Roteiros" para jogadores); no app, a leitura da sessão atualiza sozinha.
-   **Falta aplicar a migração `20261020120000_session_reveal.sql` em produção** (sem ela, só o
-   tempo real e o padrão oculto no banco não valem; o resto funciona).
+   Migração `20261020120000_session_reveal.sql` aplicada em produção em 2026-10-20.
 5. **Dados realistas.** Ao rolar (site e app), o dado aparece grande no meio da tela, cai e gira
    (estilo app "Dice"), sem caixinha; com limite de dados simultâneos para não travar o aparelho.
    Opcional se for inviável.
@@ -369,8 +368,8 @@ de segurança).
 ### 2026-10-20 — Aba Sessão
 
 - Lore oculta por padrão, liberação com um clique na mesa e aba Sessão em tempo real (site); app
-  atualiza a leitura sozinho. Migração `20261020120000_session_reveal.sql` (dry-run conferido;
-  aplicação pendente). `pnpm check` 20/20.
+  atualiza a leitura sozinho. Migração `20261020120000_session_reveal.sql` (dry-run conferido e
+  aplicada em produção). `pnpm check` 20/20.
 
 ### 2026-10-20 — Combate roleplay
 
