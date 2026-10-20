@@ -127,3 +127,14 @@ export async function loadBookReader(
     canCopy: isGm && campaign.status === 'active',
   };
 }
+
+/** Livros de um sistema entre os informados (um usuário pode ter livros de D&D e de Tormenta20). */
+export function packsOfSystem(packs: readonly BookPackSummary[], systemId: string): BookPackSummary[] {
+  return packs.filter((pack) => (pack.systemId ?? 'dnd5e') === systemId);
+}
+
+/** Fontes de conteúdo do Tormenta20 (raças, classes, origens, deuses, poderes, magias e equipamento). */
+export async function loadT20Sources(client: CodexveilClient, packs: readonly BookPackSummary[]) {
+  const sources = await loadBookSources(client, packsOfSystem(packs, 'tormenta20'), T20_CHARACTER_BOOK_KINDS);
+  return sources.map(({ book, entries }) => ({ book, entries }));
+}

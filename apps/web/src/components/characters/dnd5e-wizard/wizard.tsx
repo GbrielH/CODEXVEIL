@@ -68,6 +68,8 @@ interface WizardProps {
   defaultCampaignId: string;
   /** Chave do rascunho salvo neste navegador (por usuário). */
   storageKey: string;
+  /** A campanha (ou a ficha pessoal) já foi escolhida no passo anterior: o assistente não a troca. */
+  lockCampaign?: boolean;
 }
 
 interface StoredDraft {
@@ -118,7 +120,7 @@ function contextFor(campaign: WizardCampaign | undefined): Dnd5eCreationContext 
     : PERSONAL_SHEET_CONTEXT;
 }
 
-export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, defaultCampaignId, storageKey }: WizardProps) {
+export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, defaultCampaignId, storageKey, lockCampaign = false }: WizardProps) {
   const router = useRouter();
   const [campaignId, setCampaignId] = useState(defaultCampaignId);
   const campaign = campaigns.find((entry) => entry.id === campaignId);
@@ -314,20 +316,22 @@ export function Dnd5eCreationWizard({ campaigns, books, personalPackIds, default
                 onChange={(event) => update({ name: event.target.value })}
                 error={errorFor('name')}
               />
-              <SelectField
-                id="character-campaign"
-                label="Campanha"
-                hint="Aparecem só as campanhas em que você é jogador: o mestre usa NPCs e monstros."
-                value={campaignId}
-                onChange={(event) => chooseCampaign(event.target.value)}
-              >
-                <option value="">Sem campanha (ficha pessoal)</option>
-                {campaigns.map((entry) => (
-                  <option key={entry.id} value={entry.id}>
-                    {entry.name}
-                  </option>
-                ))}
-              </SelectField>
+              {lockCampaign ? null : (
+                <SelectField
+                  id="character-campaign"
+                  label="Campanha"
+                  hint="Aparecem só as campanhas em que você é jogador: o mestre usa NPCs e monstros."
+                  value={campaignId}
+                  onChange={(event) => chooseCampaign(event.target.value)}
+                >
+                  <option value="">Sem campanha (ficha pessoal)</option>
+                  {campaigns.map((entry) => (
+                    <option key={entry.id} value={entry.id}>
+                      {entry.name}
+                    </option>
+                  ))}
+                </SelectField>
+              )}
               {campaign ? (
                 <div className="rounded-md border border-line bg-card/60 p-4 text-sm">
                   <h3 className="eyebrow mb-2">Regras do mestre</h3>

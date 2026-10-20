@@ -3,6 +3,7 @@
  * divindade, perícias, poderes, magias, equipamento e detalhes. As regras de cálculo ficam aqui;
  * o conteúdo (raças, classes…) vem de `T20Content`, montado dos livros importados.
  */
+import { z } from 'zod';
 import type { AbilityEntryTemplate, ItemTemplate, ResourceTemplate } from '../types';
 import {
   T20_ATTRIBUTES,
@@ -668,4 +669,54 @@ export function buildT20Character(content: T20Content, draft: T20Draft, sourcebo
     items,
     abilities,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Leitura do rascunho recebido do navegador (servidor)
+// ---------------------------------------------------------------------------
+
+const shortText = (max: number) => z.string().trim().max(max).catch('');
+const idList = (max: number) => z.array(z.string().trim().min(1).max(160)).max(max).catch([]);
+const attributeNumbers = (min: number, max: number) =>
+  z.object(Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, z.number().int().min(min).max(max).catch(0)])) as Record<T20Attribute, z.ZodCatch<z.ZodNumber>>);
+
+const t20DraftSchema = z.object({
+  name: shortText(80),
+  level: z.number().int().min(1).max(20).catch(1),
+  attributeMethod: z.enum(['pontos', 'rolagem']).catch('pontos'),
+  points: attributeNumbers(-1, 4).catch(createT20Draft().points),
+  rolls: z.array(z.number().int().min(3).max(18)).max(6).catch([]),
+  rollAssignment: z
+    .object(Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, z.number().int().min(0).max(5).nullable().catch(null)])) as Record<T20Attribute, z.ZodCatch<z.ZodNullable<z.ZodNumber>>>)
+    .catch(createT20Draft().rollAssignment),
+  raceId: shortText(160),
+  raceAttributeChoices: z.array(z.enum(T20_ATTRIBUTES)).max(6).catch([]),
+  raceVariant: shortText(80),
+  raceSkills: z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(4).catch([]),
+  raceSkillPower: shortText(160),
+  classId: shortText(160),
+  classFixedChoices: z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(4).catch([]),
+  classSkills: z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(12).catch([]),
+  intSkills: z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(12).catch([]),
+  arcanistPath: z.enum(['bruxo', 'feiticeiro', 'mago', '']).catch(''),
+  lineage: shortText(80),
+  spellSchools: z.array(z.string().trim().max(40)).max(8).catch([]),
+  originId: shortText(160),
+  originBenefits: z.array(z.string().trim().max(160)).max(4).catch([]),
+  deityId: shortText(160),
+  grantedPowerId: shortText(160),
+  levelPowers: z.record(z.string().max(4), z.string().trim().max(160)).catch({}),
+  spellIds: idList(60),
+  equipment: z
+    .object({ simple: shortText(160), martial: shortText(160), armor: shortText(160), shield: z.boolean().catch(false) })
+    .catch({ simple: '', martial: '', armor: '', shield: false }),
+  money: z.number().int().min(4).max(24).nullable().catch(null),
+  appearance: shortText(4000),
+  personality: shortText(4000),
+  history: shortText(20000),
+});
+
+/** Rascunho vindo de fora (navegador): campos inválidos voltam ao padrão em vez de lançar. */
+export function parseT20Draft(input: unknown): T20Draft {
+  return t20DraftSchema.parse(input && typeof input === 'object' ? input : {});
 }

@@ -33,15 +33,21 @@ importado em Meus livros (fora do Git), como nos livros de D&D.
 
 ### Estado dos marcos
 
-| #   | Marco                                           | Situação                                                                                                                    |
-| --- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Extração do livro + núcleo de regras + migração | **Feito** (`8076641`). Migração `20261019120000_tormenta20.sql` aplicada em produção.                                       |
-| 2   | Campanha T20 + leitor dos livros T20            | **Feito** (`780275a`).                                                                                                      |
-| 3   | Criação de personagem T20 (site)                | **Em andamento**: motor pronto e testado (`tormenta20/content.ts` e `creation.ts`); **falta a tela** do assistente no site. |
-| 4   | Ficha e jogo T20 (site)                         | Não iniciado.                                                                                                               |
-| 5   | Subida de nível T20                             | Não iniciado.                                                                                                               |
-| 6   | App (criação, ficha, subida de nível)           | Não iniciado.                                                                                                               |
-| 7   | Mestre: ameaças no escudo e combate             | Não iniciado.                                                                                                               |
+| #   | Marco                                           | Situação                                                                                                                                                                                                                                                                       |
+| --- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Extração do livro + núcleo de regras + migração | **Feito** (`8076641`). Migração `20261019120000_tormenta20.sql` aplicada em produção.                                                                                                                                                                                          |
+| 2   | Campanha T20 + leitor dos livros T20            | **Feito** (`780275a`).                                                                                                                                                                                                                                                         |
+| 3   | Criação de personagem T20 (site)                | **Feito** (2026-10-19, máquina henri): assistente `components/characters/t20-wizard/`, ação `personagens/actions-t20.ts` (revalida com `parseT20Draft` + `t20DraftIssues`). Testado com o pacote real: 14 classes no 1º e no 5º nível sem pendências. Não aberto no navegador. |
+| 4   | Ficha e jogo T20 (site)                         | Não iniciado.                                                                                                                                                                                                                                                                  |
+| 5   | Subida de nível T20                             | Não iniciado.                                                                                                                                                                                                                                                                  |
+| 6   | App (criação, ficha, subida de nível)           | Não iniciado.                                                                                                                                                                                                                                                                  |
+| 7   | Mestre: ameaças no escudo e combate             | Não iniciado.                                                                                                                                                                                                                                                                  |
+
+### Novo personagem: campanha primeiro (2026-10-19)
+
+A página `/personagens/novo` agora começa perguntando **a campanha** (cartões das campanhas em que
+a pessoa é jogadora, de D&D ou de Tormenta20) ou **ficha pessoal** com o sistema. Só depois abre o
+assistente do sistema, com os livros daquela campanha (ou os importados pelo usuário).
 
 ### Como retomar
 
@@ -51,7 +57,7 @@ importado em Meus livros (fora do Git), como nos livros de D&D.
 2. **Pacote T20:** `out/t20-jda.book.json` (raças 17, classes 14, origens 33, deuses 20, poderes
    431, magias 196, equipamento 211, itens mágicos 191, ameaças 80); valida com `parseT20BookPack`
    (0 erros). O responsável importa em Meus livros e libera na campanha T20.
-3. **Marco 3, próximo passo exato:** criar `apps/web/src/components/characters/t20-wizard/` no
+3. **Marco 3 (feito; referência):** criar `apps/web/src/components/characters/t20-wizard/` no
    molde do assistente de D&D (`dnd5e-wizard/`), usando `@codexveil/rpg-systems/tormenta20`:
    `buildT20Content` (conteúdo dos pacotes da campanha/usuário via `loadBookSources`),
    `createT20Draft`, `t20DraftIssues`, `buildT20Character` e os auxiliares (`t20EquipmentOptions`,
@@ -60,7 +66,7 @@ importado em Meus livros (fora do Git), como nos livros de D&D.
    `/personagens/novo` precisa escolher o assistente pelo sistema da campanha (hoje só lista
    campanhas `dnd5e`), e a ação do servidor deve validar com `t20DraftIssues` e criar com
    `createCharacter` (sistema `tormenta20`).
-4. **Depois:** ficha T20 em `components/sheets/` (ramo `tormenta20` em `character-sheet.tsx`, usando
+4. **Próximo passo exato (marco 4):** ficha T20 em `components/sheets/` (ramo `tormenta20` em `character-sheet.tsx`, usando
    `computeT20Derived`), subida de nível, app e mestre.
 
 ### Pendências conhecidas da extração
