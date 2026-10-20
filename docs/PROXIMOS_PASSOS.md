@@ -68,9 +68,7 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
     - todas as regras, fichas, criação de personagem e imagens vêm do próprio livro;
     - seguir o modelo dos sistemas existentes (`packages/rpg-systems/src/<id>/`, registro em
       `registry.ts`, migração inserindo em `rpg_systems`, ficha e assistente no site e no app).
-    - PDF do livro (65 MB): **fora do repositório**, em `C:/Users/henri/Downloads/MANUAL DE RUNAS.pdf`.
-      Não foi versionado (o repositório é público e a publicação do PDF foi bloqueada pela proteção
-      do Claude Code); para outra máquina, copie o arquivo à mão.
+    - PDF do livro (65 MB), versionado com autorização do responsável: [`docs/sistemas/behind-the-magic/MANUAL DE RUNAS.pdf`](sistemas/behind-the-magic/MANUAL%20DE%20RUNAS.pdf).
 
 ### Estado em 2026-10-20 (feito e publicado)
 
