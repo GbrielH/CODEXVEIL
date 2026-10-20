@@ -50,7 +50,7 @@ export default async function SrdItemsPage({ params, searchParams }: PageProps<'
   const needle = normalize(term);
   const filtered = items.filter(
     (item) =>
-      (!needle || normalize(`${item.name} ${describeSrdMagicItem(item)}`).includes(needle)) &&
+      (!needle || normalize(`${item.namePt} ${item.name} ${describeSrdMagicItem(item)}`).includes(needle)) &&
       (!category || item.category === category) &&
       (!rarity || rarityTerms(item.rarity).includes(rarity)),
   );
@@ -135,7 +135,10 @@ export default async function SrdItemsPage({ params, searchParams }: PageProps<'
                 href={campaignPath(campaign.id, `/biblioteca/srd-itens/${srdSlug(item.name)}`) as Route}
                 className="flex h-full flex-col rounded-lg border border-line bg-card px-3 py-2.5 shadow-card transition-colors hover:border-parchment-400/40 hover:bg-raised"
               >
-                <span className="font-display text-base text-fg-accent">{item.name}</span>
+                <span className="font-display text-base text-fg-accent">
+                  {item.namePt}
+                  {item.namePt !== item.name ? <span className="ml-2 font-sans text-xs text-fg-subtle">{item.name}</span> : null}
+                </span>
                 <span className="text-xs text-fg-secondary">{describeSrdMagicItem(item)}</span>
               </Link>
             </li>

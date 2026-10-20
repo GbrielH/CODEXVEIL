@@ -282,6 +282,10 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-20 (tradução do SRD):** monstros e itens mágicos 100% em português (`pnpm check`
+  20/20). Próximo: pedidos de 2026-10-20 (sessão presencial/online, grid, ação de combate do
+  mestre, Treinamento em Perícia, descrições, aba Sessão, perícias marcadas, biblioteca T20,
+  combate só com turnos, dado 3D) e depois Behind the Magic.
 - **2026-10-20 (lacunas T20):** turno na ficha T20, "Usar" no mural e editar item no app
   (`pnpm check` 20/20; sem teste no navegador). Próximo: tradução do SRD, depois Behind the Magic.
 - **2026-10-20 (subida de nível):** só na aba Evolução; na campanha o mestre libera o nível e o

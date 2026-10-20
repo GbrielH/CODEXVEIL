@@ -20,7 +20,7 @@ async function load(campaignId: string, slug: string) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { campaignId, slug } = await params;
   const { item } = await load(campaignId, slug);
-  return { title: `${item.name} (SRD)` };
+  return { title: `${item.namePt} (SRD)` };
 }
 
 export default async function SrdItemPage({ params }: Props) {
@@ -35,7 +35,8 @@ export default async function SrdItemPage({ params }: Props) {
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <article className="parchment ornate min-w-0 rounded-lg px-5 py-4 text-ink">
           <p className="text-xs tracking-[0.18em] text-ink-muted uppercase">SRD 5.2.1</p>
-          <h2 className="mt-1 font-display text-2xl text-wine-800">{item.name}</h2>
+          <h2 className="mt-1 font-display text-2xl text-wine-800">{item.namePt}</h2>
+          {item.namePt !== item.name ? <p className="text-sm text-ink/70">{item.name}</p> : null}
           <p className="text-sm italic text-ink-muted">{describeSrdMagicItem(item)}</p>
           <hr className="my-3 border-wine-700/40" />
           <div className="flex flex-col gap-2 font-serif text-base leading-relaxed">

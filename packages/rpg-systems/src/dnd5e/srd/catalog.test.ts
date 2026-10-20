@@ -68,7 +68,7 @@ describe('catálogo do SRD 5.2.1', () => {
       languages: 'Comum, Dracônico',
       challengeRating: '17',
     });
-    expect(dragon.actions.map((action) => action.name)).toContain('Multiattack');
+    expect(dragon.actions.map((action) => action.name)).toContain('Ataques Múltiplos');
     expect(dragon.legendaryActions[0]?.name).toBe('Usos de Ações Lendárias');
 
     const cube = srdMonsterToStatBlock(await monster('Gelatinous Cube'));
@@ -120,5 +120,18 @@ describe('catálogo do SRD 5.2.1', () => {
     expect(srdRarityLabel('Very Rare')).toBe('Muito raro');
     expect(srdAttunementLabel('Requires Attunement by a Wizard')).toBe('Exige sintonia (Mago)');
     expect(srdAttunementLabel('Requires Attunement')).toBe('Exige sintonia');
+  });
+
+  it('traduz nomes e textos de todos os monstros e itens (o nome em inglês segue como identificador)', async () => {
+    const [monsters, items] = await Promise.all([loadSrdMonsters(), loadSrdMagicItems()]);
+    const aboleth = monsters.find((entry) => entry.name === 'Aboleth');
+    expect(aboleth?.namePt).toBe('Aboleth');
+    expect(monsters.find((entry) => entry.name === 'Adult Red Dragon')?.namePt).toBe('Dragão Vermelho Adulto');
+    expect(aboleth?.traits[0]?.description).toBe('O aboleth pode respirar ar e água.');
+    for (const monster of monsters) {
+      for (const entry of [...monster.traits, ...monster.actions]) expect(entry.description, monster.name).not.toMatch(/\b(?:the target|Melee Attack Roll|Saving Throw)\b/);
+    }
+    for (const item of items) expect(item.description.join(' '), item.name).not.toMatch(/\b(?:you can|While wearing)\b/);
+    expect(items.find((entry) => entry.name === 'Bag of Holding')?.namePt).toBe('Bolsa Guarda-Tudo');
   });
 });

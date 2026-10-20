@@ -78,7 +78,7 @@ export async function importSrdMonsterAction(campaignId: string, slug: string, k
     const supabase = await createSupabaseServerClient();
     creatureId = await createCreature(supabase, campaignId, {
       kind,
-      name: monster.name.slice(0, 80),
+      name: monster.namePt.slice(0, 80),
       subtitle: 'SRD 5.2.1',
       description: '',
       visibility: 'gm',

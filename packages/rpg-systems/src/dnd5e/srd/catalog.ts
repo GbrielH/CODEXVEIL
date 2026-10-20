@@ -7,7 +7,9 @@
  * Alterações feitas pelo Codexveil (exigência da licença): os campos estruturados (tamanho,
  * tipo, alinhamento, deslocamento, sentidos, idiomas, perícias, danos e condições) são
  * traduzidos para o português e as distâncias convertidas para metros (5 pés = 1,5 m). Os
- * nomes e os textos descritivos seguem o original em inglês.
+ * nomes e os textos descritivos também são traduzidos (`data/*.pt.json`, gerados por
+ * `scripts/srd/translate_pt.py`); o nome original em inglês continua sendo o identificador e
+ * aparece pequeno ao lado do nome em português.
  */
 import { ABILITIES, abilityLabels, type Ability } from '../abilities';
 import { dnd5eConditions } from '../conditions';
@@ -32,7 +34,10 @@ export interface SrdMonsterEntry {
 }
 
 export interface SrdMonster {
+  /** Nome original (identificador, endereço e busca em inglês). */
   name: string;
+  /** Nome em português. */
+  namePt: string;
   size: string;
   type: string;
   tags: string;
@@ -64,7 +69,10 @@ export interface SrdMonster {
 }
 
 export interface SrdMagicItem {
+  /** Nome original (identificador, endereço e busca em inglês). */
   name: string;
+  /** Nome em português. */
+  namePt: string;
   /** Categoria original: "Armor", "Weapon", "Wondrous Item", "Potion"… */
   category: string;
   subtype: string;
@@ -89,20 +97,64 @@ export function loadSrdSpellTexts(): Promise<SrdSpellTexts> {
   return spellTexts;
 }
 
-/** Monstros e animais do SRD, em ordem alfabética pelo nome original. */
+type MonsterSection = 'traits' | 'actions' | 'bonusActions' | 'reactions' | 'legendaryActions';
+interface MonsterPt extends Partial<Record<MonsterSection, { name: string | null; description: string | null }[]>> {
+  name: string | null;
+}
+interface ItemPt {
+  name: string | null;
+  subtype: string | null;
+  description: (string | null)[];
+}
+
+/** Aplica a tradução (quando existe) mantendo o texto original onde ela falta. */
+function translateMonster(monster: Omit<SrdMonster, 'namePt'>, pt: MonsterPt | undefined): SrdMonster {
+  const sections: MonsterSection[] = ['traits', 'actions', 'bonusActions', 'reactions', 'legendaryActions'];
+  const out = { ...monster, namePt: pt?.name ?? monster.name };
+  for (const section of sections) {
+    out[section] = (monster[section] ?? []).map((entry, index) => {
+      const translated = pt?.[section]?.[index];
+      return { name: translated?.name ?? entry.name, description: translated?.description ?? entry.description };
+    });
+  }
+  return out;
+}
+
+/** Monstros e animais do SRD em português, em ordem alfabética pelo nome em português. */
 export function loadSrdMonsters(): Promise<readonly SrdMonster[]> {
-  monsters ??= import('./data/monsters.json').then((module) =>
-    [...(module.default as unknown as SrdMonster[])].sort((a, b) => a.name.localeCompare(b.name, 'en')),
-  );
+  monsters ??= Promise.all([import('./data/monsters.json'), import('./data/monsters.pt.json')]).then(([module, ptModule]) => {
+    const pt = ptModule.default as unknown as Record<string, MonsterPt>;
+    return (module.default as unknown as Omit<SrdMonster, 'namePt'>[])
+      .map((monster) => translateMonster(monster, pt[monster.name]))
+      .sort((a, b) => a.namePt.localeCompare(b.namePt, 'pt-BR'));
+  });
   return monsters;
 }
 
-/** Itens mágicos do SRD, em ordem alfabética pelo nome original. */
+/** Itens mágicos do SRD em português, em ordem alfabética pelo nome em português. */
 export function loadSrdMagicItems(): Promise<readonly SrdMagicItem[]> {
-  magicItems ??= import('./data/magic-items.json').then((module) =>
-    [...(module.default as unknown as SrdMagicItem[])].sort((a, b) => a.name.localeCompare(b.name, 'en')),
-  );
+  magicItems ??= Promise.all([import('./data/magic-items.json'), import('./data/magic-items.pt.json')]).then(([module, ptModule]) => {
+    const pt = ptModule.default as unknown as Record<string, ItemPt>;
+    return (module.default as unknown as Omit<SrdMagicItem, 'namePt'>[])
+      .map((item) => {
+        const translated = pt[item.name];
+        return {
+          ...item,
+          namePt: translated?.name ?? item.name,
+          subtype: translated?.subtype ?? item.subtype,
+          description: item.description.map((paragraph, index) => translated?.description[index] ?? paragraph),
+        };
+      })
+      .sort((a, b) => a.namePt.localeCompare(b.namePt, 'pt-BR'));
+  });
   return magicItems;
+}
+
+/** Busca sem acento e sem diferença de maiúsculas, nos nomes em português e em inglês. */
+export function srdMatches(entry: { name: string; namePt: string }, query: string): boolean {
+  const plain = (text: string) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+  const wanted = plain(query.trim());
+  return !wanted || plain(entry.namePt).includes(wanted) || plain(entry.name).includes(wanted);
 }
 
 /** Identificador estável para endereços: "Adult Red Dragon" → "adult-red-dragon". */
@@ -587,7 +639,7 @@ const ITEM_CATEGORY_BY_SRD: Record<string, 'weapon' | 'armor' | 'gear' | 'consum
 export function srdMagicItemToCampaignItem(item: SrdMagicItem) {
   const subtype = item.subtype ? ` (${item.subtype})` : '';
   return {
-    name: item.name.slice(0, 120),
+    name: item.namePt.slice(0, 120),
     category: ITEM_CATEGORY_BY_SRD[item.category] ?? 'gear',
     rarity: `${srdMagicItemCategoryLabel(item.category)}${subtype}, ${srdRarityLabel(item.rarity)}`.slice(0, 60),
     requiresAttunement: item.attunement !== '',

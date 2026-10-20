@@ -21,7 +21,7 @@ async function load(campaignId: string, slug: string) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { campaignId, slug } = await params;
   const { monster } = await load(campaignId, slug);
-  return { title: `${monster.name} (SRD)` };
+  return { title: `${monster.namePt} (SRD)` };
 }
 
 /** Bloco de estatísticas do SRD, com a opção de copiar para a biblioteca da campanha. */
@@ -38,7 +38,8 @@ export default async function SrdMonsterPage({ params }: Props) {
       </Link>
       <header>
         <p className="eyebrow">SRD 5.2.1{monster.animal ? ' · Animal' : ''}</p>
-        <h2 className="mt-1 text-3xl leading-tight">{monster.name}</h2>
+        <h2 className="mt-1 text-3xl leading-tight">{monster.namePt}</h2>
+        {monster.namePt !== monster.name ? <p className="text-sm text-fg-subtle">{monster.name}</p> : null}
         <p className="text-fg-secondary">{describeSrdMonster(monster)}</p>
       </header>
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">

@@ -38,6 +38,13 @@ conjuração, alcance e duração das magias foram traduzidos e os componentes m
 resumidos para "M"; o texto das regras das condições foi traduzido para o português, com
 distâncias em metros. Os nomes das magias seguem o original em inglês.
 
+**Tradução dos monstros e itens mágicos (2026-10-20):** os nomes e os textos dos 330 monstros
+e dos 258 itens mágicos do SRD 5.2.1 foram traduzidos para o português pelo Codexveil
+(`packages/rpg-systems/src/dnd5e/srd/data/*.pt.json`, gerados por
+`scripts/srd/translate_pt.py` a partir dos dicionários em `scripts/srd/pt/`), com distâncias em
+metros e pesos em quilos. O nome original em inglês aparece ao lado e continua sendo o
+identificador. Esta é uma tradução não oficial, feita sob a CC-BY-4.0.
+
 **O que foi escrito pelo projeto:** todos os textos de interface, os resumos curtos das
 condições (`conditions.ts`) e os resumos das habilidades, traços e talentos. Eles não substituem o texto
 das regras.

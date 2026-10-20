@@ -89,6 +89,27 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
       `registry.ts`, migração inserindo em `rpg_systems`, ficha e assistente no site e no app).
     - PDF do livro (65 MB), versionado com autorização do responsável: [`docs/sistemas/behind-the-magic/MANUAL DE RUNAS.pdf`](sistemas/behind-the-magic/MANUAL%20DE%20RUNAS.pdf).
 
+## Pedidos de 2026-10-20 (depois da tradução do SRD, nesta ordem)
+
+1. **Sessão presencial ou online** na campanha. Presencial: o mestre escolhe dados físicos ou
+   virtuais; com dados físicos, os dados virtuais somem e a ficha mostra que dado rolar em cada
+   coisa (acerto do ataque, dano…). Online: dados virtuais ligados automaticamente (e, depois, o
+   grid da sessão).
+2. **Grid da sessão** (próxima grande etapa, para sessões online).
+3. **Ação de combate personalizada** criada pelo mestre.
+4. Subida de nível: poder "Treinamento em Perícia" abre a escolha da perícia, como no Aumento de
+   Atributo.
+5. Benefícios de origem: breve descrição de cada perícia/poder.
+6. Aba Sessão do mestre: mostrar a sessão montada e iniciada, com botão prático de liberar cada
+   trecho aos jogadores ali mesmo.
+7. Perícias já treinadas nas listas de escolha: elemento visual (não só desabilitar).
+8. Tormenta20: tirar Bestiário SRD e Itens mágicos SRD (de D&D) da biblioteca; usar os do T20 se
+   houver.
+9. Combate do mestre: só a definição dos turnos (sem registrar ação/rolagem/alvo pelo painel); os
+   jogadores conferem a ficha e ajustam a vida.
+10. Dado 3D numa caixinha no canto, com a cor escolhida por cada jogador (ver
+    [`MELHORIAS_FUTURAS.md`](MELHORIAS_FUTURAS.md)).
+
 ## Correções do QA para Tormenta20 (2026-10-20, concluídas)
 
 1. **[Feito]** Criação: o benefício de origem "um poder de combate à sua escolha" abre a escolha do poder ali
@@ -203,17 +224,17 @@ avisando, e a OTA pode ser publicada à mão:
 
 Lista pedida pelo responsável em 2026-10-18, **a terminar antes da IA**. Estado de cada item:
 
-| #   | Pedido                                                                                                                           | Situação                                                                                                                                                                                                                                         |
-| --- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | Calendário da criação de sessão no visual do app                                                                                 | **Feito** (site): `components/ui/date-time-field.tsx`, na criação e no editor da sessão. Não aberto no navegador.                                                                                                                                |
-| 2   | Nomes e descrições de monstros/itens em português, com o nome em inglês pequeno embaixo (busca nas duas línguas)                 | **Não iniciado.** Os 330 monstros e 258 itens do SRD estão em inglês (`srd/data/*.json`); falta traduzir nomes e textos e ajustar listas e busca (site e app). Os monstros dos livros importados já vêm em português.                            |
-| 3   | "Muitos e-mails enviados" na recuperação; envio pela Brevo com `codexveil@gmail.com`                                             | **Feito:** SMTP da Brevo ativo e templates em português na produção; o aviso é o limite de 1 min por endereço (mensagem nova). Falta confirmar a chegada e testar pelo app; o limite de 30/h só sobe pelo painel (Authentication → Rate Limits). |
-| 4   | Raças, classes etc. dos livros liberados aparecendo na criação                                                                   | **Infra pronta e publicada** (Meus livros, leitor, aba Livros, conteúdo na criação e na subida de nível, migração `20261018140000_book_packs.sql` aplicada). **Falta gerar e importar os pacotes** (abaixo) e levar o conteúdo à criação no app. |
-| 5   | Todos os antecedentes dos livros                                                                                                 | Depende da extração (Livro do Jogador 2014: 13 antecedentes).                                                                                                                                                                                    |
-| 6   | Todas as raças dos livros                                                                                                        | Depende da extração (Monstros do Multiverso: 33 raças no capítulo 1; Livro do Jogador: raças e sub-raças).                                                                                                                                       |
-| 7   | Combate: rolagem de acerto e depois de dano, dano aplicado sozinho, reações do alvo (bloquear, esquivar…) com cálculo automático | **Não iniciado.**                                                                                                                                                                                                                                |
-| 8   | Imagens em monstros e NPCs                                                                                                       | **Feito:** prévia no editor do site; envio, troca e remoção no app (tela do registro). Não testado no aparelho.                                                                                                                                  |
-| 9   | Conferir se todos os monstros e itens dos livros estão no site                                                                   | Extração dos monstros feita (abaixo); itens mágicos dos livros ainda não extraídos.                                                                                                                                                              |
+| #   | Pedido                                                                                                                           | Situação                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Calendário da criação de sessão no visual do app                                                                                 | **Feito** (site): `components/ui/date-time-field.tsx`, na criação e no editor da sessão. Não aberto no navegador.                                                                                                                                                                                                                                                                                                                                                     |
+| 2   | Nomes e descrições de monstros/itens em português, com o nome em inglês pequeno embaixo (busca nas duas línguas)                 | **Feito em 2026-10-20.** Tradução completa (monstros 1.359/1.359 entradas, itens 1.094/1.094 parágrafos), nome em inglês pequeno ao lado, busca nos dois idiomas, cópia para a biblioteca com o nome em português. Descrições das magias seguem em inglês. Antes: Os 330 monstros e 258 itens do SRD estão em inglês (`srd/data/*.json`); falta traduzir nomes e textos e ajustar listas e busca (site e app). Os monstros dos livros importados já vêm em português. |
+| 3   | "Muitos e-mails enviados" na recuperação; envio pela Brevo com `codexveil@gmail.com`                                             | **Feito:** SMTP da Brevo ativo e templates em português na produção; o aviso é o limite de 1 min por endereço (mensagem nova). Falta confirmar a chegada e testar pelo app; o limite de 30/h só sobe pelo painel (Authentication → Rate Limits).                                                                                                                                                                                                                      |
+| 4   | Raças, classes etc. dos livros liberados aparecendo na criação                                                                   | **Infra pronta e publicada** (Meus livros, leitor, aba Livros, conteúdo na criação e na subida de nível, migração `20261018140000_book_packs.sql` aplicada). **Falta gerar e importar os pacotes** (abaixo) e levar o conteúdo à criação no app.                                                                                                                                                                                                                      |
+| 5   | Todos os antecedentes dos livros                                                                                                 | Depende da extração (Livro do Jogador 2014: 13 antecedentes).                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 6   | Todas as raças dos livros                                                                                                        | Depende da extração (Monstros do Multiverso: 33 raças no capítulo 1; Livro do Jogador: raças e sub-raças).                                                                                                                                                                                                                                                                                                                                                            |
+| 7   | Combate: rolagem de acerto e depois de dano, dano aplicado sozinho, reações do alvo (bloquear, esquivar…) com cálculo automático | **Não iniciado.**                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 8   | Imagens em monstros e NPCs                                                                                                       | **Feito:** prévia no editor do site; envio, troca e remoção no app (tela do registro). Não testado no aparelho.                                                                                                                                                                                                                                                                                                                                                       |
+| 9   | Conferir se todos os monstros e itens dos livros estão no site                                                                   | Extração dos monstros feita (abaixo); itens mágicos dos livros ainda não extraídos.                                                                                                                                                                                                                                                                                                                                                                                   |
 
 ### Extração dos livros (itens 4, 5, 6 e 9)
 
@@ -408,6 +429,12 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-20 — Tradução do SRD
+
+- Monstros e itens mágicos do SRD 5.2.1 em português (motor de regras + dicionários em
+  `scripts/srd/`), com o nome em inglês ao lado e busca nos dois idiomas. Testes em
+  `srd/catalog.test.ts` garantem que nenhum texto ficou em inglês. `pnpm check` 20/20.
 
 ### 2026-10-20 — Excluir personagem
 

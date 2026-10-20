@@ -36,7 +36,7 @@ export default async function SrdBestiaryPage({ params, searchParams }: PageProp
   const needle = normalize(term);
   const filtered = monsters.filter(
     (monster) =>
-      (!needle || normalize(`${monster.name} ${describeSrdMonster(monster)}`).includes(needle)) &&
+      (!needle || normalize(`${monster.namePt} ${monster.name} ${describeSrdMonster(monster)}`).includes(needle)) &&
       (!type || monster.type === type) &&
       (!challenge || monster.cr === challenge),
   );
@@ -122,7 +122,10 @@ export default async function SrdBestiaryPage({ params, searchParams }: PageProp
                 href={campaignPath(campaign.id, `/biblioteca/srd/${srdSlug(monster.name)}`) as Route}
                 className="flex h-full flex-col rounded-lg border border-line bg-card px-3 py-2.5 shadow-card transition-colors hover:border-parchment-400/40 hover:bg-raised"
               >
-                <span className="font-display text-base text-fg-accent">{monster.name}</span>
+                <span className="font-display text-base text-fg-accent">
+                  {monster.namePt}
+                  {monster.namePt !== monster.name ? <span className="ml-2 font-sans text-xs text-fg-subtle">{monster.name}</span> : null}
+                </span>
                 <span className="text-xs text-fg-secondary">{describeSrdMonster(monster)}</span>
                 <span className="mt-1 text-xs text-fg-muted">
                   CA {monster.ac} · PV {monster.hp}
