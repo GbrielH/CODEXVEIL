@@ -9,7 +9,10 @@ import { acceptInviteAction, declineInviteAction } from '../actions';
 /** Botões de aceitar/recusar; funcionam como formulários (também sem JavaScript). */
 export function InviteDecision({ code, canDecline }: { code: string; canDecline: boolean }) {
   const [acceptState, accept] = useActionState(acceptInviteAction.bind(null, code), idleFormState);
-  const [declineState, decline] = useActionState(declineInviteAction.bind(null, code), idleFormState);
+  const [declineState, decline] = useActionState(
+    declineInviteAction.bind(null, code),
+    idleFormState,
+  );
   const message = acceptState.message ?? declineState.message;
 
   return (
@@ -23,7 +26,12 @@ export function InviteDecision({ code, canDecline }: { code: string; canDecline:
         </form>
         {canDecline ? (
           <form action={decline}>
-            <SubmitButton size="lg" variant="ghost" pendingLabel="Recusando…" className="w-full sm:w-auto">
+            <SubmitButton
+              size="lg"
+              variant="ghost"
+              pendingLabel="Recusando…"
+              className="w-full sm:w-auto"
+            >
               Recusar convite
             </SubmitButton>
           </form>

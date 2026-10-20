@@ -15,7 +15,10 @@ export default function InviteCodePage() {
         description="Digite o código que o mestre compartilhou com você. Hífens e espaços são opcionais."
       />
       <Card ornate className="max-w-lg">
-        <CardHeader icon={<KeyRound className="h-5 w-5" aria-hidden="true" />} title="Código de convite" />
+        <CardHeader
+          icon={<KeyRound className="h-5 w-5" aria-hidden="true" />}
+          title="Código de convite"
+        />
         <InviteCodeForm />
       </Card>
     </div>

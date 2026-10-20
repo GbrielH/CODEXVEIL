@@ -430,6 +430,14 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-20 — convite como carta que abre
+
+- Ao abrir um convite (código ou link), um envelope com o selo do Codexveil aparece, a aba abre,
+  a carta com as informações da campanha sobe e o envelope some (site: CSS em `globals.css`,
+  página `convite/[codigo]`; app: `components/invite-letter.tsx`, por OTA). Com "reduzir
+  movimento", a carta aparece direto.
+- Verificado: `pnpm check`. Animação não conferida visualmente no navegador nem no aparelho.
+
 ### 2026-10-20 — cor dos dados obrigatória e nome colorido
 
 - Sem cor escolhida ninguém rola dado (gatilho `dice_rolls_require_color`, erro `CVCOR`); o

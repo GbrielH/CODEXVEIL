@@ -10,6 +10,7 @@ import { inviteCodeSchema } from '@codexveil/validation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
+import { InviteLetter } from '@/components/invite-letter';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { AppText, Card } from '@/components/ui/primitives';
@@ -118,41 +119,45 @@ export default function InviteScreen() {
         <Button label="Ver convite" onPress={() => void lookUp()} loading={busy === 'preview'} />
       </Card>
       {campaign ? (
-        <Card ornate>
-          <AppText variant="eyebrow">Convite para</AppText>
-          <AppText variant="title">{campaign.name}</AppText>
-          {campaign.description ? <AppText variant="serif">{campaign.description}</AppText> : null}
-          <AppText variant="muted">
-            {findSystem(campaign.systemId)?.shortName ?? campaign.systemId} · Mestre:{' '}
-            {campaign.ownerName ?? '—'} · {campaign.memberCount} participante
-            {campaign.memberCount === 1 ? '' : 's'}
-          </AppText>
-          {preview && !preview.ok && preview.reason === 'already_member' ? (
-            <Button
-              label="Abrir a campanha"
-              onPress={() =>
-                router.replace({ pathname: '/campanha/[id]', params: { id: campaign.id } })
-              }
-            />
-          ) : (
-            <View style={{ gap: 8 }}>
+        <InviteLetter key={code}>
+          <Card ornate>
+            <AppText variant="eyebrow">Convite para</AppText>
+            <AppText variant="title">{campaign.name}</AppText>
+            {campaign.description ? (
+              <AppText variant="serif">{campaign.description}</AppText>
+            ) : null}
+            <AppText variant="muted">
+              {findSystem(campaign.systemId)?.shortName ?? campaign.systemId} · Mestre:{' '}
+              {campaign.ownerName ?? '—'} · {campaign.memberCount} participante
+              {campaign.memberCount === 1 ? '' : 's'}
+            </AppText>
+            {preview && !preview.ok && preview.reason === 'already_member' ? (
               <Button
-                label="Aceitar e entrar"
-                onPress={() => void accept()}
-                loading={busy === 'accept'}
+                label="Abrir a campanha"
+                onPress={() =>
+                  router.replace({ pathname: '/campanha/[id]', params: { id: campaign.id } })
+                }
               />
-              {preview && 'isPersonal' in preview && preview.isPersonal ? (
+            ) : (
+              <View style={{ gap: 8 }}>
                 <Button
-                  label="Recusar"
-                  variant="ghost"
-                  onPress={() => void decline()}
-                  loading={busy === 'decline'}
+                  label="Aceitar e entrar"
+                  onPress={() => void accept()}
+                  loading={busy === 'accept'}
                 />
-              ) : null}
-            </View>
-          )}
-          <AppText variant="small">Código: {formatInviteCode(code)}</AppText>
-        </Card>
+                {preview && 'isPersonal' in preview && preview.isPersonal ? (
+                  <Button
+                    label="Recusar"
+                    variant="ghost"
+                    onPress={() => void decline()}
+                    loading={busy === 'decline'}
+                  />
+                ) : null}
+              </View>
+            )}
+            <AppText variant="small">Código: {formatInviteCode(code)}</AppText>
+          </Card>
+        </InviteLetter>
       ) : null}
     </Screen>
   );

@@ -11,7 +11,10 @@ import { requireSessionUser } from '@/lib/auth';
 import { routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-export async function goToInviteAction(_previous: FormState, formData: FormData): Promise<FormState> {
+export async function goToInviteAction(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
   await requireSessionUser('/convite');
   const code = readText(formData, 'code');
   const parsed = inviteCodeSchema.safeParse(code);

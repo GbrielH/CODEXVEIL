@@ -28,7 +28,11 @@
 
   /* Tema claro: vinheta vinho mais suave sobre o papel. */
   :root[data-theme='light'] body {
-    background-image: radial-gradient(1100px 520px at 50% -12%, rgb(87 31 43 / 0.08), transparent 62%);
+    background-image: radial-gradient(
+      1100px 520px at 50% -12%,
+      rgb(87 31 43 / 0.08),
+      transparent 62%
+    );
   }
 
   ::selection {
@@ -289,7 +293,12 @@
   position: absolute;
   bottom: -12px;
   border-radius: 9999px;
-  background: radial-gradient(circle, var(--color-amber-300), var(--color-ember-400) 55%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    var(--color-amber-300),
+    var(--color-ember-400) 55%,
+    transparent 70%
+  );
   animation: codex-ember-rise var(--ember-duration, 14s) linear infinite;
   animation-delay: var(--ember-delay, 0s);
   opacity: 0;
@@ -354,4 +363,73 @@
 }
 [data-motion='reduce'] .ember {
   display: none;
+}
+
+/* Convite: carta que abre (envelope com selo, aba abre, a carta sobe e o envelope some). */
+@keyframes codex-envelope-flap {
+  0% {
+    transform: rotateX(0deg);
+  }
+  100% {
+    transform: rotateX(180deg);
+  }
+}
+@keyframes codex-envelope-seal {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.6);
+  }
+}
+@keyframes codex-envelope-away {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(30%);
+    visibility: hidden;
+  }
+}
+@keyframes codex-letter-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(18%) scale(0.86);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.invite-letter {
+  perspective: 1400px;
+}
+.invite-envelope {
+  animation: codex-envelope-away 600ms var(--ease-codex) 1700ms both;
+}
+.invite-envelope-flap {
+  transform-origin: top center;
+  backface-visibility: hidden;
+  animation: codex-envelope-flap 750ms cubic-bezier(0.5, 0, 0.3, 1) 650ms both;
+}
+.invite-envelope-seal {
+  animation: codex-envelope-seal 400ms ease-in 350ms both;
+}
+.invite-letter-card {
+  animation: codex-letter-rise 900ms var(--ease-codex) 1150ms both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .invite-envelope {
+    display: none;
+  }
+  .invite-letter-card {
+    animation: none;
+  }
 }
