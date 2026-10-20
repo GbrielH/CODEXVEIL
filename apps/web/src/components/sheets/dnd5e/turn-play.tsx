@@ -13,9 +13,10 @@ import {
   type CharacterAbility,
   type TurnAction,
 } from '@codexveil/database';
-import { d20Expression, turnActionKindLabels, turnBudget, turnModeLabels, type TurnActionKind } from '@codexveil/domain';
+import { d20Expression, withBonus, turnActionKindLabels, turnBudget, turnModeLabels, type TurnActionKind } from '@codexveil/domain';
 import {
   DND5E_ACTIONS,
+  attackDamageModifier,
   attackRollBonus,
   dnd5eActions,
   dnd5eConditionsLeftAfter,
@@ -48,22 +49,25 @@ interface Option {
   grantsAction: boolean;
   roll: string | null;
   ability: CharacterAbility | null;
+  /** Dano da arma, rolado só depois que o mestre diz que o ataque acertou. */
+  damage?: string | null;
 }
 
 /**
  * Turno do personagem na campanha: de quem é a vez e, na vez dele, as ações com o orçamento do
- * D&D (1 ação, 1 ação bônus, movimento e 1 reação), alvo, rolagem registrada no mural e o botão
- * de encerrar o turno. Quando alguém mira o personagem, aparece a opção de reagir.
+ * D&D (1 ação, 1 ação bônus, movimento e 1 reação), rolagem registrada no mural e o botão de
+ * encerrar o turno. Combate roleplay: sem escolha de alvo nem dano automático. O jogador rola o
+ * acerto, o mestre diz se acertou e, se sim, o jogador rola o dano (só registrado no mural). Quando alguém mira o personagem, aparece a opção de reagir.
  */
 export function TurnPlay() {
-  const { character, abilities, items, derived, resources, conditions, permissions, reloadConditions, setResources } = useSheet();
+  const { character, sheet, abilities, items, derived, resources, conditions, permissions, reloadConditions, setResources } = useSheet();
   const campaignId = character.campaign?.id ?? null;
   const { toast } = useToast();
   const id = useId();
   const [turn, setTurn] = useState<CampaignTurn | null>(null);
   const [actions, setActions] = useState<TurnAction[]>([]);
   const [choice, setChoice] = useState('');
-  const [target, setTarget] = useState('');
+  const [pendingHit, setPendingHit] = useState<{ label: string; total: number | null; damage: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [playing, setPlaying] = useState(true);
@@ -122,7 +126,15 @@ export function TurnPlay() {
       if (ability.kind === 'attack') {
         if (!isAttackAvailable(ability.name, items)) continue;
         const data = parseAttack(ability.data);
-        list.push({ key: ability.id, label: `Atacar: ${ability.name}`, kind: 'action', grantsAction: false, roll: d20Expression(attackRollBonus(data, derived)), ability });
+        list.push({
+          key: ability.id,
+          label: `Atacar: ${ability.name}`,
+          kind: 'action',
+          grantsAction: false,
+          roll: d20Expression(attackRollBonus(data, derived)),
+          ability,
+          damage: data.damage ? withBonus(data.damage, attackDamageModifier(data.ability, sheet.abilities)) : null,
+        });
       } else if (ability.kind === 'spell') {
         const parsed = dnd5eSpellDataSchema.safeParse(ability.data ?? {});
         const cost = spellTurnCost(parsed.success ? parsed.data.castingTime : '');
@@ -144,7 +156,7 @@ export function TurnPlay() {
       list.push({ key: `acao:${key}`, label: dnd5eActions[key].label, kind: 'action', grantsAction: false, roll: null, ability: null });
     }
     return list;
-  }, [abilities, items, derived]);
+  }, [abilities, items, derived, sheet.abilities]);
 
   if (!campaignId || !turn || character.campaign?.status !== 'active') return null;
 
@@ -152,7 +164,6 @@ export function TurnPlay() {
   const mine = me !== null && turn.activeCharacterId === character.id && turn.status === 'active';
   const roundActions = me ? actions.filter((action) => action.combatantId === me.id && action.round === turn.round && action.encounterId === turn.encounterId) : [];
   const budget = turnBudget(roundActions);
-  const targets = turn.order.filter((entry) => entry.id !== me?.id && !entry.defeated);
   const selected = options.find((option) => option.key === choice) ?? null;
   const incoming = actions.filter(
     (action) => action.targetCharacterId === character.id && action.encounterId === turn.encounterId && action.round >= turn.round - 1 && !dismissed.includes(action.id),
@@ -168,7 +179,7 @@ export function TurnPlay() {
         combatantId: me.id,
         kind,
         label: option.label,
-        targetCombatantId: kind === 'movement' || !target ? null : target,
+        targetCombatantId: null,
         grantsAction: option.grantsAction,
         // Dados presenciais: o app não rola; o jogador pode anotar o resultado do dado físico.
         rollExpression: physicalDice ? null : option.roll,
@@ -185,6 +196,7 @@ export function TurnPlay() {
         title: `${turnActionKindLabels[kind]}: ${done.label}${done.targetName ? ` → ${done.targetName}` : ''}`,
         description: done.rollTotal !== null ? `Resultado: ${done.rollTotal}` : undefined,
       });
+      if (option.damage && kind !== 'reaction') setPendingHit({ label: option.label.replace(/^Atacar: /, ''), total: done.rollTotal, damage: option.damage });
       setChoice('');
       setManual('');
       await reload();
@@ -283,7 +295,7 @@ export function TurnPlay() {
               </Badge>
             ))}
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:max-w-md">
             <div className="flex flex-col gap-1.5">
               <label htmlFor={`${id}-acao`} className="text-sm font-medium">
                 O que fazer
@@ -299,20 +311,29 @@ export function TurnPlay() {
                   ))}
               </Select>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor={`${id}-alvo`} className="text-sm font-medium">
-                Alvo
-              </label>
-              <Select id={`${id}-alvo`} value={target} onChange={(event) => setTarget(event.target.value)}>
-                <option value="">Sem alvo</option>
-                {targets.map((entry) => (
-                  <option key={entry.id} value={entry.id}>
-                    {entry.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
           </div>
+          {pendingHit ? (
+            <div role="status" className="flex flex-wrap items-center gap-2 rounded-md border border-parchment-300/50 bg-wine-900/40 px-3 py-2 text-sm">
+              <span className="min-w-0 flex-1">
+                Ataque com <strong>{pendingHit.label}</strong>
+                {pendingHit.total !== null ? ` (resultado ${pendingHit.total})` : ''}. O mestre diz se acertou.
+              </span>
+              <Button
+                size="sm"
+                loading={busy}
+                onClick={() => {
+                  const hit = pendingHit;
+                  setPendingHit(null);
+                  void act({ key: 'dano', label: `Dano: ${hit.label}`, kind: 'free', grantsAction: false, roll: hit.damage, ability: null });
+                }}
+              >
+                Acertou: rolar dano ({pendingHit.damage})
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setPendingHit(null)}>
+                Errou: fechar
+              </Button>
+            </div>
+          ) : null}
           {physicalDice ? (
             <div className="flex flex-col gap-1.5 sm:max-w-xs">
               <label htmlFor={`${id}-dado`} className="text-sm font-medium">

@@ -11,9 +11,10 @@ import {
   type CharacterAbility,
   type TurnAction,
 } from '@codexveil/database';
-import { d20Expression, turnActionKindLabels, turnBudget, turnModeLabels, type TurnActionKind } from '@codexveil/domain';
+import { d20Expression, withBonus, turnActionKindLabels, turnBudget, turnModeLabels, type TurnActionKind } from '@codexveil/domain';
 import {
   DND5E_ACTIONS,
+  attackDamageModifier,
   attackRollBonus,
   dnd5eActions,
   dnd5eAttackDataSchema,
@@ -47,6 +48,8 @@ interface Option {
   grantsAction: boolean;
   roll: string | null;
   ability: CharacterAbility | null;
+  /** Dano da arma, rolado só depois que o mestre diz que o ataque acertou. */
+  damage?: string | null;
 }
 
 /**
@@ -55,12 +58,12 @@ interface Option {
  * personagem, aparece a opção de reagir.
  */
 export function TurnPlay({ campaignId }: { campaignId: string }) {
-  const { characterId, abilities, items, derived, resources, conditions, canEditPlay, setResources, reloadPlayState } = useSheet();
+  const { characterId, sheet, abilities, items, derived, resources, conditions, canEditPlay, setResources, reloadPlayState } = useSheet();
   const toast = useToast();
   const [turn, setTurn] = useState<CampaignTurn | null>(null);
   const [actions, setActions] = useState<TurnAction[]>([]);
   const [choice, setChoice] = useState('');
-  const [target, setTarget] = useState('');
+  const [pendingHit, setPendingHit] = useState<{ label: string; total: number | null; damage: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [playing, setPlaying] = useState(true);
@@ -116,7 +119,7 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
       if (ability.kind === 'attack') {
         if (!isAttackAvailable(ability.name, items)) continue;
         const parsed = dnd5eAttackDataSchema.safeParse(ability.data ?? {});
-        if (parsed.success) list.push({ key: ability.id, label: `Atacar: ${ability.name}`, kind: 'action', grantsAction: false, roll: d20Expression(attackRollBonus(parsed.data, derived)), ability });
+        if (parsed.success) list.push({ key: ability.id, label: `Atacar: ${ability.name}`, kind: 'action', grantsAction: false, roll: d20Expression(attackRollBonus(parsed.data, derived)), ability, damage: parsed.data.damage ? withBonus(parsed.data.damage, attackDamageModifier(parsed.data.ability, sheet.abilities)) : null });
       } else if (ability.kind === 'spell') {
         const parsed = dnd5eSpellDataSchema.safeParse(ability.data ?? {});
         const cost = spellTurnCost(parsed.success ? parsed.data.castingTime : '');
@@ -131,14 +134,13 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
       list.push({ key: `acao:${key}`, label: dnd5eActions[key].label, kind: 'action', grantsAction: false, roll: null, ability: null });
     }
     return list;
-  }, [abilities, items, derived]);
+  }, [abilities, items, derived, sheet.abilities]);
 
   if (!turn) return null;
   const me = turn.order.find((entry) => entry.characterId === characterId) ?? null;
   const mine = me !== null && turn.activeCharacterId === characterId && turn.status === 'active';
   const roundActions = me ? actions.filter((action) => action.combatantId === me.id && action.round === turn.round && action.encounterId === turn.encounterId) : [];
   const budget = turnBudget(roundActions);
-  const targets = turn.order.filter((entry) => entry.id !== me?.id && !entry.defeated);
   const incoming = actions.filter(
     (action) => action.targetCharacterId === characterId && action.encounterId === turn.encounterId && action.round >= turn.round - 1 && !dismissed.includes(action.id),
   );
@@ -153,7 +155,7 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
         combatantId: me.id,
         kind,
         label: option.label,
-        targetCombatantId: kind === 'movement' || !target ? null : target,
+        targetCombatantId: null,
         grantsAction: option.grantsAction,
         // Dados presenciais: o app não rola; o jogador pode anotar o resultado do dado físico.
         rollExpression: physicalDice ? null : option.roll,
@@ -169,6 +171,7 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
         title: `${turnActionKindLabels[kind]}: ${done.label}${done.targetName ? ` → ${done.targetName}` : ''}`,
         description: done.rollTotal !== null ? `Resultado: ${done.rollTotal}` : undefined,
       });
+      if (option.damage && kind !== 'reaction') setPendingHit({ label: option.label.replace(/^Atacar: /, ''), total: done.rollTotal, damage: option.damage });
       setChoice('');
       setManual('');
       await reload();
@@ -263,7 +266,28 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
             options={available.map((option) => ({ value: option.key, label: option.label, description: turnActionKindLabels[option.kind] }))}
             onChange={setChoice}
           />
-          <PickerField label="Alvo" value={target} options={[{ value: '', label: 'Sem alvo' }, ...targets.map((entry) => ({ value: entry.id, label: entry.name }))]} onChange={setTarget} />
+          {pendingHit ? (
+            <View style={styles.alert} accessibilityRole="summary">
+              <AppText>
+                Ataque com <AppText style={{ fontFamily: fonts.sansSemiBold }}>{pendingHit.label}</AppText>
+                {pendingHit.total !== null ? ` (resultado ${pendingHit.total})` : ''}. O mestre diz se acertou.
+              </AppText>
+              <ChipRow>
+                <Chip
+                  role="button"
+                  label={`Acertou: rolar dano (${pendingHit.damage})`}
+                  selected={false}
+                  disabled={busy}
+                  onPress={() => {
+                    const hit = pendingHit;
+                    setPendingHit(null);
+                    void act({ key: 'dano', label: `Dano: ${hit.label}`, kind: 'free', grantsAction: false, roll: hit.damage, ability: null });
+                  }}
+                />
+                <Chip role="button" label="Errou: fechar" selected={false} onPress={() => setPendingHit(null)} />
+              </ChipRow>
+            </View>
+          ) : null}
           {physicalDice ? (
             <Field
               label="Resultado do dado físico (opcional)"

@@ -282,6 +282,10 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-20:** itens 1 a 3 dos pedidos de 2026-10-20 feitos (combate roleplay: sem alvo, dano
+  só após o mestre confirmar o acerto; `pnpm check` 20/20, não testado no navegador nem no
+  aparelho). Próximo: item 4 (aba Sessão) de [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md).
+
 - **Tormenta20:** seguir a seção "Continuidade Tormenta20" de [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md) (marco 3: tela do assistente de criação T20 no site).
 
 0. **Livros (2026-10-19):** importar em Meus livros os pacotes `phb-2014`, `xgte`, `tcoe`,

@@ -44,10 +44,13 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
    ampliam as opções, e escolhas extras só quando o conteúdo do livro as concede. Pedido: Número de magias, habilidades, perícias etc.
    seguem a classe/nível; mais livros liberados não dão mais escolhas, a não ser que um livro
    selecionado conceda isso explicitamente.
-3. **Combate mais roleplay (menos automação).** Manter rolagem de dados e, para o mestre, a ordem
+3. **[Feito em 2026-10-20] Combate mais roleplay (menos automação).** Manter rolagem de dados e, para o mestre, a ordem
    dos turnos. No D&D: o jogador escolhe o ataque, rola o acerto; o mestre/adversário diz se
    acertou; se acertou, o jogador clica no dado de dano, senão fecha. **Não** escolher o alvo nem
-   aplicar dano automaticamente. (Substitui o item 7 antigo "reações automáticas".)
+   aplicar dano automaticamente. (Substitui o item 7 antigo "reações automáticas".) Feito: a ficha
+   de D&D (site e app) não tem mais o campo "Alvo"; depois de rolar o ataque aparece "Acertou:
+   rolar dano" (registra o dano no mural como ação livre, sem mexer em PV) ou "Errou: fechar". O
+   painel do mestre continua podendo mirar com ameaças.
 4. **Aba Sessão para mestre e jogadores.** Mestre: toda a lore da sessão, por padrão visível só para
    ele; durante a sessão ele libera trechos (texto, imagem de NPC, frase…) com um clique. Jogadores:
    aba Sessão onde os trechos liberados vão aparecendo. (Base existente: blocos de roteiro com
@@ -357,6 +360,11 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-20 — Combate roleplay
+
+- Ficha de D&D (site e app): sem escolha de alvo; após o ataque, o mestre diz se acertou e o
+  jogador rola o dano (só no mural) ou fecha. `pnpm check` passou (20/20 tarefas).
 
 ### 2026-10-19 — Tormenta20: campanha e leitor do livro (marco 2 de 7)
 
