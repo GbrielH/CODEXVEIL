@@ -18,7 +18,7 @@ describe('blocos de roteiro', () => {
 
   it('notas privadas nascem visíveis apenas ao mestre', () => {
     expect(defaultVisibilityFor('gm_note')).toBe('gm');
-    expect(defaultVisibilityFor('paragraph')).toBe('members');
+    expect(defaultVisibilityFor('paragraph')).toBe('gm');
   });
 });
 

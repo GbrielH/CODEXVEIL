@@ -282,6 +282,9 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-20 (aba Sessão):** item 4 feito no código (`pnpm check` 20/20; sem teste no
+  navegador). Aplicar em produção: `supabase db push` (dry-run já mostra só
+  `20261020120000_session_reveal.sql`). Próximo: item 5 (dados realistas).
 - **2026-10-20:** itens 1 a 3 dos pedidos de 2026-10-20 feitos (combate roleplay: sem alvo, dano
   só após o mestre confirmar o acerto; `pnpm check` 20/20, não testado no navegador nem no
   aparelho). Próximo: item 4 (aba Sessão) de [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md).

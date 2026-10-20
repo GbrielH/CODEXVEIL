@@ -179,6 +179,13 @@ export async function updateSession(
 }
 
 /** Muda o estado da sessão. Só uma sessão por campanha pode estar em andamento. */
+/** Publica a sessão para os jogadores (feito ao liberar o primeiro trecho na mesa). */
+export async function publishSession(client: CodexveilClient, sessionId: string): Promise<void> {
+  const { data, error } = await client.from('sessions').update({ is_published: true }).eq('id', sessionId).select('id');
+  if (error) throw toAppError(error);
+  if (data.length === 0) throw new AppError('forbidden');
+}
+
 export async function setSessionStatus(
   client: CodexveilClient,
   sessionId: string,

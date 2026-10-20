@@ -31,6 +31,7 @@ import { DicePanel, DiceProvider } from '@/components/dice/dice-roller';
 import { RollFeed } from '@/components/dice/roll-feed';
 import { CombatTracker } from './combat-tracker';
 import { PartyStatus } from './party-status';
+import { RevealPanel, type RevealBlock } from './reveal-panel';
 import { ScenePanel } from './scene-panel';
 
 export interface LibraryOption {
@@ -63,6 +64,8 @@ interface GmTableProps {
   portraits: Record<string, string>;
   library: LibraryOption[];
   outline: { id: string; type: string; text: string }[];
+  reveal: RevealBlock[];
+  sessionPublished: boolean;
   notes: CampaignNote[];
   turnSettings: CampaignTurnSettings;
   rolls: DiceRoll[];
@@ -194,6 +197,7 @@ export function GmTable(props: GmTableProps) {
             ) : null}
             <RollFeed campaignId={campaignId} initialRolls={props.rolls} canClear={props.isActive} limit={30} compact />
           </Card>
+          <RevealPanel sessionId={session.id} isPublished={props.sessionPublished} isActive={props.isActive} blocks={props.reveal} />
           <ScenePanel context={context} library={props.library} />
           <Card>
             <CardHeader icon={<BookOpen className="h-5 w-5" aria-hidden="true" />} title="Atalhos do roteiro" />

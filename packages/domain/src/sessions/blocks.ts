@@ -93,7 +93,9 @@ export function isAlwaysPrivate(type: SessionBlockType): boolean {
 }
 
 export function defaultVisibilityFor(type: SessionBlockType): SharedVisibility {
-  return isAlwaysPrivate(type) ? 'gm' : 'members';
+  // Pedido de 2026-10-20: toda a lore nasce oculta; o mestre libera trechos durante a sessão.
+  void type;
+  return 'gm';
 }
 
 /** Conteúdo inicial de um bloco recém-criado. */

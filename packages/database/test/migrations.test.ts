@@ -85,7 +85,9 @@ describe('migrações', () => {
       'dice_rolls',
       'encounter_combatants',
       'encounters',
+      'session_blocks',
       'session_entities',
+      'sessions',
       'turn_actions',
     ]);
   });

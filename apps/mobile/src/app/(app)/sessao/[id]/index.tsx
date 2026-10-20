@@ -14,7 +14,7 @@ import { Image, View } from 'react-native';
 import { AppText, Badge, Card, Divider } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states';
-import { useAsyncData } from '@/lib/hooks';
+import { useAsyncData, useRealtimeRefresh } from '@/lib/hooks';
 import { useUserId } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase';
 import { colors, palette, radii } from '@/lib/theme';
@@ -141,6 +141,8 @@ export default function SessionScreen() {
     ]);
     return { session, blocks, references, imageUrls, campaignName: campaign?.name ?? null };
   }, `${id}:${userId}`);
+  // Trechos liberados pelo mestre durante a sessão chegam na hora.
+  useRealtimeRefresh(`sessao:${id}`, [{ table: 'session_blocks', filter: `session_id=eq.${id}` }], () => void reload());
 
   if (loading) return <LoadingState />;
   if (error && !data) return <ErrorState message={error} onRetry={reload} />;

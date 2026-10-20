@@ -166,6 +166,10 @@ Migração `20261018120000_gameplay_turns.sql`:
 - Índices únicos `characters_one_per_player_idx` e `campaign_notes_one_pinned_idx` (duplicatas
   antigas são desvinculadas/desafixadas antes).
 
+Migração `20261020120000_session_reveal.sql` (aba Sessão): blocos de roteiro novos nascem
+privados (`visibility` padrão `gm`) e `session_blocks` e `sessions` entram no Realtime (o RLS
+continua valendo: jogadores só recebem blocos públicos de sessões publicadas).
+
 Migração `20261018140000_book_packs.sql`: `book_packs` (livro importado: dono, `book_key`,
 nome, categoria, edição, contagem por tipo e `is_ready`) e `book_entries` (`kind`, `key`, `name`,
 `data` JSON de até 128 KB). Limites de 40 livros por usuário e 6.000 entradas por livro. Leitura:

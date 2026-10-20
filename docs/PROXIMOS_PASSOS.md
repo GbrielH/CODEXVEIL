@@ -51,10 +51,15 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
    de D&D (site e app) não tem mais o campo "Alvo"; depois de rolar o ataque aparece "Acertou:
    rolar dano" (registra o dano no mural como ação livre, sem mexer em PV) ou "Errou: fechar". O
    painel do mestre continua podendo mirar com ameaças.
-4. **Aba Sessão para mestre e jogadores.** Mestre: toda a lore da sessão, por padrão visível só para
+4. **[Feito em 2026-10-20] Aba Sessão para mestre e jogadores.** Mestre: toda a lore da sessão, por padrão visível só para
    ele; durante a sessão ele libera trechos (texto, imagem de NPC, frase…) com um clique. Jogadores:
    aba Sessão onde os trechos liberados vão aparecendo. (Base existente: blocos de roteiro com
-   `visibility` e sessões publicadas.)
+   `visibility` e sessões publicadas.) Feito: a lore nasce oculta; a Mesa do mestre tem o
+   cartão "Lore da sessão" com "Liberar"/"Ocultar" por trecho (o primeiro liberado publica a
+   sessão); nova aba "Sessão" no site mostra os trechos liberados em tempo real (a antiga
+   "Sessões" virou "Roteiros" para jogadores); no app, a leitura da sessão atualiza sozinha.
+   **Falta aplicar a migração `20261020120000_session_reveal.sql` em produção** (sem ela, só o
+   tempo real e o padrão oculto no banco não valem; o resto funciona).
 5. **Dados realistas.** Ao rolar (site e app), o dado aparece grande no meio da tela, cai e gira
    (estilo app "Dice"), sem caixinha; com limite de dados simultâneos para não travar o aparelho.
    Opcional se for inviável.
@@ -360,6 +365,12 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-20 — Aba Sessão
+
+- Lore oculta por padrão, liberação com um clique na mesa e aba Sessão em tempo real (site); app
+  atualiza a leitura sozinho. Migração `20261020120000_session_reveal.sql` (dry-run conferido;
+  aplicação pendente). `pnpm check` 20/20.
 
 ### 2026-10-20 — Combate roleplay
 

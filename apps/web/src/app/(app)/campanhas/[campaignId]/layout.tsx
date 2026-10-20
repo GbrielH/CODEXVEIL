@@ -20,7 +20,8 @@ export default async function CampaignLayout({ children, params }: LayoutProps<'
   if (!isGm) tabs.push({ href: `${base}/personagem` as Route, label: 'Meu personagem' });
   if (isGm) tabs.push({ href: `${base}/mesa` as Route, label: 'Mesa do mestre' });
   tabs.push(
-    { href: `${base}/sessoes` as Route, label: 'Sessões' },
+    { href: `${base}/sessao` as Route, label: 'Sessão' },
+    { href: `${base}/sessoes` as Route, label: isGm ? 'Sessões' : 'Roteiros' },
     { href: `${base}/dados` as Route, label: 'Dados' },
     { href: `${base}/biblioteca` as Route, label: 'Biblioteca' },
     { href: `${base}/livros` as Route, label: 'Livros' },
