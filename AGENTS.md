@@ -26,10 +26,11 @@ Formate os Markdown com `pnpm exec prettier --write`.
 
 - Faça commit e push para `origin main` só quando o responsável pedir, junto com a
   documentação atualizada.
-- **Push em `main` publica em produção:** a Vercel publica o site, e o workflow do EAS
-  (`apps/mobile/.eas/workflows/atualizar-app.yml`) envia uma atualização OTA ao app ou gera um
-  APK novo quando o código nativo muda. Rode `pnpm check` antes de cada push. Mudanças
-  nativas (dependências Expo/React Native, plugins, `app.config.ts`) gastam um build da cota.
+- **Push em `main` publica em produção:** a Vercel publica o site, e o GitHub Actions
+  (`.github/workflows/ci.yml`) roda `pnpm check` e publica a atualização OTA do app com
+  `eas update` (na máquina do GitHub, sem gastar os minutos de CI do EAS). Rode `pnpm check`
+  antes de cada push. Mudanças nativas (dependências Expo/React Native, plugins,
+  `app.config.ts`) exigem um APK novo gerado à mão (`eas build`), que gasta um build da cota.
 - Nunca versione segredos: `.env.local`, `.vercel/` e `supabase/.temp/` são ignorados.
 
 ## Verificações

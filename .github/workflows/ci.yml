@@ -1,0 +1,85 @@
+# Verificações e atualização do app a cada push em `main`.
+#
+# O app recebe a atualização OTA por um job do GitHub Actions (`eas update` roda aqui, na
+# máquina do GitHub): isso não consome os minutos de CI/CD do plano gratuito do EAS. Só um APK
+# novo (mudança nativa) usa a cota de builds do EAS, e ele é gerado à mão (docs/DEPLOY.md).
+#
+# Requer o segredo EXPO_TOKEN (expo.dev → Account settings → Access tokens) em
+# GitHub → Settings → Secrets and variables → Actions.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint, tipos e testes
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+
+  app-update:
+    name: App — atualização OTA (canal preview)
+    needs: [check]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    concurrency:
+      group: eas-update-preview
+      cancel-in-progress: true
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - name: Validar credencial do Expo
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo '::error::O segredo EXPO_TOKEN não está configurado em Settings > Secrets and variables > Actions.'
+            exit 1
+          fi
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
+      - name: Publicar no canal preview
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          UPDATE_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          message="$(printf '%s' "$UPDATE_MESSAGE" | head -n 1 | cut -c1-200)"
+          for attempt in 1 2 3; do
+            if npx --yes eas-cli@23.1.0 update \
+              --branch preview \
+              --platform android \
+              --environment preview \
+              --message "$message" \
+              --non-interactive; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "::warning::A API do Expo falhou na tentativa $attempt. Nova tentativa em 20 segundos."
+              sleep 20
+            fi
+          done
+          echo '::error::Não foi possível publicar a atualização no Expo após 3 tentativas.'
+          exit 1

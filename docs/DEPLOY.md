@@ -176,23 +176,19 @@ globalmente (`npm install -g eas-cli`). Rode os comandos dentro de `apps/mobile`
 - A chave de assinatura Android (keystore) foi gerada e é guardada pelo EAS. Não a coloque no
   repositório. Para fazer uma cópia: `eas credentials --platform android`.
 
-**Atualização automática a cada push (EAS Workflows):** o workflow
-`apps/mobile/.eas/workflows/atualizar-app.yml` roda em cada push em `main`:
+**Atualização automática a cada push (GitHub Actions, desde 2026-10-19):** o workflow
+`.github/workflows/ci.yml` roda em cada push em `main`: o job **Lint, tipos e testes**
+(`pnpm check`) e, se passar, **App — atualização OTA**, que roda
+`eas-cli update --branch preview --platform android --environment preview` na máquina do
+GitHub. Assim o empacotamento não usa os minutos de CI/CD do plano gratuito do EAS (o antigo
+EAS Workflow `atualizar-app.yml` esgotou os 60 minutos de outubro e foi removido). Mesmo
+modelo do FinFlow.
 
-1. calcula o fingerprint nativo (`fingerprint`);
-2. procura um APK `preview` com o mesmo fingerprint (`get-build`);
-3. se existir, publica uma atualização OTA no canal `preview` (`update`); se não existir, gera
-   um APK novo (`build`), que aparece na página de builds do projeto.
-
-Para ligar (uma vez): abra <https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/github>,
-instale o app da Expo no GitHub (conta `GbrielH`), conecte o repositório `GbrielH/CODEXVEIL`
-e defina **Base directory = `apps/mobile`**. A conta Expo precisa ter o GitHub vinculado nas
-configurações do usuário. Para rodar o workflow sem push (envia a pasta local):
-
-```bash
-eas workflow:validate .eas/workflows/atualizar-app.yml
-eas workflow:run .eas/workflows/atualizar-app.yml
-```
+- **Segredo necessário:** `EXPO_TOKEN` em GitHub → Settings → Secrets and variables → Actions
+  (crie em expo.dev → Account settings → Access tokens). Sem ele, o job falha avisando.
+- **Runtime:** a política é `fingerprint`. A atualização só chega aos APKs com o mesmo código
+  nativo; se mudar algo nativo, gere um APK novo à mão (abaixo) e as próximas atualizações
+  passam a valer para ele.
 
 **Gerar um APK manualmente:**
 
