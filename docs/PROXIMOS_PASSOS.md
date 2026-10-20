@@ -24,6 +24,54 @@
   navegador** em que o pedido foi feito.
 - A **recuperação de senha pedida pelo app não funciona**.
 
+## Pedidos do responsável em 2026-10-20 (a fazer, em ordem de importância)
+
+Registrados sem implementar (pedido explícito: só documentar). Estado do que já existe no fim desta seção.
+
+1. **Livros: separação exata (EXTREMA IMPORTÂNCIA).** A escolha de livros na campanha e na ficha
+   serve para limitar o conteúdo. Hoje, depois de importar todos os livros, mesmo escolhendo só o
+   D&D base aparecem espécies, raças, classes e antecedentes de todos os livros. Regra: um item que
+   só existe no livro A só aparece se o livro A estiver selecionado; o mesmo para classes,
+   subclasses, talentos, magias, monstros e itens. Vale na criação de personagem (site e app), na
+   subida de nível, na campanha e para qualquer sistema (D&D, Tormenta20 e futuros), de forma
+   automática pelo que foi selecionado. Pontos a revisar: ficha pessoal (`draft.sourcebooks` vs.
+   `ownReadyBookPacks`), `personalPackIds` no assistente, `sheetBookSources`/`sheetT20Sources` e o
+   app (`novo.tsx` usa todos os livros prontos do usuário).
+2. **Regras de criação não mudam com mais livros.** Número de magias, habilidades, perícias etc.
+   seguem a classe/nível; mais livros liberados não dão mais escolhas, a não ser que um livro
+   selecionado conceda isso explicitamente.
+3. **Combate mais roleplay (menos automação).** Manter rolagem de dados e, para o mestre, a ordem
+   dos turnos. No D&D: o jogador escolhe o ataque, rola o acerto; o mestre/adversário diz se
+   acertou; se acertou, o jogador clica no dado de dano, senão fecha. **Não** escolher o alvo nem
+   aplicar dano automaticamente. (Substitui o item 7 antigo "reações automáticas".)
+4. **Aba Sessão para mestre e jogadores.** Mestre: toda a lore da sessão, por padrão visível só para
+   ele; durante a sessão ele libera trechos (texto, imagem de NPC, frase…) com um clique. Jogadores:
+   aba Sessão onde os trechos liberados vão aparecendo. (Base existente: blocos de roteiro com
+   `visibility` e sessões publicadas.)
+5. **Dados realistas.** Ao rolar (site e app), o dado aparece grande no meio da tela, cai e gira
+   (estilo app "Dice"), sem caixinha; com limite de dados simultâneos para não travar o aparelho.
+   Opcional se for inviável.
+6. **Meus livros:** marcador do sistema de cada livro (D&D 5e, Tormenta20…).
+7. **Imagens das raças:** muitas raças aparecem com imagem básica de humano; revisar todas.
+8. **Botão "+1 nos três"** (aumento do antecedente) não responde ao clique; corrigir.
+9. **Abas do mestre x jogadores:** conferir se as abas visíveis a cada papel são coerentes.
+10. **Prompt de imagem do personagem:** ao terminar a criação, oferecer (opcional) um prompt pronto
+    para gerar a imagem numa IA de preferência do jogador, com classe, raça, habilidades,
+    personalidade, história, antecedente e demais dados; copiar ou ignorar.
+11. Depois: tradução do SRD (item 2 antigo) e assistente de IA (pedido de 2026-10-18).
+
+### Estado em 2026-10-20 (feito e publicado)
+
+- Tormenta20: marcos 1 a 7 em versão 1 (criação, ficha, subida de nível no site e no app, ameaças
+  do livro na biblioteca e no combate). Pendências T20: multiclasse, ataques com armas na ficha,
+  cópia de itens mágicos T20, testes no navegador e no aparelho.
+- Novo personagem começa pela campanha (ou ficha pessoal com o sistema).
+- Atualização OTA do app pelo GitHub Actions (`.github/workflows/ci.yml`) com o segredo
+  `EXPO_TOKEN` configurado; funcionando (execuções de 2026-10-20 com sucesso).
+- Pacotes dos livros gerados em `C:\Users\henri\Documents\Codexveil\livros-trabalho\out\`
+  (fora do Git): `t20-jda`, `phb-2014`, `xgte`, `tcoe`, `mm-2014`, `mpmm`.
+- Nada disso foi aberto no navegador nem no celular por Claude.
+
 ## Continuidade Tormenta20 (parada em 2026-10-19 à noite, retomar em outra máquina)
 
 Pedido do responsável: implantar o **Tormenta20 completo** (Edição Jogo do Ano), a partir do PDF
