@@ -765,6 +765,7 @@ export type Database = {
         Row: {
           campaign_id: string | null;
           created_at: string;
+          granted_level: number;
           id: string;
           live_updated_at: string;
           name: string;
@@ -778,6 +779,7 @@ export type Database = {
         Insert: {
           campaign_id?: string | null;
           created_at?: string;
+          granted_level?: number;
           id?: string;
           live_updated_at?: string;
           name: string;
@@ -791,6 +793,7 @@ export type Database = {
         Update: {
           campaign_id?: string | null;
           created_at?: string;
+          granted_level?: number;
           id?: string;
           live_updated_at?: string;
           name?: string;
@@ -1702,6 +1705,13 @@ export type Database = {
       get_my_pending_invites: {
         Args: never;
         Returns: Json;
+      };
+      grant_character_level: {
+        Args: {
+          p_character_id: string;
+          p_level?: number;
+        };
+        Returns: number;
       };
       leave_campaign: {
         Args: {

@@ -409,6 +409,14 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-20 — Subida de nível só na aba Evolução, liberada pelo mestre
+
+- D&D e Tormenta20, site e app: o botão de subir de nível saiu da aba Personagem (e do cabeçalho
+  do T20) e ficou só na aba Evolução (nova no app e no T20 do site). Na campanha, o mestre clica
+  em "Liberar nível N" e o jogador escolhe as melhorias; fora de campanha, nada muda. Migração
+  `20261020130000_level_grants.sql` aplicada em produção (dry-run conferido). `pnpm check` 20/20;
+  3 testes de banco novos. Sem teste no navegador nem no aparelho.
+
 ### 2026-10-20 — Pendências da auditoria
 
 - Especialista do Ladino na criação (site e app); adicionar/excluir itens do T20 no app.

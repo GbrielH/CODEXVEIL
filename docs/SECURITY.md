@@ -185,3 +185,10 @@ privado (por exemplo, GitHub Security Advisories).
 - **Notificações:** tokens de aparelho só são lidos pelo dono e pela Edge Function (chave
   secreta). A função confere o JWT, exige o papel de mestre e não repete a mesma data. O
   `google-services.json` fica no EAS (variável de ambiente), nunca no repositório público.
+
+## Níveis liberados pelo mestre (2026-10-20)
+
+Em campanha, só o mestre libera níveis (`grant_character_level`; a coluna `granted_level` não tem
+permissão de escrita direta). O banco recusa (`CVLVL`) a ficha de um jogador cujo nível total passe
+do liberado. Enquanto há nível liberado pendente, o dono pode salvar a ficha e criar habilidades
+mesmo com a edição de fichas bloqueada pela campanha.

@@ -18,6 +18,8 @@ export interface SheetCharacter {
   portraitPath: string | null;
   portraitUrl: string | null;
   campaign: { id: string; name: string; status: CampaignStatus } | null;
+  /** Nível liberado pelo mestre (campanha). */
+  grantedLevel: number;
 }
 
 export interface SheetPermissions {

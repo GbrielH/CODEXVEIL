@@ -31,13 +31,14 @@ import { colors } from '@/lib/theme';
 import { DiceProvider } from '@/components/dice/dice';
 import { AttributesSection } from './attributes-section';
 import { SheetContext, type MobileSheetContext } from './context';
+import { EvolutionSection } from './evolution-section';
 import { FeaturesSection } from './features-section';
 import { InventorySection } from './inventory-section';
 import { PlaySection } from './play-section';
 import { StorySection } from './story-section';
 import { TurnPlay } from './turn-play';
 
-type Tab = 'jogo' | 'atributos' | 'inventario' | 'habilidades' | 'personagem';
+type Tab = 'jogo' | 'atributos' | 'inventario' | 'habilidades' | 'personagem' | 'evolucao';
 
 const statusLabels: Record<AutosaveStatus, string> = {
   saved: 'Salvo',
@@ -265,6 +266,7 @@ export function SheetScreen(props: SheetScreenProps) {
             // Na campanha, as habilidades ficam divididas entre Jogo (usáveis) e Atributos (passivas).
             ...(inCampaign ? [] : [{ value: 'habilidades' as const, label: 'Habilidades' }]),
             { value: 'personagem', label: 'Personagem' },
+            { value: 'evolucao', label: 'Evolução' },
           ]}
         />
         {tab === 'jogo' ? <PlaySection /> : null}
@@ -274,6 +276,12 @@ export function SheetScreen(props: SheetScreenProps) {
         {tab === 'inventario' ? <InventorySection /> : null}
         {tab === 'habilidades' && !inCampaign ? <FeaturesSection /> : null}
         {tab === 'personagem' ? <StorySection /> : null}
+        {tab === 'evolucao' ? (
+          <EvolutionSection
+            characterName={character.name}
+            gate={{ inCampaign: Boolean(character.campaign), isGm: character.viewer.membership?.role === 'gm', isOwner: character.viewer.isOwner, grantedLevel: character.grantedLevel }}
+          />
+        ) : null}
       </Screen>
       </DiceProvider>
     </SheetContext.Provider>

@@ -47,13 +47,13 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { T20LevelUpButton } from './level-up';
 
 interface T20SheetScreenProps {
-  character: { id: string; name: string; ownerName: string; version: number; portraitUrl: string | null; campaign: { id: string; name: string } | null };
+  character: { id: string; name: string; ownerName: string; version: number; portraitUrl: string | null; campaign: { id: string; name: string } | null; grantedLevel: number };
   sheet: T20Sheet;
   resources: CharacterResource[];
   conditions: CharacterCondition[];
   items: CharacterItem[];
   abilities: CharacterAbility[];
-  permissions: { canEditSheet: boolean; canEditPlay: boolean };
+  permissions: { canEditSheet: boolean; canEditPlay: boolean; isGm: boolean; isOwner: boolean };
   /** Livros T20 da campanha (ou do dono), para a subida de nível. */
   sources?: T20ContentSource[];
   /** Na campanha, as rolagens vão para o mural e só valem com a sessão em andamento. */
@@ -159,21 +159,6 @@ function T20SheetBody(props: T20SheetScreenProps) {
               {character.campaign ? ` · Campanha: ${character.campaign.name}` : ' · Ficha pessoal'}
             </p>
           </div>
-          {permissions.canEditSheet ? (
-            <T20LevelUpButton
-              characterId={character.id}
-              content={content}
-              sheet={sheet}
-              version={version}
-              resources={resources}
-              onDone={(result) => {
-                setSheet(result.sheet);
-                setVersion(result.version);
-                setResources(result.resources);
-                setAbilities((current) => [...current, ...result.abilities]);
-              }}
-            />
-          ) : null}
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">
           <Stat icon={<Shield className="h-4 w-4" aria-hidden="true" />} label="Defesa" value={String(derived.defense)} />
@@ -195,6 +180,7 @@ function T20SheetBody(props: T20SheetScreenProps) {
           { value: 'poderes', label: 'Poderes e magias', content: null },
           { value: 'inventario', label: 'Inventário', content: null },
           { value: 'personagem', label: 'Personagem', content: null },
+          { value: 'evolucao', label: 'Evolução', content: null },
         ]}
       />
 
@@ -334,6 +320,35 @@ function T20SheetBody(props: T20SheetScreenProps) {
       ) : null}
 
       {tab === 'inventario' ? <T20Inventory characterId={character.id} items={items} setItems={setItems} canEdit={permissions.canEditPlay} capacity={derived.carryCapacity} /> : null}
+
+      {tab === 'evolucao' ? (
+        <Card>
+          <CardHeader
+            title="Evolução"
+            description={character.campaign ? 'Na campanha, o mestre libera o próximo nível e o jogador escolhe as melhorias aqui.' : 'Suba de nível escolhendo as melhorias do nível novo.'}
+          />
+          <p className="mb-3 text-sm text-fg-secondary">
+            Nível atual: <strong>{sheet.identity.classes.reduce((sum, entry) => sum + entry.level, 0)}</strong> ({sheet.identity.classes.map((entry) => `${entry.name} ${entry.level}`).join(' / ')})
+          </p>
+          <T20LevelUpButton
+            characterId={character.id}
+            characterName={character.name}
+            inCampaign={Boolean(character.campaign)}
+            grantedLevel={character.grantedLevel}
+            permissions={permissions}
+            content={content}
+            sheet={sheet}
+            version={version}
+            resources={resources}
+            onDone={(result) => {
+              setSheet(result.sheet);
+              setVersion(result.version);
+              setResources(result.resources);
+              setAbilities((current) => [...current, ...result.abilities]);
+            }}
+          />
+        </Card>
+      ) : null}
 
       {tab === 'personagem' ? (
         <StoryCard

@@ -282,6 +282,9 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-20 (subida de nível):** só na aba Evolução; na campanha o mestre libera o nível e o
+  jogador escolhe as melhorias (banco garante; migração `20261020130000_level_grants.sql`
+  aplicada; testes em `test/rls/level-grants.test.ts`).
 - **2026-10-20 (auditoria T20):** correções do QA conferidas contra todas as classes e origens
   do livro (script local sobre o pacote `t20-jda`); Cavaleiro, Caçador e criação acima do 1º nível
   corrigidos; 4 testes em `level-up.test.ts`. Especialista do Ladino e itens do T20 no app também

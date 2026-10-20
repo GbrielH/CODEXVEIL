@@ -166,6 +166,13 @@ Migração `20261018120000_gameplay_turns.sql`:
 - Índices únicos `characters_one_per_player_idx` e `campaign_notes_one_pinned_idx` (duplicatas
   antigas são desvinculadas/desafixadas antes).
 
+Migração `20261020130000_level_grants.sql` (subida de nível na campanha): `characters.granted_level`
+(nível liberado pelo mestre, só muda pela RPC `grant_character_level`); gatilho
+`characters_level_guard` impede o jogador de passar do nível liberado (SQLSTATE `CVLVL`); com
+nível liberado pendente, o dono salva a ficha e cria as habilidades do nível mesmo com a edição de
+fichas bloqueada (`private.has_pending_level`, `private.sheet_level`). Testes em
+`test/rls/level-grants.test.ts`.
+
 Migração `20261020120000_session_reveal.sql` (aba Sessão): blocos de roteiro novos nascem
 privados (`visibility` padrão `gm`) e `session_blocks` e `sessions` entram no Realtime (o RLS
 continua valendo: jogadores só recebem blocos públicos de sessões publicadas).

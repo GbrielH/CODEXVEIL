@@ -45,6 +45,8 @@ export interface CharacterDetail {
   version: number;
   updatedAt: string;
   liveUpdatedAt: string;
+  /** Nível liberado pelo mestre (campanha); 0 = nenhum. */
+  grantedLevel: number;
   campaign: CharacterCampaignRef | null;
   /** Relação de quem está consultando com o personagem. */
   viewer: { isOwner: boolean; membership: CampaignMembership | null };
@@ -342,7 +344,7 @@ export async function getCharacter(
   const { data, error } = await client
     .from('characters')
     .select(
-      'id, owner_id, campaign_id, system_id, name, portrait_path, sheet, version, updated_at, live_updated_at, owner:profiles!characters_owner_id_fkey(display_name), campaign:campaigns(id, name, status, owner_id, party_sheets_visible, players_can_edit_sheets)',
+      'id, owner_id, campaign_id, system_id, name, portrait_path, sheet, version, updated_at, live_updated_at, granted_level, owner:profiles!characters_owner_id_fkey(display_name), campaign:campaigns(id, name, status, owner_id, party_sheets_visible, players_can_edit_sheets)',
     )
     .eq('id', characterId)
     .maybeSingle();
@@ -372,6 +374,7 @@ export async function getCharacter(
     version: data.version,
     updatedAt: data.updated_at,
     liveUpdatedAt: data.live_updated_at,
+    grantedLevel: data.granted_level,
     campaign: data.campaign
       ? {
           id: data.campaign.id,
@@ -992,4 +995,11 @@ export async function listCharacterSnapshots(
 /** Caminho do retrato no bucket privado `campaign-media` (formato exigido pelas policies). */
 export function characterPortraitPath(characterId: string, fileName: string): string {
   return `characters/${characterId}/${fileName}`;
+}
+
+/** Mestre: libera o próximo nível do personagem (ou `level`). O jogador escolhe as melhorias. */
+export async function grantCharacterLevel(client: CodexveilClient, characterId: string, level?: number): Promise<number> {
+  const { data, error } = await client.rpc('grant_character_level', { p_character_id: characterId, ...(level ? { p_level: level } : {}) });
+  if (error) throw toAppError(error);
+  return data;
 }

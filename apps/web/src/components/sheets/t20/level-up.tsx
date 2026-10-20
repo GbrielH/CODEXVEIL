@@ -1,6 +1,6 @@
 'use client';
 
-import { addCharacterEvent, adjustCharacterResource, createCharacterAbility, saveCharacterSheet, type CharacterAbility, type CharacterResource } from '@codexveil/database';
+import { addCharacterEvent, adjustCharacterResource, createCharacterAbility, grantCharacterLevel, saveCharacterSheet, type CharacterAbility, type CharacterResource } from '@codexveil/database';
 import { T20_ATTRIBUTES, T20_RESOURCE_KEYS, applyT20LevelUp, isT20AttributeIncrease, planT20LevelUp, t20AttributeLabels, type T20Attribute, type T20Content, type T20Sheet } from '@codexveil/rpg-systems/tormenta20';
 import { TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -14,6 +14,11 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 interface Props {
   characterId: string;
+  characterName: string;
+  inCampaign: boolean;
+  /** Nível liberado pelo mestre (campanha). */
+  grantedLevel: number;
+  permissions: { canEditSheet: boolean; isGm: boolean; isOwner: boolean };
   content: T20Content;
   sheet: T20Sheet;
   version: number;
@@ -24,8 +29,40 @@ interface Props {
 /** Botão e painel de subida de nível do Tormenta20. */
 export function T20LevelUpButton(props: Props) {
   const [open, setOpen] = useState(false);
+  const [granted, setGranted] = useState(props.grantedLevel);
+  const [granting, setGranting] = useState(false);
+  const { toast } = useToast();
   const level = props.sheet.identity.classes.reduce((sum, entry) => sum + entry.level, 0);
   if (level >= 20 || props.sheet.identity.classes.length === 0) return null;
+
+  // Na campanha, o mestre libera o nível e o jogador escolhe as melhorias.
+  if (props.inCampaign) {
+    const pending = granted > level;
+    if (props.permissions.isGm) {
+      const grant = async () => {
+        setGranting(true);
+        try {
+          setGranted(await grantCharacterLevel(getSupabaseBrowserClient(), props.characterId));
+          toast({ tone: 'success', title: `Nível ${level + 1} liberado para ${props.characterName}.`, description: 'O jogador escolhe as melhorias na aba Evolução.' });
+        } catch (error) {
+          toast({ tone: 'danger', title: 'O nível não foi liberado', description: failureMessage(error, 'Tente novamente.') });
+        } finally {
+          setGranting(false);
+        }
+      };
+      return pending ? (
+        <p className="text-sm text-amber-300">Nível {granted} liberado: aguardando o jogador escolher as melhorias.</p>
+      ) : (
+        <Button icon={<TrendingUp className="h-4 w-4" aria-hidden="true" />} loading={granting} onClick={() => void grant()}>
+          Liberar nível {level + 1}
+        </Button>
+      );
+    }
+    if (!props.permissions.isOwner) return null;
+    if (!pending) return <p className="text-sm text-fg-muted">O mestre libera o próximo nível.</p>;
+  } else if (!props.permissions.canEditSheet) {
+    return null;
+  }
   return (
     <>
       <Button icon={<TrendingUp className="h-4 w-4" aria-hidden="true" />} onClick={() => setOpen(true)}>
@@ -55,7 +92,6 @@ function Panel({ characterId, content, sheet, version, resources, onDone, onClos
     setBusy(true);
     const client = getSupabaseBrowserClient();
     try {
-      const saved = await saveCharacterSheet(client, characterId, version, { sheet: result.sheet });
       const updated: CharacterResource[] = [];
       for (const [key, gain] of [
         [T20_RESOURCE_KEYS.hitPoints, hitPointsGained],
@@ -72,6 +108,8 @@ function Panel({ characterId, content, sheet, version, resources, onDone, onClos
           await createCharacterAbility(client, characterId, { kind: entry.kind, name: entry.name, source: entry.source, description: entry.description, data: entry.data as CharacterAbility['data'], resourceId: null }),
         );
       }
+      // A ficha é salva por último: numa campanha com edição bloqueada, o nível liberado é o que permite criar as habilidades.
+      const saved = await saveCharacterSheet(client, characterId, version, { sheet: result.sheet });
       await addCharacterEvent(client, characterId, { kind: 'level_up', summary: result.summary, data: { level: plan.newTotalLevel } });
       toast({ tone: 'success', title: `Nível ${plan.newTotalLevel}!` });
       onDone({

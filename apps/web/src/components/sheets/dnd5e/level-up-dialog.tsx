@@ -5,6 +5,7 @@ import {
   adjustCharacterResource,
   createCharacterAbility,
   createCharacterResource,
+  grantCharacterLevel,
   updateCharacterResource,
   type CharacterAbility,
 } from '@codexveil/database';
@@ -40,6 +41,8 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Modal } from '@/components/ui/modal';
 import { Select } from '@/components/ui/select';
+import { useToast } from '@/components/ui/toast';
+import { failureMessage } from '@/lib/client-errors';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useSheet } from './context';
 
@@ -51,9 +54,41 @@ type ImprovementMode = 'plus_two' | 'plus_one_each' | 'feat';
  * classe que sobe é escolhida numa lista, que também traz as classes novas (multiclasse).
  */
 export function LevelUpButton() {
-  const { derived, permissions, sheet } = useSheet();
+  const { derived, permissions, sheet, character } = useSheet();
   const [open, setOpen] = useState(false);
-  if (!permissions.canEditSheet || derived.level >= 20 || sheet.identity.classes.length === 0) return null;
+  const [granted, setGranted] = useState(character.grantedLevel);
+  const [granting, setGranting] = useState(false);
+  const { toast } = useToast();
+  if (derived.level >= 20 || sheet.identity.classes.length === 0) return null;
+
+  // Na campanha, o mestre libera o nível e o jogador escolhe as melhorias na aba Evolução.
+  if (character.campaign) {
+    const pending = granted > derived.level;
+    if (permissions.isGm) {
+      const grant = async () => {
+        setGranting(true);
+        try {
+          setGranted(await grantCharacterLevel(getSupabaseBrowserClient(), character.id));
+          toast({ tone: 'success', title: `Nível ${derived.level + 1} liberado para ${character.name}.`, description: 'O jogador escolhe as melhorias na aba Evolução.' });
+        } catch (error) {
+          toast({ tone: 'danger', title: 'O nível não foi liberado', description: failureMessage(error, 'Tente novamente.') });
+        } finally {
+          setGranting(false);
+        }
+      };
+      return pending ? (
+        <span className="text-sm text-amber-300">Nível {granted} liberado: aguardando o jogador escolher as melhorias.</span>
+      ) : (
+        <Button icon={<TrendingUp className="h-4 w-4" aria-hidden="true" />} loading={granting} onClick={() => void grant()}>
+          Liberar nível {derived.level + 1}
+        </Button>
+      );
+    }
+    if (!permissions.isOwner) return null;
+    if (!pending) return <span className="text-sm text-fg-muted">O mestre libera o próximo nível.</span>;
+  } else if (!permissions.canEditSheet) {
+    return null;
+  }
   return (
     <>
       <ConfirmDialog

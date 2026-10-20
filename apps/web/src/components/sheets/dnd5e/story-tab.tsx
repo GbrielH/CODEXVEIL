@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader } from '@/components/ui/card';
 import { SelectField, TextField } from '@/components/ui/field';
 import { useSheet } from './context';
-import { LevelUpButton } from './level-up-dialog';
 
 const advancementLabels: Record<(typeof ADVANCEMENT_MODES)[number], string> = {
   milestone: 'Marcos (o mestre decide)',
@@ -76,7 +75,7 @@ function ClassesCard() {
 
   return (
     <Card>
-      <CardHeader title="Classes" description={`Nível total ${derived.level}. Multiclasse: até 4 classes.`} action={<LevelUpButton />} />
+      <CardHeader title="Classes" description={`Nível total ${derived.level}. Multiclasse: até 4 classes. Para subir de nível, use a aba Evolução.`} />
       <ul className="flex flex-col gap-3">
         {classes.map((entry, index) => {
           const classDef = findClassByName(entry.name);

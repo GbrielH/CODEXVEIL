@@ -45,13 +45,14 @@ import { AppText, Badge, Card } from '@/components/ui/primitives';
 import { Segmented } from '@/components/ui/segmented';
 import { Notice } from '@/components/ui/states';
 import { DiceProvider, useDice } from '@/components/dice/dice';
+import { LevelGate, type LevelGateInfo } from '@/components/sheet/level-gate';
 import { T20NewItem } from './new-item';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/errors';
 import { getSupabase } from '@/lib/supabase';
 import { colors, fonts, palette, spacing } from '@/lib/theme';
 
-type Tab = 'jogo' | 'pericias' | 'poderes' | 'itens';
+type Tab = 'jogo' | 'pericias' | 'poderes' | 'itens' | 'evolucao';
 
 interface Props {
   character: { id: string; name: string; version: number };
@@ -63,6 +64,8 @@ interface Props {
   canEditSheet: boolean;
   canEditPlay: boolean;
   sources: T20ContentSource[];
+  /** Campanha: o mestre libera o nível e o jogador escolhe as melhorias. */
+  gate: LevelGateInfo;
 }
 
 /** Ficha do Tormenta20 no app: vida, mana, condições, testes, poderes, magias, itens e subida de nível. */
@@ -160,7 +163,6 @@ function T20SheetBody(props: Props) {
           <Badge label={`${String(derived.speed).replace('.', ',')} m`} tone="parchment" />
           {derived.spellDc !== null ? <Badge label={`CD ${derived.spellDc}`} tone="parchment" /> : null}
         </View>
-        {props.canEditSheet && derived.level < 20 ? <Button label="Subir de nível" onPress={() => setLevelUp(true)} /> : null}
       </Card>
 
       <Segmented
@@ -172,8 +174,22 @@ function T20SheetBody(props: Props) {
           { value: 'pericias', label: 'Perícias' },
           { value: 'poderes', label: 'Poderes' },
           { value: 'itens', label: 'Itens' },
+          { value: 'evolucao', label: 'Evolução' },
         ]}
       />
+
+      {tab === 'evolucao' ? (
+        <Card>
+          <AppText variant="heading">Evolução</AppText>
+          <AppText>
+            Nível {derived.level} · {sheet.identity.classes.map((entry) => `${entry.name} ${entry.level}`).join(' / ')}
+          </AppText>
+          <AppText variant="small">
+            {props.gate.inCampaign ? 'Na campanha, o mestre libera o próximo nível e você escolhe as melhorias aqui.' : 'Suba de nível escolhendo as melhorias do nível novo.'}
+          </AppText>
+          <LevelGate characterId={props.character.id} characterName={props.character.name} level={derived.level} canEditSheet={props.canEditSheet} gate={props.gate} onLevelUp={() => setLevelUp(true)} />
+        </Card>
+      ) : null}
 
       {tab === 'jogo' ? (
         <>
@@ -411,7 +427,6 @@ function T20SheetBody(props: Props) {
             if (result.issues.length) return result.issues.join(' ');
             try {
               const client = getSupabase();
-              const saved = await saveCharacterSheet(client, props.character.id, version, { sheet: result.sheet });
               for (const [key, gain] of [
                 [T20_RESOURCE_KEYS.hitPoints, result.sheet.hitPoints.max - sheet.hitPoints.max],
                 [T20_RESOURCE_KEYS.manaPoints, plan.manaPointsGained],
@@ -426,6 +441,8 @@ function T20SheetBody(props: Props) {
               for (const entry of result.abilities) {
                 created.push(await createCharacterAbility(client, props.character.id, { kind: entry.kind, name: entry.name, source: entry.source, description: entry.description, data: entry.data as CharacterAbility['data'], resourceId: null }));
               }
+              // Ficha por último: numa campanha com edição bloqueada, o nível liberado é o que permite criar as habilidades.
+              const saved = await saveCharacterSheet(client, props.character.id, version, { sheet: result.sheet });
               await addCharacterEvent(client, props.character.id, { kind: 'level_up', summary: result.summary, data: { level: plan.newTotalLevel } });
               setSheet(result.sheet);
               setVersion(saved.version);

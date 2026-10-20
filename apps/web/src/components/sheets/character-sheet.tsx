@@ -75,6 +75,7 @@ export async function CharacterSheet({ characterId, variant = 'full' }: { charac
           campaign: character.campaign
             ? { id: character.campaign.id, name: character.campaign.name, status: character.campaign.status }
             : null,
+          grantedLevel: character.grantedLevel,
         }}
         sheet={sheet}
         resources={resources}
@@ -118,13 +119,14 @@ export async function CharacterSheet({ characterId, variant = 'full' }: { charac
           version: character.version,
           portraitUrl: character.portraitPath ? (portraits[character.portraitPath] ?? null) : null,
           campaign: character.campaign ? { id: character.campaign.id, name: character.campaign.name } : null,
+          grantedLevel: character.grantedLevel,
         }}
         sheet={sheet}
         resources={resources}
         conditions={conditions}
         items={items}
         abilities={abilities}
-        permissions={{ canEditSheet: permissions.canEditSheet, canEditPlay: permissions.canEditPlay }}
+        permissions={{ canEditSheet: permissions.canEditSheet, canEditPlay: permissions.canEditPlay, isGm: permissions.isGm, isOwner: permissions.isOwner }}
         sources={t20Sources}
         variant={variant}
       />
