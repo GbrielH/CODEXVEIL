@@ -23,6 +23,7 @@ import {
   CalendarClock,
   Dices,
   ExternalLink,
+  Map as MapIcon,
   NotebookPen,
   Swords,
   UserPlus,
@@ -272,6 +273,14 @@ export default function CampaignScreen() {
       />
 
       <NavGrid>
+        <NavTile
+          icon={<MapIcon size={20} color={colors.fgAccent} />}
+          label="Mapa"
+          hint="Grade da sessão e o seu token"
+          onPress={() =>
+            router.push({ pathname: '/campanha/[id]/mapa', params: { id: campaign.id } })
+          }
+        />
         <NavTile
           icon={<Dices size={20} color={colors.fgAccent} />}
           label="Dados"

@@ -1,0 +1,146 @@
+import type { MapToken, SessionMap } from '@codexveil/database';
+import { fogCells, pointInPolygon, tokenSizeSquares, visibilityPolygon } from '@codexveil/domain';
+import { useMemo } from 'react';
+import { Pressable, ScrollView, type GestureResponderEvent } from 'react-native';
+import Svg, { Circle, Defs, Image as SvgImage, Mask, Path, Pattern, Polygon, Rect, Text as SvgText } from 'react-native-svg';
+
+const CELL = 36;
+const CREATURE_COLOR = '#571F2B';
+const MARKER_COLOR = '#b58a2a';
+
+function initials(label: string): string {
+  const words = label.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '?';
+  return (words.length === 1 ? words[0]!.slice(0, 2) : `${words[0]![0]}${words[1]![0]}`).toUpperCase();
+}
+
+/**
+ * Mapa ativo para o jogador (só ver e mover o próprio token): imagem ajustada pelo mestre,
+ * grade de 1,5 m, tokens, névoa opaca e linha de visão. Toque no seu token e depois no
+ * quadrado de destino.
+ */
+export function MapBoard({
+  map,
+  tokens,
+  imageUrl,
+  myCharacterId,
+  zoom,
+  selected,
+  colorOfCharacter,
+  onTapCell,
+}: {
+  map: SessionMap;
+  tokens: MapToken[];
+  imageUrl: string | null;
+  myCharacterId: string | null;
+  zoom: number;
+  /** Token do jogador selecionado para mover. */
+  selected: boolean;
+  colorOfCharacter: (characterId: string | null) => string | null;
+  onTapCell: (x: number, y: number) => void;
+}) {
+  const size = CELL * zoom;
+  const myToken = tokens.find((token) => token.kind === 'character' && token.characterId === myCharacterId) ?? null;
+
+  const unrevealed = useMemo(() => {
+    if (!map.fogEnabled) return '';
+    const revealed = fogCells(map.fogRevealed);
+    let path = '';
+    for (let y = 0; y < map.rows; y += 1) for (let x = 0; x < map.cols; x += 1) if (!revealed.has(`${x},${y}`)) path += `M${x} ${y}h1v1h-1z`;
+    return path;
+  }, [map.fogEnabled, map.fogRevealed, map.cols, map.rows]);
+
+  const sight = useMemo(() => {
+    if (!map.lineOfSight || !myToken) return null;
+    const side = tokenSizeSquares[myToken.size];
+    return visibilityPolygon({ x: myToken.x + side / 2, y: myToken.y + side / 2 }, map.walls, map.cols, map.rows, myToken.visionRadius);
+  }, [map.lineOfSight, map.walls, map.cols, map.rows, myToken]);
+
+  const visible = tokens.filter((token) => {
+    if (!sight || token.id === myToken?.id) return true;
+    const side = tokenSizeSquares[token.size];
+    return pointInPolygon({ x: token.x + side / 2, y: token.y + side / 2 }, sight);
+  });
+
+  const onPress = (event: GestureResponderEvent) => {
+    const x = Math.floor(event.nativeEvent.locationX / size);
+    const y = Math.floor(event.nativeEvent.locationY / size);
+    if (x >= 0 && y >= 0 && x < map.cols && y < map.rows) onTapCell(x, y);
+  };
+
+  return (
+    <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator>
+      <ScrollView nestedScrollEnabled showsVerticalScrollIndicator style={{ maxHeight: 520 }}>
+        <Pressable onPress={onPress} accessibilityLabel={`Mapa ${map.name}, ${map.cols} por ${map.rows} quadrados de 1,5 metro`}>
+          <Svg width={map.cols * size} height={map.rows * size} viewBox={`0 0 ${map.cols} ${map.rows}`} style={{ backgroundColor: '#16130f' }}>
+            <Defs>
+              <Pattern id="grade" width="1" height="1" patternUnits="userSpaceOnUse">
+                <Path d="M1 0H0V1" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth={1.2 / CELL} />
+              </Pattern>
+              {sight ? (
+                <Mask id="visao">
+                  <Rect x="0" y="0" width={map.cols} height={map.rows} fill="white" />
+                  <Polygon points={sight.map((point) => `${point.x},${point.y}`).join(' ')} fill="black" />
+                </Mask>
+              ) : null}
+            </Defs>
+            {imageUrl ? (
+              <SvgImage
+                href={{ uri: imageUrl }}
+                x={map.imageOffsetX}
+                y={map.imageOffsetY}
+                width={map.cols * map.imageScale}
+                height={map.rows * map.imageScale * 10}
+                preserveAspectRatio="xMinYMin meet"
+              />
+            ) : null}
+            {map.showGrid ? <Rect x="0" y="0" width={map.cols} height={map.rows} fill="url(#grade)" /> : null}
+            {[...visible]
+              .sort((a, b) => tokenSizeSquares[b.size] - tokenSizeSquares[a.size])
+              .map((token) => {
+                const side = tokenSizeSquares[token.size];
+                const radius = (side / 2) * (token.size === 'tiny' ? 0.6 : 0.9);
+                const mine = token.id === myToken?.id;
+                const color =
+                  token.kind === 'character' ? (colorOfCharacter(token.characterId) ?? '#3b4cb8') : token.kind === 'creature' ? CREATURE_COLOR : MARKER_COLOR;
+                return (
+                  <Circle
+                    key={token.id}
+                    cx={token.x + side / 2}
+                    cy={token.y + side / 2}
+                    r={radius}
+                    fill={color}
+                    stroke={mine && selected ? '#f3e2b3' : mine ? '#ffffff' : 'rgba(0,0,0,0.6)'}
+                    strokeWidth={mine ? 0.12 : 0.05}
+                  />
+                );
+              })}
+            {visible.map((token) => {
+              const side = tokenSizeSquares[token.size];
+              const radius = (side / 2) * (token.size === 'tiny' ? 0.6 : 0.9);
+              return (
+                <SvgText key={`t-${token.id}`} x={token.x + side / 2} y={token.y + side / 2 + radius * 0.27} textAnchor="middle" fontSize={radius * 0.75} fontWeight="700" fill="#ffffff">
+                  {initials(token.label)}
+                </SvgText>
+              );
+            })}
+            {unrevealed ? <Path d={unrevealed} fill="#050505" /> : null}
+            {sight ? <Rect x="0" y="0" width={map.cols} height={map.rows} fill="#050505" opacity={0.92} mask="url(#visao)" /> : null}
+            {myToken && selected ? (
+              <Rect
+                x={myToken.x}
+                y={myToken.y}
+                width={tokenSizeSquares[myToken.size]}
+                height={tokenSizeSquares[myToken.size]}
+                fill="none"
+                stroke="#f3e2b3"
+                strokeWidth={0.06}
+                strokeDasharray="0.2 0.12"
+              />
+            ) : null}
+          </Svg>
+        </Pressable>
+      </ScrollView>
+    </ScrollView>
+  );
+}

@@ -95,7 +95,7 @@ Registrados sem implementar (pedido explícito: só documentar). Estado do que j
    virtuais; com dados físicos, os dados virtuais somem e a ficha mostra que dado rolar em cada
    coisa (acerto do ataque, dano…). Online: dados virtuais ligados automaticamente (e, depois, o
    grid da sessão).
-2. **Grid da sessão** (próxima grande etapa, para sessões online). Escopo definido em 2026-10-20 (com névoa de guerra e linha de visão opcional): ver [`GRID.md`](GRID.md). Ainda não iniciado.
+2. **Grid da sessão** (próxima grande etapa, para sessões online). Escopo definido em 2026-10-20 (com névoa de guerra e linha de visão opcional): ver [`GRID.md`](GRID.md). **Implementada em 2026-10-21** (site e app); falta a verificação real com duas contas.
 3. **[Feito em 2026-10-20] Ação de combate personalizada** criada pelo mestre.
 4. **[Feito em 2026-10-20]** Subida de nível: poder "Treinamento em Perícia" abre a escolha da perícia, como no Aumento de
    Atributo.
@@ -429,6 +429,15 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-21 — grade, passo 6: mapa no app (jogador)
+
+- Tela "Mapa" no painel da campanha do app (`app/(app)/campanha/[id]/mapa.tsx` e
+  `components/map/map-board.tsx`): mapa ativo com imagem, grade, tokens na cor dos dados do dono,
+  névoa e linha de visão. Mover: tocar no próprio token e depois no quadrado de destino (arrastar
+  conflitaria com a rolagem da tela). Sem dependência nativa nova (`react-native-svg` já existia):
+  vai por OTA, sem APK. Mestrar continua só no site.
+- Verificado: typecheck e lint do app e `pnpm check`. Não verificado no aparelho.
 
 ### 2026-10-21 — grade, passos 3 a 5: mapa no site (mestre e jogador), névoa e linha de visão
 

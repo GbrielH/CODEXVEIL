@@ -1,6 +1,6 @@
 # Grade da sessão (mapa tático) — especificação
 
-Status: **em implementação** (passos 1 a 5 concluídos no site em 2026-10-21; falta o app, passo 6). Este documento registra as decisões do
+Status: **implementada em 2026-10-21** (passos 1 a 6). Falta o passo 7: verificação real com duas contas no navegador e no aparelho. No app, o movimento é por toque (token → quadrado), não por arrastar. Este documento registra as decisões do
 responsável e o plano técnico, para a implementação seguir sem novas perguntas.
 
 ## Decisões do responsável

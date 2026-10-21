@@ -1,9 +1,19 @@
 # Progresso do Codexveil
 
-> Documento de retomada. Última atualização: **2026-10-19**. Para retomar o trabalho em andamento, veja primeiro a seção "Continuidade" de [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md#continuidade-parada-em-2026-10-19-retomar-em-outra-máquina).
+> Documento de retomada. Última atualização: **2026-10-21**. Para retomar o trabalho em andamento, veja primeiro a seção "Continuidade" de [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md#continuidade-parada-em-2026-10-19-retomar-em-outra-máquina).
 > O que falta em relação ao prompt inicial está em [`PENDENCIAS.md`](PENDENCIAS.md).
 
 ## Estado atual
+
+**2026-10-21 (grade da sessão):** grade implementada conforme [`GRID.md`](GRID.md), passos 1 a 6:
+tamanho obrigatório das criaturas, banco do mapa (migrações `20261021100000`, `20261021100100` e
+`20261021110000` aplicadas), mapa no site (mestre monta; jogador vê e move o próprio token),
+névoa de guerra, paredes e linha de visão opcional, e a tela "Mapa" no app (só jogador; tocar no
+token e depois no destino; vai por OTA). Testes: `pnpm check` 20/20 (banco 147 testes, com 4 da
+grade e 1 do porte; domínio com testes de geometria) e `pnpm build`. O tabuleiro do site foi
+renderizado no Chrome headless com dados de exemplo. **Não verificado:** uso real com duas contas
+(envio da imagem, arrastar, tempo real) no navegador e no aparelho. Próximo passo: essa
+verificação e, depois, o Behind the Magic.
 
 **2026-10-20 (cor dos dados):** cor obrigatória para rolar, mestre primeiro, cores únicas e nome do
 personagem na cor do dono (site e app). Migração `20261020170000_dice_color_required.sql`
