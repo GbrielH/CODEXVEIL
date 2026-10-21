@@ -430,6 +430,25 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-21 — mapa: correção do "volta e vai de novo", imagem nos tokens e estilos de parede
+
+- **Bug do QA (mudanças voltando):** no editor do mestre, cada mudança cancelava a gravação
+  pendente da anterior (que então "voltava"), e respostas antigas da recarga em tempo real
+  chegavam depois das novas e sobrescreviam a tela. Agora as mudanças seguidas se somam numa só
+  gravação, só a resposta mais recente vale e as recargas esperam as gravações em andamento
+  (`use-map-data.ts`: `track`; `map-manager.tsx`: `patchMap`). Não reproduzido no navegador
+  (sem acesso a duas contas); a causa foi achada lendo o código.
+- **Imagem nos tokens:** o token mostra a imagem enviada pelo mestre ("Imagem do token" no painel
+  do token), senão a foto do personagem ou a imagem da criatura (jogador só vê a de criatura
+  revelada), senão as iniciais. Migração `20261021130000_token_images.sql` (coluna
+  `map_tokens.image_path` e leitura da imagem só de token visível do mapa ativo).
+- **Estilos de parede:** pedra, tijolo, ruína, madeira, deserto (arenito), cerca viva, grade de
+  ferro (não bloqueia a visão) e invisível (só bloqueia a visão; só o mestre vê). Guardado como
+  5º item de cada parede (paredes antigas viram pedra). As paredes agora aparecem desenhadas
+  para os jogadores também (no app, em versão simplificada de cores).
+- Verificado: `pnpm check` 20/20, `pnpm build` e captura do tabuleiro real no Chrome headless com
+  os 8 estilos e um token com imagem.
+
 ### 2026-10-21 — mapa: avisos de onde entram os tokens
 
 - No cartão "Mapa da sessão", a área "Adicionar ao mapa" explica de onde vêm os tokens e avisa

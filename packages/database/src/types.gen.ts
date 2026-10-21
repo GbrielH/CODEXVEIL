@@ -1133,6 +1133,7 @@ export type Database = {
           created_at: string;
           creature_id: string | null;
           id: string;
+          image_path: string | null;
           is_hidden: boolean;
           kind: string;
           label: string;
@@ -1149,6 +1150,7 @@ export type Database = {
           created_at?: string;
           creature_id?: string | null;
           id?: string;
+          image_path?: string | null;
           is_hidden?: boolean;
           kind: string;
           label?: string;
@@ -1165,6 +1167,7 @@ export type Database = {
           created_at?: string;
           creature_id?: string | null;
           id?: string;
+          image_path?: string | null;
           is_hidden?: boolean;
           kind?: string;
           label?: string;

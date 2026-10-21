@@ -88,3 +88,9 @@ responsável e o plano técnico, para a implementação seguir sem novas pergunt
 5. Site: paredes e linha de visão opcional.
 6. App: visualização e movimento do próprio token.
 7. Documentação (DATABASE, SECURITY, PROGRESS, PROXIMOS_PASSOS) e verificação com duas contas.
+
+## Adições de 2026-10-21
+
+- Imagem nos tokens: imagem própria (mestre) → foto do personagem → imagem da criatura → iniciais.
+- Paredes com estilo (pedra, tijolo, ruína, madeira, deserto, cerca viva, grade de ferro, invisível),
+  visíveis para todos; a grade de ferro não bloqueia a linha de visão e a invisível só o mestre vê.

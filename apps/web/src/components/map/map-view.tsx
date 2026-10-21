@@ -15,7 +15,7 @@ import { useMapData } from './use-map-data';
 /** Mapa ativo da sessão para o jogador: vê a grade e arrasta só o próprio token. */
 export function MapView({ campaignId, myCharacterId }: { campaignId: string; myCharacterId: string | null }) {
   const { toast } = useToast();
-  const { map, tokens, imageUrl, loaded, live, reload, setData } = useMapData(campaignId, 'active');
+  const { map, tokens, imageUrl, tokenImages, loaded, live, reload, setData, track } = useMapData(campaignId, 'active');
   const [zoom, setZoom] = useState(1);
   if (!loaded || !map) return null;
   const mine = tokens.some((token) => token.characterId !== null && token.characterId === myCharacterId);
@@ -43,12 +43,13 @@ export function MapView({ campaignId, myCharacterId }: { campaignId: string; myC
           map={map}
           tokens={tokens}
           imageUrl={imageUrl}
+          tokenImages={tokenImages}
           isGm={false}
           myCharacterId={myCharacterId}
           zoom={zoom}
           onMoveToken={(token, x, y) => {
             setData((current) => ({ ...current, tokens: current.tokens.map((entry) => (entry.id === token.id ? { ...entry, x, y } : entry)) }));
-            moveMyToken(getSupabaseBrowserClient(), token.id, x, y).catch((error: unknown) => {
+            void track(() => moveMyToken(getSupabaseBrowserClient(), token.id, x, y)).catch((error: unknown) => {
               toast({ tone: 'danger', title: 'O token não foi movido', description: failureMessage(error, 'Tente novamente.') });
               reload();
             });

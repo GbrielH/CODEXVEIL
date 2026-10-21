@@ -1,9 +1,10 @@
 'use client';
 
-import type { MapToken, SessionMap } from '@codexveil/database';
-import { cellRect, fogCells, pointInPolygon, tokenSizeSquares, visibilityPolygon, type GridRect, type GridWall, type Point } from '@codexveil/domain';
+import type { MapToken, SessionMap, Wall } from '@codexveil/database';
+import { cellRect, fogCells, pointInPolygon, tokenSizeSquares, visibilityPolygon, wallBlocksSight, type GridRect, type Point, type WallStyle } from '@codexveil/domain';
 import { useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useCampaignColors } from '@/components/dice/campaign-colors';
+import { WallPatterns, WallShape } from './wall-art';
 
 /** Ferramenta do mestre no tabuleiro. */
 export type MapTool = 'move' | 'reveal' | 'hide' | 'wall' | 'erase-wall';
@@ -22,6 +23,10 @@ interface MapBoardProps {
   map: SessionMap;
   tokens: MapToken[];
   imageUrl: string | null;
+  /** URL da imagem de cada token (id → URL). */
+  tokenImages?: Record<string, string>;
+  /** Estilo da parede desenhada pelo mestre. */
+  wallStyle?: WallStyle;
   /** Mestre: vê tudo (névoa translúcida, paredes, tokens ocultos) e move qualquer token. */
   isGm: boolean;
   /** Personagem do jogador (só ele pode ser arrastado pelo jogador). */
@@ -32,7 +37,7 @@ interface MapBoardProps {
   onSelectToken?: (tokenId: string | null) => void;
   onMoveToken?: (token: MapToken, x: number, y: number) => void;
   onPaintFog?: (area: GridRect, reveal: boolean) => void;
-  onAddWall?: (wall: GridWall) => void;
+  onAddWall?: (wall: Wall) => void;
   onRemoveWall?: (index: number) => void;
 }
 
@@ -44,6 +49,8 @@ export function MapBoard({
   map,
   tokens,
   imageUrl,
+  tokenImages = {},
+  wallStyle = 'stone',
   isGm,
   myCharacterId,
   zoom,
@@ -91,7 +98,8 @@ export function MapBoard({
     if (isGm || !map.lineOfSight || !myToken) return null;
     const side = tokenSizeSquares[myToken.size];
     const origin = { x: myToken.x + side / 2, y: myToken.y + side / 2 };
-    return visibilityPolygon(origin, map.walls, map.cols, map.rows, myToken.visionRadius);
+    const blocking = map.walls.filter((wall) => wallBlocksSight(wall[4])).map(([x1, y1, x2, y2]) => [x1, y1, x2, y2] as [number, number, number, number]);
+    return visibilityPolygon(origin, blocking, map.cols, map.rows, myToken.visionRadius);
   }, [isGm, map.lineOfSight, map.walls, map.cols, map.rows, myToken]);
   const sightPoints = sight ? sight.map((point) => `${point.x},${point.y}`).join(' ') : null;
   // Fora da linha de visão os tokens nem aparecem (só o próprio).
@@ -112,7 +120,7 @@ export function MapBoard({
       const corner = { x: Math.round(point.x), y: Math.round(point.y) };
       if (!wallStart) setWallStart(corner);
       else {
-        if (corner.x !== wallStart.x || corner.y !== wallStart.y) onAddWall?.([wallStart.x, wallStart.y, corner.x, corner.y]);
+        if (corner.x !== wallStart.x || corner.y !== wallStart.y) onAddWall?.([wallStart.x, wallStart.y, corner.x, corner.y, wallStyle]);
         setWallStart(null);
       }
     } else if (tool === 'move') {
@@ -169,6 +177,7 @@ export function MapBoard({
         <pattern id={`grade-${uid}`} width="1" height="1" patternUnits="userSpaceOnUse">
           <path d="M1 0H0V1" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth={1.2 / CELL} />
         </pattern>
+        <WallPatterns uid={uid} />
         {sightPoints ? (
           <mask id={`visao-${uid}`}>
             <rect x="0" y="0" width={map.cols} height={map.rows} fill="white" />
@@ -188,6 +197,11 @@ export function MapBoard({
         />
       ) : null}
       {map.showGrid ? <rect x="0" y="0" width={map.cols} height={map.rows} fill={`url(#grade-${uid})`} /> : null}
+
+      {/* Paredes desenhadas no estilo escolhido (todos veem; a invisível só o mestre). */}
+      {map.walls.map((wall, index) => (
+        <WallShape key={`${wall.join(',')}-${index}`} wall={wall} uid={uid} isGm={isGm} />
+      ))}
 
       {ordered.map((token) => {
         const side = tokenSizeSquares[token.size];
@@ -214,16 +228,35 @@ export function MapBoard({
             }}
           >
             <title>{token.label || 'Token'}</title>
+            {tokenImages[token.id] ? (
+              <>
+                <clipPath id={`token-${uid}-${token.id}`}>
+                  <circle r={radius} />
+                </clipPath>
+                <circle r={radius} fill={color} />
+                <image
+                  href={tokenImages[token.id]}
+                  x={-radius}
+                  y={-radius}
+                  width={radius * 2}
+                  height={radius * 2}
+                  preserveAspectRatio="xMidYMid slice"
+                  clipPath={`url(#token-${uid}-${token.id})`}
+                />
+              </>
+            ) : null}
             <circle
               r={radius}
-              fill={color}
+              fill={tokenImages[token.id] ? 'none' : color}
               stroke={selectedTokenId === token.id ? '#f3e2b3' : mine ? '#ffffff' : 'rgba(0,0,0,0.6)'}
               strokeWidth={selectedTokenId === token.id || mine ? 0.09 : 0.05}
               strokeDasharray={token.isHidden ? '0.15 0.1' : undefined}
             />
+            {tokenImages[token.id] ? null : (
             <text textAnchor="middle" dominantBaseline="central" fontSize={radius * 0.75} fontWeight={700} fill="#ffffff" style={{ pointerEvents: 'none' }}>
               {initials(token.label)}
             </text>
+            )}
           </g>
         );
       })}
@@ -235,14 +268,13 @@ export function MapBoard({
       {isGm
         ? map.walls.map((wall, index) => (
             <g key={`${wall.join(',')}-${index}`}>
-              <line x1={wall[0]} y1={wall[1]} x2={wall[2]} y2={wall[3]} stroke="#e04040" strokeWidth={0.12} strokeLinecap="round" />
               {tool === 'erase-wall' ? (
                 <line
                   x1={wall[0]}
                   y1={wall[1]}
                   x2={wall[2]}
                   y2={wall[3]}
-                  stroke="transparent"
+                  stroke="rgba(224,64,64,0.35)"
                   strokeWidth={0.5}
                   style={{ cursor: 'pointer' }}
                   onPointerDown={(event) => {

@@ -3,15 +3,15 @@
  * jogadores recebem do banco só o mapa ativo e os tokens visíveis, e movem o próprio token por
  * `move_my_token`.
  */
-import { AppError, isTokenSize, type TokenSize } from '@codexveil/domain';
+import { AppError, isTokenSize, isWallStyle, type TokenSize, type WallStyle } from '@codexveil/domain';
 import type { CodexveilClient } from '../client';
 import { toAppError } from '../errors';
 import type { Json, Tables } from '../types.gen';
 
 /** Retângulo revelado da névoa: [x, y, largura, altura] em quadrados. */
 export type FogRect = [number, number, number, number];
-/** Parede para a linha de visão: [x1, y1, x2, y2] em quadrados. */
-export type Wall = [number, number, number, number];
+/** Parede: [x1, y1, x2, y2] em quadrados e o estilo (pedra, tijolo, ruína…). */
+export type Wall = [number, number, number, number, WallStyle];
 
 export interface SessionMap {
   id: string;
@@ -47,20 +47,33 @@ export interface MapToken {
   size: TokenSize;
   isHidden: boolean;
   visionRadius: number;
+  /** Imagem enviada pelo mestre para o token (tem prioridade sobre foto/imagem da criatura). */
+  imagePath: string | null;
 }
 
 const MAP_COLUMNS =
   'id, campaign_id, session_id, name, image_path, image_scale, image_offset_x, image_offset_y, cols, rows, show_grid, fog_enabled, fog_revealed, line_of_sight, walls, is_active' as const;
-const TOKEN_COLUMNS = 'id, map_id, campaign_id, kind, character_id, creature_id, label, x, y, size, is_hidden, vision_radius' as const;
+const TOKEN_COLUMNS = 'id, map_id, campaign_id, kind, character_id, creature_id, label, x, y, size, is_hidden, vision_radius, image_path' as const;
 
 type MapRow = Pick<Tables<'session_maps'>, 'id' | 'campaign_id' | 'session_id' | 'name' | 'image_path' | 'image_scale' | 'image_offset_x' | 'image_offset_y' | 'cols' | 'rows' | 'show_grid' | 'fog_enabled' | 'fog_revealed' | 'line_of_sight' | 'walls' | 'is_active'>;
-type TokenRow = Pick<Tables<'map_tokens'>, 'id' | 'map_id' | 'campaign_id' | 'kind' | 'character_id' | 'creature_id' | 'label' | 'x' | 'y' | 'size' | 'is_hidden' | 'vision_radius'>;
+type TokenRow = Pick<Tables<'map_tokens'>, 'id' | 'map_id' | 'campaign_id' | 'kind' | 'character_id' | 'creature_id' | 'label' | 'x' | 'y' | 'size' | 'is_hidden' | 'vision_radius' | 'image_path'>;
 
 function quads(value: Json): [number, number, number, number][] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((entry) =>
     Array.isArray(entry) && entry.length === 4 && entry.every((n) => typeof n === 'number') ? [entry as [number, number, number, number]] : [],
   );
+}
+
+/** Paredes antigas (sem estilo) viram pedra. */
+function walls(value: Json): Wall[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry): Wall[] => {
+    if (!Array.isArray(entry) || entry.length < 4) return [];
+    const [x1, y1, x2, y2, style] = entry;
+    if (typeof x1 !== 'number' || typeof y1 !== 'number' || typeof x2 !== 'number' || typeof y2 !== 'number') return [];
+    return [[x1, y1, x2, y2, isWallStyle(style) ? style : 'stone']];
+  });
 }
 
 function toMap(row: MapRow): SessionMap {
@@ -79,7 +92,7 @@ function toMap(row: MapRow): SessionMap {
     fogEnabled: row.fog_enabled,
     fogRevealed: quads(row.fog_revealed),
     lineOfSight: row.line_of_sight,
-    walls: quads(row.walls),
+    walls: walls(row.walls),
     isActive: row.is_active,
   };
 }
@@ -98,6 +111,7 @@ function toToken(row: TokenRow): MapToken {
     size: isTokenSize(row.size) ? row.size : 'medium',
     isHidden: row.is_hidden,
     visionRadius: row.vision_radius,
+    imagePath: row.image_path,
   };
 }
 
@@ -202,7 +216,7 @@ export async function addMapToken(
   return data.id;
 }
 
-export async function updateMapToken(client: CodexveilClient, tokenId: string, patch: Partial<Pick<MapToken, 'label' | 'x' | 'y' | 'size' | 'isHidden' | 'visionRadius'>>): Promise<void> {
+export async function updateMapToken(client: CodexveilClient, tokenId: string, patch: Partial<Pick<MapToken, 'label' | 'x' | 'y' | 'size' | 'isHidden' | 'visionRadius' | 'imagePath'>>): Promise<void> {
   const update: Partial<Tables<'map_tokens'>> = {};
   if (patch.label !== undefined) update.label = patch.label;
   if (patch.x !== undefined) update.x = patch.x;
@@ -210,6 +224,7 @@ export async function updateMapToken(client: CodexveilClient, tokenId: string, p
   if (patch.size !== undefined) update.size = patch.size;
   if (patch.isHidden !== undefined) update.is_hidden = patch.isHidden;
   if (patch.visionRadius !== undefined) update.vision_radius = patch.visionRadius;
+  if (patch.imagePath !== undefined) update.image_path = patch.imagePath;
   const { data, error } = await client.from('map_tokens').update(update).eq('id', tokenId).select('id');
   if (error) throw toAppError(error);
   if (data.length === 0) throw new AppError('forbidden');
@@ -218,6 +233,29 @@ export async function updateMapToken(client: CodexveilClient, tokenId: string, p
 export async function deleteMapToken(client: CodexveilClient, tokenId: string): Promise<void> {
   const { error } = await client.from('map_tokens').delete().eq('id', tokenId);
   if (error) throw toAppError(error);
+}
+
+/**
+ * Caminho da imagem de cada token: a enviada pelo mestre, a foto do personagem ou a imagem da
+ * criatura (para jogadores, só de criaturas reveladas: o RLS não entrega as outras).
+ */
+export async function tokenImagePaths(client: CodexveilClient, tokens: readonly MapToken[]): Promise<Record<string, string>> {
+  const characterIds = [...new Set(tokens.filter((token) => !token.imagePath && token.characterId).map((token) => token.characterId!))];
+  const creatureIds = [...new Set(tokens.filter((token) => !token.imagePath && token.creatureId).map((token) => token.creatureId!))];
+  const [characters, creatures] = await Promise.all([
+    characterIds.length ? client.from('characters').select('id, portrait_path').in('id', characterIds) : Promise.resolve({ data: [] as { id: string; portrait_path: string | null }[], error: null }),
+    creatureIds.length ? client.from('creatures').select('id, image_path').in('id', creatureIds) : Promise.resolve({ data: [] as { id: string; image_path: string | null }[], error: null }),
+  ]);
+  if (characters.error) throw toAppError(characters.error);
+  if (creatures.error) throw toAppError(creatures.error);
+  const portraits = new Map((characters.data ?? []).map((row) => [row.id, row.portrait_path]));
+  const images = new Map((creatures.data ?? []).map((row) => [row.id, row.image_path]));
+  const result: Record<string, string> = {};
+  for (const token of tokens) {
+    const path = token.imagePath ?? (token.characterId ? portraits.get(token.characterId) : null) ?? (token.creatureId ? images.get(token.creatureId) : null) ?? null;
+    if (path) result[token.id] = path;
+  }
+  return result;
 }
 
 /** Jogador move o token do próprio personagem (validado no banco). */

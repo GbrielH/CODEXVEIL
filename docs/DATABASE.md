@@ -166,6 +166,10 @@ Migração `20261018120000_gameplay_turns.sql`:
 - Índices únicos `characters_one_per_player_idx` e `campaign_notes_one_pinned_idx` (duplicatas
   antigas são desvinculadas/desafixadas antes).
 
+Migração `20261021130000_token_images.sql`: `map_tokens.image_path` (imagem própria do token em
+`campaigns/{id}/maps/`; jogador lê só a de token visível do mapa ativo). Paredes com estilo:
+`session_maps.walls` guarda `[x1, y1, x2, y2, "estilo"]`.
+
 Migração `20261021110000_session_maps.sql` (grade da sessão): tabelas `session_maps` e
 `map_tokens`, RLS (jogador: mapa ativo e tokens não ocultos), índice de um mapa ativo por
 campanha, RPC `move_my_token` e leitura de `campaigns/{id}/maps/*` só do mapa ativo para jogadores.

@@ -15,7 +15,7 @@ import {
   type SessionMap,
   type SessionMapPatch,
 } from '@codexveil/database';
-import { TOKEN_SIZES, paintFog, tokenSizeLabels, tokenSizeSquares, type TokenSize } from '@codexveil/domain';
+import { TOKEN_SIZES, WALL_STYLES, paintFog, tokenSizeLabels, tokenSizeSquares, type TokenSize, type WallStyle } from '@codexveil/domain';
 import { IMAGE_EXTENSIONS } from '@codexveil/validation';
 import { Eraser, EyeOff, ImageUp, Map as MapIcon, Minus, MousePointer2, Plus, Radio, Square, SquareDashed, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -77,11 +77,14 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
   const [zoom, setZoom] = useState(1);
   const [selectedToken, setSelectedToken] = useState<string | null>(null);
   const [markerLabel, setMarkerLabel] = useState('');
+  const [wallStyle, setWallStyle] = useState<WallStyle>('stone');
   const saveTimer = useRef<number | null>(null);
+  const pendingPatch = useRef<{ mapId: string; patch: SessionMapPatch } | null>(null);
+  const tokenInputRef = useRef<HTMLInputElement>(null);
   const sizeLabels = tokenSizeLabels(systemId);
   const selectedKey = useMemo(() => (selectedId ? { id: selectedId } : null), [selectedId]);
 
-  const { map, tokens, imageUrl, live, reload, setData } = useMapData(campaignId, selectedKey);
+  const { map, tokens, imageUrl, tokenImages, live, reload, setData, track } = useMapData(campaignId, selectedKey);
 
   const reloadMaps = useCallback(async () => {
     try {
@@ -109,26 +112,63 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
 
   const fail = (title: string, error: unknown) => toast({ tone: 'danger', title, description: failureMessage(error, 'Tente novamente.') });
 
-  /** Atualiza o mapa na tela na hora e grava (com espera curta para controles contínuos). */
+  /**
+   * Atualiza o mapa na tela na hora e grava. Mudanças seguidas se somam numa só gravação (antes
+   * uma cancelava a outra e a primeira "voltava").
+   */
   const patchMap = (patch: SessionMapPatch, delay = 0) => {
     if (!map) return;
     setData((current) => (current.map ? { ...current, map: { ...current.map, ...patch } } : current));
-    if (saveTimer.current) window.clearTimeout(saveTimer.current);
     const mapId = map.id;
+    pendingPatch.current = pendingPatch.current && pendingPatch.current.mapId === mapId ? { mapId, patch: { ...pendingPatch.current.patch, ...patch } } : { mapId, patch };
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
-      updateSessionMap(getSupabaseBrowserClient(), mapId, patch).catch((error: unknown) => {
+      const pending = pendingPatch.current;
+      pendingPatch.current = null;
+      if (!pending) return;
+      void track(() => updateSessionMap(getSupabaseBrowserClient(), pending.mapId, pending.patch)).catch((error: unknown) => {
         fail('O mapa não foi salvo', error);
         reload();
       });
     }, delay);
   };
 
-  const patchToken = (token: MapToken, patch: Partial<Pick<MapToken, 'label' | 'x' | 'y' | 'size' | 'isHidden' | 'visionRadius'>>) => {
+  const patchToken = (token: MapToken, patch: Partial<Pick<MapToken, 'label' | 'x' | 'y' | 'size' | 'isHidden' | 'visionRadius' | 'imagePath'>>) => {
     setData((current) => ({ ...current, tokens: current.tokens.map((entry) => (entry.id === token.id ? { ...entry, ...patch } : entry)) }));
-    updateMapToken(getSupabaseBrowserClient(), token.id, patch).catch((error: unknown) => {
+    void track(() => updateMapToken(getSupabaseBrowserClient(), token.id, patch)).catch((error: unknown) => {
       fail('O token não foi alterado', error);
       reload();
     });
+  };
+
+  const uploadTokenImage = async (target: MapToken, original: File) => {
+    const client = getSupabaseBrowserClient();
+    try {
+      const prepared = await prepareImage(original, 'portrait');
+      if (!prepared.ok) {
+        toast({ tone: 'danger', title: 'Imagem recusada', description: prepared.message });
+        return;
+      }
+      const path = campaignMapPath(campaignId, `token-${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`);
+      const bucket = client.storage.from(CAMPAIGN_MEDIA_BUCKET);
+      const { error } = await bucket.upload(path, prepared.file, { contentType: prepared.mimeType, upsert: false });
+      if (error) throw error;
+      const previous = target.imagePath;
+      await track(() => updateMapToken(client, target.id, { imagePath: path }));
+      if (previous) await bucket.remove([previous]);
+      reload();
+    } catch (error) {
+      fail('A imagem do token não foi enviada', error);
+    } finally {
+      if (tokenInputRef.current) tokenInputRef.current.value = '';
+    }
+  };
+
+  const removeTokenImage = async (target: MapToken) => {
+    if (!target.imagePath) return;
+    const previous = target.imagePath;
+    patchToken(target, { imagePath: null });
+    await getSupabaseBrowserClient().storage.from(CAMPAIGN_MEDIA_BUCKET).remove([previous]);
   };
 
   const createMap = async () => {
@@ -346,7 +386,20 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
               </Button>
             </span>
           </div>
-          {tool === 'wall' ? <p className="text-xs text-fg-muted">Clique em dois cantos de quadrado para desenhar uma parede.</p> : null}
+          {tool === 'wall' ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Estilo da parede">
+                {WALL_STYLES.map((style) => (
+                  <Button key={style.id} size="sm" variant={wallStyle === style.id ? 'primary' : 'ghost'} role="radio" aria-checked={wallStyle === style.id} onClick={() => setWallStyle(style.id)}>
+                    {style.label}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-fg-muted">
+                Clique em dois cantos de quadrado para desenhar uma parede. Todas bloqueiam a linha de visão, menos a grade de ferro; a invisível só você vê.
+              </p>
+            </div>
+          ) : null}
           {tool === 'reveal' || tool === 'hide' ? <p className="text-xs text-fg-muted">Arraste sobre os quadrados para {tool === 'reveal' ? 'revelar' : 'cobrir'} a área.</p> : null}
 
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
@@ -355,6 +408,8 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
                 map={map}
                 tokens={tokens}
                 imageUrl={imageUrl}
+                tokenImages={tokenImages}
+                wallStyle={wallStyle}
                 isGm
                 myCharacterId={null}
                 zoom={zoom}
@@ -380,6 +435,24 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
                         </option>
                       ))}
                     </SelectField>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        ref={tokenInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="sr-only"
+                        onChange={(event) => event.target.files?.[0] && void uploadTokenImage(token, event.target.files[0])}
+                      />
+                      <Button size="sm" variant="secondary" icon={<ImageUp className="h-4 w-4" aria-hidden="true" />} onClick={() => tokenInputRef.current?.click()}>
+                        {token.imagePath ? 'Trocar imagem' : 'Imagem do token'}
+                      </Button>
+                      {token.imagePath ? (
+                        <Button size="sm" variant="ghost" onClick={() => void removeTokenImage(token)}>
+                          Tirar imagem
+                        </Button>
+                      ) : null}
+                    </div>
+                    <p className="text-xs text-fg-muted">Sem imagem própria, o token usa a foto do personagem ou a imagem da criatura.</p>
                     {token.kind === 'character' ? (
                       <label className="flex flex-col gap-1 text-xs text-fg-secondary">
                         Alcance da visão (quadrados; 0 = sem limite)

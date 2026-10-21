@@ -1,4 +1,4 @@
-import { getActiveMap, getCampaign, listCampaignCharacters, listMapTokens, moveMyToken, signedMediaUrls, type MapToken } from '@codexveil/database';
+import { getActiveMap, getCampaign, listCampaignCharacters, listMapTokens, moveMyToken, signedMediaUrls, tokenImagePaths, type MapToken } from '@codexveil/database';
 import { tokenSizeSquares } from '@codexveil/domain';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { ZoomIn, ZoomOut } from 'lucide-react-native';
@@ -31,9 +31,12 @@ export default function CampaignMapScreen() {
     if (!campaign) return null;
     const [map, party] = await Promise.all([getActiveMap(client, campaign.id), listCampaignCharacters(client, campaign.id)]);
     const own = party.find((character) => character.ownerId === userId) ?? null;
-    if (!map) return { campaign, map: null, tokens: [] as MapToken[], imageUrl: null as string | null, own };
-    const [tokens, urls] = await Promise.all([listMapTokens(client, map.id), map.imagePath ? signedMediaUrls(client, [map.imagePath]) : Promise.resolve({} as Record<string, string>)]);
-    return { campaign, map, tokens, imageUrl: map.imagePath ? (urls[map.imagePath] ?? null) : null, own };
+    if (!map) return { campaign, map: null, tokens: [] as MapToken[], imageUrl: null as string | null, tokenImages: {}, own };
+    const tokens = await listMapTokens(client, map.id);
+    const paths = await tokenImagePaths(client, tokens).catch((): Record<string, string> => ({}));
+    const urls = await signedMediaUrls(client, [map.imagePath, ...Object.values(paths)]);
+    const tokenImages = Object.fromEntries(Object.entries(paths).flatMap(([tokenId, path]) => (urls[path] ? [[tokenId, urls[path]]] : [])));
+    return { campaign, map, tokens, imageUrl: map.imagePath ? (urls[map.imagePath] ?? null) : null, tokenImages, own };
   }, `${id}:${userId}`);
 
   useRealtimeRefresh(
@@ -60,7 +63,7 @@ export default function CampaignMapScreen() {
     );
   }
 
-  const { map, tokens, imageUrl, own } = data;
+  const { map, tokens, imageUrl, tokenImages, own } = data;
   const myToken = tokens.find((token) => token.characterId !== null && token.characterId === own?.id) ?? null;
 
   const tap = (x: number, y: number) => {
@@ -104,6 +107,7 @@ export default function CampaignMapScreen() {
             map={map}
             tokens={tokens}
             imageUrl={imageUrl}
+            tokenImages={tokenImages}
             myCharacterId={own?.id ?? null}
             zoom={zoom}
             selected={selected}

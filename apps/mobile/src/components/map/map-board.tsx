@@ -1,10 +1,22 @@
 import type { MapToken, SessionMap } from '@codexveil/database';
-import { fogCells, pointInPolygon, tokenSizeSquares, visibilityPolygon } from '@codexveil/domain';
+import { fogCells, pointInPolygon, tokenSizeSquares, visibilityPolygon, wallBlocksSight, type WallStyle } from '@codexveil/domain';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, type GestureResponderEvent } from 'react-native';
-import Svg, { Circle, Defs, Image as SvgImage, Mask, Path, Pattern, Polygon, Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, ClipPath, Defs, G, Image as SvgImage, Line, Mask, Path, Pattern, Polygon, Rect, Text as SvgText } from 'react-native-svg';
 
 const CELL = 36;
+
+/** Cor e espessura de cada estilo de parede (versão simplificada das texturas do site). */
+const WALL_LOOK: Record<WallStyle, { fill: string; edge: string; thickness: number }> = {
+  stone: { fill: '#77736b', edge: '#4a4740', thickness: 0.32 },
+  brick: { fill: '#9b4a32', edge: '#d8c7a8', thickness: 0.3 },
+  ruin: { fill: '#6b675f', edge: '#3d3a34', thickness: 0.3 },
+  wood: { fill: '#7a4f2c', edge: '#3f2715', thickness: 0.22 },
+  sandstone: { fill: '#c9a66b', edge: '#8f6c3a', thickness: 0.34 },
+  hedge: { fill: '#3a6c32', edge: '#2f5a2a', thickness: 0.36 },
+  iron: { fill: 'none', edge: '#55595f', thickness: 0.12 },
+  invisible: { fill: 'none', edge: 'none', thickness: 0 },
+};
 const CREATURE_COLOR = '#571F2B';
 const MARKER_COLOR = '#b58a2a';
 
@@ -23,6 +35,7 @@ export function MapBoard({
   map,
   tokens,
   imageUrl,
+  tokenImages,
   myCharacterId,
   zoom,
   selected,
@@ -32,6 +45,7 @@ export function MapBoard({
   map: SessionMap;
   tokens: MapToken[];
   imageUrl: string | null;
+  tokenImages: Record<string, string>;
   myCharacterId: string | null;
   zoom: number;
   /** Token do jogador selecionado para mover. */
@@ -53,7 +67,8 @@ export function MapBoard({
   const sight = useMemo(() => {
     if (!map.lineOfSight || !myToken) return null;
     const side = tokenSizeSquares[myToken.size];
-    return visibilityPolygon({ x: myToken.x + side / 2, y: myToken.y + side / 2 }, map.walls, map.cols, map.rows, myToken.visionRadius);
+    const blocking = map.walls.filter((wall) => wallBlocksSight(wall[4])).map(([x1, y1, x2, y2]) => [x1, y1, x2, y2] as [number, number, number, number]);
+    return visibilityPolygon({ x: myToken.x + side / 2, y: myToken.y + side / 2 }, blocking, map.cols, map.rows, myToken.visionRadius);
   }, [map.lineOfSight, map.walls, map.cols, map.rows, myToken]);
 
   const visible = tokens.filter((token) => {
@@ -95,6 +110,35 @@ export function MapBoard({
               />
             ) : null}
             {map.showGrid ? <Rect x="0" y="0" width={map.cols} height={map.rows} fill="url(#grade)" /> : null}
+            {map.walls.map(([x1, y1, x2, y2, style], index) => {
+              const look = WALL_LOOK[style];
+              if (style === 'invisible') return null;
+              const length = Math.hypot(x2 - x1, y2 - y1);
+              const angle = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI;
+              return (
+                <G key={`parede-${index}`} transform={`translate(${x1} ${y1}) rotate(${angle})`}>
+                  {style === 'iron' ? (
+                    Array.from({ length: Math.max(2, Math.round(length / 0.25)) + 1 }, (_, bar) => {
+                      const bars = Math.max(2, Math.round(length / 0.25));
+                      const bx = (bar / bars) * length;
+                      return <Line key={bar} x1={bx} y1={-0.18} x2={bx} y2={0.18} stroke={look.edge} strokeWidth={0.05} />;
+                    })
+                  ) : (
+                    <Rect
+                      x={-look.thickness / 4}
+                      y={-look.thickness / 2}
+                      width={length + look.thickness / 2}
+                      height={look.thickness}
+                      rx={style === 'hedge' ? look.thickness / 2 : 0.03}
+                      fill={look.fill}
+                      stroke={look.edge}
+                      strokeWidth={0.04}
+                      strokeDasharray={style === 'ruin' ? [Math.max(0.4, length / 3), 0.18] : undefined}
+                    />
+                  )}
+                </G>
+              );
+            })}
             {[...visible]
               .sort((a, b) => tokenSizeSquares[b.size] - tokenSizeSquares[a.size])
               .map((token) => {
@@ -103,6 +147,29 @@ export function MapBoard({
                 const mine = token.id === myToken?.id;
                 const color =
                   token.kind === 'character' ? (colorOfCharacter(token.characterId) ?? '#3b4cb8') : token.kind === 'creature' ? CREATURE_COLOR : MARKER_COLOR;
+                const image = tokenImages[token.id];
+                if (image) {
+                  return (
+                    <G key={token.id}>
+                      <Defs>
+                        <ClipPath id={`token-${token.id}`}>
+                          <Circle cx={token.x + side / 2} cy={token.y + side / 2} r={radius} />
+                        </ClipPath>
+                      </Defs>
+                      <Circle cx={token.x + side / 2} cy={token.y + side / 2} r={radius} fill={color} />
+                      <SvgImage
+                        href={{ uri: image }}
+                        x={token.x + side / 2 - radius}
+                        y={token.y + side / 2 - radius}
+                        width={radius * 2}
+                        height={radius * 2}
+                        preserveAspectRatio="xMidYMid slice"
+                        clipPath={`url(#token-${token.id})`}
+                      />
+                      <Circle cx={token.x + side / 2} cy={token.y + side / 2} r={radius} fill="none" stroke={mine && selected ? '#f3e2b3' : mine ? '#ffffff' : color} strokeWidth={mine ? 0.12 : 0.08} />
+                    </G>
+                  );
+                }
                 return (
                   <Circle
                     key={token.id}
@@ -115,7 +182,7 @@ export function MapBoard({
                   />
                 );
               })}
-            {visible.map((token) => {
+            {visible.filter((token) => !tokenImages[token.id]).map((token) => {
               const side = tokenSizeSquares[token.size];
               const radius = (side / 2) * (token.size === 'tiny' ? 0.6 : 0.9);
               return (
