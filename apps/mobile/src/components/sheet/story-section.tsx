@@ -1,7 +1,16 @@
-import { findClassByName, listClasses, type Dnd5eClass } from '@codexveil/rpg-systems/dnd5e';
+import {
+  ALIGNMENTS,
+  findClassByName,
+  listBackgrounds,
+  listClasses,
+  speciesOptionNames,
+  withCurrentOption,
+  type Dnd5eClass,
+} from '@codexveil/rpg-systems/dnd5e';
 import { View } from 'react-native';
 import { Chip, ChipRow } from '@/components/ui/controls';
 import { Field } from '@/components/ui/field';
+import { PickerField } from '@/components/ui/picker';
 import { AppText, Badge, Card } from '@/components/ui/primitives';
 import { colors, fonts, spacing } from '@/lib/theme';
 import { useSheet } from './context';
@@ -32,35 +41,26 @@ export function StorySection() {
     <View style={{ gap: spacing[4] }}>
       <Card>
         <AppText variant="heading">Identidade</AppText>
-        <Field
+        <IdentityPick
           label="Espécie"
+          options={speciesOptionNames()}
           value={sheet.identity.species}
           editable={canEditSheet}
-          maxLength={60}
-          onChangeText={(species) =>
-            updateSheet((current) => ({ ...current, identity: { ...current.identity, species } }))
-          }
+          onChange={(species) => updateSheet((current) => ({ ...current, identity: { ...current.identity, species } }))}
         />
-        <Field
+        <IdentityPick
           label="Antecedente"
+          options={listBackgrounds().map((background) => background.name)}
           value={sheet.identity.background}
           editable={canEditSheet}
-          maxLength={60}
-          onChangeText={(background) =>
-            updateSheet((current) => ({
-              ...current,
-              identity: { ...current.identity, background },
-            }))
-          }
+          onChange={(background) => updateSheet((current) => ({ ...current, identity: { ...current.identity, background } }))}
         />
-        <Field
+        <IdentityPick
           label="Alinhamento"
+          options={ALIGNMENTS.map((alignment) => alignment.name)}
           value={sheet.identity.alignment}
           editable={canEditSheet}
-          maxLength={40}
-          onChangeText={(alignment) =>
-            updateSheet((current) => ({ ...current, identity: { ...current.identity, alignment } }))
-          }
+          onChange={(alignment) => updateSheet((current) => ({ ...current, identity: { ...current.identity, alignment } }))}
         />
       </Card>
       <Card>
@@ -163,5 +163,31 @@ export function StorySection() {
         ))}
       </Card>
     </View>
+  );
+}
+
+/** Campo de identidade como lista de seleção (a escolha atual entra se não estiver na lista). */
+function IdentityPick({
+  label,
+  options,
+  value,
+  editable,
+  onChange,
+}: {
+  label: string;
+  options: readonly string[];
+  value: string;
+  editable: boolean;
+  onChange: (value: string) => void;
+}) {
+  if (!editable) return <Field label={label} value={value} editable={false} />;
+  return (
+    <PickerField
+      label={label}
+      title={label}
+      value={value}
+      options={withCurrentOption(options, value).map((option) => ({ value: option, label: option }))}
+      onChange={onChange}
+    />
   );
 }

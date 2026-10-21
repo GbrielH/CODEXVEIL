@@ -49,3 +49,10 @@ export const ALIGNMENTS = [
   { id: 'chaotic_evil', name: 'Caótico e Mau', abbreviation: 'CM', evil: true },
 ] as const;
 export type AlignmentId = (typeof ALIGNMENTS)[number]['id'];
+
+/** Opções de identidade da ficha (listas de seleção): a escolha atual entra se não estiver na lista. */
+export function withCurrentOption(options: readonly string[], current: string): string[] {
+  const list = [...options];
+  if (current.trim() && !list.includes(current)) list.unshift(current);
+  return list;
+}

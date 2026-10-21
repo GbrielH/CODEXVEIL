@@ -17,6 +17,8 @@ import {
   type CreatureSize,
   type Dnd5eStatBlock,
   type StatBlockEntry,
+  ALIGNMENTS,
+  withCurrentOption,
 } from '@codexveil/rpg-systems/dnd5e';
 import {
   creatureGmDataSchema,
@@ -453,13 +455,22 @@ function GmDataCard({
                 value={stats.creatureType}
                 onChange={(event) => set({ creatureType: event.target.value })}
               />
-              <TextField
+              <SelectField
                 id={`${id}-alignment`}
                 label="Alinhamento"
-                maxLength={40}
                 value={stats.alignment}
                 onChange={(event) => set({ alignment: event.target.value })}
-              />
+              >
+                <option value="">Escolha…</option>
+                {withCurrentOption(
+                  [...ALIGNMENTS.map((alignment) => alignment.name), 'Sem alinhamento', 'Qualquer alinhamento'],
+                  stats.alignment,
+                ).map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </SelectField>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div className="flex flex-col gap-1.5">

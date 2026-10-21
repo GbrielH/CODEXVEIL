@@ -430,6 +430,16 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-21 — identidade da ficha D&D com listas de seleção
+
+- Espécie, Antecedente e Alinhamento da ficha D&D deixaram de ser digitáveis: viram listas
+  (espécies do SRD com cada linhagem, ex.: "Draconato (Preto (ácido))"; antecedentes do SRD; os 9
+  alinhamentos). Uma escolha já gravada que não esteja na lista (ex.: espécie de livro) continua
+  como opção. Site (`story-tab.tsx`) e app (`story-section.tsx`). Conferido o mesmo problema no
+  resto: a ficha do Tormenta20 já usava listas; o alinhamento do bloco de estatísticas das
+  criaturas (site, mestre) também virou lista (com "Sem alinhamento" e "Qualquer alinhamento").
+- Verificado: `pnpm check` 20/20 (teste novo das opções). Não conferido no navegador.
+
 ### 2026-10-21 — grade, passo 6: mapa no app (jogador)
 
 - Tela "Mapa" no painel da campanha do app (`app/(app)/campanha/[id]/mapa.tsx` e

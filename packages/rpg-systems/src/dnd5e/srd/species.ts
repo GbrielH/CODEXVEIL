@@ -332,3 +332,10 @@ export function listSpecies(): readonly SpeciesDefinition[] {
 }
 
 export const sizeLabels = { small: 'Pequeno', medium: 'Médio' } as const;
+
+/** Nomes para a lista de espécies da ficha ("Draconato (Preto (ácido))" para cada linhagem). */
+export function speciesOptionNames(): string[] {
+  return SRD_SPECIES.flatMap((species) =>
+    species.lineage ? species.lineage.options.map((option) => `${species.name} (${option.name})`) : [species.name],
+  );
+}

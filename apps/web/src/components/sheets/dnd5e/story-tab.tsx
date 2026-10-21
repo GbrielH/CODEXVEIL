@@ -2,7 +2,11 @@
 
 import {
   ADVANCEMENT_MODES,
+  ALIGNMENTS,
   findClassByName,
+  listBackgrounds,
+  speciesOptionNames,
+  withCurrentOption,
   listClasses,
   type Dnd5eClass,
 } from '@codexveil/rpg-systems/dnd5e';
@@ -10,7 +14,7 @@ import { useId } from 'react';
 import { CharacterIcon } from '@/components/characters/character-icon';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader } from '@/components/ui/card';
-import { SelectField, TextField } from '@/components/ui/field';
+import { SelectField } from '@/components/ui/field';
 import { useSheet } from './context';
 
 const advancementLabels: Record<(typeof ADVANCEMENT_MODES)[number], string> = {
@@ -40,30 +44,48 @@ function IdentityCard() {
     <Card>
       <CardHeader title="Identidade" />
       <div className="grid gap-4 sm:grid-cols-2">
-        <TextField
+        <SelectField
           id={`${id}-species`}
           label="Espécie"
-          maxLength={60}
-          readOnly={readOnly}
+          disabled={readOnly}
           value={sheet.identity.species}
           onChange={(event) => setIdentity({ species: event.target.value })}
-        />
-        <TextField
+        >
+          <option value="">Escolha…</option>
+          {withCurrentOption(speciesOptionNames(), sheet.identity.species).map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </SelectField>
+        <SelectField
           id={`${id}-background`}
           label="Antecedente"
-          maxLength={60}
-          readOnly={readOnly}
+          disabled={readOnly}
           value={sheet.identity.background}
           onChange={(event) => setIdentity({ background: event.target.value })}
-        />
-        <TextField
+        >
+          <option value="">Escolha…</option>
+          {withCurrentOption(listBackgrounds().map((background) => background.name), sheet.identity.background).map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </SelectField>
+        <SelectField
           id={`${id}-alignment`}
           label="Alinhamento"
-          maxLength={40}
-          readOnly={readOnly}
+          disabled={readOnly}
           value={sheet.identity.alignment}
           onChange={(event) => setIdentity({ alignment: event.target.value })}
-        />
+        >
+          <option value="">Escolha…</option>
+          {withCurrentOption(ALIGNMENTS.map((alignment) => alignment.name), sheet.identity.alignment).map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </SelectField>
         <SelectField
           id={`${id}-advancement`}
           label="Evolução"
