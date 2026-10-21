@@ -1,6 +1,7 @@
 import { authErrorMessage } from '@codexveil/database';
 import { fieldErrorsFrom, signUpSchema, type FieldErrors } from '@codexveil/validation';
 import { useState } from 'react';
+import { GoogleSignInButton } from '@/components/auth/google-button';
 import { ConfigNotice } from '@/components/config-notice';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
@@ -61,6 +62,7 @@ export default function SignUpScreen() {
     <Screen title="Criar conta" subtitle="Você poderá mestrar e jogar em quantas campanhas quiser.">
       <ConfigNotice />
       {result ? <Notice tone={result.tone} message={result.message} /> : null}
+      <GoogleSignInButton label="Criar conta com Google" />
       <Card>
         <Field
           label="Nome de exibição"

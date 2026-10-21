@@ -304,3 +304,27 @@ ityfhobhpjzhlkgvjhfb --no-verify-jwt --use-api` (o JWT é conferido dentro da fu
   arquivo; `apps/mobile/.fingerprintignore` evita que ele mude o fingerprint. A chave da conta
   de serviço (FCM V1) é enviada pelo expo.dev → Credentials.
 - Sem a variável, o APK funciona sem notificações.
+
+## Login com Google
+
+Código pronto em 2026-10-21 (site: `components/auth/google-button.tsx`; app:
+`lib/google-auth.ts` e `app/google.tsx`). Os botões só aparecem com a variável ligada. Para ativar:
+
+1. **Google Cloud Console** (<https://console.cloud.google.com>), num projeto do Codexveil:
+   - "Tela de permissão OAuth": tipo **Externo**, nome "Codexveil", e-mail de suporte e domínio
+     `codexveil.vercel.app`; escopos `openid`, `email` e `profile`; publicar o app.
+   - "Credenciais" → "Criar credenciais" → "ID do cliente OAuth" → **Aplicativo da Web**.
+     URI de redirecionamento autorizado:
+     `https://ityfhobhpjzhlkgvjhfb.supabase.co/auth/v1/callback`.
+   - Guardar o **ID do cliente** e o **segredo do cliente** (o segredo não vai para arquivos).
+2. **Supabase** (só o projeto `CODEXVEIL`): com as duas variáveis no terminal,
+   `GOOGLE_OAUTH_CLIENT_ID=... GOOGLE_OAUTH_CLIENT_SECRET=... npx supabase config push --workdir deploy`.
+   O `config.toml` só referencia as variáveis (`env(...)`).
+3. **Vercel** (projeto `codexveil`): `NEXT_PUBLIC_AUTH_GOOGLE=on` e novo deploy.
+4. **App** (ambiente `preview` do EAS): `EXPO_PUBLIC_AUTH_GOOGLE=on`; a próxima atualização OTA
+   mostra o botão. No app, o login abre o navegador e volta por `codexveil://google` (já liberado
+   em `additional_redirect_urls`), sem biblioteca nativa nova.
+
+Contas criadas pelo Google recebem o nome do Google no perfil (migração
+`20261021120000_google_signin_profile.sql`). Uma conta de e-mail e a do Google com o mesmo
+endereço são unidas pelo Supabase quando o e-mail é confirmado.

@@ -33,6 +33,18 @@ describe('perfis', () => {
     expect(profile.display_name).toBe('Aventureiro');
   });
 
+  it('contas do Google usam o nome enviado pelo Google', async () => {
+    const id = '0f3c2b1a-0000-4000-8000-00000000c0de';
+    await db.as({ kind: 'admin' }, (s) =>
+      s.query(`insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values ($1, 'google@teste.dev', now(), $2)`, [
+        id,
+        JSON.stringify({ full_name: 'Gabriel Henrique', name: 'Gabriel Henrique', avatar_url: 'https://exemplo/foto.png' }),
+      ]),
+    );
+    const profile = await db.as({ kind: 'admin' }, (s) => s.one<{ display_name: string }>(`select display_name from public.profiles where id = $1`, [id]));
+    expect(profile.display_name).toBe('Gabriel Henrique');
+  });
+
   it('só são visíveis ao próprio usuário e a quem divide uma campanha', async () => {
     const { gm, player, outsider } = await createTable(db);
     const seenByPlayer = await db.as(player, (s) =>

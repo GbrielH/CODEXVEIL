@@ -430,6 +430,19 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-21 — login com Google (código pronto, aguardando as credenciais)
+
+- Site: "Entrar com Google" e "Criar conta com Google" (retorno por `/auth/confirmar`). App: o
+  mesmo botão abre o navegador e volta por `codexveil://google` (cliente em PKCE; tela
+  `app/google.tsx`), sem biblioteca nativa nova. Botões escondidos até ligar
+  `NEXT_PUBLIC_AUTH_GOOGLE` / `EXPO_PUBLIC_AUTH_GOOGLE`.
+- Perfil de conta Google usa o nome do Google (migração `20261021120000_google_signin_profile.sql`,
+  aplicada, com teste). `deploy/supabase/config.toml` tem o provedor lendo as chaves de variáveis.
+- **Pendente (responsável):** criar o cliente OAuth no Google Cloud e enviar a configuração; passo
+  a passo em [`DEPLOY.md`](DEPLOY.md#login-com-google). Até lá a config do Auth **não** foi enviada.
+- Também: a tela "Mapa" do app passou a ficar na lista de telas protegidas (só logado).
+- Verificado: `pnpm check` 20/20 e `pnpm build`. Fluxo do Google não testado (sem credenciais).
+
 ### 2026-10-21 — identidade da ficha D&D com listas de seleção
 
 - Espécie, Antecedente e Alinhamento da ficha D&D deixaram de ser digitáveis: viram listas

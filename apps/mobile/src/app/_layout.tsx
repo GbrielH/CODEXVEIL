@@ -55,6 +55,7 @@ function RootNavigator() {
           />
           <Stack.Screen name="(app)/campanha/[id]/item/[itemId]" options={{ title: 'Item' }} />
           <Stack.Screen name="(app)/campanha/[id]/anotacoes" options={{ title: 'Anotações' }} />
+          <Stack.Screen name="(app)/campanha/[id]/mapa" options={{ title: 'Mapa' }} />
           <Stack.Screen
             name="(app)/campanha/nova"
             options={{ title: 'Nova campanha', presentation: 'modal' }}

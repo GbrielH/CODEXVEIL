@@ -43,6 +43,8 @@ export function getSupabase(): CodexveilClient {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
+        // PKCE: o login com Google volta ao app com um código (codexveil://google?code=...).
+        flowType: 'pkce',
         lock: processLock,
       },
     },

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { AuthDivider, GoogleButton } from '@/components/auth/google-button';
 import { ConfigNotice } from '@/components/setup/config-notice';
+import { googleAuthEnabled } from '@/lib/env';
 import { routes } from '@/lib/routes';
 import { SignUpForm } from '../forms';
 
@@ -16,6 +18,12 @@ export default function SignUpPage() {
         </p>
       </div>
       <ConfigNotice />
+      {googleAuthEnabled ? (
+        <>
+          <GoogleButton label="Criar conta com Google" />
+          <AuthDivider />
+        </>
+      ) : null}
       <SignUpForm />
       <p className="text-center text-sm text-fg-muted">
         Já tem conta?{' '}

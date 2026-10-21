@@ -24,3 +24,9 @@ export function siteUrl(): string {
   const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   return (raw && raw.length > 0 ? raw : 'http://localhost:3000').replace(/\/+$/, '');
 }
+
+/**
+ * Login com Google ligado? Só depois de configurar o provedor Google no Supabase
+ * (deploy/supabase/config.toml) e definir NEXT_PUBLIC_AUTH_GOOGLE=on na Vercel.
+ */
+export const googleAuthEnabled = process.env.NEXT_PUBLIC_AUTH_GOOGLE?.trim() === 'on';

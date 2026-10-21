@@ -193,6 +193,13 @@ permissão de escrita direta). O banco recusa (`CVLVL`) a ficha de um jogador cu
 do liberado. Enquanto há nível liberado pendente, o dono pode salvar a ficha e criar habilidades
 mesmo com a edição de fichas bloqueada pela campanha.
 
+## Login com Google (2026-10-21)
+
+- OAuth pelo Supabase; o retorno só segue para caminhos internos (`safeRedirectPath`). O segredo
+  do cliente Google nunca vai para arquivos: o `config.toml` usa `env(...)`.
+- App em PKCE: o código que volta por `codexveil://google` só vale com o verificador guardado no
+  próprio aparelho.
+
 ## Grade da sessão (2026-10-21)
 
 - **Mapas:** o mestre vê e edita todos; jogadores recebem do banco só o mapa ativo da campanha

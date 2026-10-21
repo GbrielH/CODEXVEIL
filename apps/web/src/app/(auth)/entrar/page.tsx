@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { AuthDivider, GoogleButton } from '@/components/auth/google-button';
 import { ConfigNotice } from '@/components/setup/config-notice';
+import { googleAuthEnabled } from '@/lib/env';
 import { routes } from '@/lib/routes';
 import { SignInForm } from '../forms';
 
@@ -18,6 +20,12 @@ export default async function SignInPage({ searchParams }: PageProps<'/entrar'>)
         <p className="mt-1 text-sm text-fg-muted">Bem-vindo de volta ao seu grimório.</p>
       </div>
       <ConfigNotice />
+      {googleAuthEnabled ? (
+        <>
+          <GoogleButton next={next} />
+          <AuthDivider />
+        </>
+      ) : null}
       <SignInForm next={next} sessionExpired={sessionExpired} />
       <p className="text-center text-sm text-fg-muted">
         Ainda não tem conta?{' '}

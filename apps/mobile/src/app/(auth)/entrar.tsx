@@ -3,6 +3,7 @@ import { fieldErrorsFrom, signInSchema, type FieldErrors } from '@codexveil/vali
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
+import { GoogleSignInButton } from '@/components/auth/google-button';
 import { Wordmark } from '@/components/brand/emblem';
 import { ConfigNotice } from '@/components/config-notice';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,7 @@ export default function SignInScreen() {
           message="Sua sessão terminou. Entre novamente para continuar."
         />
       ) : null}
+      <GoogleSignInButton />
       <Card ornate>
         <AppText variant="heading" accessibilityRole="header">
           Entrar
