@@ -430,6 +430,12 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-21 — mapa: avisos de onde entram os tokens
+
+- No cartão "Mapa da sessão", a área "Adicionar ao mapa" explica de onde vêm os tokens e avisa
+  quando não há personagens de jogadores na campanha ou criaturas na biblioteca (antes só
+  aparecia o marcador, sem explicação). O mestre não tem token próprio. Verificado: typecheck e lint.
+
 ### 2026-10-21 — login com Google (código pronto, aguardando as credenciais)
 
 - Site: "Entrar com Google" e "Criar conta com Google" (retorno por `/auth/confirmar`). App: o

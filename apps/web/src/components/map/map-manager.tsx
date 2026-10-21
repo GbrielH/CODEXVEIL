@@ -407,6 +407,14 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
 
                 <section className="flex flex-col gap-2" aria-label="Adicionar tokens">
                   <p className="eyebrow">Adicionar ao mapa</p>
+                  <p className="text-xs text-fg-muted">
+                    Personagens dos jogadores, criaturas da biblioteca e marcadores. Cada um entra no centro do mapa; arraste para o lugar.
+                  </p>
+                  {characters.length === 0 ? (
+                    <p className="text-xs text-fg-muted">Nenhum personagem de jogador na campanha ainda: eles aparecem aqui quando cada jogador vincula o personagem.</p>
+                  ) : characters.every((character) => onMap.has(character.id)) ? (
+                    <p className="text-xs text-fg-muted">Todos os personagens já estão no mapa.</p>
+                  ) : null}
                   <div className="flex flex-wrap gap-1.5">
                     {characters.filter((character) => !onMap.has(character.id)).map((character) => (
                       <Button key={character.id} size="sm" variant="secondary" icon={<Plus className="h-3.5 w-3.5" aria-hidden="true" />} onClick={() => void addToken({ kind: 'character', characterId: character.id, label: character.name, size: 'medium' })}>
@@ -414,6 +422,9 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
                       </Button>
                     ))}
                   </div>
+                  {creatures.length === 0 ? (
+                    <p className="text-xs text-fg-muted">Sem criaturas na biblioteca: crie monstros e NPCs na aba Biblioteca para colocá-los aqui.</p>
+                  ) : null}
                   {creatures.length ? (
                     <SelectField
                       id={`${id}-criatura`}
