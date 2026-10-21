@@ -879,6 +879,7 @@ export type Database = {
           image_path: string | null;
           kind: Database['public']['Enums']['creature_kind'];
           name: string;
+          size: string;
           subtitle: string;
           updated_at: string;
           visibility: Database['public']['Enums']['content_visibility'];
@@ -892,6 +893,7 @@ export type Database = {
           image_path?: string | null;
           kind: Database['public']['Enums']['creature_kind'];
           name: string;
+          size?: string;
           subtitle?: string;
           updated_at?: string;
           visibility?: Database['public']['Enums']['content_visibility'];
@@ -905,6 +907,7 @@ export type Database = {
           image_path?: string | null;
           kind?: Database['public']['Enums']['creature_kind'];
           name?: string;
+          size?: string;
           subtitle?: string;
           updated_at?: string;
           visibility?: Database['public']['Enums']['content_visibility'];

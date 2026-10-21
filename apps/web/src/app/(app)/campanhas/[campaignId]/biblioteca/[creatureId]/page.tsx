@@ -101,7 +101,9 @@ export default async function CreaturePage({ params }: Props) {
               visibility: creature.visibility,
               imagePath: creature.imagePath,
               imageUrl,
+              size: creature.size,
             }}
+            systemId={campaign.systemId}
             gm={{ notes: creature.gm.notes, secrets: creature.gm.secrets }}
             statBlock={campaign.systemId === 'dnd5e' ? (statBlock ?? parseDnd5eStatBlock({})) : null}
           />

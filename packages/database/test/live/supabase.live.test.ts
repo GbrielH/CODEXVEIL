@@ -314,6 +314,7 @@ describe.skipIf(!live)('Supabase real (integração)', () => {
       subtitle: '',
       description: '',
       visibility: 'gm',
+      size: 'medium',
     });
     await updateCreatureGmData(gm.client, hiddenCreatureId, {
       stats: {},
@@ -333,6 +334,7 @@ describe.skipIf(!live)('Supabase real (integração)', () => {
       subtitle: '',
       description: '',
       visibility: 'gm',
+      size: 'large',
     });
     await setCreatureVisibility(gm.client, revealedId, 'members');
     const seen = await getCreature(player.client, revealedId, true);

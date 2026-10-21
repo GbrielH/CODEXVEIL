@@ -272,6 +272,27 @@ describe('biblioteca de NPCs e monstros', () => {
   });
 });
 
+describe('tamanho das criaturas (token da grade)', () => {
+  it('nasce com o porte escolhido, o bloco do mestre recebe o porte e o D&D sincroniza', async () => {
+    const { gm, player, campaign } = await createTable(db);
+    const dragon = await db.as(gm, (s) =>
+      s.one<{ id: string; size: string }>(
+        `insert into public.creatures (campaign_id, kind, name, size, visibility) values ($1, 'monster', 'Dragão', 'huge', 'members') returning id, size`,
+        [campaign.id],
+      ),
+    );
+    expect(dragon.size).toBe('huge');
+    const stats = await db.as(gm, (s) => s.one<{ size: string }>(`select stats ->> 'size' as size from public.creature_gm_data where creature_id = $1`, [dragon.id]));
+    expect(stats.size).toBe('huge');
+    await db.as(gm, (s) => s.query(`update public.creature_gm_data set stats = jsonb_set(stats, '{size}', '"gargantuan"') where creature_id = $1`, [dragon.id]));
+    const seen = await db.as(player, (s) => s.one<{ size: string }>(`select size from public.creatures where id = $1`, [dragon.id]));
+    expect(seen.size).toBe('gargantuan');
+    const goblin = await db.as(gm, (s) => s.one<{ size: string }>(`insert into public.creatures (campaign_id, kind, name) values ($1, 'monster', 'Goblin') returning size`, [campaign.id]));
+    expect(goblin.size).toBe('medium');
+    await expectSqlError(db.as(gm, (s) => s.query(`insert into public.creatures (campaign_id, kind, name, size) values ($1, 'monster', 'X', 'enorme')`, [campaign.id])), '23514');
+  });
+});
+
 describe('cena e combate', () => {
   async function setupScene() {
     const table = await createTable(db);

@@ -25,6 +25,7 @@ import {
   IMAGE_EXTENSIONS,
   type FieldErrors,
 } from '@codexveil/validation';
+import { TOKEN_SIZES, tokenSizeLabels, type TokenSize } from '@codexveil/domain';
 import { ImageUp, Lock, Plus, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useId, useRef, useState } from 'react';
@@ -52,17 +53,31 @@ interface CreatureEditorProps {
     visibility: 'members' | 'gm';
     imagePath: string | null;
     imageUrl: string | null;
+    /** Porte (tamanho do token na grade). */
+    size: TokenSize;
   };
+  systemId: string;
   gm: { notes: string; secrets: string };
   /** `null` quando o sistema da campanha não tem bloco de estatísticas na interface. */
   statBlock: Dnd5eStatBlock | null;
 }
 
-export function CreatureEditor({ campaignId, creature, gm, statBlock }: CreatureEditorProps) {
+export function CreatureEditor({
+  campaignId,
+  creature,
+  gm,
+  statBlock,
+  systemId,
+}: CreatureEditorProps) {
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <div className="flex flex-col gap-6">
-        <ProfileCard campaignId={campaignId} creature={creature} />
+        <ProfileCard
+          campaignId={campaignId}
+          creature={creature}
+          systemId={systemId}
+          sizeInStats={statBlock !== null}
+        />
         <DangerCard campaignId={campaignId} creatureId={creature.id} name={creature.name} />
       </div>
       <GmDataCard creatureId={creature.id} name={creature.name} gm={gm} statBlock={statBlock} />
@@ -73,7 +88,13 @@ export function CreatureEditor({ campaignId, creature, gm, statBlock }: Creature
 function ProfileCard({
   campaignId,
   creature,
-}: Pick<CreatureEditorProps, 'campaignId' | 'creature'>) {
+  systemId,
+  sizeInStats,
+}: Pick<CreatureEditorProps, 'campaignId' | 'creature' | 'systemId'> & {
+  /** D&D: o porte é editado no bloco de estatísticas (que atualiza o token sozinho). */
+  sizeInStats: boolean;
+}) {
+  const sizeLabels = tokenSizeLabels(systemId);
   const router = useRouter();
   const { toast } = useToast();
   const id = useId();
@@ -83,6 +104,7 @@ function ProfileCard({
     subtitle: creature.subtitle,
     description: creature.description,
     revealed: creature.visibility === 'members',
+    size: creature.size,
   });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
@@ -206,6 +228,29 @@ function ProfileCard({
             error={errors.subtitle}
           />
         </div>
+        {sizeInStats ? (
+          <p className="text-xs text-fg-muted">
+            Tamanho: <strong className="text-fg">{sizeLabels[creature.size]}</strong> (defina no
+            bloco de estatísticas; ele define o tamanho do token na grade).
+          </p>
+        ) : (
+          <SelectField
+            id={`${id}-size`}
+            label="Tamanho"
+            value={form.size}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, size: event.target.value as TokenSize }))
+            }
+            hint="Tamanho do token na grade da sessão (cada quadrado = 1,5 m)."
+            error={errors.size}
+          >
+            {TOKEN_SIZES.map((size) => (
+              <option key={size} value={size}>
+                {sizeLabels[size]}
+              </option>
+            ))}
+          </SelectField>
+        )}
         <TextareaField
           id={`${id}-description`}
           label="Descrição"

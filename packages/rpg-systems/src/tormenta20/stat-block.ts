@@ -45,3 +45,14 @@ export function createDefaultT20StatBlock(): T20StatBlock {
 export function parseT20StatBlock(data: unknown): T20StatBlock {
   return t20StatBlockSchema.parse(data ?? {});
 }
+
+/** Porte de uma ameaça a partir do texto de tipo ("Monstro Grande" → large). */
+export function t20SizeFromType(type: string): 'tiny' | 'small' | 'medium' | 'large' | 'huge' | 'gargantuan' {
+  const text = type.toLowerCase();
+  if (text.includes('colossal')) return 'gargantuan';
+  if (text.includes('enorme')) return 'huge';
+  if (text.includes('grande')) return 'large';
+  if (text.includes('pequeno')) return 'small';
+  if (/min[uú]sculo/.test(text)) return 'tiny';
+  return 'medium';
+}

@@ -1,4 +1,4 @@
-import { CONTENT_VISIBILITIES, ITEM_CATEGORIES, SHARED_VISIBILITIES } from '@codexveil/domain';
+import { CONTENT_VISIBILITIES, ITEM_CATEGORIES, SHARED_VISIBILITIES, TOKEN_SIZES } from '@codexveil/domain';
 import { z } from 'zod';
 import { optionalText, requiredText } from './common';
 
@@ -17,6 +17,8 @@ export const creatureSchema = z.object({
   subtitle: optionalText(80),
   description: optionalText(4000),
   visibility: z.enum(SHARED_VISIBILITIES).default('gm'),
+  /** Porte (tamanho do token na grade da sessão). */
+  size: z.enum(TOKEN_SIZES, { message: 'Escolha o tamanho da criatura.' }),
 });
 export type CreatureInput = z.input<typeof creatureSchema>;
 export type CreatureData = z.output<typeof creatureSchema>;

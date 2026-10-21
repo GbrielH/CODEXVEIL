@@ -32,6 +32,7 @@ export async function createCreatureAction(
   if (!uuidSchema.safeParse(campaignId).success) return { status: 'error', message: 'Requisição inválida.' };
   const raw = {
     kind: readText(formData, 'kind'),
+    size: readText(formData, 'size'),
     name: readText(formData, 'name'),
     subtitle: readText(formData, 'subtitle'),
     description: '',
@@ -39,14 +40,14 @@ export async function createCreatureAction(
   };
   const parsed = creatureSchema.safeParse(raw);
   if (!parsed.success) {
-    return { status: 'error', fieldErrors: fieldErrorsFrom(parsed.error), values: { name: raw.name, subtitle: raw.subtitle, kind: raw.kind } };
+    return { status: 'error', fieldErrors: fieldErrorsFrom(parsed.error), values: { name: raw.name, subtitle: raw.subtitle, kind: raw.kind, size: raw.size } };
   }
   let creatureId: string;
   try {
     const supabase = await createSupabaseServerClient();
     creatureId = await createCreature(supabase, campaignId, parsed.data);
   } catch (error) {
-    return { status: 'error', message: failureMessage(error), values: { name: raw.name, subtitle: raw.subtitle, kind: raw.kind } };
+    return { status: 'error', message: failureMessage(error), values: { name: raw.name, subtitle: raw.subtitle, kind: raw.kind, size: raw.size } };
   }
   revalidatePath(campaignPath(campaignId, '/biblioteca'));
   redirect(campaignPath(campaignId, `/biblioteca/${creatureId}`) as Route);
@@ -76,15 +77,17 @@ export async function importSrdMonsterAction(campaignId: string, slug: string, k
   let creatureId: string;
   try {
     const supabase = await createSupabaseServerClient();
+    const stats = srdMonsterToStatBlock(monster);
     creatureId = await createCreature(supabase, campaignId, {
       kind,
       name: monster.namePt.slice(0, 80),
       subtitle: 'SRD 5.2.1',
       description: '',
       visibility: 'gm',
+      size: stats.size,
     });
     await updateCreatureGmData(supabase, creatureId, {
-      stats: srdMonsterToStatBlock(monster),
+      stats,
       notes: 'Copiado do SRD 5.2.1 (CC-BY-4.0). Ações e traços com o texto original, em inglês.',
       secrets: '',
     });

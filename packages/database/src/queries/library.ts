@@ -5,7 +5,7 @@
  * Estatísticas, observações e segredos ficam em `creature_gm_data`, que o RLS entrega
  * apenas a mestres — jogadores nunca recebem esses dados, nem por engano da interface.
  */
-import { AppError, type SharedVisibility } from '@codexveil/domain';
+import { AppError, isTokenSize, type SharedVisibility, type TokenSize } from '@codexveil/domain';
 import type { CreatureData, CreatureKind } from '@codexveil/validation';
 import type { CodexveilClient } from '../client';
 import { toAppError } from '../errors';
@@ -20,6 +20,8 @@ export interface CreatureSummary {
   description: string;
   imagePath: string | null;
   visibility: SharedVisibility;
+  /** Porte: tamanho do token na grade da sessão. */
+  size: TokenSize;
   updatedAt: string;
 }
 
@@ -36,7 +38,7 @@ export interface CreatureDetail extends CreatureSummary {
 }
 
 const CREATURE_COLUMNS =
-  'id, campaign_id, kind, name, subtitle, description, image_path, visibility, updated_at' as const;
+  'id, campaign_id, kind, name, subtitle, description, image_path, visibility, size, updated_at' as const;
 
 type CreatureRow = Pick<
   Tables<'creatures'>,
@@ -48,6 +50,7 @@ type CreatureRow = Pick<
   | 'description'
   | 'image_path'
   | 'visibility'
+  | 'size'
   | 'updated_at'
 >;
 
@@ -61,6 +64,7 @@ function toCreatureSummary(row: CreatureRow): CreatureSummary {
     description: row.description,
     imagePath: row.image_path,
     visibility: row.visibility === 'members' ? 'members' : 'gm',
+    size: isTokenSize(row.size) ? row.size : 'medium',
     updatedAt: row.updated_at,
   };
 }
@@ -132,6 +136,7 @@ export async function createCreature(
       subtitle: input.subtitle,
       description: input.description,
       visibility: input.visibility,
+      size: input.size,
     })
     .select('id')
     .single();
@@ -151,6 +156,7 @@ export async function updateCreature(
       subtitle: input.subtitle,
       description: input.description,
       visibility: input.visibility,
+      size: input.size,
     })
     .eq('id', creatureId)
     .select('id');

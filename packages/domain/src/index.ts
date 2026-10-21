@@ -9,4 +9,5 @@ export * from './plans';
 export * from './errors';
 export * from './combat/dice';
 export * from './combat/dice-colors';
+export * from './combat/token-size';
 export * from './characters/image-prompt';

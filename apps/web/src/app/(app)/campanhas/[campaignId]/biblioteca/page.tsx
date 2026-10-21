@@ -113,7 +113,7 @@ export default async function LibraryPage({ params, searchParams }: PageProps<'/
           <aside>
             <Card ornate>
               <CardHeader title="Novo registro" description="Estatísticas e segredos são preenchidos na página do registro." />
-              <NewCreatureForm campaignId={campaign.id} defaultKind={kind ?? 'npc'} />
+              <NewCreatureForm campaignId={campaign.id} systemId={campaign.systemId} defaultKind={kind ?? 'npc'} />
             </Card>
           </aside>
         ) : null}

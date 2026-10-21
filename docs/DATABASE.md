@@ -166,6 +166,11 @@ Migração `20261018120000_gameplay_turns.sql`:
 - Índices únicos `characters_one_per_player_idx` e `campaign_notes_one_pinned_idx` (duplicatas
   antigas são desvinculadas/desafixadas antes).
 
+Migração `20261021100000_creature_size.sql` (+ `20261021100100_creature_size_grants.sql`):
+`creatures.size` (`tiny`…`gargantuan`, padrão `medium`), lido pela grade da sessão; o bloco do
+mestre nasce com o porte e, no D&D, mudar `stats.size` atualiza `creatures.size` (gatilho
+`creature_gm_data_sync_size`).
+
 Migração `20261020180000_dice_color_per_session.sql`: gatilho `sessions_reset_dice_colors` apaga
 `campaign_members.dice_color` da campanha quando uma sessão começa ou termina.
 

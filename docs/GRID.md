@@ -1,6 +1,6 @@
 # Grade da sessão (mapa tático) — especificação
 
-Status: **definida em 2026-10-20, ainda não implementada.** Este documento registra as decisões do
+Status: **em implementação** (passo 1 concluído em 2026-10-21). Este documento registra as decisões do
 responsável e o plano técnico, para a implementação seguir sem novas perguntas.
 
 ## Decisões do responsável

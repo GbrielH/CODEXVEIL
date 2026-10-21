@@ -430,6 +430,16 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-21 — grade, passo 1: tamanho das criaturas
+
+- `creatures.size` (porte = tamanho do token): obrigatório ao criar NPC/monstro no site, com os
+  nomes de cada sistema (D&D: Miúdo…Imenso; T20: Minúsculo…Colossal). D&D edita o porte no bloco
+  de estatísticas (gatilho sincroniza); T20 no perfil. Importações (SRD, livros D&D e T20) já
+  gravam o porte. Registros antigos receberam o porte do bloco (D&D) ou do texto de tipo (T20).
+- Migrações `20261021100000_creature_size.sql` e `20261021100100_creature_size_grants.sql`
+  (a segunda libera a coluna nas permissões por coluna; achado pelo teste novo) aplicadas.
+- Verificado: `pnpm check` 20/20 (banco 143 testes, com teste novo do porte) e `pnpm build`.
+
 ### 2026-10-20 — especificação da grade da sessão
 
 - Decisões do responsável registradas em [`GRID.md`](GRID.md): quadrados de 1,5 m, imagem ajustada
