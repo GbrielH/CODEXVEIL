@@ -7,7 +7,11 @@ import {
   createSessionMap,
   deleteMapToken,
   deleteSessionMap,
+  getCampaignTurn,
+  getMapFollowsTurn,
   getMapSecrets,
+  mapsWithCharacter,
+  setMapFollowsTurn,
   listCampaignMaps,
   saveMapSecrets,
   setActiveMap,
@@ -36,18 +40,20 @@ import {
   type WallStyle,
 } from '@codexveil/domain';
 import { IMAGE_EXTENSIONS } from '@codexveil/validation';
-import { CircleDot, Eraser, EyeOff, ImageUp, Map as MapIcon, Minus, MousePointer2, Pencil, Plus, Radio, Ruler, Square, SquareDashed, StickyNote, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
+import { CircleDot, Eraser, Expand, Shrink, EyeOff, ImageUp, Map as MapIcon, Minus, MousePointer2, Pencil, Plus, Radio, Ruler, Square, SquareDashed, StickyNote, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { CheckboxField, SelectField, TextField } from '@/components/ui/field';
 import { NumberInput } from '@/components/ui/number-input';
+import { Modal } from '@/components/ui/modal';
 import { LiveBadge } from '@/components/ui/save-status';
 import { useToast } from '@/components/ui/toast';
 import { cx } from '@/lib/cx';
 import { failureMessage } from '@/lib/client-errors';
 import { prepareImage } from '@/lib/images';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { useRealtimeRefresh } from '@/lib/use-realtime';
 import { MapBoard, type MapTool } from './map-board';
 import { useMapData } from './use-map-data';
 
@@ -119,6 +125,13 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   const [drawColor, setDrawColor] = useState<string>(DRAWING_COLORS[0]);
   const [drawSecret, setDrawSecret] = useState(false);
   const [secrets, setSecrets] = useState<MapDrawing[]>([]);
+  const [noteAt, setNoteAt] = useState<{ x: number; y: number } | null>(null);
+  const [noteText, setNoteText] = useState('');
+  const [fullscreen, setFullscreen] = useState(false);
+  const boardAreaRef = useRef<HTMLDivElement>(null);
+  /** Novos tokens entram ocultos? (por padrão sim enquanto o mapa não está sendo mostrado). */
+  const [addHiddenChoice, setAddHiddenChoice] = useState<boolean | null>(null);
+  const [followsTurn, setFollowsTurn] = useState(true);
   const saveTimer = useRef<number | null>(null);
   const pendingPatch = useRef<{ mapId: string; patch: SessionMapPatch } | null>(null);
   const tokenInputRef = useRef<HTMLInputElement>(null);
@@ -321,8 +334,16 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
     if (!map) return;
     setBusy(true);
     try {
-      await setActiveMap(getSupabaseBrowserClient(), campaignId, map.isActive ? null : map.id);
-      toast({ tone: 'success', title: map.isActive ? 'Mapa escondido dos jogadores.' : 'Mapa ativo: os jogadores já estão vendo.' });
+      const client = getSupabaseBrowserClient();
+      await setActiveMap(client, campaignId, map.isActive ? null : map.id);
+      // Posições iniciais: os tokens dos jogadores preparados ocultos aparecem ao mostrar o mapa.
+      const prepared = map.isActive ? [] : tokens.filter((entry) => entry.kind === 'character' && entry.isHidden);
+      await Promise.all(prepared.map((entry) => updateMapToken(client, entry.id, { isHidden: false })));
+      toast({
+        tone: 'success',
+        title: map.isActive ? 'Mapa escondido dos jogadores.' : 'Mapa ativo: os jogadores já estão vendo.',
+        description: prepared.length ? `${prepared.length} ${prepared.length === 1 ? 'personagem apareceu' : 'personagens apareceram'} na posição que você marcou.` : undefined,
+      });
       await reloadMaps();
       reload();
     } catch (error) {
@@ -348,21 +369,73 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
     }
   };
 
+  // Evita o mesmo token entrar duas vezes num clique só (a lista pode avisar a escolha duas vezes).
+  const adding = useRef<string | null>(null);
   const addToken = async (input: { kind: MapToken['kind']; characterId?: string; creatureId?: string; label: string; size: TokenSize; isHidden?: boolean }) => {
     if (!map) return;
+    const key = `${input.kind}:${input.characterId ?? input.creatureId ?? input.label}`;
+    if (adding.current === key) return;
+    adding.current = key;
     // Começa no centro do mapa; o mestre arrasta para o lugar.
     const side = tokenSizeSquares[input.size];
     const x = Math.max(0, Math.floor((map.cols - side) / 2));
     const y = Math.max(0, Math.floor((map.rows - side) / 2));
     try {
-      await addMapToken(getSupabaseBrowserClient(), { mapId: map.id, campaignId, ...input, x, y });
+      await addMapToken(getSupabaseBrowserClient(), { mapId: map.id, campaignId, ...input, isHidden: input.isHidden ?? addHidden, x, y });
       reload();
     } catch (error) {
       fail('O token não foi adicionado', error);
+    } finally {
+      adding.current = null;
     }
   };
 
   const token = tokens.find((entry) => entry.id === selectedToken) ?? null;
+  const addHidden = addHiddenChoice ?? !map?.isActive;
+
+  // Tela cheia do tabuleiro (botão e tecla Esc do navegador).
+  useEffect(() => {
+    const sync = () => setFullscreen(document.fullscreenElement === boardAreaRef.current && boardAreaRef.current !== null);
+    document.addEventListener('fullscreenchange', sync);
+    return () => document.removeEventListener('fullscreenchange', sync);
+  }, []);
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void boardAreaRef.current?.requestFullscreen();
+  };
+
+  // Em combate, o mapa mostrado segue o personagem da vez (opção da campanha).
+  useEffect(() => {
+    let active = true;
+    getMapFollowsTurn(getSupabaseBrowserClient(), campaignId)
+      .then((value) => {
+        if (active) setFollowsTurn(value);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [campaignId]);
+  const lastTurnCharacter = useRef<string | null>(null);
+  const followTurn = useCallback(async () => {
+    if (!followsTurn || !canManage) return;
+    const client = getSupabaseBrowserClient();
+    const turn = await getCampaignTurn(client, campaignId).catch(() => null);
+    const characterId = turn && turn.status === 'active' ? turn.activeCharacterId : null;
+    if (!characterId || characterId === lastTurnCharacter.current) return;
+    lastTurnCharacter.current = characterId;
+    const mapIds = await mapsWithCharacter(client, campaignId, characterId).catch(() => [] as string[]);
+    if (mapIds.length === 0) return;
+    const current = maps.find((entry) => entry.isActive);
+    // Entre vários mapas com o personagem, prefere os da mesma sessão do mapa mostrado.
+    const target = mapIds.find((id) => maps.find((entry) => entry.id === id)?.sessionId === current?.sessionId) ?? mapIds[0]!;
+    if (current?.id === target) return;
+    await setActiveMap(client, campaignId, target);
+    setSelectedId(target);
+    await reloadMaps();
+  }, [followsTurn, canManage, campaignId, maps, reloadMaps]);
+  useRealtimeRefresh(`mapa-turno:${campaignId}`, [{ table: 'campaign_turns', filter: `campaign_id=eq.${campaignId}` }], () => void followTurn(), followsTurn && canManage);
+
   const onMap = new Set(tokens.map((entry) => entry.characterId).filter(Boolean));
 
   return (
@@ -614,7 +687,17 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
           {tool === 'reveal' || tool === 'hide' ? <p className="text-xs text-fg-muted">Arraste sobre os quadrados para {tool === 'reveal' ? 'revelar' : 'cobrir'} a área.</p> : null}
 
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
-            <div className="max-h-[75vh] overflow-auto rounded-md border border-line">
+            <div ref={boardAreaRef} className={cx('relative bg-canvas', fullscreen && 'p-2')}>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="absolute top-2 right-2 z-10 shadow"
+              icon={fullscreen ? <Shrink className="h-4 w-4" aria-hidden="true" /> : <Expand className="h-4 w-4" aria-hidden="true" />}
+              onClick={toggleFullscreen}
+            >
+              {fullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
+            </Button>
+            <div className={cx('overflow-auto rounded-md border border-line', fullscreen ? 'h-[calc(100vh-1rem)]' : 'h-[calc(100vh-14rem)] min-h-[28rem]')}>
               <MapBoard
                 systemId={systemId}
                 map={map}
@@ -641,10 +724,15 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                 secretDrawings={secrets}
                 onAddArea={(shape) => patchMap({ areas: [...map.areas, shape] })}
                 onAddDrawing={addDrawing}
+                onRequestNote={(point) => {
+                  setNoteText('');
+                  setNoteAt(point);
+                }}
                 onRemoveDrawing={(index, secret) =>
                   secret ? saveSecrets(secrets.filter((_, position) => position !== index)) : patchMap({ drawings: map.drawings.filter((_, position) => position !== index) })
                 }
               />
+            </div>
             </div>
 
             {canManage ? (
@@ -704,6 +792,13 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
 
                 <section className="flex flex-col gap-2" aria-label="Adicionar tokens">
                   <p className="eyebrow">Adicionar ao mapa</p>
+                  <CheckboxField
+                    id={`${id}-entrar-oculto`}
+                    label="Entrar oculto (só você vê)"
+                    description="Bom para preparar posições: os personagens aparecem quando você mostrar o mapa."
+                    checked={addHidden}
+                    onChange={(event) => setAddHiddenChoice(event.target.checked)}
+                  />
                   <p className="text-xs text-fg-muted">
                     Personagens dos jogadores, criaturas da biblioteca e marcadores. Cada um entra no centro do mapa; arraste para o lugar.
                   </p>
@@ -725,11 +820,11 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                   {creatures.length ? (
                     <SelectField
                       id={`${id}-criatura`}
-                      label="Criatura da biblioteca (entra oculta)"
+                      label="Criatura da biblioteca"
                       value=""
                       onChange={(event) => {
                         const creature = creatures.find((entry) => entry.id === event.target.value);
-                        if (creature) void addToken({ kind: 'creature', creatureId: creature.id, label: creature.name, size: creature.size, isHidden: true });
+                        if (creature) void addToken({ kind: 'creature', creatureId: creature.id, label: creature.name, size: creature.size });
                       }}
                     >
                       <option value="">Escolha…</option>
@@ -755,6 +850,18 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                     </Button>
                   </div>
                 </section>
+                <CheckboxField
+                  id={`${id}-segue-turno`}
+                  label="No combate, o mapa segue o turno"
+                  description="Na vez de cada personagem, os jogadores veem o mapa onde está o token dele. Desligado, você troca o mapa à mão."
+                  checked={followsTurn}
+                  onChange={(event) => {
+                    const value = event.target.checked;
+                    setFollowsTurn(value);
+                    lastTurnCharacter.current = null;
+                    setMapFollowsTurn(getSupabaseBrowserClient(), campaignId, value).catch((error: unknown) => fail('A opção não foi salva', error));
+                  }}
+                />
                 <p className={cx('flex items-center gap-1.5 text-xs text-fg-muted')}>
                   <EyeOff className="h-3.5 w-3.5" aria-hidden="true" /> Tokens ocultos aparecem translúcidos só para você.
                 </p>
@@ -765,6 +872,27 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
       ) : maps.length === 0 ? (
         <p className="mt-3 text-sm text-fg-muted">Nenhum mapa nesta sessão. Crie um, envie a imagem e ajuste a grade.</p>
       ) : null}
+      <Modal open={noteAt !== null} onClose={() => setNoteAt(null)} title="Nova anotação" description={drawSecret ? 'Só você vai ver esta anotação.' : 'Todos na mesa vão ver esta anotação.'}>
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const text = noteText.trim();
+            if (noteAt && text) addDrawing({ type: 'note', x: noteAt.x, y: noteAt.y, text: text.slice(0, 120), color: drawColor });
+            setNoteAt(null);
+          }}
+        >
+          <TextField id={`${id}-nota`} label="Texto da anotação" maxLength={120} autoFocus value={noteText} onChange={(event) => setNoteText(event.target.value)} placeholder="Ex.: Armadilha de fosso" />
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => setNoteAt(null)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={!noteText.trim()}>
+              Pôr no mapa
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </Card>
   );
 }

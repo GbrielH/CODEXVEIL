@@ -5,6 +5,7 @@
  * sistema (`parseBookPack` em `@codexveil/rpg-systems`). Aqui só há leitura e gravação. O RLS
  * deixa a mesa ler os livros que o dono liberou nas campanhas dele.
  */
+import { fixBookOrdinals, fixBookOrdinalsDeep } from '@codexveil/domain';
 import type { CodexveilClient } from '../client';
 import { toAppError } from '../errors';
 import type { Json, Tables } from '../types.gen';
@@ -124,7 +125,7 @@ export async function listBookEntries(client: CodexveilClient, packIds: readonly
       .order('key')
       .range(from, to),
   );
-  return rows.map((row) => ({ id: row.id, packId: row.pack_id, kind: row.kind, key: row.key, name: row.name, data: row.data, sortOrder: row.sort_order }));
+  return rows.map((row) => ({ id: row.id, packId: row.pack_id, kind: row.kind, key: row.key, name: fixBookOrdinals(row.name), data: fixBookOrdinalsDeep(row.data), sortOrder: row.sort_order }));
 }
 
 export interface BookEntryListing {
@@ -193,7 +194,7 @@ export async function getBookEntry(client: CodexveilClient, packId: string, kind
     .eq('key', key)
     .maybeSingle();
   if (error) throw toAppError(error);
-  return data ? { id: data.id, packId: data.pack_id, kind: data.kind, key: data.key, name: data.name, data: data.data, sortOrder: data.sort_order } : null;
+  return data ? { id: data.id, packId: data.pack_id, kind: data.kind, key: data.key, name: fixBookOrdinals(data.name), data: fixBookOrdinalsDeep(data.data), sortOrder: data.sort_order } : null;
 }
 
 // ----------------------------------------------------------------------------- Importação

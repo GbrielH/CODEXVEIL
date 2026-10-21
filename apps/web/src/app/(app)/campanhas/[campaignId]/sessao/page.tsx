@@ -62,7 +62,7 @@ export default async function SessionTabPage({ params }: PageProps<'/campanhas/[
   const ownCharacter = isGm ? null : (party.find((character) => character.ownerId === user.id) ?? null);
 
   return (
-    <article className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+    <article className={`mx-auto flex w-full flex-col gap-5 ${isGm ? 'max-w-none' : 'max-w-6xl'}`}>
       <header className="flex flex-wrap items-center gap-2 border-b border-line pb-4">
         <Badge tone="parchment">Sessão {session.number}</Badge>
         {isGm ? <Badge tone={session.status === 'in_progress' ? 'brand' : 'neutral'}>{sessionStatusLabels[session.status]}</Badge> : null}

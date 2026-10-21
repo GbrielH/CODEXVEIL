@@ -75,6 +75,8 @@ interface MapBoardProps {
   secretDrawings?: MapDrawing[];
   onAddArea?: (area: MapArea) => void;
   onAddDrawing?: (drawing: MapDrawing) => void;
+  /** Mestre clicou com a ferramenta "anotação": abre a janela do texto. */
+  onRequestNote?: (point: Point) => void;
   /** Apaga um desenho: índice na lista pública ou na secreta. */
   onRemoveDrawing?: (index: number, secret: boolean) => void;
 }
@@ -110,6 +112,7 @@ export function MapBoard({
   secretDrawings = [],
   onAddArea,
   onAddDrawing,
+  onRequestNote,
   onRemoveDrawing,
 }: MapBoardProps) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
@@ -223,8 +226,7 @@ export function MapBoard({
       return;
     }
     if (tool === 'note') {
-      const text = window.prompt('Texto da anotação')?.trim();
-      if (text) onAddDrawing?.({ type: 'note', x: point.x, y: point.y, text: text.slice(0, 120), color: drawColor });
+      onRequestNote?.(point);
       return;
     }
     if (tool === 'reveal' || tool === 'hide') {

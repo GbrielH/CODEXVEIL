@@ -430,6 +430,24 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-21 — mapa: tela cheia, posições iniciais, mapa segue o turno; ordinais dos livros
+
+- **Ordinais dos livros importados:** a extração do PDF trocava "º" e o artigo "o" por "0" ("atingir
+  0 30 nível", "magia de 20 nível"). Corrigido na leitura das entradas dos livros
+  (`fixBookOrdinals`, domínio, com testes), o que conserta também os livros já importados, no site
+  e no app.
+- **Anotação** abre uma janela no estilo do sistema (antes, a caixa do navegador).
+- **Tela cheia** do mapa (mestre e jogador) e mapa ocupando a altura da tela; a aba Sessão do
+  mestre usa toda a largura.
+- **"Entrar oculto"** ao adicionar qualquer token (ligado por padrão enquanto o mapa não está sendo
+  mostrado). **Posições iniciais:** ao clicar em "Mostrar aos jogadores", os tokens de personagens
+  preparados ocultos aparecem já no lugar marcado.
+- **Mapa segue o turno no combate** (opção da campanha, ligada por padrão; migração
+  `20261021160000_map_follows_turn.sql`): na vez de um personagem, o mapa onde está o token dele
+  passa a ser o mostrado. A troca é feita pela tela do mestre, que precisa estar aberta.
+- Proteção contra o mesmo token entrar duas vezes num clique só.
+- Verificado: `pnpm check` 20/20 e `pnpm build`. Não testado no navegador com duas contas.
+
 ### 2026-10-21 — roteiro "para liberar", mapas por sessão e várias imagens no mapa
 
 - Blocos do roteiro ganham "Para liberar na mesa": só os marcados aparecem em "Lore da sessão"; o

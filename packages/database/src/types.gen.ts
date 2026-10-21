@@ -409,6 +409,7 @@ export type Database = {
           default_turn_order: string;
           description: string;
           id: string;
+          map_follows_turn: boolean;
           name: string;
           owner_id: string;
           party_sheets_visible: boolean;
@@ -428,6 +429,7 @@ export type Database = {
           default_turn_order?: string;
           description?: string;
           id?: string;
+          map_follows_turn?: boolean;
           name: string;
           owner_id?: string;
           party_sheets_visible?: boolean;
@@ -447,6 +449,7 @@ export type Database = {
           default_turn_order?: string;
           description?: string;
           id?: string;
+          map_follows_turn?: boolean;
           name?: string;
           owner_id?: string;
           party_sheets_visible?: boolean;

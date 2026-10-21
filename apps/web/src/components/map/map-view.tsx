@@ -2,8 +2,8 @@
 
 import { moveMyToken } from '@codexveil/database';
 import { MAP_AREA_KINDS, type MapArea } from '@codexveil/domain';
-import { CircleDot, Map as MapIcon, MousePointer2, Ruler, ZoomIn, ZoomOut } from 'lucide-react';
-import { useState } from 'react';
+import { CircleDot, Expand, Map as MapIcon, MousePointer2, Ruler, Shrink, ZoomIn, ZoomOut } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { LiveBadge } from '@/components/ui/save-status';
@@ -21,6 +21,13 @@ export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: s
   const [tool, setTool] = useState<MapTool>('move');
   const [areaKind, setAreaKind] = useState<MapArea['kind']>('circle');
   const [localAreas, setLocalAreas] = useState<MapArea[]>([]);
+  const [fullscreen, setFullscreen] = useState(false);
+  const boardAreaRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const sync = () => setFullscreen(document.fullscreenElement !== null && document.fullscreenElement === boardAreaRef.current);
+    document.addEventListener('fullscreenchange', sync);
+    return () => document.removeEventListener('fullscreenchange', sync);
+  }, []);
   if (!loaded || !map) return null;
   const mine = tokens.some((token) => token.characterId !== null && token.characterId === myCharacterId);
 
@@ -69,7 +76,17 @@ export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: s
       </div>
       {tool === 'ruler' ? <p className="mb-2 text-xs text-fg-muted">Arraste de um quadrado a outro para medir.</p> : null}
       {tool === 'area' ? <p className="mb-2 text-xs text-fg-muted">Arraste a partir de um canto de quadrado. Só você vê as suas áreas (prévia para planejar a magia).</p> : null}
-      <div className="max-h-[75vh] overflow-auto rounded-md border border-line">
+      <div ref={boardAreaRef} className={fullscreen ? 'relative bg-canvas p-2' : 'relative'}>
+      <Button
+        size="sm"
+        variant="secondary"
+        className="absolute top-2 right-2 z-10 shadow"
+        icon={fullscreen ? <Shrink className="h-4 w-4" aria-hidden="true" /> : <Expand className="h-4 w-4" aria-hidden="true" />}
+        onClick={() => (document.fullscreenElement ? void document.exitFullscreen() : void boardAreaRef.current?.requestFullscreen())}
+      >
+        {fullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
+      </Button>
+      <div className={fullscreen ? 'h-[calc(100vh-1rem)] overflow-auto rounded-md border border-line' : 'h-[calc(100vh-14rem)] min-h-[24rem] overflow-auto rounded-md border border-line'}>
         <MapBoard
           systemId={systemId}
           map={map}
@@ -91,6 +108,7 @@ export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: s
             });
           }}
         />
+      </div>
       </div>
     </Card>
   );

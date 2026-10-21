@@ -14,3 +14,4 @@ export * from './combat/map-geometry';
 export * from './combat/wall-styles';
 export * from './combat/map-areas';
 export * from './characters/image-prompt';
+export * from './text/ordinals';

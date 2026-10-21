@@ -317,3 +317,23 @@ export async function moveMyToken(client: CodexveilClient, tokenId: string, x: n
   const { error } = await client.rpc('move_my_token', { p_token_id: tokenId, p_x: x, p_y: y });
   if (error) throw toAppError(error);
 }
+
+/** Em combate, o mapa mostrado acompanha de quem é a vez? (opção da campanha) */
+export async function getMapFollowsTurn(client: CodexveilClient, campaignId: string): Promise<boolean> {
+  const { data, error } = await client.from('campaigns').select('map_follows_turn').eq('id', campaignId).maybeSingle();
+  if (error) throw toAppError(error);
+  return data?.map_follows_turn ?? true;
+}
+
+export async function setMapFollowsTurn(client: CodexveilClient, campaignId: string, value: boolean): Promise<void> {
+  const { data, error } = await client.from('campaigns').update({ map_follows_turn: value }).eq('id', campaignId).select('id');
+  if (error) throw toAppError(error);
+  if (data.length === 0) throw new AppError('forbidden');
+}
+
+/** Mapas (da campanha) em que o personagem tem token: para seguir o turno no combate. */
+export async function mapsWithCharacter(client: CodexveilClient, campaignId: string, characterId: string): Promise<string[]> {
+  const { data, error } = await client.from('map_tokens').select('map_id').eq('campaign_id', campaignId).eq('character_id', characterId);
+  if (error) throw toAppError(error);
+  return [...new Set((data ?? []).map((row) => row.map_id))];
+}
