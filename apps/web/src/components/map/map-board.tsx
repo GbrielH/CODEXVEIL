@@ -1,13 +1,30 @@
 'use client';
 
 import type { MapToken, SessionMap, Wall } from '@codexveil/database';
-import { cellRect, fogCells, formatMeters, gridDistance, pointInPolygon, tokenSizeSquares, visibilityPolygon, wallBlocksSight, type GridRect, type Point, type WallStyle } from '@codexveil/domain';
+import {
+  areaCells,
+  areaOutline,
+  cellRect,
+  fogCells,
+  formatMeters,
+  gridDistance,
+  pointInPolygon,
+  snapMeters,
+  tokenSizeSquares,
+  visibilityPolygon,
+  wallBlocksSight,
+  type GridRect,
+  type MapArea,
+  type MapDrawing,
+  type Point,
+  type WallStyle,
+} from '@codexveil/domain';
 import { useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useCampaignColors } from '@/components/dice/campaign-colors';
 import { WallPatterns, WallShape } from './wall-art';
 
 /** Ferramenta do mestre no tabuleiro. */
-export type MapTool = 'move' | 'reveal' | 'hide' | 'wall' | 'erase-wall';
+export type MapTool = 'move' | 'ruler' | 'area' | 'reveal' | 'hide' | 'wall' | 'erase-wall' | 'draw' | 'note' | 'erase-drawing';
 
 const CELL = 40;
 const CREATURE_COLOR = '#571F2B';
@@ -41,6 +58,18 @@ interface MapBoardProps {
   onPaintFog?: (area: GridRect, reveal: boolean) => void;
   onAddWall?: (wall: Wall) => void;
   onRemoveWall?: (index: number) => void;
+  /** Forma da área de magia desenhada com a ferramenta "área". */
+  areaKind?: MapArea['kind'];
+  /** Cor dos desenhos e anotações. */
+  drawColor?: string;
+  /** Áreas só desta tela (prévia do jogador, não gravadas). */
+  localAreas?: MapArea[];
+  /** Desenhos e anotações só do mestre. */
+  secretDrawings?: MapDrawing[];
+  onAddArea?: (area: MapArea) => void;
+  onAddDrawing?: (drawing: MapDrawing) => void;
+  /** Apaga um desenho: índice na lista pública ou na secreta. */
+  onRemoveDrawing?: (index: number, secret: boolean) => void;
 }
 
 /**
@@ -64,6 +93,13 @@ export function MapBoard({
   onPaintFog,
   onAddWall,
   onRemoveWall,
+  areaKind = 'circle',
+  drawColor = '#f3e2b3',
+  localAreas = [],
+  secretDrawings = [],
+  onAddArea,
+  onAddDrawing,
+  onRemoveDrawing,
 }: MapBoardProps) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const colors = useCampaignColors();
@@ -72,6 +108,9 @@ export function MapBoard({
   const [area, setArea] = useState<{ start: Point; end: Point } | null>(null);
   const [wallStart, setWallStart] = useState<Point | null>(null);
   const [hover, setHover] = useState<Point | null>(null);
+  const [ruler, setRuler] = useState<{ start: Point; end: Point; active: boolean } | null>(null);
+  const [areaDraft, setAreaDraft] = useState<{ origin: Point; point: Point } | null>(null);
+  const [stroke, setStroke] = useState<[number, number][] | null>(null);
 
   // Rastro dos movimentos (de todos, inclusive vindos do tempo real): linha e distância por 6 s.
   const [lastTokens, setLastTokens] = useState(tokens);
@@ -132,9 +171,34 @@ export function MapBoard({
     return pointInPolygon({ x: token.x + side / 2, y: token.y + side / 2 }, sight);
   };
 
+  const center = (point: Point): Point => ({ x: Math.floor(point.x) + 0.5, y: Math.floor(point.y) + 0.5 });
+
   const onBoardDown = (event: ReactPointerEvent<SVGSVGElement>) => {
-    if (!isGm) return;
     const point = toGrid(event);
+    if (tool === 'ruler') {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      const cell = center(point);
+      setRuler({ start: cell, end: cell, active: true });
+      return;
+    }
+    if (tool === 'area') {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      // Círculo e cone partem de um canto de quadrado; a linha, do centro (pinta uma fileira só).
+      const origin = areaKind === 'line' ? center(point) : { x: Math.round(point.x), y: Math.round(point.y) };
+      setAreaDraft({ origin, point: origin });
+      return;
+    }
+    if (!isGm) return;
+    if (tool === 'draw') {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      setStroke([[point.x, point.y]]);
+      return;
+    }
+    if (tool === 'note') {
+      const text = window.prompt('Texto da anotação')?.trim();
+      if (text) onAddDrawing?.({ type: 'note', x: point.x, y: point.y, text: text.slice(0, 120), color: drawColor });
+      return;
+    }
     if (tool === 'reveal' || tool === 'hide') {
       event.currentTarget.setPointerCapture(event.pointerId);
       const cell = toCell(point);
@@ -153,12 +217,46 @@ export function MapBoard({
 
   const onBoardMove = (event: ReactPointerEvent<SVGSVGElement>) => {
     const point = toGrid(event);
+    if (ruler?.active) {
+      setRuler({ ...ruler, end: center(point) });
+      return;
+    }
+    if (areaDraft) {
+      setAreaDraft({ ...areaDraft, point });
+      return;
+    }
+    if (stroke) {
+      const last = stroke[stroke.length - 1]!;
+      if (Math.hypot(point.x - last[0], point.y - last[1]) > 0.15) setStroke([...stroke, [point.x, point.y]]);
+      return;
+    }
     if (drag) setDrag({ ...drag, x: point.x - drag.offsetX, y: point.y - drag.offsetY });
     else if (area) setArea({ ...area, end: toCell(point) });
     else if (tool === 'wall') setHover({ x: Math.round(point.x), y: Math.round(point.y) });
   };
 
+  const draftArea = (draft: { origin: Point; point: Point }): MapArea => {
+    const dx = draft.point.x - draft.origin.x;
+    const dy = draft.point.y - draft.origin.y;
+    const meters = snapMeters(Math.hypot(dx, dy) * 1.5);
+    const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+    return areaKind === 'circle'
+      ? { kind: 'circle', x: draft.origin.x, y: draft.origin.y, meters }
+      : { kind: areaKind, x: draft.origin.x, y: draft.origin.y, angle, meters };
+  };
+
   const onBoardUp = () => {
+    if (ruler?.active) setRuler({ ...ruler, active: false });
+    if (areaDraft) {
+      onAddArea?.(draftArea(areaDraft));
+      setAreaDraft(null);
+    }
+    if (stroke) {
+      if (stroke.length > 1) {
+        onAddDrawing?.({ type: 'path', points: stroke.map(([x, y]) => [Math.round(x * 100) / 100, Math.round(y * 100) / 100]), color: drawColor });
+      }
+      setStroke(null);
+    }
     if (drag) {
       const token = tokens.find((entry) => entry.id === drag.tokenId);
       if (token) {
@@ -180,6 +278,12 @@ export function MapBoard({
 
   const ordered = tokens.filter(visibleToMe).sort((a, b) => tokenSizeSquares[b.size] - tokenSizeSquares[a.size]);
   const preview = area ? cellRect(area.start, area.end, map.cols, map.rows) : null;
+  const shownAreas = [...map.areas.map((entry) => ({ area: entry, local: false })), ...localAreas.map((entry) => ({ area: entry, local: true }))];
+  if (areaDraft) shownAreas.push({ area: draftArea(areaDraft), local: true });
+  const drawingItems = [
+    ...map.drawings.map((drawing, index) => ({ drawing, index, secret: false })),
+    ...(isGm ? secretDrawings.map((drawing, index) => ({ drawing, index, secret: true })) : []),
+  ];
 
   return (
     <svg
@@ -220,6 +324,62 @@ export function MapBoard({
         />
       ) : null}
       {map.showGrid ? <rect x="0" y="0" width={map.cols} height={map.rows} fill={`url(#grade-${uid})`} /> : null}
+
+      {/* Áreas de magia: quadrados atingidos e contorno. */}
+      {shownAreas.map(({ area: shape, local }, index) => {
+        const cells = areaCells(shape, map.cols, map.rows);
+        const outline = areaOutline(shape)
+          .map((point) => `${point.x},${point.y}`)
+          .join(' ');
+        const color = shape.color ?? (local ? '#4fc3d9' : '#e8862a');
+        return (
+          <g key={`area-${index}`} style={{ pointerEvents: 'none' }}>
+            <path d={cells.map((cell) => `M${cell.x} ${cell.y}h1v1h-1z`).join('')} fill={color} opacity={0.28} />
+            <polygon points={outline} fill="none" stroke={color} strokeWidth={0.06} strokeDasharray={local ? '0.2 0.12' : undefined} />
+            <DistanceTag
+              x={shape.x}
+              y={shape.kind === 'circle' ? shape.y - shape.meters / 1.5 - 0.15 : shape.y - 0.2}
+              text={`${formatMeters(shape.meters)} · ${cells.length} quadr.`}
+            />
+          </g>
+        );
+      })}
+
+      {/* Desenhos e anotações (os secretos só o mestre vê, tracejados). */}
+      {drawingItems.map(({ drawing, index, secret }) => {
+        const erasing = tool === 'erase-drawing';
+        const onErase = (event: ReactPointerEvent) => {
+          event.stopPropagation();
+          onRemoveDrawing?.(index, secret);
+        };
+        if (drawing.type === 'path') {
+          const points = drawing.points.map(([x, y]) => `${x},${y}`).join(' ');
+          return (
+            <g key={`desenho-${secret ? 's' : 'p'}-${index}`} style={{ pointerEvents: erasing ? 'auto' : 'none', cursor: erasing ? 'pointer' : 'default' }} onPointerDown={erasing ? onErase : undefined}>
+              <polyline points={points} fill="none" stroke={drawing.color} strokeWidth={0.08} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={secret ? '0.25 0.12' : undefined} />
+              {erasing ? <polyline points={points} fill="none" stroke="rgba(224,64,64,0.25)" strokeWidth={0.4} /> : null}
+            </g>
+          );
+        }
+        const width = Math.max(1, drawing.text.length * 0.17 + 0.4);
+        return (
+          <g
+            key={`nota-${secret ? 's' : 'p'}-${index}`}
+            transform={`translate(${drawing.x} ${drawing.y})`}
+            style={{ pointerEvents: erasing ? 'auto' : 'none', cursor: erasing ? 'pointer' : 'default' }}
+            onPointerDown={erasing ? onErase : undefined}
+          >
+            <rect x={0} y={-0.25} width={width} height={0.5} rx={0.08} fill="rgba(20,16,12,0.88)" stroke={drawing.color} strokeWidth={0.04} strokeDasharray={secret ? '0.15 0.08' : undefined} />
+            <text x={0.2} y={0} dominantBaseline="central" fontSize={0.28} fill={drawing.color}>
+              {secret ? '🔒 ' : ''}
+              {drawing.text}
+            </text>
+          </g>
+        );
+      })}
+      {stroke && stroke.length > 1 ? (
+        <polyline points={stroke.map(([x, y]) => `${x},${y}`).join(' ')} fill="none" stroke={drawColor} strokeWidth={0.08} strokeLinecap="round" style={{ pointerEvents: 'none' }} />
+      ) : null}
 
       {/* Paredes desenhadas no estilo escolhido (todos veem; a invisível só o mestre). */}
       {map.walls.map((wall, index) => (
@@ -336,6 +496,18 @@ export function MapBoard({
             </g>
           ))
         : null}
+      {ruler && (ruler.start.x !== ruler.end.x || ruler.start.y !== ruler.end.y) ? (
+        <g style={{ pointerEvents: 'none' }}>
+          <line x1={ruler.start.x} y1={ruler.start.y} x2={ruler.end.x} y2={ruler.end.y} stroke="#4fc3d9" strokeWidth={0.07} />
+          <circle cx={ruler.start.x} cy={ruler.start.y} r={0.12} fill="#4fc3d9" />
+          <circle cx={ruler.end.x} cy={ruler.end.y} r={0.12} fill="#4fc3d9" />
+          <DistanceTag
+            x={ruler.end.x}
+            y={ruler.end.y - 0.25}
+            text={`${formatMeters(gridDistance(ruler.start, ruler.end, systemId).meters)} (${gridDistance(ruler.start, ruler.end, systemId).squares} quadr.)`}
+          />
+        </g>
+      ) : null}
       {isGm && tool === 'wall' && wallStart ? (
         <line x1={wallStart.x} y1={wallStart.y} x2={hover?.x ?? wallStart.x} y2={hover?.y ?? wallStart.y} stroke="#e04040" strokeWidth={0.08} strokeDasharray="0.2 0.15" />
       ) : null}

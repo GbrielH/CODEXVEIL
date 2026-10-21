@@ -3,7 +3,7 @@
  * jogadores recebem do banco só o mapa ativo e os tokens visíveis, e movem o próprio token por
  * `move_my_token`.
  */
-import { AppError, isTokenSize, isWallStyle, type TokenSize, type WallStyle } from '@codexveil/domain';
+import { AppError, isMapArea, isMapDrawing, isTokenSize, isWallStyle, type MapArea, type MapDrawing, type TokenSize, type WallStyle } from '@codexveil/domain';
 import type { CodexveilClient } from '../client';
 import { toAppError } from '../errors';
 import type { Json, Tables } from '../types.gen';
@@ -30,6 +30,12 @@ export interface SessionMap {
   lineOfSight: boolean;
   walls: Wall[];
   isActive: boolean;
+  /** A névoa se abre sozinha onde os tokens dos jogadores enxergam (calculado na tela do mestre). */
+  fogAutoReveal: boolean;
+  /** Áreas de magia colocadas pelo mestre (todos veem). */
+  areas: MapArea[];
+  /** Desenhos e anotações visíveis a todos. */
+  drawings: MapDrawing[];
 }
 
 export type MapTokenKind = 'character' | 'creature' | 'marker';
@@ -52,10 +58,10 @@ export interface MapToken {
 }
 
 const MAP_COLUMNS =
-  'id, campaign_id, session_id, name, image_path, image_scale, image_offset_x, image_offset_y, cols, rows, show_grid, fog_enabled, fog_revealed, line_of_sight, walls, is_active' as const;
+  'id, campaign_id, session_id, name, image_path, image_scale, image_offset_x, image_offset_y, cols, rows, show_grid, fog_enabled, fog_revealed, line_of_sight, walls, is_active, fog_auto_reveal, areas, drawings' as const;
 const TOKEN_COLUMNS = 'id, map_id, campaign_id, kind, character_id, creature_id, label, x, y, size, is_hidden, vision_radius, image_path' as const;
 
-type MapRow = Pick<Tables<'session_maps'>, 'id' | 'campaign_id' | 'session_id' | 'name' | 'image_path' | 'image_scale' | 'image_offset_x' | 'image_offset_y' | 'cols' | 'rows' | 'show_grid' | 'fog_enabled' | 'fog_revealed' | 'line_of_sight' | 'walls' | 'is_active'>;
+type MapRow = Pick<Tables<'session_maps'>, 'id' | 'campaign_id' | 'session_id' | 'name' | 'image_path' | 'image_scale' | 'image_offset_x' | 'image_offset_y' | 'cols' | 'rows' | 'show_grid' | 'fog_enabled' | 'fog_revealed' | 'line_of_sight' | 'walls' | 'is_active' | 'fog_auto_reveal' | 'areas' | 'drawings'>;
 type TokenRow = Pick<Tables<'map_tokens'>, 'id' | 'map_id' | 'campaign_id' | 'kind' | 'character_id' | 'creature_id' | 'label' | 'x' | 'y' | 'size' | 'is_hidden' | 'vision_radius' | 'image_path'>;
 
 function quads(value: Json): [number, number, number, number][] {
@@ -94,6 +100,9 @@ function toMap(row: MapRow): SessionMap {
     lineOfSight: row.line_of_sight,
     walls: walls(row.walls),
     isActive: row.is_active,
+    fogAutoReveal: row.fog_auto_reveal,
+    areas: Array.isArray(row.areas) ? row.areas.filter(isMapArea) : [],
+    drawings: Array.isArray(row.drawings) ? row.drawings.filter(isMapDrawing) : [],
   };
 }
 
@@ -150,7 +159,7 @@ export async function createSessionMap(client: CodexveilClient, input: { campaig
   return data.id;
 }
 
-export type SessionMapPatch = Partial<Pick<SessionMap, 'name' | 'imagePath' | 'imageScale' | 'imageOffsetX' | 'imageOffsetY' | 'cols' | 'rows' | 'showGrid' | 'fogEnabled' | 'fogRevealed' | 'lineOfSight' | 'walls'>>;
+export type SessionMapPatch = Partial<Pick<SessionMap, 'name' | 'imagePath' | 'imageScale' | 'imageOffsetX' | 'imageOffsetY' | 'cols' | 'rows' | 'showGrid' | 'fogEnabled' | 'fogRevealed' | 'lineOfSight' | 'walls' | 'fogAutoReveal' | 'areas' | 'drawings'>>;
 
 export async function updateSessionMap(client: CodexveilClient, mapId: string, patch: SessionMapPatch): Promise<void> {
   const update: Partial<Tables<'session_maps'>> = {};
@@ -166,6 +175,9 @@ export async function updateSessionMap(client: CodexveilClient, mapId: string, p
   if (patch.fogRevealed !== undefined) update.fog_revealed = patch.fogRevealed;
   if (patch.lineOfSight !== undefined) update.line_of_sight = patch.lineOfSight;
   if (patch.walls !== undefined) update.walls = patch.walls;
+  if (patch.fogAutoReveal !== undefined) update.fog_auto_reveal = patch.fogAutoReveal;
+  if (patch.areas !== undefined) update.areas = patch.areas;
+  if (patch.drawings !== undefined) update.drawings = patch.drawings;
   const { data, error } = await client.from('session_maps').update(update).eq('id', mapId).select('id');
   if (error) throw toAppError(error);
   if (data.length === 0) throw new AppError('forbidden');
@@ -256,6 +268,20 @@ export async function tokenImagePaths(client: CodexveilClient, tokens: readonly 
     if (path) result[token.id] = path;
   }
   return result;
+}
+
+/** Desenhos e anotações só do mestre (o banco não entrega aos jogadores). */
+export async function getMapSecrets(client: CodexveilClient, mapId: string): Promise<MapDrawing[]> {
+  const { data, error } = await client.from('session_map_secrets').select('drawings').eq('map_id', mapId).maybeSingle();
+  if (error) throw toAppError(error);
+  return data && Array.isArray(data.drawings) ? data.drawings.filter(isMapDrawing) : [];
+}
+
+export async function saveMapSecrets(client: CodexveilClient, mapId: string, campaignId: string, drawings: MapDrawing[]): Promise<void> {
+  const { error } = await client
+    .from('session_map_secrets')
+    .upsert({ map_id: mapId, campaign_id: campaignId, drawings: drawings as unknown as Json }, { onConflict: 'map_id' });
+  if (error) throw toAppError(error);
 }
 
 /** Jogador move o token do próprio personagem (validado no banco). */

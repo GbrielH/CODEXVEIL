@@ -430,6 +430,24 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-21 — mapa: régua, áreas de magia, névoa automática, desenho e anotações
+
+- **Régua** (mestre e jogadores, site): arrastar de um quadrado a outro mostra metros e quadrados,
+  com a regra de diagonal do sistema. Só quem mede vê.
+- **Áreas de magia** (círculo, cone e linha; site): arrastar a partir de um canto (a linha, do
+  centro do quadrado); o tamanho segue de 1,5 em 1,5 m e os quadrados atingidos (centro dentro
+  da forma) ficam destacados. As do mestre ficam gravadas e todos veem (inclusive no app); as
+  do jogador são prévia só dele. Cone com largura no fim igual ao comprimento.
+- **Névoa que se revela sozinha** (opção do mapa): abre o que os tokens dos jogadores enxergam
+  (paredes bloqueiam com a linha de visão ligada; sem ela e sem alcance, 6 quadrados). Calculado
+  na tela do mestre, que precisa estar aberta.
+- **Desenho livre e anotações** (mestre): cores, apagar, e opção "Só eu vejo" para armadilhas,
+  guardada na tabela `session_map_secrets`, que o banco nunca envia aos jogadores. No app, os
+  desenhos e anotações públicos aparecem.
+- Migração `20261021140000_map_tools.sql` aplicada; teste novo de acesso aos segredos; geometria
+  das áreas em `packages/domain/src/combat/map-areas.ts` com testes. Verificado: `pnpm check`
+  20/20, `pnpm build` e captura no Chrome headless com as três áreas, desenho e anotações.
+
 ### 2026-10-21 — livros do Tormenta20 no app e distância percorrida no mapa
 
 - **Bug: livro de Tormenta20 importado não aparecia no app.** O app lia os livros liberados de

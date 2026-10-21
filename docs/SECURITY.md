@@ -202,6 +202,9 @@ mesmo com a edição de fichas bloqueada pela campanha.
 
 ## Grade da sessão (2026-10-21)
 
+- **Anotações secretas do mestre** ficam em `session_map_secrets`, tabela separada sem nenhuma
+  policy para jogadores (não vão junto com o mapa, que todos os membros leem).
+
 - **Mapas:** o mestre vê e edita todos; jogadores recebem do banco só o mapa ativo da campanha
   (RLS), e a imagem em `campaigns/{id}/maps/` só é liberada para o mapa ativo.
 - **Tokens ocultos** (`is_hidden`) nunca chegam aos jogadores (RLS, inclusive no Realtime).

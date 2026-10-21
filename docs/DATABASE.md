@@ -166,6 +166,10 @@ Migração `20261018120000_gameplay_turns.sql`:
 - Índices únicos `characters_one_per_player_idx` e `campaign_notes_one_pinned_idx` (duplicatas
   antigas são desvinculadas/desafixadas antes).
 
+Migração `20261021140000_map_tools.sql`: `session_maps.fog_auto_reveal`, `areas` (áreas de magia do
+mestre) e `drawings` (desenhos e anotações públicos); tabela `session_map_secrets` (desenhos só do
+mestre; RLS sem acesso para jogadores).
+
 Migração `20261021130000_token_images.sql`: `map_tokens.image_path` (imagem própria do token em
 `campaigns/{id}/maps/`; jogador lê só a de token visível do mapa ativo). Paredes com estilo:
 `session_maps.walls` guarda `[x1, y1, x2, y2, "estilo"]`.

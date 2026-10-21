@@ -7,7 +7,9 @@ import {
   createSessionMap,
   deleteMapToken,
   deleteSessionMap,
+  getMapSecrets,
   listSessionMaps,
+  saveMapSecrets,
   setActiveMap,
   updateMapToken,
   updateSessionMap,
@@ -15,9 +17,26 @@ import {
   type SessionMap,
   type SessionMapPatch,
 } from '@codexveil/database';
-import { TOKEN_SIZES, WALL_STYLES, paintFog, tokenSizeLabels, tokenSizeSquares, type TokenSize, type WallStyle } from '@codexveil/domain';
+import {
+  DRAWING_COLORS,
+  MAP_AREA_KINDS,
+  TOKEN_SIZES,
+  WALL_STYLES,
+  fogCells,
+  paintFog,
+  pointInPolygon,
+  rectsFromCells,
+  tokenSizeLabels,
+  tokenSizeSquares,
+  visibilityPolygon,
+  wallBlocksSight,
+  type MapArea,
+  type MapDrawing,
+  type TokenSize,
+  type WallStyle,
+} from '@codexveil/domain';
 import { IMAGE_EXTENSIONS } from '@codexveil/validation';
-import { Eraser, EyeOff, ImageUp, Map as MapIcon, Minus, MousePointer2, Plus, Radio, Square, SquareDashed, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
+import { CircleDot, Eraser, EyeOff, ImageUp, Map as MapIcon, Minus, MousePointer2, Pencil, Plus, Radio, Ruler, Square, SquareDashed, StickyNote, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -58,7 +77,15 @@ const TOOLS: { tool: MapTool; label: string; icon: ReactNode }[] = [
   { tool: 'hide', label: 'Cobrir com névoa', icon: <Square className="h-4 w-4" aria-hidden="true" /> },
   { tool: 'wall', label: 'Parede', icon: <Minus className="h-4 w-4" aria-hidden="true" /> },
   { tool: 'erase-wall', label: 'Apagar parede', icon: <Eraser className="h-4 w-4" aria-hidden="true" /> },
+  { tool: 'ruler', label: 'Régua', icon: <Ruler className="h-4 w-4" aria-hidden="true" /> },
+  { tool: 'area', label: 'Área de magia', icon: <CircleDot className="h-4 w-4" aria-hidden="true" /> },
+  { tool: 'draw', label: 'Desenhar', icon: <Pencil className="h-4 w-4" aria-hidden="true" /> },
+  { tool: 'note', label: 'Anotação', icon: <StickyNote className="h-4 w-4" aria-hidden="true" /> },
+  { tool: 'erase-drawing', label: 'Apagar desenho', icon: <Eraser className="h-4 w-4" aria-hidden="true" /> },
 ];
+
+/** Sem alcance definido e sem linha de visão, a névoa automática abre 6 quadrados (9 m). */
+const DEFAULT_REVEAL_RADIUS = 6;
 
 /**
  * Mesa do mestre na grade: cria mapas da sessão, envia e ajusta a imagem sob a grade de 1,5 m,
@@ -78,6 +105,10 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
   const [selectedToken, setSelectedToken] = useState<string | null>(null);
   const [markerLabel, setMarkerLabel] = useState('');
   const [wallStyle, setWallStyle] = useState<WallStyle>('stone');
+  const [areaKind, setAreaKind] = useState<MapArea['kind']>('circle');
+  const [drawColor, setDrawColor] = useState<string>(DRAWING_COLORS[0]);
+  const [drawSecret, setDrawSecret] = useState(false);
+  const [secrets, setSecrets] = useState<MapDrawing[]>([]);
   const saveTimer = useRef<number | null>(null);
   const pendingPatch = useRef<{ mapId: string; patch: SessionMapPatch } | null>(null);
   const tokenInputRef = useRef<HTMLInputElement>(null);
@@ -170,6 +201,56 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
     patchToken(target, { imagePath: null });
     await getSupabaseBrowserClient().storage.from(CAMPAIGN_MEDIA_BUCKET).remove([previous]);
   };
+
+  // Desenhos e anotações só do mestre (tabela separada; o banco não envia aos jogadores).
+  const mapId = map?.id ?? null;
+  useEffect(() => {
+    if (!mapId) return;
+    let active = true;
+    getMapSecrets(getSupabaseBrowserClient(), mapId)
+      .then((next) => {
+        if (active) setSecrets(next);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [mapId]);
+
+  const saveSecrets = (next: MapDrawing[]) => {
+    if (!map) return;
+    setSecrets(next);
+    saveMapSecrets(getSupabaseBrowserClient(), map.id, campaignId, next).catch((error: unknown) => fail('A anotação secreta não foi salva', error));
+  };
+
+  const addDrawing = (drawing: MapDrawing) => {
+    if (!map) return;
+    if (drawSecret) saveSecrets([...secrets, drawing]);
+    else patchMap({ drawings: [...map.drawings, drawing] });
+  };
+
+  // Névoa automática: abre o que os tokens dos jogadores enxergam (paredes bloqueiam quando a
+  // linha de visão está ligada). Calculado aqui, na tela do mestre, e gravado na névoa.
+  const autoRevealKey = map && map.fogEnabled && map.fogAutoReveal ? `${map.id}:${tokens.map((token) => `${token.id}@${token.x},${token.y}`).join('|')}:${map.walls.length}:${map.lineOfSight}` : null;
+  const lastRevealKey = useRef<string | null>(null);
+  useEffect(() => {
+    if (!autoRevealKey || !map || autoRevealKey === lastRevealKey.current) return;
+    lastRevealKey.current = autoRevealKey;
+    const blocking = map.lineOfSight ? map.walls.filter((wall) => wallBlocksSight(wall[4])).map(([x1, y1, x2, y2]) => [x1, y1, x2, y2] as [number, number, number, number]) : [];
+    const revealed = fogCells(map.fogRevealed);
+    const before = revealed.size;
+    for (const token of tokens) {
+      if (token.kind !== 'character') continue;
+      const side = tokenSizeSquares[token.size];
+      const radius = token.visionRadius || (map.lineOfSight ? 0 : DEFAULT_REVEAL_RADIUS);
+      const polygon = visibilityPolygon({ x: token.x + side / 2, y: token.y + side / 2 }, blocking, map.cols, map.rows, radius);
+      for (let y = 0; y < map.rows; y += 1) {
+        for (let x = 0; x < map.cols; x += 1) if (pointInPolygon({ x: x + 0.5, y: y + 0.5 }, polygon)) revealed.add(`${x},${y}`);
+      }
+    }
+    if (revealed.size > before) patchMap({ fogRevealed: rectsFromCells(revealed) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a chave já resume mapa, tokens e paredes.
+  }, [autoRevealKey]);
 
   const createMap = async () => {
     const name = newName.trim();
@@ -350,12 +431,21 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
                   checked={map.lineOfSight}
                   onChange={(event) => patchMap({ lineOfSight: event.target.checked })}
                 />
+                {map.fogEnabled ? (
+                  <CheckboxField
+                    id={`${id}-nevoa-auto`}
+                    label="Névoa se revela sozinha"
+                    description="Abre o que os tokens dos jogadores enxergam ao se mover (precisa desta tela aberta)."
+                    checked={map.fogAutoReveal}
+                    onChange={(event) => patchMap({ fogAutoReveal: event.target.checked })}
+                  />
+                ) : null}
               </div>
             </fieldset>
           ) : null}
 
           <div className="flex flex-wrap items-center gap-1" role="toolbar" aria-label="Ferramentas do mapa">
-            {TOOLS.filter((entry) => canManage || entry.tool === 'move')
+            {TOOLS.filter((entry) => canManage || entry.tool === 'move' || entry.tool === 'ruler')
               .filter((entry) => map.fogEnabled || (entry.tool !== 'reveal' && entry.tool !== 'hide'))
               .map((entry) => (
                 <Button key={entry.tool} size="sm" variant={tool === entry.tool ? 'primary' : 'secondary'} icon={entry.icon} aria-pressed={tool === entry.tool} onClick={() => setTool(entry.tool)}>
@@ -372,6 +462,11 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
                 </Button>
               </>
             ) : null}
+            {canManage && map.areas.length ? (
+              <Button size="sm" variant="ghost" onClick={() => patchMap({ areas: [] })}>
+                Limpar áreas
+              </Button>
+            ) : null}
             {canManage && map.walls.length ? (
               <Button size="sm" variant="ghost" onClick={() => window.confirm('Apagar todas as paredes?') && patchMap({ walls: [] })}>
                 Limpar paredes
@@ -386,6 +481,41 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
               </Button>
             </span>
           </div>
+          {tool === 'ruler' ? <p className="text-xs text-fg-muted">Arraste de um quadrado a outro para medir (diagonal pela regra do sistema).</p> : null}
+          {tool === 'area' ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Forma da área">
+                {MAP_AREA_KINDS.map((entry) => (
+                  <Button key={entry.kind} size="sm" variant={areaKind === entry.kind ? 'primary' : 'ghost'} role="radio" aria-checked={areaKind === entry.kind} onClick={() => setAreaKind(entry.kind)}>
+                    {entry.label}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-fg-muted">
+                Arraste a partir de um canto de quadrado: o tamanho segue de 1,5 em 1,5 m e os quadrados atingidos ficam destacados. Todos veem as áreas que você coloca.
+              </p>
+            </div>
+          ) : null}
+          {tool === 'draw' || tool === 'note' ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex gap-1.5" role="radiogroup" aria-label="Cor">
+                {DRAWING_COLORS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    role="radio"
+                    aria-checked={drawColor === color}
+                    aria-label={`Cor ${color}`}
+                    onClick={() => setDrawColor(color)}
+                    className={cx('h-6 w-6 rounded-full border', drawColor === color ? 'ring-2 ring-parchment-300' : 'border-line-strong')}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+              <CheckboxField id={`${id}-segredo`} label="Só eu vejo (armadilhas, segredos)" checked={drawSecret} onChange={(event) => setDrawSecret(event.target.checked)} />
+              <p className="text-xs text-fg-muted">{tool === 'draw' ? 'Arraste para desenhar.' : 'Clique no mapa para escrever uma anotação.'}</p>
+            </div>
+          ) : null}
           {tool === 'wall' ? (
             <div className="flex flex-col gap-2">
               <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Estilo da parede">
@@ -421,6 +551,14 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
                 onPaintFog={(area, reveal) => patchMap({ fogRevealed: paintFog(map.fogRevealed, area, reveal) })}
                 onAddWall={(wall) => patchMap({ walls: [...map.walls, wall] })}
                 onRemoveWall={(index) => patchMap({ walls: map.walls.filter((_, position) => position !== index) })}
+                areaKind={areaKind}
+                drawColor={drawColor}
+                secretDrawings={secrets}
+                onAddArea={(shape) => patchMap({ areas: [...map.areas, shape] })}
+                onAddDrawing={addDrawing}
+                onRemoveDrawing={(index, secret) =>
+                  secret ? saveSecrets(secrets.filter((_, position) => position !== index)) : patchMap({ drawings: map.drawings.filter((_, position) => position !== index) })
+                }
               />
             </div>
 

@@ -12,7 +12,7 @@ responsável e o plano técnico, para a implementação seguir sem novas pergunt
 | 3   | Tokens     | Aparecem como tokens: personagens dos jogadores, monstros e NPCs da biblioteca e marcadores livres. Tamanho pelo porte. Por isso **a criação de criaturas passa a pedir o tamanho** (D&D e Tormenta20). Imagem do token: retrato do personagem/criatura ou iniciais na cor dos dados do dono. Vida: barra para personagens; monstros mostram ao jogador só "ferido"/"muito ferido" (número exato só para o mestre). |
 | 4   | Permissões | Jogador move só o próprio token, a qualquer momento (não só na vez). Mestre move tudo e esconde tokens (ex.: monstro que ainda não apareceu). Tudo em tempo real.                                                                                                                                                                                                                                                   |
 | 5   | Site x app | **Mestrar só no site** (enviar mapa, ajustar escala, posicionar monstros, névoa, esconder linhas). No app o jogador **vê a grade e move apenas o próprio token** (vai por OTA, sem APK).                                                                                                                                                                                                                            |
-| 6   | Escopo     | Já na primeira versão: **névoa de guerra** e **linha de visão (opcional, o mestre liga/desliga por mapa)**. Fora desta versão: régua de medição, áreas de magia (cone/círculo), desenho livre, grade hexagonal.                                                                                                                                                                                                     |
+| 6   | Escopo     | Já na primeira versão: **névoa de guerra** e **linha de visão (opcional, o mestre liga/desliga por mapa)**. Fora desta versão: grade hexagonal (régua, áreas e desenho foram feitos depois, em 2026-10-21).                                                                                                                                                                                                         |
 
 ## Tamanho do token por porte
 
@@ -96,3 +96,6 @@ responsável e o plano técnico, para a implementação seguir sem novas pergunt
   visíveis para todos; a grade de ferro não bloqueia a linha de visão e a invisível só o mestre vê.
 - Distância percorrida: etiqueta ao arrastar e rastro com "Nome: X m" para toda a mesa. D&D: diagonal
   = 1 quadrado; Tormenta20: diagonais alternadas (1,5 m / 3 m).
+- Régua (todos), áreas de magia (círculo, cone, linha; as do mestre gravadas, as do jogador só
+  prévia), névoa que se revela sozinha (opção do mapa; calculada na tela do mestre), desenho
+  livre e anotações do mestre (com opção "só eu vejo", em tabela separada).

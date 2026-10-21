@@ -88,3 +88,24 @@ describe('grade da sessão', () => {
     );
   });
 });
+
+describe('ferramentas do mapa', () => {
+  it('desenhos secretos só chegam ao mestre; áreas e desenhos públicos chegam a todos', async () => {
+    const { gm, player, campaign, map } = await setupMap();
+    await db.as(gm, (s) =>
+      s.query(`insert into public.session_map_secrets (map_id, campaign_id, drawings) values ($1, $2, '[{"type":"note","x":3,"y":3,"text":"Armadilha"}]')`, [map, campaign.id]),
+    );
+    await db.as(gm, (s) =>
+      s.query(`update public.session_maps set areas = '[{"kind":"circle","x":5,"y":5,"meters":6}]', drawings = '[{"type":"note","x":1,"y":1,"text":"Porta"}]', fog_auto_reveal = true where id = $1`, [map]),
+    );
+    expect(await db.as(player, (s) => s.query(`select * from public.session_map_secrets`))).toEqual([]);
+    expect(await db.as(gm, (s) => s.query(`select map_id from public.session_map_secrets`))).toHaveLength(1);
+    const seen = await db.as(player, (s) => s.one<{ areas: unknown[]; drawings: unknown[] }>(`select areas, drawings from public.session_maps where id = $1`, [map]));
+    expect(seen.areas).toHaveLength(1);
+    expect(seen.drawings).toHaveLength(1);
+    await expectSqlError(
+      db.as(player, (s) => s.query(`insert into public.session_map_secrets (map_id, campaign_id) values ($1, $2)`, [map, campaign.id])),
+      '42501',
+    );
+  });
+});

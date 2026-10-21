@@ -1,7 +1,8 @@
 'use client';
 
 import { moveMyToken } from '@codexveil/database';
-import { Map as MapIcon, ZoomIn, ZoomOut } from 'lucide-react';
+import { MAP_AREA_KINDS, type MapArea } from '@codexveil/domain';
+import { CircleDot, Map as MapIcon, MousePointer2, Ruler, ZoomIn, ZoomOut } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -9,7 +10,7 @@ import { LiveBadge } from '@/components/ui/save-status';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
-import { MapBoard } from './map-board';
+import { MapBoard, type MapTool } from './map-board';
 import { useMapData } from './use-map-data';
 
 /** Mapa ativo da sessão para o jogador: vê a grade e arrasta só o próprio token. */
@@ -17,6 +18,9 @@ export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: s
   const { toast } = useToast();
   const { map, tokens, imageUrl, tokenImages, loaded, live, reload, setData, track } = useMapData(campaignId, 'active');
   const [zoom, setZoom] = useState(1);
+  const [tool, setTool] = useState<MapTool>('move');
+  const [areaKind, setAreaKind] = useState<MapArea['kind']>('circle');
+  const [localAreas, setLocalAreas] = useState<MapArea[]>([]);
   if (!loaded || !map) return null;
   const mine = tokens.some((token) => token.characterId !== null && token.characterId === myCharacterId);
 
@@ -38,6 +42,33 @@ export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: s
           </div>
         }
       />
+      <div className="mb-2 flex flex-wrap items-center gap-1" role="toolbar" aria-label="Ferramentas do mapa">
+        {(
+          [
+            { tool: 'move', label: 'Mover', icon: <MousePointer2 className="h-4 w-4" aria-hidden="true" /> },
+            { tool: 'ruler', label: 'Régua', icon: <Ruler className="h-4 w-4" aria-hidden="true" /> },
+            { tool: 'area', label: 'Área de magia', icon: <CircleDot className="h-4 w-4" aria-hidden="true" /> },
+          ] as const
+        ).map((entry) => (
+          <Button key={entry.tool} size="sm" variant={tool === entry.tool ? 'primary' : 'secondary'} icon={entry.icon} aria-pressed={tool === entry.tool} onClick={() => setTool(entry.tool)}>
+            {entry.label}
+          </Button>
+        ))}
+        {tool === 'area'
+          ? MAP_AREA_KINDS.map((entry) => (
+              <Button key={entry.kind} size="sm" variant={areaKind === entry.kind ? 'primary' : 'ghost'} onClick={() => setAreaKind(entry.kind)}>
+                {entry.label}
+              </Button>
+            ))
+          : null}
+        {localAreas.length ? (
+          <Button size="sm" variant="ghost" onClick={() => setLocalAreas([])}>
+            Limpar minhas áreas
+          </Button>
+        ) : null}
+      </div>
+      {tool === 'ruler' ? <p className="mb-2 text-xs text-fg-muted">Arraste de um quadrado a outro para medir.</p> : null}
+      {tool === 'area' ? <p className="mb-2 text-xs text-fg-muted">Arraste a partir de um canto de quadrado. Só você vê as suas áreas (prévia para planejar a magia).</p> : null}
       <div className="max-h-[75vh] overflow-auto rounded-md border border-line">
         <MapBoard
           systemId={systemId}
@@ -48,6 +79,10 @@ export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: s
           isGm={false}
           myCharacterId={myCharacterId}
           zoom={zoom}
+          tool={tool}
+          areaKind={areaKind}
+          localAreas={localAreas}
+          onAddArea={(shape) => setLocalAreas((current) => [...current, shape])}
           onMoveToken={(token, x, y) => {
             setData((current) => ({ ...current, tokens: current.tokens.map((entry) => (entry.id === token.id ? { ...entry, x, y } : entry)) }));
             void track(() => moveMyToken(getSupabaseBrowserClient(), token.id, x, y)).catch((error: unknown) => {

@@ -1450,11 +1450,43 @@ export type Database = {
           },
         ];
       };
+      session_map_secrets: {
+        Row: {
+          campaign_id: string;
+          drawings: Json;
+          map_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          campaign_id: string;
+          drawings?: Json;
+          map_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          campaign_id?: string;
+          drawings?: Json;
+          map_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'session_map_secrets_map_fk';
+            columns: ['map_id', 'campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'session_maps';
+            referencedColumns: ['id', 'campaign_id'];
+          },
+        ];
+      };
       session_maps: {
         Row: {
+          areas: Json;
           campaign_id: string;
           cols: number;
           created_at: string;
+          drawings: Json;
+          fog_auto_reveal: boolean;
           fog_enabled: boolean;
           fog_revealed: Json;
           id: string;
@@ -1472,9 +1504,12 @@ export type Database = {
           walls: Json;
         };
         Insert: {
+          areas?: Json;
           campaign_id: string;
           cols?: number;
           created_at?: string;
+          drawings?: Json;
+          fog_auto_reveal?: boolean;
           fog_enabled?: boolean;
           fog_revealed?: Json;
           id?: string;
@@ -1492,9 +1527,12 @@ export type Database = {
           walls?: Json;
         };
         Update: {
+          areas?: Json;
           campaign_id?: string;
           cols?: number;
           created_at?: string;
+          drawings?: Json;
+          fog_auto_reveal?: boolean;
           fog_enabled?: boolean;
           fog_revealed?: Json;
           id?: string;

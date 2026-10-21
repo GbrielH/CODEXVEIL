@@ -1,8 +1,8 @@
 import type { MapToken, SessionMap } from '@codexveil/database';
-import { fogCells, formatMeters, gridDistance, pointInPolygon, tokenSizeSquares, visibilityPolygon, wallBlocksSight, type WallStyle } from '@codexveil/domain';
+import { areaCells, areaOutline, fogCells, formatMeters, gridDistance, pointInPolygon, tokenSizeSquares, visibilityPolygon, wallBlocksSight, type WallStyle } from '@codexveil/domain';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, type GestureResponderEvent } from 'react-native';
-import Svg, { Circle, ClipPath, Defs, G, Image as SvgImage, Line, Mask, Path, Pattern, Polygon, Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, ClipPath, Defs, G, Image as SvgImage, Line, Mask, Path, Pattern, Polygon, Polyline, Rect, Text as SvgText } from 'react-native-svg';
 
 const CELL = 36;
 
@@ -132,6 +132,28 @@ export function MapBoard({
               />
             ) : null}
             {map.showGrid ? <Rect x="0" y="0" width={map.cols} height={map.rows} fill="url(#grade)" /> : null}
+            {map.areas.map((shape, index) => {
+              const cells = areaCells(shape, map.cols, map.rows);
+              const color = shape.color ?? '#e8862a';
+              return (
+                <G key={`area-${index}`}>
+                  <Path d={cells.map((cell) => `M${cell.x} ${cell.y}h1v1h-1z`).join('')} fill={color} opacity={0.28} />
+                  <Polygon points={areaOutline(shape).map((point) => `${point.x},${point.y}`).join(' ')} fill="none" stroke={color} strokeWidth={0.06} />
+                </G>
+              );
+            })}
+            {map.drawings.map((drawing, index) =>
+              drawing.type === 'path' ? (
+                <Polyline key={`desenho-${index}`} points={drawing.points.map(([x, y]) => `${x},${y}`).join(' ')} fill="none" stroke={drawing.color} strokeWidth={0.08} strokeLinecap="round" strokeLinejoin="round" />
+              ) : (
+                <G key={`nota-${index}`}>
+                  <Rect x={drawing.x} y={drawing.y - 0.25} width={Math.max(1, drawing.text.length * 0.17 + 0.4)} height={0.5} rx={0.08} fill="rgba(20,16,12,0.88)" stroke={drawing.color} strokeWidth={0.04} />
+                  <SvgText x={drawing.x + 0.2} y={drawing.y + 0.1} fontSize={0.28} fill={drawing.color}>
+                    {drawing.text}
+                  </SvgText>
+                </G>
+              ),
+            )}
             {map.walls.map(([x1, y1, x2, y2, style], index) => {
               const look = WALL_LOOK[style];
               if (style === 'invisible') return null;
