@@ -430,6 +430,13 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-21 — QA: "tudo certo" na revisão, mas a criação é recusada
+
+- O servidor revalida o rascunho e recusava com "Ainda há escolhas pendentes", sem dizer qual. A
+  tela agora mostra cada pendência que o servidor apontou (passo e mensagem), para achar a causa.
+  Causa ainda não identificada: o servidor monta o conteúdo dos livros do mesmo jeito que o
+  assistente; aguardando a mensagem detalhada do QA.
+
 ### 2026-10-21 — QA: Humano variante com "aumentam em I"
 
 - O texto do livro importado trazia "aumentam em I" (o PDF trocou o 1 pela letra), e o aumento de

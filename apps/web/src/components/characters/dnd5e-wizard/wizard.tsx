@@ -287,7 +287,14 @@ export function Dnd5eCreationWizard({
         router.push(`${characterPath(result.characterId)}?aviso=personagem-criado` as Route);
         return;
       }
-      setSubmitError(result.message);
+      // Mostra o que o servidor apontou (ele revalida com os livros que carregou).
+      const details = result.issues?.length
+        ? ` ${result.issues
+            .slice(0, 6)
+            .map((issue) => `${dnd5eStepLabels[issue.step]}: ${issue.message}`)
+            .join(' · ')}`
+        : '';
+      setSubmitError(`${result.message}${details}`);
       if (result.issues?.length) setAttempted(new Set(DND5E_STEPS));
     });
   };
