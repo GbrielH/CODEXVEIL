@@ -9,6 +9,14 @@ describe('benefícios das raças de livro (2014)', () => {
     expect(benefits).toEqual({ fixed: {}, choiceCount: 2, choiceAmount: 1, skillChoices: 1, featChoice: true });
   });
 
+  it('texto do livro do QA: "aumentam em I" (o PDF troca o 1 pela letra) e vírgula antes de "à sua escolha"', () => {
+    const benefits = parseSpeciesBenefits(
+      'Aumento no Valor de Habilidade. Dois valores de habilidade, à sua escolha, aumentam em I. Perícia. Você ganha proficiência em uma perícia, à sua escolha. Talento. Você adquire um talento de sua escolha.',
+    );
+    expect(benefits).toEqual({ fixed: {}, choiceCount: 2, choiceAmount: 1, skillChoices: 1, featChoice: true });
+    expect(parseSpeciesBenefits('Todos os seus valores de habilidade aumentam em l.').fixed.str).toBe(1);
+  });
+
   it('Humano padrão: todos os atributos +1', () => {
     const benefits = parseSpeciesBenefits('Todos os seus valores de habilidade aumentam em 1.');
     expect(benefits.fixed).toEqual({ str: 1, dex: 1, con: 1, int: 1, wis: 1, cha: 1 });

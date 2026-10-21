@@ -430,6 +430,13 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-21 — QA: Humano variante com "aumentam em I"
+
+- O texto do livro importado trazia "aumentam em I" (o PDF trocou o 1 pela letra), e o aumento de
+  atributo à escolha não era reconhecido. O leitor das raças passa a aceitar "I", "l" e "um/uma"
+  como 1 (teste com o texto exato do QA). Se ainda aparecer "escolhas pendentes" sem campo para
+  escolher, falta saber em qual passo (o QA pode ter testado antes da publicação anterior terminar).
+
 ### 2026-10-21 — criação D&D: treino em armaduras e escudos junto da maestria
 
 - Na etapa de classe (site e app), cartão "Armaduras e escudos" logo depois de "Maestria em Armas"

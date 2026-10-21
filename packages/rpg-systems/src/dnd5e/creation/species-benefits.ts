@@ -29,6 +29,12 @@ const ABILITY_NAMES: Record<string, Ability> = {
   carisma: 'cha',
 };
 
+/** "1", "I" e "l" (o PDF troca o 1 por letras) e "um/uma". */
+const AMOUNT = String.raw`(\d|i|l|um|uma)(?![\p{L}\d])`;
+function amount(word: string): number {
+  return /^(i|l|um|uma)$/.test(word) ? 1 : Number(word);
+}
+
 function count(word: string): number {
   return NUMBERS[word] ?? (Number.parseInt(word, 10) || 0);
 }
@@ -37,21 +43,24 @@ export function parseSpeciesBenefits(text: string): SpeciesBenefits {
   const lower = text.toLowerCase();
   const result: SpeciesBenefits = { fixed: {}, choiceCount: 0, choiceAmount: 0, skillChoices: 0, featChoice: false };
 
-  const all = /todos os seus valores de (?:habilidade|atributo)s? aumentam em (\d)/.exec(lower);
-  if (all) for (const ability of ABILITIES) result.fixed[ability] = Number(all[1]);
+  const all = new RegExp(String.raw`todos os seus valores de (?:habilidade|atributo)s? aumentam em ${AMOUNT}`, 'u').exec(lower);
+  if (all) for (const ability of ABILITIES) result.fixed[ability] = amount(all[1]!);
 
-  const choice = /(um|uma|dois|duas|três|tres|\d) (?:outros? )?valor(?:es)? de (?:habilidade|atributo)s?,?[^.]{0,40}?(?:à|a) sua escolha,?[^.]{0,20}?aumenta(?:m)? em (\d)/.exec(lower);
+  const choice = new RegExp(
+    String.raw`(um|uma|dois|duas|três|tres|\d) (?:outros? )?valor(?:es)? de (?:habilidade|atributo)s?,?[^.]{0,40}?(?:à|a) sua escolha,?[^.]{0,20}?aumenta(?:m)? em ${AMOUNT}`,
+    'u',
+  ).exec(lower);
   if (choice) {
     result.choiceCount = count(choice[1]!);
-    result.choiceAmount = Number(choice[2]);
+    result.choiceAmount = amount(choice[2]!);
   }
 
   // "Seu valor de Força aumenta em 2" / "seus valores de Força e Constituição aumentam em 1".
-  const fixedPattern = /(?:seu|o seu|seus|os seus) valor(?:es)? de ((?:força|destreza|constituição|inteligência|sabedoria|carisma)(?:(?:, | e )(?:força|destreza|constituição|inteligência|sabedoria|carisma))*) aumenta(?:m)? em (\d)/g;
+  const fixedPattern = /(?:seu|o seu|seus|os seus) valor(?:es)? de ((?:força|destreza|constituição|inteligência|sabedoria|carisma)(?:(?:, | e )(?:força|destreza|constituição|inteligência|sabedoria|carisma))*) aumenta(?:m)? em (\d|i|l|um|uma)(?![\p{L}\d])/gu;
   for (const match of lower.matchAll(fixedPattern)) {
     for (const name of match[1]!.split(/, | e /)) {
       const ability = ABILITY_NAMES[name.trim()];
-      if (ability) result.fixed[ability] = (result.fixed[ability] ?? 0) + Number(match[2]);
+      if (ability) result.fixed[ability] = (result.fixed[ability] ?? 0) + amount(match[2]!);
     }
   }
 
