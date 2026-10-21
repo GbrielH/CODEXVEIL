@@ -37,6 +37,7 @@ import { sizeLabels } from '../srd/species';
 import type { ClassDefinition, EquipmentGrant, ResourceDefinition, WeaponDefinition } from '../srd/types';
 import type { AbilityEntryTemplate, ItemTemplate, ResourceTemplate } from '../../types';
 import {
+  armorPurchases,
   draftBackground,
   draftClass,
   draftFeats,
@@ -119,7 +120,10 @@ export function startingEquipment(draft: Dnd5eDraft): { items: ResolvedItem[]; g
     if (existing) existing.quantity += resolved.quantity;
     else items.push(resolved);
   }
-  return { items, gold: (classOption?.gold ?? 0) + (backgroundOption?.gold ?? 0) };
+  // Armadura e escudo comprados com o ouro inicial (regra oficial, com o pacote de ouro).
+  const purchases = armorPurchases(draft);
+  for (const id of purchases.ids) items.push({ catalogId: id, name: SRD_ITEMS[id]?.name ?? id, quantity: 1 });
+  return { items, gold: Math.max(0, (classOption?.gold ?? 0) + (backgroundOption?.gold ?? 0) - purchases.cost) };
 }
 
 // ---------------------------------------------------------------------------

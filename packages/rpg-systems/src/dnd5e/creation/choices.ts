@@ -15,7 +15,7 @@ import { findBackground } from '../srd/backgrounds';
 import { CIRCLE_OF_THE_LAND, SRD_INVOCATIONS, SRD_METAMAGIC } from '../srd/class-options';
 import { SORCERER_METAMAGIC, WARLOCK_INVOCATIONS, WARLOCK_SLOT_LEVEL, atLevel, findClass, listSubclasses } from '../srd/classes';
 import { spellNamePt } from '../srd/spell-names-pt';
-import { ALL_TOOLS, ARTISAN_TOOLS, GAMING_SETS, MUSICAL_INSTRUMENTS, SRD_ITEMS, SRD_WEAPONS, findTool } from '../srd/equipment';
+import { ALL_TOOLS, ARMOR_COST_GP, ARTISAN_TOOLS, GAMING_SETS, MUSICAL_INSTRUMENTS, SRD_ARMOR, SRD_ITEMS, SRD_WEAPONS, findTool } from '../srd/equipment';
 import { epicBoonAbilities, findFeat, listFeats } from '../srd/feats';
 import { ALIGNMENTS, CLASS_ONLY_LANGUAGES, SRD_LANGUAGES, languageName } from '../srd/languages';
 import { findSpecies } from '../srd/species';
@@ -738,6 +738,28 @@ function featOptionsFor(
 }
 
 /** Escolhas exigidas pelas regras para o rascunho atual, na ordem do assistente. */
+/** Ouro dos pacotes de equipamento escolhidos (classe + antecedente), antes das compras. */
+export function equipmentGold(draft: Dnd5eDraft): number {
+  const classOption = draftClass(draft)?.equipment.find((option) => option.id === selectionText(draft, 'equipment.class'));
+  const backgroundOption = draftBackground(draft)?.equipment.find((option) => option.id === selectionText(draft, 'equipment.background'));
+  return (classOption?.gold ?? 0) + (backgroundOption?.gold ?? 0);
+}
+
+/** O pacote de classe escolhido não traz armadura nem escudo (o de ouro): dá para comprar. */
+export function canBuyArmor(draft: Dnd5eDraft): boolean {
+  const classDef = draftClass(draft);
+  const chosen = classDef?.equipment.find((option) => option.id === selectionText(draft, 'equipment.class'));
+  if (!classDef || !chosen || classDef.armor.length === 0) return false;
+  return !chosen.items.some((grant) => SRD_ITEMS[grant.item]?.category === 'armor');
+}
+
+/** Armadura e escudo comprados com o ouro inicial e o custo total. */
+export function armorPurchases(draft: Dnd5eDraft): { ids: string[]; cost: number } {
+  if (!canBuyArmor(draft)) return { ids: [], cost: 0 };
+  const ids = [selectionText(draft, 'equipment.buy_armor'), selectionText(draft, 'equipment.buy_shield')].filter((id) => id && id !== 'none' && SRD_ARMOR[id]);
+  return { ids, cost: ids.reduce((total, id) => total + (ARMOR_COST_GP[id] ?? 0), 0) };
+}
+
 export function listDnd5eChoices(draft: Dnd5eDraft): ChoiceSpec[] {
   const specs: ChoiceSpec[] = [];
   const classDef = draftClass(draft);
@@ -1382,6 +1404,37 @@ export function listDnd5eChoices(draft: Dnd5eDraft): ChoiceSpec[] {
         source: `Classe: ${classDef.name}`,
         options: MUSICAL_INSTRUMENTS.map((instrument) => ({ id: instrument.id, name: instrument.name })),
       });
+    }
+  }
+  // Regra oficial: com o pacote de ouro (sem armadura), compra-se armadura e escudo com o ouro
+  // inicial, entre os que a classe tem treino.
+  if (classDef && canBuyArmor(draft)) {
+    const gold = equipmentGold(draft);
+    const source = `Classe: ${classDef.name}`;
+    const otherCost = (id: string) => (id === 'equipment.buy_armor' ? (ARMOR_COST_GP[selectionText(draft, 'equipment.buy_shield')] ?? 0) : (ARMOR_COST_GP[selectionText(draft, 'equipment.buy_armor')] ?? 0));
+    const purchase = (id: string, ids: string[]) =>
+      [
+        { id: 'none', name: 'Não comprar' },
+        ...ids.map((armorId) => {
+          const definition = SRD_ARMOR[armorId]!;
+          const cost = ARMOR_COST_GP[armorId] ?? 0;
+          const free = gold - otherCost(id);
+          return {
+            id: armorId,
+            name: `${definition.name} (${cost} PO)`,
+            description: definition.category === 'shield' ? `+${definition.armorClass} na CA.` : `CA ${definition.armorClass}${definition.dexterity === 'full' ? ' + Des' : definition.dexterity === 'max2' ? ' + Des (máx. 2)' : ''}${definition.strength ? ` · For ${definition.strength}` : ''}${definition.stealthDisadvantage ? ' · desvantagem em Furtividade' : ''}.`,
+            ...(cost > free ? { disabledReason: `Custa ${cost} PO; sobram ${Math.max(0, free)} PO.` } : {}),
+          };
+        }),
+      ];
+    const trainedArmor = Object.values(SRD_ARMOR)
+      .filter((definition) => definition.category !== 'shield' && classDef.armor.includes(definition.category))
+      .map((definition) => definition.id);
+    if (trainedArmor.length) {
+      specs.push({ kind: 'option', id: 'equipment.buy_armor', step: 'equipment', label: 'Comprar armadura com o ouro inicial', description: `Ouro inicial: ${gold} PO. Só armaduras em que a classe tem treino.`, source, options: purchase('equipment.buy_armor', trainedArmor) });
+    }
+    if (classDef.armor.includes('shield')) {
+      specs.push({ kind: 'option', id: 'equipment.buy_shield', step: 'equipment', label: 'Comprar escudo com o ouro inicial', source, options: purchase('equipment.buy_shield', ['shield']) });
     }
   }
   if (background) {

@@ -116,6 +116,23 @@ export const SRD_ARMOR: Record<string, ArmorDefinition> = Object.fromEntries(
   ].map((definition) => [definition.id, definition]),
 );
 
+/** Preço das armaduras e do escudo em PO (SRD 5.2.1), para a compra com o ouro inicial. */
+export const ARMOR_COST_GP: Record<string, number> = {
+  padded: 5,
+  leather: 10,
+  studded_leather: 45,
+  hide: 10,
+  chain_shirt: 50,
+  scale_mail: 50,
+  breastplate: 400,
+  half_plate: 750,
+  ring_mail: 30,
+  chain_mail: 75,
+  splint: 200,
+  plate: 1500,
+  shield: 10,
+};
+
 /** Ferramentas de artesão (cada uma exige uma proficiência própria). */
 export const ARTISAN_TOOLS = [
   { id: 'alchemists_supplies', name: 'Suprimentos de alquimista', weightLb: 8 },

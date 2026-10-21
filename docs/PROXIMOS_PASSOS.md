@@ -430,6 +430,16 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-21 — criação D&D: comprar armadura e escudo com o ouro inicial (regra oficial)
+
+- Pedido do QA (escolher a armadura). Regra oficial escolhida pelo responsável: no passo
+  Equipamento, quando o pacote de classe não traz armadura (o pacote de ouro), aparecem "Comprar
+  armadura" e "Comprar escudo" (com "Não comprar"), só com o que a classe tem treino, preço do
+  SRD 5.2.1, CA e exigências; o que o ouro não paga fica indisponível. A compra entra no
+  inventário e sai do ouro (`ARMOR_COST_GP`, `armorPurchases`). Site e app.
+- O QA confirmou que a criação recusada era o que a mensagem detalhada mostrou ("era isso mesmo").
+- Verificado: `pnpm check` 20/20 e `pnpm build`, com testes da compra (Paladino, pacote B).
+
 ### 2026-10-21 — QA: "tudo certo" na revisão, mas a criação é recusada
 
 - O servidor revalida o rascunho e recusava com "Ainda há escolhas pendentes", sem dizer qual. A
