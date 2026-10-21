@@ -430,6 +430,20 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-21 — raças de livro (2014): bônus de atributo, perícia e talento (QA)
+
+- **Bug do QA:** escolhendo "Humano variante" (livro importado) não apareciam as escolhas que ele
+  dá. As raças de livro só traziam esses benefícios em texto, e a criação (regras 2024) não aplicava
+  bônus de raça. Agora `parseSpeciesBenefits` lê o texto ("Todos os seus valores… aumentam em 1",
+  "Dois valores de habilidade, à sua escolha, aumentam em 1", "Seu valor de Força aumenta em 2",
+  "proficiência em uma perícia à sua escolha", "um talento à sua escolha") e a etapa Espécie
+  ganha as escolhas (atributos, perícias, talento de origem ou geral), aplicadas na ficha. Vale a
+  linhagem escolhida, se ela descreve benefícios; senão, as características da raça. Só para raças
+  de livro (as do SRD 5.2.1 seguem com os aumentos do antecedente). Site e app.
+- Observação: numa ficha com raça de livro e antecedente de 2024, os dois aumentos se somam.
+- Verificado: `pnpm check` 20/20 e `pnpm build`, com testes do leitor e da criação do Humano
+  padrão/variante.
+
 ### 2026-10-21 — mapa: tela cheia, posições iniciais, mapa segue o turno; ordinais dos livros
 
 - **Ordinais dos livros importados:** a extração do PDF trocava "º" e o artigo "o" por "0" ("atingir

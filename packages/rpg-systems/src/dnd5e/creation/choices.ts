@@ -20,6 +20,7 @@ import { epicBoonAbilities, findFeat, listFeats } from '../srd/feats';
 import { ALIGNMENTS, CLASS_ONLY_LANGUAGES, SRD_LANGUAGES, languageName } from '../srd/languages';
 import { findSpecies } from '../srd/species';
 import { findSpell, listSpells } from '../srd/spells';
+import { hasSpeciesBenefits, parseSpeciesBenefits, type SpeciesBenefits } from './species-benefits';
 import type {
   BackgroundDefinition,
   ClassDefinition,
@@ -161,6 +162,34 @@ export function draftLineage(draft: Dnd5eDraft) {
   return species?.lineage?.options.find((option) => option.id === id);
 }
 
+/**
+ * Benefícios das raças de livro (2014), lidos do texto: os da linhagem escolhida, se ela os
+ * descreve (Humano padrão/variante); senão, os das características da raça. As espécies do SRD
+ * 5.2.1 não têm (os aumentos vêm do antecedente).
+ */
+export function draftSpeciesBenefits(draft: Dnd5eDraft): SpeciesBenefits | null {
+  const species = draftSpecies(draft);
+  if (!species?.book) return null;
+  const lineage = draftLineage(draft);
+  const fromLineage = lineage ? parseSpeciesBenefits(lineage.description) : null;
+  if (fromLineage && hasSpeciesBenefits(fromLineage)) return fromLineage;
+  const fromTraits = parseSpeciesBenefits(species.traits.map((trait) => `${trait.name}. ${trait.description}`).join(' '));
+  return hasSpeciesBenefits(fromTraits) ? fromTraits : null;
+}
+
+/** Aumentos de atributo da raça de livro: os fixos e os escolhidos. */
+export function speciesIncrease(draft: Dnd5eDraft): Partial<Record<Ability, number>> {
+  const benefits = draftSpeciesBenefits(draft);
+  if (!benefits) return {};
+  const increase: Partial<Record<Ability, number>> = { ...benefits.fixed };
+  if (benefits.choiceCount > 0) {
+    for (const id of selectionList(draft, 'species.book_abilities').slice(0, benefits.choiceCount)) {
+      if ((ABILITIES as readonly string[]).includes(id)) increase[id as Ability] = (increase[id as Ability] ?? 0) + benefits.choiceAmount;
+    }
+  }
+  return increase;
+}
+
 const skillName = (skill: Skill) => skillDefinitions[skill].label;
 const skillOptions = (skills: readonly Skill[]): ChoiceOption[] => skills.map((skill) => ({ id: skill, name: skillName(skill) }));
 const isSkill = (value: string): value is Skill => (SKILLS as readonly string[]).includes(value);
@@ -253,6 +282,10 @@ export function draftFeats(draft: Dnd5eDraft): FeatInstance[] {
         ...(background.magicInitiateList ? { fixedList: background.magicInitiateList } : {}),
       });
     }
+  }
+  if (draftSpeciesBenefits(draft)?.featChoice) {
+    const featId = selectionText(draft, 'species.book_feat');
+    if (featId) feats.push({ specId: 'species.book_feat', featId, source: `Espécie: ${species?.name ?? ''}`, level: 1 });
   }
   if (species?.id === 'human') {
     const featId = selectionText(draft, 'species.versatile');
@@ -467,6 +500,7 @@ export function skillGrants(draft: Dnd5eDraft): Grant[] {
   if (classDef?.id === 'bard' && draft.level >= 3) push(selectionList(draft, 'subclass.lore_proficiencies'), 'Colégio do Conhecimento', 'subclass.lore_proficiencies');
   if (species?.id === 'elf') push(selectionList(draft, 'species.keen_senses'), 'Elfo (Sentidos Aguçados)', 'species.keen_senses');
   if (species?.id === 'human') push(selectionList(draft, 'species.skillful'), 'Humano (Hábil)', 'species.skillful');
+  if (species && draftSpeciesBenefits(draft)?.skillChoices) push(selectionList(draft, 'species.book_skills'), `Espécie: ${species.name}`, 'species.book_skills');
   for (const feat of draftFeats(draft)) {
     if (feat.featId !== 'skilled') continue;
     const id = `${feat.specId}.proficiencies`;
@@ -983,6 +1017,34 @@ export function listDnd5eChoices(draft: Dnd5eDraft): ChoiceSpec[] {
         options: abilityOptions(['int', 'wis', 'cha']),
       });
     }
+    const benefits = draftSpeciesBenefits(draft);
+    if (benefits?.choiceCount) {
+      specs.push({
+        kind: 'multi',
+        id: 'species.book_abilities',
+        step: 'species',
+        label: `Aumento de atributo: escolha ${benefits.choiceCount}`,
+        description: `Cada atributo escolhido aumenta em ${benefits.choiceAmount}.`,
+        source,
+        count: benefits.choiceCount,
+        options: abilityOptions(ABILITIES.filter((ability) => !benefits.fixed[ability])),
+      });
+    }
+    if (benefits?.skillChoices) {
+      specs.push({
+        kind: 'multi',
+        id: 'species.book_skills',
+        step: 'species',
+        label: benefits.skillChoices === 1 ? 'Perícia à sua escolha' : `Perícias à sua escolha (${benefits.skillChoices})`,
+        source,
+        count: benefits.skillChoices,
+        options: skillChoiceOptions(SKILLS, 'species.book_skills'),
+      });
+    }
+    if (benefits?.featChoice) {
+      specs.push({ kind: 'option', id: 'species.book_feat', step: 'species', label: 'Talento à sua escolha', source, options: featOptionsFor(draft, ['origin', 'general'], 'species.book_feat', null) });
+      for (const feat of feats.filter((entry) => entry.specId === 'species.book_feat')) specs.push(...featChoiceSpecs(draft, feat, 'species'));
+    }
     if (species.id === 'elf') {
       specs.push({
         kind: 'multi',
@@ -1377,6 +1439,7 @@ export function abilityScoresBefore(draft: Dnd5eDraft, featLevel: number): Recor
   if (!base) return null;
   const scores = { ...base };
   applyIncrease(scores, selectionIncrease(draft, 'background.abilities'), 20);
+  applyIncrease(scores, speciesIncrease(draft), 20);
   for (const feat of draftFeats(draft)) {
     if (feat.level >= featLevel) continue;
     const { increase, cap } = featIncrease(draft, feat);
@@ -1391,6 +1454,7 @@ export function finalAbilityScores(draft: Dnd5eDraft): Record<Ability, number> |
   if (!base) return null;
   const scores = { ...base };
   applyIncrease(scores, selectionIncrease(draft, 'background.abilities'), 20);
+  applyIncrease(scores, speciesIncrease(draft), 20);
   for (const feat of draftFeats(draft)) {
     const { increase, cap } = featIncrease(draft, feat);
     applyIncrease(scores, increase, cap);
