@@ -136,3 +136,25 @@ export function pointInPolygon(point: Point, polygon: readonly Point[]): boolean
   }
   return inside;
 }
+
+/** Metros por quadrado da grade. */
+export const METERS_PER_SQUARE = 1.5;
+
+/**
+ * Distância de movimento entre duas células, pelo caminho mais curto na grade.
+ *   * D&D 5e (SRD 5.2.1): cada quadrado na diagonal custa 1 quadrado (1,5 m).
+ *   * Tormenta20: diagonais alternadas — a 1ª custa 1,5 m, a 2ª 3 m, a 3ª 1,5 m…
+ */
+export function gridDistance(from: Point, to: Point, systemId: string): { squares: number; meters: number } {
+  const dx = Math.abs(Math.round(to.x) - Math.round(from.x));
+  const dy = Math.abs(Math.round(to.y) - Math.round(from.y));
+  const diagonal = Math.min(dx, dy);
+  const straight = Math.max(dx, dy) - diagonal;
+  const squares = systemId === 'tormenta20' ? straight + diagonal + Math.floor(diagonal / 2) : straight + diagonal;
+  return { squares, meters: squares * METERS_PER_SQUARE };
+}
+
+/** "9 m" ou "10,5 m". */
+export function formatMeters(meters: number): string {
+  return `${meters.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} m`;
+}

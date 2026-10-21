@@ -8,6 +8,7 @@ import {
   type BookPackSummary,
 } from '@codexveil/database';
 import {
+  campaignSourcebooks,
   ABILITIES,
   ALIGNMENTS,
   CHARACTER_BOOK_KINDS,
@@ -106,7 +107,7 @@ async function loadCreationData(userId: string): Promise<CreationData> {
       listCampaignBookPacks(
         client,
         campaign.ownerId,
-        parseDnd5eCampaignRules(campaign.characterRules).sourcebooks,
+        campaignSourcebooks(campaign.characterRules),
       ).then((found) => found.filter(isDnd)),
     ),
   ]);
@@ -211,7 +212,7 @@ export default function NewCharacterScreen() {
           ? await listCampaignBookPacks(
               client,
               chosen.ownerId,
-              parseDnd5eCampaignRules(chosen.characterRules).sourcebooks,
+              campaignSourcebooks(chosen.characterRules),
             )
           : [];
         setT20Sources(await loadT20Sources(client, packs));

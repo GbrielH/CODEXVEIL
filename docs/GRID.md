@@ -94,3 +94,5 @@ responsável e o plano técnico, para a implementação seguir sem novas pergunt
 - Imagem nos tokens: imagem própria (mestre) → foto do personagem → imagem da criatura → iniciais.
 - Paredes com estilo (pedra, tijolo, ruína, madeira, deserto, cerca viva, grade de ferro, invisível),
   visíveis para todos; a grade de ferro não bloqueia a linha de visão e a invisível só o mestre vê.
+- Distância percorrida: etiqueta ao arrastar e rastro com "Nome: X m" para toda a mesa. D&D: diagonal
+  = 1 quadrado; Tormenta20: diagonais alternadas (1,5 m / 3 m).

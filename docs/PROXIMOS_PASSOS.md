@@ -430,6 +430,21 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-21 — livros do Tormenta20 no app e distância percorrida no mapa
+
+- **Bug: livro de Tormenta20 importado não aparecia no app.** O app lia os livros liberados de
+  campanhas T20 com o leitor de regras do D&D, que devolvia "nenhum livro". Agora site e app usam
+  `campaignSourcebooks` (pacote `rpg-systems`), que lê os dois sistemas (com teste). Observação:
+  numa campanha valem os livros **do mestre** liberados nas regras; os livros do próprio jogador
+  valem na ficha pessoal.
+- **Distância no mapa:** ao arrastar, etiqueta com a distância até o quadrado de destino; depois de
+  qualquer movimento (de qualquer pessoa, pelo tempo real), linha tracejada e "Nome: X m" por 6 s.
+  No app, o mesmo rastro e o aviso "Você andou X m". Cálculo `gridDistance` (domínio, com testes):
+  D&D 5e conta cada diagonal como 1 quadrado (SRD 5.2.1); Tormenta20 alterna diagonais (1,5 m,
+  3 m, 1,5 m…). A distância é a do caminho mais curto entre a origem e o destino.
+- Verificado: `pnpm check` 20/20, `pnpm build` e captura do rastro no Chrome headless
+  ("Lyra: 7,5 m" para 3 diagonais + 1 reto no T20).
+
 ### 2026-10-21 — mapa: correção do "volta e vai de novo", imagem nos tokens e estilos de parede
 
 - **Bug do QA (mudanças voltando):** no editor do mestre, cada mudança cancelava a gravação

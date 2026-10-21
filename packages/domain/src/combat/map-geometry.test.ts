@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cellRect, fogCells, paintFog, pointInPolygon, rectsFromCells, visibilityPolygon } from './map-geometry';
+import { cellRect, fogCells, formatMeters, gridDistance, paintFog, pointInPolygon, rectsFromCells, visibilityPolygon } from './map-geometry';
 
 const inside = pointInPolygon;
 
@@ -34,5 +34,32 @@ describe('linha de visão', () => {
     const near = visibilityPolygon({ x: 5, y: 5 }, [], 20, 20, 3);
     expect(inside({ x: 6, y: 6 }, near)).toBe(true);
     expect(inside({ x: 12, y: 5 }, near)).toBe(false);
+  });
+});
+
+describe('distância percorrida', () => {
+  it('em linha reta conta 1,5 m por quadrado nos dois sistemas', () => {
+    expect(gridDistance({ x: 0, y: 0 }, { x: 4, y: 0 }, 'dnd5e')).toEqual({ squares: 4, meters: 6 });
+    expect(gridDistance({ x: 2, y: 5 }, { x: 2, y: 1 }, 'tormenta20')).toEqual({ squares: 4, meters: 6 });
+  });
+
+  it('D&D: diagonal custa 1 quadrado', () => {
+    expect(gridDistance({ x: 0, y: 0 }, { x: 3, y: 3 }, 'dnd5e')).toEqual({ squares: 3, meters: 4.5 });
+    expect(gridDistance({ x: 0, y: 0 }, { x: 5, y: 2 }, 'dnd5e')).toEqual({ squares: 5, meters: 7.5 });
+  });
+
+  it('Tormenta20: diagonais alternam 1,5 m e 3 m', () => {
+    expect(gridDistance({ x: 0, y: 0 }, { x: 1, y: 1 }, 'tormenta20').meters).toBe(1.5);
+    expect(gridDistance({ x: 0, y: 0 }, { x: 2, y: 2 }, 'tormenta20').meters).toBe(4.5);
+    expect(gridDistance({ x: 0, y: 0 }, { x: 3, y: 3 }, 'tormenta20').meters).toBe(6);
+    expect(gridDistance({ x: 0, y: 0 }, { x: 4, y: 4 }, 'tormenta20').meters).toBe(9);
+    // 2 diagonais (1,5 + 3) + 3 retos (4,5) = 9 m.
+    expect(gridDistance({ x: 0, y: 0 }, { x: 5, y: 2 }, 'tormenta20').meters).toBe(9);
+    expect(gridDistance({ x: 3, y: 3 }, { x: 3, y: 3 }, 'tormenta20').meters).toBe(0);
+  });
+
+  it('formata em metros', () => {
+    expect(formatMeters(9)).toBe('9 m');
+    expect(formatMeters(10.5)).toBe('10,5 m');
   });
 });

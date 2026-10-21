@@ -103,3 +103,13 @@ export function dnd5eCampaignIssues(
   }
   return issues;
 }
+
+/**
+ * Livros liberados nas regras da campanha, de qualquer sistema (o campo `sourcebooks`). Use
+ * esta função em vez de `parseDnd5eCampaignRules(...).sourcebooks`, que perde os livros das
+ * campanhas de Tormenta20 (as regras delas têm outro formato).
+ */
+export function campaignSourcebooks(characterRules: unknown): string[] {
+  const raw = characterRules && typeof characterRules === 'object' ? (characterRules as { sourcebooks?: unknown }).sourcebooks : undefined;
+  return Array.isArray(raw) ? raw.filter((entry): entry is string => typeof entry === 'string') : parseDnd5eCampaignRules(characterRules).sourcebooks;
+}

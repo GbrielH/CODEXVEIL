@@ -13,7 +13,7 @@ import { MapBoard } from './map-board';
 import { useMapData } from './use-map-data';
 
 /** Mapa ativo da sessão para o jogador: vê a grade e arrasta só o próprio token. */
-export function MapView({ campaignId, myCharacterId }: { campaignId: string; myCharacterId: string | null }) {
+export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: string; systemId: string; myCharacterId: string | null }) {
   const { toast } = useToast();
   const { map, tokens, imageUrl, tokenImages, loaded, live, reload, setData, track } = useMapData(campaignId, 'active');
   const [zoom, setZoom] = useState(1);
@@ -40,6 +40,7 @@ export function MapView({ campaignId, myCharacterId }: { campaignId: string; myC
       />
       <div className="max-h-[75vh] overflow-auto rounded-md border border-line">
         <MapBoard
+          systemId={systemId}
           map={map}
           tokens={tokens}
           imageUrl={imageUrl}

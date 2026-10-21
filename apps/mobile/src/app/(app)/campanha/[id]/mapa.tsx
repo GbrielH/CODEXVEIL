@@ -1,5 +1,5 @@
 import { getActiveMap, getCampaign, listCampaignCharacters, listMapTokens, moveMyToken, signedMediaUrls, tokenImagePaths, type MapToken } from '@codexveil/database';
-import { tokenSizeSquares } from '@codexveil/domain';
+import { formatMeters, gridDistance, tokenSizeSquares } from '@codexveil/domain';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { ZoomIn, ZoomOut } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -78,6 +78,8 @@ export default function CampaignMapScreen() {
     const nx = Math.max(0, Math.min(map.cols - side, x));
     const ny = Math.max(0, Math.min(map.rows - side, y));
     setSelected(false);
+    const walked = gridDistance(myToken, { x: nx, y: ny }, data.campaign.systemId);
+    toast({ tone: 'info', title: `Você andou ${formatMeters(walked.meters)}`, description: `${walked.squares} ${walked.squares === 1 ? 'quadrado' : 'quadrados'} de 1,5 m.` });
     mutate((current) => (current ? { ...current, tokens: current.tokens.map((token) => (token.id === myToken.id ? { ...token, x: nx, y: ny } : token)) } : current));
     moveMyToken(getSupabase(), myToken.id, nx, ny).catch((cause: unknown) => {
       toast({ tone: 'danger', title: 'O token não foi movido', description: failureMessage(cause) });
@@ -108,6 +110,7 @@ export default function CampaignMapScreen() {
             tokens={tokens}
             imageUrl={imageUrl}
             tokenImages={tokenImages}
+            systemId={data.campaign.systemId}
             myCharacterId={own?.id ?? null}
             zoom={zoom}
             selected={selected}

@@ -1,6 +1,6 @@
 import type { MapToken, SessionMap } from '@codexveil/database';
-import { fogCells, pointInPolygon, tokenSizeSquares, visibilityPolygon, wallBlocksSight, type WallStyle } from '@codexveil/domain';
-import { useMemo } from 'react';
+import { fogCells, formatMeters, gridDistance, pointInPolygon, tokenSizeSquares, visibilityPolygon, wallBlocksSight, type WallStyle } from '@codexveil/domain';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, type GestureResponderEvent } from 'react-native';
 import Svg, { Circle, ClipPath, Defs, G, Image as SvgImage, Line, Mask, Path, Pattern, Polygon, Rect, Text as SvgText } from 'react-native-svg';
 
@@ -36,6 +36,7 @@ export function MapBoard({
   tokens,
   imageUrl,
   tokenImages,
+  systemId,
   myCharacterId,
   zoom,
   selected,
@@ -46,6 +47,8 @@ export function MapBoard({
   tokens: MapToken[];
   imageUrl: string | null;
   tokenImages: Record<string, string>;
+  /** Sistema da campanha (regra de distância na diagonal). */
+  systemId: string;
   myCharacterId: string | null;
   zoom: number;
   /** Token do jogador selecionado para mover. */
@@ -54,6 +57,25 @@ export function MapBoard({
   onTapCell: (x: number, y: number) => void;
 }) {
   const size = CELL * zoom;
+
+  // Rastro dos movimentos (de todos): linha tracejada e distância por 6 s.
+  const [lastTokens, setLastTokens] = useState(tokens);
+  const [trails, setTrails] = useState<{ id: string; label: string; fx: number; fy: number; tx: number; ty: number; half: number; meters: number }[]>([]);
+  if (lastTokens !== tokens) {
+    const before = new Map(lastTokens.map((token) => [token.id, token]));
+    const moved = tokens.flatMap((token) => {
+      const old = before.get(token.id);
+      if (!old || (old.x === token.x && old.y === token.y)) return [];
+      return [{ id: token.id, label: token.label, fx: old.x, fy: old.y, tx: token.x, ty: token.y, half: tokenSizeSquares[token.size] / 2, meters: gridDistance(old, token, systemId).meters }];
+    });
+    setLastTokens(tokens);
+    if (moved.length) setTrails((current) => [...current.filter((trail) => !moved.some((entry) => entry.id === trail.id)), ...moved]);
+  }
+  useEffect(() => {
+    if (trails.length === 0) return;
+    const timer = setTimeout(() => setTrails([]), 6000);
+    return () => clearTimeout(timer);
+  }, [trails]);
   const myToken = tokens.find((token) => token.kind === 'character' && token.characterId === myCharacterId) ?? null;
 
   const unrevealed = useMemo(() => {
@@ -191,6 +213,21 @@ export function MapBoard({
                 </SvgText>
               );
             })}
+            {trails
+              .filter((trail) => visible.some((token) => token.id === trail.id))
+              .map((trail) => {
+                const text = `${trail.label ? `${trail.label}: ` : ''}${formatMeters(trail.meters)}`;
+                const width = Math.max(1.2, text.length * 0.2 + 0.3);
+                return (
+                  <G key={`rastro-${trail.id}`}>
+                    <Line x1={trail.fx + trail.half} y1={trail.fy + trail.half} x2={trail.tx + trail.half} y2={trail.ty + trail.half} stroke="#f3e2b3" strokeWidth={0.06} strokeDasharray={[0.2, 0.14]} />
+                    <Rect x={trail.tx + trail.half - width / 2} y={trail.ty - 0.65} width={width} height={0.42} rx={0.12} fill="rgba(20,16,12,0.9)" stroke="#f3e2b3" strokeWidth={0.03} />
+                    <SvgText x={trail.tx + trail.half} y={trail.ty - 0.35} textAnchor="middle" fontSize={0.26} fontWeight="700" fill="#f3e2b3">
+                      {text}
+                    </SvgText>
+                  </G>
+                );
+              })}
             {unrevealed ? <Path d={unrevealed} fill="#050505" /> : null}
             {sight ? <Rect x="0" y="0" width={map.cols} height={map.rows} fill="#050505" opacity={0.92} mask="url(#visao)" /> : null}
             {myToken && selected ? (

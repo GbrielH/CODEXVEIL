@@ -10,7 +10,7 @@ import {
   BOOK_ENTRY_KINDS,
   CHARACTER_BOOK_KINDS,
   buildDnd5eBookContent,
-  parseDnd5eCampaignRules,
+  campaignSourcebooks,
   visibleBookKinds,
   type BookContentSource,
   type Dnd5eBookContent,
@@ -22,12 +22,6 @@ import { uuidSchema } from '@codexveil/validation';
 /** Livros liberados na campanha (os do dono que ele marcou nas regras de criação). */
 export function campaignBookPacks(client: CodexveilClient, campaign: { ownerId: string; characterRules: unknown }): Promise<BookPackSummary[]> {
   return listCampaignBookPacks(client, campaign.ownerId, campaignSourcebooks(campaign.characterRules));
-}
-
-/** Livros liberados nas regras da campanha, de qualquer sistema (o campo `sourcebooks`). */
-export function campaignSourcebooks(characterRules: unknown): string[] {
-  const raw = characterRules && typeof characterRules === 'object' ? (characterRules as { sourcebooks?: unknown }).sourcebooks : undefined;
-  return Array.isArray(raw) ? raw.filter((entry): entry is string => typeof entry === 'string') : parseDnd5eCampaignRules(characterRules).sourcebooks;
 }
 
 /** Livros prontos do próprio usuário (usados nas fichas pessoais). */

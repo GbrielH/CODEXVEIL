@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ABILITIES, type Ability } from '../abilities';
-import { parseDnd5eCampaignRules } from '../campaign-rules';
+import { campaignSourcebooks, parseDnd5eCampaignRules } from '../campaign-rules';
 import { computeDnd5eDerived } from '../derived';
 import { parseDnd5eSheet } from '../sheet';
 import { findClass } from '../srd/classes';
@@ -350,6 +350,10 @@ describe('regras da campanha', () => {
     expect(parseDnd5eCampaignRules({ sourcebooks: ['xgte', 'tcoe'] }).sourcebooks).toEqual(['xgte', 'tcoe']);
     expect(parseDnd5eCampaignRules({ sourcebooks: ['livro-de-magias'] }).sourcebooks).toEqual(['livro-de-magias']);
     expect(parseDnd5eCampaignRules({ sourcebooks: ['Livro Falso!'] }).sourcebooks).toEqual([]);
+    // Regras de Tormenta20 têm outro formato: o leitor do D&D perdia os livros (bug do app).
+    const t20Rules = { startingLevel: 1, attributeMethods: ['points'], sourcebooks: ['tormenta20-jda'] };
+    expect(campaignSourcebooks(t20Rules)).toEqual(['tormenta20-jda']);
+    expect(campaignSourcebooks(null)).toEqual([]);
   });
 });
 

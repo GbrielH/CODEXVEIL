@@ -1,8 +1,8 @@
 'use client';
 
 import type { MapToken, SessionMap, Wall } from '@codexveil/database';
-import { cellRect, fogCells, pointInPolygon, tokenSizeSquares, visibilityPolygon, wallBlocksSight, type GridRect, type Point, type WallStyle } from '@codexveil/domain';
-import { useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { cellRect, fogCells, formatMeters, gridDistance, pointInPolygon, tokenSizeSquares, visibilityPolygon, wallBlocksSight, type GridRect, type Point, type WallStyle } from '@codexveil/domain';
+import { useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useCampaignColors } from '@/components/dice/campaign-colors';
 import { WallPatterns, WallShape } from './wall-art';
 
@@ -25,6 +25,8 @@ interface MapBoardProps {
   imageUrl: string | null;
   /** URL da imagem de cada token (id → URL). */
   tokenImages?: Record<string, string>;
+  /** Sistema da campanha (regra de distância na diagonal). */
+  systemId: string;
   /** Estilo da parede desenhada pelo mestre. */
   wallStyle?: WallStyle;
   /** Mestre: vê tudo (névoa translúcida, paredes, tokens ocultos) e move qualquer token. */
@@ -50,6 +52,7 @@ export function MapBoard({
   tokens,
   imageUrl,
   tokenImages = {},
+  systemId,
   wallStyle = 'stone',
   isGm,
   myCharacterId,
@@ -69,6 +72,26 @@ export function MapBoard({
   const [area, setArea] = useState<{ start: Point; end: Point } | null>(null);
   const [wallStart, setWallStart] = useState<Point | null>(null);
   const [hover, setHover] = useState<Point | null>(null);
+
+  // Rastro dos movimentos (de todos, inclusive vindos do tempo real): linha e distância por 6 s.
+  const [lastTokens, setLastTokens] = useState(tokens);
+  const [trails, setTrails] = useState<{ id: string; label: string; from: Point; to: Point; side: number; meters: number }[]>([]);
+  if (lastTokens !== tokens) {
+    const before = new Map(lastTokens.map((token) => [token.id, token]));
+    const moved = tokens.flatMap((token) => {
+      const old = before.get(token.id);
+      if (!old || (old.x === token.x && old.y === token.y)) return [];
+      const { meters } = gridDistance(old, token, systemId);
+      return [{ id: token.id, label: token.label, from: { x: old.x, y: old.y }, to: { x: token.x, y: token.y }, side: tokenSizeSquares[token.size], meters }];
+    });
+    setLastTokens(tokens);
+    if (moved.length) setTrails((current) => [...current.filter((trail) => !moved.some((entry) => entry.id === trail.id)), ...moved]);
+  }
+  useEffect(() => {
+    if (trails.length === 0) return;
+    const timer = window.setTimeout(() => setTrails([]), 6000);
+    return () => window.clearTimeout(timer);
+  }, [trails]);
 
   const myToken = tokens.find((token) => token.kind === 'character' && token.characterId === myCharacterId) ?? null;
 
@@ -261,6 +284,33 @@ export function MapBoard({
         );
       })}
 
+      {/* Rastros dos últimos movimentos (linha tracejada e distância). */}
+      {trails.filter((trail) => tokens.some((token) => token.id === trail.id && visibleToMe(token))).map((trail) => {
+        const half = trail.side / 2;
+        return (
+          <g key={`rastro-${trail.id}`} style={{ pointerEvents: 'none' }}>
+            <line x1={trail.from.x + half} y1={trail.from.y + half} x2={trail.to.x + half} y2={trail.to.y + half} stroke="#f3e2b3" strokeWidth={0.06} strokeDasharray="0.2 0.14" />
+            <circle cx={trail.from.x + half} cy={trail.from.y + half} r={0.1} fill="#f3e2b3" />
+            <DistanceTag x={trail.to.x + half} y={trail.to.y - 0.15} text={`${trail.label ? `${trail.label}: ` : ''}${formatMeters(trail.meters)}`} />
+          </g>
+        );
+      })}
+      {drag
+        ? (() => {
+            const token = tokens.find((entry) => entry.id === drag.tokenId);
+            if (!token) return null;
+            const side = tokenSizeSquares[token.size];
+            const target = { x: Math.max(0, Math.min(map.cols - side, Math.round(drag.x))), y: Math.max(0, Math.min(map.rows - side, Math.round(drag.y))) };
+            const { squares, meters } = gridDistance(token, target, systemId);
+            return (
+              <g style={{ pointerEvents: 'none' }}>
+                <rect x={target.x} y={target.y} width={side} height={side} fill="rgba(243,226,179,0.12)" stroke="#f3e2b3" strokeWidth={0.04} strokeDasharray="0.15 0.1" />
+                <DistanceTag x={target.x + side / 2} y={target.y - 0.15} text={`${formatMeters(meters)} (${squares} ${squares === 1 ? 'quadrado' : 'quadrados'})`} />
+              </g>
+            );
+          })()
+        : null}
+
       {/* Névoa: opaca para o jogador, translúcida para o mestre. */}
       {unrevealedPath ? <path d={unrevealedPath} fill="#050505" opacity={isGm ? 0.55 : 1} style={{ pointerEvents: 'none' }} /> : null}
       {sightPoints ? <rect x="0" y="0" width={map.cols} height={map.rows} fill="#050505" opacity={0.92} mask={`url(#visao-${uid})`} style={{ pointerEvents: 'none' }} /> : null}
@@ -303,5 +353,18 @@ export function MapBoard({
         />
       ) : null}
     </svg>
+  );
+}
+
+/** Etiqueta de distância sobre o mapa (em unidades de quadrado). */
+function DistanceTag({ x, y, text }: { x: number; y: number; text: string }) {
+  const width = Math.max(1.2, text.length * 0.2 + 0.3);
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <rect x={-width / 2} y={-0.5} width={width} height={0.42} rx={0.12} fill="rgba(20,16,12,0.9)" stroke="#f3e2b3" strokeWidth={0.03} />
+      <text y={-0.29} textAnchor="middle" dominantBaseline="central" fontSize={0.26} fontWeight={700} fill="#f3e2b3">
+        {text}
+      </text>
+    </g>
   );
 }

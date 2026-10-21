@@ -405,6 +405,7 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
             <div className="max-h-[75vh] overflow-auto rounded-md border border-line">
               <MapBoard
+                systemId={systemId}
                 map={map}
                 tokens={tokens}
                 imageUrl={imageUrl}

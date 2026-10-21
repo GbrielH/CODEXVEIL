@@ -7,8 +7,8 @@ import {
   type CodexveilClient,
 } from '@codexveil/database';
 import {
+  campaignSourcebooks,
   CHARACTER_BOOK_KINDS,
-  parseDnd5eCampaignRules,
   type BookContentSource,
 } from '@codexveil/rpg-systems/dnd5e';
 import { T20_CHARACTER_BOOK_KINDS, type T20ContentSource } from '@codexveil/rpg-systems/tormenta20';
@@ -78,7 +78,7 @@ async function packsFor(client: CodexveilClient, userId: string, character: Shee
     return listCampaignBookPacks(
       client,
       campaign.ownerId,
-      parseDnd5eCampaignRules(campaign.characterRules).sourcebooks,
+      campaignSourcebooks(campaign.characterRules),
     );
   }
   if (!character.viewer.isOwner) return [];

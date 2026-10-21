@@ -12,6 +12,7 @@ import {
 import { campaignRoleLabels } from '@codexveil/domain';
 import { conditionLabel, findSystem, summarizeSheet } from '@codexveil/rpg-systems';
 import {
+  campaignSourcebooks,
   dnd5eCampaignIssues,
   dnd5eCampaignLinks,
   parseDnd5eCampaignRules,
@@ -110,7 +111,7 @@ export default function CampaignScreen() {
     campaign.systemId === 'dnd5e'
       ? dnd5eCampaignLinks(
           system?.officialLinks ?? [],
-          parseDnd5eCampaignRules(campaign.characterRules).sourcebooks,
+          campaignSourcebooks(campaign.characterRules),
         )
       : (system?.officialLinks ?? []);
   const showCreationRules =

@@ -90,7 +90,7 @@ export default async function SessionTabPage({ params }: PageProps<'/campanhas/[
         </>
       ) : null}
 
-      {!isGm ? <MapView campaignId={campaign.id} myCharacterId={ownCharacter?.id ?? null} /> : null}
+      {!isGm ? <MapView campaignId={campaign.id} systemId={campaign.systemId} myCharacterId={ownCharacter?.id ?? null} /> : null}
 
       {blocks.length === 0 ? (
         <EmptyState
