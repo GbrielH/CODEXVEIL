@@ -81,8 +81,8 @@ export function RevealPanel({
       />
       {blocks.length === 0 ? (
         <p className="text-sm text-fg-muted">
-          Escreva o roteiro da sessão no editor; cada bloco aparece aqui oculto, pronto para
-          liberar.
+          Nada marcado para liberar. No editor do roteiro, marque “Para liberar na mesa” nos blocos que você
+          pretende mostrar; o resto fica como roteiro só seu.
         </p>
       ) : (
         <ul className="flex max-h-[28rem] flex-col gap-2 overflow-y-auto pr-1">

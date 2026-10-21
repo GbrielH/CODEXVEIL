@@ -79,6 +79,7 @@ export default async function SessionTabPage({ params }: PageProps<'/campanhas/[
         <>
           <MapManager
             campaignId={campaign.id}
+            sessions={all.map((entry) => ({ id: entry.id, number: entry.number, title: entry.title }))}
             sessionId={session.id}
             systemId={campaign.systemId}
             characters={party.map((character) => ({ id: character.id, name: character.name }))}

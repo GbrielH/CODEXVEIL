@@ -237,17 +237,19 @@ export interface StoredSessionBlock {
   sessionId: string;
   position: number;
   visibility: SharedVisibility;
+  /** O mestre marcou para liberar na mesa (aparece em "Lore da sessão"); senão é roteiro só dele. */
+  revealable: boolean;
   /** `null` quando os dados não seguem o esquema atual (exibido como bloco ilegível). */
   content: SessionBlockContent | null;
   type: Tables<'session_blocks'>['type'];
   updatedAt: string;
 }
 
-const BLOCK_COLUMNS = 'id, session_id, type, position, visibility, data, updated_at' as const;
+const BLOCK_COLUMNS = 'id, session_id, type, position, visibility, revealable, data, updated_at' as const;
 
 type BlockRow = Pick<
   Tables<'session_blocks'>,
-  'id' | 'session_id' | 'type' | 'position' | 'visibility' | 'data' | 'updated_at'
+  'id' | 'session_id' | 'type' | 'position' | 'visibility' | 'revealable' | 'data' | 'updated_at'
 >;
 
 function toStoredBlock(row: BlockRow): StoredSessionBlock {
@@ -258,6 +260,7 @@ function toStoredBlock(row: BlockRow): StoredSessionBlock {
     position: row.position,
     // A coluna aceita apenas 'members' e 'gm' para blocos (CHECK no banco).
     visibility: row.visibility === 'members' ? 'members' : 'gm',
+    revealable: row.revealable,
     content: parsed.success ? parsed.data : null,
     type: row.type,
     updatedAt: row.updated_at,
@@ -307,7 +310,7 @@ export async function createSessionBlock(
 export async function updateSessionBlock(
   client: CodexveilClient,
   blockId: string,
-  patch: { visibility?: SharedVisibility; content?: SessionBlockContent; position?: number },
+  patch: { visibility?: SharedVisibility; content?: SessionBlockContent; position?: number; revealable?: boolean },
 ): Promise<StoredSessionBlock> {
   const { data, error } = await client
     .from('session_blocks')
@@ -317,6 +320,7 @@ export async function updateSessionBlock(
         ? { data: patch.content.data as Json, schema_version: BLOCK_SCHEMA_VERSION }
         : {}),
       ...(patch.position === undefined ? {} : { position: patch.position }),
+      ...(patch.revealable === undefined ? {} : { revealable: patch.revealable }),
     })
     .eq('id', blockId)
     .select(BLOCK_COLUMNS);

@@ -36,6 +36,7 @@ export function MapBoard({
   tokens,
   imageUrl,
   tokenImages,
+  layers,
   systemId,
   myCharacterId,
   zoom,
@@ -47,6 +48,8 @@ export function MapBoard({
   tokens: MapToken[];
   imageUrl: string | null;
   tokenImages: Record<string, string>;
+  /** Imagens do mapa (camadas) com URL e proporção. */
+  layers: { path: string; x: number; y: number; width: number; url: string; aspect: number }[];
   /** Sistema da campanha (regra de distância na diagonal). */
   systemId: string;
   myCharacterId: string | null;
@@ -121,16 +124,22 @@ export function MapBoard({
                 </Mask>
               ) : null}
             </Defs>
-            {imageUrl ? (
-              <SvgImage
-                href={{ uri: imageUrl }}
-                x={map.imageOffsetX}
-                y={map.imageOffsetY}
-                width={map.cols * map.imageScale}
-                height={map.rows * map.imageScale * 10}
-                preserveAspectRatio="xMinYMin meet"
-              />
-            ) : null}
+            {layers.length
+              ? layers.map((layer, index) => (
+                  <SvgImage key={`${layer.path}-${index}`} href={{ uri: layer.url }} x={layer.x} y={layer.y} width={layer.width} height={layer.width * layer.aspect} preserveAspectRatio="none" />
+                ))
+              : imageUrl
+                ? (
+                  <SvgImage
+                    href={{ uri: imageUrl }}
+                    x={map.imageOffsetX}
+                    y={map.imageOffsetY}
+                    width={map.cols * map.imageScale}
+                    height={map.rows * map.imageScale * 10}
+                    preserveAspectRatio="xMinYMin meet"
+                  />
+                )
+                : null}
             {map.showGrid ? <Rect x="0" y="0" width={map.cols} height={map.rows} fill="url(#grade)" /> : null}
             {map.areas.map((shape, index) => {
               const cells = areaCells(shape, map.cols, map.rows);

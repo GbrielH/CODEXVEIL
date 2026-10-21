@@ -13,6 +13,14 @@ export type FogRect = [number, number, number, number];
 /** Parede: [x1, y1, x2, y2] em quadrados e o estilo (pedra, tijolo, ruína…). */
 export type Wall = [number, number, number, number, WallStyle];
 
+/** Uma imagem (camada) do mapa: posição e largura em quadrados; a altura segue a proporção. */
+export interface MapImage {
+  path: string;
+  x: number;
+  y: number;
+  width: number;
+}
+
 export interface SessionMap {
   id: string;
   campaignId: string;
@@ -36,6 +44,8 @@ export interface SessionMap {
   areas: MapArea[];
   /** Desenhos e anotações visíveis a todos. */
   drawings: MapDrawing[];
+  /** Imagens do mapa, da de baixo para a de cima. */
+  images: MapImage[];
 }
 
 export type MapTokenKind = 'character' | 'creature' | 'marker';
@@ -58,10 +68,10 @@ export interface MapToken {
 }
 
 const MAP_COLUMNS =
-  'id, campaign_id, session_id, name, image_path, image_scale, image_offset_x, image_offset_y, cols, rows, show_grid, fog_enabled, fog_revealed, line_of_sight, walls, is_active, fog_auto_reveal, areas, drawings' as const;
+  'id, campaign_id, session_id, name, image_path, image_scale, image_offset_x, image_offset_y, cols, rows, show_grid, fog_enabled, fog_revealed, line_of_sight, walls, is_active, fog_auto_reveal, areas, drawings, images' as const;
 const TOKEN_COLUMNS = 'id, map_id, campaign_id, kind, character_id, creature_id, label, x, y, size, is_hidden, vision_radius, image_path' as const;
 
-type MapRow = Pick<Tables<'session_maps'>, 'id' | 'campaign_id' | 'session_id' | 'name' | 'image_path' | 'image_scale' | 'image_offset_x' | 'image_offset_y' | 'cols' | 'rows' | 'show_grid' | 'fog_enabled' | 'fog_revealed' | 'line_of_sight' | 'walls' | 'is_active' | 'fog_auto_reveal' | 'areas' | 'drawings'>;
+type MapRow = Pick<Tables<'session_maps'>, 'id' | 'campaign_id' | 'session_id' | 'name' | 'image_path' | 'image_scale' | 'image_offset_x' | 'image_offset_y' | 'cols' | 'rows' | 'show_grid' | 'fog_enabled' | 'fog_revealed' | 'line_of_sight' | 'walls' | 'is_active' | 'fog_auto_reveal' | 'areas' | 'drawings' | 'images'>;
 type TokenRow = Pick<Tables<'map_tokens'>, 'id' | 'map_id' | 'campaign_id' | 'kind' | 'character_id' | 'creature_id' | 'label' | 'x' | 'y' | 'size' | 'is_hidden' | 'vision_radius' | 'image_path'>;
 
 function quads(value: Json): [number, number, number, number][] {
@@ -79,6 +89,15 @@ function walls(value: Json): Wall[] {
     const [x1, y1, x2, y2, style] = entry;
     if (typeof x1 !== 'number' || typeof y1 !== 'number' || typeof x2 !== 'number' || typeof y2 !== 'number') return [];
     return [[x1, y1, x2, y2, isWallStyle(style) ? style : 'stone']];
+  });
+}
+
+function mapImages(value: Json): MapImage[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry): MapImage[] => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return [];
+    const { path, x, y, width } = entry as Record<string, unknown>;
+    return typeof path === 'string' && typeof x === 'number' && typeof y === 'number' && typeof width === 'number' ? [{ path, x, y, width }] : [];
   });
 }
 
@@ -103,6 +122,7 @@ function toMap(row: MapRow): SessionMap {
     fogAutoReveal: row.fog_auto_reveal,
     areas: Array.isArray(row.areas) ? row.areas.filter(isMapArea) : [],
     drawings: Array.isArray(row.drawings) ? row.drawings.filter(isMapDrawing) : [],
+    images: mapImages(row.images),
   };
 }
 
@@ -127,6 +147,13 @@ function toToken(row: TokenRow): MapToken {
 /** Caminho da imagem de um mapa no bucket `campaign-media`. */
 export function campaignMapPath(campaignId: string, fileName: string): string {
   return `campaigns/${campaignId}/maps/${fileName}`;
+}
+
+/** Todos os mapas da campanha (mestre), por sessão e data de criação. */
+export async function listCampaignMaps(client: CodexveilClient, campaignId: string): Promise<SessionMap[]> {
+  const { data, error } = await client.from('session_maps').select(MAP_COLUMNS).eq('campaign_id', campaignId).order('created_at');
+  if (error) throw toAppError(error);
+  return (data ?? []).map(toMap);
 }
 
 /** Mapas de uma sessão (mestre). */
@@ -159,7 +186,7 @@ export async function createSessionMap(client: CodexveilClient, input: { campaig
   return data.id;
 }
 
-export type SessionMapPatch = Partial<Pick<SessionMap, 'name' | 'imagePath' | 'imageScale' | 'imageOffsetX' | 'imageOffsetY' | 'cols' | 'rows' | 'showGrid' | 'fogEnabled' | 'fogRevealed' | 'lineOfSight' | 'walls' | 'fogAutoReveal' | 'areas' | 'drawings'>>;
+export type SessionMapPatch = Partial<Pick<SessionMap, 'name' | 'imagePath' | 'imageScale' | 'imageOffsetX' | 'imageOffsetY' | 'cols' | 'rows' | 'showGrid' | 'fogEnabled' | 'fogRevealed' | 'lineOfSight' | 'walls' | 'fogAutoReveal' | 'areas' | 'drawings' | 'images'>>;
 
 export async function updateSessionMap(client: CodexveilClient, mapId: string, patch: SessionMapPatch): Promise<void> {
   const update: Partial<Tables<'session_maps'>> = {};
@@ -177,6 +204,7 @@ export async function updateSessionMap(client: CodexveilClient, mapId: string, p
   if (patch.walls !== undefined) update.walls = patch.walls;
   if (patch.fogAutoReveal !== undefined) update.fog_auto_reveal = patch.fogAutoReveal;
   if (patch.areas !== undefined) update.areas = patch.areas;
+  if (patch.images !== undefined) update.images = patch.images as unknown as Json;
   if (patch.drawings !== undefined) update.drawings = patch.drawings;
   const { data, error } = await client.from('session_maps').update(update).eq('id', mapId).select('id');
   if (error) throw toAppError(error);

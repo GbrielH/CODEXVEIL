@@ -14,18 +14,21 @@ export interface MapData {
   imageUrl: string | null;
   /** URL da imagem de cada token (id → URL assinada). */
   tokenImages: Record<string, string>;
+  /** URL de cada imagem (camada) do mapa (caminho → URL assinada). */
+  layerUrls: Record<string, string>;
 }
 
 async function load(campaignId: string, mapId: MapSelector): Promise<MapData> {
   const client = getSupabaseBrowserClient();
-  if (!mapId) return { map: null, tokens: [], imageUrl: null, tokenImages: {} };
+  if (!mapId) return { map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {} };
   const map = mapId === 'active' ? await getActiveMap(client, campaignId) : await getSessionMap(client, mapId.id);
-  if (!map) return { map: null, tokens: [], imageUrl: null, tokenImages: {} };
+  if (!map) return { map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {} };
   const tokens = await listMapTokens(client, map.id);
   const paths = await tokenImagePaths(client, tokens).catch((): Record<string, string> => ({}));
-  const urls = await signedMediaUrls(client, [map.imagePath, ...Object.values(paths)]);
+  const urls = await signedMediaUrls(client, [map.imagePath, ...map.images.map((layer) => layer.path), ...Object.values(paths)]);
   const tokenImages = Object.fromEntries(Object.entries(paths).flatMap(([id, path]) => (urls[path] ? [[id, urls[path]]] : [])));
-  return { map, tokens, imageUrl: map.imagePath ? (urls[map.imagePath] ?? null) : null, tokenImages };
+  const layerUrls = Object.fromEntries(map.images.flatMap((layer) => (urls[layer.path] ? [[layer.path, urls[layer.path]!]] : [])));
+  return { map, tokens, imageUrl: map.imagePath ? (urls[map.imagePath] ?? null) : null, tokenImages, layerUrls };
 }
 
 /**
@@ -33,7 +36,7 @@ async function load(campaignId: string, mapId: MapSelector): Promise<MapData> {
  * recarregado em tempo real quando o mestre ou outro jogador muda algo.
  */
 export function useMapData(campaignId: string, mapId: MapSelector) {
-  const [data, setData] = useState<MapData>({ map: null, tokens: [], imageUrl: null, tokenImages: {} });
+  const [data, setData] = useState<MapData>({ map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {} });
   const [loaded, setLoaded] = useState(false);
 
   // Só a resposta mais recente vale (respostas antigas chegando depois desfaziam mudanças), e

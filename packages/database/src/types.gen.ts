@@ -1326,6 +1326,7 @@ export type Database = {
           data: Json;
           id: string;
           position: number;
+          revealable: boolean;
           schema_version: number;
           session_id: string;
           type: Database['public']['Enums']['session_block_type'];
@@ -1339,6 +1340,7 @@ export type Database = {
           data?: Json;
           id?: string;
           position: number;
+          revealable?: boolean;
           schema_version?: number;
           session_id: string;
           type: Database['public']['Enums']['session_block_type'];
@@ -1352,6 +1354,7 @@ export type Database = {
           data?: Json;
           id?: string;
           position?: number;
+          revealable?: boolean;
           schema_version?: number;
           session_id?: string;
           type?: Database['public']['Enums']['session_block_type'];
@@ -1494,6 +1497,7 @@ export type Database = {
           image_offset_y: number;
           image_path: string | null;
           image_scale: number;
+          images: Json;
           is_active: boolean;
           line_of_sight: boolean;
           name: string;
@@ -1517,6 +1521,7 @@ export type Database = {
           image_offset_y?: number;
           image_path?: string | null;
           image_scale?: number;
+          images?: Json;
           is_active?: boolean;
           line_of_sight?: boolean;
           name: string;
@@ -1540,6 +1545,7 @@ export type Database = {
           image_offset_y?: number;
           image_path?: string | null;
           image_scale?: number;
+          images?: Json;
           is_active?: boolean;
           line_of_sight?: boolean;
           name?: string;

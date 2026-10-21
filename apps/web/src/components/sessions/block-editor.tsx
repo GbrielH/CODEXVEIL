@@ -39,6 +39,8 @@ export interface EditorOptions {
 interface BlockDraft {
   visibility: SharedVisibility;
   content: SessionBlockContent;
+  /** Marcado para liberar na mesa (aparece em "Lore da sessão"); senão é roteiro só do mestre. */
+  revealable: boolean;
 }
 
 const inputClass =
@@ -81,7 +83,7 @@ export function BlockEditor(props: BlockEditorProps) {
   const { block, index, total, onLocalChange, onMove, onRemove, onInsertBelow, dragHandlers } =
     props;
   const autosave = useAutosave<BlockDraft>({
-    initial: { visibility: block.visibility, content: block.content },
+    initial: { visibility: block.visibility, content: block.content, revealable: block.revealable },
     version: 0,
     delayMs: 700,
     save: async (draft) => {
@@ -132,6 +134,18 @@ export function BlockEditor(props: BlockEditorProps) {
           locked={forcedPrivate}
           onChange={(visibility) => change({ visibility })}
         />
+        {forcedPrivate || draft.content.type === 'divider' ? null : (
+          <label
+            className={cx(
+              'flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition-colors',
+              draft.revealable ? 'border-parchment-300/60 bg-parchment-200/10 text-fg' : 'border-line-strong text-fg-muted hover:text-fg',
+            )}
+            title="Marcado: aparece na lista para liberar aos jogadores durante a sessão. Desmarcado: roteiro só seu."
+          >
+            <input type="checkbox" checked={draft.revealable} onChange={(event) => change({ revealable: event.target.checked })} className="h-3.5 w-3.5 accent-wine-500" />
+            Para liberar na mesa
+          </label>
+        )}
         <SaveStatus status={autosave.state.status} className="ml-auto" />
         <div className="flex items-center">
           <Button

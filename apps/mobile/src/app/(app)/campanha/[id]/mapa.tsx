@@ -3,7 +3,7 @@ import { formatMeters, gridDistance, tokenSizeSquares } from '@codexveil/domain'
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { ZoomIn, ZoomOut } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 import { useDicePalette } from '@/components/dice/dice-color';
 import { MapBoard } from '@/components/map/map-board';
 import { IconButton } from '@/components/ui/button';
@@ -16,6 +16,8 @@ import { useAsyncData, useRealtimeRefresh } from '@/lib/hooks';
 import { useUserId } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
+
+type MapLayer = { path: string; x: number; y: number; width: number; url: string; aspect: number };
 
 /** Mapa ativo da sessão no app (só jogar): ver a grade e mover o próprio token. */
 export default function CampaignMapScreen() {
@@ -31,12 +33,28 @@ export default function CampaignMapScreen() {
     if (!campaign) return null;
     const [map, party] = await Promise.all([getActiveMap(client, campaign.id), listCampaignCharacters(client, campaign.id)]);
     const own = party.find((character) => character.ownerId === userId) ?? null;
-    if (!map) return { campaign, map: null, tokens: [] as MapToken[], imageUrl: null as string | null, tokenImages: {}, own };
+    if (!map) return { campaign, map: null, tokens: [] as MapToken[], imageUrl: null as string | null, tokenImages: {}, layers: [] as MapLayer[], own };
     const tokens = await listMapTokens(client, map.id);
     const paths = await tokenImagePaths(client, tokens).catch((): Record<string, string> => ({}));
-    const urls = await signedMediaUrls(client, [map.imagePath, ...Object.values(paths)]);
+    const urls = await signedMediaUrls(client, [map.imagePath, ...map.images.map((layer) => layer.path), ...Object.values(paths)]);
+    // Imagens (camadas) com a proporção de cada uma, para desenhar na largura escolhida pelo mestre.
+    const layers = await Promise.all(
+      map.images.flatMap((layer) => {
+        const url = urls[layer.path];
+        if (!url) return [];
+        return [
+          new Promise<MapLayer>((resolve) =>
+            Image.getSize(
+              url,
+              (width, height) => resolve({ ...layer, url, aspect: width ? height / width : 1 }),
+              () => resolve({ ...layer, url, aspect: 1 }),
+            ),
+          ),
+        ];
+      }),
+    );
     const tokenImages = Object.fromEntries(Object.entries(paths).flatMap(([tokenId, path]) => (urls[path] ? [[tokenId, urls[path]]] : [])));
-    return { campaign, map, tokens, imageUrl: map.imagePath ? (urls[map.imagePath] ?? null) : null, tokenImages, own };
+    return { campaign, map, tokens, imageUrl: map.imagePath ? (urls[map.imagePath] ?? null) : null, tokenImages, layers, own };
   }, `${id}:${userId}`);
 
   useRealtimeRefresh(
@@ -63,7 +81,7 @@ export default function CampaignMapScreen() {
     );
   }
 
-  const { map, tokens, imageUrl, tokenImages, own } = data;
+  const { map, tokens, imageUrl, tokenImages, layers, own } = data;
   const myToken = tokens.find((token) => token.characterId !== null && token.characterId === own?.id) ?? null;
 
   const tap = (x: number, y: number) => {
@@ -110,6 +128,7 @@ export default function CampaignMapScreen() {
             tokens={tokens}
             imageUrl={imageUrl}
             tokenImages={tokenImages}
+            layers={layers}
             systemId={data.campaign.systemId}
             myCharacterId={own?.id ?? null}
             zoom={zoom}

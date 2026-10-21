@@ -430,6 +430,20 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-21 — roteiro "para liberar", mapas por sessão e várias imagens no mapa
+
+- Blocos do roteiro ganham "Para liberar na mesa": só os marcados aparecem em "Lore da sessão"; o
+  resto é roteiro só do mestre. Blocos já existentes ficaram marcados (nada sumiu); os novos
+  nascem como roteiro. (`session_blocks.revealable`)
+- Mapa: ao criar, o mestre escolhe a sessão e o nome; a lista mostra todos os mapas da campanha
+  ("Sessão N · título — mapa"), para conferir os cenários de qualquer sessão.
+- Várias imagens por mapa (camadas): "Adicionar imagem", ferramenta "Imagem" para arrastar cada
+  uma dentro da grade, largura em quadrados, "Trazer para a frente" e "Tirar imagem". A imagem
+  antiga virou a primeira camada. (`session_maps.images`; leitura no Storage só das camadas do
+  mapa ativo para jogadores.) No app as camadas aparecem com a proporção certa.
+- Migração `20261021150000_reveal_flags_map_layers.sql` aplicada. Verificado: `pnpm check` 20/20,
+  `pnpm build` e captura no Chrome headless com duas camadas.
+
 ### 2026-10-21 — mapa: régua, áreas de magia, névoa automática, desenho e anotações
 
 - **Régua** (mestre e jogadores, site): arrastar de um quadrado a outro mostra metros e quadrados,

@@ -8,7 +8,7 @@ import {
   deleteMapToken,
   deleteSessionMap,
   getMapSecrets,
-  listSessionMaps,
+  listCampaignMaps,
   saveMapSecrets,
   setActiveMap,
   updateMapToken,
@@ -61,8 +61,17 @@ export interface MapCreature {
   size: TokenSize;
 }
 
+export interface MapSession {
+  id: string;
+  number: number;
+  title: string;
+}
+
 interface MapManagerProps {
   campaignId: string;
+  /** Sessões da campanha (o mapa pertence a uma delas). */
+  sessions: MapSession[];
+  /** Sessão em andamento/atual: escolhida por padrão ao criar e ao abrir. */
   sessionId: string;
   systemId: string;
   characters: MapCharacter[];
@@ -73,6 +82,7 @@ interface MapManagerProps {
 
 const TOOLS: { tool: MapTool; label: string; icon: ReactNode }[] = [
   { tool: 'move', label: 'Mover', icon: <MousePointer2 className="h-4 w-4" aria-hidden="true" /> },
+  { tool: 'image', label: 'Imagem', icon: <ImageUp className="h-4 w-4" aria-hidden="true" /> },
   { tool: 'reveal', label: 'Revelar névoa', icon: <SquareDashed className="h-4 w-4" aria-hidden="true" /> },
   { tool: 'hide', label: 'Cobrir com névoa', icon: <Square className="h-4 w-4" aria-hidden="true" /> },
   { tool: 'wall', label: 'Parede', icon: <Minus className="h-4 w-4" aria-hidden="true" /> },
@@ -92,7 +102,7 @@ const DEFAULT_REVEAL_RADIUS = 6;
  * ativa o mapa para os jogadores, coloca tokens (personagens, criaturas, marcadores), pinta a
  * névoa de guerra e desenha paredes para a linha de visão opcional.
  */
-export function MapManager({ campaignId, sessionId, systemId, characters, creatures, canManage }: MapManagerProps) {
+export function MapManager({ campaignId, sessions, sessionId, systemId, characters, creatures, canManage }: MapManagerProps) {
   const { toast } = useToast();
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -115,31 +125,41 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
   const sizeLabels = tokenSizeLabels(systemId);
   const selectedKey = useMemo(() => (selectedId ? { id: selectedId } : null), [selectedId]);
 
-  const { map, tokens, imageUrl, tokenImages, live, reload, setData, track } = useMapData(campaignId, selectedKey);
+  const { map, tokens, imageUrl, tokenImages, layerUrls, live, reload, setData, track } = useMapData(campaignId, selectedKey);
+  const [newSessionId, setNewSessionId] = useState(sessionId);
+  const [selectedLayer, setSelectedLayer] = useState<number | null>(null);
+  const sessionLabel = (id: string) => {
+    const found = sessions.find((entry) => entry.id === id);
+    return found ? `Sessão ${found.number} · ${found.title}` : 'Sessão';
+  };
+  // Mapas da sessão atual primeiro; depois os das outras sessões.
+  const pickDefault = (list: SessionMap[]) => list.find((entry) => entry.isActive)?.id ?? list.find((entry) => entry.sessionId === sessionId)?.id ?? list[0]?.id ?? null;
 
   const reloadMaps = useCallback(async () => {
     try {
-      const next = await listSessionMaps(getSupabaseBrowserClient(), sessionId);
+      const next = await listCampaignMaps(getSupabaseBrowserClient(), campaignId);
       setMaps(next);
-      setSelectedId((current) => current ?? next.find((entry) => entry.isActive)?.id ?? next[0]?.id ?? null);
+      setSelectedId((current) => current ?? pickDefault(next));
     } catch {
       // Mantém a lista anterior.
     }
-  }, [sessionId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pickDefault só lê a sessão atual.
+  }, [campaignId]);
 
   useEffect(() => {
     let active = true;
-    listSessionMaps(getSupabaseBrowserClient(), sessionId)
+    listCampaignMaps(getSupabaseBrowserClient(), campaignId)
       .then((next) => {
         if (!active) return;
         setMaps(next);
-        setSelectedId((current) => current ?? next.find((entry) => entry.isActive)?.id ?? next[0]?.id ?? null);
+        setSelectedId((current) => current ?? pickDefault(next));
       })
       .catch(() => undefined);
     return () => {
       active = false;
     };
-  }, [sessionId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pickDefault só lê a sessão atual.
+  }, [campaignId]);
 
   const fail = (title: string, error: unknown) => toast({ tone: 'danger', title, description: failureMessage(error, 'Tente novamente.') });
 
@@ -257,7 +277,7 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
     if (!name) return;
     setBusy(true);
     try {
-      const mapId = await createSessionMap(getSupabaseBrowserClient(), { campaignId, sessionId, name });
+      const mapId = await createSessionMap(getSupabaseBrowserClient(), { campaignId, sessionId: newSessionId, name });
       setNewName('');
       await reloadMaps();
       setSelectedId(mapId);
@@ -282,10 +302,12 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
       const bucket = client.storage.from(CAMPAIGN_MEDIA_BUCKET);
       const { error } = await bucket.upload(path, prepared.file, { contentType: prepared.mimeType, upsert: false });
       if (error) throw error;
-      const previous = map.imagePath;
-      await updateSessionMap(client, map.id, { imagePath: path });
-      if (previous) await bucket.remove([previous]);
-      toast({ tone: 'success', title: 'Imagem do mapa enviada.', description: 'Ajuste o tamanho até os quadrados combinarem com o desenho (1 quadrado = 1,5 m).' });
+      // Nova camada no canto de cima, com a largura do mapa; o mestre arrasta e ajusta.
+      const layers = [...map.images, { path, x: 0, y: 0, width: map.cols }];
+      await track(() => updateSessionMap(client, map.id, { images: layers }));
+      setSelectedLayer(layers.length - 1);
+      setTool('image');
+      toast({ tone: 'success', title: 'Imagem adicionada ao mapa.', description: 'Com a ferramenta "Imagem", arraste para posicionar e ajuste a largura até os quadrados combinarem (1 quadrado = 1,5 m).' });
       reload();
     } catch (error) {
       fail('A imagem não foi enviada', error);
@@ -354,18 +376,27 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
 
       <div className="flex flex-wrap items-end gap-2">
         {maps.length ? (
-          <SelectField id={`${id}-mapa`} label="Mapa" value={selectedId ?? ''} onChange={(event) => setSelectedId(event.target.value || null)} className="min-w-48">
-            {maps.map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.name}
-                {entry.isActive ? ' (ativo)' : ''}
-              </option>
-            ))}
+          <SelectField id={`${id}-mapa`} label="Cenário (todos os mapas da campanha)" value={selectedId ?? ''} onChange={(event) => setSelectedId(event.target.value || null)} className="min-w-64">
+            {[...maps]
+              .sort((a, b) => (sessions.find((entry) => entry.id === b.sessionId)?.number ?? 0) - (sessions.find((entry) => entry.id === a.sessionId)?.number ?? 0))
+              .map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {sessionLabel(entry.sessionId)} — {entry.name}
+                  {entry.isActive ? ' (ativo)' : ''}
+                </option>
+              ))}
           </SelectField>
         ) : null}
         {canManage ? (
           <>
-            <TextField id={`${id}-novo`} label="Novo mapa" placeholder="Ex.: Taverna do Javali" maxLength={80} value={newName} onChange={(event) => setNewName(event.target.value)} />
+            <SelectField id={`${id}-sessao`} label="Sessão do novo mapa" value={newSessionId} onChange={(event) => setNewSessionId(event.target.value)} className="min-w-48">
+              {sessions.map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  Sessão {entry.number} · {entry.title}
+                </option>
+              ))}
+            </SelectField>
+            <TextField id={`${id}-novo`} label="Nome do mapa" placeholder="Ex.: Taverna do Javali" maxLength={80} value={newName} onChange={(event) => setNewName(event.target.value)} />
             <Button icon={<Plus className="h-4 w-4" aria-hidden="true" />} disabled={!newName.trim()} loading={busy && !map} onClick={() => void createMap()}>
               Criar mapa
             </Button>
@@ -382,7 +413,7 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
               </Button>
               <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(event) => event.target.files?.[0] && void uploadImage(event.target.files[0])} />
               <Button variant="secondary" icon={<ImageUp className="h-4 w-4" aria-hidden="true" />} disabled={busy} onClick={() => inputRef.current?.click()}>
-                {map.imagePath ? 'Trocar imagem' : 'Enviar imagem'}
+                Adicionar imagem
               </Button>
               <Button variant="ghost" icon={<Trash2 className="h-4 w-4" aria-hidden="true" />} disabled={busy} onClick={() => void removeMap()}>
                 Apagar mapa
@@ -393,26 +424,75 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
           {canManage ? (
             <fieldset className="grid gap-3 rounded-md border border-line p-3 sm:grid-cols-3 lg:grid-cols-6">
               <legend className="px-1 text-xs text-fg-muted">Ajuste da imagem e da grade</legend>
-              <label className="flex flex-col gap-1 text-xs text-fg-secondary sm:col-span-3 lg:col-span-2">
-                Tamanho da imagem ({Math.round(map.imageScale * 100)}%)
-                <input
-                  type="range"
-                  min={0.1}
-                  max={4}
-                  step={0.01}
-                  value={map.imageScale}
-                  onChange={(event) => patchMap({ imageScale: Number(event.target.value) }, 400)}
-                  className="accent-wine-500"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-fg-secondary">
-                Mover imagem → (quadrados)
-                <NumberInput value={map.imageOffsetX} decimal min={-500} max={500} onCommit={(value) => patchMap({ imageOffsetX: value ?? 0 })} />
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-fg-secondary">
-                Mover imagem ↓ (quadrados)
-                <NumberInput value={map.imageOffsetY} decimal min={-500} max={500} onCommit={(value) => patchMap({ imageOffsetY: value ?? 0 })} />
-              </label>
+              <div className="flex flex-col gap-2 sm:col-span-3 lg:col-span-6">
+                {map.images.length === 0 ? (
+                  <p className="text-xs text-fg-muted">Sem imagem: use “Adicionar imagem”. Dá para pôr várias e arrastar cada uma com a ferramenta “Imagem”.</p>
+                ) : (
+                  <div className="flex flex-wrap items-end gap-3">
+                    <SelectField
+                      id={`${id}-camada`}
+                      label="Imagem selecionada"
+                      value={selectedLayer === null ? '' : String(selectedLayer)}
+                      onChange={(event) => {
+                        setSelectedLayer(event.target.value === '' ? null : Number(event.target.value));
+                        setTool('image');
+                      }}
+                      className="min-w-40"
+                    >
+                      <option value="">Escolha…</option>
+                      {map.images.map((_, index) => (
+                        <option key={index} value={index}>
+                          Imagem {index + 1}
+                          {index === map.images.length - 1 && map.images.length > 1 ? ' (por cima)' : ''}
+                        </option>
+                      ))}
+                    </SelectField>
+                    {selectedLayer !== null && map.images[selectedLayer] ? (
+                      <>
+                        <label className="flex min-w-56 flex-1 flex-col gap-1 text-xs text-fg-secondary">
+                          Largura: {map.images[selectedLayer].width.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} quadrados
+                          <input
+                            type="range"
+                            min={1}
+                            max={Math.max(200, map.cols * 3)}
+                            step={0.25}
+                            value={map.images[selectedLayer].width}
+                            onChange={(event) =>
+                              patchMap({ images: map.images.map((layer, index) => (index === selectedLayer ? { ...layer, width: Number(event.target.value) } : layer)) }, 400)
+                            }
+                            className="accent-wine-500"
+                          />
+                        </label>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={selectedLayer === map.images.length - 1}
+                          onClick={() => {
+                            const layer = map.images[selectedLayer]!;
+                            patchMap({ images: [...map.images.filter((_, index) => index !== selectedLayer), layer] });
+                            setSelectedLayer(map.images.length - 1);
+                          }}
+                        >
+                          Trazer para a frente
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
+                          onClick={() => {
+                            const layer = map.images[selectedLayer]!;
+                            patchMap({ images: map.images.filter((_, index) => index !== selectedLayer) });
+                            setSelectedLayer(null);
+                            void getSupabaseBrowserClient().storage.from(CAMPAIGN_MEDIA_BUCKET).remove([layer.path]);
+                          }}
+                        >
+                          Tirar imagem
+                        </Button>
+                      </>
+                    ) : null}
+                  </div>
+                )}
+              </div>
               <label className="flex flex-col gap-1 text-xs text-fg-secondary">
                 Colunas
                 <NumberInput value={map.cols} min={4} max={200} onCommit={(value) => value && patchMap({ cols: value })} />
@@ -481,6 +561,7 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
               </Button>
             </span>
           </div>
+          {tool === 'image' ? <p className="text-xs text-fg-muted">Arraste uma imagem para posicioná-la dentro da grade; a largura fica no ajuste acima.</p> : null}
           {tool === 'ruler' ? <p className="text-xs text-fg-muted">Arraste de um quadrado a outro para medir (diagonal pela regra do sistema).</p> : null}
           {tool === 'area' ? (
             <div className="flex flex-col gap-2">
@@ -540,6 +621,10 @@ export function MapManager({ campaignId, sessionId, systemId, characters, creatu
                 tokens={tokens}
                 imageUrl={imageUrl}
                 tokenImages={tokenImages}
+                layerUrls={layerUrls}
+                selectedLayer={selectedLayer}
+                onSelectLayer={setSelectedLayer}
+                onMoveLayer={(index, x, y) => patchMap({ images: map.images.map((layer, position) => (position === index ? { ...layer, x, y } : layer)) })}
                 wallStyle={wallStyle}
                 isGm
                 myCharacterId={null}

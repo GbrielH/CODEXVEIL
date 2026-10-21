@@ -1,6 +1,6 @@
 'use client';
 
-import type { MapToken, SessionMap, Wall } from '@codexveil/database';
+import type { MapImage, MapToken, SessionMap, Wall } from '@codexveil/database';
 import {
   areaCells,
   areaOutline,
@@ -24,7 +24,7 @@ import { useCampaignColors } from '@/components/dice/campaign-colors';
 import { WallPatterns, WallShape } from './wall-art';
 
 /** Ferramenta do mestre no tabuleiro. */
-export type MapTool = 'move' | 'ruler' | 'area' | 'reveal' | 'hide' | 'wall' | 'erase-wall' | 'draw' | 'note' | 'erase-drawing';
+export type MapTool = 'move' | 'image' | 'ruler' | 'area' | 'reveal' | 'hide' | 'wall' | 'erase-wall' | 'draw' | 'note' | 'erase-drawing';
 
 const CELL = 40;
 const CREATURE_COLOR = '#571F2B';
@@ -40,6 +40,13 @@ interface MapBoardProps {
   map: SessionMap;
   tokens: MapToken[];
   imageUrl: string | null;
+  /** URL de cada imagem (camada) do mapa (caminho → URL). */
+  layerUrls?: Record<string, string>;
+  /** Camada selecionada (ferramenta "imagem" do mestre). */
+  selectedLayer?: number | null;
+  onSelectLayer?: (index: number | null) => void;
+  /** Mestre moveu uma camada (nova posição em quadrados). */
+  onMoveLayer?: (index: number, x: number, y: number) => void;
   /** URL da imagem de cada token (id → URL). */
   tokenImages?: Record<string, string>;
   /** Sistema da campanha (regra de distância na diagonal). */
@@ -81,6 +88,10 @@ export function MapBoard({
   tokens,
   imageUrl,
   tokenImages = {},
+  layerUrls = {},
+  selectedLayer = null,
+  onSelectLayer,
+  onMoveLayer,
   systemId,
   wallStyle = 'stone',
   isGm,
@@ -111,6 +122,23 @@ export function MapBoard({
   const [ruler, setRuler] = useState<{ start: Point; end: Point; active: boolean } | null>(null);
   const [areaDraft, setAreaDraft] = useState<{ origin: Point; point: Point } | null>(null);
   const [stroke, setStroke] = useState<[number, number][] | null>(null);
+  const [layerDrag, setLayerDrag] = useState<{ index: number; offsetX: number; offsetY: number; x: number; y: number } | null>(null);
+  // Proporção (altura/largura) de cada imagem, para o contorno e a área de arrastar.
+  const [aspects, setAspects] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let active = true;
+    for (const [path, url] of Object.entries(layerUrls)) {
+      if (aspects[path]) continue;
+      const image = new Image();
+      image.onload = () => {
+        if (active && image.naturalWidth) setAspects((current) => ({ ...current, [path]: image.naturalHeight / image.naturalWidth }));
+      };
+      image.src = url;
+    }
+    return () => {
+      active = false;
+    };
+  }, [layerUrls, aspects]);
 
   // Rastro dos movimentos (de todos, inclusive vindos do tempo real): linha e distância por 6 s.
   const [lastTokens, setLastTokens] = useState(tokens);
@@ -217,6 +245,10 @@ export function MapBoard({
 
   const onBoardMove = (event: ReactPointerEvent<SVGSVGElement>) => {
     const point = toGrid(event);
+    if (layerDrag) {
+      setLayerDrag({ ...layerDrag, x: point.x - layerDrag.offsetX, y: point.y - layerDrag.offsetY });
+      return;
+    }
     if (ruler?.active) {
       setRuler({ ...ruler, end: center(point) });
       return;
@@ -246,6 +278,10 @@ export function MapBoard({
   };
 
   const onBoardUp = () => {
+    if (layerDrag) {
+      onMoveLayer?.(layerDrag.index, Math.round(layerDrag.x * 4) / 4, Math.round(layerDrag.y * 4) / 4);
+      setLayerDrag(null);
+    }
     if (ruler?.active) setRuler({ ...ruler, active: false });
     if (areaDraft) {
       onAddArea?.(draftArea(areaDraft));
@@ -313,16 +349,41 @@ export function MapBoard({
         ) : null}
       </defs>
 
-      {imageUrl ? (
-        <image
-          href={imageUrl}
-          x={map.imageOffsetX}
-          y={map.imageOffsetY}
-          width={map.cols * map.imageScale}
-          height={map.rows * map.imageScale * 10}
-          preserveAspectRatio="xMinYMin meet"
-        />
-      ) : null}
+      {/* Imagens (camadas): o mestre arrasta com a ferramenta "Imagem". */}
+      {map.images.map((layer: MapImage, index) => {
+        const url = layerUrls[layer.path] ?? (index === 0 ? imageUrl : null);
+        if (!url) return null;
+        const dragging = layerDrag?.index === index;
+        const x = dragging ? layerDrag.x : layer.x;
+        const y = dragging ? layerDrag.y : layer.y;
+        const height = layer.width * (aspects[layer.path] ?? 1);
+        const active = isGm && tool === 'image';
+        return (
+          <g key={`${layer.path}-${index}`}>
+            <image href={url} x={x} y={y} width={layer.width} height={height} preserveAspectRatio="none" />
+            {active ? (
+              <rect
+                x={x}
+                y={y}
+                width={layer.width}
+                height={height}
+                fill="transparent"
+                stroke={selectedLayer === index ? '#f3e2b3' : 'rgba(243,226,179,0.35)'}
+                strokeWidth={0.06}
+                strokeDasharray="0.3 0.15"
+                style={{ cursor: 'move' }}
+                onPointerDown={(event) => {
+                  event.stopPropagation();
+                  onSelectLayer?.(index);
+                  svgRef.current?.setPointerCapture(event.pointerId);
+                  const point = toGrid(event);
+                  setLayerDrag({ index, offsetX: point.x - layer.x, offsetY: point.y - layer.y, x: layer.x, y: layer.y });
+                }}
+              />
+            ) : null}
+          </g>
+        );
+      })}
       {map.showGrid ? <rect x="0" y="0" width={map.cols} height={map.rows} fill={`url(#grade-${uid})`} /> : null}
 
       {/* Áreas de magia: quadrados atingidos e contorno. */}

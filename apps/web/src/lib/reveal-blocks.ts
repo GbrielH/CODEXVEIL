@@ -4,7 +4,8 @@ import { blockLabel, blockPreview } from '@/lib/block-preview';
 
 /** Trechos liberáveis da sessão (todos os blocos menos notas privadas e separadores). */
 export async function loadRevealBlocks(client: CodexveilClient, blocks: readonly StoredSessionBlock[]): Promise<RevealBlock[]> {
-  const revealable = blocks.filter((block) => block.type !== 'gm_note' && block.type !== 'divider');
+  // Só o que o mestre marcou "Para liberar na mesa" (o resto é roteiro só dele).
+  const revealable = blocks.filter((block) => block.revealable && block.type !== 'gm_note' && block.type !== 'divider');
   const [references, imageUrls] = await Promise.all([
     resolveBlockReferences(client, revealable),
     signedMediaUrls(
