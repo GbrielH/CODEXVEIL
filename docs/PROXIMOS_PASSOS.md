@@ -430,6 +430,13 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-21 — criação D&D: treino em armaduras e escudos junto da maestria
+
+- Na etapa de classe (site e app), cartão "Armaduras e escudos" logo depois de "Maestria em Armas"
+  (ou no fim das escolhas, nas classes sem maestria) com o treino da classe e o efeito de usar sem
+  treino. Só informativo: pelas regras (SRD 5.2.1), o treino é fixo por classe e não existe
+  maestria de armaduras. Verificado: `pnpm check` 20/20 e `pnpm build`.
+
 ### 2026-10-21 — raças de livro (2014): bônus de atributo, perícia e talento (QA)
 
 - **Bug do QA:** escolhendo "Humano variante" (livro importado) não apareciam as escolhas que ele

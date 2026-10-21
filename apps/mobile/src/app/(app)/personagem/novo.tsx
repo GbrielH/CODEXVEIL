@@ -441,16 +441,32 @@ function Wizard({
   };
 
   const stepSpecs = specs.filter((spec) => spec.step === step);
-  const renderSpecs = () =>
-    stepSpecs.map((spec) => (
-      <ChoiceField
-        key={spec.id}
-        spec={spec}
-        value={draft.selections[spec.id]}
-        error={errorFor(spec.id)}
-        onChange={(value) => setSelection(spec.id, value)}
-      />
-    ));
+  // Treino em armaduras e escudos (fixo pela classe): logo depois da Maestria em Armas.
+  const armorTraining =
+    step === 'class' && classDef ? (
+      <Card key="treino-armaduras">
+        <AppText variant="heading">Armaduras e escudos</AppText>
+        <AppText variant="small">Treino: {classDef.armorLabel || 'nenhum'}.</AppText>
+        <AppText variant="muted">
+          Fixo pela classe, sem escolha. Usar armadura sem treino dá desvantagem em testes de Força e Destreza e impede conjurar magias; escudo sem treino não soma na CA.
+        </AppText>
+      </Card>
+    ) : null;
+  const renderSpecs = () => {
+    const fields = stepSpecs.flatMap((spec) => {
+      const field = (
+        <ChoiceField
+          key={spec.id}
+          spec={spec}
+          value={draft.selections[spec.id]}
+          error={errorFor(spec.id)}
+          onChange={(value) => setSelection(spec.id, value)}
+        />
+      );
+      return spec.id === 'class.weapon_mastery' && armorTraining ? [field, armorTraining] : [field];
+    });
+    return stepSpecs.some((spec) => spec.id === 'class.weapon_mastery') || !armorTraining ? fields : [...fields, armorTraining];
+  };
 
   return (
     <ScrollView

@@ -293,16 +293,32 @@ export function Dnd5eCreationWizard({
   };
 
   const stepSpecs = specs.filter((spec) => spec.step === step);
-  const renderSpecs = () =>
-    stepSpecs.map((spec) => (
-      <ChoiceField
-        key={spec.id}
-        spec={spec}
-        value={draft.selections[spec.id]}
-        error={errorFor(spec.id)}
-        onChange={(value) => setSelection(spec.id, value)}
-      />
-    ));
+  // Treino em armaduras e escudos (fixo pela classe): logo depois da Maestria em Armas.
+  const armorTraining = step === 'class' && classDef ? (
+    <section key="treino-armaduras" className="flex flex-col gap-1 rounded-md border border-line bg-raised p-4" aria-labelledby="treino-armaduras">
+      <h3 id="treino-armaduras" className="font-display text-base text-fg">
+        Armaduras e escudos
+      </h3>
+      <p className="text-xs text-fg-muted">Classe: {classDef.name}</p>
+      <p className="text-sm text-fg">Treino: {classDef.armorLabel || 'nenhum'}.</p>
+      <p className="text-xs text-fg-muted">Fixo pela classe, sem escolha. Usar armadura sem treino dá desvantagem em testes de Força e Destreza e impede conjurar magias; escudo sem treino não soma na CA.</p>
+    </section>
+  ) : null;
+  const renderSpecs = () => {
+    const fields = stepSpecs.flatMap((spec) => {
+      const field = (
+        <ChoiceField
+          key={spec.id}
+          spec={spec}
+          value={draft.selections[spec.id]}
+          error={errorFor(spec.id)}
+          onChange={(value) => setSelection(spec.id, value)}
+        />
+      );
+      return spec.id === 'class.weapon_mastery' && armorTraining ? [field, armorTraining] : [field];
+    });
+    return stepSpecs.some((spec) => spec.id === 'class.weapon_mastery') || !armorTraining ? fields : [...fields, armorTraining];
+  };
 
   return (
     <div ref={topRef} className="flex scroll-mt-20 flex-col gap-6">
