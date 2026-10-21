@@ -101,6 +101,11 @@ function toToken(row: TokenRow): MapToken {
   };
 }
 
+/** Caminho da imagem de um mapa no bucket `campaign-media`. */
+export function campaignMapPath(campaignId: string, fileName: string): string {
+  return `campaigns/${campaignId}/maps/${fileName}`;
+}
+
 /** Mapas de uma sessão (mestre). */
 export async function listSessionMaps(client: CodexveilClient, sessionId: string): Promise<SessionMap[]> {
   const { data, error } = await client.from('session_maps').select(MAP_COLUMNS).eq('session_id', sessionId).order('created_at');

@@ -175,7 +175,7 @@ describe('ataques de armas do inventário', () => {
     sheet.proficiencies.weapons = 'Armas simples';
     const dagger = findSrdWeaponByName('Adaga');
     expect(dagger && weaponAttackEntry(dagger, sheet).data).toMatchObject({ ability: 'dex', proficient: true, damage: '1d4' });
-  });
+  }, 20000); // importa o módulo inteiro do D&D: lento quando todos os testes rodam juntos.
 });
 
 describe('personagem entrando numa campanha', () => {

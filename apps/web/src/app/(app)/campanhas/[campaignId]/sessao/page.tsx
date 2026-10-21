@@ -1,6 +1,8 @@
-import { listSessionBlocks, listSessions, pickCurrentSession, resolveBlockReferences, sessionStatusLabels, signedMediaUrls } from '@codexveil/database';
+import { listCampaignCharacters, listCreatures, listSessionBlocks, listSessions, pickCurrentSession, resolveBlockReferences, sessionStatusLabels, signedMediaUrls } from '@codexveil/database';
 import type { Metadata, Route } from 'next';
 import { RevealPanel } from '@/components/gm/reveal-panel';
+import { MapManager } from '@/components/map/map-manager';
+import { MapView } from '@/components/map/map-view';
 import { BlockRenderer } from '@/components/sessions/block-renderer';
 import { ButtonLink } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +24,7 @@ export const metadata: Metadata = { title: 'Sessão' };
  */
 export default async function SessionTabPage({ params }: PageProps<'/campanhas/[campaignId]/sessao'>) {
   const { campaignId } = await params;
-  const { campaign } = await loadCampaignOrNotFound(campaignId);
+  const { user, campaign } = await loadCampaignOrNotFound(campaignId);
   const supabase = await createSupabaseServerClient();
   const isGm = campaign.role === 'gm';
   const all = await listSessions(supabase, campaign.id);
@@ -47,17 +49,20 @@ export default async function SessionTabPage({ params }: PageProps<'/campanhas/[
 
   const allBlocks = await listSessionBlocks(supabase, session.id);
   const blocks = allBlocks.filter((block) => block.visibility === 'members');
-  const [references, imageUrls, reveal] = await Promise.all([
+  const [references, imageUrls, reveal, party, creatures] = await Promise.all([
     resolveBlockReferences(supabase, blocks),
     signedMediaUrls(
       supabase,
       blocks.map((block) => (block.content?.type === 'image' ? block.content.data.path : null)),
     ),
     isGm ? loadRevealBlocks(supabase, allBlocks) : Promise.resolve([]),
+    listCampaignCharacters(supabase, campaign.id),
+    isGm ? listCreatures(supabase, campaign.id) : Promise.resolve([]),
   ]);
+  const ownCharacter = isGm ? null : (party.find((character) => character.ownerId === user.id) ?? null);
 
   return (
-    <article className="mx-auto flex w-full max-w-3xl flex-col gap-5">
+    <article className="mx-auto flex w-full max-w-6xl flex-col gap-5">
       <header className="flex flex-wrap items-center gap-2 border-b border-line pb-4">
         <Badge tone="parchment">Sessão {session.number}</Badge>
         {isGm ? <Badge tone={session.status === 'in_progress' ? 'brand' : 'neutral'}>{sessionStatusLabels[session.status]}</Badge> : null}
@@ -72,10 +77,20 @@ export default async function SessionTabPage({ params }: PageProps<'/campanhas/[
 
       {isGm ? (
         <>
+          <MapManager
+            campaignId={campaign.id}
+            sessionId={session.id}
+            systemId={campaign.systemId}
+            characters={party.map((character) => ({ id: character.id, name: character.name }))}
+            creatures={creatures.map((creature) => ({ id: creature.id, name: creature.name, size: creature.size }))}
+            canManage={campaign.status === 'active'}
+          />
           <RevealPanel sessionId={session.id} isPublished={session.isPublished} isActive={campaign.status === 'active'} blocks={reveal} />
           <Divider label="O que os jogadores estão vendo" />
         </>
       ) : null}
+
+      {!isGm ? <MapView campaignId={campaign.id} myCharacterId={ownCharacter?.id ?? null} /> : null}
 
       {blocks.length === 0 ? (
         <EmptyState

@@ -40,7 +40,9 @@ export type RealtimeTable =
   | 'campaign_turns'
   | 'turn_actions'
   | 'session_blocks'
-  | 'sessions';
+  | 'sessions'
+  | 'session_maps'
+  | 'map_tokens';
 
 export interface RealtimeBinding {
   table: RealtimeTable;

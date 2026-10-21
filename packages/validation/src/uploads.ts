@@ -30,6 +30,8 @@ export const IMAGE_PRESETS = {
   creature: { maxDimension: 1024, quality: 0.82 },
   /** Imagem de bloco de roteiro ou capa de campanha. */
   scene: { maxDimension: 1600, quality: 0.8 },
+  /** Mapa da grade da sessão (maior, para dar zoom sem perder detalhe). */
+  map: { maxDimension: 3000, quality: 0.8 },
 } as const;
 export type ImagePreset = keyof typeof IMAGE_PRESETS;
 

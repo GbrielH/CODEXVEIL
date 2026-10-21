@@ -430,6 +430,26 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-21 — grade, passos 3 a 5: mapa no site (mestre e jogador), névoa e linha de visão
+
+- Aba Sessão do mestre: cartão "Mapa da sessão" (`components/map/map-manager.tsx`) para criar
+  vários mapas, enviar a imagem (preset `map`, até 3000 px em WebP), ajustar tamanho e posição
+  sob a grade de 1,5 m, colunas e linhas, mostrar/esconder as linhas, ativar para os jogadores,
+  adicionar tokens (personagens, criaturas da biblioteca — entram ocultas — e marcadores),
+  editar token (nome, porte, oculto, alcance da visão) e apagar. Ferramentas: mover, revelar e
+  cobrir névoa (arrastando), desenhar e apagar paredes.
+- Jogador: o mapa ativo aparece na aba Sessão (`map-view.tsx`), com a névoa opaca e, se o mestre
+  ligar, a linha de visão do próprio token (paredes bloqueiam; tokens fora da visão nem aparecem).
+  Arrasta só o próprio token (`move_my_token`). Tempo real; conferência a cada 20 s para quando o
+  mestre esconde o mapa (o RLS não envia esse aviso).
+- Geometria pura e testada em `packages/domain/src/combat/map-geometry.ts` (névoa por células,
+  polígono de visão por raios, ponto no polígono).
+- Verificado: `pnpm check` 20/20 e `pnpm build`; o tabuleiro real foi renderizado no Chrome
+  headless com dados de exemplo (visão do mestre, do jogador com névoa e com linha de visão).
+  Não verificado: uso no navegador logado com duas contas (envio de imagem, arrastar, tempo real).
+- Teste `acha a arma pelo nome do item` (rpg-systems) ganhou limite de 20 s: falhava de vez em
+  quando por tempo com todos os testes rodando juntos.
+
 ### 2026-10-21 — grade, passo 2: banco do mapa
 
 - Migração `20261021110000_session_maps.sql` aplicada: `session_maps` (imagem, escala e
