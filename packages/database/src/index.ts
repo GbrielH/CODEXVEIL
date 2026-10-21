@@ -32,6 +32,7 @@ export * from './queries/notes';
 export * from './queries/items';
 export * from './queries/books';
 export * from './queries/dice';
+export * from './queries/maps';
 export * from './queries/turns';
 export * from './queries/notifications';
 export * from './realtime';

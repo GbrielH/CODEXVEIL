@@ -166,6 +166,11 @@ Migração `20261018120000_gameplay_turns.sql`:
 - Índices únicos `characters_one_per_player_idx` e `campaign_notes_one_pinned_idx` (duplicatas
   antigas são desvinculadas/desafixadas antes).
 
+Migração `20261021110000_session_maps.sql` (grade da sessão): tabelas `session_maps` e
+`map_tokens`, RLS (jogador: mapa ativo e tokens não ocultos), índice de um mapa ativo por
+campanha, RPC `move_my_token` e leitura de `campaigns/{id}/maps/*` só do mapa ativo para jogadores.
+Névoa (`fog_revealed`) e paredes (`walls`) ficam em JSON no próprio mapa.
+
 Migração `20261021100000_creature_size.sql` (+ `20261021100100_creature_size_grants.sql`):
 `creatures.size` (`tiny`…`gargantuan`, padrão `medium`), lido pela grade da sessão; o bloco do
 mestre nasce com o porte e, no D&D, mudar `stats.size` atualiza `creatures.size` (gatilho

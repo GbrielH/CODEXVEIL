@@ -1126,6 +1126,79 @@ export type Database = {
           },
         ];
       };
+      map_tokens: {
+        Row: {
+          campaign_id: string;
+          character_id: string | null;
+          created_at: string;
+          creature_id: string | null;
+          id: string;
+          is_hidden: boolean;
+          kind: string;
+          label: string;
+          map_id: string;
+          size: string;
+          updated_at: string;
+          vision_radius: number;
+          x: number;
+          y: number;
+        };
+        Insert: {
+          campaign_id: string;
+          character_id?: string | null;
+          created_at?: string;
+          creature_id?: string | null;
+          id?: string;
+          is_hidden?: boolean;
+          kind: string;
+          label?: string;
+          map_id: string;
+          size?: string;
+          updated_at?: string;
+          vision_radius?: number;
+          x?: number;
+          y?: number;
+        };
+        Update: {
+          campaign_id?: string;
+          character_id?: string | null;
+          created_at?: string;
+          creature_id?: string | null;
+          id?: string;
+          is_hidden?: boolean;
+          kind?: string;
+          label?: string;
+          map_id?: string;
+          size?: string;
+          updated_at?: string;
+          vision_radius?: number;
+          x?: number;
+          y?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'map_tokens_character_id_fkey';
+            columns: ['character_id'];
+            isOneToOne: false;
+            referencedRelation: 'characters';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'map_tokens_creature_fk';
+            columns: ['creature_id', 'campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'creatures';
+            referencedColumns: ['id', 'campaign_id'];
+          },
+          {
+            foreignKeyName: 'map_tokens_map_fk';
+            columns: ['map_id', 'campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'session_maps';
+            referencedColumns: ['id', 'campaign_id'];
+          },
+        ];
+      };
       plans: {
         Row: {
           created_at: string;
@@ -1367,6 +1440,77 @@ export type Database = {
           },
           {
             foreignKeyName: 'session_entities_session_fk';
+            columns: ['session_id', 'campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'sessions';
+            referencedColumns: ['id', 'campaign_id'];
+          },
+        ];
+      };
+      session_maps: {
+        Row: {
+          campaign_id: string;
+          cols: number;
+          created_at: string;
+          fog_enabled: boolean;
+          fog_revealed: Json;
+          id: string;
+          image_offset_x: number;
+          image_offset_y: number;
+          image_path: string | null;
+          image_scale: number;
+          is_active: boolean;
+          line_of_sight: boolean;
+          name: string;
+          rows: number;
+          session_id: string;
+          show_grid: boolean;
+          updated_at: string;
+          walls: Json;
+        };
+        Insert: {
+          campaign_id: string;
+          cols?: number;
+          created_at?: string;
+          fog_enabled?: boolean;
+          fog_revealed?: Json;
+          id?: string;
+          image_offset_x?: number;
+          image_offset_y?: number;
+          image_path?: string | null;
+          image_scale?: number;
+          is_active?: boolean;
+          line_of_sight?: boolean;
+          name: string;
+          rows?: number;
+          session_id: string;
+          show_grid?: boolean;
+          updated_at?: string;
+          walls?: Json;
+        };
+        Update: {
+          campaign_id?: string;
+          cols?: number;
+          created_at?: string;
+          fog_enabled?: boolean;
+          fog_revealed?: Json;
+          id?: string;
+          image_offset_x?: number;
+          image_offset_y?: number;
+          image_path?: string | null;
+          image_scale?: number;
+          is_active?: boolean;
+          line_of_sight?: boolean;
+          name?: string;
+          rows?: number;
+          session_id?: string;
+          show_grid?: boolean;
+          updated_at?: string;
+          walls?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'session_maps_session_fk';
             columns: ['session_id', 'campaign_id'];
             isOneToOne: false;
             referencedRelation: 'sessions';
@@ -1728,6 +1872,14 @@ export type Database = {
       leave_campaign: {
         Args: {
           p_campaign_id: string;
+        };
+        Returns: undefined;
+      };
+      move_my_token: {
+        Args: {
+          p_token_id: string;
+          p_x: number;
+          p_y: number;
         };
         Returns: undefined;
       };

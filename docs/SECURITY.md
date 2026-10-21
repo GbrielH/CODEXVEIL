@@ -192,3 +192,14 @@ Em campanha, só o mestre libera níveis (`grant_character_level`; a coluna `gra
 permissão de escrita direta). O banco recusa (`CVLVL`) a ficha de um jogador cujo nível total passe
 do liberado. Enquanto há nível liberado pendente, o dono pode salvar a ficha e criar habilidades
 mesmo com a edição de fichas bloqueada pela campanha.
+
+## Grade da sessão (2026-10-21)
+
+- **Mapas:** o mestre vê e edita todos; jogadores recebem do banco só o mapa ativo da campanha
+  (RLS), e a imagem em `campaigns/{id}/maps/` só é liberada para o mapa ativo.
+- **Tokens ocultos** (`is_hidden`) nunca chegam aos jogadores (RLS, inclusive no Realtime).
+- **Movimento:** jogadores não têm `update` em `map_tokens`; movem só o token do próprio
+  personagem pela função `move_my_token` (SECURITY DEFINER), que confere o dono, o mapa ativo,
+  a campanha ativa e os limites da grade.
+- **Névoa e linha de visão são recursos visuais:** a imagem inteira do mapa ativo chega ao
+  jogador; o que é realmente secreto deve ficar em tokens ocultos.

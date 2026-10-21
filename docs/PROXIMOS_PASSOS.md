@@ -430,6 +430,17 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-21 — grade, passo 2: banco do mapa
+
+- Migração `20261021110000_session_maps.sql` aplicada: `session_maps` (imagem, escala e
+  deslocamento, colunas/linhas, linhas visíveis, névoa com áreas reveladas, paredes e linha de
+  visão, um mapa ativo por campanha) e `map_tokens` (personagem, criatura ou marcador, posição,
+  porte, oculto, alcance da visão). Jogador vê só o mapa ativo e os tokens não ocultos; move só
+  o próprio token por `move_my_token` (confere dono, mapa ativo, campanha ativa e limites).
+  Imagens em `campaigns/{id}/maps/` (bucket `campaign-media`; jogador lê só a do mapa ativo).
+  Realtime nas duas tabelas. Consultas em `packages/database/src/queries/maps.ts`.
+- Verificado: 4 testes novos de acesso (`test/rls/maps.test.ts`).
+
 ### 2026-10-21 — grade, passo 1: tamanho das criaturas
 
 - `creatures.size` (porte = tamanho do token): obrigatório ao criar NPC/monstro no site, com os

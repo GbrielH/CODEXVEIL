@@ -1,6 +1,6 @@
 # Grade da sessão (mapa tático) — especificação
 
-Status: **em implementação** (passo 1 concluído em 2026-10-21). Este documento registra as decisões do
+Status: **em implementação** (passos 1 e 2 concluídos em 2026-10-21). Este documento registra as decisões do
 responsável e o plano técnico, para a implementação seguir sem novas perguntas.
 
 ## Decisões do responsável
@@ -48,9 +48,8 @@ responsável e o plano técnico, para a implementação seguir sem novas pergunt
 - `map_tokens`: `id`, `map_id`, `campaign_id`, `kind` (`character` | `creature` | `marker`),
   `character_id` / `creature_id` (opcionais), `label`, `x`, `y` (em quadrados), `size`
   (quadrados de lado), `is_hidden`, `vision_radius` (em quadrados, para a linha de visão).
-- `map_fog`: áreas reveladas por mapa (lista de retângulos/células reveladas, em JSON ou uma
-  linha por célula), editadas só pelo mestre.
-- `map_walls` (para a linha de visão): segmentos `x1,y1,x2,y2` desenhados pelo mestre sobre o mapa.
+- Névoa: `session_maps.fog_revealed` (retângulos revelados em JSON), editada só pelo mestre.
+- Paredes (linha de visão): `session_maps.walls` (segmentos `x1,y1,x2,y2` em JSON).
 - **RLS:** membros leem mapas da sessão publicada; tokens com `is_hidden` só para o mestre; névoa
   e paredes só o mestre altera. **Jogador só atualiza `x`/`y` do token do próprio personagem**
   (RPC `move_my_token`, `SECURITY DEFINER`, conferindo o dono e os limites do mapa).
