@@ -333,7 +333,7 @@ describe('todas as classes em todos os níveis', () => {
         }
       }
     }
-  });
+  }, 30000); // percorre todas as classes e níveis: lento quando todos os testes rodam juntos (CI).
 });
 
 describe('regras da campanha', () => {

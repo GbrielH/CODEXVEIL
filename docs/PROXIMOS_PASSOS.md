@@ -436,6 +436,8 @@ de segurança).
   tela agora mostra cada pendência que o servidor apontou (passo e mensagem), para achar a causa.
   Causa ainda não identificada: o servidor monta o conteúdo dos livros do mesmo jeito que o
   assistente; aguardando a mensagem detalhada do QA.
+- A CI falhou uma vez por tempo no teste "todas as classes em todos os níveis" (0,7 s aqui, mais de
+  5 s na máquina do GitHub com tudo rodando junto); limite dele subiu para 30 s.
 
 ### 2026-10-21 — QA: Humano variante com "aumentam em I"
 
