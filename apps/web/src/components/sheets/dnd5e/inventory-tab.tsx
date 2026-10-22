@@ -7,6 +7,7 @@ import {
   createCharacterResource,
   deleteCharacterItem,
   setCharacterItemEquipped,
+  updateCharacterAbility,
   updateCharacterItem,
   type CharacterItem,
 } from '@codexveil/database';
@@ -18,14 +19,21 @@ import {
   type ItemCategory,
 } from '@codexveil/domain';
 import {
+  ABILITIES,
   CURRENCIES,
+  abilityLabels,
+  critRangeLabel,
   currencyLabels,
   currencyResource,
   currencyResourceKey,
+  damageTypeLabels,
+  dnd5eAttackDataSchema,
   findSrdWeaponByName,
   totalInGold,
   weaponAttackEntry,
+  withCurrentOption,
   type Currency,
+  type Dnd5eAttackData,
 } from '@codexveil/rpg-systems/dnd5e';
 import { fieldErrorsFrom, inventoryItemSchema, type FieldErrors } from '@codexveil/validation';
 import { Backpack, Coins, Minus, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -356,7 +364,11 @@ function ItemFormModal({
   item: CharacterItem | 'new' | null;
   onClose: () => void;
 }) {
-  const { character, setItems, run } = useSheet();
+  const { character, setItems, run, abilities, setAbilities, permissions } = useSheet();
+  // Ataque ligado à arma (pelo nome): dano, tipo, crítico e afins ficam no ataque da ficha.
+  const linkedAttack =
+    item && item !== 'new' ? (abilities.find((entry) => entry.kind === 'attack' && entry.name.toLowerCase() === item.name.toLowerCase()) ?? null) : null;
+  const [attack, setAttack] = useState<Dnd5eAttackData>(() => dnd5eAttackDataSchema.parse({}));
   const id = useId();
   const isNew = item === 'new';
   const [form, setForm] = useState<ItemForm>(emptyItem);
@@ -367,6 +379,8 @@ function ItemFormModal({
   if (item !== openedFor) {
     setOpenedFor(item);
     setErrors({});
+    const parsedAttack = dnd5eAttackDataSchema.safeParse(linkedAttack?.data ?? {});
+    setAttack(parsedAttack.success ? parsedAttack.data : dnd5eAttackDataSchema.parse({}));
     setForm(
       item && item !== 'new'
         ? {
@@ -400,6 +414,15 @@ function ItemFormModal({
         failure: 'Não foi possível salvar o item',
       },
     );
+    if (saved && form.category === 'weapon' && permissions.canEditSheet && attack.damage.trim()) {
+      // Grava o ataque da arma (cria se ainda não houver), com o nome do item.
+      const fields = { name: saved.name, source: linkedAttack?.source || 'Arma', description: linkedAttack?.description ?? '', data: { ...attack }, resourceId: linkedAttack?.resourceId ?? null };
+      const stored = await run(
+        () => (linkedAttack ? updateCharacterAbility(client, linkedAttack.id, fields) : createCharacterAbility(client, character.id, { kind: 'attack', ...fields })),
+        { failure: 'O ataque da arma não foi salvo' },
+      );
+      if (stored) setAbilities((current) => (linkedAttack ? current.map((entry) => (entry.id === stored.id ? stored : entry)) : [...current, stored]));
+    }
     setBusy(false);
     if (!saved) return;
     setItems((current) =>
@@ -511,6 +534,80 @@ function ItemFormModal({
           onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
           error={errors.notes}
         />
+        {form.category === 'weapon' ? (
+          <fieldset className="grid gap-3 rounded-md border border-line p-3 sm:grid-cols-4" disabled={!permissions.canEditSheet}>
+            <legend className="px-1 text-sm font-medium">Ataque {linkedAttack ? '' : '(novo, ao salvar)'}</legend>
+            <SelectField
+              id={`${id}-atk-ability`}
+              label="Atributo"
+              value={attack.ability ?? ''}
+              onChange={(event) => setAttack((current) => ({ ...current, ability: (event.target.value || null) as Dnd5eAttackData['ability'] }))}
+            >
+              {ABILITIES.map((ability) => (
+                <option key={ability} value={ability}>
+                  {abilityLabels[ability].name}
+                </option>
+              ))}
+              <option value="">Nenhum (bônus fixo)</option>
+            </SelectField>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor={`${id}-atk-bonus`} className="text-sm font-medium">
+                Bônus no acerto
+              </label>
+              <NumberInput id={`${id}-atk-bonus`} value={attack.bonus} min={-30} max={30} onCommit={(value) => setAttack((current) => ({ ...current, bonus: value ?? 0 }))} />
+            </div>
+            <TextField id={`${id}-atk-damage`} label="Dano (dados)" placeholder="1d8" maxLength={60} value={attack.damage} onChange={(event) => setAttack((current) => ({ ...current, damage: event.target.value }))} />
+            <SelectField id={`${id}-atk-type`} label="Tipo de dano" value={attack.damageType} onChange={(event) => setAttack((current) => ({ ...current, damageType: event.target.value }))}>
+              <option value="">—</option>
+              {withCurrentOption(Object.values(damageTypeLabels), attack.damageType).map((label) => (
+                <option key={label} value={label}>
+                  {label}
+                </option>
+              ))}
+            </SelectField>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor={`${id}-atk-dmgbonus`} className="text-sm font-medium">
+                Bônus no dano
+              </label>
+              <NumberInput id={`${id}-atk-dmgbonus`} value={attack.damageBonus} min={-30} max={30} onCommit={(value) => setAttack((current) => ({ ...current, damageBonus: value ?? 0 }))} />
+            </div>
+            <TextField id={`${id}-atk-extra`} label="Dano adicional" placeholder="1d6" maxLength={40} value={attack.extraDamage} onChange={(event) => setAttack((current) => ({ ...current, extraDamage: event.target.value }))} />
+            <SelectField id={`${id}-atk-extratype`} label="Tipo do adicional" value={attack.extraDamageType} onChange={(event) => setAttack((current) => ({ ...current, extraDamageType: event.target.value }))}>
+              <option value="">—</option>
+              {withCurrentOption(Object.values(damageTypeLabels), attack.extraDamageType).map((label) => (
+                <option key={label} value={label}>
+                  {label}
+                </option>
+              ))}
+            </SelectField>
+            <TextField id={`${id}-atk-range`} label="Alcance" placeholder="1,5 m" maxLength={60} value={attack.range} onChange={(event) => setAttack((current) => ({ ...current, range: event.target.value }))} />
+            <SelectField id={`${id}-atk-crit`} label="Crítico com" value={String(attack.critRange)} onChange={(event) => setAttack((current) => ({ ...current, critRange: Number(event.target.value) }))}>
+              {[20, 19, 18, 17, 16, 15].map((value) => (
+                <option key={value} value={value}>
+                  {critRangeLabel(value)} no d20
+                </option>
+              ))}
+            </SelectField>
+            <TextField
+              id={`${id}-atk-critextra`}
+              label="Dano extra no crítico"
+              placeholder="1d8"
+              maxLength={40}
+              value={attack.critExtra}
+              onChange={(event) => setAttack((current) => ({ ...current, critExtra: event.target.value }))}
+            />
+            <CheckboxField
+              id={`${id}-atk-prof`}
+              label="Proficiente"
+              checked={attack.proficient}
+              onChange={(event) => setAttack((current) => ({ ...current, proficient: event.target.checked }))}
+              className="self-end sm:col-span-2"
+            />
+            <p className="text-xs text-fg-muted sm:col-span-4">
+              No crítico os dados do dano (e do adicional) dobram e entra o dano extra de crítico. O ataque aparece em Jogo, com os botões de dano e de crítico.
+            </p>
+          </fieldset>
+        ) : null}
         <CheckboxField
           id={`${id}-equipped`}
           label="Equipado"

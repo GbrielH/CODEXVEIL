@@ -1,9 +1,10 @@
 'use client';
 
-import { d20Expression, withBonus, type DiceRollMode } from '@codexveil/domain';
+import { d20Expression, type DiceRollMode } from '@codexveil/domain';
 import {
-  attackDamageModifier,
   attackRollBonus,
+  attackDamageFormula,
+  critRangeLabel,
   dnd5eAttackDataSchema,
   effectiveSpeed,
   formatModifier,
@@ -206,9 +207,8 @@ export function PlayTab() {
               {attacks.map((attack) => {
                 const data = parseAttack(attack.data);
                 const bonus = attackRollBonus(data, derived) - penalty;
-                const damage = data.damage
-                  ? withBonus(data.damage, attackDamageModifier(data.ability, sheet.abilities))
-                  : null;
+                const damage = attackDamageFormula(data, sheet.abilities);
+                const critical = attackDamageFormula(data, sheet.abilities, true);
                 return (
                   <li key={attack.id} className="flex items-center gap-3 py-2">
                     <HoverCard
@@ -222,7 +222,12 @@ export function PlayTab() {
                           {attack.name}
                         </span>
                         <span className="block truncate text-xs text-fg-muted">
-                          {[data.damage && `${data.damage} ${data.damageType}`.trim(), data.range]
+                          {[
+                            data.damage && `${data.damage} ${data.damageType}`.trim(),
+                            data.extraDamage && `+${data.extraDamage} ${data.extraDamageType}`.trim(),
+                            data.range,
+                            `crítico ${critRangeLabel(data.critRange)}`,
+                          ]
                             .filter(Boolean)
                             .join(' · ')}
                         </span>
@@ -233,6 +238,16 @@ export function PlayTab() {
                             className="mt-1 inline-flex px-1.5 py-0.5 text-xs text-ember-300"
                           >
                             Rolar dano ({damage})
+                          </RollButton>
+                        ) : null}
+                        {critical ? (
+                          <RollButton
+                            expression={critical}
+                            label={`Dano crítico: ${attack.name}`}
+                            className="mt-1 ml-1 inline-flex px-1.5 py-0.5 text-xs text-amber-300"
+                            title={`Crítico com ${critRangeLabel(data.critRange)} no d20: dados dobrados${data.critExtra ? ` e +${data.critExtra}` : ''}`}
+                          >
+                            Crítico ({critical})
                           </RollButton>
                         ) : null}
                       </span>

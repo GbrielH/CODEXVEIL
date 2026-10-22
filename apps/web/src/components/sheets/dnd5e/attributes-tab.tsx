@@ -51,7 +51,8 @@ export function AttributesTab() {
 }
 
 function AbilityScores() {
-  const { sheet, derived, updateSheet, permissions } = useSheet();
+  const { sheet, derived, updateSheet, permissions, conditionEffects: effects } = useSheet();
+  const penalty = effects.d20Penalty;
   const id = useId();
   return (
     <section aria-label="Atributos" className="grid grid-cols-3 gap-3 sm:grid-cols-6">
@@ -66,12 +67,20 @@ function AbilityScores() {
             </span>
             <span className="block text-[11px] text-fg-muted">{abilityLabels[ability].name}</span>
           </label>
-          <span
-            className="tabular font-display text-3xl leading-none text-fg-accent"
-            aria-label={`Modificador ${formatModifier(derived.abilityModifiers[ability])}`}
+          {/* Clicar no modificador rola o teste do atributo (d20 + modificador). */}
+          <RollButton
+            expression={d20Expression(derived.abilityModifiers[ability] - penalty)}
+            label={`Teste de ${abilityLabels[ability].name}`}
+            mode={rollModeFrom(effects.abilityChecks)}
+            title={`Rolar teste de ${abilityLabels[ability].name}`}
           >
-            {formatModifier(derived.abilityModifiers[ability])}
-          </span>
+            <span
+              className={cx('tabular font-display text-3xl leading-none', penalty > 0 ? 'text-amber-300' : 'text-fg-accent')}
+              aria-label={`Modificador ${formatModifier(derived.abilityModifiers[ability] - penalty)}`}
+            >
+              {formatModifier(derived.abilityModifiers[ability] - penalty)}
+            </span>
+          </RollButton>
           <NumberInput
             id={`${id}-${ability}`}
             value={sheet.abilities[ability]}

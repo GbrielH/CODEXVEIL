@@ -1,8 +1,9 @@
 import type { CharacterAbility } from '@codexveil/database';
-import { d20Expression, withBonus } from '@codexveil/domain';
+import { d20Expression } from '@codexveil/domain';
 import {
-  attackDamageModifier,
+  attackDamageFormula,
   attackRollBonus,
+  critRangeLabel,
   dnd5eAttackDataSchema,
   dnd5eSpellDataSchema,
   featureTurnCost,
@@ -100,13 +101,8 @@ export function FeaturesSection({ show = 'all' }: { show?: 'all' | 'usable' | 'p
           entry.kind === 'spell' ? dnd5eSpellDataSchema.safeParse(entry.data ?? {}) : null;
         const expanded = open === entry.id;
         const attackBonus = attack?.success ? attackRollBonus(attack.data, derived) : null;
-        const damage =
-          attack?.success && attack.data.damage
-            ? withBonus(
-                attack.data.damage,
-                attackDamageModifier(attack.data.ability, sheet.abilities),
-              )
-            : null;
+        const damage = attack?.success ? attackDamageFormula(attack.data, sheet.abilities) : null;
+        const critical = attack?.success ? attackDamageFormula(attack.data, sheet.abilities, true) : null;
         return (
           <Card key={entry.id}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -163,6 +159,17 @@ export function FeaturesSection({ show = 'all' }: { show?: 'all' | 'usable' | 'p
               >
                 <AppText variant="small" style={{ color: '#EC9384', fontFamily: fonts.sansMedium }}>
                   Rolar dano ({damage})
+                </AppText>
+              </RollButton>
+            ) : null}
+            {critical && attack?.success ? (
+              <RollButton
+                expression={critical}
+                label={`Dano crítico: ${entry.name}`}
+                style={{ alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 4 }}
+              >
+                <AppText variant="small" style={{ color: '#E6BE74', fontFamily: fonts.sansMedium }}>
+                  Crítico ({critRangeLabel(attack.data.critRange)} no d20): {critical}
                 </AppText>
               </RollButton>
             ) : null}

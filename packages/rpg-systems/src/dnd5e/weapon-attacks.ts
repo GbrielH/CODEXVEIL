@@ -65,7 +65,7 @@ export function weaponAttackEntry(weapon: WeaponDefinition, sheet: Dnd5eSheet): 
     name: weapon.name,
     source: weapon.category === 'simple' ? 'Arma simples' : 'Arma marcial',
     description: [properties ? `Propriedades: ${properties}.` : '', proficient ? '' : 'Sem proficiência: não soma o bônus de proficiência.'].filter(Boolean).join(' '),
-    data: { ability, proficient, bonus: 0, damage: weapon.damage, damageType: damageTypeLabels[weapon.damageType], range },
+    data: { ability, proficient, bonus: 0, damage: weapon.damage, damageType: damageTypeLabels[weapon.damageType], range, damageBonus: 0, extraDamage: '', extraDamageType: '', critRange: 20, critExtra: '' },
   };
 }
 

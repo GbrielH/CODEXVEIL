@@ -430,6 +430,19 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-22 — ficha D&D: rolar atributos e crítico/dano das armas
+
+- **Atributos:** clicar (ou tocar, no app) no modificador de um atributo rola o teste dele
+  (d20 + modificador), com a penalidade de exaustão e vantagem/desvantagem das condições.
+- **Armas:** em "Editar item" (categoria Armas, site) aparece a seção "Ataque", ligada ao ataque
+  da ficha pelo nome (cria o ataque se não houver): atributo, proficiência, bônus no acerto, dano,
+  tipo de dano, bônus no dano, dano adicional com tipo próprio, alcance, "Crítico com" (20, 19–20,
+  18–20…) e dano extra no crítico. No app, os mesmos campos no editor do ataque.
+- Em Jogo (e nos turnos), o dano soma o bônus e o adicional, e há o botão "Crítico" (dados
+  dobrados + dano extra de crítico), com a faixa de crítico indicada. `attackDamageFormula`,
+  `critRangeLabel` e `doubleDice` (rpg-systems, com teste).
+- Verificado: `pnpm check` 20/20 e `pnpm build`. Não conferido no navegador.
+
 ### 2026-10-21 — criação D&D: comprar armadura e escudo com o ouro inicial (regra oficial)
 
 - Pedido do QA (escolher a armadura). Regra oficial escolhida pelo responsável: no passo

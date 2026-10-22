@@ -92,9 +92,16 @@ export function AttributesSection() {
             accessibilityLabel={`${abilityLabels[ability].name} ${sheet.abilities[ability]}, modificador ${formatModifier(derived.abilityModifiers[ability])}`}
           >
             <AppText variant="eyebrow">{abilityLabels[ability].abbreviation}</AppText>
-            <AppText variant="display" style={{ fontSize: 28, lineHeight: 32 }}>
-              {formatModifier(derived.abilityModifiers[ability])}
-            </AppText>
+            {/* Tocar no modificador rola o teste do atributo (d20 + modificador). */}
+            <RollButton
+              expression={d20Expression(derived.abilityModifiers[ability] - penalty)}
+              label={`Teste de ${abilityLabels[ability].name}`}
+              mode={rollModeOf(effects.abilityChecks)}
+            >
+              <AppText variant="display" style={{ fontSize: 28, lineHeight: 32, color: penalty > 0 ? '#E6BE74' : undefined }}>
+                {formatModifier(derived.abilityModifiers[ability] - penalty)}
+              </AppText>
+            </RollButton>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               {canEditSheet ? (
                 <IconButton

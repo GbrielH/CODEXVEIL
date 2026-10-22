@@ -241,3 +241,16 @@ describe('resumo seguro de fichas', () => {
     expect(summarizeSheet('outro', {}).level).toBeNull();
   });
 });
+
+describe('dano e crítico do ataque', () => {
+  it('soma modificador e bônus, dobra os dados no crítico e põe o extra', async () => {
+    const { attackDamageFormula, critRangeLabel, dnd5eAttackDataSchema } = await import('./entries');
+    const scores = { str: 16, dex: 10, con: 10, int: 10, wis: 10, cha: 10 };
+    const attack = dnd5eAttackDataSchema.parse({ ability: 'str', damage: '1d8', damageType: 'cortante', damageBonus: 1, extraDamage: '1d6', extraDamageType: 'fogo', critRange: 19, critExtra: '1d8' });
+    expect(attackDamageFormula(attack, scores)).toBe('1d8+1d6+4');
+    expect(attackDamageFormula(attack, scores, true)).toBe('2d8+2d6+1d8+4');
+    expect(critRangeLabel(attack.critRange)).toBe('19–20');
+    expect(critRangeLabel(20)).toBe('20');
+    expect(attackDamageFormula(dnd5eAttackDataSchema.parse({ damage: '' }), scores)).toBeNull();
+  });
+});

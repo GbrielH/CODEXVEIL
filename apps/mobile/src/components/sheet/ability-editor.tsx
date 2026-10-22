@@ -314,6 +314,40 @@ export function AbilityEditor({
             onChangeText={(range) => setAttack({ range })}
             placeholder="Ex.: 1,5 m"
           />
+          <NumberField
+            label="Bônus no dano"
+            value={draft.attack.damageBonus}
+            onChange={(damageBonus) => setAttack({ damageBonus: Math.max(-30, Math.min(30, damageBonus ?? 0)) })}
+          />
+          <Field
+            label="Dano adicional"
+            value={draft.attack.extraDamage}
+            maxLength={40}
+            autoCapitalize="none"
+            onChangeText={(extraDamage) => setAttack({ extraDamage })}
+            placeholder="Ex.: 1d6"
+          />
+          <Field
+            label="Tipo do dano adicional"
+            value={draft.attack.extraDamageType}
+            maxLength={40}
+            onChangeText={(extraDamageType) => setAttack({ extraDamageType })}
+            placeholder="Ex.: Fogo"
+          />
+          <NumberField
+            label="Crítico a partir de (no d20)"
+            value={draft.attack.critRange}
+            onChange={(critRange) => setAttack({ critRange: Math.max(2, Math.min(20, critRange ?? 20)) })}
+          />
+          <Field
+            label="Dano extra no crítico"
+            value={draft.attack.critExtra}
+            maxLength={40}
+            autoCapitalize="none"
+            onChangeText={(critExtra) => setAttack({ critExtra })}
+            placeholder="Ex.: 1d8"
+            hint="No crítico os dados do dano dobram e este dano entra."
+          />
         </View>
       ) : null}
 

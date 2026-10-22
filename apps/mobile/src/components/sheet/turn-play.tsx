@@ -15,7 +15,6 @@ import {
 } from '@codexveil/database';
 import {
   d20Expression,
-  withBonus,
   turnActionKindLabels,
   turnBudget,
   turnModeLabels,
@@ -23,7 +22,7 @@ import {
 } from '@codexveil/domain';
 import {
   DND5E_ACTIONS,
-  attackDamageModifier,
+  attackDamageFormula,
   attackRollBonus,
   dnd5eActions,
   dnd5eAttackDataSchema,
@@ -167,12 +166,7 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
             grantsAction: false,
             roll: d20Expression(attackRollBonus(parsed.data, derived)),
             ability,
-            damage: parsed.data.damage
-              ? withBonus(
-                  parsed.data.damage,
-                  attackDamageModifier(parsed.data.ability, sheet.abilities),
-                )
-              : null,
+            damage: attackDamageFormula(parsed.data, sheet.abilities),
           });
       } else if (ability.kind === 'spell') {
         const parsed = dnd5eSpellDataSchema.safeParse(ability.data ?? {});
