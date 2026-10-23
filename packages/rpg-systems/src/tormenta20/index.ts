@@ -49,6 +49,7 @@ export const tormenta20System: RpgSystem<T20Sheet, T20Derived, T20StatBlock, T20
   initiativeBonus: (sheet) => computeT20Derived(sheet).initiative,
 };
 
+export * from './attacks';
 export * from './attributes';
 export * from './skills';
 export * from './progression';

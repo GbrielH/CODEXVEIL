@@ -36,6 +36,7 @@ import {
 import { Heart, Minus, Moon, Plus, Shield, Sparkles, X, Zap } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { TokenImageCard } from '@/components/characters/token-image-card';
+import { T20AttacksCard } from './attacks-card';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -314,6 +315,18 @@ function T20SheetBody(props: T20SheetScreenProps) {
                 ),
             )
           }
+        />
+      ) : null}
+
+      {tab === 'jogo' ? (
+        <T20AttacksCard
+          characterId={character.id}
+          sheet={effectiveSheet}
+          derived={derived}
+          items={items}
+          content={content}
+          mode={rollMode}
+          canAct={permissions.canEditPlay}
         />
       ) : null}
 

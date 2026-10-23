@@ -460,11 +460,16 @@ de segurança).
       Luta Arquearia (+2 acerto) e Duelismo (+2 dano); Crítico Aprimorado do Campeão (19 e 18); botão
       "Fúria" na aba Jogo (só Bárbaro; +2/+3/+4 no dano com Força corpo a corpo; guardado no navegador).
       Dano usa os atributos com itens. Perícias: Pau para Toda Obra (Bardo 2º) e talento Alerta na
-      iniciativa. App usa o mesmo cálculo (sem o botão de Fúria). **Falta:** Tormenta20 (ataques ainda
-      não existem na ficha T20).
+      iniciativa. App usa o mesmo cálculo (sem o botão de Fúria). Testes em `attack-automation.test.ts`.
 - [x] Dados: resultado (balão, cabeçalho e animação de crítico) só depois que os dados param; animação
       de crítico no acerto pela margem da arma (19–20…); caixinha de dados arrastável (duplo clique
       volta ao canto).
+- [x] Ataques do Tormenta20 (`tormenta20/attacks.ts`, card "Ataques" na aba Jogo do site): armas
+      equipadas com dano e crítico do livro (ou da descrição "Dano 1d8 · Crítico 19/x3"); Luta/Pontaria
+      no acerto, Força no dano corpo a corpo e de arremesso, disparo sem Força; crítico multiplica só os
+      dados; Fúria do Bárbaro (+2 ataque e dano corpo a corpo, +1 a cada 5 níveis); Estilo de Disparo
+      soma Destreza. Estilos de Uma Arma e de Duas Mãos só como aviso (o livro extraído não traz a
+      empunhadura). Regras conferidas no PDF do Jogo do Ano. Falta no app.
 - [x] Painel do assistente por cima de tudo (portal no `body`; antes ficava atrás dos cards).
 - [x] Mãozinha (cursor) em tudo que é clicável no site: rolagens, abas, botões (`globals.css`).
 - [x] Livro T20 exportado: faltam as origens Acólito e Amigo dos Animais, há poderes com " e"

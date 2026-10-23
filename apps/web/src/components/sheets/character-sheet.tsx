@@ -136,8 +136,9 @@ export async function CharacterSheet({
     );
   } else if (system?.id === 'tormenta20') {
     // Livros para a subida de nível: os da campanha do personagem ou, em fichas pessoais, os do dono.
+    // Também para quem só joga: os ataques usam as armas do livro (dano e crítico).
     let t20Sources: Awaited<ReturnType<typeof loadT20Sources>> = [];
-    if (permissions.canEditSheet) {
+    if (permissions.canEditSheet || permissions.canEditPlay) {
       t20Sources = await loadT20Sources(supabase, activePacks);
     }
     let sheet;
