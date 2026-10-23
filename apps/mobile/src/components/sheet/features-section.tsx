@@ -134,15 +134,6 @@ export function FeaturesSection({ show = 'all' }: { show?: 'all' | 'usable' | 'p
                   ) : null}
                 </View>
               </Pressable>
-              {attackBonus !== null ? (
-                <RollButton
-                  expression={d20Expression(attackBonus)}
-                  label={`Ataque: ${entry.name}`}
-                  style={{ paddingHorizontal: 6 }}
-                >
-                  <AppText variant="number">{formatModifier(attackBonus)}</AppText>
-                </RollButton>
-              ) : null}
               {canEditSheet ? (
                 <IconButton
                   icon={<Pencil size={16} color={colors.fgSecondary} />}
@@ -151,27 +142,33 @@ export function FeaturesSection({ show = 'all' }: { show?: 'all' | 'usable' | 'p
                 />
               ) : null}
             </View>
-            {damage ? (
-              <RollButton
-                expression={damage}
-                label={`Dano: ${entry.name}`}
-                style={{ alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 4 }}
-              >
-                <AppText variant="small" style={{ color: '#EC9384', fontFamily: fonts.sansMedium }}>
-                  Rolar dano ({damage})
-                </AppText>
-              </RollButton>
-            ) : null}
-            {critical && attack?.success ? (
-              <RollButton
-                expression={critical}
-                label={`Dano crítico: ${entry.name}`}
-                style={{ alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 4 }}
-              >
-                <AppText variant="small" style={{ color: '#E6BE74', fontFamily: fonts.sansMedium }}>
-                  Crítico ({critRangeLabel(attack.data.critRange)} no d20): {critical}
-                </AppText>
-              </RollButton>
+            {attackBonus !== null && attack?.success ? (
+              // As três rolagens, na ordem do jogo: acerto, dano e dano crítico.
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                {[
+                  { key: 'acerto', title: 'Acerto', expression: d20Expression(attackBonus), value: formatModifier(attackBonus), color: colors.fgAccent, label: `Ataque: ${entry.name}` },
+                  { key: 'dano', title: 'Dano', expression: damage, value: damage ?? '—', color: '#EC9384', label: `Dano: ${entry.name}` },
+                  {
+                    key: 'critico',
+                    title: `Crítico (${critRangeLabel(attack.data.critRange)})`,
+                    expression: critical,
+                    value: critical ?? '—',
+                    color: '#E6BE74',
+                    label: `Dano crítico: ${entry.name}`,
+                  },
+                ].map((roll) => (
+                  <RollButton key={roll.key} expression={roll.expression} label={roll.label} style={{ flex: 1 }}>
+                    <View style={{ alignItems: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: 8, paddingVertical: 6 }}>
+                      <AppText variant="small" style={{ fontSize: 11 }}>
+                        {roll.title}
+                      </AppText>
+                      <AppText variant="number" style={{ color: roll.color }}>
+                        {roll.value}
+                      </AppText>
+                    </View>
+                  </RollButton>
+                ))}
+              </View>
             ) : null}
             {expanded && spell?.success ? (
               <SpellDetails

@@ -210,62 +210,63 @@ export function PlayTab() {
                 const damage = attackDamageFormula(data, sheet.abilities);
                 const critical = attackDamageFormula(data, sheet.abilities, true);
                 return (
-                  <li key={attack.id} className="flex items-center gap-3 py-2">
+                  <li key={attack.id} className="flex flex-col gap-2 py-3">
                     <HoverCard
-                      className="block flex-1"
+                      className="block"
                       content={() => (
                         <AttackDetails attack={attack} data={data} bonus={formatModifier(bonus)} />
                       )}
                     >
                       <span className="block min-w-0">
-                        <span className="block truncate text-sm font-medium text-fg">
-                          {attack.name}
-                        </span>
+                        <span className="block truncate text-sm font-medium text-fg">{attack.name}</span>
                         <span className="block truncate text-xs text-fg-muted">
                           {[
                             data.damage && `${data.damage} ${data.damageType}`.trim(),
                             data.extraDamage && `+${data.extraDamage} ${data.extraDamageType}`.trim(),
                             data.range,
-                            `crítico ${critRangeLabel(data.critRange)}`,
                           ]
                             .filter(Boolean)
                             .join(' · ')}
                         </span>
-                        {damage ? (
-                          <RollButton
-                            expression={damage}
-                            label={`Dano: ${attack.name}`}
-                            className="mt-1 inline-flex px-1.5 py-0.5 text-xs text-ember-300"
-                          >
-                            Rolar dano ({damage})
-                          </RollButton>
-                        ) : null}
-                        {critical ? (
-                          <RollButton
-                            expression={critical}
-                            label={`Dano crítico: ${attack.name}`}
-                            className="mt-1 ml-1 inline-flex px-1.5 py-0.5 text-xs text-amber-300"
-                            title={`Crítico com ${critRangeLabel(data.critRange)} no d20: dados dobrados${data.critExtra ? ` e +${data.critExtra}` : ''}`}
-                          >
-                            Crítico ({critical})
-                          </RollButton>
-                        ) : null}
                       </span>
                     </HoverCard>
-                    <RollEffectBadge sources={effects.attackRolls} />
-                    <PenaltyBadge penalty={penalty} source={penaltySource} />
-                    <RollButton
-                      expression={d20Expression(bonus)}
-                      label={`Ataque: ${attack.name}`}
-                      mode={rollModeFrom(effects.attackRolls)}
-                    >
-                      <span
-                        className={`tabular block rounded-md border border-line-strong bg-raised px-2 py-1 font-display text-lg ${penalty > 0 ? 'text-amber-300' : 'text-fg-accent'}`}
-                        aria-label={`Bônus de ataque ${formatModifier(bonus)}`}
+                    {/* As três rolagens, na ordem do jogo: acerto, dano e dano crítico. */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <RollButton
+                        expression={d20Expression(bonus)}
+                        label={`Ataque: ${attack.name}`}
+                        mode={rollModeFrom(effects.attackRolls)}
+                        className="w-full"
                       >
-                        {formatModifier(bonus)}
+                        <span className="flex w-full flex-col items-center rounded-md border border-line-strong bg-raised px-2 py-1.5">
+                          <span className="text-[11px] tracking-wider text-fg-muted uppercase">Acerto</span>
+                          <span className={`tabular font-display text-lg ${penalty > 0 ? 'text-amber-300' : 'text-fg-accent'}`}>{formatModifier(bonus)}</span>
+                        </span>
+                      </RollButton>
+                      <RollButton expression={damage} label={`Dano: ${attack.name}`} className="w-full">
+                        <span className="flex w-full flex-col items-center rounded-md border border-line-strong bg-raised px-2 py-1.5">
+                          <span className="text-[11px] tracking-wider text-fg-muted uppercase">Dano</span>
+                          <span className="tabular font-display text-lg text-ember-300">{damage ?? '—'}</span>
+                        </span>
+                      </RollButton>
+                      <RollButton
+                        expression={critical}
+                        label={`Dano crítico: ${attack.name}`}
+                        className="w-full"
+                        title={`Crítico com ${critRangeLabel(data.critRange)} no d20: dados dobrados${data.critExtra ? ` e +${data.critExtra}` : ''}`}
+                      >
+                        <span className="flex w-full flex-col items-center rounded-md border border-amber-400/30 bg-raised px-2 py-1.5">
+                          <span className="text-[11px] tracking-wider text-fg-muted uppercase">Crítico ({critRangeLabel(data.critRange)})</span>
+                          <span className="tabular font-display text-lg text-amber-300">{critical ?? '—'}</span>
+                        </span>
+                      </RollButton>
+                    </div>
+                    {effects.attackRolls.length || penalty > 0 ? (
+                      <span className="flex items-center gap-1">
+                        <RollEffectBadge sources={effects.attackRolls} />
+                        <PenaltyBadge penalty={penalty} source={penaltySource} />
                       </span>
-                    </RollButton>
+                    ) : null}
                   </li>
                 );
               })}
