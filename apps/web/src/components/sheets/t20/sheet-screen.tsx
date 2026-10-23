@@ -34,6 +34,7 @@ import {
 } from '@codexveil/rpg-systems/tormenta20';
 import { Heart, Minus, Moon, Plus, Shield, Sparkles, X, Zap } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
+import { TokenImageCard } from '@/components/characters/token-image-card';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -567,6 +568,8 @@ function T20SheetBody(props: T20SheetScreenProps) {
           />
         </Card>
       ) : null}
+
+      {tab === 'personagem' && permissions.canEditSheet ? <TokenImageCard characterId={character.id} portraitUrl={character.portraitUrl} /> : null}
 
       {tab === 'personagem' && permissions.isOwner ? (
         <DeleteCharacterCard

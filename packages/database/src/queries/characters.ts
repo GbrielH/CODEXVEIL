@@ -40,6 +40,8 @@ export interface CharacterDetail {
   systemId: string;
   name: string;
   portraitPath: string | null;
+  /** Imagem do token no mapa (sem ela, o mapa usa o retrato). */
+  tokenPath: string | null;
   /** Ficha bruta; valide com o módulo do sistema (`findSystem(systemId).parseSheet`). */
   sheet: unknown;
   version: number;
@@ -344,7 +346,7 @@ export async function getCharacter(
   const { data, error } = await client
     .from('characters')
     .select(
-      'id, owner_id, campaign_id, system_id, name, portrait_path, sheet, version, updated_at, live_updated_at, granted_level, owner:profiles!characters_owner_id_fkey(display_name), campaign:campaigns(id, name, status, owner_id, party_sheets_visible, players_can_edit_sheets)',
+      'id, owner_id, campaign_id, system_id, name, portrait_path, token_path, sheet, version, updated_at, live_updated_at, granted_level, owner:profiles!characters_owner_id_fkey(display_name), campaign:campaigns(id, name, status, owner_id, party_sheets_visible, players_can_edit_sheets)',
     )
     .eq('id', characterId)
     .maybeSingle();
@@ -370,6 +372,7 @@ export async function getCharacter(
     systemId: data.system_id,
     name: data.name,
     portraitPath: data.portrait_path,
+    tokenPath: data.token_path,
     sheet: data.sheet,
     version: data.version,
     updatedAt: data.updated_at,
@@ -993,6 +996,13 @@ export async function listCharacterSnapshots(
 // ---------------------------------------------------------------------------
 
 /** Caminho do retrato no bucket privado `campaign-media` (formato exigido pelas policies). */
+/** Troca (ou tira) a imagem de token do personagem. */
+export async function setCharacterToken(client: CodexveilClient, characterId: string, tokenPath: string | null): Promise<void> {
+  const { data, error } = await client.from('characters').update({ token_path: tokenPath }).eq('id', characterId).select('id');
+  if (error) throw toAppError(error);
+  if (data.length === 0) throw new AppError('forbidden');
+}
+
 export function characterPortraitPath(characterId: string, fileName: string): string {
   return `characters/${characterId}/${fileName}`;
 }

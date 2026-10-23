@@ -782,6 +782,7 @@ export type Database = {
           portrait_path: string | null;
           sheet: Json;
           system_id: string;
+          token_path: string | null;
           updated_at: string;
           version: number;
         };
@@ -796,6 +797,7 @@ export type Database = {
           portrait_path?: string | null;
           sheet?: Json;
           system_id: string;
+          token_path?: string | null;
           updated_at?: string;
           version?: number;
         };
@@ -810,6 +812,7 @@ export type Database = {
           portrait_path?: string | null;
           sheet?: Json;
           system_id?: string;
+          token_path?: string | null;
           updated_at?: string;
           version?: number;
         };

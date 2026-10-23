@@ -14,6 +14,7 @@ import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 import { useId, useRef, useState } from 'react';
 import { Portrait } from '@/components/characters/portrait';
+import { TokenImageCard } from '@/components/characters/token-image-card';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -31,10 +32,11 @@ export function SettingsTab({
 }: {
   campaigns: { id: string; name: string; characterRules?: unknown }[];
 }) {
-  const { permissions } = useSheet();
+  const { permissions, character } = useSheet();
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       {permissions.canEditSheet ? <PortraitCard /> : null}
+      {permissions.canEditSheet ? <TokenImageCard characterId={character.id} portraitUrl={character.portraitUrl} /> : null}
       {permissions.isOwner ? <CampaignCard campaigns={campaigns} /> : null}
       {permissions.isOwner ? <DangerCard /> : null}
     </div>
