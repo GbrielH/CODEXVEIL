@@ -15,7 +15,8 @@ import { parseT20Sheet } from '@codexveil/rpg-systems/tormenta20';
 import { Dnd5eSheetScreen } from '@/components/sheets/dnd5e/sheet-screen';
 import { T20SheetScreen } from '@/components/sheets/t20/sheet-screen';
 import { ErrorState } from '@/components/ui/states';
-import { campaignBookPacks, loadBookSources, loadT20Sources, ownReadyBookPacks } from '@/lib/books';
+import { ItemCatalogProvider } from '@/components/sheets/item-catalog';
+import { campaignBookPacks, loadBookSources, loadT20Sources, ownReadyBookPacks, packsOfSystem } from '@/lib/books';
 import { loadCharacterOrNotFound } from '@/lib/characters';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -55,19 +56,27 @@ export async function CharacterSheet({
   const sheetBooks = Array.isArray(identity?.sourcebooks)
     ? identity.sourcebooks.filter((id): id is string => typeof id === 'string')
     : [];
-  let books: Awaited<ReturnType<typeof loadBookSources>> = [];
-  if (permissions.canEditSheet && character.systemId === 'dnd5e') {
-    const campaign = character.campaign
+  // Mesmos livros alimentam o catálogo "Escolher do livro" do inventário.
+  const campaign =
+    (permissions.canEditSheet || permissions.canEditPlay) && character.campaign
       ? await getCampaign(supabase, character.campaign.id, user.id)
       : null;
-    const packs = campaign
+  const activePacks = !(permissions.canEditSheet || permissions.canEditPlay)
+    ? []
+    : campaign
       ? await campaignBookPacks(supabase, campaign)
       : character.viewer.isOwner
         ? (await ownReadyBookPacks(supabase, user.id)).filter((pack) =>
             sheetBooks.includes(pack.bookKey),
           )
         : [];
-    books = await loadBookSources(supabase, packs);
+  const catalogBooks = {
+    systemId: character.systemId,
+    packs: packsOfSystem(activePacks, character.systemId).map((pack) => ({ id: pack.id, name: pack.name })),
+  };
+  let books: Awaited<ReturnType<typeof loadBookSources>> = [];
+  if (permissions.canEditSheet && character.systemId === 'dnd5e') {
+    books = await loadBookSources(supabase, activePacks);
   }
 
   const system = findSystem(character.systemId);
@@ -129,17 +138,7 @@ export async function CharacterSheet({
     // Livros para a subida de nível: os da campanha do personagem ou, em fichas pessoais, os do dono.
     let t20Sources: Awaited<ReturnType<typeof loadT20Sources>> = [];
     if (permissions.canEditSheet) {
-      const campaign = character.campaign
-        ? await getCampaign(supabase, character.campaign.id, user.id)
-        : null;
-      const packs = campaign
-        ? await campaignBookPacks(supabase, campaign)
-        : character.viewer.isOwner
-          ? (await ownReadyBookPacks(supabase, user.id)).filter((pack) =>
-              sheetBooks.includes(pack.bookKey),
-            )
-          : [];
-      t20Sources = await loadT20Sources(supabase, packs);
+      t20Sources = await loadT20Sources(supabase, activePacks);
     }
     let sheet;
     try {
@@ -190,5 +189,5 @@ export async function CharacterSheet({
     );
   }
 
-  return content;
+  return <ItemCatalogProvider value={catalogBooks}>{content}</ItemCatalogProvider>;
 }

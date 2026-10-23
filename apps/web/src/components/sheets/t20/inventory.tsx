@@ -17,6 +17,7 @@ import {
 import { fieldErrorsFrom, inventoryItemSchema, type FieldErrors } from '@codexveil/validation';
 import { Backpack, Minus, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useId, useState, type Dispatch, type SetStateAction } from 'react';
+import { ItemCatalogPicker } from '../item-catalog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -350,6 +351,13 @@ function ItemFormModal({
           void submit();
         }}
       >
+        {isNew ? (
+          <ItemCatalogPicker
+            onPick={(picked) =>
+              setForm((current) => ({ ...current, name: picked.name, category: picked.category, weight: picked.weight, description: picked.description }))
+            }
+          />
+        ) : null}
         <div className="grid gap-4 sm:grid-cols-[1fr_12rem]">
           <TextField
             id={`${id}-name`}

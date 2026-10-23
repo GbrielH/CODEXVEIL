@@ -49,6 +49,7 @@ import { NumberInput } from '@/components/ui/number-input';
 import { EmptyState } from '@/components/ui/states';
 import { cx } from '@/lib/cx';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { ItemCatalogPicker } from '../item-catalog';
 import { useSheet } from './context';
 
 export function InventoryTab() {
@@ -364,7 +365,7 @@ function ItemFormModal({
   item: CharacterItem | 'new' | null;
   onClose: () => void;
 }) {
-  const { character, setItems, run, abilities, setAbilities, permissions } = useSheet();
+  const { character, setItems, run, abilities, setAbilities, permissions, sheet } = useSheet();
   // Ataque ligado à arma (pelo nome): dano, tipo, crítico e afins ficam no ataque da ficha.
   const linkedAttack =
     item && item !== 'new' ? (abilities.find((entry) => entry.kind === 'attack' && entry.name.toLowerCase() === item.name.toLowerCase()) ?? null) : null;
@@ -458,6 +459,14 @@ function ItemFormModal({
           void submit();
         }}
       >
+        {isNew ? (
+          <ItemCatalogPicker
+            metric={sheet.combat.speedUnit === 'm'}
+            onPick={(picked) =>
+              setForm((current) => ({ ...current, name: picked.name, category: picked.category, weight: picked.weight, description: picked.description }))
+            }
+          />
+        ) : null}
         <div className="grid gap-4 sm:grid-cols-[1fr_12rem]">
           <TextField
             id={`${id}-name`}
