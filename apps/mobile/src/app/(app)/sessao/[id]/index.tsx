@@ -11,6 +11,7 @@ import {
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Lock } from 'lucide-react-native';
 import { Image, View } from 'react-native';
+import { AttendanceCard } from '@/components/sessions/attendance';
 import { AppText, Badge, Card, Divider } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states';
@@ -213,7 +214,7 @@ export default function SessionScreen() {
         blocks.map((block) => (block.content?.type === 'image' ? block.content.data.path : null)),
       ),
     ]);
-    return { session, blocks, references, imageUrls, campaignName: campaign?.name ?? null };
+    return { session, blocks, references, imageUrls, campaignName: campaign?.name ?? null, isPlayer: campaign?.role === 'player' };
   }, `${id}:${userId}`);
   // Trechos liberados pelo mestre durante a sessão chegam na hora.
   useRealtimeRefresh(
@@ -235,7 +236,7 @@ export default function SessionScreen() {
     );
   }
 
-  const { session, blocks, references, imageUrls, campaignName } = data;
+  const { session, blocks, references, imageUrls, campaignName, isPlayer } = data;
   return (
     <Screen
       eyebrow={
@@ -252,6 +253,7 @@ export default function SessionScreen() {
           tone={session.status === 'in_progress' ? 'brand' : 'neutral'}
         />
       </View>
+      {isPlayer && session.status === 'planned' && session.scheduledAt ? <AttendanceCard sessionId={session.id} campaignId={session.campaignId} /> : null}
       {session.recap ? (
         <View
           style={{ backgroundColor: colors.parchment, borderRadius: radii.lg, padding: 16, gap: 6 }}

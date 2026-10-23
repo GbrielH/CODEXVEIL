@@ -1321,6 +1321,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      session_attendance: {
+        Row: {
+          campaign_id: string;
+          session_id: string;
+          status: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          campaign_id: string;
+          session_id: string;
+          status: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          campaign_id?: string;
+          session_id?: string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'session_attendance_session_fk';
+            columns: ['session_id', 'campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'sessions';
+            referencedColumns: ['id', 'campaign_id'];
+          },
+          {
+            foreignKeyName: 'session_attendance_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       session_blocks: {
         Row: {
           campaign_id: string;

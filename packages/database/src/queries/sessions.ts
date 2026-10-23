@@ -446,3 +446,24 @@ export async function resolveBlockReferences(
 export function sessionImagePath(campaignId: string, sessionId: string, fileName: string): string {
   return `campaigns/${campaignId}/sessions/${sessionId}/${fileName}`;
 }
+
+export type AttendanceStatus = 'yes' | 'no';
+
+/** Respostas de presença das sessões da campanha: sessão → (usuário → resposta). */
+export async function listCampaignAttendance(client: CodexveilClient, campaignId: string): Promise<Record<string, Record<string, AttendanceStatus>>> {
+  const { data, error } = await client.from('session_attendance').select('session_id, user_id, status').eq('campaign_id', campaignId);
+  if (error) throw toAppError(error);
+  const result: Record<string, Record<string, AttendanceStatus>> = {};
+  for (const row of data ?? []) {
+    (result[row.session_id] ??= {})[row.user_id] = row.status === 'yes' ? 'yes' : 'no';
+  }
+  return result;
+}
+
+/** O usuário responde se vai à sessão agendada (cria ou muda a resposta). */
+export async function setMyAttendance(client: CodexveilClient, sessionId: string, campaignId: string, userId: string, status: AttendanceStatus): Promise<void> {
+  const { error } = await client
+    .from('session_attendance')
+    .upsert({ session_id: sessionId, campaign_id: campaignId, user_id: userId, status }, { onConflict: 'session_id,user_id' });
+  if (error) throw toAppError(error);
+}

@@ -544,3 +544,24 @@ describe('anotações', () => {
     expect(names).toHaveLength(0);
   });
 });
+
+describe('confirmar presença', () => {
+  it('o jogador responde só por si, em sessão agendada; todos da mesa veem', async () => {
+    const { gm, player, otherPlayer, outsider, campaign } = await createTable(db);
+    const session = await db.as(gm, (s) =>
+      s.one<{ id: string }>(`insert into public.sessions (campaign_id, title, is_published, scheduled_at) values ($1, 'Noite 2', true, now() + interval '2 days') returning id`, [campaign.id]),
+    );
+    await db.as(player, (s) => s.query(`insert into public.session_attendance (session_id, campaign_id, status) values ($1, $2, 'yes')`, [session.id, campaign.id]));
+    await db.as(player, (s) => s.query(`update public.session_attendance set status = 'no' where session_id = $1`, [session.id]));
+    const seen = await db.as(gm, (s) => s.query<{ status: string }>(`select status from public.session_attendance where session_id = $1`, [session.id]));
+    expect(seen.map((row) => row.status)).toEqual(['no']);
+    await expectSqlError(
+      db.as(otherPlayer, (s) => s.query(`insert into public.session_attendance (session_id, campaign_id, user_id, status) values ($1, $2, $3, 'yes')`, [session.id, campaign.id, player.id])),
+      '42501',
+    );
+    await expectSqlError(
+      db.as(outsider, (s) => s.query(`insert into public.session_attendance (session_id, campaign_id, status) values ($1, $2, 'yes')`, [session.id, campaign.id])),
+      '42501',
+    );
+  });
+});

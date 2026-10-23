@@ -1,7 +1,8 @@
-import { listSessions, sessionStatusLabels } from '@codexveil/database';
+import { listCampaignAttendance, listCampaignMembers, listSessions, sessionStatusLabels } from '@codexveil/database';
 import { CalendarClock, EyeOff, NotebookPen, ScrollText } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
+import { AttendanceButtons } from '@/components/sessions/attendance-buttons';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Notice } from '@/components/ui/notice';
@@ -16,9 +17,14 @@ export const metadata: Metadata = { title: 'Sessões' };
 
 export default async function SessionsPage({ params, searchParams }: PageProps<'/campanhas/[campaignId]/sessoes'>) {
   const [{ campaignId }, query] = await Promise.all([params, searchParams]);
-  const { campaign } = await loadCampaignOrNotFound(campaignId);
+  const { user, campaign } = await loadCampaignOrNotFound(campaignId);
   const supabase = await createSupabaseServerClient();
-  const sessions = await listSessions(supabase, campaign.id);
+  const [sessions, attendance, members] = await Promise.all([
+    listSessions(supabase, campaign.id),
+    listCampaignAttendance(supabase, campaign.id),
+    listCampaignMembers(supabase, campaign.id, campaign.ownerId),
+  ]);
+  const players = members.filter((member) => member.role === 'player');
   const isGm = campaign.role === 'gm';
   const canManage = isGm && campaign.status === 'active';
   const nextNumber = (sessions[0]?.number ?? 0) + 1;
@@ -77,6 +83,30 @@ export default async function SessionsPage({ params, searchParams }: PageProps<'
                       ) : null}
                     </span>
                   </Link>
+                  {session.status === 'planned' && session.scheduledAt ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-3 rounded-md border border-line bg-raised px-3 py-2 text-xs">
+                      {isGm ? (
+                        (() => {
+                          const answers = attendance[session.id] ?? {};
+                          const named = (status: 'yes' | 'no' | null) =>
+                            players.filter((player) => (answers[player.userId] ?? null) === status).map((player) => player.displayName);
+                          const groups = [
+                            { label: 'Confirmados', names: named('yes'), tone: 'text-emerald-300' },
+                            { label: 'Não vão', names: named('no'), tone: 'text-red-300' },
+                            { label: 'Sem resposta', names: named(null), tone: 'text-fg-muted' },
+                          ];
+                          return groups.map((group) => (
+                            <span key={group.label} className={group.tone} title={group.names.join(', ') || 'ninguém'}>
+                              {group.label}: <strong>{group.names.length}</strong>
+                              {group.names.length ? ` (${group.names.join(', ')})` : ''}
+                            </span>
+                          ));
+                        })()
+                      ) : (
+                        <AttendanceButtons sessionId={session.id} campaignId={campaign.id} userId={user.id} initial={attendance[session.id]?.[user.id] ?? null} />
+                      )}
+                    </div>
+                  ) : null}
                 </li>
               ))}
             </ul>
