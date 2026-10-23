@@ -14,8 +14,8 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
  */
 export const runtime = 'nodejs';
 
-/** Modelo do plano gratuito; GEMINI_MODEL troca sem mudar o código. */
-const MODEL = process.env.GEMINI_MODEL?.trim() || 'gemini-2.5-flash';
+/** Apelido do Flash atual (o Google aposenta versões fixas para contas novas); GEMINI_MODEL troca sem mudar o código. */
+const MODEL = process.env.GEMINI_MODEL?.trim() || 'gemini-flash-latest';
 const MAX_QUESTION = 2000;
 const MAX_CONTEXT = 12000;
 
@@ -109,6 +109,7 @@ export async function POST(request: Request): Promise<Response> {
         if (finish === 'SAFETY') controller.enqueue(encoder.encode('\n\n(O assistente não pode responder a isso.)'));
         if (finish === 'MAX_TOKENS') controller.enqueue(encoder.encode('\n\n(Resposta cortada por tamanho.)'));
       } catch (caught) {
+        console.error('[assistente] falha no Gemini', MODEL, caught);
         const busy = typeof caught === 'object' && caught !== null && 'status' in caught && caught.status === 429;
         const message = busy ? 'O assistente está ocupado (limite gratuito). Tente de novo em instantes.' : 'O assistente falhou ao responder. Tente de novo.';
         controller.enqueue(encoder.encode(`\n\n(${message})`));

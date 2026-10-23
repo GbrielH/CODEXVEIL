@@ -434,7 +434,7 @@ de segurança).
 
 - [x] Card "Assistente" acima do perfil/"Sair" (site), painel de conversa por cima da página,
       streaming, botão copiar e aviso de que a regra do livro vale.
-- [x] Rota `/api/assistente` (Google Gemini `gemini-2.5-flash`, plano gratuito; trocado do Claude no mesmo dia porque a API da Anthropic não tem plano gratuito), contexto pela rota com o RLS da pessoa.
+- [x] Rota `/api/assistente` (Google Gemini `gemini-flash-latest`, plano gratuito; trocado do Claude no mesmo dia porque a API da Anthropic não tem plano gratuito), contexto pela rota com o RLS da pessoa.
 - [x] Cota de 30 perguntas/dia (migração `20261023120000_assistant_usage.sql`, aplicada).
 - [ ] Criar `GEMINI_API_KEY` na Vercel (o card só aparece com ela) (chave grátis em aistudio.google.com) e testar uma pergunta real.
 - [x] Painel do assistente por cima de tudo (portal no `body`; antes ficava atrás dos cards).
