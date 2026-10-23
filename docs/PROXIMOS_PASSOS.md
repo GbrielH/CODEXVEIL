@@ -492,6 +492,10 @@ de segurança).
       de atalhos/agenda/personagens; cards de campanha com a arte e o título por cima; página inicial
       "Sua campanha. Seu mundo. Seus segredos."; login com a paisagem e o círculo. App: capas com a
       paisagem e banner do painel com a cena (OTA). Capturas conferidas: página inicial e login.
+- [x] Tela de carregamento do site: dragão em pixel art animado (GIF do responsável convertido para
+      WebP sem perdas, 260 px, 1,3 MB em vez de 4 MB; `public/mestre/carregando.webp`), no lugar do
+      dragão em SVG. Some com movimento reduzido. App: continua o carregador próprio (GIF/WebP
+      animado no Android exige componente nativo, ou seja, APK novo).
 - [x] Painel do assistente por cima de tudo (portal no `body`; antes ficava atrás dos cards).
 - [x] Mãozinha (cursor) em tudo que é clicável no site: rolagens, abas, botões (`globals.css`).
 - [x] Livro T20 exportado: faltam as origens Acólito e Amigo dos Animais, há poderes com " e"
