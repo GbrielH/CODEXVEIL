@@ -412,7 +412,7 @@ function rollMark(sources: readonly ConditionRollSource[]): string | null {
 
 function CombatStats() {
   const { sheet, derived, conditionEffects: effects } = useSheet();
-  const speed = effectiveSpeed(sheet.combat.speed, sheet.combat.speedUnit, effects);
+  const speed = effectiveSpeed(derived.speed, sheet.combat.speedUnit, effects);
   const passive = passiveWithConditions(derived.passivePerception, effects);
   const initiativeNotes = [
     rollMark(effects.initiative),
@@ -426,7 +426,7 @@ function CombatStats() {
         : null;
   const initiativeMode = netRollMode(effects.initiative);
   const stats = [
-    { label: 'CA', value: String(sheet.combat.armorClass), note: null, changed: false },
+    { label: 'CA', value: String(derived.armorClass), note: derived.armorClassBreakdown.join(' · ') || null, changed: false },
     {
       label: 'Iniciativa',
       value: formatModifier(derived.initiative - effects.d20Penalty),
@@ -444,7 +444,7 @@ function CombatStats() {
       label: 'Desloc.',
       value: `${speed.toLocaleString('pt-BR')} ${sheet.combat.speedUnit}`,
       note: speedNote,
-      changed: speed !== sheet.combat.speed,
+      changed: speed !== derived.speed,
     },
     {
       label: 'Percepção',

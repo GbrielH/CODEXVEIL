@@ -64,3 +64,4 @@ export { t20OfficialLinks } from './links';
 export * from './content';
 export * from './creation';
 export * from './level-up';
+export * from './equipment-defense';

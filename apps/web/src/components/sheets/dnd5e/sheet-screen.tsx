@@ -15,6 +15,7 @@ import { applyTrackOperation, type TrackOperation } from '@codexveil/domain';
 import {
   buildDnd5eBookContent,
   computeDnd5eDerived,
+  speciesSpeedFeet,
   dnd5eConditionEffects,
   dnd5eSheetSchema,
   parseDnd5eSheet,
@@ -23,7 +24,7 @@ import {
   type Dnd5eSheet,
 } from '@codexveil/rpg-systems/dnd5e';
 import { BookOpen, Backpack, Feather, Hourglass, Settings, Sparkles, Swords } from 'lucide-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
@@ -114,7 +115,28 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
   });
   const { value: draft, update, reset, state: saveState } = autosave;
 
-  const derived = useMemo(() => computeDnd5eDerived(draft.sheet), [draft.sheet]);
+  // CA, deslocamento e atributos vêm do que está equipado e das características (automático).
+  const derived = useMemo(
+    () => computeDnd5eDerived(draft.sheet, { items, features: abilities.filter((entry) => entry.kind !== 'attack' && entry.kind !== 'spell').map((entry) => entry.name) }),
+    [draft.sheet, items, abilities],
+  );
+  // Grava na ficha a CA e o deslocamento calculados, para o mestre, o grupo, os turnos e o mapa
+  // verem os mesmos números (o deslocamento só quando a espécie é conhecida, para não acumular).
+  const knownSpecies = speciesSpeedFeet(draft.sheet.identity.species) !== null;
+  useEffect(() => {
+    if (!permissions.canEditSheet) return;
+    const combat = draft.sheet.combat;
+    const acChanged = derived.armorClass !== combat.armorClass;
+    const speedChanged = knownSpecies && derived.speed !== combat.speed;
+    if (!acChanged && !speedChanged) return;
+    update((current) => ({
+      ...current,
+      sheet: {
+        ...current.sheet,
+        combat: { ...current.sheet.combat, armorClass: derived.armorClass, ...(speedChanged ? { speed: derived.speed } : {}) },
+      },
+    }));
+  }, [derived.armorClass, derived.speed, knownSpecies, permissions.canEditSheet, draft.sheet.combat, update]);
   const conditionEffects = useMemo(() => dnd5eConditionEffects(conditions), [conditions]);
 
   const run = useCallback(

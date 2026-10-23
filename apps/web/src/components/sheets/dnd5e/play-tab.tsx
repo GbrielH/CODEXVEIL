@@ -95,7 +95,7 @@ export function PlayTab() {
   const attacks = abilities.filter(
     (entry) => entry.kind === 'attack' && isAttackAvailable(entry.name, items),
   );
-  const speedValue = effectiveSpeed(sheet.combat.speed, sheet.combat.speedUnit, effects);
+  const speedValue = effectiveSpeed(derived.speed, sheet.combat.speedUnit, effects);
   const speed = `${speedValue.toLocaleString('pt-BR')} ${sheet.combat.speedUnit}`;
   const speedHint =
     effects.speedZero.length > 0
@@ -137,7 +137,7 @@ export function PlayTab() {
           <Stat
             icon={<Shield className="h-5 w-5" aria-hidden="true" />}
             label="Classe de armadura"
-            value={String(sheet.combat.armorClass)}
+            value={String(derived.armorClass)}
           />
           <Stat
             icon={<Zap className="h-5 w-5" aria-hidden="true" />}
@@ -161,7 +161,7 @@ export function PlayTab() {
             label="Deslocamento"
             value={speed}
             hint={speedHint}
-            changed={speedValue !== sheet.combat.speed}
+            changed={speedValue !== derived.speed}
           />
           <Stat
             icon={<Crosshair className="h-5 w-5" aria-hidden="true" />}

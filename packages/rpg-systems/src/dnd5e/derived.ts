@@ -3,6 +3,7 @@
  * mesmos números, na web e no mobile.
  */
 import { ABILITIES, abilityModifier, type Ability } from './abilities';
+import { computeDnd5eCombat, type GearItem } from './equipment-effects';
 import {
   experienceForNextLevel,
   levelForExperience,
@@ -30,6 +31,17 @@ export interface Dnd5eDerived {
   savingThrows: Record<Ability, number>;
   skills: Record<Skill, Dnd5eSkillValue>;
   initiative: number;
+  /** Classe de Armadura calculada (armadura, escudo, Destreza, Defesa sem Armadura, itens). */
+  armorClass: number;
+  armorClassBreakdown: string[];
+  /** Deslocamento calculado (espécie, classe, armadura), na unidade da ficha. */
+  speed: number;
+  speedNotes: string[];
+  /** Atributos efetivos (com itens como as Manoplas de Força do Ogro). */
+  abilities: Record<Ability, number>;
+  abilityNotes: string[];
+  /** Avisos do equipamento (armadura sem a Força exigida…). */
+  combatWarnings: string[];
   passivePerception: number;
   passiveInsight: number;
   passiveInvestigation: number;
@@ -52,14 +64,20 @@ function mapAbilities<T>(fn: (ability: Ability) => T): Record<Ability, T> {
   >;
 }
 
-export function computeDnd5eDerived(sheet: Dnd5eSheet): Dnd5eDerived {
+/**
+ * Valores derivados. Com `gear` (itens e nomes das características), CA, deslocamento e
+ * atributos vêm do equipamento; sem ele (ex.: prévia da criação), da ficha.
+ */
+export function computeDnd5eDerived(sheet: Dnd5eSheet, gear?: { items: readonly GearItem[]; features?: readonly string[] }): Dnd5eDerived {
   const level = totalLevel(sheet);
   const proficiencyBonus = proficiencyBonusForLevel(level);
-  const abilityModifiers = mapAbilities((ability) => abilityModifier(sheet.abilities[ability]));
+  const combat = gear ? computeDnd5eCombat(sheet, gear.items, gear.features ?? []) : null;
+  const scores = combat?.abilities ?? sheet.abilities;
+  const abilityModifiers = mapAbilities((ability) => abilityModifier(scores[ability]));
 
   const savingThrows = mapAbilities((ability) => {
     const entry = sheet.savingThrows[ability];
-    return abilityModifiers[ability] + (entry.proficient ? proficiencyBonus : 0) + entry.bonus;
+    return abilityModifiers[ability] + (entry.proficient ? proficiencyBonus : 0) + entry.bonus + (combat?.savingThrowBonus ?? 0);
   });
 
   const skills = Object.fromEntries(
@@ -107,13 +125,20 @@ export function computeDnd5eDerived(sheet: Dnd5eSheet): Dnd5eDerived {
       abilityModifiers.dex +
       proficiencyContribution(sheet.combat.initiativeProficiency, proficiencyBonus) +
       sheet.combat.initiativeBonus,
+    armorClass: combat?.armorClass ?? sheet.combat.armorClass,
+    armorClassBreakdown: combat?.armorClassBreakdown ?? [],
+    speed: combat?.speed ?? sheet.combat.speed,
+    speedNotes: combat?.speedNotes ?? [],
+    abilities: scores,
+    abilityNotes: combat?.abilityNotes ?? [],
+    combatWarnings: combat?.warnings ?? [],
     passivePerception: 10 + skills.perception.bonus,
     passiveInsight: 10 + skills.insight.bonus,
     passiveInvestigation: 10 + skills.investigation.bonus,
     spellcasting,
     carryingCapacity: {
-      pounds: sheet.abilities.str * 15,
-      kilograms: sheet.abilities.str * 7.5,
+      pounds: scores.str * 15,
+      kilograms: scores.str * 7.5,
     },
     hitDice,
     experience: {

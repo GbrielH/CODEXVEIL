@@ -20,6 +20,7 @@ import {
   T20_REST_QUALITY,
   buildT20Content,
   computeT20Derived,
+  t20DefenseFromItems,
   findT20Condition,
   formatT20Bonus,
   t20AttributeLabels,
@@ -33,7 +34,7 @@ import {
   t20AbilityCost,
 } from '@codexveil/rpg-systems/tormenta20';
 import { Heart, Minus, Moon, Plus, Shield, Sparkles, X, Zap } from 'lucide-react';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { TokenImageCard } from '@/components/characters/token-image-card';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -132,13 +133,29 @@ function T20SheetBody(props: T20SheetScreenProps) {
   const [items, setItems] = useState(props.items);
   const [abilities, setAbilities] = useState(props.abilities);
   const content = useMemo(() => buildT20Content(props.sources ?? []), [props.sources]);
+
+  // Defesa automática: armadura e escudo equipados no inventário (grava na ficha ao mudar).
+  const gearDefense = useMemo(() => t20DefenseFromItems(items), [items]);
+  const effectiveSheet = useMemo(() => (gearDefense ? { ...sheet, defense: { ...gearDefense, other: sheet.defense.other } } : sheet), [sheet, gearDefense]);
+  const defenseKey = gearDefense ? JSON.stringify({ ...gearDefense, other: sheet.defense.other }) : null;
+  useEffect(() => {
+    if (!defenseKey || !permissions.canEditSheet || JSON.stringify(sheet.defense) === defenseKey) return;
+    const next = { ...sheet, defense: JSON.parse(defenseKey) as typeof sheet.defense };
+    saveCharacterSheet(getSupabaseBrowserClient(), character.id, version, { sheet: next })
+      .then((saved) => {
+        setSheet(next);
+        setVersion(saved.version);
+      })
+      .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- grava só quando o equipamento muda a Defesa.
+  }, [defenseKey]);
   const derived = useMemo(
     () =>
       computeT20Derived(
-        sheet,
+        effectiveSheet,
         conditions.map((condition) => condition.key),
       ),
-    [sheet, conditions],
+    [effectiveSheet, conditions],
   );
   const resource = (key: string) => resources.find((entry) => entry.key === key);
 

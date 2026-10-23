@@ -16,13 +16,14 @@ import {
 import { applyTrackOperation, type TrackOperation } from '@codexveil/domain';
 import {
   computeDnd5eDerived,
+  speciesSpeedFeet,
   dnd5eConditionEffects,
   dnd5eSheetSchema,
   dnd5eSystem,
   parseDnd5eSheet,
   type Dnd5eSheet,
 } from '@codexveil/rpg-systems/dnd5e';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Image, View } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { ImageUploadButtons } from '@/components/ui/image-upload';
@@ -95,7 +96,21 @@ export function SheetScreen(props: SheetScreenProps) {
     },
   });
   const sheet = autosave.value;
-  const derived = computeDnd5eDerived(sheet);
+  // CA, deslocamento e atributos vêm do que está equipado e das características (automático).
+  const derived = computeDnd5eDerived(sheet, {
+    items,
+    features: abilities.filter((entry) => entry.kind !== 'attack' && entry.kind !== 'spell').map((entry) => entry.name),
+  });
+  // Grava na ficha a CA e o deslocamento calculados (o mestre, o grupo e o mapa leem a ficha).
+  const knownSpecies = speciesSpeedFeet(sheet.identity.species) !== null;
+  const updateSheet = autosave.update;
+  useEffect(() => {
+    if (!props.canEditSheet) return;
+    const acChanged = derived.armorClass !== sheet.combat.armorClass;
+    const speedChanged = knownSpecies && derived.speed !== sheet.combat.speed;
+    if (!acChanged && !speedChanged) return;
+    updateSheet((current) => ({ ...current, combat: { ...current.combat, armorClass: derived.armorClass, ...(speedChanged ? { speed: derived.speed } : {}) } }));
+  }, [derived.armorClass, derived.speed, knownSpecies, props.canEditSheet, sheet.combat.armorClass, sheet.combat.speed, updateSheet]);
   const conditionEffects = dnd5eConditionEffects(conditions);
 
   const reloadPlayState = async () => {

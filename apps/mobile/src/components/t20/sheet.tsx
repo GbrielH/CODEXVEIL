@@ -34,6 +34,7 @@ import {
   type T20Skill,
   type T20LevelUpChoices,
   computeT20Derived,
+  t20DefenseFromItems,
   findT20Condition,
   formatT20Bonus,
   planT20LevelUp,
@@ -45,7 +46,7 @@ import {
   type T20RestQuality,
   type T20Sheet,
 } from '@codexveil/rpg-systems/tormenta20';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { CheckRow } from '@/components/ui/controls';
@@ -141,13 +142,29 @@ function T20SheetBody(props: Props) {
     }
   };
   const content = useMemo(() => buildT20Content(props.sources), [props.sources]);
+
+  // Defesa automática: armadura e escudo equipados no inventário (grava na ficha ao mudar).
+  const gearDefense = useMemo(() => t20DefenseFromItems(items), [items]);
+  const effectiveSheet = useMemo(() => (gearDefense ? { ...sheet, defense: { ...gearDefense, other: sheet.defense.other } } : sheet), [sheet, gearDefense]);
+  const defenseKey = gearDefense ? JSON.stringify({ ...gearDefense, other: sheet.defense.other }) : null;
+  useEffect(() => {
+    if (!defenseKey || !props.canEditSheet || JSON.stringify(sheet.defense) === defenseKey) return;
+    const next = { ...sheet, defense: JSON.parse(defenseKey) as typeof sheet.defense };
+    saveCharacterSheet(getSupabase(), props.character.id, version, { sheet: next })
+      .then((saved) => {
+        setSheet(next);
+        setVersion(saved.version);
+      })
+      .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- grava só quando o equipamento muda a Defesa.
+  }, [defenseKey]);
   const derived = useMemo(
     () =>
       computeT20Derived(
-        sheet,
+        effectiveSheet,
         conditions.map((entry) => entry.key),
       ),
-    [sheet, conditions],
+    [effectiveSheet, conditions],
   );
   const track = (key: string) => resources.find((entry) => entry.key === key);
   const value = Math.max(1, Number(amount) || 1);

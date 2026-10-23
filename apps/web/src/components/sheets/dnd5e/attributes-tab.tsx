@@ -15,11 +15,11 @@ import {
   skillDefinitions,
   type Ability,
   type ProficiencyLevel,
+  SRD_LANGUAGES,
 } from '@codexveil/rpg-systems/dnd5e';
 import { useId } from 'react';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Select } from '@/components/ui/select';
-import { TextareaField } from '@/components/ui/field';
 import { NumberInput } from '@/components/ui/number-input';
 import { cx } from '@/lib/cx';
 import { RollButton } from '@/components/dice/dice-roller';
@@ -95,6 +95,11 @@ function AbilityScores() {
             }
             className="h-9 w-16 text-base"
           />
+          {derived.abilities[ability] !== sheet.abilities[ability] ? (
+            <span className="text-center text-[11px] text-emerald-300" title={derived.abilityNotes.join('; ')}>
+              Com itens: {derived.abilities[ability]}
+            </span>
+          ) : null}
         </div>
       ))}
     </section>
@@ -271,71 +276,58 @@ function SkillsTable() {
 }
 
 function CombatBasics() {
-  const { sheet, updateSheet, permissions } = useSheet();
+  const { sheet, derived, updateSheet, permissions } = useSheet();
   const id = useId();
-  const setCombat = (patch: Partial<typeof sheet.combat>) =>
-    updateSheet((current) => ({ ...current, combat: { ...current.combat, ...patch } }));
+  const unit = sheet.combat.speedUnit;
+  const stats = [
+    { label: 'Classe de armadura', value: String(derived.armorClass), notes: derived.armorClassBreakdown },
+    {
+      label: 'Iniciativa',
+      value: formatModifier(derived.initiative),
+      notes: [`Destreza ${formatModifier(derived.abilityModifiers.dex)}`, ...(derived.initiative !== derived.abilityModifiers.dex ? ['+ proficiência/bônus de talentos'] : [])],
+    },
+    { label: 'Deslocamento', value: `${derived.speed.toLocaleString('pt-BR')} ${unit}`, notes: derived.speedNotes },
+  ];
   return (
     <Card>
-      <CardHeader
-        title="Combate"
-        description="Valores base informados por você; a iniciativa soma a Destreza."
-      />
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-ac`} className="text-sm font-medium">
-            Classe de armadura
-          </label>
-          <NumberInput
-            id={`${id}-ac`}
-            value={sheet.combat.armorClass}
-            min={0}
-            max={50}
-            disabled={!permissions.canEditSheet}
-            onCommit={(value) => setCombat({ armorClass: value ?? 10 })}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-init`} className="text-sm font-medium">
-            Bônus de iniciativa
-          </label>
-          <NumberInput
-            id={`${id}-init`}
-            value={sheet.combat.initiativeBonus}
-            min={-30}
-            max={30}
-            disabled={!permissions.canEditSheet}
-            onCommit={(value) => setCombat({ initiativeBonus: value ?? 0 })}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-speed`} className="text-sm font-medium">
-            Deslocamento
-          </label>
-          <NumberInput
-            id={`${id}-speed`}
-            value={sheet.combat.speed}
-            min={0}
-            max={1000}
-            decimal
-            disabled={!permissions.canEditSheet}
-            onCommit={(value) => setCombat({ speed: value ?? 0 })}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-unit`} className="text-sm font-medium">
-            Unidade
-          </label>
-          <Select
-            id={`${id}-unit`}
-            value={sheet.combat.speedUnit}
-            disabled={!permissions.canEditSheet}
-            onChange={(event) => setCombat({ speedUnit: event.target.value === 'ft' ? 'ft' : 'm' })}
-          >
-            <option value="m">metros</option>
-            <option value="ft">pés</option>
-          </Select>
-        </div>
+      <CardHeader title="Combate" description="Calculado automaticamente pela espécie, classe, atributos e pelo que está equipado." />
+      <div className="grid gap-3 sm:grid-cols-3">
+        {stats.map((stat) => (
+          <div key={stat.label} className="flex flex-col gap-1 rounded-md border border-line bg-raised p-3">
+            <span className="text-xs text-fg-muted">{stat.label}</span>
+            <span className="tabular font-display text-2xl text-fg-accent">{stat.value}</span>
+            {stat.notes.length ? (
+              <ul className="text-[11px] text-fg-muted">
+                {stat.notes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ))}
+      </div>
+      {derived.combatWarnings.length ? (
+        <ul className="mt-3 text-xs text-amber-300">
+          {derived.combatWarnings.map((warning) => (
+            <li key={warning}>{warning}</li>
+          ))}
+        </ul>
+      ) : null}
+      {derived.abilityNotes.length ? <p className="mt-2 text-xs text-fg-muted">Atributos alterados por itens: {derived.abilityNotes.join('; ')}.</p> : null}
+      <div className="mt-3 flex items-center gap-2">
+        <label htmlFor={`${id}-unit`} className="text-xs text-fg-muted">
+          Unidade de distância
+        </label>
+        <Select
+          id={`${id}-unit`}
+          value={unit}
+          disabled={!permissions.canEditSheet}
+          onChange={(event) => updateSheet((current) => ({ ...current, combat: { ...current.combat, speedUnit: event.target.value === 'ft' ? 'ft' : 'm' } }))}
+          className="w-32"
+        >
+          <option value="m">metros</option>
+          <option value="ft">pés</option>
+        </Select>
       </div>
     </Card>
   );
@@ -414,35 +406,49 @@ function Spellcasting() {
 
 function Proficiencies() {
   const { sheet, updateSheet, permissions } = useSheet();
-  const id = useId();
-  const fields = [
+  // Armaduras, armas e ferramentas vêm da classe, do antecedente e das evoluções (criação e
+  // subida de nível gravam sozinhas): só exibição.
+  const fixed = [
     { key: 'armor', label: 'Armaduras' },
     { key: 'weapons', label: 'Armas' },
     { key: 'tools', label: 'Ferramentas' },
-    { key: 'languages', label: 'Idiomas' },
   ] as const;
+  const known = sheet.proficiencies.languages
+    .split(/,\s*/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const all = [...SRD_LANGUAGES.map((language) => language.name), ...known.filter((name) => !SRD_LANGUAGES.some((language) => language.name === name))];
+  const toggle = (name: string, checked: boolean) =>
+    updateSheet((current) => {
+      const currentKnown = current.proficiencies.languages.split(/,\s*/).map((entry) => entry.trim()).filter(Boolean);
+      const next = checked ? [...currentKnown, name] : currentKnown.filter((entry) => entry !== name);
+      return { ...current, proficiencies: { ...current.proficiencies, languages: [...new Set(next)].join(', ') } };
+    });
   return (
     <Card>
-      <CardHeader title="Proficiências e idiomas" />
-      <div className="grid gap-4 sm:grid-cols-2">
-        {fields.map((field) => (
-          <TextareaField
-            key={field.key}
-            id={`${id}-${field.key}`}
-            label={field.label}
-            rows={2}
-            maxLength={300}
-            readOnly={!permissions.canEditSheet}
-            value={sheet.proficiencies[field.key]}
-            onChange={(event) =>
-              updateSheet((current) => ({
-                ...current,
-                proficiencies: { ...current.proficiencies, [field.key]: event.target.value },
-              }))
-            }
-          />
+      <CardHeader title="Proficiências e idiomas" description="Proficiências automáticas pela classe, antecedente e evoluções." />
+      <dl className="grid gap-3 sm:grid-cols-3">
+        {fixed.map((field) => (
+          <div key={field.key} className="rounded-md border border-line bg-raised p-3">
+            <dt className="text-xs text-fg-muted">{field.label}</dt>
+            <dd className="text-sm text-fg">{sheet.proficiencies[field.key] || 'Nenhuma'}</dd>
+          </div>
         ))}
-      </div>
+      </dl>
+      <fieldset className="mt-4">
+        <legend className="mb-2 text-sm font-medium">Idiomas</legend>
+        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+          {all.map((name) => {
+            const checked = known.includes(name);
+            return (
+              <label key={name} className={cx('flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm', checked ? 'border-parchment-300/60 bg-parchment-200/10 text-fg' : 'border-line text-fg-secondary')}>
+                <input type="checkbox" className="h-4 w-4 accent-wine-500" checked={checked} disabled={!permissions.canEditSheet} onChange={(event) => toggle(name, event.target.checked)} />
+                {name}
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
     </Card>
   );
 }

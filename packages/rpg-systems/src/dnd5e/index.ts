@@ -82,6 +82,7 @@ export * from './turn-costs';
 export * from './weapon-attacks';
 export * from './sheet';
 export * from './derived';
+export * from './equipment-effects';
 export * from './resources';
 export * from './entries';
 export * from './stat-block';
