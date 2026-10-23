@@ -1,4 +1,4 @@
-import { listCampaignCharacters, listCreatures, listSessionBlocks, listSessions, pickCurrentSession, resolveBlockReferences, sessionStatusLabels, signedMediaUrls } from '@codexveil/database';
+import { listCampaignCharacters, listCreatures, listSessionBlocks, listSessions, resolveBlockReferences, signedMediaUrls, type StoredSessionBlock } from '@codexveil/database';
 import type { Metadata, Route } from 'next';
 import { RevealPanel } from '@/components/gm/reveal-panel';
 import { MapManager } from '@/components/map/map-manager';
@@ -18,9 +18,11 @@ export const metadata: Metadata = { title: 'Sessão' };
 
 /**
  * Aba Sessão.
- *   * Mestre: a sessão em andamento (ou a próxima) com toda a lore montada e um botão para
- *     liberar cada trecho aos jogadores; abaixo, o que os jogadores estão vendo.
- *   * Jogadores: os trechos liberados da sessão atual, em tempo real.
+ *   * Só a sessão **iniciada** (em andamento) aparece; sem sessão aberta, não há conteúdo.
+ *     Mestre: lista para liberar trechos e o mapa. Jogadores: os trechos liberados e o mapa ativo.
+ *   * "Sessões anteriores": o que foi liberado em cada sessão passada, para consulta. Se o mestre
+ *     ocultar um trecho depois, ele some (os jogadores só recebem blocos liberados — RLS).
+ *   * O mestre mantém o editor de mapas sempre à mão, para preparar cenários antes da sessão.
  */
 export default async function SessionTabPage({ params }: PageProps<'/campanhas/[campaignId]/sessao'>) {
   const { campaignId } = await params;
@@ -28,79 +30,108 @@ export default async function SessionTabPage({ params }: PageProps<'/campanhas/[
   const supabase = await createSupabaseServerClient();
   const isGm = campaign.role === 'gm';
   const all = await listSessions(supabase, campaign.id);
-  // O mestre vê também sessões ainda não publicadas; os jogadores só recebem as publicadas.
+  // Jogadores só recebem sessões publicadas.
   const sessions = isGm ? all : all.filter((session) => session.isPublished);
-  const session = pickCurrentSession(sessions) ?? [...sessions].sort((a, b) => b.number - a.number)[0] ?? null;
+  const current = sessions.find((session) => session.status === 'in_progress') ?? null;
+  const past = sessions.filter((session) => session.id !== current?.id && session.status === 'completed').sort((a, b) => b.number - a.number);
 
-  if (!session) {
-    return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-end">
-          <LiveRefresh campaignId={campaign.id} />
-        </div>
-        <EmptyState
-          title={isGm ? 'Nenhuma sessão montada' : 'Nada liberado ainda'}
-          description={isGm ? 'Crie uma sessão e escreva o roteiro; aqui você libera cada trecho aos jogadores durante o jogo.' : 'Quando o mestre liberar trechos da sessão (textos, imagens de NPCs, falas), eles aparecem aqui.'}
-          action={isGm ? <ButtonLink href={campaignPath(campaign.id, '/sessoes') as Route}>Ir para as sessões</ButtonLink> : undefined}
-        />
-      </div>
-    );
-  }
-
-  const allBlocks = await listSessionBlocks(supabase, session.id);
-  const blocks = allBlocks.filter((block) => block.visibility === 'members');
-  const [references, imageUrls, reveal, party, creatures] = await Promise.all([
-    resolveBlockReferences(supabase, blocks),
-    signedMediaUrls(
-      supabase,
-      blocks.map((block) => (block.content?.type === 'image' ? block.content.data.path : null)),
-    ),
-    isGm ? loadRevealBlocks(supabase, allBlocks) : Promise.resolve([]),
+  const [currentBlocks, pastBlocks, party, creatures] = await Promise.all([
+    current ? listSessionBlocks(supabase, current.id) : Promise.resolve([] as StoredSessionBlock[]),
+    Promise.all(past.map((session) => listSessionBlocks(supabase, session.id))),
     listCampaignCharacters(supabase, campaign.id),
     isGm ? listCreatures(supabase, campaign.id) : Promise.resolve([]),
   ]);
+  const released = (blocks: StoredSessionBlock[]) => blocks.filter((block) => block.visibility === 'members');
+  const shownCurrent = released(currentBlocks);
+  const shownPast = past.map((session, index) => ({ session, blocks: released(pastBlocks[index] ?? []) })).filter((entry) => entry.blocks.length > 0);
+  const everyBlock = [...shownCurrent, ...shownPast.flatMap((entry) => entry.blocks)];
+  const [references, imageUrls, reveal] = await Promise.all([
+    resolveBlockReferences(supabase, everyBlock),
+    signedMediaUrls(
+      supabase,
+      everyBlock.map((block) => (block.content?.type === 'image' ? block.content.data.path : null)),
+    ),
+    isGm && current ? loadRevealBlocks(supabase, currentBlocks) : Promise.resolve([]),
+  ]);
   const ownCharacter = isGm ? null : (party.find((character) => character.ownerId === user.id) ?? null);
+  // Sessão de referência do editor de mapas do mestre (a iniciada, senão a mais recente).
+  const mapSession = current ?? [...all].sort((a, b) => b.number - a.number)[0] ?? null;
 
   return (
     <article className={`mx-auto flex w-full flex-col gap-5 ${isGm ? 'max-w-none' : 'max-w-6xl'}`}>
       <header className="flex flex-wrap items-center gap-2 border-b border-line pb-4">
-        <Badge tone="parchment">Sessão {session.number}</Badge>
-        {isGm ? <Badge tone={session.status === 'in_progress' ? 'brand' : 'neutral'}>{sessionStatusLabels[session.status]}</Badge> : null}
-        <h2 className="min-w-0 flex-1 text-2xl leading-tight">{session.title}</h2>
-        {isGm ? (
-          <ButtonLink href={`${sessionPath(campaign.id, session.id)}/editar` as Route} variant="ghost" size="sm">
+        {current ? <Badge tone="brand">Sessão {current.number} · em andamento</Badge> : <Badge tone="neutral">Nenhuma sessão em andamento</Badge>}
+        <h2 className="min-w-0 flex-1 text-2xl leading-tight">{current?.title ?? 'Sessão'}</h2>
+        {isGm && current ? (
+          <ButtonLink href={`${sessionPath(campaign.id, current.id)}/editar` as Route} variant="ghost" size="sm">
             Editar roteiro
           </ButtonLink>
         ) : null}
         <LiveRefresh campaignId={campaign.id} />
       </header>
 
-      {isGm ? (
-        <>
-          <MapManager
-            campaignId={campaign.id}
-            sessions={all.map((entry) => ({ id: entry.id, number: entry.number, title: entry.title }))}
-            sessionId={session.id}
-            systemId={campaign.systemId}
-            characters={party.map((character) => ({ id: character.id, name: character.name }))}
-            creatures={creatures.map((creature) => ({ id: creature.id, name: creature.name, size: creature.size }))}
-            canManage={campaign.status === 'active'}
-          />
-          <RevealPanel sessionId={session.id} isPublished={session.isPublished} isActive={campaign.status === 'active'} blocks={reveal} />
-          <Divider label="O que os jogadores estão vendo" />
-        </>
+      {isGm && current ? (
+        <RevealPanel sessionId={current.id} isPublished={current.isPublished} isActive={campaign.status === 'active'} blocks={reveal} />
       ) : null}
 
-      {!isGm ? <MapView campaignId={campaign.id} systemId={campaign.systemId} myCharacterId={ownCharacter?.id ?? null} /> : null}
-
-      {blocks.length === 0 ? (
-        <EmptyState
-          title="Nada liberado ainda"
-          description={isGm ? 'Use “Liberar” acima: o trecho aparece na hora na aba Sessão dos jogadores.' : 'O mestre ainda não liberou trechos desta sessão. Eles aparecem aqui assim que forem liberados.'}
+      {isGm && mapSession ? (
+        <MapManager
+          campaignId={campaign.id}
+          sessions={all.map((entry) => ({ id: entry.id, number: entry.number, title: entry.title }))}
+          sessionId={mapSession.id}
+          systemId={campaign.systemId}
+          characters={party.map((character) => ({ id: character.id, name: character.name }))}
+          creatures={creatures.map((creature) => ({ id: creature.id, name: creature.name, size: creature.size }))}
+          canManage={campaign.status === 'active'}
         />
+      ) : null}
+      {!isGm && current ? <MapView campaignId={campaign.id} systemId={campaign.systemId} myCharacterId={ownCharacter?.id ?? null} /> : null}
+
+      {current ? (
+        <>
+          {isGm ? <Divider label="O que os jogadores estão vendo" /> : null}
+          {shownCurrent.length === 0 ? (
+            <EmptyState
+              title="Nada liberado ainda"
+              description={isGm ? 'Use “Liberar” acima: o trecho aparece na hora na aba Sessão dos jogadores.' : 'O mestre ainda não liberou trechos desta sessão. Eles aparecem aqui assim que forem liberados.'}
+            />
+          ) : (
+            shownCurrent.map((block) => <BlockRenderer key={block.id} block={block} campaignId={campaign.id} references={references} imageUrls={imageUrls} showVisibility={false} />)
+          )}
+        </>
       ) : (
-        blocks.map((block) => <BlockRenderer key={block.id} block={block} campaignId={campaign.id} references={references} imageUrls={imageUrls} showVisibility={false} />)
+        <EmptyState
+          title="Nenhuma sessão em andamento"
+          description={
+            isGm
+              ? 'Inicie uma sessão em Sessões para liberar trechos aos jogadores. Os mapas podem ser preparados acima.'
+              : 'Quando o mestre iniciar a sessão, o que ele liberar aparece aqui.'
+          }
+          action={isGm ? <ButtonLink href={campaignPath(campaign.id, '/sessoes') as Route}>Ir para as sessões</ButtonLink> : undefined}
+        />
       )}
+
+      {shownPast.length ? (
+        <section className="flex flex-col gap-3" aria-labelledby="sessoes-anteriores">
+          <Divider label="Sessões anteriores" />
+          <p id="sessoes-anteriores" className="text-sm text-fg-muted">
+            O que foi liberado em cada sessão, para consulta.
+          </p>
+          {shownPast.map(({ session, blocks }) => (
+            <details key={session.id} className="group rounded-lg border border-line bg-card p-4">
+              <summary className="cursor-pointer list-none font-display text-lg text-fg">
+                Sessão {session.number} · {session.title}
+                <span className="ml-2 text-xs text-fg-muted">({blocks.length} {blocks.length === 1 ? 'trecho' : 'trechos'})</span>
+              </summary>
+              <div className="mt-4 flex flex-col gap-4">
+                {blocks.map((block) => (
+                  <BlockRenderer key={block.id} block={block} campaignId={campaign.id} references={references} imageUrls={imageUrls} showVisibility={false} />
+                ))}
+              </div>
+            </details>
+          ))}
+        </section>
+      ) : null}
     </article>
   );
 }
