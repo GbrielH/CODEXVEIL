@@ -212,13 +212,14 @@ export function FeaturesTab({
 }
 
 function AttackRow({ attack, onEdit }: { attack: CharacterAbility; onEdit: () => void }) {
-  const { derived, permissions } = useSheet();
+  const { permissions, resolveAttack } = useSheet();
   const data = parseAttack(attack.data);
-  const bonus = formatModifier(attackRollBonus(data, derived));
+  const resolved = resolveAttack(attack.name, data);
+  const bonus = formatModifier(resolved.toHit);
   return (
     <li className="flex items-center gap-3 py-2">
       <RollButton
-        expression={d20Expression(attackRollBonus(data, derived))}
+        expression={d20Expression(resolved.toHit)}
         label={`Ataque: ${attack.name}`}
       >
         <span className="tabular block w-12 rounded-md border border-line-strong bg-raised py-1 text-center font-display text-lg text-fg-accent">

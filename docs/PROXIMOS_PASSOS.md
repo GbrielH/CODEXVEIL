@@ -455,6 +455,16 @@ de segurança).
 - [x] QA: animação de crítico (20 natural: clarão dourado e "Crítico!") e de falha (1 natural: "Falha
       crítica" tremendo), no site; desligada com movimento reduzido.
 - [x] QA: painel do Tomo arrastável pelo cabeçalho.
+- [x] Bônus automáticos no D&D (`dnd5e/attack-automation.ts`): ataques com armas do SRD tiram atributo
+      (acuidade/distância), proficiência (texto da ficha) e arma mágica +N do item equipado; Estilo de
+      Luta Arquearia (+2 acerto) e Duelismo (+2 dano); Crítico Aprimorado do Campeão (19 e 18); botão
+      "Fúria" na aba Jogo (só Bárbaro; +2/+3/+4 no dano com Força corpo a corpo; guardado no navegador).
+      Dano usa os atributos com itens. Perícias: Pau para Toda Obra (Bardo 2º) e talento Alerta na
+      iniciativa. App usa o mesmo cálculo (sem o botão de Fúria). **Falta:** Tormenta20 (ataques ainda
+      não existem na ficha T20).
+- [x] Dados: resultado (balão, cabeçalho e animação de crítico) só depois que os dados param; animação
+      de crítico no acerto pela margem da arma (19–20…); caixinha de dados arrastável (duplo clique
+      volta ao canto).
 - [x] Painel do assistente por cima de tudo (portal no `body`; antes ficava atrás dos cards).
 - [x] Mãozinha (cursor) em tudo que é clicável no site: rolagens, abas, botões (`globals.css`).
 - [x] Livro T20 exportado: faltam as origens Acólito e Amigo dos Animais, há poderes com " e"

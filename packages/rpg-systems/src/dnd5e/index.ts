@@ -80,6 +80,7 @@ export * from './links';
 export * from './turns';
 export * from './turn-costs';
 export * from './weapon-attacks';
+export * from './attack-automation';
 export * from './sheet';
 export * from './derived';
 export * from './equipment-effects';

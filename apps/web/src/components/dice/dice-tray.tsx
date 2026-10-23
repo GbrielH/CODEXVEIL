@@ -4,7 +4,7 @@ import type { DiceRoll } from '@codexveil/database';
 import type DiceBox from '@3d-dice/dice-box-threejs';
 import { describeDiceRoll, naturalD20 } from '@codexveil/domain';
 import { ChevronDown, ChevronUp, Dices, Lock } from 'lucide-react';
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { cx } from '@/lib/cx';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
@@ -19,6 +19,7 @@ export const MAX_TRAY_DICE = 6;
 const SUPPORTED_SIDES = new Set([4, 6, 8, 10, 12, 20, 100]);
 const DEFAULT_COLOR = DICE_COLORS[0]!.hex;
 const STORAGE_KEY = 'codexveil:dice-tray-open';
+const POSITION_KEY = 'codexveil:dice-tray-position';
 
 export interface TrayRoll {
   key: string;
@@ -27,6 +28,8 @@ export interface TrayRoll {
   userId: string | null;
   /** Rolagem "Apenas eu e o mestre": só quem rolou e o mestre recebem (o servidor filtra). */
   secret: boolean;
+  /** Margem de crítico do ataque (19 = 19–20); sem ela, só o 20 natural. */
+  critRange?: number;
 }
 
 /** Quanto tempo o balão com o resultado fica acima da caixinha. */
@@ -92,6 +95,43 @@ export function DiceTray({
   const [ready, setReady] = useState(false);
   const [last, setLast] = useState<TrayRoll | null>(null);
   const [picking, setPicking] = useState(false);
+  const [rolling, setRolling] = useState<TrayRoll | null>(null);
+  const trayRef = useRef<HTMLDivElement>(null);
+  // Posição escolhida ao arrastar pelo cabeçalho (fica guardada neste navegador).
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(() => {
+    try {
+      const stored = typeof window === 'undefined' ? null : window.localStorage.getItem(POSITION_KEY);
+      return stored ? (JSON.parse(stored) as { x: number; y: number }) : null;
+    } catch {
+      return null;
+    }
+  });
+  const startDrag = (event: ReactPointerEvent<HTMLElement>) => {
+    if ((event.target as HTMLElement).closest('button') || !trayRef.current) return;
+    const rect = trayRef.current.getBoundingClientRect();
+    const offsetX = event.clientX - rect.left;
+    const offsetY = event.clientY - rect.top;
+    let latest: { x: number; y: number } | null = null;
+    const move = (moveEvent: PointerEvent) => {
+      latest = {
+        x: Math.min(Math.max(0, moveEvent.clientX - offsetX), Math.max(0, window.innerWidth - rect.width)),
+        y: Math.min(Math.max(0, moveEvent.clientY - offsetY), Math.max(0, window.innerHeight - 48)),
+      };
+      setPosition(latest);
+    };
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      try {
+        if (latest) window.localStorage.setItem(POSITION_KEY, JSON.stringify(latest));
+      } catch {
+        // Sem armazenamento: vale só nesta página.
+      }
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop);
+    event.preventDefault();
+  };
   // A caixinha vai para o <body> (portal): dentro do <main>, a animação de entrada (transform) fazia o
   // "fixed" valer em relação ao conteúdo, e ela aparecia no fim da página em vez de presa à tela.
   const mounted = useSyncExternalStore(subscribeNothing, () => true, () => false);
@@ -131,10 +171,11 @@ export function DiceTray({
     running.current = true;
     while (queue.current.length) {
       const next = queue.current.shift()!;
-      setLast(next);
       const box = boxRef.current;
       const text = notation(next.roll);
       if (box && text) {
+        // O resultado (balão, cabeçalho e animação de crítico) só aparece quando os dados param.
+        setRolling(next);
         const color = (next.userId ? palette?.colorOfUser(next.userId) : myColor) ?? DEFAULT_COLOR;
         try {
           await box.updateConfig({
@@ -151,7 +192,9 @@ export function DiceTray({
         } catch (error) {
           console.error('[codexveil] falha ao rolar os dados 3D', error);
         }
+        setRolling(null);
       }
+      setLast(next);
     }
     running.current = false;
   }, [palette, myColor]);
@@ -220,7 +263,9 @@ export function DiceTray({
       window.clearTimeout(hide);
     };
   }, [last]);
-  const natural = last ? naturalD20(last.roll) : null;
+  const naturalRoll = last ? naturalD20(last.roll) : null;
+  // Crítico pela margem da arma (19–20 do Campeão…); falha só no 1 natural.
+  const natural = naturalRoll !== null && naturalRoll >= (last?.critRange ?? 20) ? 20 : naturalRoll === 1 ? 1 : null;
 
   const toggle = () => {
     setOpen((current) => {
@@ -250,7 +295,10 @@ export function DiceTray({
         </p>
       </div>
     ) : null}
-    <div className="fixed right-3 bottom-20 z-50 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col items-stretch gap-2 lg:bottom-4">
+    <div
+      ref={trayRef}
+      style={position ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' } : undefined}
+      className="fixed right-3 bottom-20 z-50 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col items-stretch gap-2 lg:bottom-4">
       {/* Resultado da última rolagem, logo acima da caixinha. */}
       <div aria-live="polite" className="min-h-0">
         {last && bubbleKey === last.key ? (
@@ -273,7 +321,7 @@ export function DiceTray({
             </p>
             <p className="truncate text-xs text-fg-muted">
               {describeDiceRoll(last.roll)}
-              {natural === 20 ? ' · 20 natural!' : natural === 1 ? ' · 1 natural' : ''}
+              {natural === 20 ? (naturalRoll === 20 ? ' · 20 natural!' : ` · ${naturalRoll} natural: crítico!`) : natural === 1 ? ' · 1 natural' : ''}
             </p>
             {last.secret ? (
               <p className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-200">
@@ -288,10 +336,24 @@ export function DiceTray({
         aria-label="Dados"
         className="overflow-hidden rounded-lg border border-line-strong bg-raised/95 shadow-2xl backdrop-blur"
       >
-        <div className="flex items-center gap-2 border-b border-line px-3 py-1.5">
+        <div
+          onPointerDown={startDrag}
+          onDoubleClick={() => {
+            setPosition(null);
+            try {
+              window.localStorage.removeItem(POSITION_KEY);
+            } catch {
+              // Sem armazenamento.
+            }
+          }}
+          title="Arraste para mover (duplo clique volta ao canto)"
+          className="flex cursor-grab touch-none items-center gap-2 border-b border-line px-3 py-1.5 select-none active:cursor-grabbing"
+        >
           <Dices className="h-4 w-4 text-fg-accent" aria-hidden="true" />
           <span className="min-w-0 flex-1 truncate text-xs text-fg-secondary">
-            {last ? (
+            {rolling ? (
+              <>Rolando… · {rolling.rollerName}{rolling.roll.label ? ` · ${rolling.roll.label}` : ''}</>
+            ) : last ? (
               <>
                 {last.secret ? (
                   <Lock className="mr-1 inline h-3 w-3 text-amber-300" aria-label="Secreta" />

@@ -30,7 +30,7 @@ export function findSrdWeaponByName(itemName: string): WeaponDefinition | undefi
 }
 
 /** Proficiência pelo texto da ficha ("Armas simples e marciais", "Armas simples, Rapieira"…). */
-function isProficient(sheet: Dnd5eSheet, weapon: WeaponDefinition): boolean {
+export function sheetHasWeaponProficiency(sheet: Dnd5eSheet, weapon: WeaponDefinition): boolean {
   const text = normalize(sheet.proficiencies.weapons);
   if (text.includes(normalize(weapon.name))) return true;
   return weapon.category === 'simple' ? text.includes('simples') : text.includes('marcia');
@@ -59,7 +59,7 @@ export function weaponAttackEntry(weapon: WeaponDefinition, sheet: Dnd5eSheet): 
   const properties = weapon.properties
     .map((property) => (property === 'versatile' && weapon.versatileDamage ? `Versátil (${weapon.versatileDamage})` : weaponPropertyLabels[property]))
     .join(', ');
-  const proficient = isProficient(sheet, weapon);
+  const proficient = sheetHasWeaponProficiency(sheet, weapon);
   return {
     kind: 'attack',
     name: weapon.name,

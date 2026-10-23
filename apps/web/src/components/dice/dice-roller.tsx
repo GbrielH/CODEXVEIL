@@ -39,6 +39,8 @@ export interface RollRequest {
   mode?: DiceRollMode;
   /** Rolagem secreta: só o mestre (e quem rolou) vê. */
   secret?: boolean;
+  /** Menor resultado natural do d20 que é crítico (ataques com margem 19–20…); padrão 20. */
+  critRange?: number;
 }
 
 export type ShownRoll = Pick<
@@ -187,6 +189,7 @@ function DiceProviderInner({
         rollerName: 'Você',
         userId: null,
         secret: shown.secret,
+        critRange: request.critRange ?? 20,
       });
       // O resultado aparece no balão acima da caixinha de dados (sem aviso no topo da tela).
       return shown;
@@ -219,9 +222,12 @@ export function RollButton({
   children,
   className,
   title,
+  critRange,
 }: {
   expression: string | null;
   label: string;
+  /** Ataques: margem de crítico da arma, para a animação de crítico. */
+  critRange?: number;
   /** Vantagem/desvantagem já decidida pelas condições ativas. */
   mode?: DiceRollMode;
   children: ReactNode;
@@ -257,7 +263,7 @@ export function RollButton({
       aria-label={`Rolar ${label} (${expression}${mode !== 'normal' ? `, ${diceRollModeLabels[mode].toLowerCase()}` : ''})`}
       onClick={async () => {
         setBusy(true);
-        await dice.roll({ expression, label, mode });
+        await dice.roll({ expression, label, mode, critRange });
         setBusy(false);
       }}
       className={cx(

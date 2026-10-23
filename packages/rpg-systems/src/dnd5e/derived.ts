@@ -74,6 +74,13 @@ export function computeDnd5eDerived(sheet: Dnd5eSheet, gear?: { items: readonly 
   const combat = gear ? computeDnd5eCombat(sheet, gear.items, gear.features ?? []) : null;
   const scores = combat?.abilities ?? sheet.abilities;
   const abilityModifiers = mapAbilities((ability) => abilityModifier(scores[ability]));
+  const plainName = (text: string) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+  // Pau para Toda Obra (Bardo 2º): metade da proficiência nos testes de atributo sem proficiência.
+  const jackOfAllTrades = sheet.identity.classes.some((entry) => ['bardo', 'bard'].includes(plainName(entry.name)) && entry.level >= 2);
+  // Alerta (talento): soma a proficiência na Iniciativa.
+  const alert = (gear?.features ?? []).some((feature) => ['alerta', 'alert'].includes(plainName(feature).replace(/^talento:\s*/, '').trim()));
+  const checkProficiency = (level: ProficiencyLevel) =>
+    level === 'none' && jackOfAllTrades ? Math.floor(proficiencyBonus / 2) : proficiencyContribution(level, proficiencyBonus);
 
   const savingThrows = mapAbilities((ability) => {
     const entry = sheet.savingThrows[ability];
@@ -89,7 +96,7 @@ export function computeDnd5eDerived(sheet: Dnd5eSheet, gear?: { items: readonly 
         proficiency: entry.proficiency,
         bonus:
           abilityModifiers[ability] +
-          proficiencyContribution(entry.proficiency, proficiencyBonus) +
+          checkProficiency(entry.proficiency) +
           entry.bonus,
       };
       return [skill, value];
@@ -123,7 +130,7 @@ export function computeDnd5eDerived(sheet: Dnd5eSheet, gear?: { items: readonly 
     skills,
     initiative:
       abilityModifiers.dex +
-      proficiencyContribution(sheet.combat.initiativeProficiency, proficiencyBonus) +
+      (alert && sheet.combat.initiativeProficiency === 'none' ? proficiencyBonus : checkProficiency(sheet.combat.initiativeProficiency)) +
       sheet.combat.initiativeBonus,
     armorClass: combat?.armorClass ?? sheet.combat.armorClass,
     armorClassBreakdown: combat?.armorClassBreakdown ?? [],

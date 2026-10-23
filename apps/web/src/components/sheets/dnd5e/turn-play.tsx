@@ -24,8 +24,6 @@ import {
 } from '@codexveil/domain';
 import {
   DND5E_ACTIONS,
-  attackDamageFormula,
-  attackRollBonus,
   dnd5eActions,
   dnd5eConditionsLeftAfter,
   dnd5eSpellDataSchema,
@@ -70,7 +68,6 @@ interface Option {
 export function TurnPlay() {
   const {
     character,
-    sheet,
     abilities,
     items,
     derived,
@@ -79,6 +76,7 @@ export function TurnPlay() {
     permissions,
     reloadConditions,
     setResources,
+    resolveAttack,
   } = useSheet();
   const campaignId = character.campaign?.id ?? null;
   const { toast } = useToast();
@@ -171,9 +169,9 @@ export function TurnPlay() {
           label: `Atacar: ${ability.name}`,
           kind: 'action',
           grantsAction: false,
-          roll: d20Expression(attackRollBonus(data, derived)),
+          roll: d20Expression(resolveAttack(ability.name, data).toHit),
           ability,
-          damage: attackDamageFormula(data, sheet.abilities),
+          damage: resolveAttack(ability.name, data).damage,
         });
       } else if (ability.kind === 'spell') {
         const parsed = dnd5eSpellDataSchema.safeParse(ability.data ?? {});
@@ -222,7 +220,7 @@ export function TurnPlay() {
       });
     }
     return list;
-  }, [abilities, items, derived, sheet.abilities, customActions]);
+  }, [abilities, items, derived, resolveAttack, customActions]);
 
   if (!campaignId || !turn || character.campaign?.status !== 'active') return null;
 

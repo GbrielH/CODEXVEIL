@@ -7,7 +7,7 @@ import type {
   CharacterResource,
 } from '@codexveil/database';
 import type { CampaignStatus, TrackOperation } from '@codexveil/domain';
-import type { Dnd5eConditionEffects, Dnd5eDerived, Dnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
+import type { Dnd5eActiveEffects, Dnd5eAttackData, Dnd5eConditionEffects, Dnd5eDerived, Dnd5eSheet, ResolvedDnd5eAttack } from '@codexveil/rpg-systems/dnd5e';
 import { createContext, useContext, type Dispatch, type SetStateAction } from 'react';
 
 export interface SheetCharacter {
@@ -66,6 +66,12 @@ export interface SheetContextValue {
   ) => Promise<T | undefined>;
   /** A gravação do retrato muda a versão da ficha sem conflitar com o rascunho local. */
   adoptVersion: (version: number) => void;
+
+  /** Efeitos ligados no jogo (Fúria…), guardados neste navegador. */
+  activeEffects: Dnd5eActiveEffects;
+  setActiveEffects: (effects: Dnd5eActiveEffects) => void;
+  /** Acerto, dano e crítico calculados (atributo, proficiência, arma mágica, estilos, Fúria…). */
+  resolveAttack: (name: string, data: Dnd5eAttackData) => ResolvedDnd5eAttack;
 }
 
 export const SheetContext = createContext<SheetContextValue | null>(null);

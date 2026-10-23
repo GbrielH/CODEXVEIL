@@ -22,6 +22,8 @@ import {
   setActiveDnd5eBookContent,
   type BookContentSource,
   type Dnd5eSheet,
+  resolveDnd5eAttack,
+  type Dnd5eActiveEffects,
 } from '@codexveil/rpg-systems/dnd5e';
 import { BookOpen, Backpack, Feather, Hourglass, Settings, Sparkles, Swords } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -116,10 +118,26 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
   const { value: draft, update, reset, state: saveState } = autosave;
 
   // CA, deslocamento e atributos vêm do que está equipado e das características (automático).
-  const derived = useMemo(
-    () => computeDnd5eDerived(draft.sheet, { items, features: abilities.filter((entry) => entry.kind !== 'attack' && entry.kind !== 'spell').map((entry) => entry.name) }),
-    [draft.sheet, items, abilities],
-  );
+  const featureNames = useMemo(() => abilities.filter((entry) => entry.kind !== 'attack' && entry.kind !== 'spell').map((entry) => entry.name), [abilities]);
+  const derived = useMemo(() => computeDnd5eDerived(draft.sheet, { items, features: featureNames }), [draft.sheet, items, featureNames]);
+  // Fúria e outros efeitos ligados durante o jogo: ficam neste navegador, por personagem.
+  const effectsKey = `codexveil:efeitos:${character.id}`;
+  const [activeEffects, setActiveEffectsState] = useState<Dnd5eActiveEffects>(() => {
+    try {
+      const stored = typeof window === 'undefined' ? null : window.localStorage.getItem(effectsKey);
+      return { rage: false, ...(stored ? (JSON.parse(stored) as Partial<Dnd5eActiveEffects>) : {}) };
+    } catch {
+      return { rage: false };
+    }
+  });
+  const setActiveEffects = (next: Dnd5eActiveEffects) => {
+    setActiveEffectsState(next);
+    try {
+      window.localStorage.setItem(effectsKey, JSON.stringify(next));
+    } catch {
+      // Sem armazenamento: vale só nesta página.
+    }
+  };
   // Grava na ficha a CA e o deslocamento calculados, para o mestre, o grupo, os turnos e o mapa
   // verem os mesmos números (o deslocamento só quando a espécie é conhecida, para não acumular).
   const knownSpecies = speciesSpeedFeet(draft.sheet.identity.species) !== null;
@@ -291,6 +309,9 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
     reloadConditions,
     run,
     adoptVersion: autosave.adoptVersion,
+    activeEffects,
+    setActiveEffects,
+    resolveAttack: (name, data) => resolveDnd5eAttack(name, data, { sheet: draft.sheet, derived, items, features: featureNames, effects: activeEffects }),
   };
 
   const readOnlyReason = !permissions.canEditPlay

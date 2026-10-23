@@ -1,8 +1,7 @@
 import type { CharacterAbility } from '@codexveil/database';
 import { d20Expression } from '@codexveil/domain';
 import {
-  attackDamageFormula,
-  attackRollBonus,
+  resolveDnd5eAttack,
   critRangeLabel,
   dnd5eAttackDataSchema,
   dnd5eSpellDataSchema,
@@ -100,9 +99,18 @@ export function FeaturesSection({ show = 'all' }: { show?: 'all' | 'usable' | 'p
         const spell =
           entry.kind === 'spell' ? dnd5eSpellDataSchema.safeParse(entry.data ?? {}) : null;
         const expanded = open === entry.id;
-        const attackBonus = attack?.success ? attackRollBonus(attack.data, derived) : null;
-        const damage = attack?.success ? attackDamageFormula(attack.data, sheet.abilities) : null;
-        const critical = attack?.success ? attackDamageFormula(attack.data, sheet.abilities, true) : null;
+        const resolved = attack?.success
+          ? resolveDnd5eAttack(entry.name, attack.data, {
+              sheet,
+              derived,
+              items,
+              features: allAbilities.filter((item) => item.kind !== 'attack' && item.kind !== 'spell').map((item) => item.name),
+              effects: { rage: false },
+            })
+          : null;
+        const attackBonus = resolved?.toHit ?? null;
+        const damage = resolved?.damage ?? null;
+        const critical = resolved?.critical ?? null;
         return (
           <Card key={entry.id}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

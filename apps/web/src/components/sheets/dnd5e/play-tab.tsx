@@ -2,9 +2,9 @@
 
 import { d20Expression, type DiceRollMode } from '@codexveil/domain';
 import {
-  attackRollBonus,
-  attackDamageFormula,
+  canRage,
   critRangeLabel,
+  rageDamageBonus,
   dnd5eAttackDataSchema,
   effectiveSpeed,
   formatModifier,
@@ -90,7 +90,7 @@ export function parseAttack(data: unknown): Dnd5eAttackData {
 
 /** Tudo o que se consulta e altera com frequência durante uma partida, numa só tela. */
 export function PlayTab() {
-  const { sheet, derived, abilities, items, conditionEffects: effects } = useSheet();
+  const { sheet, derived, abilities, items, conditionEffects: effects, resolveAttack, activeEffects, setActiveEffects, permissions } = useSheet();
   // Armas do inventário só aparecem equipadas; ataques sem arma (desarmado, garras) sempre.
   const attacks = abilities.filter(
     (entry) => entry.kind === 'attack' && isAttackAvailable(entry.name, items),
@@ -196,6 +196,24 @@ export function PlayTab() {
             />
           </div>
         ) : null}
+        {canRage(sheet) ? (
+          <button
+            type="button"
+            disabled={!permissions.canEditPlay}
+            aria-pressed={activeEffects.rage}
+            onClick={() => setActiveEffects({ ...activeEffects, rage: !activeEffects.rage })}
+            className={`flex items-center justify-between gap-3 rounded-md border px-4 py-3 text-left ${activeEffects.rage ? 'border-red-400/60 bg-red-500/15 text-red-200' : 'border-line bg-raised text-fg hover:bg-hover'}`}
+          >
+            <span>
+              <span className="block font-display text-lg">{activeEffects.rage ? 'Em Fúria!' : 'Entrar em Fúria'}</span>
+              <span className="block text-xs text-fg-muted">
+                +{rageDamageBonus(sheet.identity.classes.filter((entry) => /b[aá]rbaro|barbarian/i.test(entry.name)).reduce((total, entry) => total + entry.level, 0))} no dano com Força
+                corpo a corpo, vantagem em testes e salvaguardas de Força, resistência a dano contundente, cortante e perfurante.
+              </span>
+            </span>
+            <span className={`rounded-full px-2 py-0.5 text-xs ${activeEffects.rage ? 'bg-red-500/30' : 'bg-hover'}`}>{activeEffects.rage ? 'Ligada' : 'Desligada'}</span>
+          </button>
+        ) : null}
         <Card>
           <CardHeader icon={<Swords className="h-5 w-5" aria-hidden="true" />} title="Ataques" />
           {attacks.length === 0 ? (
@@ -206,9 +224,10 @@ export function PlayTab() {
             <ul className="divide-y divide-line">
               {attacks.map((attack) => {
                 const data = parseAttack(attack.data);
-                const bonus = attackRollBonus(data, derived) - penalty;
-                const damage = attackDamageFormula(data, sheet.abilities);
-                const critical = attackDamageFormula(data, sheet.abilities, true);
+                const resolved = resolveAttack(attack.name, data);
+                const bonus = resolved.toHit - penalty;
+                const damage = resolved.damage;
+                const critical = resolved.critical;
                 return (
                   <li key={attack.id} className="flex flex-col gap-2 py-3">
                     <HoverCard
@@ -236,6 +255,7 @@ export function PlayTab() {
                         expression={d20Expression(bonus)}
                         label={`Ataque: ${attack.name}`}
                         mode={rollModeFrom(effects.attackRolls)}
+                        critRange={resolved.critRange}
                         className="w-full"
                       >
                         <span className="flex w-full flex-col items-center rounded-md border border-line-strong bg-raised px-2 py-1.5">
@@ -253,14 +273,15 @@ export function PlayTab() {
                         expression={critical}
                         label={`Dano crítico: ${attack.name}`}
                         className="w-full"
-                        title={`Crítico com ${critRangeLabel(data.critRange)} no d20: dados dobrados${data.critExtra ? ` e +${data.critExtra}` : ''}`}
+                        title={`Crítico com ${critRangeLabel(resolved.critRange)} no d20: dados dobrados${data.critExtra ? ` e +${data.critExtra}` : ''}`}
                       >
                         <span className="flex w-full flex-col items-center rounded-md border border-amber-400/30 bg-raised px-2 py-1.5">
-                          <span className="text-[11px] tracking-wider text-fg-muted uppercase">Crítico ({critRangeLabel(data.critRange)})</span>
+                          <span className="text-[11px] tracking-wider text-fg-muted uppercase">Crítico ({critRangeLabel(resolved.critRange)})</span>
                           <span className="tabular font-display text-lg text-amber-300">{critical ?? '—'}</span>
                         </span>
                       </RollButton>
                     </div>
+                    {resolved.notes.length ? <p className="text-[11px] text-fg-subtle">Automático: {resolved.notes.join(' · ')}</p> : null}
                     {effects.attackRolls.length || penalty > 0 ? (
                       <span className="flex items-center gap-1">
                         <RollEffectBadge sources={effects.attackRolls} />

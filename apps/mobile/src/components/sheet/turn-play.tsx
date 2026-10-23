@@ -22,8 +22,7 @@ import {
 } from '@codexveil/domain';
 import {
   DND5E_ACTIONS,
-  attackDamageFormula,
-  attackRollBonus,
+  resolveDnd5eAttack,
   dnd5eActions,
   dnd5eAttackDataSchema,
   dnd5eConditionsLeftAfter,
@@ -153,6 +152,13 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
   );
 
   const options = useMemo<Option[]>(() => {
+    const attackContext = {
+      sheet,
+      derived,
+      items,
+      features: abilities.filter((entry) => entry.kind !== 'attack' && entry.kind !== 'spell').map((entry) => entry.name),
+      effects: { rage: false },
+    };
     const list: Option[] = [];
     for (const ability of abilities) {
       if (ability.kind === 'attack') {
@@ -164,9 +170,9 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
             label: `Atacar: ${ability.name}`,
             kind: 'action',
             grantsAction: false,
-            roll: d20Expression(attackRollBonus(parsed.data, derived)),
+            roll: d20Expression(resolveDnd5eAttack(ability.name, parsed.data, attackContext).toHit),
             ability,
-            damage: attackDamageFormula(parsed.data, sheet.abilities),
+            damage: resolveDnd5eAttack(ability.name, parsed.data, attackContext).damage,
           });
       } else if (ability.kind === 'spell') {
         const parsed = dnd5eSpellDataSchema.safeParse(ability.data ?? {});
