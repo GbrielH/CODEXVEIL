@@ -468,8 +468,14 @@ de segurança).
       equipadas com dano e crítico do livro (ou da descrição "Dano 1d8 · Crítico 19/x3"); Luta/Pontaria
       no acerto, Força no dano corpo a corpo e de arremesso, disparo sem Força; crítico multiplica só os
       dados; Fúria do Bárbaro (+2 ataque e dano corpo a corpo, +1 a cada 5 níveis); Estilo de Disparo
-      soma Destreza. Estilos de Uma Arma e de Duas Mãos só como aviso (o livro extraído não traz a
-      empunhadura). Regras conferidas no PDF do Jogo do Ano. Falta no app.
+      soma Destreza. Regras conferidas no PDF do Jogo do Ano.
+- [x] Limitações dos ataques T20 corrigidas: o pacote do livro grava a empunhadura e a seção da tabela
+      de armas (`grip`: leve/uma/duas; `attack`: corpo/distancia; 47 armas). Estilo de Duas Mãos (+5
+      dano), Uma Arma (+2 ataque, só com a outra mão livre: sem escudo nem segunda arma) e Arremesso
+      (+2 dano) agora somam; arremesso puro usa Pontaria. **Reimportar** o `t20-jda.book.json`.
+- [x] App: ataques do Tormenta20 (mesmo cálculo e Fúria) e botão de Fúria no D&D; o app carrega os
+      livros T20 também para quem só joga. Vai por OTA.
+- [x] Caixinha de dados e painel do Tomo não saem mais da tela ao arrastar (caixinha presa pela base).
 - [x] Painel do assistente por cima de tudo (portal no `body`; antes ficava atrás dos cards).
 - [x] Mãozinha (cursor) em tudo que é clicável no site: rolagens, abas, botões (`globals.css`).
 - [x] Livro T20 exportado: faltam as origens Acólito e Amigo dos Animais, há poderes com " e"

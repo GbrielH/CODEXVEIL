@@ -5,6 +5,7 @@ import { d20Expression, type DiceRollMode } from '@codexveil/domain';
 import {
   formatT20Bonus,
   resolveT20Attack,
+  t20GripLabels,
   t20RageMaxBonus,
   t20WeaponStats,
   type T20Content,
@@ -65,6 +66,8 @@ export function T20AttacksCard({
   const weapons = items
     .filter((item) => item.isEquipped && item.category === 'weapon')
     .map((item) => ({ item, stats: t20WeaponStats(item.name, item.description, content) }));
+  // Estilo de Uma Arma exige a outra mão livre: outra arma ou escudo equipado ocupa a mão.
+  const shieldEquipped = items.some((item) => item.isEquipped && /escudo/i.test(item.name));
 
   return (
     <Card>
@@ -118,14 +121,14 @@ export function T20AttacksCard({
                 </li>
               );
             }
-            const attack = resolveT20Attack(stats, sheet, derived, { rage: activeRage });
+            const attack = resolveT20Attack(stats, sheet, derived, { rage: activeRage, offHandBusy: shieldEquipped || weapons.length > 1 });
             const critLabel = `${attack.critMargin < 20 ? `${attack.critMargin}` : '20'}/x${attack.critMultiplier}`;
             return (
               <li key={item.id} className="flex flex-col gap-2 py-3">
                 <span>
                   <span className="block text-sm font-medium text-fg">{item.name}</span>
                   <span className="block text-xs text-fg-muted">
-                    {[stats.damage, stats.damageType, stats.kind === 'ranged' ? 'disparo' : stats.kind === 'thrown' ? 'corpo a corpo ou arremesso' : 'corpo a corpo', stats.range && !/^[—–-]$/.test(stats.range) ? stats.range : '']
+                    {[stats.damage, stats.damageType, stats.kind === 'ranged' ? 'disparo' : stats.kind === 'thrown' ? 'arremesso' : stats.kind === 'melee-thrown' ? 'corpo a corpo ou arremesso' : 'corpo a corpo', stats.grip ? t20GripLabels[stats.grip] : '', stats.range && !/^[—–-]$/.test(stats.range) ? stats.range : '']
                       .filter(Boolean)
                       .join(' · ')}
                   </span>

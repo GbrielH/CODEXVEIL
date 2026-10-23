@@ -47,6 +47,7 @@ import { useRealtimeRefresh } from '@/lib/hooks';
 import { getSupabase } from '@/lib/supabase';
 import { colors, fonts, radii, spacing } from '@/lib/theme';
 import { useSheet } from './context';
+import { useRage } from '@/lib/active-effects';
 
 interface Option {
   key: string;
@@ -77,6 +78,7 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
     setResources,
     reloadPlayState,
   } = useSheet();
+  const [rage] = useRage(characterId);
   const toast = useToast();
   const [turn, setTurn] = useState<CampaignTurn | null>(null);
   const [actions, setActions] = useState<TurnAction[]>([]);
@@ -157,7 +159,7 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
       derived,
       items,
       features: abilities.filter((entry) => entry.kind !== 'attack' && entry.kind !== 'spell').map((entry) => entry.name),
-      effects: { rage: false },
+      effects: { rage: rage > 0 },
     };
     const list: Option[] = [];
     for (const ability of abilities) {
@@ -221,7 +223,7 @@ export function TurnPlay({ campaignId }: { campaignId: string }) {
       });
     }
     return list;
-  }, [abilities, items, derived, sheet.abilities, customActions]);
+  }, [abilities, items, derived, sheet, rage, customActions]);
 
   if (!turn) return null;
   const me = turn.order.find((entry) => entry.characterId === characterId) ?? null;

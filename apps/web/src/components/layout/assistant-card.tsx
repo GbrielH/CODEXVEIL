@@ -63,7 +63,7 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
     const offsetY = event.clientY - rect.top;
     const move = (moveEvent: PointerEvent) => {
       const maxX = window.innerWidth - rect.width;
-      const maxY = window.innerHeight - 48;
+      const maxY = window.innerHeight - rect.height;
       setPosition({
         x: Math.min(Math.max(0, moveEvent.clientX - offsetX), Math.max(0, maxX)),
         y: Math.min(Math.max(0, moveEvent.clientY - offsetY), Math.max(0, maxY)),

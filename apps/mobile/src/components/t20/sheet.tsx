@@ -57,6 +57,7 @@ import { Segmented } from '@/components/ui/segmented';
 import { Notice } from '@/components/ui/states';
 import { DiceProvider, useDice } from '@/components/dice/dice';
 import { DeleteCharacterCard } from '@/components/sheet/delete-character';
+import { T20Attacks } from './attacks';
 import { LevelGate, type LevelGateInfo } from '@/components/sheet/level-gate';
 import { T20NewItem } from './new-item';
 import { T20TurnCard, logT20TurnUse } from './turn-card';
@@ -288,6 +289,17 @@ function T20SheetBody(props: Props) {
                 ),
             )
           }
+        />
+      ) : null}
+      {tab === 'jogo' ? (
+        <T20Attacks
+          characterId={props.character.id}
+          sheet={effectiveSheet}
+          derived={derived}
+          items={items}
+          content={content}
+          mode={rollMode}
+          canAct={props.canEditPlay}
         />
       ) : null}
       {tab === 'jogo' ? (

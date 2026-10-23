@@ -43,8 +43,10 @@ export default function CharacterScreen() {
       character.systemId === 'dnd5e' && canEditCharacterSheet(characterAccessInput(character))
         ? await sheetBookSources(supabase, userId, character)
         : [];
+    // Tormenta20: também para quem só joga (os ataques usam as armas do livro).
     const t20Books =
-      character.systemId === 'tormenta20' && canEditCharacterSheet(characterAccessInput(character))
+      character.systemId === 'tormenta20' &&
+      (canEditCharacterSheet(characterAccessInput(character)) || canEditCharacterPlayState(characterAccessInput(character)))
         ? await sheetT20Sources(supabase, userId, character)
         : [];
     return {

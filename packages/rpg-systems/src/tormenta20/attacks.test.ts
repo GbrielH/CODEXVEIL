@@ -25,13 +25,14 @@ describe('ataques do Tormenta20', () => {
     const stats = t20WeaponStats('Machado de batalha', 'Dano 1d8 · Crítico x3 · Corte · T$ 10', null);
     expect(stats).toMatchObject({ damage: '1d8', critMargin: 20, critMultiplier: 3, kind: 'melee' });
     expect(t20WeaponStats('Arco curto', 'Dano 1d6 · Crítico x3 · Alcance Médio', null)?.kind).toBe('ranged');
-    expect(t20WeaponStats('Azagaia', 'Dano 1d6 · Crítico x2 · Alcance Médio', null)?.kind).toBe('thrown');
+    expect(t20WeaponStats('Azagaia', 'Dano 1d6 · Crítico x2 · Alcance Médio · Uma mão · Ataque à distância', null)).toMatchObject({ kind: 'thrown', grip: 'uma' });
+    expect(t20WeaponStats('Adaga', 'Dano 1d4 · Crítico 19 · Alcance Curto · Leve', null)).toMatchObject({ kind: 'melee-thrown', grip: 'leve' });
   });
 
   it('corpo a corpo: Luta no acerto, Força no dano e só os dados multiplicados no crítico', () => {
     const sheet = sheetWith({ for: 3 });
     const derived = computeT20Derived(sheet);
-    const attack = resolveT20Attack({ damage: '1d8', damageType: 'Corte', critMargin: 20, critMultiplier: 3, kind: 'melee', range: '' }, sheet, derived, { rage: 0 });
+    const attack = resolveT20Attack({ damage: '1d8', damageType: 'Corte', critMargin: 20, critMultiplier: 3, kind: 'melee', range: '', grip: null }, sheet, derived, { rage: 0 });
     expect(attack.skill).toBe('luta');
     expect(attack.toHit).toBe(derived.skills.luta.total);
     expect(attack.damage).toBe('1d8+3');
@@ -40,12 +41,25 @@ describe('ataques do Tormenta20', () => {
 
   it('disparo não soma Força; Estilo de Disparo soma Destreza', () => {
     const plainSheet = sheetWith({ for: 3, des: 2 });
-    const bow = { damage: '1d6', damageType: '', critMargin: 20, critMultiplier: 3, kind: 'ranged' as const, range: 'Médio' };
+    const bow = { damage: '1d6', damageType: '', critMargin: 20, critMultiplier: 3, kind: 'ranged' as const, range: 'Médio', grip: null };
     expect(resolveT20Attack(bow, plainSheet, computeT20Derived(plainSheet), { rage: 0 }).damage).toBe('1d6');
     const archer = sheetWith({ for: 3, des: 2, powers: ['Estilo de Disparo'] });
     const attack = resolveT20Attack(bow, archer, computeT20Derived(archer), { rage: 0 });
     expect(attack.skill).toBe('pontaria');
     expect(attack.damage).toBe('1d6+2');
+  });
+
+  it('Estilos de Duas Mãos, Uma Arma e Arremesso pela empunhadura', () => {
+    const sheet = sheetWith({ for: 2, powers: ['Estilo de Duas Mãos', 'Estilo de Uma Arma', 'Estilo de Arremesso'] });
+    const derived = computeT20Derived(sheet);
+    const melee = (grip: 'leve' | 'uma' | 'duas') => ({ damage: '1d8', damageType: '', critMargin: 20, critMultiplier: 2, kind: 'melee' as const, range: '', grip });
+    expect(resolveT20Attack(melee('duas'), sheet, derived, { rage: 0 }).damage).toBe('1d8+7');
+    expect(resolveT20Attack(melee('uma'), sheet, derived, { rage: 0 }).toHit).toBe(derived.skills.luta.total + 2);
+    expect(resolveT20Attack(melee('uma'), sheet, derived, { rage: 0, offHandBusy: true }).toHit).toBe(derived.skills.luta.total);
+    const javelin = { damage: '1d6', damageType: '', critMargin: 20, critMultiplier: 2, kind: 'thrown' as const, range: 'Médio', grip: 'uma' as const };
+    const thrown = resolveT20Attack(javelin, sheet, derived, { rage: 0 });
+    expect(thrown.skill).toBe('pontaria');
+    expect(thrown.damage).toBe('1d6+4');
   });
 
   it('Fúria: +2 no ataque e no dano corpo a corpo, +1 a cada cinco níveis', () => {
@@ -55,7 +69,7 @@ describe('ataques do Tormenta20', () => {
     expect(t20RageMaxBonus(sheetWith())).toBe(0);
     const sheet = sheetWith({ for: 2, barbarian: 1 });
     const derived = computeT20Derived(sheet);
-    const attack = resolveT20Attack({ damage: '1d12', damageType: '', critMargin: 20, critMultiplier: 3, kind: 'melee', range: '' }, sheet, derived, { rage: 2 });
+    const attack = resolveT20Attack({ damage: '1d12', damageType: '', critMargin: 20, critMultiplier: 3, kind: 'melee', range: '', grip: null }, sheet, derived, { rage: 2 });
     expect(attack.toHit).toBe(derived.skills.luta.total + 2);
     expect(attack.damage).toBe('1d12+4');
   });

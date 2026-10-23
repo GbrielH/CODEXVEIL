@@ -19,7 +19,8 @@ export const MAX_TRAY_DICE = 6;
 const SUPPORTED_SIDES = new Set([4, 6, 8, 10, 12, 20, 100]);
 const DEFAULT_COLOR = DICE_COLORS[0]!.hex;
 const STORAGE_KEY = 'codexveil:dice-tray-open';
-const POSITION_KEY = 'codexveil:dice-tray-position';
+// Posição pela base (o balão do resultado cresce para cima sem empurrar a caixinha para fora da tela).
+const POSITION_KEY = 'codexveil:dice-tray-anchor';
 
 export interface TrayRoll {
   key: string;
@@ -98,10 +99,10 @@ export function DiceTray({
   const [rolling, setRolling] = useState<TrayRoll | null>(null);
   const trayRef = useRef<HTMLDivElement>(null);
   // Posição escolhida ao arrastar pelo cabeçalho (fica guardada neste navegador).
-  const [position, setPosition] = useState<{ x: number; y: number } | null>(() => {
+  const [position, setPosition] = useState<{ x: number; bottom: number } | null>(() => {
     try {
       const stored = typeof window === 'undefined' ? null : window.localStorage.getItem(POSITION_KEY);
-      return stored ? (JSON.parse(stored) as { x: number; y: number }) : null;
+      return stored ? (JSON.parse(stored) as { x: number; bottom: number }) : null;
     } catch {
       return null;
     }
@@ -111,11 +112,12 @@ export function DiceTray({
     const rect = trayRef.current.getBoundingClientRect();
     const offsetX = event.clientX - rect.left;
     const offsetY = event.clientY - rect.top;
-    let latest: { x: number; y: number } | null = null;
+    let latest: { x: number; bottom: number } | null = null;
     const move = (moveEvent: PointerEvent) => {
+      const top = moveEvent.clientY - offsetY;
       latest = {
         x: Math.min(Math.max(0, moveEvent.clientX - offsetX), Math.max(0, window.innerWidth - rect.width)),
-        y: Math.min(Math.max(0, moveEvent.clientY - offsetY), Math.max(0, window.innerHeight - 48)),
+        bottom: Math.min(Math.max(0, window.innerHeight - (top + rect.height)), Math.max(0, window.innerHeight - rect.height)),
       };
       setPosition(latest);
     };
@@ -297,7 +299,18 @@ export function DiceTray({
     ) : null}
     <div
       ref={trayRef}
-      style={position ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' } : undefined}
+      style={
+        position
+          ? {
+              // Trava também ao diminuir a janela: a caixinha nunca sai da tela.
+              left: `min(${position.x}px, calc(100vw - min(24rem, 100vw - 1.5rem)))`,
+              bottom: `min(${position.bottom}px, calc(100dvh - 3rem))`,
+              right: 'auto',
+              top: 'auto',
+              maxHeight: '100dvh',
+            }
+          : undefined
+      }
       className="fixed right-3 bottom-20 z-50 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col items-stretch gap-2 lg:bottom-4">
       {/* Resultado da última rolagem, logo acima da caixinha. */}
       <div aria-live="polite" className="min-h-0">

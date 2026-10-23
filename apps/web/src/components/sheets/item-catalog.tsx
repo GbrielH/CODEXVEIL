@@ -136,6 +136,8 @@ async function loadCatalog(books: CatalogBooks, metric: boolean): Promise<Catalo
               text('critical') && `Crítico ${text('critical')}`,
               text('range') && `Alcance ${text('range')}`,
               text('damageType'),
+              text('grip') && (text('grip') === 'duas' ? 'Duas mãos' : text('grip') === 'leve' ? 'Leve' : 'Uma mão'),
+              text('attack') === 'distancia' && 'Ataque à distância',
               typeof data.defense === 'number' && `Defesa +${data.defense}`,
               typeof data.penalty === 'number' && data.penalty < 0 && `Penalidade ${data.penalty}`,
               text('price'),

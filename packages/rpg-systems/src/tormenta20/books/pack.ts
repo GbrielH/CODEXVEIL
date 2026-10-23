@@ -164,6 +164,10 @@ export const t20EquipmentSchema = z.object({
   critical: text(20),
   range: text(40),
   damageType: text(60),
+  /** Empunhadura da tabela de armas: leve, uma mão ou duas mãos (livros antigos não trazem). */
+  grip: z.enum(['leve', 'uma', 'duas']).optional(),
+  /** Seção da tabela: corpo a corpo ou ataque à distância. */
+  attack: z.enum(['corpo', 'distancia']).optional(),
   // Armaduras e escudos
   defense: z.number().int().min(0).max(20).optional(),
   penalty: z.number().int().min(-20).max(0).optional(),

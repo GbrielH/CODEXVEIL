@@ -185,9 +185,15 @@ def main():
                                  key=slug(f"origem-{p['name']}")))
     entries += [spell(s) for s in d['spells']]
     for w in d['weapons']:
+        # "Corpo a Corpo — Duas Mãos" → seção e empunhadura (Estilos de Uma Arma, Duas Mãos, arremesso).
+        section = plain(w.get('group', ''))
+        grip = 'duas' if 'duas' in section else 'leve' if 'leve' in section else 'uma' if 'uma' in section else None
+        extra = {'attack': 'corpo' if section.startswith('corpo') else 'distancia'} if section else {}
+        if grip:
+            extra['grip'] = grip
         entries.append(entry('equipment', w['name'], {'group': 'arma', 'category': w['category'], 'price': w['price'], 'spaces': w['spaces'],
                                                        'damage': w['damage'], 'critical': w['critical'], 'range': w['range'],
-                                                       'damageType': w['damageType'], 'text': w['text'][:8000]},
+                                                       'damageType': w['damageType'], 'text': w['text'][:8000], **extra},
                              key=slug(f"arma-{w['category']}-{w['name']}")))
     for a in d['armors']:
         entries.append(entry('equipment', a['name'], {'group': 'armadura', 'category': a['group'], 'price': a['price'], 'spaces': a['spaces'],

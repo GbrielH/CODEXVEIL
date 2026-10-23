@@ -5,13 +5,20 @@
  *   * crítico: margem de ameaça e multiplicador da arma ("19", "x3", "19/x3"); só os dados são
  *     multiplicados, os bônus numéricos não;
  *   * Fúria do Bárbaro: +2 no ataque e no dano corpo a corpo (+1 a cada cinco níveis, pagando PM);
- *   * Estilo de Disparo: soma a Destreza no dano com armas de disparo.
+ *   * Estilos (cap. 2, poderes de combate): Disparo (+Des no dano de disparo), Arremesso (+2 no
+ *     dano de arremesso), Duas Mãos (+5 no dano corpo a corpo com arma de duas mãos, não leve) e
+ *     Uma Arma (+2 no ataque com arma corpo a corpo numa mão e nada na outra).
  */
 import type { T20Content } from './content';
 import type { T20Derived } from './derived';
 import type { T20Sheet } from './sheet';
 
-export type T20WeaponKind = 'melee' | 'thrown' | 'ranged';
+/**
+ * melee: só corpo a corpo (Luta, +For); melee-thrown: corpo a corpo que também pode ser arremessada
+ * (Luta por padrão); thrown: arma de arremesso (Pontaria, +For); ranged: disparo (Pontaria, sem For).
+ */
+export type T20WeaponKind = 'melee' | 'melee-thrown' | 'thrown' | 'ranged';
+export type T20Grip = 'leve' | 'uma' | 'duas';
 
 export interface T20WeaponStats {
   damage: string;
@@ -22,11 +29,15 @@ export interface T20WeaponStats {
   /** Corpo a corpo, corpo a corpo que também pode ser arremessada, ou de disparo. */
   kind: T20WeaponKind;
   range: string;
+  /** Empunhadura; `null` quando o livro não informa. */
+  grip: T20Grip | null;
 }
 
 export interface T20AttackEffects {
   /** Bônus da Fúria ativa (0 = desligada). */
   rage: number;
+  /** A outra mão está ocupada (outra arma ou escudo equipado): sem Estilo de Uma Arma. */
+  offHandBusy?: boolean;
 }
 
 export interface ResolvedT20Attack {
@@ -57,11 +68,23 @@ export function parseT20Critical(text: string): { margin: number; multiplier: nu
 
 const SHOOTING = /\b(arco|besta|funda|zarabatana|arcabuz|mosquete|pistola|bacamarte|canh[aã]o)\b/;
 
-function weaponKind(name: string, category: string, range: string): T20WeaponKind {
+function weaponKind(name: string, category: string, range: string, attack?: 'corpo' | 'distancia'): T20WeaponKind {
   const hasRange = Boolean(range.trim()) && !/^[—–-]$/.test(range.trim());
   if (!hasRange) return 'melee';
-  return SHOOTING.test(plain(name)) || plain(category).includes('fogo') ? 'ranged' : 'thrown';
+  if (SHOOTING.test(plain(name)) || plain(category).includes('fogo')) return 'ranged';
+  // Sem a seção da tabela (livros antigos), arma com alcance que não dispara é tratada como corpo a corpo arremessável.
+  return attack === 'distancia' ? 'thrown' : 'melee-thrown';
 }
+
+function gripFromText(text: string): T20Grip | null {
+  const value = plain(text);
+  if (/duas maos/.test(value)) return 'duas';
+  if (/\bleve\b/.test(value)) return 'leve';
+  if (/uma mao/.test(value)) return 'uma';
+  return null;
+}
+
+export const t20GripLabels: Record<T20Grip, string> = { leve: 'leve', uma: 'uma mão', duas: 'duas mãos' };
 
 /**
  * Estatísticas da arma: do livro (equipamento com o mesmo nome) ou, sem o livro, da descrição que
@@ -77,8 +100,9 @@ export function t20WeaponStats(itemName: string, description: string, content: T
       damageType: fromBook.damageType,
       critMargin: crit.margin,
       critMultiplier: crit.multiplier,
-      kind: weaponKind(fromBook.name, fromBook.category, fromBook.range),
+      kind: weaponKind(fromBook.name, fromBook.category, fromBook.range, fromBook.attack),
       range: fromBook.range,
+      grip: fromBook.grip ?? null,
     };
   }
   const damage = /Dano\s+(\d+d\d+(?:\+\d+)?)/i.exec(description);
@@ -90,8 +114,9 @@ export function t20WeaponStats(itemName: string, description: string, content: T
     damageType: '',
     critMargin: crit.margin,
     critMultiplier: crit.multiplier,
-    kind: weaponKind(itemName, '', range),
+    kind: weaponKind(itemName, '', range, /distância|distancia/i.test(description) ? 'distancia' : undefined),
     range,
+    grip: gripFromText(description),
   };
 }
 
@@ -122,28 +147,45 @@ function multiplyDice(formula: string, multiplier: number): string {
 
 export function resolveT20Attack(stats: T20WeaponStats, sheet: T20Sheet, derived: T20Derived, effects: T20AttackEffects): ResolvedT20Attack {
   const notes: string[] = [];
-  const melee = stats.kind !== 'ranged';
+  const melee = stats.kind === 'melee' || stats.kind === 'melee-thrown';
   const skill = melee ? 'luta' : 'pontaria';
   let toHit = derived.skills[skill].total;
   notes.push(`${melee ? 'Luta' : 'Pontaria'} ${sign(toHit)}`);
 
   let bonus = 0;
-  if (melee) {
+  if (stats.kind !== 'ranged') {
+    // Corpo a corpo e arremesso somam a Força no dano.
     bonus += derived.attributes.for;
     notes.push(`Força ${sign(derived.attributes.for)} no dano`);
-    if (stats.kind === 'thrown') notes.push('Pode ser arremessada (use Pontaria)');
   }
+  if (stats.kind === 'melee-thrown') notes.push('Pode ser arremessada (aí o teste é de Pontaria)');
   if (stats.kind === 'ranged' && hasPower(sheet, 'Estilo de Disparo')) {
     bonus += derived.attributes.des;
     notes.push(`Estilo de Disparo: Destreza ${sign(derived.attributes.des)} no dano`);
+  }
+  if (stats.kind === 'thrown' && hasPower(sheet, 'Estilo de Arremesso')) {
+    bonus += 2;
+    notes.push('Estilo de Arremesso +2 no dano');
+  }
+  if (melee && stats.grip === 'duas' && hasPower(sheet, 'Estilo de Duas Mãos')) {
+    bonus += 5;
+    notes.push('Estilo de Duas Mãos +5 no dano');
+  }
+  if (melee && (stats.grip === 'leve' || stats.grip === 'uma') && hasPower(sheet, 'Estilo de Uma Arma')) {
+    if (effects.offHandBusy) notes.push('Estilo de Uma Arma: a outra mão está ocupada (sem o +2)');
+    else {
+      toHit += 2;
+      notes.push('Estilo de Uma Arma +2 no ataque');
+    }
   }
   if (effects.rage && melee) {
     toHit += effects.rage;
     bonus += effects.rage;
     notes.push(`Fúria +${effects.rage} no ataque e no dano`);
   }
-  if (hasPower(sheet, 'Estilo de Duas Mãos')) notes.push('Estilo de Duas Mãos: +5 no dano se usar a arma com as duas mãos');
-  if (hasPower(sheet, 'Estilo de Uma Arma')) notes.push('Estilo de Uma Arma: +2 no ataque se a outra mão estiver livre');
+  if (!stats.grip && (hasPower(sheet, 'Estilo de Duas Mãos') || hasPower(sheet, 'Estilo de Uma Arma'))) {
+    notes.push('Empunhadura desconhecida: reimporte o livro para aplicar os Estilos');
+  }
 
   return {
     skill,
