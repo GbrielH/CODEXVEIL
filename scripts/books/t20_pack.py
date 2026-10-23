@@ -153,7 +153,8 @@ def number(text):
 def threat(t):
     skills = t.get('pericias', '')
     initiative = number(t.get('iniciativa', ''))
-    data = {'type': t['type'][:160], 'challenge': t['nd'][:10], 'senses': t.get('iniciativa', '')[:400], 'initiative': initiative,
+    kind = t['type'] or ('Perigo' if not t['hp'] and not t['defense'] else '')  # perigos (Avalanche etc.) não têm ficha
+    data = {'type': kind[:160], 'challenge': t['nd'][:10], 'senses': t.get('iniciativa', '')[:400], 'initiative': initiative,
             'defense': t['defense'], 'defenseNotes': t['defenseText'][:600], 'hitPoints': t['hp'],
             'manaPoints': number(t['pontos_de_mana']) if t.get('pontos_de_mana') else None,
             'speed': t.get('deslocamento', '')[:200], 'melee': t.get('corpo_a_corpo', '')[:1000], 'ranged': t.get('a_distancia', '')[:1000],
@@ -192,6 +193,8 @@ def main():
         entries.append(entry('equipment', a['name'], {'group': 'armadura', 'category': a['group'], 'price': a['price'], 'spaces': a['spaces'],
                                                        'defense': number(a['defense']), 'penalty': min(0, number(a['penalty'])), 'text': a['text'][:8000]}))
     for i in d['items']:
+        if i['group'] == 'Magia' and re.match(r'^\d+º círculo$', i['name']):
+            i = {**i, 'name': f"Lançamento de magia ({i['name']})"}  # serviço da tabela de preços
         entries.append(entry('equipment', i['name'], {'group': 'item', 'category': i['group'], 'price': i['price'], 'spaces': i['spaces'], 'text': i['text'][:8000]},
                              key=slug(f"item-{i['name']}")))
     for m in d['improvements']:

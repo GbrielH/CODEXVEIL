@@ -32,6 +32,8 @@ class Book:
         for i, r in enumerate(rows):
             if r['y'] > 735:  # rodapé: "Capítulo Um", "Construção de Personagem", número da página
                 self.texts[i] = ''
+            # Ornamento de fim de texto (glifo "e" depois do ponto final): "por um dia. e".
+            self.texts[i] = re.sub(r'([.!?)])\s+e$', r'\1', self.texts[i])
 
     def is_title(self, i, size):
         r = self.rows[i]
@@ -109,7 +111,10 @@ class Book:
                 pending = None
                 continue
             m = re.match(r'^([^.:]{2,80}?)\.\s+(.*)$', body)
-            if (lead and m and body.startswith(lead.rstrip('.').split()[0] if lead.split() else lead)) or (bullet and m):
+            # Um nome em destaque só abre entrada se for o nome inteiro ("Aparar."); um termo em itálico no
+            # começo da linha ("Amedrontar (atributo-chave Carisma). Esta…") continua o texto anterior.
+            lead_is_name = bool(lead) and lead.lstrip('•	 ')[:1].isupper() and (lead.rstrip().endswith('.') or m is not None and m.group(1).strip() == lead.strip())
+            if (lead_is_name and m and body.startswith(lead.rstrip('.').split()[0] if lead.split() else lead)) or (bullet and m):
                 current = {'name': m.group(1).strip(), 'lines': [m.group(2)], 'row': i, 'bullet': bullet}
                 out.append(current)
             elif bullet:
@@ -326,7 +331,7 @@ def titled_blocks(book, size, first_page, last_page, end_index=None):
 
 def origins(book):
     out = []
-    for i, name, stop in titled_blocks(book, 21, 92, 101):
+    for i, name, stop in titled_blocks(book, 21, 91, 101):
         if name.startswith('Sua Própria'):
             continue
         entries = {e['name']: e['text'] for e in book.entries(i + 1, stop)}

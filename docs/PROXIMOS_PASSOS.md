@@ -437,8 +437,9 @@ de segurança).
 - [x] Rota `/api/assistente` (Claude `claude-opus-5-5`), contexto pela rota com o RLS da pessoa.
 - [x] Cota de 30 perguntas/dia (migração `20261023120000_assistant_usage.sql`, aplicada).
 - [ ] Criar `ANTHROPIC_API_KEY` na Vercel (o card só aparece com ela) e testar uma pergunta real.
-- [ ] Livro T20 exportado: faltam as origens Acólito e Amigo dos Animais, há poderes com " e"
-      sobrando ou cortados e perigos classificados como ameaças; corrigir em `scripts/books/t20.py`.
+- [x] Livro T20 exportado: faltam as origens Acólito e Amigo dos Animais, há poderes com " e"
+      sobrando ou cortados e perigos classificados como ameaças; corrigido em `scripts/books/t20.py` e `t20_pack.py`
+      (35 origens, 433 poderes; só "Golpe Pessoal" segue cortado antes da tabela de efeitos). Reimportar.
 
 ### 2026-10-23 — rodada de correções (fichas automáticas, sessão, presença, mapa)
 

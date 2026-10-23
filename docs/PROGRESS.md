@@ -305,8 +305,7 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
-- **2026-10-23:** criar `ANTHROPIC_API_KEY` na Vercel e testar o assistente; corrigir a extração
-  do livro T20 (origens faltando, textos cortados, perigos como ameaças).
+- **2026-10-23:** criar `ANTHROPIC_API_KEY` na Vercel e testar o assistente; reimportar o livro T20 corrigido em Meus livros.
 - **2026-10-20 (tradução do SRD):** monstros e itens mágicos 100% em português (`pnpm check`
   20/20). Próximo: pedidos de 2026-10-20 (sessão presencial/online, grid, ação de combate do
   mestre, Treinamento em Perícia, descrições, aba Sessão, perícias marcadas, biblioteca T20,
