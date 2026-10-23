@@ -338,3 +338,23 @@ export async function mapsWithCharacter(client: CodexveilClient, campaignId: str
   if (error) throw toAppError(error);
   return [...new Set((data ?? []).map((row) => row.map_id))];
 }
+
+/**
+ * Fichas dos personagens e blocos das criaturas dos tokens, para calcular o deslocamento de
+ * cada um (o banco só entrega o que a pessoa pode ver: jogadores não leem blocos de criaturas).
+ */
+export async function tokenSpeedSources(
+  client: CodexveilClient,
+  tokens: readonly MapToken[],
+): Promise<{ characters: Record<string, { systemId: string; sheet: Json }>; creatures: Record<string, Json> }> {
+  const characterIds = [...new Set(tokens.map((token) => token.characterId).filter((id): id is string => Boolean(id)))];
+  const creatureIds = [...new Set(tokens.map((token) => token.creatureId).filter((id): id is string => Boolean(id)))];
+  const [characters, creatures] = await Promise.all([
+    characterIds.length ? client.from('characters').select('id, system_id, sheet').in('id', characterIds) : Promise.resolve({ data: [], error: null }),
+    creatureIds.length ? client.from('creature_gm_data').select('creature_id, stats').in('creature_id', creatureIds) : Promise.resolve({ data: [], error: null }),
+  ]);
+  return {
+    characters: Object.fromEntries((characters.data ?? []).map((row) => [row.id, { systemId: row.system_id, sheet: row.sheet }])),
+    creatures: Object.fromEntries((creatures.data ?? []).map((row) => [row.creature_id, row.stats])),
+  };
+}

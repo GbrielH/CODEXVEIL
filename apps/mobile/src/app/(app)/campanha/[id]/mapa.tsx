@@ -1,5 +1,6 @@
 import { getActiveMap, getCampaign, listCampaignCharacters, listMapTokens, moveMyToken, signedMediaUrls, tokenImagePaths, type MapToken } from '@codexveil/database';
 import { formatMeters, gridDistance, tokenSizeSquares } from '@codexveil/domain';
+import { characterSpeedMeters } from '@codexveil/rpg-systems';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { ZoomIn, ZoomOut } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -97,7 +98,13 @@ export default function CampaignMapScreen() {
     const ny = Math.max(0, Math.min(map.rows - side, y));
     setSelected(false);
     const walked = gridDistance(myToken, { x: nx, y: ny }, data.campaign.systemId);
-    toast({ tone: 'info', title: `Você andou ${formatMeters(walked.meters)}`, description: `${walked.squares} ${walked.squares === 1 ? 'quadrado' : 'quadrados'} de 1,5 m.` });
+    const limit = own ? characterSpeedMeters(data.campaign.systemId, own.sheet) : null;
+    const over = limit !== null && walked.meters > limit;
+    toast({
+      tone: over ? 'danger' : 'info',
+      title: `Você andou ${formatMeters(walked.meters)}${limit !== null ? ` de ${formatMeters(limit)}` : ''}`,
+      description: over ? 'Passou do seu deslocamento (o movimento foi feito; combine com o mestre).' : `${walked.squares} ${walked.squares === 1 ? 'quadrado' : 'quadrados'} de 1,5 m.`,
+    });
     mutate((current) => (current ? { ...current, tokens: current.tokens.map((token) => (token.id === myToken.id ? { ...token, x: nx, y: ny } : token)) } : current));
     moveMyToken(getSupabase(), myToken.id, nx, ny).catch((cause: unknown) => {
       toast({ tone: 'danger', title: 'O token não foi movido', description: failureMessage(cause) });

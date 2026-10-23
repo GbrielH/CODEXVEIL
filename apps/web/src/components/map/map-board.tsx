@@ -40,6 +40,8 @@ interface MapBoardProps {
   map: SessionMap;
   tokens: MapToken[];
   imageUrl: string | null;
+  /** Deslocamento de cada token em metros: a etiqueta do arrasto fica vermelha ao passar. */
+  tokenSpeeds?: Record<string, number>;
   /** URL de cada imagem (camada) do mapa (caminho → URL). */
   layerUrls?: Record<string, string>;
   /** Camada selecionada (ferramenta "imagem" do mestre). */
@@ -91,6 +93,7 @@ export function MapBoard({
   imageUrl,
   tokenImages = {},
   layerUrls = {},
+  tokenSpeeds = {},
   selectedLayer = null,
   onSelectLayer,
   onMoveLayer,
@@ -525,10 +528,20 @@ export function MapBoard({
             const side = tokenSizeSquares[token.size];
             const target = { x: Math.max(0, Math.min(map.cols - side, Math.round(drag.x))), y: Math.max(0, Math.min(map.rows - side, Math.round(drag.y))) };
             const { squares, meters } = gridDistance(token, target, systemId);
+            const limit = tokenSpeeds[token.id];
+            // Passou do deslocamento: fica vermelho, mas não impede o movimento.
+            const over = limit !== undefined && meters > limit;
+            const tone = over ? '#ef4444' : '#f3e2b3';
             return (
               <g style={{ pointerEvents: 'none' }}>
-                <rect x={target.x} y={target.y} width={side} height={side} fill="rgba(243,226,179,0.12)" stroke="#f3e2b3" strokeWidth={0.04} strokeDasharray="0.15 0.1" />
-                <DistanceTag x={target.x + side / 2} y={target.y - 0.15} text={`${formatMeters(meters)} (${squares} ${squares === 1 ? 'quadrado' : 'quadrados'})`} />
+                <line x1={token.x + side / 2} y1={token.y + side / 2} x2={target.x + side / 2} y2={target.y + side / 2} stroke={tone} strokeWidth={0.06} strokeDasharray="0.2 0.14" />
+                <rect x={target.x} y={target.y} width={side} height={side} fill={over ? 'rgba(239,68,68,0.18)' : 'rgba(243,226,179,0.12)'} stroke={tone} strokeWidth={0.04} strokeDasharray="0.15 0.1" />
+                <DistanceTag
+                  x={target.x + side / 2}
+                  y={target.y - 0.15}
+                  color={tone}
+                  text={`${formatMeters(meters)}${limit !== undefined ? ` de ${formatMeters(limit)}` : ` (${squares} ${squares === 1 ? 'quadrado' : 'quadrados'})`}${over ? ' · passou do deslocamento' : ''}`}
+                />
               </g>
             );
           })()
@@ -592,12 +605,12 @@ export function MapBoard({
 }
 
 /** Etiqueta de distância sobre o mapa (em unidades de quadrado). */
-function DistanceTag({ x, y, text }: { x: number; y: number; text: string }) {
+function DistanceTag({ x, y, text, color = '#f3e2b3' }: { x: number; y: number; text: string; color?: string }) {
   const width = Math.max(1.2, text.length * 0.2 + 0.3);
   return (
     <g transform={`translate(${x} ${y})`}>
-      <rect x={-width / 2} y={-0.5} width={width} height={0.42} rx={0.12} fill="rgba(20,16,12,0.9)" stroke="#f3e2b3" strokeWidth={0.03} />
-      <text y={-0.29} textAnchor="middle" dominantBaseline="central" fontSize={0.26} fontWeight={700} fill="#f3e2b3">
+      <rect x={-width / 2} y={-0.5} width={width} height={0.42} rx={0.12} fill="rgba(20,16,12,0.9)" stroke={color} strokeWidth={0.03} />
+      <text y={-0.29} textAnchor="middle" dominantBaseline="central" fontSize={0.26} fontWeight={700} fill={color}>
         {text}
       </text>
     </g>

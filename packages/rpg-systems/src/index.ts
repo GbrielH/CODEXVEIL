@@ -23,3 +23,4 @@ export {
   summarizeSheet,
   type SystemId,
 } from './registry';
+export { characterSpeedMeters, speedTextMeters } from './speed';

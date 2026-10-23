@@ -1,6 +1,7 @@
 'use client';
 
-import { getActiveMap, getSessionMap, listMapTokens, signedMediaUrls, tokenImagePaths, type MapToken, type SessionMap } from '@codexveil/database';
+import { getActiveMap, getSessionMap, listMapTokens, signedMediaUrls, tokenImagePaths, tokenSpeedSources, type MapToken, type SessionMap } from '@codexveil/database';
+import { characterSpeedMeters, speedTextMeters } from '@codexveil/rpg-systems';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
@@ -16,19 +17,34 @@ export interface MapData {
   tokenImages: Record<string, string>;
   /** URL de cada imagem (camada) do mapa (caminho → URL assinada). */
   layerUrls: Record<string, string>;
+  /** Deslocamento de cada token em metros (régua vermelha ao passar). */
+  tokenSpeeds: Record<string, number>;
 }
 
 async function load(campaignId: string, mapId: MapSelector): Promise<MapData> {
   const client = getSupabaseBrowserClient();
-  if (!mapId) return { map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {} };
+  if (!mapId) return { map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {}, tokenSpeeds: {} };
   const map = mapId === 'active' ? await getActiveMap(client, campaignId) : await getSessionMap(client, mapId.id);
-  if (!map) return { map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {} };
+  if (!map) return { map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {}, tokenSpeeds: {} };
   const tokens = await listMapTokens(client, map.id);
   const paths = await tokenImagePaths(client, tokens).catch((): Record<string, string> => ({}));
   const urls = await signedMediaUrls(client, [map.imagePath, ...map.images.map((layer) => layer.path), ...Object.values(paths)]);
   const tokenImages = Object.fromEntries(Object.entries(paths).flatMap(([id, path]) => (urls[path] ? [[id, urls[path]]] : [])));
   const layerUrls = Object.fromEntries(map.images.flatMap((layer) => (urls[layer.path] ? [[layer.path, urls[layer.path]!]] : [])));
-  return { map, tokens, imageUrl: map.imagePath ? (urls[map.imagePath] ?? null) : null, tokenImages, layerUrls };
+  type SpeedSources = Awaited<ReturnType<typeof tokenSpeedSources>>;
+  const sources = await tokenSpeedSources(client, tokens).catch((): SpeedSources => ({ characters: {}, creatures: {} }));
+  const tokenSpeeds: Record<string, number> = {};
+  for (const token of tokens) {
+    const character = token.characterId ? sources.characters[token.characterId] : undefined;
+    const creature = token.creatureId ? sources.creatures[token.creatureId] : undefined;
+    const speed = character
+      ? characterSpeedMeters(character.systemId, character.sheet)
+      : creature && typeof creature === 'object' && !Array.isArray(creature) && typeof creature.speed === 'string'
+        ? speedTextMeters(creature.speed)
+        : null;
+    if (speed) tokenSpeeds[token.id] = speed;
+  }
+  return { map, tokens, imageUrl: map.imagePath ? (urls[map.imagePath] ?? null) : null, tokenImages, layerUrls, tokenSpeeds };
 }
 
 /**
@@ -36,7 +52,7 @@ async function load(campaignId: string, mapId: MapSelector): Promise<MapData> {
  * recarregado em tempo real quando o mestre ou outro jogador muda algo.
  */
 export function useMapData(campaignId: string, mapId: MapSelector) {
-  const [data, setData] = useState<MapData>({ map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {} });
+  const [data, setData] = useState<MapData>({ map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {}, tokenSpeeds: {} });
   const [loaded, setLoaded] = useState(false);
 
   // Só a resposta mais recente vale (respostas antigas chegando depois desfaziam mudanças), e

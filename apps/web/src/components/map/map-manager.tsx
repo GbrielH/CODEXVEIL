@@ -138,7 +138,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   const sizeLabels = tokenSizeLabels(systemId);
   const selectedKey = useMemo(() => (selectedId ? { id: selectedId } : null), [selectedId]);
 
-  const { map, tokens, imageUrl, tokenImages, layerUrls, live, reload, setData, track } = useMapData(campaignId, selectedKey);
+  const { map, tokens, imageUrl, tokenImages, tokenSpeeds, layerUrls, live, reload, setData, track } = useMapData(campaignId, selectedKey);
   const [newSessionId, setNewSessionId] = useState(sessionId);
   const [selectedLayer, setSelectedLayer] = useState<number | null>(null);
   const sessionLabel = (id: string) => {
@@ -704,6 +704,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                 tokens={tokens}
                 imageUrl={imageUrl}
                 tokenImages={tokenImages}
+                tokenSpeeds={tokenSpeeds}
                 layerUrls={layerUrls}
                 selectedLayer={selectedLayer}
                 onSelectLayer={setSelectedLayer}
