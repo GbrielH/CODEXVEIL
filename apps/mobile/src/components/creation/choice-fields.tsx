@@ -645,7 +645,7 @@ const styles = StyleSheet.create({
   },
   cardSelected: {
     borderColor: 'rgba(206, 191, 157, 0.7)',
-    backgroundColor: 'rgba(228, 216, 189, 0.08)',
+    backgroundColor: 'rgba(245, 237, 231, 0.08)',
   },
   cardTitle: { fontFamily: fonts.sansMedium, fontSize: 15 },
   disabled: { opacity: 0.45 },
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
   },
   chipSelected: {
     borderColor: 'rgba(206, 191, 157, 0.7)',
-    backgroundColor: 'rgba(228, 216, 189, 0.08)',
+    backgroundColor: 'rgba(245, 237, 231, 0.08)',
   },
   search: {
     minHeight: 44,

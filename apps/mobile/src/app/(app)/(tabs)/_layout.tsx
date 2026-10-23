@@ -17,7 +17,7 @@ export default function TabsLayout() {
           minHeight: 64,
           paddingTop: 6,
         },
-        tabBarActiveBackgroundColor: 'rgba(87, 31, 43, 0.35)',
+        tabBarActiveBackgroundColor: 'rgba(107, 59, 198, 0.35)',
         tabBarItemStyle: { borderRadius: 14, marginHorizontal: 6, marginVertical: 4 },
         tabBarActiveTintColor: colors.fgAccent,
         tabBarInactiveTintColor: colors.fgMuted,

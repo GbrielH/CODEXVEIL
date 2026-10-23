@@ -33,11 +33,11 @@ export interface EmblemColors {
 }
 
 export const defaultEmblemColors: EmblemColors = {
-  veil: '#571F2B',
+  veil: '#6B3BC6',
   opening: '#0F0F11',
-  star: '#E4D8BD',
-  pages: '#E4D8BD',
-  spine: '#571F2B',
+  star: '#F5EDE7',
+  pages: '#F5EDE7',
+  spine: '#6B3BC6',
   outline: '#B8B8BC',
 };
 

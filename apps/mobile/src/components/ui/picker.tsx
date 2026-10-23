@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[2],
     borderRadius: radii.md,
   },
-  optionSelected: { backgroundColor: 'rgba(228, 216, 189, 0.08)' },
+  optionSelected: { backgroundColor: 'rgba(245, 237, 231, 0.08)' },
   trigger: {
     flexDirection: 'row',
     alignItems: 'center',

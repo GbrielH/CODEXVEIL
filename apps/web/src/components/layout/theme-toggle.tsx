@@ -8,7 +8,7 @@ export type Theme = 'dark' | 'light';
 
 /** Chave no navegador; lida antes da pintura pelo script do layout raiz. */
 export const THEME_STORAGE_KEY = 'codexveil-theme';
-const THEME_COLORS: Record<Theme, string> = { dark: '#171719', light: '#F3EDE0' };
+const THEME_COLORS: Record<Theme, string> = { dark: '#0B0B0F', light: '#F5EDE7' };
 
 /** Aplica o tema salvo antes da primeira pintura (evita piscar o tema escuro). */
 export const themeBootScript = `try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');if(t==='light'){document.documentElement.dataset.theme='light';}}catch(e){}`;

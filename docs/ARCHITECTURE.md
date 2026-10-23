@@ -228,12 +228,16 @@ problemas foram vistos no navegador em 2026-10-17.
 
 ## Design system
 
-- Paleta oficial (Carvão `#171719`, Vinho `#571F2B`, Prata `#B8B8BC`, Pergaminho `#E4D8BD`)
-  e cores derivadas em `packages/ui/src/tokens.ts`. Para a web, `packages/ui/scripts/build-css.ts`
+- Paleta oficial do redesign "Grimório Arcano" (2026-10-23): quase-preto `#0B0B0F`, violeta
+  `#6B3BC6`, lavanda `#A88BFF`, marfim `#F5EDE7` e cinza `#4B4B5A`, com o mascote Tomo. As escalas
+  mantêm os nomes antigos (`wine` = violeta, `parchment` = marfim) para não mexer nas telas. Cores derivadas em `packages/ui/src/tokens.ts`. Para a web, `packages/ui/scripts/build-css.ts`
   gera `packages/ui/css/tokens.css`; o mobile importa os tokens em `apps/mobile/src/lib/theme.ts`.
 - O contraste das combinações usadas é verificado em teste (`contrast.test.ts`).
 - O emblema e o logotipo são SVG originais (`brand.ts`). `pnpm brand:assets` gera todos os
   ícones (favicon, PWA, Android adaptativo e splash) a partir deles, sem imagens externas.
+  **Cuidado:** os arquivos em `apps/mobile/assets/images/` entram na "impressão digital" do app
+  (`runtimeVersion: fingerprint`); regenerá-los muda a versão e o APK instalado deixa de receber OTA.
+  Só regenere os do app junto com um APK novo (por isso, em 2026-10-23, só os do site foram trocados).
 - Fontes: Cinzel (títulos), Alegreya (textos de leitura) e Inter (interface). A web as serve
   pelo próprio domínio (`next/font`), e o mobile as embute no app (`@expo-google-fonts`).
 

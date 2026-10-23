@@ -1003,7 +1003,7 @@ const styles = StyleSheet.create({
   },
   stepChipCurrent: {
     borderColor: 'rgba(206, 191, 157, 0.7)',
-    backgroundColor: 'rgba(228, 216, 189, 0.08)',
+    backgroundColor: 'rgba(245, 237, 231, 0.08)',
   },
   levelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   footer: {

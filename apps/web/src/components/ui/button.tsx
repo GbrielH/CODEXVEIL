@@ -13,8 +13,8 @@ const base =
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    'border border-wine-500/70 bg-primary text-primary-fg shadow-[inset_0_1px_0_rgb(228_216_189/0.14)] ' +
-    'hover:bg-primary-hover active:bg-primary-pressed',
+    'border border-wine-400/50 bg-primary text-primary-fg shadow-[inset_0_1px_0_rgb(245_237_231/0.16),0_0_22px_-8px_rgb(107_59_198/0.9)] ' +
+    'hover:bg-primary-hover hover:shadow-[inset_0_1px_0_rgb(245_237_231/0.16),0_0_26px_-6px_rgb(168_139_255/0.8)] active:bg-primary-pressed',
   secondary:
     'border border-line-strong bg-raised text-fg hover:border-silver-400/60 hover:bg-hover active:bg-card',
   ghost: 'text-fg-secondary hover:bg-hover hover:text-fg active:bg-card',

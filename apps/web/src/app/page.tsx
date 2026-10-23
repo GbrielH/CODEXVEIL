@@ -1,7 +1,8 @@
 import { listSystems } from '@codexveil/rpg-systems';
 import { BookOpenText, Crown, EyeOff, ScrollText, Smartphone, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Emblem, Wordmark } from '@/components/brand/emblem';
+import Image from 'next/image';
+import { Wordmark } from '@/components/brand/emblem';
 import { Badge } from '@/components/ui/badge';
 import { ButtonLink } from '@/components/ui/button';
 import { Divider } from '@/components/ui/divider';
@@ -123,11 +124,11 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="relative mx-auto flex aspect-square w-full max-w-sm items-center justify-center" aria-hidden="true">
-            <div className="absolute inset-0 rounded-full border border-parchment-400/15" />
-            <div className="absolute inset-8 rounded-full border border-dashed border-wine-400/25" />
-            <div className="absolute inset-16 rounded-full bg-wine-900/40 blur-2xl" />
-            <Emblem className="emblem-glow relative h-48 w-48 sm:h-56 sm:w-56" />
+          {/* Tomo, o grimório mestre (mascote do redesign "Grimório Arcano"). */}
+          <div className="relative mx-auto flex aspect-square w-full max-w-md items-center justify-center" aria-hidden="true">
+            <div className="absolute inset-6 rounded-full bg-wine-700/25 blur-3xl" />
+            <div className="absolute inset-0 rounded-full border border-wine-400/15" />
+            <Image src="/mestre/heroi.webp" alt="" width={640} height={598} priority className="relative h-auto w-full [mask-image:radial-gradient(closest-side,black_62%,transparent)]" />
           </div>
         </section>
 

@@ -19,12 +19,13 @@ describe('contrastRatio', () => {
 });
 
 describe('paleta oficial', () => {
-  it('mantém as quatro cores da identidade', () => {
+  it('mantém as cores da identidade (redesign "Grimório Arcano")', () => {
     expect(brandColors).toEqual({
-      charcoal: '#171719',
-      wine: '#571F2B',
-      silver: '#B8B8BC',
-      parchment: '#E4D8BD',
+      charcoal: '#0B0B0F',
+      wine: '#6B3BC6',
+      lavender: '#A88BFF',
+      silver: '#4B4B5A',
+      parchment: '#F5EDE7',
     });
   });
 });

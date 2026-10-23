@@ -58,7 +58,7 @@ function PickerCard({
       className={cx(
         'flex h-full flex-col gap-1.5 rounded-md border p-3 text-left transition-colors',
         selected
-          ? 'border-parchment-300/70 bg-parchment-200/10 shadow-[inset_0_0_0_1px_rgb(228_216_189/0.25)]'
+          ? 'border-parchment-300/70 bg-parchment-200/10 shadow-[inset_0_0_0_1px_rgb(245_237_231/0.25)]'
           : 'border-line hover:border-line-strong hover:bg-hover',
       )}
     >

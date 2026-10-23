@@ -40,7 +40,7 @@ async function ensureChannel(): Promise<void> {
     name: 'Sessões agendadas',
     description: 'Avisos quando o mestre agenda ou remarca uma sessão.',
     importance: Notifications.AndroidImportance.HIGH,
-    lightColor: '#853244',
+    lightColor: '#8D63E3',
   });
 }
 

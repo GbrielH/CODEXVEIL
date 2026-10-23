@@ -42,7 +42,7 @@ export function CharacterCoverCard({
       ) : (
         <View style={[styles.cover, styles.placeholder]}>
           {classId ? (
-            <CharacterIcon kind="class" id={classId} color="rgba(228, 216, 189, 0.7)" size={72} />
+            <CharacterIcon kind="class" id={classId} color="rgba(245, 237, 231, 0.7)" size={72} />
           ) : (
             <AppText style={styles.initial}>{name.trim().charAt(0).toUpperCase() || '?'}</AppText>
           )}
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: palette.wine[950],
   },
-  initial: { fontFamily: fonts.displayBold, fontSize: 48, color: 'rgba(228, 216, 189, 0.7)' },
+  initial: { fontFamily: fonts.displayBold, fontSize: 48, color: 'rgba(245, 237, 231, 0.7)' },
   body: { padding: spacing[3], gap: 2 },
   title: { fontFamily: fonts.display, fontSize: 18, lineHeight: 24, color: colors.fgAccent },
 });

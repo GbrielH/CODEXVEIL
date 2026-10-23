@@ -127,7 +127,7 @@ export function InviteLetter({ children }: { children: ReactNode }) {
                 height="198"
                 rx="10"
                 fill="#2A0E14"
-                stroke="#C9828E"
+                stroke="#C2AEFF"
                 strokeOpacity="0.45"
               />
             </svg>
@@ -143,8 +143,8 @@ export function InviteLetter({ children }: { children: ReactNode }) {
               <svg viewBox="0 0 300 116" preserveAspectRatio="none" className="h-full w-full">
                 <path
                   d="M1 10 Q1 1 10 1 L290 1 Q299 1 299 10 L150 116 Z"
-                  fill="#571F2B"
-                  stroke="#C9828E"
+                  fill="#6B3BC6"
+                  stroke="#C2AEFF"
                   strokeOpacity="0.35"
                 />
               </svg>

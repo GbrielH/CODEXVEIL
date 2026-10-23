@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   },
   valueSelected: {
     borderColor: 'rgba(206, 191, 157, 0.7)',
-    backgroundColor: 'rgba(228, 216, 189, 0.08)',
+    backgroundColor: 'rgba(245, 237, 231, 0.08)',
   },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
   pool: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },

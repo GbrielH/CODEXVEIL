@@ -4,9 +4,9 @@
 export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <html lang="pt-BR">
-      <body style={{ margin: 0, background: '#171719', color: '#E7E4DD', fontFamily: 'system-ui, sans-serif' }}>
+      <body style={{ margin: 0, background: '#0B0B0F', color: '#ECE7E3', fontFamily: 'system-ui, sans-serif' }}>
         <main style={{ maxWidth: 480, margin: '20vh auto', padding: 16, textAlign: 'center' }}>
-          <h1 style={{ color: '#E4D8BD', fontSize: 24 }}>O Codexveil encontrou um erro</h1>
+          <h1 style={{ color: '#F5EDE7', fontSize: 24 }}>O Codexveil encontrou um erro</h1>
           <p style={{ color: '#B8B8BC', lineHeight: 1.6 }}>
             Recarregue a página. Se o problema continuar, tente novamente mais tarde.
           </p>
@@ -17,9 +17,9 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
               marginTop: 16,
               padding: '12px 20px',
               borderRadius: 6,
-              border: '1px solid #853244',
-              background: '#571F2B',
-              color: '#E4D8BD',
+              border: '1px solid #8D63E3',
+              background: '#6B3BC6',
+              color: '#F5EDE7',
               fontWeight: 600,
               cursor: 'pointer',
             }}

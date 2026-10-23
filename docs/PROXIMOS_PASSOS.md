@@ -476,6 +476,13 @@ de segurança).
 - [x] App: ataques do Tormenta20 (mesmo cálculo e Fúria) e botão de Fúria no D&D; o app carrega os
       livros T20 também para quem só joga. Vai por OTA.
 - [x] Caixinha de dados e painel do Tomo não saem mais da tela ao arrastar (caixinha presa pela base).
+- [x] Redesign visual "Grimório Arcano" (site e app; nenhuma aba mudou): paleta violeta/lavanda/
+      marfim/quase-preto nos tokens (`packages/ui`, contraste AA/AAA testado: 34 testes), cantos mais
+      redondos, botão primário com brilho, item ativo do menu em pílula violeta, estrela na marca.
+      Site: painel com boas-vindas e arte do Tomo + cartões de resumo; login/cadastro com o Tomo à
+      esquerda; página inicial com o Tomo. App: destaque violeta e banner do Tomo no painel (OTA).
+      Ícones do site regenerados; ícone e splash nativos do app ficam para o próximo APK.
+      Verificado com capturas do Chrome sem janela (página inicial e login).
 - [x] Painel do assistente por cima de tudo (portal no `body`; antes ficava atrás dos cards).
 - [x] Mãozinha (cursor) em tudo que é clicável no site: rolagens, abas, botões (`globals.css`).
 - [x] Livro T20 exportado: faltam as origens Acólito e Amigo dos Animais, há poderes com " e"

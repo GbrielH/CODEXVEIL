@@ -98,7 +98,7 @@ const badgeTones: Record<BadgeTone, { background: string; border: string; text: 
   neutral: { background: colors.raised, border: colors.lineStrong, text: colors.fgSecondary },
   brand: { background: '#3D1520', border: 'rgba(176, 74, 96, 0.5)', text: '#E3B5BD' },
   parchment: {
-    background: 'rgba(228, 216, 189, 0.1)',
+    background: 'rgba(245, 237, 231, 0.1)',
     border: 'rgba(187, 167, 125, 0.4)',
     text: colors.fgAccent,
   },

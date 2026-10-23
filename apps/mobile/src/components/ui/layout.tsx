@@ -106,7 +106,7 @@ function EmberAccent() {
     backgroundColor: interpolateColor(
       glow.value,
       [0, 1],
-      [palette.parchment[400], palette.amber[300]],
+      [palette.wine[700], palette.wine[400]],
     ),
     opacity: 0.65 + 0.35 * glow.value,
     shadowOpacity: 0.6 * glow.value,
@@ -189,11 +189,11 @@ const styles = StyleSheet.create({
     padding: spacing[4],
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: 'rgba(187, 167, 125, 0.35)',
+    borderColor: 'rgba(168, 139, 255, 0.35)',
     backgroundColor: palette.wine[950],
     overflow: 'hidden',
   },
-  heroAccent: { width: 3, borderRadius: 2, backgroundColor: palette.parchment[400] },
+  heroAccent: { width: 3, borderRadius: 2, backgroundColor: palette.wine[400] },
   quickRow: { flexDirection: 'row', gap: spacing[2] },
   quick: {
     flex: 1,

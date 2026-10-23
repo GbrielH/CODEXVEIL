@@ -236,7 +236,7 @@ export function DateTimeField({
                     className={cx(
                       'tabular h-9 rounded-md text-sm transition-colors',
                       isChosen(day)
-                        ? 'bg-wine-500 text-parchment-100 shadow-[inset_0_0_0_1px_rgb(228_216_189/0.35)]'
+                        ? 'bg-wine-500 text-parchment-100 shadow-[inset_0_0_0_1px_rgb(245_237_231/0.35)]'
                         : isToday(day)
                           ? 'border border-parchment-300/50 text-fg-accent hover:bg-hover'
                           : 'text-fg-secondary hover:bg-hover hover:text-fg',

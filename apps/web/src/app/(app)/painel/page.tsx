@@ -8,15 +8,15 @@ import {
 } from '@codexveil/database';
 import { summarizeSheet } from '@codexveil/rpg-systems';
 import { formatInviteCode } from '@codexveil/domain';
-import { CalendarClock, KeyRound, Mail, Plus, ScrollText, Swords } from 'lucide-react';
+import { CalendarCheck, CalendarClock, KeyRound, Mail, Plus, ScrollText, Swords, UserRound } from 'lucide-react';
 import type { Metadata, Route } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { CampaignCard } from '@/components/campaigns/campaign-card';
 import { CharacterCard } from '@/components/characters/character-card';
 import { ButtonLink } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Notice } from '@/components/ui/notice';
-import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/states';
 import { requireSessionUser } from '@/lib/auth';
 import { formatDateTime } from '@/lib/format';
@@ -50,21 +50,56 @@ export default async function DashboardPage({ searchParams }: PageProps<'/painel
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader
-        eyebrow="Painel"
-        title={`Olá, ${firstName}`}
-        description="Suas campanhas, convites e próximas sessões num relance."
-        actions={
-          <>
+      {/* Boas-vindas com o Tomo (redesign "Grimório Arcano"). */}
+      <section
+        aria-labelledby="boas-vindas"
+        className="relative overflow-hidden rounded-xl border border-line bg-[radial-gradient(120%_140%_at_85%_20%,rgb(107_59_198/0.35),transparent_60%),linear-gradient(135deg,var(--color-charcoal-850),var(--color-charcoal-950))] px-6 py-8 shadow-[0_20px_50px_-30px_rgb(107_59_198/0.8)] sm:px-10 sm:py-10"
+      >
+        <Image
+          src="/mestre/heroi.webp"
+          alt=""
+          width={640}
+          height={598}
+          priority
+          className="pointer-events-none absolute -right-10 -bottom-16 hidden h-[130%] w-auto opacity-90 [mask-image:radial-gradient(closest-side,black_55%,transparent)] md:block"
+        />
+        <div className="relative flex max-w-xl flex-col gap-4">
+          <p className="eyebrow text-wine-300">Painel</p>
+          <h1 id="boas-vindas" className="text-3xl leading-tight sm:text-4xl">
+            Bem-vindo de volta, {firstName}!
+          </h1>
+          <p className="text-fg-secondary">Que suas próximas sessões sejam lendárias.</p>
+          <div className="flex flex-wrap gap-3 pt-1">
             <ButtonLink href={routes.newCampaign} icon={<Plus className="h-4 w-4" aria-hidden="true" />}>
               Nova campanha
             </ButtonLink>
             <ButtonLink href="/convite" variant="secondary" icon={<KeyRound className="h-4 w-4" aria-hidden="true" />}>
               Entrar com código
             </ButtonLink>
-          </>
-        }
-      />
+          </div>
+        </div>
+      </section>
+
+      <ul className="grid gap-4 sm:grid-cols-3" aria-label="Resumo">
+        {[
+          { href: routes.campaigns, icon: <ScrollText className="h-5 w-5" aria-hidden="true" />, title: 'Minhas campanhas', value: `${active.length} ${active.length === 1 ? 'ativa' : 'ativas'}` },
+          { href: routes.campaigns, icon: <CalendarCheck className="h-5 w-5" aria-hidden="true" />, title: 'Próximas sessões', value: `${sessions.length} ${sessions.length === 1 ? 'agendada' : 'agendadas'}` },
+          { href: routes.characters, icon: <UserRound className="h-5 w-5" aria-hidden="true" />, title: 'Personagens', value: `${characters.length} ${characters.length === 1 ? 'ficha' : 'fichas'}` },
+        ].map((stat) => (
+          <li key={stat.title}>
+            <Link
+              href={stat.href as Route}
+              className="flex items-center gap-4 rounded-lg border border-line bg-card px-4 py-4 transition-colors hover:border-wine-400/50 hover:bg-hover"
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-md border border-wine-400/30 bg-wine-900/60 text-wine-300">{stat.icon}</span>
+              <span>
+                <span className="block text-sm font-medium text-fg">{stat.title}</span>
+                <span className="block text-xs text-fg-muted">{stat.value}</span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
 
       <Notice value={params.aviso} />
 
@@ -99,11 +134,11 @@ export default async function DashboardPage({ searchParams }: PageProps<'/painel
         <section aria-labelledby="campanhas-andamento" className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-4">
             <h2 id="campanhas-andamento" className="text-xl">
-              Campanhas em andamento
+              Campanhas recentes
             </h2>
             {campaigns.length > 0 ? (
-              <Link href={routes.campaigns} className="text-sm text-fg-secondary underline underline-offset-4 hover:text-fg">
-                Ver todas{archivedCount > 0 ? ` (${archivedCount} arquivada${archivedCount > 1 ? 's' : ''})` : ''}
+              <Link href={routes.campaigns} className="text-sm text-wine-300 hover:text-wine-200">
+                Ver todas{archivedCount > 0 ? ` (${archivedCount} arquivada${archivedCount > 1 ? 's' : ''})` : ''} →
               </Link>
             ) : null}
           </div>

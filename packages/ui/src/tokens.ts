@@ -2,59 +2,65 @@
  * Tokens do design system do Codexveil — fonte única de verdade para web (Tailwind/CSS)
  * e mobile (React Native).
  *
- * Direção visual: "Dark Fantasy Premium" + "Grimório Vivo".
- * As quatro cores oficiais estão em `brandColors`; as escalas derivadas existem para
- * estados (hover, foco, desabilitado) e para garantir contraste legível.
+ * Direção visual (redesign de 2026-10-23): "Grimório Arcano" — quase-preto, violeta arcano,
+ * lavanda luminosa e marfim, com o mascote Tomo. As cores oficiais estão em `brandColors`; as
+ * escalas derivadas existem para estados (hover, foco, desabilitado) e para garantir contraste.
+ *
+ * Os nomes das escalas (`wine`, `parchment`, `charcoal`, `silver`) foram mantidos para não
+ * mexer em todas as telas: `wine` agora é a escala violeta e `parchment`, a marfim.
  *
  * Este arquivo não pode importar outros módulos: ele é lido diretamente pelo Node
  * (type stripping) no script que gera `css/tokens.css`.
  */
 
-/** As quatro cores oficiais da identidade do Codexveil. */
+/** Cores oficiais da identidade do Codexveil (paleta do redesign). */
 export const brandColors = {
-  charcoal: '#171719',
-  wine: '#571F2B',
-  silver: '#B8B8BC',
-  parchment: '#E4D8BD',
+  charcoal: '#0B0B0F',
+  wine: '#6B3BC6',
+  lavender: '#A88BFF',
+  silver: '#4B4B5A',
+  parchment: '#F5EDE7',
 } as const;
 
 export const palette = {
   charcoal: {
-    950: '#0F0F11',
+    950: '#07070A',
     900: brandColors.charcoal,
-    850: '#1C1C1F',
-    800: '#222226',
-    700: '#2C2C31',
-    600: '#3A3A40',
-    500: '#4A4A51',
+    850: '#111118',
+    800: '#16161F',
+    700: '#20202C',
+    600: '#2C2B3B',
+    500: brandColors.silver,
   },
+  /** Violeta arcano (nome histórico: "wine"). */
   wine: {
-    950: '#2A0E14',
-    900: '#3D1520',
-    800: '#4A1A24',
+    950: '#140A29',
+    900: '#1D0F3D',
+    800: '#2B1660',
     700: brandColors.wine,
-    600: '#692634',
-    500: '#853244',
-    400: '#B04A60',
-    300: '#C9828E',
-    200: '#E3B5BD',
-    100: '#F3E1E4',
+    600: '#7A4AD6',
+    500: '#8D63E3',
+    400: brandColors.lavender,
+    300: '#C2AEFF',
+    200: '#DCD0FF',
+    100: '#F0EBFF',
   },
   silver: {
-    100: '#ECECEE',
-    200: '#D4D4D8',
-    300: brandColors.silver,
-    400: '#9A9AA0',
-    500: '#85858C',
-    600: '#5E5E64',
+    100: '#EEEDF4',
+    200: '#D4D2DE',
+    300: '#B6B3C6',
+    400: '#9C98AF',
+    500: '#868299',
+    600: brandColors.silver,
   },
+  /** Marfim (nome histórico: "parchment"). */
   parchment: {
-    50: '#F7F1E3',
-    100: '#EEE5CF',
+    50: '#FCF9F6',
+    100: '#F9F4EF',
     200: brandColors.parchment,
-    300: '#D2C29F',
-    400: '#BBA77D',
-    500: '#9C8760',
+    300: '#E4D7CC',
+    400: '#C9B7A9',
+    500: '#A8958A',
   },
   ink: {
     900: '#2B2420',
@@ -79,24 +85,24 @@ export const colors = {
   hover: palette.charcoal[700],
   overlay: 'rgba(8, 8, 10, 0.72)',
 
-  // Linhas e bordas (translúcidas para se adaptarem a qualquer superfície)
-  lineSubtle: 'rgba(184, 184, 188, 0.10)',
-  line: 'rgba(184, 184, 188, 0.18)',
-  lineStrong: 'rgba(184, 184, 188, 0.32)',
+  // Linhas e bordas (translúcidas, com um toque de lavanda)
+  lineSubtle: 'rgba(176, 164, 220, 0.09)',
+  line: 'rgba(176, 164, 220, 0.16)',
+  lineStrong: 'rgba(176, 164, 220, 0.30)',
 
   // Texto sobre superfícies escuras
-  fg: '#E7E4DD',
+  fg: '#ECE7E3',
   fgSecondary: palette.silver[300],
   fgMuted: palette.silver[400],
   fgSubtle: palette.silver[500],
   fgAccent: palette.parchment[200],
   fgBrand: palette.wine[300],
 
-  // Ação primária (vinho)
-  primary: palette.wine[700],
-  primaryHover: palette.wine[600],
-  primaryPressed: palette.wine[800],
-  primaryFg: palette.parchment[200],
+  // Ação primária (violeta arcano, um tom abaixo da marca para o texto marfim ficar AAA)
+  primary: '#5A2FB0',
+  primaryHover: '#5F33B8',
+  primaryPressed: '#4C2799',
+  primaryFg: palette.parchment[50],
 
   // Pergaminho (notas, documentos, registros antigos)
   parchment: palette.parchment[200],
@@ -105,8 +111,8 @@ export const colors = {
   ink: palette.ink[900],
   inkMuted: palette.ink[700],
 
-  // Foco: anel de alto contraste sobre o fundo escuro
-  focus: palette.parchment[200],
+  // Foco: anel lavanda de alto contraste sobre o fundo escuro
+  focus: palette.wine[400],
 
   // Estados
   success: palette.verdigris[400],
@@ -132,11 +138,11 @@ export type ColorToken = keyof typeof colors;
  * acento. Ativado no site por `data-theme="light"` no <html>.
  */
 export const lightColors = {
-  canvas: '#F3EDE0',
-  sunken: '#E9E1CF',
-  raised: '#FAF6EE',
-  card: '#FFFCF5',
-  hover: '#ECE3D0',
+  canvas: '#F5EDE7',
+  sunken: '#ECE2DA',
+  raised: '#FBF7F3',
+  card: '#FFFFFF',
+  hover: '#EDE4F7',
   overlay: 'rgba(23, 23, 25, 0.5)',
 
   lineSubtle: 'rgba(43, 36, 32, 0.08)',
@@ -147,12 +153,12 @@ export const lightColors = {
   fgSecondary: '#4A4038',
   fgMuted: '#5E5248',
   fgSubtle: '#6A5E54',
-  fgAccent: palette.wine[700],
-  fgBrand: palette.wine[500],
+  fgAccent: '#4A2596',
+  fgBrand: '#5A2FB0',
 
-  primary: palette.wine[700],
-  primaryHover: palette.wine[600],
-  primaryPressed: palette.wine[800],
+  primary: '#5A2FB0',
+  primaryHover: '#5F33B8',
+  primaryPressed: '#4C2799',
   primaryFg: palette.parchment[50],
 
   parchment: palette.parchment[200],
@@ -191,11 +197,11 @@ export const lightPaletteOverrides = {
   'verdigris-400': '#3C8A5C',
   'arcane-300': '#2C5689',
   'arcane-400': '#3F72B5',
-  'wine-200': palette.wine[600],
-  'wine-300': palette.wine[500],
-  'wine-900': '#EBD3D8',
-  'wine-950': '#F3E1E4',
-  'parchment-100': palette.wine[700],
+  'wine-200': '#5A2FB0',
+  'wine-300': '#5F33B8',
+  'wine-900': '#E6DCFA',
+  'wine-950': '#F1EBFC',
+  'parchment-100': '#4A2596',
   'parchment-200': '#6E5C3A',
   'parchment-300': '#65512F',
   'parchment-400': '#7A6440',
@@ -224,13 +230,13 @@ export const fontSizes = {
   '5xl': [48, 52],
 } as const satisfies Record<string, readonly [number, number]>;
 
-/** Raios discretos: cantos mais retos combinam com a estética de tomo/encadernação. */
+/** Raios: um pouco mais arredondados no redesign, sem perder o ar de encadernação. */
 export const radii = {
   xs: 2,
   sm: 4,
-  md: 6,
-  lg: 10,
-  xl: 14,
+  md: 8,
+  lg: 12,
+  xl: 16,
   full: 9999,
 } as const;
 
@@ -258,9 +264,9 @@ export const motion = {
 } as const;
 
 export const shadows = {
-  card: '0 1px 0 0 rgba(228, 216, 189, 0.04) inset, 0 8px 24px -12px rgba(0, 0, 0, 0.6)',
-  overlay: '0 24px 64px -16px rgba(0, 0, 0, 0.75)',
-  glow: '0 0 0 1px rgba(201, 130, 142, 0.35), 0 0 24px -4px rgba(87, 31, 43, 0.65)',
+  card: '0 1px 0 0 rgba(168, 139, 255, 0.05) inset, 0 10px 28px -14px rgba(0, 0, 0, 0.75)',
+  overlay: '0 24px 64px -16px rgba(0, 0, 0, 0.8)',
+  glow: '0 0 0 1px rgba(168, 139, 255, 0.40), 0 0 28px -4px rgba(107, 59, 198, 0.70)',
 } as const;
 
 /** Tamanho mínimo de alvos de toque (WCAG 2.5.5 / diretrizes Android). */

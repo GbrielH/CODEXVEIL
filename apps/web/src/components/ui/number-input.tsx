@@ -89,7 +89,7 @@ export function NumberInput({
         'tabular h-11 rounded-md border bg-sunken px-3 text-center text-fg',
         defaultWidth(className),
         'transition-[border-color,box-shadow] duration-150 ease-codex hover:border-silver-400/50',
-        'focus-visible:border-parchment-300 focus-visible:shadow-[0_0_0_3px_rgb(228_216_189/0.18)] focus-visible:outline-none',
+        'focus-visible:border-parchment-300 focus-visible:shadow-[0_0_0_3px_rgb(245_237_231/0.18)] focus-visible:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-60',
         invalid ? 'border-ember-400/80' : 'border-line-strong',
         className,

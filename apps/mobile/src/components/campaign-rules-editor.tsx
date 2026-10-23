@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   },
   optionSelected: {
     borderColor: 'rgba(206, 191, 157, 0.7)',
-    backgroundColor: 'rgba(228, 216, 189, 0.08)',
+    backgroundColor: 'rgba(245, 237, 231, 0.08)',
   },
   link: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36 },
 });

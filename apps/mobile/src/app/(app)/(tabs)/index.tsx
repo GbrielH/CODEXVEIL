@@ -10,7 +10,7 @@ import { formatInviteCode } from '@codexveil/domain';
 import { summarizeSheet } from '@codexveil/rpg-systems';
 import { useRouter } from 'expo-router';
 import { CalendarClock, Dices, Mail, ScrollText, Swords } from 'lucide-react-native';
-import { View } from 'react-native';
+import { Image, View, type ImageSourcePropType } from 'react-native';
 import { CampaignCoverCard } from '@/components/campaign-cover-card';
 import { CharacterAvatar } from '@/components/character-avatar';
 import {
@@ -28,6 +28,9 @@ import { useAsyncData } from '@/lib/hooks';
 import { useUserId } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
+
+// Arte do Tomo (empacotada no app; vai junto na atualização OTA).
+const TOMO_HERO = require('../../../../assets/images/tomo-heroi.webp') as ImageSourcePropType;
 
 const dateFormat = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'medium',
@@ -88,6 +91,29 @@ export default function DashboardScreen() {
       onRefresh={reload}
     >
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
+      {/* Boas-vindas com o Tomo (redesign "Grimório Arcano"). */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+          padding: 16,
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: 'rgba(168, 139, 255, 0.30)',
+          backgroundColor: '#140A29',
+          overflow: 'hidden',
+        }}
+      >
+        <View style={{ flex: 1, gap: 4 }}>
+          <AppText variant="eyebrow" style={{ color: colors.fgBrand }}>
+            Bem-vindo de volta
+          </AppText>
+          <AppText style={{ color: colors.fgAccent, fontSize: 16 }}>Suas campanhas, em um só lugar.</AppText>
+          <AppText variant="small">Que suas próximas sessões sejam lendárias.</AppText>
+        </View>
+        <Image source={TOMO_HERO} style={{ width: 120, height: 112 }} resizeMode="contain" accessibilityIgnoresInvertColors />
+      </View>
       {data ? (
         <>
           {current?.campaignId ? (

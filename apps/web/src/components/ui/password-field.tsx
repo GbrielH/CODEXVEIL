@@ -53,7 +53,7 @@ export function PasswordField({
           aria-label={visible ? 'Ocultar senha' : 'Mostrar senha'}
           aria-pressed={visible}
           aria-controls={id}
-          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-fg-muted transition-colors hover:text-fg focus-visible:text-fg focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgb(228_216_189/0.18)]"
+          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-fg-muted transition-colors hover:text-fg focus-visible:text-fg focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgb(245_237_231/0.18)]"
         >
           {visible ? (
             <EyeOff className="h-5 w-5" aria-hidden="true" />

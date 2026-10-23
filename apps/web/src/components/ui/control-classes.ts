@@ -4,7 +4,7 @@ const controlBase =
   'rounded-md border bg-sunken px-3 text-fg placeholder:text-fg-subtle ' +
   'transition-[border-color,box-shadow] duration-150 ease-codex ' +
   'hover:border-silver-400/50 focus-visible:border-parchment-300 focus-visible:outline-none ' +
-  'focus-visible:shadow-[0_0_0_3px_rgb(228_216_189/0.18)] disabled:cursor-not-allowed disabled:opacity-60';
+  'focus-visible:shadow-[0_0_0_3px_rgb(245_237_231/0.18)] disabled:cursor-not-allowed disabled:opacity-60';
 
 /**
  * Sem classe de largura em `classes`, o controle ocupa a largura toda. Duas larguras na mesma

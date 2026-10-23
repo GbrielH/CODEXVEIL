@@ -50,7 +50,7 @@ export function CampaignCoverCard({
         <View style={[styles.cover, styles.placeholder]}>
           <AppText style={styles.initials}>{initials(campaign.name)}</AppText>
           <View style={styles.placeholderIcon}>
-            <ScrollText size={18} color="rgba(228, 216, 189, 0.3)" />
+            <ScrollText size={18} color="rgba(245, 237, 231, 0.3)" />
           </View>
         </View>
       )}
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.wine[950],
   },
   placeholderIcon: { position: 'absolute', right: spacing[3], bottom: spacing[3] },
-  initials: { fontFamily: fonts.displayBold, fontSize: 34, color: 'rgba(228, 216, 189, 0.7)' },
+  initials: { fontFamily: fonts.displayBold, fontSize: 34, color: 'rgba(245, 237, 231, 0.7)' },
   body: { padding: spacing[3], gap: 6 },
   title: { fontFamily: fonts.sansSemiBold, fontSize: 17, lineHeight: 22, color: colors.fg },
 });

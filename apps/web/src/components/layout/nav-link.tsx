@@ -32,7 +32,7 @@ export function NavLink({ href, icon, label, variant }: NavLinkProps) {
           active ? 'text-fg-accent' : 'text-fg-muted hover:text-fg',
         )}
       >
-        <span className={cx('rounded-full px-4 py-1 transition-colors', active && 'bg-wine-900')}>
+        <span className={cx('rounded-full px-4 py-1 transition-colors', active && 'bg-wine-700 text-parchment-50 shadow-[0_0_16px_-4px_rgb(107_59_198/0.9)]')}>
           {icon}
         </span>
         {label}
@@ -47,16 +47,13 @@ export function NavLink({ href, icon, label, variant }: NavLinkProps) {
       title={label}
       className={cx(
         'group relative flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors group-data-[collapsed=true]/shell:justify-center group-data-[collapsed=true]/shell:px-0',
-        active ? 'bg-wine-900/70 text-fg-accent' : 'text-fg-secondary hover:bg-hover hover:text-fg',
+        // Item ativo: pílula violeta com brilho suave (redesign "Grimório Arcano").
+        active
+          ? 'bg-gradient-to-r from-wine-700 to-wine-800 text-parchment-50 shadow-[0_0_20px_-6px_rgb(107_59_198/0.9)]'
+          : 'text-fg-secondary hover:bg-hover hover:text-fg',
       )}
     >
-      {active ? (
-        <span
-          className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-parchment-300"
-          aria-hidden="true"
-        />
-      ) : null}
-      <span className={active ? 'text-fg-brand' : 'text-fg-muted group-hover:text-fg-secondary'}>
+      <span className={active ? 'text-parchment-50' : 'text-fg-muted group-hover:text-wine-300'}>
         {icon}
       </span>
       <span className="truncate group-data-[collapsed=true]/shell:sr-only">{label}</span>

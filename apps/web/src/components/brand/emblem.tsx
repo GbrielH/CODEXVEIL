@@ -59,6 +59,10 @@ export function Wordmark({ className, size = 'md' }: WordmarkProps) {
       >
         Codexveil
       </span>
+      {/* Estrela de quatro pontas da identidade (o "símbolo" do redesign). */}
+      <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0 text-wine-400" aria-hidden="true">
+        <path d="M8 0L9.4 6.6L16 8L9.4 9.4L8 16L6.6 9.4L0 8L6.6 6.6Z" fill="currentColor" />
+      </svg>
     </span>
   );
 }
