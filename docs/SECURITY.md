@@ -116,6 +116,14 @@ apaga (`private.owns_book_pack`). Testado em `packages/database/test/rls/books.t
   e esses redirecionamentos são enviados com `Cache-Control: private, no-store`.
 - Mobile: sessão no SQLite privado do app, com renovação pausada em segundo plano.
 
+## Assistente de IA
+
+- A chave `ANTHROPIC_API_KEY` fica só no servidor (Vercel). A rota `/api/assistente` exige sessão.
+- O contexto (campanha, papel, ficha aberta) é lido com o cliente do Supabase da própria pessoa:
+  o RLS garante que segredos do mestre não chegam a jogadores.
+- Cota diária no banco (`consume_assistant_question`, 30 por dia, limite fixo no SQL); pergunta de
+  até 2.000 caracteres e contexto de até 12.000. Conversas não são gravadas.
+
 ## Cabeçalhos HTTP (web)
 
 `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,

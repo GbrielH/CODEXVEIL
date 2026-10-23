@@ -2,6 +2,7 @@ import { getProfile } from '@codexveil/database';
 import type { ReactNode } from 'react';
 import { AppShell } from '@/components/layout/app-shell';
 import { requireSessionUser } from '@/lib/auth';
+import { assistantEnabled } from '@/lib/env';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /** Conteúdo por usuário: nunca pré-renderizado nem compartilhado entre requisições. */
@@ -16,6 +17,7 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
   return (
     <AppShell
       displayName={profile?.displayName ?? 'Aventureiro'}
+      assistant={assistantEnabled()}
       motion={profile?.preferences.motion ?? 'system'}
     >
       {children}

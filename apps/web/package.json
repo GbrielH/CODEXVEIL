@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@3d-dice/dice-box-threejs": "0.0.12",
+    "@anthropic-ai/sdk": "^1.1.0",
     "@codexveil/database": "workspace:*",
     "@codexveil/domain": "workspace:*",
     "@codexveil/rpg-systems": "workspace:*",

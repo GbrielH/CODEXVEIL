@@ -25,6 +25,7 @@
     "@expo-google-fonts/cinzel": "^0.4.0",
     "@expo-google-fonts/inter": "^0.4.0",
     "@expo/metro-runtime": "~57.0.17",
+    "@opentelemetry/api": "1.10.0",
     "@supabase/supabase-js": "catalog:",
     "expo": "~57.0.30",
     "expo-clipboard": "~57.0.2",

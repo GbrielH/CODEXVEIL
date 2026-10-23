@@ -15,6 +15,32 @@ export type Database = {
   };
   public: {
     Tables: {
+      assistant_usage: {
+        Row: {
+          day: string;
+          questions: number;
+          user_id: string;
+        };
+        Insert: {
+          day?: string;
+          questions?: number;
+          user_id: string;
+        };
+        Update: {
+          day?: string;
+          questions?: number;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'assistant_usage_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       book_entries: {
         Row: {
           data: Json;
@@ -1913,6 +1939,10 @@ export type Database = {
           p_campaign_id: string;
         };
         Returns: Json;
+      };
+      consume_assistant_question: {
+        Args: never;
+        Returns: number;
       };
       create_character: {
         Args: {

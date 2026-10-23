@@ -169,6 +169,10 @@ Migração `20261018120000_gameplay_turns.sql`:
 Migração `20261023100000_session_attendance.sql`: tabela `session_attendance` (presença: `yes`/`no`
 por pessoa e sessão; membros leem; cada um responde só por si, em sessão agendada não iniciada).
 
+Migração `20261023120000_assistant_usage.sql`: tabela `assistant_usage` (perguntas por pessoa e
+dia, UTC; a pessoa só lê a própria linha) e a função `consume_assistant_question()` (SECURITY
+DEFINER, limite fixo de 30 por dia; devolve quantas restam ou -1). As conversas não são gravadas.
+
 Migração `20261023110000_character_token_image.sql`: `characters.token_path` (imagem do token no
 mapa; mesma pasta do retrato).
 

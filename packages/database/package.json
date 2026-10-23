@@ -16,6 +16,7 @@
   "dependencies": {
     "@codexveil/domain": "workspace:*",
     "@codexveil/validation": "workspace:*",
+    "@opentelemetry/api": "1.10.0",
     "@supabase/supabase-js": "catalog:",
     "zod": "catalog:"
   },

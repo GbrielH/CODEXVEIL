@@ -430,6 +430,16 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-23 — assistente de IA (card no menu)
+
+- [x] Card "Assistente" acima do perfil/"Sair" (site), painel de conversa por cima da página,
+      streaming, botão copiar e aviso de que a regra do livro vale.
+- [x] Rota `/api/assistente` (Claude `claude-opus-5-5`), contexto pela rota com o RLS da pessoa.
+- [x] Cota de 30 perguntas/dia (migração `20261023120000_assistant_usage.sql`, aplicada).
+- [ ] Criar `ANTHROPIC_API_KEY` na Vercel (o card só aparece com ela) e testar uma pergunta real.
+- [ ] Livro T20 exportado: faltam as origens Acólito e Amigo dos Animais, há poderes com " e"
+      sobrando ou cortados e perigos classificados como ameaças; corrigir em `scripts/books/t20.py`.
+
 ### 2026-10-23 — rodada de correções (fichas automáticas, sessão, presença, mapa)
 
 - **Ataques:** acerto, dano e crítico lado a lado (site e app).

@@ -5,6 +5,11 @@
 
 ## Estado atual
 
+**2026-10-23 (assistente de IA):** card no menu do site, rota `/api/assistente` com streaming e
+cota diária no banco (migração `20261023120000` aplicada). `pnpm check` 20/20 e `pnpm build`.
+**Não verificado:** uma resposta real, pois falta a `ANTHROPIC_API_KEY` na Vercel; sem ela o card
+fica oculto.
+
 **2026-10-21 (grade da sessão):** grade implementada conforme [`GRID.md`](GRID.md), passos 1 a 6:
 tamanho obrigatório das criaturas, banco do mapa (migrações `20261021100000`, `20261021100100` e
 `20261021110000` aplicadas), mapa no site (mestre monta; jogador vê e move o próprio token),
@@ -300,6 +305,8 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-23:** criar `ANTHROPIC_API_KEY` na Vercel e testar o assistente; corrigir a extração
+  do livro T20 (origens faltando, textos cortados, perigos como ameaças).
 - **2026-10-20 (tradução do SRD):** monstros e itens mágicos 100% em português (`pnpm check`
   20/20). Próximo: pedidos de 2026-10-20 (sessão presencial/online, grid, ação de combate do
   mestre, Treinamento em Perícia, descrições, aba Sessão, perícias marcadas, biblioteca T20,

@@ -30,3 +30,8 @@ export function siteUrl(): string {
  * (deploy/supabase/config.toml) e definir NEXT_PUBLIC_AUTH_GOOGLE=on na Vercel.
  */
 export const googleAuthEnabled = process.env.NEXT_PUBLIC_AUTH_GOOGLE?.trim() === 'on';
+
+/** Assistente de IA ligado? Só com ANTHROPIC_API_KEY definida no servidor (Vercel). */
+export function assistantEnabled(): boolean {
+  return Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+}

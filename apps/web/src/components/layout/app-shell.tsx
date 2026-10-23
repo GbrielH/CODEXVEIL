@@ -15,6 +15,7 @@ import { Emblem, Wordmark } from '@/components/brand/emblem';
 import { EmberField } from '@/components/brand/ember-field';
 import { Avatar } from '@/components/ui/avatar';
 import { routes } from '@/lib/routes';
+import { AssistantCard } from './assistant-card';
 import { NavLink } from './nav-link';
 import { ShellFrame, SidebarToggle } from './shell-frame';
 import { ThemeToggle } from './theme-toggle';
@@ -60,6 +61,8 @@ const navItems: NavItem[] = [
 
 interface AppShellProps {
   displayName: string;
+  /** Mostra o card do assistente de IA (só com a chave configurada no servidor). */
+  assistant?: boolean;
   motion: 'system' | 'reduce';
   children: ReactNode;
 }
@@ -87,7 +90,7 @@ function SignOutButton({ compact = false }: { compact?: boolean }) {
  * Estrutura das áreas autenticadas: barra lateral no desktop e navegação inferior no
  * celular (alvos de toque de 56 px), com o conteúdo principal ao centro.
  */
-export function AppShell({ displayName, motion, children }: AppShellProps) {
+export function AppShell({ displayName, assistant = false, motion, children }: AppShellProps) {
   return (
     <ShellFrame motion={motion}>
       <EmberField />
@@ -109,6 +112,16 @@ export function AppShell({ displayName, motion, children }: AppShellProps) {
             <NavLink key={item.href} {...item} variant="sidebar" />
           ))}
         </nav>
+        {assistant ? (
+          <div className="px-3 pb-3 group-data-[collapsed=true]/shell:px-2">
+            <span className="group-data-[collapsed=true]/shell:hidden">
+              <AssistantCard />
+            </span>
+            <span className="hidden group-data-[collapsed=true]/shell:block">
+              <AssistantCard compact />
+            </span>
+          </div>
+        ) : null}
         <div className="flex items-center gap-3 border-t border-line px-4 py-4 group-data-[collapsed=true]/shell:flex-col group-data-[collapsed=true]/shell:px-2">
           <Avatar name={displayName} size="sm" />
           <div className="min-w-0 flex-1 group-data-[collapsed=true]/shell:hidden">
@@ -137,6 +150,7 @@ export function AppShell({ displayName, motion, children }: AppShellProps) {
             </span>
           </Link>
           <div className="flex items-center gap-1">
+            {assistant ? <AssistantCard compact /> : null}
             <ThemeToggle compact />
             <Avatar name={displayName} size="sm" />
             <SignOutButton compact />

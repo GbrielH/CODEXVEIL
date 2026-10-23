@@ -86,6 +86,10 @@ São todas públicas: só a URL do projeto e a **publishable key** (Project Sett
 As variáveis `NEXT_PUBLIC_*` e `EXPO_PUBLIC_*` entram no bundle **no momento do build**.
 Depois de alterá-las, gere o build de novo.
 
+**Segredo do servidor (só web):** `ANTHROPIC_API_KEY` liga o assistente de IA (card no menu). É
+lida só pela rota `/api/assistente` na Vercel (Production); nunca vai para o navegador nem para o
+app. Sem ela, o card não aparece. Basta um novo deploy depois de criá-la.
+
 ## 4. Site (Next.js)
 
 ### Vercel (em uso)
