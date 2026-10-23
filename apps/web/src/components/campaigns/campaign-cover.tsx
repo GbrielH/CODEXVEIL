@@ -14,9 +14,12 @@ export function CampaignCover({
   name: string;
   className?: string;
 }) {
+  // Quem passa `absolute` (fundo de banner/cartão) não pode receber `relative`: no CSS do
+  // Tailwind o `relative` vence e a capa voltava ao fluxo, esticando o banner.
+  const position = className?.split(/\s+/).includes('absolute') ? '' : 'relative';
   if (url) {
     return (
-      <span className={cx('relative block overflow-hidden bg-wine-950', className)}>
+      <span className={cx(position, 'block overflow-hidden bg-wine-950', className)}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={url} alt="" className="h-full w-full object-cover" />
       </span>
@@ -24,7 +27,7 @@ export function CampaignCover({
   }
   // Sem capa: a paisagem arcana da própria campanha (gerada pelo nome).
   return (
-    <span className={cx('relative block overflow-hidden bg-wine-950', className)} aria-hidden="true">
+    <span className={cx(position, 'block overflow-hidden bg-wine-950', className)} aria-hidden="true">
       <ArcaneScene seed={name} />
     </span>
   );

@@ -75,7 +75,7 @@ export default async function DashboardPage({ searchParams }: PageProps<'/painel
             width={640}
             height={598}
             priority
-            className="pointer-events-none absolute -right-6 -bottom-10 hidden h-[115%] w-auto opacity-95 [mask-image:radial-gradient(closest-side,black_55%,transparent)] 2xl:block"
+            className="pointer-events-none absolute -right-4 -bottom-8 hidden h-80 w-auto opacity-95 [mask-image:radial-gradient(closest-side,black_55%,transparent)] 2xl:block"
           />
           <div className="flex min-h-64 max-w-xl flex-col justify-center gap-3 px-6 py-8 sm:px-10">
             <p className="eyebrow text-wine-300">Olá, {firstName}</p>
