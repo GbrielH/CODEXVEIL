@@ -26,3 +26,6 @@ allowBuilds:
   sharp: true
   # Apenas confere o binário nativo, que já vem como dependência opcional por plataforma.
   unrs-resolver: false
+  # SDK do Gemini (assistente de IA): scripts de pós-instalação desnecessários para o uso no servidor.
+  '@google/genai': false
+  protobufjs: false
