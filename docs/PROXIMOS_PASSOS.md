@@ -483,6 +483,15 @@ de segurança).
       esquerda; página inicial com o Tomo. App: destaque violeta e banner do Tomo no painel (OTA).
       Ícones do site regenerados; ícone e splash nativos do app ficam para o próximo APK.
       Verificado com capturas do Chrome sem janela (página inicial e login).
+- [x] Redesign, 2ª etapa (linguagem visual dos mocks, não só cores): paisagem arcana gerada por
+      código (`packages/ui/src/scene.ts`: céu, lua, montanhas e castelo; cada campanha tem a sua pela
+      semente do nome) como capa padrão, banner da campanha e fundos; círculo arcano animado atrás
+      do Tomo (`arcane-sigil.tsx`, para com movimento reduzido); barra superior com busca de
+      campanhas e personagens, sino de convites e avatar; cartão do usuário "Online" no menu; painel
+      com destaque da campanha mais recente ("Continuar campanha"), resumos, "Suas campanhas" e coluna
+      de atalhos/agenda/personagens; cards de campanha com a arte e o título por cima; página inicial
+      "Sua campanha. Seu mundo. Seus segredos."; login com a paisagem e o círculo. App: capas com a
+      paisagem e banner do painel com a cena (OTA). Capturas conferidas: página inicial e login.
 - [x] Painel do assistente por cima de tudo (portal no `body`; antes ficava atrás dos cards).
 - [x] Mãozinha (cursor) em tudo que é clicável no site: rolagens, abas, botões (`globals.css`).
 - [x] Livro T20 exportado: faltam as origens Acólito e Amigo dos Animais, há poderes com " e"

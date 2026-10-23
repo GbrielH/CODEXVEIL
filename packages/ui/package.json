@@ -10,7 +10,8 @@
     "./brand": "./src/brand.ts",
     "./glyphs": "./src/glyphs.ts",
     "./character-icons": "./src/character-icons.ts",
-    "./tokens.css": "./css/tokens.css"
+    "./tokens.css": "./css/tokens.css",
+    "./scene": "./src/scene.ts"
   },
   "scripts": {
     "build:css": "node scripts/build-css.ts",

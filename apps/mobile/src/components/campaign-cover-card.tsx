@@ -1,21 +1,12 @@
 import type { CampaignSummary } from '@codexveil/database';
 import { campaignRoleLabels, campaignStatusLabels } from '@codexveil/domain';
 import { findSystem } from '@codexveil/rpg-systems';
-import { ScrollText } from 'lucide-react-native';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { ArcaneScene } from '@/components/ui/arcane-scene';
 import { AppText, Badge } from '@/components/ui/primitives';
 import { colors, fonts, palette, radii, spacing } from '@/lib/theme';
 
-function initials(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  return (
-    words.length > 1
-      ? `${words[0]![0]}${words[words.length - 1]![0]}`
-      : (words[0]?.slice(0, 2) ?? '?')
-  ).toUpperCase();
-}
-
-/** Campanha com a capa no topo (ou um fundo com as iniciais, sem imagem). */
+/** Campanha no estilo "Grimório Arcano": a capa (ou a paisagem da campanha) com o título por cima. */
 export function CampaignCoverCard({
   campaign,
   coverUrl,
@@ -39,34 +30,26 @@ export function CampaignCoverCard({
       accessibilityLabel={`${campaign.name}, ${role}, ${details}`}
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
     >
-      {coverUrl ? (
-        <Image
-          source={{ uri: coverUrl }}
-          accessibilityIgnoresInvertColors
-          style={styles.cover}
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={[styles.cover, styles.placeholder]}>
-          <AppText style={styles.initials}>{initials(campaign.name)}</AppText>
-          <View style={styles.placeholderIcon}>
-            <ScrollText size={18} color="rgba(245, 237, 231, 0.3)" />
-          </View>
-        </View>
-      )}
-      <View style={styles.body}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+      <View style={styles.cover}>
+        {coverUrl ? (
+          <Image source={{ uri: coverUrl }} accessibilityIgnoresInvertColors style={StyleSheet.absoluteFill} resizeMode="cover" />
+        ) : (
+          <ArcaneScene seed={campaign.name} />
+        )}
+        {/* Escurece de baixo para cima para o título ficar legível sobre a arte. */}
+        <View style={styles.shade} />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, padding: spacing[3] }}>
           <Badge label={role} tone={campaign.role === 'gm' ? 'brand' : 'neutral'} />
-          {campaign.status === 'archived' ? (
-            <Badge label={campaignStatusLabels.archived} tone="warning" />
-          ) : null}
+          {campaign.status === 'archived' ? <Badge label={campaignStatusLabels.archived} tone="warning" /> : null}
         </View>
-        <AppText style={styles.title} numberOfLines={2}>
-          {campaign.name}
-        </AppText>
-        <AppText variant="small" style={{ color: colors.fgMuted }}>
-          {details}
-        </AppText>
+        <View style={styles.body}>
+          <AppText style={styles.title} numberOfLines={2}>
+            {campaign.name}
+          </AppText>
+          <AppText variant="small" style={{ color: colors.fgSecondary }}>
+            {details}
+          </AppText>
+        </View>
       </View>
     </Pressable>
   );
@@ -80,14 +63,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     overflow: 'hidden',
   },
-  cover: { width: '100%', aspectRatio: 16 / 9 },
-  placeholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.wine[950],
-  },
-  placeholderIcon: { position: 'absolute', right: spacing[3], bottom: spacing[3] },
-  initials: { fontFamily: fonts.displayBold, fontSize: 34, color: 'rgba(245, 237, 231, 0.7)' },
-  body: { padding: spacing[3], gap: 6 },
-  title: { fontFamily: fonts.sansSemiBold, fontSize: 17, lineHeight: 22, color: colors.fg },
+  cover: { width: '100%', aspectRatio: 16 / 10, justifyContent: 'space-between', backgroundColor: palette.wine[950] },
+  shade: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(7, 7, 10, 0.35)' },
+  body: { padding: spacing[3], gap: 4, backgroundColor: 'rgba(7, 7, 10, 0.55)' },
+  title: { fontFamily: fonts.display, fontSize: 18, lineHeight: 24, color: colors.fgAccent },
 });

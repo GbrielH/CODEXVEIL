@@ -21,6 +21,7 @@ import {
   SectionHeader,
 } from '@/components/ui/layout';
 import { ListRow } from '@/components/ui/list-row';
+import { ArcaneScene } from '@/components/ui/arcane-scene';
 import { AppText } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states';
@@ -103,8 +104,10 @@ export default function DashboardScreen() {
           borderColor: 'rgba(168, 139, 255, 0.30)',
           backgroundColor: '#140A29',
           overflow: 'hidden',
+          minHeight: 150,
         }}
       >
+        <ArcaneScene seed="Bem-vindo de volta" options={{ noMoon: true }} style={{ opacity: 0.8 }} />
         <View style={{ flex: 1, gap: 4 }}>
           <AppText variant="eyebrow" style={{ color: colors.fgBrand }}>
             Bem-vindo de volta

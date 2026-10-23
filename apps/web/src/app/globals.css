@@ -457,3 +457,50 @@
   display: none;
 }
 
+
+/* -------------------------------------------------------------------------- */
+/* Círculo arcano (encantamento atrás do Tomo)                                 */
+/* -------------------------------------------------------------------------- */
+@keyframes sigil-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes sigil-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+.arcane-sigil {
+  filter: drop-shadow(0 0 6px rgb(168 139 255 / 0.65)) drop-shadow(0 0 22px rgb(107 59 198 / 0.55));
+}
+.arcane-sigil .sigil-spin-slow,
+.arcane-sigil .sigil-spin-reverse,
+.arcane-sigil .sigil-spin-fast,
+.arcane-sigil .sigil-pulse {
+  transform-box: view-box;
+  transform-origin: center;
+}
+.arcane-sigil .sigil-spin-slow {
+  animation: sigil-spin 60s linear infinite;
+}
+.arcane-sigil .sigil-spin-reverse {
+  animation: sigil-spin 40s linear infinite reverse;
+}
+.arcane-sigil .sigil-spin-fast {
+  animation: sigil-spin 18s linear infinite;
+}
+.arcane-sigil .sigil-pulse {
+  animation: sigil-pulse 3.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .arcane-sigil * {
+    animation: none !important;
+  }
+}

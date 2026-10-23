@@ -2,6 +2,8 @@ import { listSystems } from '@codexveil/rpg-systems';
 import { BookOpenText, Crown, EyeOff, ScrollText, Smartphone, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import Image from 'next/image';
+import { ArcaneScene } from '@/components/brand/arcane-scene';
+import { ArcaneSigil } from '@/components/brand/arcane-sigil';
 import { Wordmark } from '@/components/brand/emblem';
 import { Badge } from '@/components/ui/badge';
 import { ButtonLink } from '@/components/ui/button';
@@ -71,7 +73,13 @@ export default async function HomePage() {
   const systems = listSystems();
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="relative isolate flex min-h-dvh flex-col">
+      {/* Paisagem arcana atrás do cabeçalho e do destaque, esmaecida à esquerda para o texto. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[46rem] overflow-hidden" aria-hidden="true">
+        <ArcaneScene seed="Sua campanha, seu mundo" options={{ noMoon: true }} />
+        <span className="absolute inset-0 bg-gradient-to-r from-charcoal-950 via-charcoal-950/80 to-charcoal-950/20" />
+        <span className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-canvas to-transparent" />
+      </div>
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
         <Wordmark size="sm" />
         <nav aria-label="Acesso" className="flex items-center gap-2">
@@ -95,9 +103,13 @@ export default async function HomePage() {
       <main id="conteudo" className="flex-1">
         <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-4 pt-10 pb-20 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:pt-20">
           <div className="animate-fade-up">
-            <p className="eyebrow">Gerenciador de campanhas de RPG de mesa</p>
-            <h1 className="mt-4 text-4xl leading-[1.1] sm:text-5xl">
-              Campanhas, fichas e segredos do mestre num só grimório.
+            <p className="eyebrow text-wine-300">O grimório digital de RPG de mesa</p>
+            <h1 className="mt-4 text-4xl leading-[1.1] [text-shadow:0_2px_24px_rgb(0_0_0/0.8)] sm:text-6xl">
+              Sua campanha.
+              <br />
+              Seu mundo.
+              <br />
+              <span className="text-wine-300">Seus segredos.</span>
             </h1>
             <p className="mt-6 max-w-xl font-serif text-lg leading-relaxed text-fg-secondary">
               O Codexveil reúne o que hoje fica espalhado entre documentos, planilhas e mensagens:
@@ -127,8 +139,9 @@ export default async function HomePage() {
           {/* Tomo, o grimório mestre (mascote do redesign "Grimório Arcano"). */}
           <div className="relative mx-auto flex aspect-square w-full max-w-md items-center justify-center" aria-hidden="true">
             <div className="absolute inset-6 rounded-full bg-wine-700/25 blur-3xl" />
-            <div className="absolute inset-0 rounded-full border border-wine-400/15" />
-            <Image src="/mestre/heroi.webp" alt="" width={640} height={598} priority className="relative h-auto w-full [mask-image:radial-gradient(closest-side,black_62%,transparent)]" />
+            {/* Encantamento: círculo arcano girando em volta do Tomo. */}
+            <ArcaneSigil className="absolute -inset-[12%] h-[124%] w-[124%]" />
+            <Image src="/mestre/heroi.webp" alt="" width={640} height={598} priority className="relative h-auto w-[74%] [mask-image:radial-gradient(closest-side,black_58%,transparent)]" />
           </div>
         </section>
 
