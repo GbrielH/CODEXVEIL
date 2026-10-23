@@ -494,7 +494,7 @@ de segurança).
       paisagem e banner do painel com a cena (OTA). Capturas conferidas: página inicial e login.
 - [x] Tela de carregamento do site: dragão em pixel art animado (GIF do responsável convertido para
       WebP sem perdas, 260 px, 1,3 MB em vez de 4 MB; `public/mestre/carregando.webp`), no lugar do
-      dragão em SVG. Some com movimento reduzido. App: continua o carregador próprio (GIF/WebP
+      dragão em SVG, espiando de trás de uma montanha (a arte termina cortada na direita). Some com movimento reduzido. App: continua o carregador próprio (GIF/WebP
       animado no Android exige componente nativo, ou seja, APK novo).
 - [x] Painel do assistente por cima de tudo (portal no `body`; antes ficava atrás dos cards).
 - [x] Mãozinha (cursor) em tudo que é clicável no site: rolagens, abas, botões (`globals.css`).
