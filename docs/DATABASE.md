@@ -166,6 +166,12 @@ Migração `20261018120000_gameplay_turns.sql`:
 - Índices únicos `characters_one_per_player_idx` e `campaign_notes_one_pinned_idx` (duplicatas
   antigas são desvinculadas/desafixadas antes).
 
+Migração `20261023100000_session_attendance.sql`: tabela `session_attendance` (presença: `yes`/`no`
+por pessoa e sessão; membros leem; cada um responde só por si, em sessão agendada não iniciada).
+
+Migração `20261023110000_character_token_image.sql`: `characters.token_path` (imagem do token no
+mapa; mesma pasta do retrato).
+
 Migração `20261021140000_map_tools.sql`: `session_maps.fog_auto_reveal`, `areas` (áreas de magia do
 mestre) e `drawings` (desenhos e anotações públicos); tabela `session_map_secrets` (desenhos só do
 mestre; RLS sem acesso para jogadores).

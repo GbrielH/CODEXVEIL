@@ -430,6 +430,34 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-23 — rodada de correções (fichas automáticas, sessão, presença, mapa)
+
+- **Ataques:** acerto, dano e crítico lado a lado (site e app).
+- **Aba Sessão:** só a sessão iniciada; sem sessão aberta, nada aparece. "Sessões anteriores"
+  guarda para consulta só o que foi liberado (se o mestre ocultar depois, some).
+- **Confirmar presença:** em sessões agendadas, o jogador responde "Vou/Não vou" (site e app);
+  o mestre vê confirmados, recusas e sem resposta, com nomes. Migração
+  `20261023100000_session_attendance.sql` (RLS: cada um só responde por si, só em sessão agendada).
+- **Imagem de token do personagem** (Ajustes da ficha, D&D e T20); o mapa usa o token e, sem ele,
+  o retrato. Migração `20261023110000_character_token_image.sql`.
+- **Mapa:** a etiqueta do arrasto mostra "X m de Y m" e fica vermelha ao passar do deslocamento
+  do token (ficha do personagem ou bloco da criatura), sem impedir o movimento. No app, o aviso
+  de movimento diz o limite e avisa quando passou.
+- **Ficha D&D automática** (`equipment-effects.ts`): CA pela armadura/escudo equipados (Destreza
+  conforme o tipo, mágicos +N, Anel/Manto de Proteção, Estilo de Luta Defesa, Defesa sem Armadura
+  do bárbaro e do monge, Resiliência Dracônica), deslocamento pela espécie e pela classe
+  (Movimento sem Armadura, Movimento Rápido, −3 m em armadura pesada sem a Força exigida) e
+  atributos por itens (Manoplas de Força do Ogro, Tiara do Intelecto, Amuleto da Saúde, Cintos de
+  Força de Gigante). Combate só leitura, com a explicação de cada valor; a ficha grava a CA e o
+  deslocamento calculados para o mestre, o grupo e o mapa verem os mesmos números.
+  Proficiências só leitura (criação e subida de nível já gravam) e idiomas num painel de seleção.
+- **Ficha T20:** a Defesa segue a armadura e o escudo equipados ("Defesa +N, penalidade P").
+- **Auditoria:** teste que cria um personagem para cada classe × espécie × antecedente do SRD e
+  confere deslocamento, resistências, perícias do antecedente, vida de 1º nível e CA (passou em
+  todas). T20 não auditado assim: o conteúdo vem do livro importado, fora do repositório.
+- **IA:** especificação (card no menu, acima do perfil) em `MELHORIAS_FUTURAS.md`.
+- Verificado: `pnpm check` e `pnpm build`. Não conferido no navegador nem no aparelho.
+
 ### 2026-10-22 — ficha D&D: rolar atributos e crítico/dano das armas
 
 - **Atributos:** clicar (ou tocar, no app) no modificador de um atributo rola o teste dele

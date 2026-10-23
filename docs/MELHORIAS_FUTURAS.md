@@ -3,7 +3,42 @@
 Ideias aprovadas pelo responsável, mas **adiadas**. Antes de começar uma delas, mova-a para
 [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md).
 
-## Dado 3D de verdade (estilo app "Dice") — site feito em 2026-10-20; falta o app
+## Assistente de IA (card no menu) — especificação de 2026-10-23, implementação em seguida
+
+**Onde fica:** não é aba nem tela. É um **card fixo no menu lateral, logo acima do perfil e do
+"Sair"**, que abre um painel de conversa sobre a tela atual. Assim o usuário consulta a IA sem sair
+da ficha, do mapa ou do roteiro em que está. No celular (site), o mesmo card abre o painel por
+cima da página. No app, fica para depois (o app é só para jogar; avaliar quando houver APK novo).
+
+**Prompt de sistema (base):**
+
+> Você é o assistente do Codexveil, uma plataforma de RPG de mesa (D&D 5e — SRD 5.2.1 — e
+> Tormenta20). Responda em português do Brasil, de forma curta e prática. Você é **consultivo**:
+> explica regras, sugere ideias, ajuda a montar cenas, encontros e personagens, e tira dúvidas
+> sobre a ficha e a campanha. Você **não altera nada** no sistema (não salva, não rola dados, não
+> muda fichas). Use só o contexto fornecido (a tela atual, a ficha, a campanha e as regras do
+> sistema); se faltar informação, diga o que falta. Nunca revele segredos do mestre a jogadores:
+> o contexto que você recebe já vem filtrado pelo que a pessoa pode ver. Cite a regra (livro e
+> seção) quando souber; quando for uma sugestão sua, deixe claro que é sugestão. Para jogadores,
+> não dê spoilers da história; para o mestre, pode sugerir ganchos, NPCs e desafios.
+
+**Contexto enviado a cada pergunta (montado no servidor, pelo RLS da pessoa):**
+
+- Página atual (rota) e o que está aberto: ficha (sistema, nível, classe, atributos, CA, perícias,
+  itens equipados), campanha (nome, sistema, papel da pessoa), sessão em andamento e mapa ativo
+  (sem tokens ocultos nem anotações secretas para jogadores).
+- Nada de chaves, e-mails ou dados de outras pessoas além do que a tela já mostra.
+
+**Regras técnicas:**
+
+- Chamada só no servidor (rota do site), com a chave do provedor em variável de ambiente da
+  Vercel (nunca no app nem no navegador). Modelo atual da Anthropic (Claude).
+- Limite de uso por pessoa (ex.: 30 perguntas/dia) e tamanho máximo de pergunta e contexto.
+- Respostas em streaming; histórico só na sessão do navegador (não grava conversas no banco
+  nesta primeira versão).
+- Botão "copiar" na resposta; aviso de que a IA pode errar e que a regra do livro vale.
+
+(estilo app "Dice") — site feito em 2026-10-20; falta o app
 
 **Feito no site (2026-10-20):** caixinha no canto inferior direito com dados 3D
 (`@3d-dice/dice-box-threejs`, MIT, carregada sob demanda), cor escolhida por cada jogador na
