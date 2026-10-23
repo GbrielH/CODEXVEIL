@@ -3,6 +3,7 @@
 import { Copy, Send, Sparkles, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useRef, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -35,7 +36,8 @@ export function AssistantCard({ compact = false }: { compact?: boolean }) {
           </span>
         )}
       </button>
-      {open ? <AssistantPanel onClose={() => setOpen(false)} /> : null}
+      {/* Portal no body: o menu lateral cria um contexto de empilhamento que prendia o painel atrás da página. */}
+      {open ? createPortal(<AssistantPanel onClose={() => setOpen(false)} />, document.body) : null}
     </>
   );
 }
@@ -94,7 +96,7 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
     <div
       role="dialog"
       aria-label="Assistente de IA"
-      className="fixed right-4 bottom-24 z-50 flex max-h-[min(640px,calc(100dvh-8rem))] w-[min(420px,calc(100vw-2rem))] flex-col rounded-xl border border-line-strong bg-raised shadow-2xl lg:bottom-6 lg:left-[calc(var(--sidebar-width,16rem)+1rem)] lg:right-auto"
+      className="fixed right-4 bottom-24 z-[100] flex max-h-[min(640px,calc(100dvh-8rem))] w-[min(420px,calc(100vw-2rem))] flex-col rounded-xl border border-line-strong bg-raised shadow-2xl lg:bottom-6 lg:left-[calc(var(--sidebar-width,16rem)+1rem)] lg:right-auto"
     >
       <header className="flex items-center gap-2 border-b border-line px-4 py-3">
         <Sparkles className="h-4 w-4 text-fg-brand" aria-hidden="true" />

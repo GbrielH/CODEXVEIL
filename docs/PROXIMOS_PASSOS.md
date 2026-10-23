@@ -437,6 +437,7 @@ de segurança).
 - [x] Rota `/api/assistente` (Google Gemini `gemini-2.5-flash`, plano gratuito; trocado do Claude no mesmo dia porque a API da Anthropic não tem plano gratuito), contexto pela rota com o RLS da pessoa.
 - [x] Cota de 30 perguntas/dia (migração `20261023120000_assistant_usage.sql`, aplicada).
 - [ ] Criar `GEMINI_API_KEY` na Vercel (o card só aparece com ela) (chave grátis em aistudio.google.com) e testar uma pergunta real.
+- [x] Painel do assistente por cima de tudo (portal no `body`; antes ficava atrás dos cards).
 - [x] Mãozinha (cursor) em tudo que é clicável no site: rolagens, abas, botões (`globals.css`).
 - [x] Livro T20 exportado: faltam as origens Acólito e Amigo dos Animais, há poderes com " e"
       sobrando ou cortados e perigos classificados como ameaças; corrigido em `scripts/books/t20.py` e `t20_pack.py`
