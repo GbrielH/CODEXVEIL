@@ -439,7 +439,8 @@ de segurança).
       no mesmo dia** a pedido do responsável (só ele e amigos usam).
 - [x] Personalidade de "Mestre" de RPG; modelo `gemini-3.1-flash-lite` (~1 s até a primeira palavra;
       o Flash levou 60 s), com `gemini-flash-lite-latest` de reserva. Testado em produção ("oi").
-- [ ] Mascote (grimório encapuzado): o responsável está criando; usar como ícone do card e do painel.
+- [x] Mascote **Tomo, o Mestre** (grimório encapuzado, arte do responsável): ícone no card e no
+      painel, pose feliz na abertura e pose "?" enquanto responde (`apps/web/public/mestre/*.webp`).
 - [ ] Criar `GEMINI_API_KEY` na Vercel (o card só aparece com ela) (chave grátis em aistudio.google.com) e testar uma pergunta real.
 - [x] QA: "Escolher do livro" ao adicionar item (site, D&D e T20): catálogo com busca e filtro por
       tipo, do SRD 5.2.1 (D&D, itens e itens mágicos) e dos livros ativos da ficha; preenche o

@@ -1,6 +1,7 @@
 'use client';
 
-import { Copy, Send, Sparkles, X } from 'lucide-react';
+import { Copy, Send, X } from 'lucide-react';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
@@ -9,6 +10,9 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
+
+/** Mascote: Tomo, o grimório encapuzado que mestra (arte do responsável, em `public/mestre`). */
+const MASCOT_NAME = 'Tomo';
 
 /**
  * Assistente de IA: card no menu (acima do perfil/"Sair") que abre um painel de conversa por
@@ -21,18 +25,18 @@ export function AssistantCard({ compact = false }: { compact?: boolean }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={compact ? 'Assistente de IA' : undefined}
+        aria-label={compact ? `${MASCOT_NAME}, o Mestre (assistente de IA)` : undefined}
         className={
           compact
             ? 'flex h-11 w-11 items-center justify-center rounded-md text-fg-brand hover:bg-hover'
             : 'flex w-full items-center gap-3 rounded-lg border border-line bg-card px-3 py-2.5 text-left hover:border-line-strong hover:bg-hover'
         }
       >
-        <Sparkles className="h-5 w-5 shrink-0 text-fg-brand" aria-hidden="true" />
+        <Image src="/mestre/icone.webp" alt="" width={36} height={36} className={compact ? 'h-8 w-8 rounded-md' : 'h-9 w-9 shrink-0 rounded-md'} />
         {compact ? null : (
           <span className="min-w-0">
-            <span className="block text-sm font-medium text-fg">Mestre</span>
-            <span className="block truncate text-xs text-fg-muted">Pergunte ao Mestre sem sair da tela</span>
+            <span className="block text-sm font-medium text-fg">{MASCOT_NAME}, o Mestre</span>
+            <span className="block truncate text-xs text-fg-muted">Pergunte sem sair da tela</span>
           </span>
         )}
       </button>
@@ -96,18 +100,21 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
       className="fixed right-4 bottom-24 z-[100] flex max-h-[min(640px,calc(100dvh-8rem))] w-[min(420px,calc(100vw-2rem))] flex-col rounded-xl border border-line-strong bg-raised shadow-2xl lg:bottom-6 lg:left-[calc(var(--sidebar-width,16rem)+1rem)] lg:right-auto"
     >
       <header className="flex items-center gap-2 border-b border-line px-4 py-3">
-        <Sparkles className="h-4 w-4 text-fg-brand" aria-hidden="true" />
-        <h2 className="flex-1 text-sm font-medium text-fg">Mestre</h2>
+        <Image src="/mestre/icone.webp" alt="" width={28} height={28} className="h-7 w-7 rounded-md" />
+        <h2 className="flex-1 text-sm font-medium text-fg">{MASCOT_NAME}, o Mestre</h2>
         <button type="button" onClick={onClose} aria-label="Fechar" className="rounded p-1 text-fg-muted hover:bg-hover hover:text-fg">
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </header>
       <div ref={listRef} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
         {messages.length === 0 ? (
-          <p className="text-sm text-fg-muted">
-            Pergunte sobre regras, a ficha ou a campanha aberta. O assistente só consulta: não muda nada. Ele pode errar; a regra do
-            livro vale.
-          </p>
+          <div className="flex flex-col items-center gap-2 py-2 text-center">
+            <Image src="/mestre/feliz.webp" alt={`${MASCOT_NAME}, o grimório mestre`} width={160} height={154} className="h-auto w-36" />
+            <p className="text-sm text-fg-muted">
+              Saudações, aventureiro! Eu sou {MASCOT_NAME}. Pergunte sobre regras, a ficha ou a campanha aberta. Só consulto: não mudo
+              nada. Posso errar; a regra do livro vale.
+            </p>
+          </div>
         ) : (
           messages.map((message, index) => (
             <div
@@ -118,7 +125,15 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
                   : 'group relative self-start rounded-lg border border-line bg-card px-3 py-2 text-sm whitespace-pre-wrap text-fg'
               }
             >
-              {message.content || (busy ? '…' : '')}
+              {message.content ||
+                (busy ? (
+                  <span className="flex items-center gap-2 text-fg-muted">
+                    <Image src="/mestre/pensando.webp" alt="" width={40} height={45} className="h-11 w-10 animate-pulse" />
+                    {MASCOT_NAME} está consultando o grimório…
+                  </span>
+                ) : (
+                  ''
+                ))}
               {message.role === 'assistant' && message.content ? (
                 <button
                   type="button"
