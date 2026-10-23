@@ -118,7 +118,9 @@ apaga (`private.owns_book_pack`). Testado em `packages/database/test/rls/books.t
 
 ## Assistente de IA
 
-- A chave `ANTHROPIC_API_KEY` fica só no servidor (Vercel). A rota `/api/assistente` exige sessão.
+- A chave `GEMINI_API_KEY` fica só no servidor (Vercel). A rota `/api/assistente` exige sessão.
+- Provedor: Google Gemini no plano gratuito, em que o Google pode usar as perguntas para melhorar
+  os modelos. O contexto não leva e-mails nem dados de outras pessoas; só campanha, papel e ficha.
 - O contexto (campanha, papel, ficha aberta) é lido com o cliente do Supabase da própria pessoa:
   o RLS garante que segredos do mestre não chegam a jogadores.
 - Cota diária no banco (`consume_assistant_question`, 30 por dia, limite fixo no SQL); pergunta de

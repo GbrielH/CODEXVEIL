@@ -7,7 +7,7 @@
 
 **2026-10-23 (assistente de IA):** card no menu do site, rota `/api/assistente` com streaming e
 cota diária no banco (migração `20261023120000` aplicada). `pnpm check` 20/20 e `pnpm build`.
-**Não verificado:** uma resposta real, pois falta a `ANTHROPIC_API_KEY` na Vercel; sem ela o card
+**Não verificado:** uma resposta real, pois falta a `GEMINI_API_KEY` na Vercel; sem ela o card
 fica oculto.
 
 **2026-10-21 (grade da sessão):** grade implementada conforme [`GRID.md`](GRID.md), passos 1 a 6:
@@ -305,7 +305,7 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
-- **2026-10-23:** criar `ANTHROPIC_API_KEY` na Vercel e testar o assistente; reimportar o livro T20 corrigido em Meus livros.
+- **2026-10-23:** criar `GEMINI_API_KEY` na Vercel e testar o assistente; reimportar o livro T20 corrigido em Meus livros.
 - **2026-10-20 (tradução do SRD):** monstros e itens mágicos 100% em português (`pnpm check`
   20/20). Próximo: pedidos de 2026-10-20 (sessão presencial/online, grid, ação de combate do
   mestre, Treinamento em Perícia, descrições, aba Sessão, perícias marcadas, biblioteca T20,

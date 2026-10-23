@@ -32,7 +32,7 @@ cima da página. No app, fica para depois (o app é só para jogar; avaliar quan
 **Regras técnicas:**
 
 - Chamada só no servidor (rota do site), com a chave do provedor em variável de ambiente da
-  Vercel (nunca no app nem no navegador). Modelo atual da Anthropic (Claude).
+  Vercel (nunca no app nem no navegador). Em uso: Google Gemini no plano gratuito (`GEMINI_API_KEY`; `GEMINI_MODEL` opcional). No plano gratuito o Google pode usar as perguntas para melhorar os modelos: não enviar dados pessoais no contexto.
 - Limite de uso por pessoa (ex.: 30 perguntas/dia) e tamanho máximo de pergunta e contexto.
 - Respostas em streaming; histórico só na sessão do navegador (não grava conversas no banco
   nesta primeira versão).

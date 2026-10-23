@@ -31,7 +31,7 @@ export function siteUrl(): string {
  */
 export const googleAuthEnabled = process.env.NEXT_PUBLIC_AUTH_GOOGLE?.trim() === 'on';
 
-/** Assistente de IA ligado? Só com ANTHROPIC_API_KEY definida no servidor (Vercel). */
+/** Assistente de IA ligado? Só com GEMINI_API_KEY definida no servidor (Vercel). */
 export function assistantEnabled(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+  return Boolean(process.env.GEMINI_API_KEY?.trim());
 }

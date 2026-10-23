@@ -13,12 +13,12 @@
   },
   "dependencies": {
     "@3d-dice/dice-box-threejs": "0.0.12",
-    "@anthropic-ai/sdk": "^1.1.0",
     "@codexveil/database": "workspace:*",
     "@codexveil/domain": "workspace:*",
     "@codexveil/rpg-systems": "workspace:*",
     "@codexveil/ui": "workspace:*",
     "@codexveil/validation": "workspace:*",
+    "@google/genai": "^2.30.0",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "catalog:",
     "lucide-react": "^1.50.0",

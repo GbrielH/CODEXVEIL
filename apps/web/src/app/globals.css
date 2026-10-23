@@ -5,6 +5,18 @@
 /* Base                                                                        */
 /* -------------------------------------------------------------------------- */
 @layer base {
+  /* O Tailwind 4 tirou a mãozinha dos botões; tudo que é clicável (rolagens, abas, etc.) volta a ter. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary,
+  label[for],
+  select:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+
   html {
     color-scheme: dark;
     background-color: var(--color-canvas);

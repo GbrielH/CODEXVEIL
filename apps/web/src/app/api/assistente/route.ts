@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenAI } from '@google/genai';
 import { getCampaign, getCharacter } from '@codexveil/database';
 import { uuidSchema } from '@codexveil/validation';
 import { z } from 'zod';
@@ -7,14 +7,15 @@ import { assistantEnabled } from '@/lib/env';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /**
- * Assistente de IA (consultivo). Só no servidor: a chave da Anthropic fica em
- * ANTHROPIC_API_KEY na Vercel. A resposta volta em texto puro, em streaming.
+ * Assistente de IA (consultivo), com o Google Gemini (plano gratuito). Só no servidor: a chave fica
+ * em GEMINI_API_KEY na Vercel. A resposta volta em texto puro, em streaming.
  * O contexto é montado aqui com o cliente do Supabase da própria pessoa, então o RLS
  * garante que só entra o que ela já pode ver.
  */
 export const runtime = 'nodejs';
 
-const MODEL = 'claude-opus-5-5';
+/** Modelo do plano gratuito; GEMINI_MODEL troca sem mudar o código. */
+const MODEL = process.env.GEMINI_MODEL?.trim() || 'gemini-2.5-flash';
 const MAX_QUESTION = 2000;
 const MAX_CONTEXT = 12000;
 
@@ -84,45 +85,39 @@ export async function POST(request: Request): Promise<Response> {
   if (remaining < 0) return text('Você chegou ao limite de perguntas de hoje. Volte amanhã.', 429);
 
   const context = await buildContext(pathname, user.id);
-  const client = new Anthropic();
-  const history: Anthropic.MessageParam[] = messages.map((message, index) =>
-    index === messages.length - 1
-      ? { role: 'user', content: `<contexto>\n${context}\n</contexto>\n\n${message.content}` }
-      : { role: message.role, content: message.content },
-  );
-
-  const stream = client.messages.stream({
-    model: MODEL,
-    max_tokens: 4000,
-    output_config: { effort: 'low' },
-    system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
-    messages: history,
-  });
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const contents = messages.map((message, index) => ({
+    role: message.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: index === messages.length - 1 ? `<contexto>\n${context}\n</contexto>\n\n${message.content}` : message.content }],
+  }));
+  const abort = new AbortController();
 
   const encoder = new TextEncoder();
   const body = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
-        for await (const event of stream) {
-          if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-            controller.enqueue(encoder.encode(event.delta.text));
-          }
+        const stream = await ai.models.generateContentStream({
+          model: MODEL,
+          contents,
+          config: { systemInstruction: SYSTEM_PROMPT, maxOutputTokens: 4000, abortSignal: abort.signal },
+        });
+        let finish: string | undefined;
+        for await (const chunk of stream) {
+          if (chunk.text) controller.enqueue(encoder.encode(chunk.text));
+          finish = chunk.candidates?.[0]?.finishReason ?? finish;
         }
-        const final = await stream.finalMessage();
-        if (final.stop_reason === 'refusal') controller.enqueue(encoder.encode('\n\n(O assistente não pode responder a isso.)'));
-        if (final.stop_reason === 'max_tokens') controller.enqueue(encoder.encode('\n\n(Resposta cortada por tamanho.)'));
+        if (finish === 'SAFETY') controller.enqueue(encoder.encode('\n\n(O assistente não pode responder a isso.)'));
+        if (finish === 'MAX_TOKENS') controller.enqueue(encoder.encode('\n\n(Resposta cortada por tamanho.)'));
       } catch (caught) {
-        const message =
-          caught instanceof Anthropic.RateLimitError
-            ? 'O assistente está ocupado. Tente de novo em instantes.'
-            : 'O assistente falhou ao responder. Tente de novo.';
+        const busy = typeof caught === 'object' && caught !== null && 'status' in caught && caught.status === 429;
+        const message = busy ? 'O assistente está ocupado (limite gratuito). Tente de novo em instantes.' : 'O assistente falhou ao responder. Tente de novo.';
         controller.enqueue(encoder.encode(`\n\n(${message})`));
       } finally {
         controller.close();
       }
     },
     cancel() {
-      stream.abort();
+      abort.abort();
     },
   });
   return new Response(body, {
