@@ -4,12 +4,15 @@ import type { DiceRoll } from '@codexveil/database';
 import type DiceBox from '@3d-dice/dice-box-threejs';
 import { describeDiceRoll, naturalD20 } from '@codexveil/domain';
 import { ChevronDown, ChevronUp, Dices, Lock } from 'lucide-react';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { cx } from '@/lib/cx';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
 import { DICE_COLORS, DiceColorPalette, DieIcon, useCampaignColors } from './campaign-colors';
 import type { ShownRoll } from './dice-roller';
+
+const subscribeNothing = () => () => undefined;
 
 /** Limite de dados 3D por rolagem (o resto entra só no total), para não pesar no aparelho. */
 export const MAX_TRAY_DICE = 6;
@@ -79,12 +82,15 @@ export function DiceTray({
   const [ready, setReady] = useState(false);
   const [last, setLast] = useState<TrayRoll | null>(null);
   const [picking, setPicking] = useState(false);
+  // A caixinha vai para o <body> (portal): dentro do <main>, a animação de entrada (transform) fazia o
+  // "fixed" valer em relação ao conteúdo, e ela aparecia no fim da página em vez de presa à tela.
+  const mounted = useSyncExternalStore(subscribeNothing, () => true, () => false);
   const userId = palette?.userId ?? null;
   const myColor = palette?.myColor ?? null;
 
   // Cria a cena 3D só quando a caixinha está aberta (a biblioteca é carregada sob demanda).
   useEffect(() => {
-    if (!open || boxRef.current) return;
+    if (!mounted || !open || boxRef.current) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let cancelled = false;
     void import('@3d-dice/dice-box-threejs')
@@ -108,7 +114,7 @@ export function DiceTray({
     return () => {
       cancelled = true;
     };
-  }, [open, containerId]);
+  }, [mounted, open, containerId]);
 
   const play = useCallback(async () => {
     if (running.current) return;
@@ -217,8 +223,9 @@ export function DiceTray({
     });
   };
 
-  return (
-    <div className="fixed right-3 bottom-20 z-50 flex w-[min(18rem,calc(100vw-1.5rem))] flex-col items-stretch gap-2 lg:bottom-4">
+  if (!mounted) return null;
+  return createPortal(
+    <div className="fixed right-3 bottom-20 z-50 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col items-stretch gap-2 lg:bottom-4">
       {/* Resultado da última rolagem, logo acima da caixinha. */}
       <div aria-live="polite" className="min-h-0">
         {last && bubbleKey === last.key ? (
@@ -308,7 +315,7 @@ export function DiceTray({
         <div
           id={containerId}
           className={cx(
-            'relative h-40 w-full overflow-hidden [&_canvas]:absolute [&_canvas]:inset-0 [&_canvas]:!h-full [&_canvas]:!w-full',
+            'relative h-56 w-full overflow-hidden [&_canvas]:absolute [&_canvas]:inset-0 [&_canvas]:!h-full [&_canvas]:!w-full',
             !open && 'hidden',
           )}
         >
@@ -323,6 +330,7 @@ export function DiceTray({
           mestre)
         </p>
       </aside>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -365,7 +365,8 @@ function ItemFormModal({
   item: CharacterItem | 'new' | null;
   onClose: () => void;
 }) {
-  const { character, setItems, run, abilities, setAbilities, permissions, sheet } = useSheet();
+  const { character, setItems, run, abilities, setAbilities, permissions, sheet, resources } = useSheet();
+  const wallet = totalInGold(Object.fromEntries(CURRENCIES.map((coin) => [coin, resources.find((resource) => resource.key === currencyResourceKey(coin))?.current ?? 0])));
   // Ataque ligado à arma (pelo nome): dano, tipo, crítico e afins ficam no ataque da ficha.
   const linkedAttack =
     item && item !== 'new' ? (abilities.find((entry) => entry.kind === 'attack' && entry.name.toLowerCase() === item.name.toLowerCase()) ?? null) : null;
@@ -462,8 +463,9 @@ function ItemFormModal({
         {isNew ? (
           <ItemCatalogPicker
             metric={sheet.combat.speedUnit === 'm'}
+            wallet={wallet}
             onPick={(picked) =>
-              setForm((current) => ({ ...current, name: picked.name, category: picked.category, weight: picked.weight, description: picked.description }))
+              setForm((current) => ({ ...current, name: picked.name, category: picked.category, weight: picked.weight, description: picked.description, quantity: picked.quantity }))
             }
           />
         ) : null}

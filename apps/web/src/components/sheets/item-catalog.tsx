@@ -1,9 +1,9 @@
 'use client';
 
 import { listBookEntries } from '@codexveil/database';
-import { itemCategoryLabels, ITEM_CATEGORIES, type ItemCategory } from '@codexveil/domain';
-import { SRD_ITEMS, loadSrdMagicItems, srdMagicItemToCampaignItem, weightForUnit } from '@codexveil/rpg-systems/dnd5e';
-import { BookOpen, Search } from 'lucide-react';
+import { itemCategoryLabels, type ItemCategory } from '@codexveil/domain';
+import { ARMOR_COST_GP, SRD_ITEMS, WEAPON_COST_GP, loadSrdMagicItems, srdMagicItemToCampaignItem, weightForUnit } from '@codexveil/rpg-systems/dnd5e';
+import { BookOpen, Plus, Search } from 'lucide-react';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
@@ -25,9 +25,12 @@ export interface CatalogPick {
   category: ItemCategory;
   weight: number | null;
   description: string;
+  quantity: number;
 }
 
-interface CatalogEntry extends CatalogPick {
+interface CatalogEntry extends Omit<CatalogPick, 'quantity'> {
+  /** Preço unitário na moeda base (PO no D&D, T$ no Tormenta20); `null` = sem preço no livro. */
+  price: number | null;
   key: string;
   /** "SRD 5.2.1", nome do livro… */
   source: string;
@@ -36,7 +39,6 @@ interface CatalogEntry extends CatalogPick {
   magic: boolean;
 }
 
-type Filter = ItemCategory | 'magic' | 'all';
 
 const plain = (text: string) =>
   text
@@ -54,6 +56,14 @@ function t20Category(group: string, category: string): ItemCategory {
   if (/alquim|pocao|alimenta|consum|municao/.test(name)) return 'consumable';
   if (/ferrament|kit|instrument/.test(name)) return 'tool';
   return 'gear';
+}
+
+/** "T$ 1.500" → 1500; "—" ou vazio → sem preço. */
+function t20Price(text: string): number | null {
+  const match = /([\d.]+(?:,\d+)?)/.exec(text);
+  if (!match?.[1]) return null;
+  const value = Number(match[1].replace(/\./g, '').replace(',', '.'));
+  return Number.isFinite(value) ? value : null;
 }
 
 async function loadCatalog(books: CatalogBooks, metric: boolean): Promise<CatalogEntry[]> {
@@ -75,6 +85,7 @@ async function loadCatalog(books: CatalogBooks, metric: boolean): Promise<Catalo
         source: 'SRD 5.2.1',
         kind: itemCategoryLabels[item.category],
         magic: false,
+        price: (item.weapon ? WEAPON_COST_GP[item.weapon] : item.armor ? ARMOR_COST_GP[item.armor] : undefined) ?? null,
       });
     }
     for (const item of await loadSrdMagicItems()) {
@@ -88,6 +99,7 @@ async function loadCatalog(books: CatalogBooks, metric: boolean): Promise<Catalo
         source: 'SRD 5.2.1',
         kind: 'Item mágico',
         magic: true,
+        price: null,
       });
     }
     for (const entry of entries) {
@@ -103,6 +115,7 @@ async function loadCatalog(books: CatalogBooks, metric: boolean): Promise<Catalo
         source: names.get(entry.packId) ?? 'Livro',
         kind: 'Item mágico',
         magic: true,
+        price: null,
       });
     }
   } else {
@@ -130,6 +143,7 @@ async function loadCatalog(books: CatalogBooks, metric: boolean): Promise<Catalo
           source: names.get(entry.packId) ?? 'Livro',
           kind: text('category') || itemCategoryLabels[t20Category(text('group'), text('category'))],
           magic: false,
+          price: t20Price(text('price')),
         });
       } else {
         const kindName = text('kind');
@@ -142,6 +156,7 @@ async function loadCatalog(books: CatalogBooks, metric: boolean): Promise<Catalo
           source: names.get(entry.packId) ?? 'Livro',
           kind: 'Item mágico',
           magic: true,
+          price: t20Price(text('price')),
         });
       }
     }
@@ -149,17 +164,34 @@ async function loadCatalog(books: CatalogBooks, metric: boolean): Promise<Catalo
   return out.map((entry) => ({ ...entry, name: entry.name.slice(0, 120), description: entry.description.slice(0, 2000) }));
 }
 
+const money = (value: number, currency: string) =>
+  `${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} ${currency}`;
+
 /**
- * "Escolher do livro": catálogo de itens (SRD no D&D e livros ativos da ficha), com busca e filtro
- * por tipo. Escolher um item preenche o formulário; a pessoa ainda pode ajustar antes de salvar.
+ * "Escolher do livro": catálogo de itens como numa loja (SRD no D&D e livros ativos da ficha).
+ * Filtra por tipo e por "cabe no bolso" (disponíveis: preço até o dinheiro do personagem), mostra
+ * valor, quantidade e total; escolher preenche o formulário, que ainda pode ser ajustado.
  */
-export function ItemCatalogPicker({ onPick, metric = false }: { onPick: (item: CatalogPick) => void; metric?: boolean }) {
+export function ItemCatalogPicker({
+  onPick,
+  metric = false,
+  wallet = null,
+}: {
+  onPick: (item: CatalogPick) => void;
+  metric?: boolean;
+  /** Dinheiro do personagem na moeda base (PO ou T$), para separar disponíveis e indisponíveis. */
+  wallet?: number | null;
+}) {
   const books = useContext(CatalogContext);
+  const currency = books.systemId === 'dnd5e' ? 'PO' : 'T$';
   const [open, setOpen] = useState(false);
   const [catalog, setCatalog] = useState<CatalogEntry[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<Filter>('all');
+  const [kind, setKind] = useState('all');
+  const [showAvailable, setShowAvailable] = useState(true);
+  const [showUnavailable, setShowUnavailable] = useState(true);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (!open || catalog) return;
@@ -172,13 +204,19 @@ export function ItemCatalogPicker({ onPick, metric = false }: { onPick: (item: C
     };
   }, [open, catalog, books, metric]);
 
+  const kinds = useMemo(() => [...new Set((catalog ?? []).map((entry) => entry.kind))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [catalog]);
+  const quantityOf = (key: string) => quantities[key] ?? 1;
+  const affordable = (entry: CatalogEntry, quantity = 1) => wallet === null || entry.price === null || entry.price * quantity <= wallet;
+
   const shown = useMemo(() => {
     const words = plain(query).split(/\s+/).filter(Boolean);
     return (catalog ?? [])
-      .filter((entry) => (filter === 'all' ? true : filter === 'magic' ? entry.magic : entry.category === filter && !entry.magic))
+      .filter((entry) => kind === 'all' || entry.kind === kind)
+      .filter((entry) => (affordable(entry) ? showAvailable : showUnavailable))
       .filter((entry) => words.every((word) => plain(`${entry.name} ${entry.kind}`).includes(word)))
-      .slice(0, 80);
-  }, [catalog, query, filter]);
+      .slice(0, 120);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `affordable` só depende de `wallet`.
+  }, [catalog, query, kind, showAvailable, showUnavailable, wallet]);
 
   const hasCatalog = books.systemId === 'dnd5e' || books.packs.length > 0;
   if (!hasCatalog) {
@@ -213,19 +251,31 @@ export function ItemCatalogPicker({ onPick, metric = false }: { onPick: (item: C
           />
         </label>
         <select
-          value={filter}
-          onChange={(event) => setFilter(event.target.value as Filter)}
-          aria-label="Tipo de item"
-          className="rounded-md border border-line bg-canvas px-2 py-2 text-sm text-fg"
+          value={kind}
+          onChange={(event) => setKind(event.target.value)}
+          aria-label="Categoria do item"
+          className="max-w-[14rem] rounded-md border border-line bg-canvas px-2 py-2 text-sm text-fg"
         >
-          <option value="all">Todos os tipos</option>
-          {ITEM_CATEGORIES.map((category) => (
-            <option key={category} value={category}>
-              {itemCategoryLabels[category]}
+          <option value="all">Todas as categorias</option>
+          {kinds.map((entry) => (
+            <option key={entry} value={entry}>
+              {entry}
             </option>
           ))}
-          <option value="magic">Itens mágicos</option>
         </select>
+      </div>
+      <div className="flex flex-wrap items-center gap-4 text-sm text-fg">
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={showAvailable} onChange={(event) => setShowAvailable(event.target.checked)} className="h-4 w-4 accent-wine-500" />
+          Itens disponíveis
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={showUnavailable} onChange={(event) => setShowUnavailable(event.target.checked)} className="h-4 w-4 accent-wine-500" />
+          Itens indisponíveis
+        </label>
+        <span className="text-xs text-fg-muted">
+          {wallet === null ? 'Sem dinheiro registrado na ficha.' : `Seu dinheiro: ${money(wallet, currency)}`}
+        </span>
       </div>
       {failed ? (
         <p className="text-sm text-danger">Não foi possível carregar o catálogo. Tente de novo.</p>
@@ -234,25 +284,63 @@ export function ItemCatalogPicker({ onPick, metric = false }: { onPick: (item: C
       ) : shown.length === 0 ? (
         <p className="text-sm text-fg-muted">Nenhum item encontrado.</p>
       ) : (
-        <ul className="flex max-h-64 flex-col divide-y divide-line overflow-y-auto rounded-md border border-line">
-          {shown.map((entry) => (
-            <li key={entry.key}>
-              <button
-                type="button"
-                onClick={() => {
-                  onPick(entry);
-                  setOpen(false);
-                }}
-                className="flex w-full flex-col px-3 py-2 text-left hover:bg-hover"
-              >
-                <span className="text-sm text-fg">{entry.name}</span>
-                <span className="text-xs text-fg-muted">
-                  {join(entry.kind, entry.source, entry.weight !== null && `${entry.weight.toLocaleString('pt-BR')} ${books.systemId === 'dnd5e' ? (metric ? 'kg' : 'lb') : 'espaço(s)'}`)}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="max-h-80 overflow-auto rounded-md border border-line">
+          <table className="w-full text-left text-sm">
+            <thead className="sticky top-0 bg-raised text-[11px] tracking-wider text-fg-muted uppercase">
+              <tr>
+                <th className="px-3 py-2 font-medium">Item</th>
+                <th className="px-2 py-2 text-right font-medium">Valor</th>
+                <th className="px-2 py-2 text-center font-medium">Qtd.</th>
+                <th className="px-2 py-2 text-right font-medium">Total</th>
+                <th className="px-2 py-2" aria-label="Escolher" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {shown.map((entry) => {
+                const quantity = quantityOf(entry.key);
+                const total = entry.price === null ? null : entry.price * quantity;
+                const fits = affordable(entry, quantity);
+                return (
+                  <tr key={entry.key} className={fits ? '' : 'opacity-60'}>
+                    <td className="px-3 py-2">
+                      <span className="block text-fg">{entry.name}</span>
+                      <span className="block text-xs text-fg-muted">
+                        {join(entry.kind, entry.source, entry.weight !== null && `${entry.weight.toLocaleString('pt-BR')} ${books.systemId === 'dnd5e' ? (metric ? 'kg' : 'lb') : 'espaço(s)'}`)}
+                      </span>
+                    </td>
+                    <td className="tabular px-2 py-2 text-right whitespace-nowrap">{entry.price === null ? '—' : money(entry.price, currency)}</td>
+                    <td className="px-2 py-2 text-center">
+                      <input
+                        type="number"
+                        min={1}
+                        max={999}
+                        value={quantity}
+                        onChange={(event) => setQuantities((current) => ({ ...current, [entry.key]: Math.max(1, Math.min(999, Math.floor(Number(event.target.value) || 1))) }))}
+                        aria-label={`Quantidade de ${entry.name}`}
+                        className="tabular w-14 rounded border border-line bg-canvas px-1 py-1 text-center text-sm text-fg"
+                      />
+                    </td>
+                    <td className={`tabular px-2 py-2 text-right whitespace-nowrap ${fits ? 'text-fg' : 'text-danger'}`}>{total === null ? '—' : money(total, currency)}</td>
+                    <td className="px-2 py-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onPick({ name: entry.name, category: entry.category, weight: entry.weight, description: entry.description, quantity });
+                          setOpen(false);
+                        }}
+                        aria-label={`Escolher ${entry.name}`}
+                        title="Escolher"
+                        className="flex h-8 w-8 items-center justify-center rounded-md border border-line text-fg-brand hover:bg-hover"
+                      >
+                        <Plus className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
       <button type="button" onClick={() => setOpen(false)} className="self-end text-xs text-fg-muted hover:text-fg">
         Fechar catálogo

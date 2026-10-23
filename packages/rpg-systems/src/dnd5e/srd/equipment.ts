@@ -133,6 +133,48 @@ export const ARMOR_COST_GP: Record<string, number> = {
   shield: 10,
 };
 
+/** Custo das armas em peças de ouro (SRD 5.2.1, tabela de armas; 1 PP = 0,1 PO, 1 PC = 0,01 PO). */
+export const WEAPON_COST_GP: Record<string, number> = {
+  club: 0.1,
+  dagger: 2,
+  greatclub: 0.2,
+  handaxe: 5,
+  javelin: 0.5,
+  light_hammer: 2,
+  mace: 5,
+  quarterstaff: 0.2,
+  sickle: 1,
+  spear: 1,
+  dart: 0.05,
+  light_crossbow: 25,
+  shortbow: 25,
+  sling: 0.1,
+  battleaxe: 10,
+  flail: 10,
+  glaive: 20,
+  greataxe: 30,
+  greatsword: 50,
+  halberd: 20,
+  lance: 10,
+  longsword: 15,
+  maul: 10,
+  morningstar: 15,
+  pike: 5,
+  rapier: 25,
+  scimitar: 25,
+  shortsword: 10,
+  trident: 5,
+  warhammer: 15,
+  war_pick: 5,
+  whip: 2,
+  blowgun: 10,
+  hand_crossbow: 75,
+  heavy_crossbow: 50,
+  longbow: 50,
+  musket: 500,
+  pistol: 250,
+};
+
 /** Ferramentas de artesão (cada uma exige uma proficiência própria). */
 export const ARTISAN_TOOLS = [
   { id: 'alchemists_supplies', name: 'Suprimentos de alquimista', weightLb: 8 },

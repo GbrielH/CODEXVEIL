@@ -444,6 +444,12 @@ de segurança).
 - [x] QA: "Escolher do livro" ao adicionar item (site, D&D e T20): catálogo com busca e filtro por
       tipo, do SRD 5.2.1 (D&D, itens e itens mágicos) e dos livros ativos da ficha; preenche o
       formulário (`components/sheets/item-catalog.tsx`). Falta no app.
+- [x] QA (loja): o catálogo virou tabela Item | Valor | Qtd. | Total, com filtro pela categoria do livro
+      (armas, armaduras, alimentação, alquímicos…) e caixas "Itens disponíveis/indisponíveis" (cabe ou
+      não no dinheiro da ficha: PO no D&D, T$ no T20). Preços: livros T20, armaduras e armas do SRD
+      (`WEAPON_COST_GP`). Escolher preenche o item com a quantidade; não desconta o dinheiro.
+- [x] Caixinha de dados presa à tela (portal no `body`; o `transform` da animação do `<main>` a
+      levava para o fim da página) e maior (24rem × 14rem de área de rolagem).
 - [x] Painel do assistente por cima de tudo (portal no `body`; antes ficava atrás dos cards).
 - [x] Mãozinha (cursor) em tudo que é clicável no site: rolagens, abas, botões (`globals.css`).
 - [x] Livro T20 exportado: faltam as origens Acólito e Amigo dos Animais, há poderes com " e"

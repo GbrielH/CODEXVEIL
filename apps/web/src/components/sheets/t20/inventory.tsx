@@ -38,6 +38,8 @@ interface Props {
   canEdit: boolean;
   /** Limite de carga em espaços (Tormenta20). */
   capacity: number;
+  /** Tibares do personagem (para o catálogo separar itens disponíveis e indisponíveis). */
+  money?: number | null;
 }
 
 /** Espaços ocupados: o campo "peso" guarda os espaços de cada item no Tormenta20. */
@@ -49,7 +51,7 @@ function usedSpaces(items: readonly CharacterItem[]): number {
  * Inventário do Tormenta20 no mesmo formato do D&D: itens por categoria, equipar, quantidade,
  * adicionar, editar e excluir, e a carga em espaços.
  */
-export function T20Inventory({ characterId, items, setItems, canEdit, capacity }: Props) {
+export function T20Inventory({ characterId, items, setItems, canEdit, capacity, money = null }: Props) {
   const { toast } = useToast();
   const [editing, setEditing] = useState<CharacterItem | 'new' | null>(null);
   const groups = groupByCategory(items);
@@ -234,6 +236,7 @@ export function T20Inventory({ characterId, items, setItems, canEdit, capacity }
           setItems={setItems}
           onClose={() => setEditing(null)}
           run={run}
+          money={money}
         />
       </Card>
     </div>
@@ -266,7 +269,9 @@ function ItemFormModal({
   setItems,
   onClose,
   run,
+  money,
 }: {
+  money: number | null;
   characterId: string;
   item: CharacterItem | 'new' | null;
   setItems: Dispatch<SetStateAction<CharacterItem[]>>;
@@ -353,8 +358,9 @@ function ItemFormModal({
       >
         {isNew ? (
           <ItemCatalogPicker
+            wallet={money}
             onPick={(picked) =>
-              setForm((current) => ({ ...current, name: picked.name, category: picked.category, weight: picked.weight, description: picked.description }))
+              setForm((current) => ({ ...current, name: picked.name, category: picked.category, weight: picked.weight, description: picked.description, quantity: picked.quantity }))
             }
           />
         ) : null}

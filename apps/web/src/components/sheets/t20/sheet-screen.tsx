@@ -548,6 +548,7 @@ function T20SheetBody(props: T20SheetScreenProps) {
           setItems={setItems}
           canEdit={permissions.canEditPlay}
           capacity={derived.carryCapacity}
+          money={resource(T20_RESOURCE_KEYS.money)?.current ?? null}
         />
       ) : null}
 
