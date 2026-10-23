@@ -365,3 +365,45 @@ describe('livros da ficha', () => {
     expect(parseDnd5eSheet({}).identity.sourcebooks).toEqual([]);
   });
 });
+
+describe('auditoria: classe × espécie × antecedente (SRD 5.2.1)', () => {
+  it('a ficha criada bate com as regras e com o cálculo automático da ficha', async () => {
+    const { listClasses } = await import('../srd/classes');
+    const { listSpecies } = await import('../srd/species');
+    const { listBackgrounds } = await import('../srd/backgrounds');
+    const { computeDnd5eCombat } = await import('../equipment-effects');
+    const problems: string[] = [];
+    for (const klass of listClasses()) {
+      for (const species of listSpecies()) {
+        for (const background of listBackgrounds()) {
+          const label = `${klass.name} / ${species.name} / ${background.name}`;
+          const draft = complete({ classId: klass.id, speciesId: species.id, backgroundId: background.id, level: 1 });
+          const issues = validateDnd5eDraft(draft, PERSONAL_SHEET_CONTEXT);
+          if (issues.length) {
+            problems.push(`${label}: pendências ${issues.map((issue) => issue.path).join(', ')}`);
+            continue;
+          }
+          const built = buildDnd5eCharacterFromDraft(draft);
+          const sheet = parseDnd5eSheet(built.sheet);
+          const summary = combatSummary(draft);
+          // Deslocamento da espécie (pés → metros).
+          const speciesMeters = Math.round((draft.selections['species.lineage'] && species.lineage?.options.find((option) => option.id === draft.selections['species.lineage'])?.speed ? species.lineage.options.find((option) => option.id === draft.selections['species.lineage'])!.speed! : species.speed) * 0.3 * 10) / 10;
+          if (sheet.combat.speed !== speciesMeters) problems.push(`${label}: deslocamento ${sheet.combat.speed} ≠ ${speciesMeters}`);
+          // Testes de resistência da classe.
+          for (const ability of klass.savingThrows) if (!sheet.savingThrows[ability].proficient) problems.push(`${label}: sem proficiência em resistência de ${ability}`);
+          // Perícias do antecedente.
+          for (const skill of background.skills) if (sheet.skills[skill].proficiency === 'none') problems.push(`${label}: sem a perícia ${skill} do antecedente`);
+          // Vida de 1º nível: dado de vida máximo + Constituição.
+          const hp = built.resources.find((resource) => resource.key === 'hp');
+          const conMod = Math.floor((sheet.abilities.con - 10) / 2);
+          const expectedHp = Number(klass.hitDie.slice(1)) + conMod;
+          if (hp && hp.max !== expectedHp && !(species.id === 'dwarf')) problems.push(`${label}: vida ${hp.max} ≠ ${expectedHp}`);
+          // CA da criação = CA calculada pela ficha com os itens equipados.
+          const combat = computeDnd5eCombat(sheet, built.items, built.abilities.map((entry) => entry.name));
+          if (combat.armorClass !== summary.armorClass) problems.push(`${label}: CA da ficha ${combat.armorClass} ≠ CA da criação ${summary.armorClass}`);
+        }
+      }
+    }
+    expect(problems).toEqual([]);
+  }, 120000);
+});
