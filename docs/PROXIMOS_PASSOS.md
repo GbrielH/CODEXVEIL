@@ -435,7 +435,11 @@ de segurança).
 - [x] Card "Assistente" acima do perfil/"Sair" (site), painel de conversa por cima da página,
       streaming, botão copiar e aviso de que a regra do livro vale.
 - [x] Rota `/api/assistente` (Google Gemini `gemini-flash-latest`, plano gratuito; trocado do Claude no mesmo dia porque a API da Anthropic não tem plano gratuito), contexto pela rota com o RLS da pessoa.
-- [x] Cota de 30 perguntas/dia (migração `20261023120000_assistant_usage.sql`, aplicada).
+- [x] Cota de 30 perguntas/dia (migração `20261023120000_assistant_usage.sql`, aplicada); **retirada
+      no mesmo dia** a pedido do responsável (só ele e amigos usam).
+- [x] Personalidade de "Mestre" de RPG; modelo `gemini-3.1-flash-lite` (~1 s até a primeira palavra;
+      o Flash levou 60 s), com `gemini-flash-lite-latest` de reserva. Testado em produção ("oi").
+- [ ] Mascote (grimório encapuzado): o responsável está criando; usar como ícone do card e do painel.
 - [ ] Criar `GEMINI_API_KEY` na Vercel (o card só aparece com ela) (chave grátis em aistudio.google.com) e testar uma pergunta real.
 - [x] QA: "Escolher do livro" ao adicionar item (site, D&D e T20): catálogo com busca e filtro por
       tipo, do SRD 5.2.1 (D&D, itens e itens mágicos) e dos livros ativos da ficha; preenche o

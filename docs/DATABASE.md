@@ -171,7 +171,8 @@ por pessoa e sessão; membros leem; cada um responde só por si, em sessão agen
 
 Migração `20261023120000_assistant_usage.sql`: tabela `assistant_usage` (perguntas por pessoa e
 dia, UTC; a pessoa só lê a própria linha) e a função `consume_assistant_question()` (SECURITY
-DEFINER, limite fixo de 30 por dia; devolve quantas restam ou -1). As conversas não são gravadas.
+DEFINER, limite fixo de 30 por dia; devolve quantas restam ou -1). As conversas não são gravadas. **Sem uso desde 2026-10-23** (o responsável tirou o limite; a rota
+não chama mais a função).
 
 Migração `20261023110000_character_token_image.sql`: `characters.token_path` (imagem do token no
 mapa; mesma pasta do retrato).

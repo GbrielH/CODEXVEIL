@@ -123,7 +123,8 @@ apaga (`private.owns_book_pack`). Testado em `packages/database/test/rls/books.t
   os modelos. O contexto não leva e-mails nem dados de outras pessoas; só campanha, papel e ficha.
 - O contexto (campanha, papel, ficha aberta) é lido com o cliente do Supabase da própria pessoa:
   o RLS garante que segredos do mestre não chegam a jogadores.
-- Cota diária no banco (`consume_assistant_question`, 30 por dia, limite fixo no SQL); pergunta de
+- Sem cota por pessoa desde 2026-10-23 (uso só do responsável e amigos; o limite é o do plano gratuito do
+  Gemini). A função `consume_assistant_question` continua no banco, sem uso. Pergunta de
   até 2.000 caracteres e contexto de até 12.000. Conversas não são gravadas.
 
 ## Cabeçalhos HTTP (web)

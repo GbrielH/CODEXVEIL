@@ -6,7 +6,8 @@
 ## Estado atual
 
 **2026-10-23 (assistente de IA):** card no menu do site, rota `/api/assistente` com streaming e
-cota diária no banco (migração `20261023120000` aplicada). `pnpm check` 20/20 e `pnpm build`.
+Gemini 3.1 Flash-Lite com personalidade de Mestre, sem limite por pessoa (a migração
+`20261023120000` ficou sem uso). `pnpm check` 20/20 e `pnpm build`.
 **Não verificado:** uma resposta real, pois falta a `GEMINI_API_KEY` na Vercel; sem ela o card
 fica oculto.
 

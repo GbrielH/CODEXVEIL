@@ -31,8 +31,8 @@ export function AssistantCard({ compact = false }: { compact?: boolean }) {
         <Sparkles className="h-5 w-5 shrink-0 text-fg-brand" aria-hidden="true" />
         {compact ? null : (
           <span className="min-w-0">
-            <span className="block text-sm font-medium text-fg">Assistente</span>
-            <span className="block truncate text-xs text-fg-muted">Tire dúvidas sem sair da tela</span>
+            <span className="block text-sm font-medium text-fg">Mestre</span>
+            <span className="block truncate text-xs text-fg-muted">Pergunte ao Mestre sem sair da tela</span>
           </span>
         )}
       </button>
@@ -47,7 +47,6 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
-  const [remaining, setRemaining] = useState<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const scrollDown = () => requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
@@ -69,8 +68,6 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ pathname, messages: next.slice(-20) }),
       });
-      const left = response.headers.get('x-assistant-remaining');
-      if (left) setRemaining(Number(left));
       if (!response.ok || !response.body) {
         write(await response.text());
         return;
@@ -100,8 +97,7 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
     >
       <header className="flex items-center gap-2 border-b border-line px-4 py-3">
         <Sparkles className="h-4 w-4 text-fg-brand" aria-hidden="true" />
-        <h2 className="flex-1 text-sm font-medium text-fg">Assistente</h2>
-        {remaining !== null ? <span className="text-xs text-fg-muted">{remaining} perguntas hoje</span> : null}
+        <h2 className="flex-1 text-sm font-medium text-fg">Mestre</h2>
         <button type="button" onClick={onClose} aria-label="Fechar" className="rounded p-1 text-fg-muted hover:bg-hover hover:text-fg">
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
