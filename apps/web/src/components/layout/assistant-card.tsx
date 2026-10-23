@@ -3,7 +3,7 @@
 import { Copy, Send, X } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 
 interface ChatMessage {
@@ -52,6 +52,31 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  // Posição escolhida ao arrastar pelo cabeçalho (sem ela, o painel fica no canto padrão).
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+
+  const startDrag = (event: ReactPointerEvent<HTMLElement>) => {
+    if ((event.target as HTMLElement).closest('button') || !panelRef.current) return;
+    const rect = panelRef.current.getBoundingClientRect();
+    const offsetX = event.clientX - rect.left;
+    const offsetY = event.clientY - rect.top;
+    const move = (moveEvent: PointerEvent) => {
+      const maxX = window.innerWidth - rect.width;
+      const maxY = window.innerHeight - 48;
+      setPosition({
+        x: Math.min(Math.max(0, moveEvent.clientX - offsetX), Math.max(0, maxX)),
+        y: Math.min(Math.max(0, moveEvent.clientY - offsetY), Math.max(0, maxY)),
+      });
+    };
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop);
+    event.preventDefault();
+  };
 
   const scrollDown = () => requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
 
@@ -95,11 +120,17 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div
+      ref={panelRef}
       role="dialog"
       aria-label="Assistente de IA"
+      style={position ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' } : undefined}
       className="fixed right-4 bottom-24 z-[100] flex max-h-[min(640px,calc(100dvh-8rem))] w-[min(420px,calc(100vw-2rem))] flex-col rounded-xl border border-line-strong bg-raised shadow-2xl lg:bottom-6 lg:left-[calc(var(--sidebar-width,16rem)+1rem)] lg:right-auto"
     >
-      <header className="flex items-center gap-2 border-b border-line px-4 py-3">
+      <header
+        onPointerDown={startDrag}
+        title="Arraste para mover"
+        className="flex cursor-grab touch-none items-center gap-2 border-b border-line px-4 py-3 select-none active:cursor-grabbing"
+      >
         <Image src="/mestre/icone.webp" alt="" width={28} height={28} className="h-7 w-7 rounded-md" />
         <h2 className="flex-1 text-sm font-medium text-fg">{MASCOT_NAME}, o Mestre</h2>
         <button type="button" onClick={onClose} aria-label="Fechar" className="rounded p-1 text-fg-muted hover:bg-hover hover:text-fg">

@@ -39,6 +39,16 @@ function notation(roll: TrayRoll['roll']): string | null {
   let used = 0;
   for (const group of roll.dice) {
     if (!SUPPORTED_SIDES.has(group.sides)) continue;
+    if (group.sides === 100) {
+      // d100 na mesa é o dado percentual (00–90) mais um d10 (unidade): 45 = "40" + "5"; 100 = "00" + "0".
+      // A biblioteca lê a dezena (0 = "00") e a unidade (0 = face "0").
+      const take = group.values.slice(0, Math.max(0, Math.floor((MAX_TRAY_DICE - used) / 2)));
+      if (take.length === 0) continue;
+      used += take.length * 2;
+      groups.push(`${take.length}d100`, `${take.length}d10`);
+      values.push(...take.map((value) => Math.floor((value % 100) / 10)), ...take.map((value) => value % 10));
+      continue;
+    }
     const take = group.values.slice(0, Math.max(0, MAX_TRAY_DICE - used));
     if (take.length === 0) continue;
     used += take.length;
@@ -225,6 +235,21 @@ export function DiceTray({
 
   if (!mounted) return null;
   return createPortal(
+    <>
+    {/* Crítico (20 natural) ou falha (1 natural): explosão na tela, sem bloquear cliques. */}
+    {last && bubbleKey === last.key && (natural === 20 || natural === 1) ? (
+      <div key={last.key} aria-hidden="true" className="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center overflow-hidden">
+        <div className={cx('absolute inset-0', natural === 20 ? 'animate-crit-flash bg-[radial-gradient(circle,rgb(251_191_36/0.45),transparent_60%)]' : 'animate-crit-flash bg-[radial-gradient(circle,rgb(239_68_68/0.4),transparent_60%)]')} />
+        <p
+          className={cx(
+            'font-display text-6xl tracking-wider uppercase sm:text-8xl',
+            natural === 20 ? 'animate-crit-banner text-amber-300 [text-shadow:0_0_24px_rgb(251_191_36/0.9),0_0_60px_rgb(251_191_36/0.6)]' : 'animate-fumble-banner text-red-400 [text-shadow:0_0_24px_rgb(239_68_68/0.8)]',
+          )}
+        >
+          {natural === 20 ? 'Crítico!' : 'Falha crítica'}
+        </p>
+      </div>
+    ) : null}
     <div className="fixed right-3 bottom-20 z-50 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col items-stretch gap-2 lg:bottom-4">
       {/* Resultado da última rolagem, logo acima da caixinha. */}
       <div aria-live="polite" className="min-h-0">
@@ -330,7 +355,8 @@ export function DiceTray({
           mestre)
         </p>
       </aside>
-    </div>,
+    </div>
+    </>,
     document.body,
   );
 }

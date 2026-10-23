@@ -451,6 +451,10 @@ de segurança).
       (`WEAPON_COST_GP`). Escolher preenche o item com a quantidade; não desconta o dinheiro.
 - [x] Caixinha de dados presa à tela (portal no `body`; o `transform` da animação do `<main>` a
       levava para o fim da página) e maior (24rem × 14rem de área de rolagem).
+- [x] QA: d100 3D mostrava um dado só (45 aparecia como "70"); agora dado percentual + d10 (40 + 5).
+- [x] QA: animação de crítico (20 natural: clarão dourado e "Crítico!") e de falha (1 natural: "Falha
+      crítica" tremendo), no site; desligada com movimento reduzido.
+- [x] QA: painel do Tomo arrastável pelo cabeçalho.
 - [x] Painel do assistente por cima de tudo (portal no `body`; antes ficava atrás dos cards).
 - [x] Mãozinha (cursor) em tudo que é clicável no site: rolagens, abas, botões (`globals.css`).
 - [x] Livro T20 exportado: faltam as origens Acólito e Amigo dos Animais, há poderes com " e"

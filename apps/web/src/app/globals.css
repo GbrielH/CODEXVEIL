@@ -343,6 +343,80 @@
   animation: codex-die-throw 1000ms cubic-bezier(0.3, 0.7, 0.4, 1) both;
 }
 
+@keyframes codex-crit-flash {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes codex-crit-banner {
+  0% {
+    transform: scale(0.3) rotate(-8deg);
+    opacity: 0;
+  }
+  20% {
+    transform: scale(1.25) rotate(3deg);
+    opacity: 1;
+  }
+  35% {
+    transform: scale(1) rotate(0);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.1);
+    opacity: 0;
+  }
+}
+
+@keyframes codex-fumble-banner {
+  0% {
+    transform: translateY(-40px);
+    opacity: 0;
+  }
+  20% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  25%,
+  35%,
+  45% {
+    transform: translateX(-10px);
+  }
+  30%,
+  40%,
+  50% {
+    transform: translateX(10px);
+  }
+  80% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+}
+
+@utility animate-crit-flash {
+  animation: codex-crit-flash 1.4s ease-out both;
+}
+
+@utility animate-crit-banner {
+  animation: codex-crit-banner 1.8s var(--ease-codex) both;
+}
+
+@utility animate-fumble-banner {
+  animation: codex-fumble-banner 1.8s ease-out both;
+}
+
 @utility animate-pop {
   animation: codex-pop 360ms var(--ease-codex) both;
 }
@@ -354,6 +428,12 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-die-throw {
     animation: none !important;
+  }
+  /* Movimento reduzido: sem explosão de crítico (o balão do resultado já avisa). */
+  .animate-crit-flash,
+  .animate-crit-banner,
+  .animate-fumble-banner {
+    display: none;
   }
 }
 
