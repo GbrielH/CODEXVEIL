@@ -24,7 +24,7 @@ export function DragonLoader({
   className?: string;
 }) {
   return (
-    <div role="status" className={cx('flex flex-col items-center justify-center gap-3 py-10 text-fg-secondary', className)}>
+    <div role="status" className={cx('flex flex-col items-center justify-center gap-5 py-10 text-fg-secondary', className)}>
       {/* A margem direita reserva espaço para a montanha (~56% da largura do dragão). */}
       <div
         aria-hidden="true"
@@ -35,7 +35,7 @@ export function DragonLoader({
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- WebP animado: a otimização do next/image congelaria a animação. */}
         <img src="/mestre/carregando.webp" alt="" width={260} height={313} decoding="async" className="block h-auto w-full [image-rendering:pixelated]" />
-        <svg viewBox="0 0 140 200" preserveAspectRatio="none" className="absolute" style={{ left: '84%', top: '-8%', width: '72%', height: '116%' }}>
+        <svg viewBox="0 0 140 200" preserveAspectRatio="none" className="absolute" style={{ left: '84%', top: '-12%', width: '72%', height: '112%' }}>
           <defs>
             <linearGradient id="dragon-rock" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0" stopColor="#2C1760" />
@@ -54,7 +54,7 @@ export function DragonLoader({
           <rect width="140" height="200" fill="url(#dragon-rock-fade)" />
         </svg>
       </div>
-      <span className="font-display text-sm tracking-[0.2em] uppercase">{label}</span>
+      <span className="relative z-10 font-display text-sm tracking-[0.2em] uppercase">{label}</span>
     </div>
   );
 }
