@@ -430,6 +430,14 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-23 — pedido: cor dos dados por sessão (a fazer)
+
+- [ ] A cor dos dados é escolhida **só no início de cada sessão** e vale apenas para ela; não
+      fica gravada para a campanha inteira. Fora de uma sessão, a insígnia de dado e o sublinhado
+      colorido do nome (`ColoredName` em `apps/web/src/components/dice/campaign-colors.tsx`) não
+      aparecem (hoje aparecem na aba Grupo). Ao encerrar a sessão, as cores são liberadas.
+      Conferir o esquema (onde a cor é gravada) e fazer migração se preciso; site e app.
+
 ### 2026-10-23 — pedido: efeito visual em habilidades ativas (a fazer)
 
 - [ ] Habilidades ativáveis da ficha (cartão com "Ligada/Desligada", como "Entrar em Fúria")
