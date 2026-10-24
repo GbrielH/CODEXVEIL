@@ -104,8 +104,10 @@ tesouro por ND, mundo de Arton).
 - [x] Sinônimos de tradução também no script (`SPELL_ALIASES_PT`): corrigiu o Juramento dos Anciões
       (9º: Proteção Contra Elementos, antes saía Veneno) e o Deserto (Deteriorar = Malogro).
 - [x] Monstros do Multiverso: as 11 tabelas "Blocos de Estatísticas por Ambiente" como seções.
-- [ ] Ainda em aberto: escolher o terreno quando o Círculo da Terra do livro é escolhido **na
-      subida de nível** (hoje só na criação); erros residuais de OCR do Xanathar/PHB que o
+- [x] Terreno do Círculo da Terra escolhido também na subida de nível (site; `landId`).
+- [x] Os 6 pacotes foram importados na conta do responsável em 2026-10-25 pelo
+      `scripts/books/import_books.mjs` (ver `scripts/books/README.md`).
+- [ ] Ainda em aberto: erros residuais de OCR do Xanathar/PHB que o
       vocabulário não corrige com segurança; decidir quais regras opcionais viram automação.
 
 ### B2a. Texto original do pedido, página por página (pedido de 2026-10-24)

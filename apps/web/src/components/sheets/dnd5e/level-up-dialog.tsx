@@ -170,6 +170,7 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
   const [multiclassSkill, setMulticlassSkill] = useState<Skill | ''>('');
   const [multiclassInstrument, setMulticlassInstrument] = useState('');
   const [subclassId, setSubclassId] = useState('');
+  const [landId, setLandId] = useState('');
   const [busy, setBusy] = useState(false);
 
   const featOptions = plan.feats.filter((feat) => feat.id !== 'ability_score_improvement');
@@ -198,6 +199,7 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
     featSkills: featSkills.filter((skill): skill is Skill => Boolean(skill)),
     magicInitiate: initiate,
     ...(subclassId ? { subclassId } : {}),
+    ...(landId ? { landId } : {}),
   };
   const result = applyDnd5eLevelUp(sheet, plan, choices);
   const blockedOptions = multiclassOptions.filter((option) => option.blocked.length > 0);
@@ -420,6 +422,25 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
               </option>
             ))}
           </Select>
+          {chosenSubclass &&
+          chosenSubclass.id !== 'land' &&
+          (chosenSubclass.landOptions ?? []).length > 0 ? (
+            <Select
+              aria-label="Terreno do círculo"
+              value={landId}
+              onChange={(event) => setLandId(event.target.value)}
+            >
+              <option value="">Escolha o terreno (magias de círculo)</option>
+              {(chosenSubclass.landOptions ?? []).map((land) => (
+                <option key={land.id} value={land.id}>
+                  {land.name}:{' '}
+                  {land.spells
+                    .map((group) => `${group.level}º ${group.spells.join(', ')}`)
+                    .join(' · ')}
+                </option>
+              ))}
+            </Select>
+          ) : null}
           {chosenSubclass ? (
             <div className="flex flex-col gap-2">
               <p className="text-xs whitespace-pre-line text-fg-muted">

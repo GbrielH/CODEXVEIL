@@ -50,3 +50,19 @@ repositório. Gere tudo numa pasta fora do projeto (por exemplo, `Documents/Code
    O pacote (`codexveil.tormenta20.book`) é importado em Meus livros como os de D&D.
 
 Veja o andamento e o que falta em `docs/PROXIMOS_PASSOS.md` ("Continuidade").
+
+## Importar na conta do responsável (sem passar pelo site)
+
+`scripts/books/import_books.mjs` faz o mesmo que "Meus livros": apaga a versão anterior do livro,
+envia o conteúdo em lotes e chama `finish_book_import` (que deduplica). A chave administrativa só
+abre uma sessão da própria conta (link mágico verificado no script, sem e-mail); o envio roda com
+essa sessão, sob o RLS. As chaves vêm da CLI do Supabase em variáveis de ambiente e nunca vão para
+arquivos:
+
+```bash
+KEYS=$(npx supabase projects api-keys --project-ref ityfhobhpjzhlkgvjhfb -o json)
+export SUPABASE_URL=https://ityfhobhpjzhlkgvjhfb.supabase.co
+export SERVICE_KEY=$(node -e "process.stdout.write(JSON.parse(process.argv[1]).find(k=>k.name==='service_role').api_key)" "$KEYS")
+export ANON_KEY=$(node -e "process.stdout.write(JSON.parse(process.argv[1]).find(k=>k.name==='anon').api_key)" "$KEYS")
+node scripts/books/import_books.mjs <email> <pasta out> phb-2014.book.json xgte.book.json …
+```
