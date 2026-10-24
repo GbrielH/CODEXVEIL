@@ -68,23 +68,45 @@ function mapAbilities<T>(fn: (ability: Ability) => T): Record<Ability, T> {
  * Valores derivados. Com `gear` (itens e nomes das características), CA, deslocamento e
  * atributos vêm do equipamento; sem ele (ex.: prévia da criação), da ficha.
  */
-export function computeDnd5eDerived(sheet: Dnd5eSheet, gear?: { items: readonly GearItem[]; features?: readonly string[] }): Dnd5eDerived {
+export function computeDnd5eDerived(
+  sheet: Dnd5eSheet,
+  gear?: { items: readonly GearItem[]; features?: readonly string[] },
+): Dnd5eDerived {
   const level = totalLevel(sheet);
   const proficiencyBonus = proficiencyBonusForLevel(level);
   const combat = gear ? computeDnd5eCombat(sheet, gear.items, gear.features ?? []) : null;
   const scores = combat?.abilities ?? sheet.abilities;
   const abilityModifiers = mapAbilities((ability) => abilityModifier(scores[ability]));
-  const plainName = (text: string) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+  const plainName = (text: string) =>
+    text
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase();
   // Pau para Toda Obra (Bardo 2º): metade da proficiência nos testes de atributo sem proficiência.
-  const jackOfAllTrades = sheet.identity.classes.some((entry) => ['bardo', 'bard'].includes(plainName(entry.name)) && entry.level >= 2);
+  const jackOfAllTrades = sheet.identity.classes.some(
+    (entry) => ['bardo', 'bard'].includes(plainName(entry.name)) && entry.level >= 2,
+  );
   // Alerta (talento): soma a proficiência na Iniciativa.
-  const alert = (gear?.features ?? []).some((feature) => ['alerta', 'alert'].includes(plainName(feature).replace(/^talento:\s*/, '').trim()));
+  const alert = (gear?.features ?? []).some((feature) =>
+    ['alerta', 'alert'].includes(
+      plainName(feature)
+        .replace(/^talento:\s*/, '')
+        .trim(),
+    ),
+  );
   const checkProficiency = (level: ProficiencyLevel) =>
-    level === 'none' && jackOfAllTrades ? Math.floor(proficiencyBonus / 2) : proficiencyContribution(level, proficiencyBonus);
+    level === 'none' && jackOfAllTrades
+      ? Math.floor(proficiencyBonus / 2)
+      : proficiencyContribution(level, proficiencyBonus);
 
   const savingThrows = mapAbilities((ability) => {
     const entry = sheet.savingThrows[ability];
-    return abilityModifiers[ability] + (entry.proficient ? proficiencyBonus : 0) + entry.bonus + (combat?.savingThrowBonus ?? 0);
+    return (
+      abilityModifiers[ability] +
+      (entry.proficient ? proficiencyBonus : 0) +
+      entry.bonus +
+      (combat?.savingThrowBonus ?? 0)
+    );
   });
 
   const skills = Object.fromEntries(
@@ -94,10 +116,7 @@ export function computeDnd5eDerived(sheet: Dnd5eSheet, gear?: { items: readonly 
       const value: Dnd5eSkillValue = {
         ability,
         proficiency: entry.proficiency,
-        bonus:
-          abilityModifiers[ability] +
-          checkProficiency(entry.proficiency) +
-          entry.bonus,
+        bonus: abilityModifiers[ability] + checkProficiency(entry.proficiency) + entry.bonus,
       };
       return [skill, value];
     }),
@@ -108,10 +127,7 @@ export function computeDnd5eDerived(sheet: Dnd5eSheet, gear?: { items: readonly 
     ? {
         ability: castingAbility,
         saveDc:
-          8 +
-          proficiencyBonus +
-          abilityModifiers[castingAbility] +
-          sheet.spellcasting.saveDcBonus,
+          8 + proficiencyBonus + abilityModifiers[castingAbility] + sheet.spellcasting.saveDcBonus,
         attackBonus:
           proficiencyBonus + abilityModifiers[castingAbility] + sheet.spellcasting.attackBonus,
       }
@@ -130,7 +146,9 @@ export function computeDnd5eDerived(sheet: Dnd5eSheet, gear?: { items: readonly 
     skills,
     initiative:
       abilityModifiers.dex +
-      (alert && sheet.combat.initiativeProficiency === 'none' ? proficiencyBonus : checkProficiency(sheet.combat.initiativeProficiency)) +
+      (alert && sheet.combat.initiativeProficiency === 'none'
+        ? proficiencyBonus
+        : checkProficiency(sheet.combat.initiativeProficiency)) +
       sheet.combat.initiativeBonus,
     armorClass: combat?.armorClass ?? sheet.combat.armorClass,
     armorClassBreakdown: combat?.armorClassBreakdown ?? [],

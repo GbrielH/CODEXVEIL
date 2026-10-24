@@ -13,7 +13,7 @@ export interface Dnd5eTurnCost {
 
 /** Habilidades de classe conhecidas, pelo nome na ficha (em português). */
 const FEATURE_COSTS: Readonly<Record<string, Dnd5eTurnCost>> = {
-  'fúria': { kind: 'bonus_action', grantsAction: false },
+  fúria: { kind: 'bonus_action', grantsAction: false },
   'surto de ação': { kind: 'free', grantsAction: true },
   'retomar o fôlego': { kind: 'bonus_action', grantsAction: false },
   'ação ardilosa': { kind: 'bonus_action', grantsAction: false },
@@ -24,18 +24,20 @@ const FEATURE_COSTS: Readonly<Record<string, Dnd5eTurnCost>> = {
   'canalizar divindade': { kind: 'action', grantsAction: false },
   'destruir mortos-vivos': { kind: 'action', grantsAction: false },
   'presença intimidadora': { kind: 'bonus_action', grantsAction: false },
-  'contraencanto': { kind: 'reaction', grantsAction: false },
+  contraencanto: { kind: 'reaction', grantsAction: false },
   'desviar ataques': { kind: 'reaction', grantsAction: false },
   'esquiva sobrenatural': { kind: 'reaction', grantsAction: false },
   'golpe atordoante': { kind: 'free', grantsAction: false },
-  'retaliação': { kind: 'reaction', grantsAction: false },
+  retaliação: { kind: 'reaction', grantsAction: false },
 };
 
 /** Custo pelo tempo de conjuração da magia ("Ação", "Ação bônus", "Reação", "1 minuto"…). */
 export function spellTurnCost(castingTime: string): Dnd5eTurnCost {
   const text = castingTime.toLowerCase();
-  if (text.includes('bônus') || text.includes('bonus')) return { kind: 'bonus_action', grantsAction: false };
-  if (text.includes('reação') || text.includes('reaction')) return { kind: 'reaction', grantsAction: false };
+  if (text.includes('bônus') || text.includes('bonus'))
+    return { kind: 'bonus_action', grantsAction: false };
+  if (text.includes('reação') || text.includes('reaction'))
+    return { kind: 'reaction', grantsAction: false };
   return { kind: 'action', grantsAction: false };
 }
 

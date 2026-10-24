@@ -1,7 +1,18 @@
 import { ALL_TOOLS, SRD_ITEMS } from '../srd/equipment';
 import type { EquipmentGrant } from '../srd/types';
 
-const NUMBER_WORDS: Record<string, number> = { um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, dez: 10, vinte: 20 };
+const NUMBER_WORDS: Record<string, number> = {
+  um: 1,
+  uma: 1,
+  dois: 2,
+  duas: 2,
+  tres: 3,
+  quatro: 4,
+  cinco: 5,
+  seis: 6,
+  dez: 10,
+  vinte: 20,
+};
 
 function plain(text: string): string {
   return text
@@ -30,7 +41,9 @@ function matchCatalog(piece: string): string | undefined {
   const text = ` ${plain(piece)} `;
   // Singular simples ("virotes" → "virote", "flechas" → "flecha").
   const singular = text.replace(/(\w{3,})s\b/g, '$1');
-  return catalogEntries().find((entry) => text.includes(` ${entry.key} `) || singular.includes(` ${entry.key} `))?.id;
+  return catalogEntries().find(
+    (entry) => text.includes(` ${entry.key} `) || singular.includes(` ${entry.key} `),
+  )?.id;
 }
 
 /**
@@ -50,7 +63,12 @@ export function equipmentFromText(text: string): { items: EquipmentGrant[]; gold
     const coins = /(\d+)\s*(po|pp|pc)\b/i.exec(raw);
     if (coins && /algibeira|bolsa|moedas|\bpo\b/i.test(raw)) {
       const value = Number(coins[1]);
-      gold += coins[2]!.toLowerCase() === 'po' ? value : coins[2]!.toLowerCase() === 'pp' ? Math.floor(value / 10) : 0;
+      gold +=
+        coins[2]!.toLowerCase() === 'po'
+          ? value
+          : coins[2]!.toLowerCase() === 'pp'
+            ? Math.floor(value / 10)
+            : 0;
       if (/algibeira|bolsa/i.test(raw)) items.push({ item: 'pouch', name: 'Algibeira' });
       continue;
     }
@@ -58,11 +76,21 @@ export function equipmentFromText(text: string): { items: EquipmentGrant[]; gold
     const piece = raw.split(/\s+ou\s+/i)[0]!.trim();
     const words = plain(piece).split(' ');
     const first = words[0] ?? '';
-    const quantity = NUMBER_WORDS[first] ?? (/^\d+$/.test(first) && !/metros?/.test(words[1] ?? '') ? Number(first) : 1);
-    const name = piece.replace(/^(um|uma|dois|duas|\d+)\s+/i, '').replace(/^\w/, (letter) => letter.toUpperCase());
+    const quantity =
+      NUMBER_WORDS[first] ??
+      (/^\d+$/.test(first) && !/metros?/.test(words[1] ?? '') ? Number(first) : 1);
+    const name = piece
+      .replace(/^(um|uma|dois|duas|\d+)\s+/i, '')
+      .replace(/^\w/, (letter) => letter.toUpperCase());
     if (!name) continue;
     const id = matchCatalog(piece);
-    items.push({ item: id ?? 'livro', ...(id && plain(name) === plain(SRD_ITEMS[id]?.name ?? '') ? {} : { name: name.slice(0, 120) }), ...(quantity > 1 ? { quantity } : {}) });
+    items.push({
+      item: id ?? 'livro',
+      ...(id && plain(name) === plain(SRD_ITEMS[id]?.name ?? '')
+        ? {}
+        : { name: name.slice(0, 120) }),
+      ...(quantity > 1 ? { quantity } : {}),
+    });
   }
   return { items: items.slice(0, 30), gold };
 }

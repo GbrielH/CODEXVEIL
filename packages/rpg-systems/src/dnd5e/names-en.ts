@@ -86,5 +86,7 @@ export function matchesNameSearch(name: string, query: string): boolean {
   if (!wanted) return true;
   const plain = (text: string) => comparableName(text).replace(/ /g, '');
   const target = wanted.replace(/ /g, '');
-  return [name, ENGLISH_NAMES[comparableName(name)] ?? ''].some((candidate) => candidate && plain(candidate).includes(target));
+  return [name, ENGLISH_NAMES[comparableName(name)] ?? ''].some(
+    (candidate) => candidate && plain(candidate).includes(target),
+  );
 }

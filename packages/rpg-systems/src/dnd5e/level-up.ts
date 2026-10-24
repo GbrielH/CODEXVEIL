@@ -12,13 +12,34 @@ import { spellSchoolLabels } from './entries';
 import { hitDiceResourceKey, spellSlotResources } from './resources';
 import type { Dnd5eClass, Dnd5eSheet } from './sheet';
 import { SKILLS, skillDefinitions, type Skill } from './skills';
-import { SRD_INVOCATIONS, SRD_METAMAGIC, type InvocationDefinition, type MetamagicDefinition } from './srd/class-options';
-import { SORCERER_METAMAGIC, WARLOCK_INVOCATIONS, WARLOCK_PACT_SLOTS, WARLOCK_SLOT_LEVEL, atLevel, listClasses, listSubclasses } from './srd/classes';
+import {
+  SRD_INVOCATIONS,
+  SRD_METAMAGIC,
+  type InvocationDefinition,
+  type MetamagicDefinition,
+} from './srd/class-options';
+import {
+  SORCERER_METAMAGIC,
+  WARLOCK_INVOCATIONS,
+  WARLOCK_PACT_SLOTS,
+  WARLOCK_SLOT_LEVEL,
+  atLevel,
+  listClasses,
+  listSubclasses,
+} from './srd/classes';
 import { MUSICAL_INSTRUMENTS } from './srd/equipment';
 import { findFeat, listFeats } from './srd/feats';
 import { findSpell, listSpells } from './srd/spells';
 import type { BookSpell } from './books/active';
-import type { ClassDefinition, ClassId, FeatDefinition, FeatureDefinition, ResourceDefinition, SrdSpell, SubclassDefinition } from './srd/types';
+import type {
+  ClassDefinition,
+  ClassId,
+  FeatDefinition,
+  FeatureDefinition,
+  ResourceDefinition,
+  SrdSpell,
+  SubclassDefinition,
+} from './srd/types';
 
 const HIT_DIE_SIDES = { d6: 6, d8: 8, d10: 10, d12: 12 } as const;
 
@@ -53,9 +74,17 @@ export interface MulticlassTraining {
   instrument: boolean;
 }
 
-const training = (fields: Partial<MulticlassTraining>): MulticlassTraining => ({ armor: '', weapons: '', tools: '', skill: null, instrument: false, ...fields });
+const training = (fields: Partial<MulticlassTraining>): MulticlassTraining => ({
+  armor: '',
+  weapons: '',
+  tools: '',
+  skill: null,
+  instrument: false,
+  ...fields,
+});
 
-export const MULTICLASS_TRAINING: Record<ClassId, MulticlassTraining> & Partial<Record<string, MulticlassTraining>> = {
+export const MULTICLASS_TRAINING: Record<ClassId, MulticlassTraining> &
+  Partial<Record<string, MulticlassTraining>> = {
   barbarian: training({ armor: 'Escudos', weapons: 'Armas marciais' }),
   bard: training({ armor: 'Armaduras leves', skill: 'any', instrument: true }),
   cleric: training({ armor: 'Armaduras leves e médias, escudos' }),
@@ -63,7 +92,11 @@ export const MULTICLASS_TRAINING: Record<ClassId, MulticlassTraining> & Partial<
   fighter: training({ armor: 'Armaduras leves e médias, escudos', weapons: 'Armas marciais' }),
   monk: training({}),
   paladin: training({ armor: 'Armaduras leves e médias, escudos', weapons: 'Armas marciais' }),
-  ranger: training({ armor: 'Armaduras leves e médias, escudos', weapons: 'Armas marciais', skill: 'class' }),
+  ranger: training({
+    armor: 'Armaduras leves e médias, escudos',
+    weapons: 'Armas marciais',
+    skill: 'class',
+  }),
   rogue: training({ armor: 'Armaduras leves', tools: 'Ferramentas de ladrão', skill: 'class' }),
   sorcerer: training({}),
   warlock: training({ armor: 'Armaduras leves' }),
@@ -72,14 +105,25 @@ export const MULTICLASS_TRAINING: Record<ClassId, MulticlassTraining> & Partial<
 
 /** Atributos abaixo de 13. "Força ou Destreza": basta um; "Destreza e Sabedoria": os dois. */
 function missingPrimary(classDef: ClassDefinition, scores: Record<Ability, number>): Ability[] {
-  const below = classDef.primaryAbilities.filter((ability) => scores[ability] < MULTICLASS_MIN_SCORE);
+  const below = classDef.primaryAbilities.filter(
+    (ability) => scores[ability] < MULTICLASS_MIN_SCORE,
+  );
   const anyOf = classDef.primaryAbilityLabel.includes(' ou ');
   return anyOf && below.length < classDef.primaryAbilities.length ? [] : below;
 }
 
-function describeMissing(classDef: ClassDefinition, missing: readonly Ability[], scores: Record<Ability, number>): string {
+function describeMissing(
+  classDef: ClassDefinition,
+  missing: readonly Ability[],
+  scores: Record<Ability, number>,
+): string {
   const joiner = classDef.primaryAbilityLabel.includes(' ou ') ? ' ou ' : ' e ';
-  return missing.map((ability) => `${abilityLabels[ability].name} ${MULTICLASS_MIN_SCORE} (tem ${scores[ability]})`).join(joiner);
+  return missing
+    .map(
+      (ability) =>
+        `${abilityLabels[ability].name} ${MULTICLASS_MIN_SCORE} (tem ${scores[ability]})`,
+    )
+    .join(joiner);
 }
 
 export interface MulticlassOption {
@@ -93,17 +137,29 @@ export function dnd5eMulticlassOptions(sheet: Dnd5eSheet): MulticlassOption[] {
   const current = sheet.identity.classes.map((entry) => findClassByName(entry.name));
   const totalLevel = sheet.identity.classes.reduce((sum, entry) => sum + entry.level, 0);
   const general: string[] = [];
-  if (sheet.identity.classes.length >= MAX_CLASSES) general.push(`A ficha já tem ${MAX_CLASSES} classes.`);
+  if (sheet.identity.classes.length >= MAX_CLASSES)
+    general.push(`A ficha já tem ${MAX_CLASSES} classes.`);
   if (totalLevel >= 20) general.push('O personagem já está no 20º nível.');
   for (const classDef of current) {
     const missing = classDef ? missingPrimary(classDef, sheet.abilities) : [];
-    if (classDef && missing.length) general.push(`Para sair de ${classDef.name}: ${describeMissing(classDef, missing, sheet.abilities)}.`);
+    if (classDef && missing.length)
+      general.push(
+        `Para sair de ${classDef.name}: ${describeMissing(classDef, missing, sheet.abilities)}.`,
+      );
   }
   return listClasses()
     .filter((classDef) => !current.some((entry) => entry?.id === classDef.id))
     .map((classDef) => {
       const missing = missingPrimary(classDef, sheet.abilities);
-      return { classDef, blocked: [...general, ...(missing.length ? [`Exige ${describeMissing(classDef, missing, sheet.abilities)}.`] : [])] };
+      return {
+        classDef,
+        blocked: [
+          ...general,
+          ...(missing.length
+            ? [`Exige ${describeMissing(classDef, missing, sheet.abilities)}.`]
+            : []),
+        ],
+      };
     });
 }
 
@@ -160,10 +216,22 @@ export interface Dnd5eLevelUpPlan {
   multiclass: Dnd5eMulticlassPlan | null;
 }
 
-function resourceFrom(definition: ResourceDefinition, context: Parameters<ResourceDefinition['max']>[0], sortOrder: number): ResourceTemplate | null {
+function resourceFrom(
+  definition: ResourceDefinition,
+  context: Parameters<ResourceDefinition['max']>[0],
+  sortOrder: number,
+): ResourceTemplate | null {
   const max = definition.max(context);
   if (max === null || max <= 0) return null;
-  return { key: definition.key, label: definition.label, current: max, max, recovery: definition.recovery, display: definition.display, sortOrder };
+  return {
+    key: definition.key,
+    label: definition.label,
+    current: max,
+    max,
+    recovery: definition.recovery,
+    display: definition.display,
+    sortOrder,
+  };
 }
 
 /**
@@ -171,10 +239,18 @@ function resourceFrom(definition: ResourceDefinition, context: Parameters<Resour
  * numa classe nova (multiclasse). `knownNames` são os nomes das entradas que o personagem já tem
  * (magias, talentos, invocações), para não oferecer de novo.
  */
-export function planDnd5eLevelUp(sheet: Dnd5eSheet, classIndex: number, knownNames: readonly string[] = [], newClassId?: string): Dnd5eLevelUpPlan {
+export function planDnd5eLevelUp(
+  sheet: Dnd5eSheet,
+  classIndex: number,
+  knownNames: readonly string[] = [],
+  newClassId?: string,
+): Dnd5eLevelUpPlan {
   const newClass = newClassId ? listClasses().find((entry) => entry.id === newClassId) : undefined;
   const classes: Dnd5eClass[] = newClass
-    ? [...sheet.identity.classes, { name: newClass.name, subclass: '', level: 0, hitDie: newClass.hitDie }]
+    ? [
+        ...sheet.identity.classes,
+        { name: newClass.name, subclass: '', level: 0, hitDie: newClass.hitDie },
+      ]
     : sheet.identity.classes;
   const index = newClass ? classes.length - 1 : classes[classIndex] ? classIndex : 0;
   const entry = classes[index];
@@ -188,16 +264,23 @@ export function planDnd5eLevelUp(sheet: Dnd5eSheet, classIndex: number, knownNam
 
   const subclasses = classDef ? listSubclasses(classDef) : [];
   const subclassChosen = Boolean(entry?.subclass.trim());
-  const currentSubclass = subclassChosen ? subclasses.find((option) => normalize(option.name) === normalize(entry?.subclass ?? '')) : undefined;
+  const currentSubclass = subclassChosen
+    ? subclasses.find((option) => normalize(option.name) === normalize(entry?.subclass ?? ''))
+    : undefined;
   // A subclasse chega no 3º nível (ou no primeiro nível depois dele, se ainda não foi escolhida).
-  const subclassArrives = Boolean(classDef && !subclassChosen && newClassLevel >= 3 && subclasses.length > 0);
+  const subclassArrives = Boolean(
+    classDef && !subclassChosen && newClassLevel >= 3 && subclasses.length > 0,
+  );
   const singleSubclass = subclassArrives && subclasses.length === 1 ? subclasses[0]! : null;
   const subclassFeatures = currentSubclass
     ? currentSubclass.features.filter((feature) => feature.level === newClassLevel)
     : singleSubclass
       ? singleSubclass.features.filter((feature) => feature.level <= newClassLevel)
       : [];
-  const features = [...(classDef?.features.filter((feature) => feature.level === newClassLevel) ?? []), ...subclassFeatures];
+  const features = [
+    ...(classDef?.features.filter((feature) => feature.level === newClassLevel) ?? []),
+    ...subclassFeatures,
+  ];
 
   const known = new Set(knownNames.map(normalize));
   // No 19º nível toda classe ganha uma Dádiva Épica (ou outro talento em que se qualifique).
@@ -205,21 +288,32 @@ export function planDnd5eLevelUp(sheet: Dnd5eSheet, classIndex: number, knownNam
   const abilityScoreImprovement = Boolean(classDef?.asiLevels.includes(newClassLevel)) || epicBoon;
   const qualifies = (feat: FeatDefinition) =>
     (feat.minLevel ?? 0) <= newTotalLevel &&
-    (!feat.minScore || feat.minScore.abilities.some((ability) => sheet.abilities[ability] >= (feat.minScore?.value ?? 0))) &&
+    (!feat.minScore ||
+      feat.minScore.abilities.some(
+        (ability) => sheet.abilities[ability] >= (feat.minScore?.value ?? 0),
+      )) &&
     (feat.repeatable || !known.has(normalize(feat.name)));
   // Regras de 2024: no aumento de atributo vale qualquer talento em que o personagem se qualifique
   // (gerais, de origem, de estilo de luta para quem tem Estilo de Luta e, no 19º, dádivas épicas),
   // inclusive os dos livros liberados.
   const hasFightingStyle = classes.some((item, position) =>
-    hasFightingStyleFeature((position === index ? classDef : findClassByName(item.name)) ?? undefined, position === index ? newClassLevel : item.level),
+    hasFightingStyleFeature(
+      (position === index ? classDef : findClassByName(item.name)) ?? undefined,
+      position === index ? newClassLevel : item.level,
+    ),
   );
   const featOrder: FeatDefinition['category'][] = ['general', 'origin', 'fighting_style', 'epic'];
   const feats = abilityScoreImprovement
-    ? listFeats().filter(
-        (feat) =>
-          (feat.category === 'general' || feat.category === 'origin' || (hasFightingStyle && feat.category === 'fighting_style') || (epicBoon && feat.category === 'epic')) &&
-          qualifies(feat),
-      ).sort((a, b) => featOrder.indexOf(a.category) - featOrder.indexOf(b.category))
+    ? listFeats()
+        .filter(
+          (feat) =>
+            (feat.category === 'general' ||
+              feat.category === 'origin' ||
+              (hasFightingStyle && feat.category === 'fighting_style') ||
+              (epicBoon && feat.category === 'epic')) &&
+            qualifies(feat),
+        )
+        .sort((a, b) => featOrder.indexOf(a.category) - featOrder.indexOf(b.category))
     : [];
 
   const casting = classDef?.spellcasting;
@@ -228,30 +322,45 @@ export function planDnd5eLevelUp(sheet: Dnd5eSheet, classIndex: number, knownNam
   let newCantrips = 0;
   let newSpells = 0;
   if (casting) {
-    newCantrips = casting.cantrips ? Math.max(0, atLevel(casting.cantrips, newClassLevel) - before(casting.cantrips)) : 0;
+    newCantrips = casting.cantrips
+      ? Math.max(0, atLevel(casting.cantrips, newClassLevel) - before(casting.cantrips))
+      : 0;
     newSpells = Math.max(0, atLevel(casting.prepared, newClassLevel) - before(casting.prepared));
     // Mago: o grimório começa com 6 magias e ganha 2 a cada nível, além das que passa a preparar.
     if (casting.spellbook) newSpells = Math.max(newSpells, oldLevel > 0 ? 2 : 6);
   }
   const maxSpellCircle = maxClassSpellLevel(classDef ?? undefined, newClassLevel);
-  const gained = (table: readonly number[] | undefined) => (table ? Math.max(0, atLevel(table, newClassLevel) - before(table)) : 0);
+  const gained = (table: readonly number[] | undefined) =>
+    table ? Math.max(0, atLevel(table, newClassLevel) - before(table)) : 0;
   // Espaços de magia pelo nível de conjurador somado (multiclasse do SRD 5.2.1): níveis inteiros
   // dos conjuradores completos e metade, arredondada para cima, de paladino e patrulheiro.
   const casterLevel = classes.reduce((sum, item, position) => {
     const definition = position === index ? classDef : findClassByName(item.name);
     const level = position === index ? newClassLevel : item.level;
     const progression = definition?.spellcasting?.progression;
-    return sum + (progression === 'full' ? level : progression === 'half' ? Math.ceil(level / 2) : 0);
+    return (
+      sum + (progression === 'full' ? level : progression === 'half' ? Math.ceil(level / 2) : 0)
+    );
   }, 0);
   const newInvocations = classDef?.id === 'warlock' ? gained(WARLOCK_INVOCATIONS) : 0;
   const newMetamagic = classDef?.id === 'sorcerer' ? gained(SORCERER_METAMAGIC) : 0;
   const newWeaponMasteries = gained(classDef?.weaponMastery);
-  const fromList = casting ? listSpells().filter((spell) => spell.classes.includes(casting.list) && !known.has(normalize(spell.name))) : [];
+  const fromList = casting
+    ? listSpells().filter(
+        (spell) => spell.classes.includes(casting.list) && !known.has(normalize(spell.name)),
+      )
+    : [];
 
   const resources: ResourceTemplate[] = [];
   if (classDef) {
-    const modifiers = Object.fromEntries(ABILITIES.map((ability) => [ability, abilityModifier(sheet.abilities[ability])])) as Record<Ability, number>;
-    const context = { level: newClassLevel, proficiencyBonus: proficiencyBonusForLevel(newTotalLevel), modifiers };
+    const modifiers = Object.fromEntries(
+      ABILITIES.map((ability) => [ability, abilityModifier(sheet.abilities[ability])]),
+    ) as Record<Ability, number>;
+    const context = {
+      level: newClassLevel,
+      proficiencyBonus: proficiencyBonusForLevel(newTotalLevel),
+      modifiers,
+    };
     classDef.resources.forEach((definition, position) => {
       const resource = resourceFrom(definition, context, 100 + position);
       if (resource) resources.push(resource);
@@ -263,24 +372,42 @@ export function planDnd5eLevelUp(sheet: Dnd5eSheet, classIndex: number, knownNam
         if (resource) resources.push(resource);
       });
     }
-    if (casting && casting.progression !== 'pact' && casterLevel > 0) resources.push(...spellSlotResources(casterLevel));
+    if (casting && casting.progression !== 'pact' && casterLevel > 0)
+      resources.push(...spellSlotResources(casterLevel));
     if (casting?.progression === 'pact') {
       const slots = atLevel(WARLOCK_PACT_SLOTS, newClassLevel);
-      resources.push({ key: 'pact_slots', label: `Espaços de pacto (${atLevel(WARLOCK_SLOT_LEVEL, newClassLevel)}º círculo)`, current: slots, max: slots, recovery: 'short_rest', display: 'pool', sortOrder: 40 });
+      resources.push({
+        key: 'pact_slots',
+        label: `Espaços de pacto (${atLevel(WARLOCK_SLOT_LEVEL, newClassLevel)}º círculo)`,
+        current: slots,
+        max: slots,
+        recovery: 'short_rest',
+        display: 'pool',
+        sortOrder: 40,
+      });
     }
   }
 
   let multiclass: Dnd5eMulticlassPlan | null = null;
   if (newClass) {
     // Classes de livro sem tabela própria: as armaduras da classe (o texto do livro detalha o resto).
-    const trained = MULTICLASS_TRAINING[newClass.id] ?? training({ armor: newClass.armor.length ? newClass.armorLabel : '' });
-    const classSkills = newClass.skillChoices.options === 'any' ? SKILLS : newClass.skillChoices.options;
+    const trained =
+      MULTICLASS_TRAINING[newClass.id] ??
+      training({ armor: newClass.armor.length ? newClass.armorLabel : '' });
+    const classSkills =
+      newClass.skillChoices.options === 'any' ? SKILLS : newClass.skillChoices.options;
     const pool = trained.skill === 'any' ? SKILLS : trained.skill === 'class' ? classSkills : [];
     multiclass = {
       training: trained,
-      skillOptions: pool.filter((skill) => sheet.skills[skill].proficiency === 'none' || sheet.skills[skill].proficiency === 'half'),
-      instrumentOptions: trained.instrument ? MUSICAL_INSTRUMENTS.map((instrument) => ({ id: instrument.id, name: instrument.name })) : [],
-      blocked: dnd5eMulticlassOptions(sheet).find((option) => option.classDef.id === newClass.id)?.blocked ?? ['O personagem já tem esta classe.'],
+      skillOptions: pool.filter(
+        (skill) =>
+          sheet.skills[skill].proficiency === 'none' || sheet.skills[skill].proficiency === 'half',
+      ),
+      instrumentOptions: trained.instrument
+        ? MUSICAL_INSTRUMENTS.map((instrument) => ({ id: instrument.id, name: instrument.name }))
+        : [],
+      blocked: dnd5eMulticlassOptions(sheet).find((option) => option.classDef.id === newClass.id)
+        ?.blocked ?? ['O personagem já tem esta classe.'],
     };
   }
 
@@ -307,9 +434,16 @@ export function planDnd5eLevelUp(sheet: Dnd5eSheet, classIndex: number, knownNam
     spellOptions: fromList.filter((spell) => spell.level > 0 && spell.level <= maxSpellCircle),
     cantripOptions: fromList.filter((spell) => spell.level === 0),
     newInvocations,
-    invocationOptions: newInvocations > 0 ? SRD_INVOCATIONS.filter((invocation) => invocation.minLevel <= newClassLevel && !known.has(normalize(invocation.name))) : [],
+    invocationOptions:
+      newInvocations > 0
+        ? SRD_INVOCATIONS.filter(
+            (invocation) =>
+              invocation.minLevel <= newClassLevel && !known.has(normalize(invocation.name)),
+          )
+        : [],
     newMetamagic,
-    metamagicOptions: newMetamagic > 0 ? SRD_METAMAGIC.filter((option) => !known.has(normalize(option.name))) : [],
+    metamagicOptions:
+      newMetamagic > 0 ? SRD_METAMAGIC.filter((option) => !known.has(normalize(option.name))) : [],
     newWeaponMasteries,
     resources,
     multiclass,
@@ -327,7 +461,9 @@ export type AbilityImprovement =
   | { kind: 'feat'; featId: string; ability?: Ability };
 
 /** Atributos que um talento aumenta em 1 (Agarrador: Força ou Destreza; dádivas épicas: qualquer um). */
-export function featAbilityIncrease(featId: string): { abilities: readonly Ability[]; cap: number } | null {
+export function featAbilityIncrease(
+  featId: string,
+): { abilities: readonly Ability[]; cap: number } | null {
   const feat = findFeat(featId);
   if (!feat) return null;
   if (feat.id === 'grappler') return { abilities: ['str', 'dex'], cap: 20 };
@@ -337,13 +473,18 @@ export function featAbilityIncrease(featId: string): { abilities: readonly Abili
 }
 
 /** Aplica o aumento de atributo (máximo 20; 30 nas dádivas épicas). */
-export function applyAbilityImprovement(scores: Record<Ability, number>, choice: AbilityImprovement): Record<Ability, number> {
+export function applyAbilityImprovement(
+  scores: Record<Ability, number>,
+  choice: AbilityImprovement,
+): Record<Ability, number> {
   const next = { ...scores };
   if (choice.kind === 'plus_two') next[choice.ability] = Math.min(20, next[choice.ability] + 2);
-  if (choice.kind === 'plus_one_each') for (const ability of choice.abilities) next[ability] = Math.min(20, next[ability] + 1);
+  if (choice.kind === 'plus_one_each')
+    for (const ability of choice.abilities) next[ability] = Math.min(20, next[ability] + 1);
   if (choice.kind === 'feat' && choice.ability) {
     const increase = featAbilityIncrease(choice.featId);
-    if (increase?.abilities.includes(choice.ability)) next[choice.ability] = Math.min(increase.cap, next[choice.ability] + 1);
+    if (increase?.abilities.includes(choice.ability))
+      next[choice.ability] = Math.min(increase.cap, next[choice.ability] + 1);
   }
   return next;
 }
@@ -369,7 +510,11 @@ export interface Dnd5eLevelUpChoices {
 
 export const MAGIC_INITIATE_LISTS = ['cleric', 'druid', 'wizard'] as const;
 export type MagicInitiateList = (typeof MAGIC_INITIATE_LISTS)[number];
-export const magicInitiateListLabels: Record<MagicInitiateList, string> = { cleric: 'Clérigo', druid: 'Druida', wizard: 'Mago' };
+export const magicInitiateListLabels: Record<MagicInitiateList, string> = {
+  cleric: 'Clérigo',
+  druid: 'Druida',
+  wizard: 'Mago',
+};
 
 export interface MagicInitiateChoice {
   list: MagicInitiateList | '';
@@ -379,15 +524,26 @@ export interface MagicInitiateChoice {
 }
 
 /** Truques e magias de 1º círculo da lista do Iniciado em Magia, sem as que o personagem já tem. */
-export function magicInitiateOptions(list: MagicInitiateList, knownNames: readonly string[] = []): { cantrips: SrdSpell[]; spells: SrdSpell[] } {
+export function magicInitiateOptions(
+  list: MagicInitiateList,
+  knownNames: readonly string[] = [],
+): { cantrips: SrdSpell[]; spells: SrdSpell[] } {
   const known = new Set(knownNames.map(normalize));
-  const fromList = listSpells().filter((spell) => spell.classes.includes(list) && !known.has(normalize(spell.name)));
-  return { cantrips: fromList.filter((spell) => spell.level === 0), spells: fromList.filter((spell) => spell.level === 1) };
+  const fromList = listSpells().filter(
+    (spell) => spell.classes.includes(list) && !known.has(normalize(spell.name)),
+  );
+  return {
+    cantrips: fromList.filter((spell) => spell.level === 0),
+    spells: fromList.filter((spell) => spell.level === 1),
+  };
 }
 
 /** Perícias que o talento Habilidoso pode dar (as que o personagem ainda não domina). */
 export function skilledFeatOptions(sheet: Dnd5eSheet): Skill[] {
-  return SKILLS.filter((skill) => sheet.skills[skill].proficiency === 'none' || sheet.skills[skill].proficiency === 'half');
+  return SKILLS.filter(
+    (skill) =>
+      sheet.skills[skill].proficiency === 'none' || sheet.skills[skill].proficiency === 'half',
+  );
 }
 
 /** Acrescenta um treinamento ao texto das proficiências, sem repetir o que já está lá. */
@@ -430,32 +586,66 @@ function spellEntry(spell: BookSpell, source: string, sortOrder: number): Abilit
   };
 }
 
-const ABILITY_SHORT: Record<Ability, string> = { str: 'FOR', dex: 'DES', con: 'CON', int: 'INT', wis: 'SAB', cha: 'CAR' };
+const ABILITY_SHORT: Record<Ability, string> = {
+  str: 'FOR',
+  dex: 'DES',
+  con: 'CON',
+  int: 'INT',
+  wis: 'SAB',
+  cha: 'CAR',
+};
 
 /** Monta a ficha do novo nível com as escolhas feitas no painel. */
-export function applyDnd5eLevelUp(sheet: Dnd5eSheet, plan: Dnd5eLevelUpPlan, choices: Dnd5eLevelUpChoices): Dnd5eLevelUpResult {
+export function applyDnd5eLevelUp(
+  sheet: Dnd5eSheet,
+  plan: Dnd5eLevelUpPlan,
+  choices: Dnd5eLevelUpChoices,
+): Dnd5eLevelUpResult {
   const issues: string[] = [];
   const pick = (count: number, chosen: readonly string[], singular: string, plural: string) => {
-    if (chosen.length < count) issues.push(`Escolha ${count} ${count === 1 ? singular : plural} (faltam ${count - chosen.length}).`);
-    if (chosen.length > count) issues.push(`Escolha no máximo ${count} ${count === 1 ? singular : plural}.`);
+    if (chosen.length < count)
+      issues.push(
+        `Escolha ${count} ${count === 1 ? singular : plural} (faltam ${count - chosen.length}).`,
+      );
+    if (chosen.length > count)
+      issues.push(`Escolha no máximo ${count} ${count === 1 ? singular : plural}.`);
   };
   pick(plan.newCantrips, choices.cantrips, 'truque', 'truques');
   pick(plan.newSpells, choices.spells, 'magia', 'magias');
   pick(plan.newInvocations, choices.invocations, 'invocação', 'invocações');
   pick(plan.newMetamagic, choices.metamagic, 'opção de Metamagia', 'opções de Metamagia');
-  if (plan.abilityScoreImprovement && !choices.improvement) issues.push('Escolha o aumento de atributo ou um talento.');
-  if (choices.improvement?.kind === 'plus_one_each' && choices.improvement.abilities[0] === choices.improvement.abilities[1]) {
+  if (plan.abilityScoreImprovement && !choices.improvement)
+    issues.push('Escolha o aumento de atributo ou um talento.');
+  if (
+    choices.improvement?.kind === 'plus_one_each' &&
+    choices.improvement.abilities[0] === choices.improvement.abilities[1]
+  ) {
     issues.push('Escolha dois atributos diferentes (ou +2 em um só).');
   }
-  if (choices.improvement?.kind === 'feat' && featAbilityIncrease(choices.improvement.featId) && !choices.improvement.ability) {
+  if (
+    choices.improvement?.kind === 'feat' &&
+    featAbilityIncrease(choices.improvement.featId) &&
+    !choices.improvement.ability
+  ) {
     issues.push('Escolha o atributo que o talento aumenta.');
   }
-  if (choices.hitPoints.method === 'roll' && (choices.hitPoints.die < 1 || choices.hitPoints.die > plan.hitDieSides)) issues.push('Role o dado de vida.');
+  if (
+    choices.hitPoints.method === 'roll' &&
+    (choices.hitPoints.die < 1 || choices.hitPoints.die > plan.hitDieSides)
+  )
+    issues.push('Role o dado de vida.');
   // Talentos com escolhas próprias.
-  const chosenFeatId = plan.abilityScoreImprovement && choices.improvement?.kind === 'feat' ? choices.improvement.featId : '';
+  const chosenFeatId =
+    plan.abilityScoreImprovement && choices.improvement?.kind === 'feat'
+      ? choices.improvement.featId
+      : '';
   const skilledOptions = skilledFeatOptions(sheet);
-  const featSkills = chosenFeatId === 'skilled' ? [...new Set(choices.featSkills ?? [])].filter((skill) => skilledOptions.includes(skill)) : [];
-  if (chosenFeatId === 'skilled' && featSkills.length !== 3) issues.push('Escolha as 3 perícias do talento Habilidoso.');
+  const featSkills =
+    chosenFeatId === 'skilled'
+      ? [...new Set(choices.featSkills ?? [])].filter((skill) => skilledOptions.includes(skill))
+      : [];
+  if (chosenFeatId === 'skilled' && featSkills.length !== 3)
+    issues.push('Escolha as 3 perícias do talento Habilidoso.');
   const initiate = chosenFeatId === 'magic_initiate' ? choices.magicInitiate : undefined;
   let initiateSpells: SrdSpell[] = [];
   if (chosenFeatId === 'magic_initiate') {
@@ -471,25 +661,51 @@ export function applyDnd5eLevelUp(sheet: Dnd5eSheet, plan: Dnd5eLevelUpPlan, cho
     if (!initiate?.ability) issues.push('Escolha o atributo de conjuração do Iniciado em Magia.');
   }
   const multiclass = plan.multiclass;
-  const multiclassSkill = multiclass && choices.multiclassSkill && multiclass.skillOptions.includes(choices.multiclassSkill) ? choices.multiclassSkill : null;
-  const instrument = multiclass?.instrumentOptions.find((option) => option.id === choices.multiclassInstrument) ?? null;
+  const multiclassSkill =
+    multiclass &&
+    choices.multiclassSkill &&
+    multiclass.skillOptions.includes(choices.multiclassSkill)
+      ? choices.multiclassSkill
+      : null;
+  const instrument =
+    multiclass?.instrumentOptions.find((option) => option.id === choices.multiclassInstrument) ??
+    null;
   if (multiclass) {
     issues.push(...multiclass.blocked);
-    if (multiclass.skillOptions.length > 0 && !multiclassSkill) issues.push('Escolha a perícia que a nova classe dá.');
-    if (multiclass.instrumentOptions.length > 0 && !instrument) issues.push('Escolha o instrumento musical.');
+    if (multiclass.skillOptions.length > 0 && !multiclassSkill)
+      issues.push('Escolha a perícia que a nova classe dá.');
+    if (multiclass.instrumentOptions.length > 0 && !instrument)
+      issues.push('Escolha o instrumento musical.');
   }
-  const chosenSubclass = plan.subclass ?? plan.subclassOptions.find((option) => option.id === choices.subclassId) ?? null;
+  const chosenSubclass =
+    plan.subclass ??
+    plan.subclassOptions.find((option) => option.id === choices.subclassId) ??
+    null;
   if (plan.subclassOptions.length > 0 && !chosenSubclass) issues.push('Escolha a subclasse.');
 
   const improvement = plan.abilityScoreImprovement ? choices.improvement : null;
-  const abilities = improvement ? applyAbilityImprovement(sheet.abilities, improvement) : { ...sheet.abilities };
+  const abilities = improvement
+    ? applyAbilityImprovement(sheet.abilities, improvement)
+    : { ...sheet.abilities };
   const conChange = abilityModifier(abilities.con) - abilityModifier(sheet.abilities.con);
-  const die = choices.hitPoints.method === 'roll' ? choices.hitPoints.die : Math.floor(plan.hitDieSides / 2) + 1;
+  const die =
+    choices.hitPoints.method === 'roll'
+      ? choices.hitPoints.die
+      : Math.floor(plan.hitDieSides / 2) + 1;
   // Constituição maior aumenta o máximo de PV também nos níveis anteriores.
-  const hpGain = Math.max(1, hitPointsGained(die, abilityModifier(abilities.con)) + conChange * (plan.newTotalLevel - 1));
+  const hpGain = Math.max(
+    1,
+    hitPointsGained(die, abilityModifier(abilities.con)) + conChange * (plan.newTotalLevel - 1),
+  );
 
   const classes = plan.classes.map((entry, position) =>
-    position === plan.classIndex ? { ...entry, level: plan.newClassLevel, subclass: chosenSubclass ? chosenSubclass.name : entry.subclass } : entry,
+    position === plan.classIndex
+      ? {
+          ...entry,
+          level: plan.newClassLevel,
+          subclass: chosenSubclass ? chosenSubclass.name : entry.subclass,
+        }
+      : entry,
   );
   let nextSheet: Dnd5eSheet = { ...sheet, abilities, identity: { ...sheet.identity, classes } };
   if (multiclass) {
@@ -500,41 +716,77 @@ export function applyDnd5eLevelUp(sheet: Dnd5eSheet, plan: Dnd5eLevelUpPlan, cho
         ...nextSheet.proficiencies,
         armor: addProficiency(nextSheet.proficiencies.armor, multiclass.training.armor),
         weapons: addProficiency(nextSheet.proficiencies.weapons, multiclass.training.weapons),
-        tools: addProficiency(nextSheet.proficiencies.tools, [multiclass.training.tools, instrument?.name ?? ''].filter(Boolean).join(', ')),
+        tools: addProficiency(
+          nextSheet.proficiencies.tools,
+          [multiclass.training.tools, instrument?.name ?? ''].filter(Boolean).join(', '),
+        ),
       },
-      skills: multiclassSkill ? { ...nextSheet.skills, [multiclassSkill]: { ...nextSheet.skills[multiclassSkill], proficiency: 'proficient' } } : nextSheet.skills,
+      skills: multiclassSkill
+        ? {
+            ...nextSheet.skills,
+            [multiclassSkill]: { ...nextSheet.skills[multiclassSkill], proficiency: 'proficient' },
+          }
+        : nextSheet.skills,
     };
   }
 
   if (featSkills.length === 3) {
     nextSheet = {
       ...nextSheet,
-      skills: { ...nextSheet.skills, ...Object.fromEntries(featSkills.map((skill) => [skill, { ...nextSheet.skills[skill], proficiency: 'proficient' }])) },
+      skills: {
+        ...nextSheet.skills,
+        ...Object.fromEntries(
+          featSkills.map((skill) => [
+            skill,
+            { ...nextSheet.skills[skill], proficiency: 'proficient' },
+          ]),
+        ),
+      },
     };
   }
 
   const resources = [...plan.resources];
   if (chosenSubclass && !plan.subclass) {
-    const modifiers = Object.fromEntries(ABILITIES.map((ability) => [ability, abilityModifier(abilities[ability])])) as Record<Ability, number>;
-    const context = { level: plan.newClassLevel, proficiencyBonus: proficiencyBonusForLevel(plan.newTotalLevel), modifiers };
+    const modifiers = Object.fromEntries(
+      ABILITIES.map((ability) => [ability, abilityModifier(abilities[ability])]),
+    ) as Record<Ability, number>;
+    const context = {
+      level: plan.newClassLevel,
+      proficiencyBonus: proficiencyBonusForLevel(plan.newTotalLevel),
+      modifiers,
+    };
     (chosenSubclass.resources ?? []).forEach((definition, position) => {
       const resource = resourceFrom(definition, context, 120 + position);
       if (resource) resources.push(resource);
     });
   }
   const hitDie = plan.classes[plan.classIndex]?.hitDie ?? plan.classDef?.hitDie ?? 'd8';
-  const hitDice = classes.filter((entry) => entry.hitDie === hitDie).reduce((sum, entry) => sum + entry.level, 0);
-  resources.push({ key: hitDiceResourceKey(hitDie), label: `Dados de vida (${hitDie})`, current: hitDice, max: hitDice, recovery: 'long_rest', display: 'pool', sortOrder: 10 });
+  const hitDice = classes
+    .filter((entry) => entry.hitDie === hitDie)
+    .reduce((sum, entry) => sum + entry.level, 0);
+  resources.push({
+    key: hitDiceResourceKey(hitDie),
+    label: `Dados de vida (${hitDie})`,
+    current: hitDice,
+    max: hitDice,
+    recovery: 'long_rest',
+    display: 'pool',
+    sortOrder: 10,
+  });
 
   const entries: AbilityEntryTemplate[] = [];
   let order = 500;
   const className = plan.classDef?.name ?? plan.className;
   const levelSource = `${className} ${plan.newClassLevel}º nível`;
   // Habilidades da subclasse escolhida agora (até o novo nível) e o dono de cada habilidade.
-  const chosenFeatures = chosenSubclass && !plan.subclass ? chosenSubclass.features.filter((feature) => feature.level <= plan.newClassLevel) : [];
+  const chosenFeatures =
+    chosenSubclass && !plan.subclass
+      ? chosenSubclass.features.filter((feature) => feature.level <= plan.newClassLevel)
+      : [];
   const owners = new Map<FeatureDefinition, string>();
   for (const option of [chosenSubclass, ...(plan.classDef ? listSubclasses(plan.classDef) : [])]) {
-    for (const feature of option?.features ?? []) if (!owners.has(feature)) owners.set(feature, option!.name);
+    for (const feature of option?.features ?? [])
+      if (!owners.has(feature)) owners.set(feature, option!.name);
   }
   for (const feature of [...plan.features, ...chosenFeatures]) {
     const owner = owners.get(feature) ?? className;
@@ -554,7 +806,9 @@ export function applyDnd5eLevelUp(sheet: Dnd5eSheet, plan: Dnd5eLevelUpPlan, cho
       const listLabel = initiate?.list ? magicInitiateListLabels[initiate.list] : '';
       const extra = [
         improvement.ability ? `Atributo aumentado: ${ABILITY_SHORT[improvement.ability]} +1.` : '',
-        featSkills.length ? `Perícias: ${featSkills.map((skill) => skillDefinitions[skill].label).join(', ')}.` : '',
+        featSkills.length
+          ? `Perícias: ${featSkills.map((skill) => skillDefinitions[skill].label).join(', ')}.`
+          : '',
         listLabel ? `Lista: ${listLabel}.` : '',
         initiate?.ability ? `Atributo de conjuração: ${abilityLabels[initiate.ability].name}.` : '',
       ].filter(Boolean);
@@ -573,7 +827,15 @@ export function applyDnd5eLevelUp(sheet: Dnd5eSheet, plan: Dnd5eLevelUpPlan, cho
           if (spell.level > 0) {
             // A magia de 1º círculo pode ser conjurada 1 vez sem espaço por descanso longo.
             const key = `feat_magic_initiate_${initiate.list}`;
-            resources.push({ key, label: `${spell.name} sem espaço`.slice(0, 60), current: 1, max: 1, recovery: 'long_rest', display: 'checkboxes', sortOrder: 160 });
+            resources.push({
+              key,
+              label: `${spell.name} sem espaço`.slice(0, 60),
+              current: 1,
+              max: 1,
+              recovery: 'long_rest',
+              display: 'checkboxes',
+              sortOrder: 160,
+            });
             entries.push({ ...entry, resourceKey: key });
           } else entries.push(entry);
         }
@@ -587,23 +849,44 @@ export function applyDnd5eLevelUp(sheet: Dnd5eSheet, plan: Dnd5eLevelUpPlan, cho
   // Magias sempre preparadas que chegam com o nível (domínio, juramento, círculo, classe): não
   // gastam escolhas de magia. Subclasse nova traz as do nível atual e as anteriores.
   const preparedGroups = [
-    ...(plan.classDef?.alwaysPrepared ?? []).filter((group) => group.level === plan.newClassLevel).map((group) => ({ spells: group.spells, owner: className })),
+    ...(plan.classDef?.alwaysPrepared ?? [])
+      .filter((group) => group.level === plan.newClassLevel)
+      .map((group) => ({ spells: group.spells, owner: className })),
     ...(chosenSubclass && !plan.currentSubclass
-      ? (chosenSubclass.alwaysPrepared ?? []).filter((group) => group.level <= plan.newClassLevel).map((group) => ({ spells: group.spells, owner: chosenSubclass.name }))
-      : (plan.currentSubclass?.alwaysPrepared ?? []).filter((group) => group.level === plan.newClassLevel).map((group) => ({ spells: group.spells, owner: plan.currentSubclass!.name }))),
+      ? (chosenSubclass.alwaysPrepared ?? [])
+          .filter((group) => group.level <= plan.newClassLevel)
+          .map((group) => ({ spells: group.spells, owner: chosenSubclass.name }))
+      : (plan.currentSubclass?.alwaysPrepared ?? [])
+          .filter((group) => group.level === plan.newClassLevel)
+          .map((group) => ({ spells: group.spells, owner: plan.currentSubclass!.name }))),
   ];
   for (const group of preparedGroups) {
     for (const name of group.spells) {
       const spell = findSpell(name);
       if (spell && !choices.spells.includes(spell.name)) {
         const entry = spellEntry(spell, `${group.owner} (sempre preparada)`, order++);
-        entries.push({ ...entry, description: `Sempre preparada; não conta no limite de magias preparadas.\n\n${entry.description}`.slice(0, 8000) });
+        entries.push({
+          ...entry,
+          description:
+            `Sempre preparada; não conta no limite de magias preparadas.\n\n${entry.description}`.slice(
+              0,
+              8000,
+            ),
+        });
       }
     }
   }
   for (const id of choices.invocations) {
     const invocation = SRD_INVOCATIONS.find((entry) => entry.id === id);
-    if (invocation) entries.push({ kind: 'class_feature', name: invocation.name, source: 'Invocação Mística', description: invocation.description, data: {}, sortOrder: order++ });
+    if (invocation)
+      entries.push({
+        kind: 'class_feature',
+        name: invocation.name,
+        source: 'Invocação Mística',
+        description: invocation.description,
+        data: {},
+        sortOrder: order++,
+      });
   }
   for (const id of choices.metamagic) {
     const option = SRD_METAMAGIC.find((entry) => entry.id === id);
@@ -619,14 +902,27 @@ export function applyDnd5eLevelUp(sheet: Dnd5eSheet, plan: Dnd5eLevelUpPlan, cho
     }
   }
 
-  const parts = [`${className} ${plan.newClassLevel} (nível ${plan.newTotalLevel})`, `+${hpGain} PV máximos`];
+  const parts = [
+    `${className} ${plan.newClassLevel} (nível ${plan.newTotalLevel})`,
+    `+${hpGain} PV máximos`,
+  ];
   if (multiclass) parts.push(`multiclasse em ${className}`);
-  if (chosenSubclass && !plan.classes[plan.classIndex]?.subclass.trim()) parts.push(`subclasse ${chosenSubclass.name}`);
+  if (chosenSubclass && !plan.classes[plan.classIndex]?.subclass.trim())
+    parts.push(`subclasse ${chosenSubclass.name}`);
   if (improvement?.kind === 'plus_two') parts.push(`${ABILITY_SHORT[improvement.ability]} +2`);
-  if (improvement?.kind === 'plus_one_each') parts.push(improvement.abilities.map((ability) => `${ABILITY_SHORT[ability]} +1`).join(', '));
-  if (improvement?.kind === 'feat') parts.push(`talento ${findFeat(improvement.featId)?.name ?? improvement.featId}`);
+  if (improvement?.kind === 'plus_one_each')
+    parts.push(improvement.abilities.map((ability) => `${ABILITY_SHORT[ability]} +1`).join(', '));
+  if (improvement?.kind === 'feat')
+    parts.push(`talento ${findFeat(improvement.featId)?.name ?? improvement.featId}`);
   const learned = choices.cantrips.length + choices.spells.length;
   if (learned) parts.push(`${learned} ${learned === 1 ? 'magia nova' : 'magias novas'}`);
 
-  return { sheet: nextSheet, hitPointsGained: hpGain, resources, abilities: entries, issues, summary: `Subiu de nível: ${parts.join(' · ')}.`.slice(0, 300) };
+  return {
+    sheet: nextSheet,
+    hitPointsGained: hpGain,
+    resources,
+    abilities: entries,
+    issues,
+    summary: `Subiu de nível: ${parts.join(' · ')}.`.slice(0, 300),
+  };
 }

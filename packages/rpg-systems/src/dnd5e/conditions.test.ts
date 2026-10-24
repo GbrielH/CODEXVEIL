@@ -15,7 +15,9 @@ import {
 
 const effectsOf = (...keys: (string | [string, number])[]) =>
   dnd5eConditionEffects(
-    keys.map((entry) => (Array.isArray(entry) ? { key: entry[0], level: entry[1] } : { key: entry, level: null })),
+    keys.map((entry) =>
+      Array.isArray(entry) ? { key: entry[0], level: entry[1] } : { key: entry, level: null },
+    ),
   );
 
 describe('condições do SRD 5.2.1', () => {
@@ -73,7 +75,11 @@ describe('condições do SRD 5.2.1', () => {
 
   it('Inconsciente impõe Incapacitado e Caído; à distância, vantagem e desvantagem se anulam', () => {
     const effects = effectsOf('unconscious');
-    expect(effects.conditions.map((condition) => condition.key)).toEqual(['unconscious', 'incapacitated', 'prone']);
+    expect(effects.conditions.map((condition) => condition.key)).toEqual([
+      'unconscious',
+      'incapacitated',
+      'prone',
+    ]);
     expect(netRollMode(effects.attacksAgainst)).toBe('advantage');
     const qualified = effects.attacksAgainst.filter((source) => source.qualifier);
     expect(qualified.map((source) => [source.mode, source.source])).toEqual([
@@ -86,15 +92,23 @@ describe('condições do SRD 5.2.1', () => {
 
   it('uma condição aplicada diretamente não fica marcada como imposta', () => {
     const effects = effectsOf('paralyzed', 'incapacitated');
-    expect(effects.conditions.find((condition) => condition.key === 'incapacitated')?.impliedBy).toBeNull();
+    expect(
+      effects.conditions.find((condition) => condition.key === 'incapacitated')?.impliedBy,
+    ).toBeNull();
   });
 
   it('Petrificado anula Envenenado (imunidade)', () => {
     const effects = effectsOf('petrified', 'poisoned');
-    expect(effects.conditions.find((condition) => condition.key === 'poisoned')?.suppressedBy).toBe('Petrificado');
+    expect(effects.conditions.find((condition) => condition.key === 'poisoned')?.suppressedBy).toBe(
+      'Petrificado',
+    );
     expect(netRollMode(effects.attackRolls)).toBeNull();
     expect(effects.resistAllDamage).toEqual(['Petrificado']);
-    expect(describeDnd5eConditionEffects(effects).some((line) => line.detail.includes('imunidade (Petrificado)'))).toBe(true);
+    expect(
+      describeDnd5eConditionEffects(effects).some((line) =>
+        line.detail.includes('imunidade (Petrificado)'),
+      ),
+    ).toBe(true);
   });
 
   it('Invisível e Envenenado: vantagem e desvantagem nos ataques se anulam', () => {
@@ -126,13 +140,17 @@ describe('condições do SRD 5.2.1', () => {
     const effects = effectsOf('restrained');
     expect(effects.savingThrows.dex.rolls.map((roll) => roll.mode)).toEqual(['disadvantage']);
     expect(effects.savingThrows.str.rolls).toEqual([]);
-    const saves = describeDnd5eConditionEffects(effects).find((line) => line.label === 'Testes de resistência');
+    const saves = describeDnd5eConditionEffects(effects).find(
+      (line) => line.label === 'Testes de resistência',
+    );
     expect(saves?.detail).toBe('DES: Desvantagem (Contido)');
   });
 
   it('condições personalizadas aparecem sem efeitos mecânicos', () => {
     const effects = effectsOf('Abençoado');
-    expect(effects.conditions).toMatchObject([{ key: 'Abençoado', label: 'Abençoado', definition: null }]);
+    expect(effects.conditions).toMatchObject([
+      { key: 'Abençoado', label: 'Abençoado', definition: null },
+    ]);
     expect(describeDnd5eConditionEffects(effects)).toEqual([]);
   });
 
@@ -143,15 +161,39 @@ describe('condições do SRD 5.2.1', () => {
         { id: 'b', key: 'poisoned', level: null },
       ]),
     ).toEqual({ update: [{ id: 'a', level: 1 }], remove: [] });
-    expect(dnd5eLongRestConditionChanges([{ id: 'a', key: 'exhaustion', level: 1 }])).toEqual({ update: [], remove: ['a'] });
+    expect(dnd5eLongRestConditionChanges([{ id: 'a', key: 'exhaustion', level: 1 }])).toEqual({
+      update: [],
+      remove: ['a'],
+    });
   });
 
   it('o jogador só aplica as condições das próprias habilidades', () => {
-    expect(dnd5eSelfConditionOptions([]).map((option) => option.key)).toEqual(['invisible', 'prone', 'unconscious']);
-    const ranger = dnd5eSelfConditionOptions(['Véu da Natureza', 'Ataque Extra', 'Contact Other Plane', 'Invisibility']);
-    expect(ranger.map((option) => option.key)).toEqual(['incapacitated', 'invisible', 'prone', 'unconscious']);
-    expect(ranger.find((option) => option.key === 'invisible')?.sources).toEqual(['Ação Esconder', 'Véu da Natureza', 'Invisibility']);
-    expect(ranger.find((option) => option.key === 'incapacitated')).toMatchObject({ label: 'Incapacitado', sources: ['Contact Other Plane'] });
+    expect(dnd5eSelfConditionOptions([]).map((option) => option.key)).toEqual([
+      'invisible',
+      'prone',
+      'unconscious',
+    ]);
+    const ranger = dnd5eSelfConditionOptions([
+      'Véu da Natureza',
+      'Ataque Extra',
+      'Contact Other Plane',
+      'Invisibility',
+    ]);
+    expect(ranger.map((option) => option.key)).toEqual([
+      'incapacitated',
+      'invisible',
+      'prone',
+      'unconscious',
+    ]);
+    expect(ranger.find((option) => option.key === 'invisible')?.sources).toEqual([
+      'Ação Esconder',
+      'Véu da Natureza',
+      'Invisibility',
+    ]);
+    expect(ranger.find((option) => option.key === 'incapacitated')).toMatchObject({
+      label: 'Incapacitado',
+      sources: ['Contact Other Plane'],
+    });
   });
 
   it('durações em rodadas', () => {
@@ -166,24 +208,51 @@ describe('condições do SRD 5.2.1', () => {
 
 describe('ataques de armas do inventário', () => {
   it('acha a arma pelo nome do item e monta o ataque', async () => {
-    const { findSrdWeaponByName, weaponAttackEntry, createDefaultDnd5eSheet } = await import('./index');
+    const { findSrdWeaponByName, weaponAttackEntry, createDefaultDnd5eSheet } =
+      await import('./index');
     expect(findSrdWeaponByName('Adaga')?.id).toBe('dagger');
-    expect(findSrdWeaponByName('Machadinhas (2)')?.id ?? findSrdWeaponByName('Machadinha')?.id).toBe('handaxe');
+    expect(
+      findSrdWeaponByName('Machadinhas (2)')?.id ?? findSrdWeaponByName('Machadinha')?.id,
+    ).toBe('handaxe');
     expect(findSrdWeaponByName('Pedra da sorte')).toBeUndefined();
     const sheet = createDefaultDnd5eSheet();
     sheet.abilities.dex = 16;
     sheet.proficiencies.weapons = 'Armas simples';
     const dagger = findSrdWeaponByName('Adaga');
-    expect(dagger && weaponAttackEntry(dagger, sheet).data).toMatchObject({ ability: 'dex', proficient: true, damage: '1d4' });
+    expect(dagger && weaponAttackEntry(dagger, sheet).data).toMatchObject({
+      ability: 'dex',
+      proficient: true,
+      damage: '1d4',
+    });
   }, 20000); // importa o módulo inteiro do D&D: lento quando todos os testes rodam juntos.
 });
 
 describe('personagem entrando numa campanha', () => {
   it('lista o que impede a entrada', async () => {
     const { dnd5eCampaignIssues, defaultDnd5eCampaignRules } = await import('./index');
-    const ok = { name: 'Lyra', sheet: { identity: { species: 'Elfo', background: 'Sábio', alignment: 'Neutro e Bom', classes: [{ name: 'Mago', level: 1 }] } } };
+    const ok = {
+      name: 'Lyra',
+      sheet: {
+        identity: {
+          species: 'Elfo',
+          background: 'Sábio',
+          alignment: 'Neutro e Bom',
+          classes: [{ name: 'Mago', level: 1 }],
+        },
+      },
+    };
     expect(dnd5eCampaignIssues(ok, defaultDnd5eCampaignRules())).toEqual([]);
-    const bad = { name: 'Vex', sheet: { identity: { species: '', background: 'Sábio', alignment: 'Caótico e Mau', classes: [{ name: 'Ladino', level: 3 }] } } };
+    const bad = {
+      name: 'Vex',
+      sheet: {
+        identity: {
+          species: '',
+          background: 'Sábio',
+          alignment: 'Caótico e Mau',
+          classes: [{ name: 'Ladino', level: 3 }],
+        },
+      },
+    };
     const issues = dnd5eCampaignIssues(bad, defaultDnd5eCampaignRules());
     expect(issues).toHaveLength(3);
     expect(issues.join(' ')).toContain('3º nível');
@@ -191,11 +260,31 @@ describe('personagem entrando numa campanha', () => {
 
   it('a ficha só entra com livros que o mestre liberou', async () => {
     const { dnd5eCampaignIssues, parseDnd5eCampaignRules } = await import('./index');
-    const sheet = { identity: { species: 'Elfo', background: 'Sábio', alignment: 'Neutro e Bom', classes: [{ name: 'Mago', level: 1 }], sourcebooks: ['xgte', 'tcoe'] } };
-    expect(dnd5eCampaignIssues({ name: 'Lyra', sheet }, parseDnd5eCampaignRules({ sourcebooks: ['xgte', 'tcoe', 'ftod'] }))).toEqual([]);
-    const issues = dnd5eCampaignIssues({ name: 'Lyra', sheet }, parseDnd5eCampaignRules({ sourcebooks: ['xgte'] }));
-    expect(issues).toEqual([expect.stringContaining("livros que o mestre não liberou: Tasha's Cauldron of Everything")]);
+    const sheet = {
+      identity: {
+        species: 'Elfo',
+        background: 'Sábio',
+        alignment: 'Neutro e Bom',
+        classes: [{ name: 'Mago', level: 1 }],
+        sourcebooks: ['xgte', 'tcoe'],
+      },
+    };
+    expect(
+      dnd5eCampaignIssues(
+        { name: 'Lyra', sheet },
+        parseDnd5eCampaignRules({ sourcebooks: ['xgte', 'tcoe', 'ftod'] }),
+      ),
+    ).toEqual([]);
+    const issues = dnd5eCampaignIssues(
+      { name: 'Lyra', sheet },
+      parseDnd5eCampaignRules({ sourcebooks: ['xgte'] }),
+    );
+    expect(issues).toEqual([
+      expect.stringContaining("livros que o mestre não liberou: Tasha's Cauldron of Everything"),
+    ]);
     // Sistema base: nenhum livro liberado.
-    expect(dnd5eCampaignIssues({ name: 'Lyra', sheet }, parseDnd5eCampaignRules({}))).toHaveLength(1);
+    expect(dnd5eCampaignIssues({ name: 'Lyra', sheet }, parseDnd5eCampaignRules({}))).toHaveLength(
+      1,
+    );
   });
 });

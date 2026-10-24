@@ -3,7 +3,12 @@
  * `creature_gm_data.stats` — visível apenas aos mestres.
  */
 import { z } from 'zod';
-import { ABILITIES, ABILITY_SCORE_MAX, ABILITY_SCORE_MIN, DEFAULT_ABILITY_SCORE } from './abilities';
+import {
+  ABILITIES,
+  ABILITY_SCORE_MAX,
+  ABILITY_SCORE_MIN,
+  DEFAULT_ABILITY_SCORE,
+} from './abilities';
 import { isChallengeRating } from './progression';
 
 export const DND5E_STAT_BLOCK_VERSION = 1;

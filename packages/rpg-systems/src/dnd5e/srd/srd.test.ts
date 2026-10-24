@@ -20,8 +20,22 @@ describe('magias do SRD 5.2.1', () => {
   });
 
   it('distribui as magias pelos círculos do SRD', () => {
-    const byLevel = SRD_SPELLS.reduce<Record<number, number>>((count, spell) => ({ ...count, [spell.level]: (count[spell.level] ?? 0) + 1 }), {});
-    expect(byLevel).toEqual({ 0: 27, 1: 57, 2: 57, 3: 42, 4: 34, 5: 38, 6: 31, 7: 20, 8: 17, 9: 16 });
+    const byLevel = SRD_SPELLS.reduce<Record<number, number>>(
+      (count, spell) => ({ ...count, [spell.level]: (count[spell.level] ?? 0) + 1 }),
+      {},
+    );
+    expect(byLevel).toEqual({
+      0: 27,
+      1: 57,
+      2: 57,
+      3: 42,
+      4: 34,
+      5: 38,
+      6: 31,
+      7: 20,
+      8: 17,
+      9: 16,
+    });
   });
 
   it('cabeçalhos cabem nos campos da ficha', () => {
@@ -34,15 +48,27 @@ describe('magias do SRD 5.2.1', () => {
   });
 
   it('marca concentração e ritual a partir do cabeçalho', () => {
-    expect(SRD_SPELLS.find((spell) => spell.name === 'Bless')).toMatchObject({ level: 1, concentration: true });
-    expect(SRD_SPELLS.find((spell) => spell.name === 'Detect Magic')).toMatchObject({ ritual: true, concentration: true });
-    expect(SRD_SPELLS.find((spell) => spell.name === 'Fireball')).toMatchObject({ level: 3, range: '45 m', castingTime: 'Ação' });
+    expect(SRD_SPELLS.find((spell) => spell.name === 'Bless')).toMatchObject({
+      level: 1,
+      concentration: true,
+    });
+    expect(SRD_SPELLS.find((spell) => spell.name === 'Detect Magic')).toMatchObject({
+      ritual: true,
+      concentration: true,
+    });
+    expect(SRD_SPELLS.find((spell) => spell.name === 'Fireball')).toMatchObject({
+      level: 3,
+      range: '45 m',
+      castingTime: 'Ação',
+    });
   });
 });
 
 describe('nomes das magias em português', () => {
   it('toda magia do SRD tem nome em português, sem repetição', () => {
-    const missing = SRD_SPELLS.filter((spell) => !SRD_SPELL_NAMES_PT[spell.name]).map((spell) => spell.name);
+    const missing = SRD_SPELLS.filter((spell) => !SRD_SPELL_NAMES_PT[spell.name]).map(
+      (spell) => spell.name,
+    );
     expect(missing).toEqual([]);
     const names = Object.values(SRD_SPELL_NAMES_PT);
     expect(new Set(names).size).toBe(names.length);
@@ -62,27 +88,40 @@ describe('classes do SRD 5.2.1', () => {
 
   it('tem as 12 classes, cada uma com sua subclasse do SRD', () => {
     expect(classes.map((entry) => entry.id)).toHaveLength(12);
-    for (const entry of classes) expect(entry.subclass.features.length, entry.id).toBeGreaterThan(0);
+    for (const entry of classes)
+      expect(entry.subclass.features.length, entry.id).toBeGreaterThan(0);
   });
 
   it('tabelas por nível têm 20 posições', () => {
     for (const entry of classes) {
-      const tables = [entry.weaponMastery, entry.spellcasting?.cantrips, entry.spellcasting?.prepared].filter(Boolean);
+      const tables = [
+        entry.weaponMastery,
+        entry.spellcasting?.cantrips,
+        entry.spellcasting?.prepared,
+      ].filter(Boolean);
       for (const table of tables) expect(table, entry.id).toHaveLength(20);
     }
   });
 
   it('o conjunto padrão sugerido usa cada valor uma vez', () => {
     for (const entry of classes) {
-      expect(Object.values(entry.standardArray).sort((a, b) => b - a), entry.id).toEqual([...STANDARD_ARRAY]);
+      expect(
+        Object.values(entry.standardArray).sort((a, b) => b - a),
+        entry.id,
+      ).toEqual([...STANDARD_ARRAY]);
     }
   });
 
   it('perícias, equipamento e recursos referem dados existentes', () => {
     for (const entry of classes) {
-      if (entry.skillChoices.options !== 'any') for (const skill of entry.skillChoices.options) expect(SKILLS).toContain(skill);
+      if (entry.skillChoices.options !== 'any')
+        for (const skill of entry.skillChoices.options) expect(SKILLS).toContain(skill);
       for (const option of entry.equipment) {
-        for (const grant of option.items) expect(SRD_ITEMS[grant.item] ?? findTool(grant.item), `${entry.id}: ${grant.item}`).toBeDefined();
+        for (const grant of option.items)
+          expect(
+            SRD_ITEMS[grant.item] ?? findTool(grant.item),
+            `${entry.id}: ${grant.item}`,
+          ).toBeDefined();
       }
       for (const resource of [...entry.resources, ...(entry.subclass.resources ?? [])]) {
         expect(resource.key).toMatch(RESOURCE_KEY);
@@ -93,18 +132,24 @@ describe('classes do SRD 5.2.1', () => {
         expect(feature.level).toBeLessThanOrEqual(20);
         expect(feature.name.length).toBeLessThanOrEqual(120);
       }
-      for (const feature of entry.subclass.features) expect(feature.level, feature.name).toBeGreaterThanOrEqual(3);
+      for (const feature of entry.subclass.features)
+        expect(feature.level, feature.name).toBeGreaterThanOrEqual(3);
     }
   });
 
   it('magias sempre preparadas existem no SRD', () => {
     const named = [
       ...classes.flatMap((entry) => (entry.alwaysPrepared ?? []).flatMap((group) => group.spells)),
-      ...classes.flatMap((entry) => (entry.subclass.alwaysPrepared ?? []).flatMap((group) => group.spells)),
+      ...classes.flatMap((entry) =>
+        (entry.subclass.alwaysPrepared ?? []).flatMap((group) => group.spells),
+      ),
       ...CIRCLE_OF_THE_LAND.flatMap((land) => land.spells.flatMap((group) => group.spells)),
       ...SRD_SPECIES.flatMap((species) => [
         ...(species.cantrips ?? []),
-        ...(species.lineage?.options ?? []).flatMap((option) => [...(option.cantrips ?? []), ...(option.spells ?? []).map((spell) => spell.spell)]),
+        ...(species.lineage?.options ?? []).flatMap((option) => [
+          ...(option.cantrips ?? []),
+          ...(option.spells ?? []).map((spell) => spell.spell),
+        ]),
       ]),
     ];
     for (const name of named) expect(spellNames.has(name), name).toBe(true);
@@ -113,11 +158,18 @@ describe('classes do SRD 5.2.1', () => {
 
 describe('origens e talentos do SRD 5.2.1', () => {
   it('antecedentes têm três atributos e duas perícias distintos', () => {
-    expect(SRD_BACKGROUNDS.map((background) => background.id)).toEqual(['acolyte', 'criminal', 'sage', 'soldier']);
+    expect(SRD_BACKGROUNDS.map((background) => background.id)).toEqual([
+      'acolyte',
+      'criminal',
+      'sage',
+      'soldier',
+    ]);
     for (const background of SRD_BACKGROUNDS) {
       expect(new Set(background.abilities).size).toBe(3);
       expect(new Set(background.skills).size).toBe(2);
-      expect(SRD_FEATS.some((feat) => feat.id === background.feat && feat.category === 'origin')).toBe(true);
+      expect(
+        SRD_FEATS.some((feat) => feat.id === background.feat && feat.category === 'origin'),
+      ).toBe(true);
     }
   });
 
@@ -137,6 +189,7 @@ describe('origens e talentos do SRD 5.2.1', () => {
 
   it('invocações com pré-requisito apontam para invocações existentes', () => {
     const ids = new Set(SRD_INVOCATIONS.map((invocation) => invocation.id));
-    for (const invocation of SRD_INVOCATIONS) if (invocation.requires) expect(ids.has(invocation.requires), invocation.id).toBe(true);
+    for (const invocation of SRD_INVOCATIONS)
+      if (invocation.requires) expect(ids.has(invocation.requires), invocation.id).toBe(true);
   });
 });

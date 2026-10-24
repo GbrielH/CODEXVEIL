@@ -11,9 +11,14 @@ import {
   suggestHitPointMax,
   totalInGold,
 } from './resources';
-import { createDefaultDnd5eSheet, parseDnd5eSheet, totalLevel, type Dnd5eSheetInput } from './sheet';
+import {
+  createDefaultDnd5eSheet,
+  parseDnd5eSheet,
+  totalLevel,
+  type Dnd5eSheetInput,
+} from './sheet';
 import { createDefaultDnd5eStatBlock, parseDnd5eStatBlock } from './stat-block';
-import { dnd5eSystem } from './index';
+import { dnd5eSystem, formatSpeciesName } from './index';
 import { summarizeSheet } from '../registry';
 
 function sheet(input: Dnd5eSheetInput) {
@@ -226,12 +231,17 @@ describe('resumo do personagem', () => {
 
   it('usa o nível quando não há espécie nem classe', () => {
     expect(dnd5eSystem.summarize(createDefaultDnd5eSheet()).subtitle).toBe('Nível 1');
+    expect(formatSpeciesName('Draconato (Preto (ácido))')).toBe('Draconato Preto (ácido)');
+    expect(formatSpeciesName('Humano (Humano variante)')).toBe('Humano variante');
+    expect(formatSpeciesName('Elfo (Alto Elfo)')).toBe('Elfo (Alto Elfo)');
   });
 });
 
 describe('resumo seguro de fichas', () => {
   it('nunca lança, mesmo com dados inválidos ou sistema desconhecido', () => {
-    expect(summarizeSheet('dnd5e', { identity: { classes: [{ name: 'Bardo', level: 2 }] } })).toEqual({
+    expect(
+      summarizeSheet('dnd5e', { identity: { classes: [{ name: 'Bardo', level: 2 }] } }),
+    ).toEqual({
       subtitle: 'Bardo 2',
       level: 2,
     });
@@ -244,9 +254,19 @@ describe('resumo seguro de fichas', () => {
 
 describe('dano e crítico do ataque', () => {
   it('soma modificador e bônus, dobra os dados no crítico e põe o extra', async () => {
-    const { attackDamageFormula, critRangeLabel, dnd5eAttackDataSchema } = await import('./entries');
+    const { attackDamageFormula, critRangeLabel, dnd5eAttackDataSchema } =
+      await import('./entries');
     const scores = { str: 16, dex: 10, con: 10, int: 10, wis: 10, cha: 10 };
-    const attack = dnd5eAttackDataSchema.parse({ ability: 'str', damage: '1d8', damageType: 'cortante', damageBonus: 1, extraDamage: '1d6', extraDamageType: 'fogo', critRange: 19, critExtra: '1d8' });
+    const attack = dnd5eAttackDataSchema.parse({
+      ability: 'str',
+      damage: '1d8',
+      damageType: 'cortante',
+      damageBonus: 1,
+      extraDamage: '1d6',
+      extraDamageType: 'fogo',
+      critRange: 19,
+      critExtra: '1d8',
+    });
     expect(attackDamageFormula(attack, scores)).toBe('1d8+1d6+4');
     expect(attackDamageFormula(attack, scores, true)).toBe('2d8+2d6+1d8+4');
     expect(critRangeLabel(attack.critRange)).toBe('19–20');

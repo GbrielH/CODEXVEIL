@@ -33,7 +33,8 @@ export const SRD_FEATS: readonly FeatDefinition[] = [
     id: 'savage_attacker',
     name: 'Atacante Selvagem',
     category: 'origin',
-    description: 'Uma vez por turno, ao acertar um alvo com uma arma, rola os dados de dano da arma duas vezes e usa o resultado que preferir.',
+    description:
+      'Uma vez por turno, ao acertar um alvo com uma arma, rola os dados de dano da arma duas vezes e usa o resultado que preferir.',
   },
   {
     id: 'skilled',
@@ -49,7 +50,8 @@ export const SRD_FEATS: readonly FeatDefinition[] = [
     category: 'general',
     repeatable: true,
     minLevel: 4,
-    description: 'Aumenta um valor de atributo em 2, ou dois valores em 1. Não pode passar de 20. Repetível.',
+    description:
+      'Aumenta um valor de atributo em 2, ou dois valores em 1. Não pode passar de 20. Repetível.',
   },
   {
     id: 'grappler',
@@ -84,7 +86,8 @@ export const SRD_FEATS: readonly FeatDefinition[] = [
     id: 'two_weapon_fighting',
     name: 'Combate com Duas Armas',
     category: 'fighting_style',
-    description: 'No ataque extra da propriedade Leve, soma o modificador de atributo ao dano, se ainda não somava.',
+    description:
+      'No ataque extra da propriedade Leve, soma o modificador de atributo ao dano, se ainda não somava.',
   },
   // Dádivas épicas (19º nível)
   {
@@ -92,14 +95,16 @@ export const SRD_FEATS: readonly FeatDefinition[] = [
     name: 'Dádiva da Proeza em Combate',
     category: 'epic',
     minLevel: 19,
-    description: 'Um atributo à escolha +1 (máximo 30). Mira Impecável: ao errar uma jogada de ataque, pode acertar; recupera o uso no início do seu próximo turno.',
+    description:
+      'Um atributo à escolha +1 (máximo 30). Mira Impecável: ao errar uma jogada de ataque, pode acertar; recupera o uso no início do seu próximo turno.',
   },
   {
     id: 'boon_of_dimensional_travel',
     name: 'Dádiva da Viagem Dimensional',
     category: 'epic',
     minLevel: 19,
-    description: 'Um atributo à escolha +1 (máximo 30). Passos Cintilantes: logo após a ação de Ataque ou de Magia, teletransporta-se até 9 m para um espaço visível desocupado.',
+    description:
+      'Um atributo à escolha +1 (máximo 30). Passos Cintilantes: logo após a ação de Ataque ou de Magia, teletransporta-se até 9 m para um espaço visível desocupado.',
   },
   {
     id: 'boon_of_fate',
@@ -143,7 +148,10 @@ export const SRD_FEATS: readonly FeatDefinition[] = [
 ];
 
 export function findFeat(id: string): FeatDefinition | undefined {
-  return SRD_FEATS.find((feat) => feat.id === id) ?? activeDnd5eBookContent().feats.find((feat) => feat.id === id);
+  return (
+    SRD_FEATS.find((feat) => feat.id === id) ??
+    activeDnd5eBookContent().feats.find((feat) => feat.id === id)
+  );
 }
 
 /** Talentos do SRD e dos livros liberados. */
@@ -153,7 +161,9 @@ export function listFeats(): readonly FeatDefinition[] {
 }
 
 /** Atributos que uma dádiva épica pode aumentar. */
-export function epicBoonAbilities(featId: string): readonly ('str' | 'dex' | 'con' | 'int' | 'wis' | 'cha')[] {
+export function epicBoonAbilities(
+  featId: string,
+): readonly ('str' | 'dex' | 'con' | 'int' | 'wis' | 'cha')[] {
   if (featId === 'boon_of_irresistible_offense') return ['str', 'dex'];
   if (featId === 'boon_of_spell_recall') return ['int', 'wis', 'cha'];
   return ['str', 'dex', 'con', 'int', 'wis', 'cha'];

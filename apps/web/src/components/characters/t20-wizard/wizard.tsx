@@ -106,9 +106,14 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
     () => rules?.attributeMethods ?? (['pontos', 'rolagem'] as const),
     [rules],
   );
-  const [draft, setDraft] = useState<T20Draft>(() =>
-    createT20Draft(rules?.startingLevel ?? 1, allowedMethods[0] ?? 'pontos'),
-  );
+  // Ficha pessoal: começa com todos os livros importados marcados (antes começava sem nenhum e
+  // o aviso "Sem livros" escondia a lista para marcá-los).
+  const [draft, setDraft] = useState<T20Draft>(() => {
+    const initial = createT20Draft(rules?.startingLevel ?? 1, allowedMethods[0] ?? 'pontos');
+    return campaign
+      ? initial
+      : { ...initial, sourcebooks: sources.map((source) => source.book.id) };
+  });
   // Na campanha, os livros do mestre; na ficha pessoal, só os livros marcados abaixo.
   const selectedSources = useMemo(
     () =>
@@ -171,7 +176,8 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
     });
   };
 
-  if (content.races.length === 0 || content.classes.length === 0) {
+  const available = useMemo(() => buildT20Content(sources), [sources]);
+  if (available.races.length === 0 || available.classes.length === 0) {
     return (
       <Alert tone="warning" title="Sem livros do Tormenta20">
         {campaign

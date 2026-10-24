@@ -105,7 +105,10 @@ export const SRD_BACKGROUNDS: readonly BackgroundDefinition[] = [
 ];
 
 export function findBackground(id: string): BackgroundDefinition | undefined {
-  return SRD_BACKGROUNDS.find((background) => background.id === id) ?? activeDnd5eBookContent().backgrounds.find((background) => background.id === id);
+  return (
+    SRD_BACKGROUNDS.find((background) => background.id === id) ??
+    activeDnd5eBookContent().backgrounds.find((background) => background.id === id)
+  );
 }
 
 /** Antecedentes do SRD e dos livros liberados. */

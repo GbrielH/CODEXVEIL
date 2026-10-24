@@ -27,12 +27,27 @@ import {
   type Dnd5eStatBlock,
 } from './stat-block';
 
+/**
+ * Nome da espécie sem parênteses aninhados: "Draconato (Preto (ácido))" vira "Draconato Preto
+ * (ácido)" e "Humano (Humano variante)" vira "Humano variante".
+ */
+export function formatSpeciesName(species: string): string {
+  const match = /^([^()]+?)\s*\((.+)\)$/.exec(species.trim());
+  if (!match) return species.trim();
+  const [, base = '', inner = ''] = match;
+  if (!inner.includes('('))
+    return inner.toLowerCase().startsWith(base.toLowerCase()) ? inner : species.trim();
+  return inner.toLowerCase().startsWith(base.toLowerCase()) ? inner : `${base} ${inner}`;
+}
+
 function summarize(sheet: Dnd5eSheet) {
   const classes = sheet.identity.classes
     .filter((entry) => entry.name.length > 0)
     .map((entry) => `${entry.name} ${entry.level}`)
     .join(' / ');
-  const parts = [sheet.identity.species, classes].filter((part) => part.length > 0);
+  const parts = [formatSpeciesName(sheet.identity.species), classes].filter(
+    (part) => part.length > 0,
+  );
   const level = totalLevel(sheet);
   return {
     subtitle: parts.length > 0 ? parts.join(' · ') : `Nível ${level}`,
@@ -40,37 +55,38 @@ function summarize(sheet: Dnd5eSheet) {
   };
 }
 
-export const dnd5eSystem: RpgSystem<Dnd5eSheet, Dnd5eDerived, Dnd5eStatBlock, Dnd5eCampaignRules> = {
-  id: 'dnd5e',
-  name: 'Dungeons & Dragons 5ª Edição',
-  shortName: 'D&D 5e',
-  rulesReference: 'SRD 5.2.1',
-  sheetSchemaVersion: DND5E_SHEET_VERSION,
-  license: srd52License,
-  conditions: dnd5eConditions,
-  officialLinks: dnd5eOfficialLinks,
-  conditionDurations: dnd5eConditionDurations,
-  formatConditionRounds: formatDnd5eConditionRounds,
-  sheetSchema: dnd5eSheetSchema,
-  statBlockSchema: dnd5eStatBlockSchema,
-  campaignRulesSchema: dnd5eCampaignRulesSchema,
-  defaultCampaignRules: defaultDnd5eCampaignRules,
-  parseCampaignRules: parseDnd5eCampaignRules,
-  describeCampaignRules: describeDnd5eCampaignRules,
-  createDefaultSheet: createDefaultDnd5eSheet,
-  parseSheet: parseDnd5eSheet,
-  computeDerived: computeDnd5eDerived,
-  summarize,
-  defaultResources: dnd5eDefaultResources,
-  createDefaultStatBlock: createDefaultDnd5eStatBlock,
-  parseStatBlock: parseDnd5eStatBlock,
-  combatDefaults: (statBlock) => ({
-    hitPoints: statBlock.hitPoints,
-    armorClass: statBlock.armorClass,
-    initiativeBonus: abilityModifier(statBlock.abilities.dex),
-  }),
-  initiativeBonus: (sheet) => computeDnd5eDerived(sheet).initiative,
-};
+export const dnd5eSystem: RpgSystem<Dnd5eSheet, Dnd5eDerived, Dnd5eStatBlock, Dnd5eCampaignRules> =
+  {
+    id: 'dnd5e',
+    name: 'Dungeons & Dragons 5ª Edição',
+    shortName: 'D&D 5e',
+    rulesReference: 'SRD 5.2.1',
+    sheetSchemaVersion: DND5E_SHEET_VERSION,
+    license: srd52License,
+    conditions: dnd5eConditions,
+    officialLinks: dnd5eOfficialLinks,
+    conditionDurations: dnd5eConditionDurations,
+    formatConditionRounds: formatDnd5eConditionRounds,
+    sheetSchema: dnd5eSheetSchema,
+    statBlockSchema: dnd5eStatBlockSchema,
+    campaignRulesSchema: dnd5eCampaignRulesSchema,
+    defaultCampaignRules: defaultDnd5eCampaignRules,
+    parseCampaignRules: parseDnd5eCampaignRules,
+    describeCampaignRules: describeDnd5eCampaignRules,
+    createDefaultSheet: createDefaultDnd5eSheet,
+    parseSheet: parseDnd5eSheet,
+    computeDerived: computeDnd5eDerived,
+    summarize,
+    defaultResources: dnd5eDefaultResources,
+    createDefaultStatBlock: createDefaultDnd5eStatBlock,
+    parseStatBlock: parseDnd5eStatBlock,
+    combatDefaults: (statBlock) => ({
+      hitPoints: statBlock.hitPoints,
+      armorClass: statBlock.armorClass,
+      initiativeBonus: abilityModifier(statBlock.abilities.dex),
+    }),
+    initiativeBonus: (sheet) => computeDnd5eDerived(sheet).initiative,
+  };
 
 export * from './abilities';
 export * from './skills';

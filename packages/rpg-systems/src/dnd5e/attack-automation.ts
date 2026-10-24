@@ -48,7 +48,9 @@ function normalize(text: string): string {
 
 function classLevel(sheet: Dnd5eSheet, ...names: string[]): number {
   const wanted = names.map(normalize);
-  return sheet.identity.classes.filter((entry) => wanted.includes(normalize(entry.name))).reduce((total, entry) => total + entry.level, 0);
+  return sheet.identity.classes
+    .filter((entry) => wanted.includes(normalize(entry.name)))
+    .reduce((total, entry) => total + entry.level, 0);
 }
 
 function hasFeature(features: readonly string[], ...fragments: string[]): boolean {
@@ -69,7 +71,9 @@ export function canRage(sheet: Dnd5eSheet): boolean {
 
 /** Margem de crítico do Campeão: 19–20 no 3º nível de Guerreiro, 18–20 no 15º. */
 function championCritRange(sheet: Dnd5eSheet): number {
-  const champion = sheet.identity.classes.some((entry) => /campe|champion/.test(normalize(entry.subclass ?? '')));
+  const champion = sheet.identity.classes.some((entry) =>
+    /campe|champion/.test(normalize(entry.subclass ?? '')),
+  );
   if (!champion) return 20;
   const fighter = classLevel(sheet, 'Guerreiro', 'Fighter');
   return fighter >= 15 ? 18 : fighter >= 3 ? 19 : 20;
@@ -81,15 +85,29 @@ function withModifier(formula: string, modifier: number): string {
 }
 
 function doubleDice(formula: string): string {
-  return formula.replace(/(\d*)d(\d+)/gi, (_, count: string, sides: string) => `${(Number(count) || 1) * 2}d${sides}`);
+  return formula.replace(
+    /(\d*)d(\d+)/gi,
+    (_, count: string, sides: string) => `${(Number(count) || 1) * 2}d${sides}`,
+  );
 }
 
 const sign = (value: number) => (value >= 0 ? `+${value}` : String(value));
 
-const ABILITY_SHORT: Record<Ability, string> = { str: 'For', dex: 'Des', con: 'Con', int: 'Int', wis: 'Sab', cha: 'Car' };
+const ABILITY_SHORT: Record<Ability, string> = {
+  str: 'For',
+  dex: 'Des',
+  con: 'Con',
+  int: 'Int',
+  wis: 'Sab',
+  cha: 'Car',
+};
 
 /** Acerto, dano e crítico do ataque, com tudo o que a ficha já sabe. */
-export function resolveDnd5eAttack(name: string, data: Dnd5eAttackData, context: Dnd5eAttackContext): ResolvedDnd5eAttack {
+export function resolveDnd5eAttack(
+  name: string,
+  data: Dnd5eAttackData,
+  context: Dnd5eAttackContext,
+): ResolvedDnd5eAttack {
   const { sheet, derived, items, features, effects } = context;
   const weapon = findSrdWeaponByName(name);
   const notes: string[] = [];
@@ -98,11 +116,23 @@ export function resolveDnd5eAttack(name: string, data: Dnd5eAttackData, context:
   // Atributo: armas do SRD seguem as regras (à distância = Des; acuidade = o maior); o resto usa o do ataque.
   let ability: Ability | null = data.ability;
   if (weapon) {
-    ability = weapon.kind === 'ranged' ? 'dex' : weapon.properties.includes('finesse') ? (mod('dex') > mod('str') ? 'dex' : 'str') : 'str';
+    ability =
+      weapon.kind === 'ranged'
+        ? 'dex'
+        : weapon.properties.includes('finesse')
+          ? mod('dex') > mod('str')
+            ? 'dex'
+            : 'str'
+          : 'str';
   }
   const proficient = weapon ? sheetHasWeaponProficiency(sheet, weapon) : data.proficient;
   // Item equipado com o nome da arma ("Espada longa +1").
-  const item = items.find((entry) => entry.isEquipped && weapon && findSrdWeaponByName(entry.name.replace(/\s*\+\s*[1-3]\b/, ''))?.id === weapon.id);
+  const item = items.find(
+    (entry) =>
+      entry.isEquipped &&
+      weapon &&
+      findSrdWeaponByName(entry.name.replace(/\s*\+\s*[1-3]\b/, ''))?.id === weapon.id,
+  );
   const magic = item ? magicBonus(item.name) : magicBonus(name);
 
   const abilityPart = ability ? mod(ability) : 0;
@@ -121,7 +151,12 @@ export function resolveDnd5eAttack(name: string, data: Dnd5eAttackData, context:
 
   let damageBonus = abilityPart + magic + data.damageBonus;
   if (data.damageBonus) notes.push(`Bônus manual ${sign(data.damageBonus)} no dano`);
-  if (weapon && !ranged && !weapon.properties.includes('two_handed') && hasFeature(features, 'duelismo', 'duelo', 'dueling')) {
+  if (
+    weapon &&
+    !ranged &&
+    !weapon.properties.includes('two_handed') &&
+    hasFeature(features, 'duelismo', 'duelo', 'dueling')
+  ) {
     damageBonus += 2;
     notes.push('Estilo de Luta (Duelismo) +2 no dano');
   }
@@ -139,10 +174,18 @@ export function resolveDnd5eAttack(name: string, data: Dnd5eAttackData, context:
   const dice = (critical: boolean) => {
     if (!data.damage.trim()) return null;
     const parts = [critical ? doubleDice(data.damage.trim()) : data.damage.trim()];
-    if (data.extraDamage.trim()) parts.push(critical ? doubleDice(data.extraDamage.trim()) : data.extraDamage.trim());
+    if (data.extraDamage.trim())
+      parts.push(critical ? doubleDice(data.extraDamage.trim()) : data.extraDamage.trim());
     if (critical && data.critExtra.trim()) parts.push(data.critExtra.trim());
     return withModifier(parts.join('+'), damageBonus);
   };
 
-  return { toHit, damage: dice(false), critical: dice(true), critRange, notes, automatic: Boolean(weapon) };
+  return {
+    toHit,
+    damage: dice(false),
+    critical: dice(true),
+    critRange,
+    notes,
+    automatic: Boolean(weapon),
+  };
 }

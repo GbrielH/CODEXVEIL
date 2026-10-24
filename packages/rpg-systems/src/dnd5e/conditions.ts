@@ -198,7 +198,8 @@ export const dnd5eConditions = [
   {
     key: 'invisible',
     label: 'Invisível',
-    summary: 'Não pode ser visto. Ataques contra ele têm desvantagem; os ataques dele têm vantagem.',
+    summary:
+      'Não pode ser visto. Ataques contra ele têm desvantagem; os ataques dele têm vantagem.',
     rules: [
       {
         title: 'Surpresa',
@@ -447,12 +448,17 @@ export interface Dnd5eConditionEffects {
   dead: boolean;
 }
 
-function withSource(effects: readonly RollEffect[] | undefined, source: string): ConditionRollSource[] {
+function withSource(
+  effects: readonly RollEffect[] | undefined,
+  source: string,
+): ConditionRollSource[] {
   return (effects ?? []).map((effect) => ({ ...effect, source }));
 }
 
 /** Junta os efeitos de todas as condições ativas (inclusive as impostas por outras). */
-export function dnd5eConditionEffects(active: readonly ActiveConditionInput[]): Dnd5eConditionEffects {
+export function dnd5eConditionEffects(
+  active: readonly ActiveConditionInput[],
+): Dnd5eConditionEffects {
   const conditions: Dnd5eActiveCondition[] = [];
   const add = (key: string, level: number | null, impliedBy: string | null) => {
     const existing = conditions.find((condition) => condition.key === key);
@@ -462,8 +468,16 @@ export function dnd5eConditionEffects(active: readonly ActiveConditionInput[]): 
       if (impliedBy === null) existing.impliedBy = null;
       return;
     }
-    conditions.push({ key, label: definition?.label ?? key, level, impliedBy, suppressedBy: null, definition });
-    for (const included of definition?.includes ?? []) add(included, null, definition?.label ?? key);
+    conditions.push({
+      key,
+      label: definition?.label ?? key,
+      level,
+      impliedBy,
+      suppressedBy: null,
+      definition,
+    });
+    for (const included of definition?.includes ?? [])
+      add(included, null, definition?.label ?? key);
   };
   for (const condition of active) {
     const definition = findDnd5eCondition(condition.key);
@@ -484,7 +498,10 @@ export function dnd5eConditionEffects(active: readonly ActiveConditionInput[]): 
   }
 
   const savingThrows = Object.fromEntries(
-    ABILITIES.map((ability) => [ability, { autoFail: [] as string[], rolls: [] as ConditionRollSource[] }]),
+    ABILITIES.map((ability) => [
+      ability,
+      { autoFail: [] as string[], rolls: [] as ConditionRollSource[] },
+    ]),
   ) as Dnd5eConditionEffects['savingThrows'];
   const effects: Dnd5eConditionEffects = {
     conditions,
@@ -517,7 +534,10 @@ export function dnd5eConditionEffects(active: readonly ActiveConditionInput[]): 
     effects.attackRolls.push(...withSource(mechanics.attackRolls, source));
     effects.attacksAgainst.push(...withSource(mechanics.attacksAgainst, source));
     effects.abilityChecks.push(...withSource(mechanics.abilityChecks, source));
-    effects.initiative.push(...withSource(mechanics.abilityChecks, source), ...withSource(mechanics.initiative, source));
+    effects.initiative.push(
+      ...withSource(mechanics.abilityChecks, source),
+      ...withSource(mechanics.initiative, source),
+    );
     for (const save of mechanics.savingThrows ?? []) {
       for (const ability of save.abilities) {
         if (save.mode === 'auto_fail') savingThrows[ability].autoFail.push(source);
@@ -536,7 +556,9 @@ export function dnd5eConditionEffects(active: readonly ActiveConditionInput[]): 
  * Resultado das vantagens e desvantagens que valem sempre (sem situação específica): as duas
  * juntas se anulam, como manda a regra.
  */
-export function netRollMode(sources: readonly ConditionRollSource[]): RollMode | 'cancelled' | null {
+export function netRollMode(
+  sources: readonly ConditionRollSource[],
+): RollMode | 'cancelled' | null {
   const unconditional = sources.filter((source) => !source.qualifier);
   const advantage = unconditional.some((source) => source.mode === 'advantage');
   const disadvantage = unconditional.some((source) => source.mode === 'disadvantage');
@@ -562,7 +584,11 @@ export function describeRollSources(sources: readonly ConditionRollSource[]): st
   const groups = new Map<string, { mode: RollMode; qualifier?: string; sources: string[] }>();
   for (const source of sources) {
     const id = `${source.mode}|${source.qualifier ?? ''}`;
-    const group = groups.get(id) ?? { mode: source.mode, ...(source.qualifier ? { qualifier: source.qualifier } : {}), sources: [] };
+    const group = groups.get(id) ?? {
+      mode: source.mode,
+      ...(source.qualifier ? { qualifier: source.qualifier } : {}),
+      sources: [],
+    };
     if (!group.sources.includes(source.source)) group.sources.push(source.source);
     groups.set(id, group);
   }
@@ -577,9 +603,14 @@ function roundOne(value: number): number {
 }
 
 /** Deslocamento efetivo na unidade da ficha (metros ou pés), nunca negativo. */
-export function effectiveSpeed(speed: number, unit: 'm' | 'ft', effects: Dnd5eConditionEffects): number {
+export function effectiveSpeed(
+  speed: number,
+  unit: 'm' | 'ft',
+  effects: Dnd5eConditionEffects,
+): number {
   if (effects.speedZero.length > 0) return 0;
-  const reduction = unit === 'ft' ? effects.speedReductionFeet : (effects.speedReductionFeet / 5) * 1.5;
+  const reduction =
+    unit === 'ft' ? effects.speedReductionFeet : (effects.speedReductionFeet / 5) * 1.5;
   return Math.max(0, roundOne(speed - reduction));
 }
 
@@ -604,10 +635,16 @@ export interface ConditionEffectLine {
 }
 
 /** Linhas legíveis com tudo o que as condições ativas mudam na ficha. */
-export function describeDnd5eConditionEffects(effects: Dnd5eConditionEffects): ConditionEffectLine[] {
+export function describeDnd5eConditionEffects(
+  effects: Dnd5eConditionEffects,
+): ConditionEffectLine[] {
   const lines: ConditionEffectLine[] = [];
   if (effects.dead) {
-    lines.push({ label: 'Morte', detail: 'Exaustão no nível 6: o personagem morre.', severe: true });
+    lines.push({
+      label: 'Morte',
+      detail: 'Exaustão no nível 6: o personagem morre.',
+      severe: true,
+    });
   }
   if (effects.incapacitated.length > 0) {
     lines.push({
@@ -623,7 +660,10 @@ export function describeDnd5eConditionEffects(effects: Dnd5eConditionEffects): C
     });
   }
   if (effects.speedZero.length > 0) {
-    lines.push({ label: 'Deslocamento', detail: `0, sem poder aumentar (${effects.speedZero.join(', ')}).` });
+    lines.push({
+      label: 'Deslocamento',
+      detail: `0, sem poder aumentar (${effects.speedZero.join(', ')}).`,
+    });
   } else if (effects.speedReductionFeet > 0) {
     const meters = (effects.speedReductionFeet / 5) * 1.5;
     lines.push({
@@ -632,7 +672,10 @@ export function describeDnd5eConditionEffects(effects: Dnd5eConditionEffects): C
     });
   }
   if (effects.attackRolls.length > 0) {
-    lines.push({ label: 'Seus ataques', detail: describeRollSources(effects.attackRolls).join('; ') });
+    lines.push({
+      label: 'Seus ataques',
+      detail: describeRollSources(effects.attackRolls).join('; '),
+    });
   }
   if (effects.attacksAgainst.length > 0 || effects.autoCritWithin5ft.length > 0) {
     const parts = describeRollSources(effects.attacksAgainst);
@@ -642,10 +685,16 @@ export function describeDnd5eConditionEffects(effects: Dnd5eConditionEffects): C
     lines.push({ label: 'Ataques contra você', detail: parts.join('; ') });
   }
   if (effects.abilityChecks.length > 0) {
-    lines.push({ label: 'Testes de atributo e perícias', detail: describeRollSources(effects.abilityChecks).join('; ') });
+    lines.push({
+      label: 'Testes de atributo e perícias',
+      detail: describeRollSources(effects.abilityChecks).join('; '),
+    });
   }
   const initiativeOnly = effects.initiative.filter(
-    (source) => !effects.abilityChecks.some((check) => check.source === source.source && check.mode === source.mode),
+    (source) =>
+      !effects.abilityChecks.some(
+        (check) => check.source === source.source && check.mode === source.mode,
+      ),
   );
   if (initiativeOnly.length > 0) {
     lines.push({ label: 'Iniciativa', detail: describeRollSources(initiativeOnly).join('; ') });
@@ -658,21 +707,36 @@ export function describeDnd5eConditionEffects(effects: Dnd5eConditionEffects): C
     }
   }
   for (const [source, abilities] of autoFail) {
-    saves.push(`${abilities.map((ability) => abilityLabels[ability].abbreviation).join(' e ')}: falha automática (${source})`);
+    saves.push(
+      `${abilities.map((ability) => abilityLabels[ability].abbreviation).join(' e ')}: falha automática (${source})`,
+    );
   }
   for (const ability of ABILITIES) {
     const rolls = effects.savingThrows[ability].rolls;
-    if (rolls.length > 0) saves.push(`${abilityLabels[ability].abbreviation}: ${describeRollSources(rolls).join('; ')}`);
+    if (rolls.length > 0)
+      saves.push(
+        `${abilityLabels[ability].abbreviation}: ${describeRollSources(rolls).join('; ')}`,
+      );
   }
   if (saves.length > 0) {
-    lines.push({ label: 'Testes de resistência', detail: saves.join('; '), severe: autoFail.size > 0 });
+    lines.push({
+      label: 'Testes de resistência',
+      detail: saves.join('; '),
+      severe: autoFail.size > 0,
+    });
   }
   if (effects.resistAllDamage.length > 0) {
-    lines.push({ label: 'Dano recebido', detail: `Resistência a todo dano (${effects.resistAllDamage.join(', ')}).` });
+    lines.push({
+      label: 'Dano recebido',
+      detail: `Resistência a todo dano (${effects.resistAllDamage.join(', ')}).`,
+    });
   }
   for (const condition of effects.conditions) {
     if (condition.suppressedBy) {
-      lines.push({ label: condition.label, detail: `Sem efeito: imunidade (${condition.suppressedBy}).` });
+      lines.push({
+        label: condition.label,
+        detail: `Sem efeito: imunidade (${condition.suppressedBy}).`,
+      });
     }
   }
   return lines;
@@ -745,7 +809,9 @@ const SELF_CONDITIONS_BY_ABILITY: Readonly<Record<string, readonly Dnd5eConditio
  * ter por conta própria (Caído, Invisível pela ação Esconder, Inconsciente a 0 PV) e as que
  * vêm das habilidades e magias da ficha. As demais são aplicadas pelo mestre.
  */
-export function dnd5eSelfConditionOptions(abilityNames: readonly string[]): Dnd5eSelfConditionOption[] {
+export function dnd5eSelfConditionOptions(
+  abilityNames: readonly string[],
+): Dnd5eSelfConditionOption[] {
   const sources = new Map<Dnd5eConditionKey, string[]>();
   const add = (key: Dnd5eConditionKey, source: string) => {
     const list = sources.get(key) ?? [];
@@ -759,5 +825,9 @@ export function dnd5eSelfConditionOptions(abilityNames: readonly string[]): Dnd5
   }
   return dnd5eConditions
     .filter((condition) => sources.has(condition.key))
-    .map((condition) => ({ key: condition.key, label: condition.label, sources: sources.get(condition.key) ?? [] }));
+    .map((condition) => ({
+      key: condition.key,
+      label: condition.label,
+      sources: sources.get(condition.key) ?? [],
+    }));
 }

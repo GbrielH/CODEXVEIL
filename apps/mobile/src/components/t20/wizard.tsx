@@ -91,9 +91,15 @@ export function T20MobileWizard({
     () => campaign?.rules.attributeMethods ?? (['pontos', 'rolagem'] as const),
     [campaign],
   );
-  const [draft, setDraft] = useState<T20Draft>(() =>
-    createT20Draft(campaign?.rules.startingLevel ?? 1, methods[0] ?? 'pontos'),
-  );
+  // Ficha pessoal: começa com todos os livros importados marcados (sem isso, o aviso "Sem
+  // livros" escondia a lista para marcá-los).
+  const [draft, setDraft] = useState<T20Draft>(() => {
+    const initial = createT20Draft(campaign?.rules.startingLevel ?? 1, methods[0] ?? 'pontos');
+    return campaign
+      ? initial
+      : { ...initial, sourcebooks: sources.map((source) => source.book.id) };
+  });
+  const available = useMemo(() => buildT20Content(sources), [sources]);
   // Na campanha, os livros do mestre; na ficha pessoal, só os livros marcados no início.
   const selectedSources = useMemo(
     () =>
@@ -176,7 +182,7 @@ export function T20MobileWizard({
     }
   };
 
-  if (content.races.length === 0 || content.classes.length === 0) {
+  if (available.races.length === 0 || available.classes.length === 0) {
     return (
       <Notice
         tone="warning"

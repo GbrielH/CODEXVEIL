@@ -6,10 +6,22 @@ export interface BookLanguages {
   choices: number;
 }
 
-const COUNT_WORDS: Record<string, number> = { um: 1, uma: 1, outro: 1, outra: 1, dois: 2, duas: 2, tres: 3 };
+const COUNT_WORDS: Record<string, number> = {
+  um: 1,
+  uma: 1,
+  outro: 1,
+  outra: 1,
+  dois: 2,
+  duas: 2,
+  tres: 3,
+};
 
 /** Nomes em português de 2014 que diferem do SRD 5.2 (o Pequenino era "Halfling"). */
-const NAME_ALIASES: Record<string, string> = { halfling: 'halfling', 'dialeto subterraneo': 'deep_speech', 'fala profunda': 'deep_speech' };
+const NAME_ALIASES: Record<string, string> = {
+  halfling: 'halfling',
+  'dialeto subterraneo': 'deep_speech',
+  'fala profunda': 'deep_speech',
+};
 
 function plain(text: string): string {
   return text
@@ -36,7 +48,10 @@ export function languagesFromText(text: string): BookLanguages {
     if (new RegExp(`\\b${alias}\\b`).test(firstSentence)) fixed.add(id);
   }
   let choices = 0;
-  const choice = /\b(um|uma|outro|outra|dois|duas|tres|\d)\b[^.]{0,40}?(?:a|à) sua escolha|(?:um|uma) (?:idioma|outro idioma) (?:adicional|extra)/.exec(lower);
+  const choice =
+    /\b(um|uma|outro|outra|dois|duas|tres|\d)\b[^.]{0,40}?(?:a|à) sua escolha|(?:um|uma) (?:idioma|outro idioma) (?:adicional|extra)/.exec(
+      lower,
+    );
   if (choice) choices = COUNT_WORDS[choice[1] ?? 'um'] ?? (Number(choice[1]) || 1);
   return { fixed: [...fixed], choices: Math.min(choices, 4) };
 }

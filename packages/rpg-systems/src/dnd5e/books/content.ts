@@ -12,7 +12,13 @@
 import { ABILITIES, abilityLabels, type Ability } from '../abilities';
 import { SRD_SPELLS } from '../srd/spells';
 import { SRD_SPELL_NAMES_PT } from '../srd/spell-names-pt';
-import { CLASS_IDS, type BackgroundDefinition, type ClassDefinition, type FeatDefinition, type SpeciesDefinition } from '../srd/types';
+import {
+  CLASS_IDS,
+  type BackgroundDefinition,
+  type ClassDefinition,
+  type FeatDefinition,
+  type SpeciesDefinition,
+} from '../srd/types';
 import type { BookRef, BookSpell, BookSubclass, Dnd5eBookContent } from './active';
 import { equipmentFromText } from './equipment-text';
 import { languagesFromText } from './languages-text';
@@ -36,13 +42,19 @@ export function normalizeBookName(name: string): string {
 
 const SRD_BY_NAME = new Map<string, string>();
 for (const spell of SRD_SPELLS) SRD_BY_NAME.set(normalizeBookName(spell.name), spell.name);
-for (const [en, pt] of Object.entries(SRD_SPELL_NAMES_PT)) SRD_BY_NAME.set(normalizeBookName(pt), en);
+for (const [en, pt] of Object.entries(SRD_SPELL_NAMES_PT))
+  SRD_BY_NAME.set(normalizeBookName(pt), en);
 
 /** Nome sem artigos e preposições, para casar traduções ("contra o Bem e o Mal" = "contra Bem e Mal"). */
 function looseSpellName(name: string): string {
   return normalizeBookName(name)
     .split(' ')
-    .filter((word) => !['o', 'a', 'os', 'as', 'e', 'de', 'do', 'da', 'dos', 'das', 'of', 'the', 'and'].includes(word))
+    .filter(
+      (word) =>
+        !['o', 'a', 'os', 'as', 'e', 'de', 'do', 'da', 'dos', 'das', 'of', 'the', 'and'].includes(
+          word,
+        ),
+    )
     .join(' ');
 }
 
@@ -72,7 +84,8 @@ function armorLabel(armor: readonly string[]): string {
   const names = { light: 'leves', medium: 'médias', heavy: 'pesadas' } as const;
   const parts: string[] = [];
   if (kinds.length === 3) parts.push('Todas as armaduras');
-  else if (kinds.length > 0) parts.push(`Armaduras ${kinds.map((kind) => names[kind]).join(' e ')}`);
+  else if (kinds.length > 0)
+    parts.push(`Armaduras ${kinds.map((kind) => names[kind]).join(' e ')}`);
   if (armor.includes('shield')) parts.push(parts.length > 0 ? 'escudos' : 'Escudos');
   return parts.join(' e ');
 }
@@ -81,7 +94,10 @@ function armorLabel(armor: readonly string[]): string {
 function suggestedArray(primary: readonly Ability[]): Record<Ability, number> {
   const order = [...new Set<Ability>([...primary, 'con', 'dex', 'wis', 'str', 'cha', 'int'])];
   const values = [15, 14, 13, 12, 10, 8];
-  return Object.fromEntries(order.map((ability, index) => [ability, values[index] ?? 8])) as Record<Ability, number>;
+  return Object.fromEntries(order.map((ability, index) => [ability, values[index] ?? 8])) as Record<
+    Ability,
+    number
+  >;
 }
 
 const isSrdClass = (id: string) => (CLASS_IDS as readonly string[]).includes(id);
@@ -130,7 +146,9 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
         book: book.name,
         summary: data.summary,
         primaryAbilities: data.primaryAbilities,
-        primaryAbilityLabel: data.primaryAbilities.map((ability) => abilityLabels[ability].name).join(' e '),
+        primaryAbilityLabel: data.primaryAbilities
+          .map((ability) => abilityLabels[ability].name)
+          .join(' e '),
         complexity: 'Média',
         hitDie: data.hitDie,
         savingThrows: data.savingThrows,
@@ -166,7 +184,8 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
       });
     }
   }
-  const resolveClassId = (classId: string) => (isSrdClass(classId) ? classId : (classKeys.get(classId) ?? classId));
+  const resolveClassId = (classId: string) =>
+    isSrdClass(classId) ? classId : (classKeys.get(classId) ?? classId);
 
   for (const { book, entries } of sources) {
     for (const entry of entries) {
@@ -186,7 +205,12 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
             description: data.summary,
             features: data.features.map((feature) =>
               shift && feature.level < 3
-                ? { ...feature, level: 3, description: `${feature.description}\n\n(No livro, ${feature.level}º nível.)`.trim() }
+                ? {
+                    ...feature,
+                    level: 3,
+                    description:
+                      `${feature.description}\n\n(No livro, ${feature.level}º nível.)`.trim(),
+                  }
                 : feature,
             ),
             alwaysPrepared: data.alwaysPrepared.map((group) => ({
@@ -222,7 +246,12 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
                   },
                 }
               : {}),
-            ...(data.cantrips.length ? { cantrips: data.cantrips.map((name) => srdSpellNameFor(name) ?? name), spellcastingAbilityChoice: true } : {}),
+            ...(data.cantrips.length
+              ? {
+                  cantrips: data.cantrips.map((name) => srdSpellNameFor(name) ?? name),
+                  spellcastingAbilityChoice: true,
+                }
+              : {}),
           });
           break;
         }
@@ -263,7 +292,9 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
             name: entry.name,
             book: book.name,
             category: data.category,
-            description: data.prerequisite ? `Pré-requisito: ${data.prerequisite}. ${data.description}` : data.description,
+            description: data.prerequisite
+              ? `Pré-requisito: ${data.prerequisite}. ${data.description}`
+              : data.description,
             ...(data.repeatable ? { repeatable: true } : {}),
             ...(minLevel ? { minLevel } : {}),
             ...(data.minScore ? { minScore: data.minScore } : {}),
@@ -282,7 +313,10 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
           const key = normalizeBookName(entry.name);
           const existing = spells.get(key);
           if (existing) {
-            spells.set(key, { ...existing, classes: [...new Set([...existing.classes, ...data.classes])] });
+            spells.set(key, {
+              ...existing,
+              classes: [...new Set([...existing.classes, ...data.classes])],
+            });
             break;
           }
           spells.set(key, {
@@ -322,15 +356,25 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
     }
     const key = normalizeBookName(name);
     const spell = spells.get(key);
-    if (spell && !spell.classes.includes(list)) spells.set(key, { ...spell, classes: [...spell.classes, list] });
+    if (spell && !spell.classes.includes(list))
+      spells.set(key, { ...spell, classes: [...spell.classes, list] });
   }
 
   // Magias sempre preparadas que não são do SRD: usa o nome da magia do livro (as tabelas das
   // subclasses vêm em minúsculas e às vezes com outra tradução).
-  const bookByLoose = new Map([...spells.values()].map((spell) => [looseSpellName(spell.name), spell.name]));
-  const resolve = (name: string) => (SRD_SPELLS.some((spell) => spell.name === name) ? name : (bookByLoose.get(looseSpellName(name)) ?? name));
+  const bookByLoose = new Map(
+    [...spells.values()].map((spell) => [looseSpellName(spell.name), spell.name]),
+  );
+  const resolve = (name: string) =>
+    SRD_SPELLS.some((spell) => spell.name === name)
+      ? name
+      : (bookByLoose.get(looseSpellName(name)) ?? name);
   for (const subclass of subclasses) {
-    if (subclass.alwaysPrepared) subclass.alwaysPrepared = subclass.alwaysPrepared.map((group) => ({ ...group, spells: group.spells.map(resolve) }));
+    if (subclass.alwaysPrepared)
+      subclass.alwaysPrepared = subclass.alwaysPrepared.map((group) => ({
+        ...group,
+        spells: group.spells.map(resolve),
+      }));
   }
   for (const entry of species) {
     if (entry.cantrips) entry.cantrips = entry.cantrips.map(resolve);
@@ -343,7 +387,9 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
     species,
     backgrounds,
     feats,
-    spells: [...spells.values()].sort((a, b) => a.level - b.level || a.name.localeCompare(b.name, 'pt-BR')),
+    spells: [...spells.values()].sort(
+      (a, b) => a.level - b.level || a.name.localeCompare(b.name, 'pt-BR'),
+    ),
     srdSpellLists: Object.fromEntries([...srdSpellLists].map(([name, set]) => [name, [...set]])),
   };
 }

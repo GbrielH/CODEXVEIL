@@ -43,7 +43,15 @@ export const bookEntryKindLabels: Record<BookEntryKind, { one: string; many: str
 };
 
 /** Tipos usados na criação e na subida de nível dos personagens. */
-export const CHARACTER_BOOK_KINDS = ['class', 'subclass', 'species', 'background', 'feat', 'spell', 'spell_list'] as const satisfies readonly BookEntryKind[];
+export const CHARACTER_BOOK_KINDS = [
+  'class',
+  'subclass',
+  'species',
+  'background',
+  'feat',
+  'spell',
+  'spell_list',
+] as const satisfies readonly BookEntryKind[];
 
 /** Categorias cujo texto os jogadores leem (as outras podem ter surpresas da mesa). */
 export const PLAYER_TEXT_CATEGORIES = ['core', 'player', 'setting'] as const;
@@ -55,7 +63,10 @@ export const PLAYER_TEXT_CATEGORIES = ['core', 'player', 'setting'] as const;
 export function visibleBookKinds(category: string, canReadAll: boolean): BookEntryKind[] {
   if (canReadAll) return [...BOOK_ENTRY_KINDS];
   const text = (PLAYER_TEXT_CATEGORIES as readonly string[]).includes(category);
-  return BOOK_ENTRY_KINDS.filter((kind) => (CHARACTER_BOOK_KINDS as readonly string[]).includes(kind) || (kind === 'section' && text));
+  return BOOK_ENTRY_KINDS.filter(
+    (kind) =>
+      (CHARACTER_BOOK_KINDS as readonly string[]).includes(kind) || (kind === 'section' && text),
+  );
 }
 
 /** Identificador de livro ou de entrada: minúsculas, números e hífens. */
@@ -96,8 +107,14 @@ export const bookClassSchema = z.object({
   hitDie: z.enum(['d6', 'd8', 'd10', 'd12']),
   primaryAbilities: z.array(z.enum(ABILITIES)).min(1).max(3),
   savingThrows: z.tuple([z.enum(ABILITIES), z.enum(ABILITIES)]),
-  skillChoices: z.object({ count: z.number().int().min(0).max(6), options: z.array(z.enum(SKILLS)).max(18) }),
-  armor: z.array(z.enum(['light', 'medium', 'heavy', 'shield'])).max(4).default([]),
+  skillChoices: z.object({
+    count: z.number().int().min(0).max(6),
+    options: z.array(z.enum(SKILLS)).max(18),
+  }),
+  armor: z
+    .array(z.enum(['light', 'medium', 'heavy', 'shield']))
+    .max(4)
+    .default([]),
   weapons: z.object({
     simple: z.boolean(),
     martial: z.enum(['all', 'light', 'finesse_or_light', 'none']),
@@ -127,13 +144,20 @@ export const bookSubclassSchema = z.object({
   summary: text(2000),
   features: z.array(featureSchema).max(60).default([]),
   /** Magias sempre preparadas (domínio, juramento, círculo, patrono), pelo nome. */
-  alwaysPrepared: z.array(z.object({ level, spells: z.array(z.string().trim().max(120)).max(10) })).max(10).default([]),
+  alwaysPrepared: z
+    .array(z.object({ level, spells: z.array(z.string().trim().max(120)).max(10) }))
+    .max(10)
+    .default([]),
 });
 
 export const bookSpeciesSchema = z.object({
   summary: text(2000),
   creatureType: text(60),
-  sizes: z.array(z.enum(['small', 'medium'])).min(1).max(2).default(['medium']),
+  sizes: z
+    .array(z.enum(['small', 'medium']))
+    .min(1)
+    .max(2)
+    .default(['medium']),
   /** Deslocamento em pés. */
   speed: z.number().int().min(0).max(120).default(30),
   traits: z.array(featureSchema).max(40).default([]),
@@ -141,7 +165,14 @@ export const bookSpeciesSchema = z.object({
     .object({
       label: z.string().trim().min(1).max(80),
       options: z
-        .array(z.object({ id: bookKeySchema, name: z.string().trim().min(1).max(120), description: text(4000), speed: z.number().int().min(0).max(120).optional() }))
+        .array(
+          z.object({
+            id: bookKeySchema,
+            name: z.string().trim().min(1).max(120),
+            description: text(4000),
+            speed: z.number().int().min(0).max(120).optional(),
+          }),
+        )
         .min(1)
         .max(20),
     })
@@ -164,7 +195,12 @@ export const bookFeatSchema = z.object({
   description: z.string().trim().max(8000),
   prerequisite: text(300),
   minLevel: level.optional(),
-  minScore: z.object({ abilities: z.array(z.enum(ABILITIES)).min(1).max(6), value: z.number().int().min(1).max(30) }).optional(),
+  minScore: z
+    .object({
+      abilities: z.array(z.enum(ABILITIES)).min(1).max(6),
+      value: z.number().int().min(1).max(30),
+    })
+    .optional(),
   /** Aumenta em 1 um destes atributos (o jogador escolhe). */
   abilityIncrease: z.array(z.enum(ABILITIES)).max(6).default([]),
   repeatable: z.boolean().default(false),
@@ -192,10 +228,22 @@ export const bookSpellSchema = z.object({
 export const bookSpellListSchema = z.object({
   list: z.string().trim().min(1).max(40),
   /** Magias acrescentadas à lista, pelo nome (português do livro ou original do SRD). */
-  spells: z.array(z.object({ name: z.string().trim().min(1).max(120), level: z.number().int().min(0).max(9) })).max(400),
+  spells: z
+    .array(
+      z.object({ name: z.string().trim().min(1).max(120), level: z.number().int().min(0).max(9) }),
+    )
+    .max(400),
 });
 
-const namedEntries = z.array(z.object({ name: z.string().trim().min(1).max(200), description: z.string().trim().max(8000).default('') })).max(60).default([]);
+const namedEntries = z
+  .array(
+    z.object({
+      name: z.string().trim().min(1).max(200),
+      description: z.string().trim().max(8000).default(''),
+    }),
+  )
+  .max(60)
+  .default([]);
 
 export const bookMonsterSchema = z.object({
   size: text(60),
@@ -206,7 +254,13 @@ export const bookMonsterSchema = z.object({
   hp: z.number().int().min(0).max(9999).default(1),
   hpFormula: text(80),
   speed: text(200),
-  abilities: z.object(Object.fromEntries(ABILITIES.map((ability) => [ability, z.number().int().min(1).max(30).default(10)])) as Record<(typeof ABILITIES)[number], z.ZodDefault<z.ZodNumber>>).prefault({}),
+  abilities: z
+    .object(
+      Object.fromEntries(
+        ABILITIES.map((ability) => [ability, z.number().int().min(1).max(30).default(10)]),
+      ) as Record<(typeof ABILITIES)[number], z.ZodDefault<z.ZodNumber>>,
+    )
+    .prefault({}),
   savingThrows: text(300),
   skills: text(400),
   vulnerabilities: text(300),
@@ -290,12 +344,18 @@ export interface BookPackIssue {
   message: string;
 }
 
-export function parseBookEntryData<K extends BookEntryKind>(kind: K, data: unknown): BookEntryData<K> {
+export function parseBookEntryData<K extends BookEntryKind>(
+  kind: K,
+  data: unknown,
+): BookEntryData<K> {
   return bookEntryDataSchemas[kind].parse(data) as BookEntryData<K>;
 }
 
 /** Lê o conteúdo salvo no banco sem lançar: devolve `null` se a entrada não for válida. */
-export function safeBookEntryData<K extends BookEntryKind>(kind: K, data: unknown): BookEntryData<K> | null {
+export function safeBookEntryData<K extends BookEntryKind>(
+  kind: K,
+  data: unknown,
+): BookEntryData<K> | null {
   const parsed = bookEntryDataSchemas[kind].safeParse(data);
   return parsed.success ? (parsed.data as BookEntryData<K>) : null;
 }
@@ -307,10 +367,14 @@ export function safeBookEntryData<K extends BookEntryKind>(kind: K, data: unknow
 export function parseBookPack(input: unknown): { pack: BookPack; issues: BookPackIssue[] } {
   const header = z
     .object({
-      format: z.literal(BOOK_PACK_FORMAT, { error: 'Este arquivo não é um pacote de livro do Codexveil.' }),
+      format: z.literal(BOOK_PACK_FORMAT, {
+        error: 'Este arquivo não é um pacote de livro do Codexveil.',
+      }),
       version: z.literal(BOOK_PACK_VERSION, { error: 'Versão de pacote não suportada.' }),
       book: bookInfoSchema,
-      entries: z.array(z.unknown()).max(MAX_BOOK_ENTRIES, `O pacote pode ter no máximo ${MAX_BOOK_ENTRIES} entradas.`),
+      entries: z
+        .array(z.unknown())
+        .max(MAX_BOOK_ENTRIES, `O pacote pode ter no máximo ${MAX_BOOK_ENTRIES} entradas.`),
     })
     .parse(input);
   const issues: BookPackIssue[] = [];
@@ -331,11 +395,19 @@ export function parseBookPack(input: unknown): { pack: BookPack; issues: BookPac
     const data = bookEntryDataSchemas[kind].safeParse(base.data.data);
     if (!data.success) {
       const issue = data.error.issues[0];
-      issues.push({ index, kind, key, message: `${issue?.path.join('.') || 'dados'}: ${issue?.message ?? 'inválido'}` });
+      issues.push({
+        index,
+        kind,
+        key,
+        message: `${issue?.path.join('.') || 'dados'}: ${issue?.message ?? 'inválido'}`,
+      });
       return;
     }
     seen.add(id);
     entries.push({ kind, key, name, data: data.data });
   });
-  return { pack: { format: BOOK_PACK_FORMAT, version: BOOK_PACK_VERSION, book: header.book, entries }, issues };
+  return {
+    pack: { format: BOOK_PACK_FORMAT, version: BOOK_PACK_VERSION, book: header.book, entries },
+    issues,
+  };
 }

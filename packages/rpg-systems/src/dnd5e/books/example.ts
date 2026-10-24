@@ -51,7 +51,10 @@ export const BOOK_PACK_EXAMPLE = {
         hitDie: 'd8',
         primaryAbilities: ['int'],
         savingThrows: ['int', 'wis'],
-        skillChoices: { count: 2, options: ['arcana', 'history', 'insight', 'investigation', 'medicine', 'religion'] },
+        skillChoices: {
+          count: 2,
+          options: ['arcana', 'history', 'insight', 'investigation', 'medicine', 'religion'],
+        },
         armor: ['light'],
         weapons: { simple: true, martial: 'none' },
         tools: 'Ferramentas de caligrafia',
@@ -67,9 +70,23 @@ export const BOOK_PACK_EXAMPLE = {
           prepared,
         },
         features: [
-          { level: 1, name: 'Runas Gravadas', description: 'Você grava runas em objetos para conjurar as magias da lista do arcanista.' },
-          { level: 2, name: 'Leitura Rápida', description: 'Você faz testes de Inteligência (Investigação) como ação bônus.' },
-          { level: 5, name: 'Runa Dupla', description: 'Uma vez por descanso longo, conjura duas magias de 1º círculo na mesma ação.' },
+          {
+            level: 1,
+            name: 'Runas Gravadas',
+            description:
+              'Você grava runas em objetos para conjurar as magias da lista do arcanista.',
+          },
+          {
+            level: 2,
+            name: 'Leitura Rápida',
+            description: 'Você faz testes de Inteligência (Investigação) como ação bônus.',
+          },
+          {
+            level: 5,
+            name: 'Runa Dupla',
+            description:
+              'Uma vez por descanso longo, conjura duas magias de 1º círculo na mesma ação.',
+          },
         ],
       },
     },
@@ -81,8 +98,16 @@ export const BOOK_PACK_EXAMPLE = {
         classId: 'fighter',
         summary: 'Guerreiros que vigiam as costas e guiam aliados no escuro.',
         features: [
-          { level: 3, name: 'Luz de Vigia', description: 'Como ação bônus, você emite luz plena num raio de 6 metros por 1 minuto.' },
-          { level: 7, name: 'Olhar do Farol', description: 'Você tem vantagem em testes de Sabedoria (Percepção) feitos à noite.' },
+          {
+            level: 3,
+            name: 'Luz de Vigia',
+            description: 'Como ação bônus, você emite luz plena num raio de 6 metros por 1 minuto.',
+          },
+          {
+            level: 7,
+            name: 'Olhar do Farol',
+            description: 'Você tem vantagem em testes de Sabedoria (Percepção) feitos à noite.',
+          },
         ],
       },
     },
@@ -96,8 +121,18 @@ export const BOOK_PACK_EXAMPLE = {
         sizes: ['small'],
         speed: 30,
         traits: [
-          { level: 1, name: 'Camuflagem Verde', description: 'Você tem vantagem em testes de Destreza (Furtividade) em vegetação densa.' },
-          { level: 3, name: 'Esporos Calmantes', description: 'Uma vez por descanso longo, criaturas a 3 metros recuperam 1d6 pontos de vida.' },
+          {
+            level: 1,
+            name: 'Camuflagem Verde',
+            description:
+              'Você tem vantagem em testes de Destreza (Furtividade) em vegetação densa.',
+          },
+          {
+            level: 3,
+            name: 'Esporos Calmantes',
+            description:
+              'Uma vez por descanso longo, criaturas a 3 metros recuperam 1d6 pontos de vida.',
+          },
         ],
         cantrips: ['Druidcraft'],
       },
@@ -112,7 +147,11 @@ export const BOOK_PACK_EXAMPLE = {
         tools: 'Ferramentas de cartógrafo',
         languages: 'Um idioma à escolha',
         equipment: 'Ferramentas de cartógrafo, estojo de mapas, roupas de viajante e 10 PO.',
-        feature: { name: 'Olho para Atalhos', description: 'Você sempre encontra um caminho mais curto entre dois pontos que já visitou.' },
+        feature: {
+          name: 'Olho para Atalhos',
+          description:
+            'Você sempre encontra um caminho mais curto entre dois pontos que já visitou.',
+        },
       },
     },
     {
@@ -121,7 +160,8 @@ export const BOOK_PACK_EXAMPLE = {
       name: 'Mãos Firmes',
       data: {
         category: 'general',
-        description: 'Você tem vantagem em testes para manter a concentração ao sofrer dano de quedas e empurrões.',
+        description:
+          'Você tem vantagem em testes para manter a concentração ao sofrer dano de quedas e empurrões.',
         prerequisite: '4º nível',
         abilityIncrease: ['dex', 'con'],
       },
@@ -139,7 +179,9 @@ export const BOOK_PACK_EXAMPLE = {
         components: 'V, S',
         duration: 'Concentração, até 10 minutos',
         concentration: true,
-        description: ['Uma lanterna de luz fantasmagórica flutua até um ponto à sua escolha e ilumina 6 metros ao redor.'],
+        description: [
+          'Uma lanterna de luz fantasmagórica flutua até um ponto à sua escolha e ilumina 6 metros ao redor.',
+        ],
       },
     },
     {
@@ -173,7 +215,13 @@ export const BOOK_PACK_EXAMPLE = {
         cr: '1/2',
         xp: '100',
         traits: [{ name: 'Amorfo', description: 'O lodo passa por frestas de 2,5 centímetros.' }],
-        actions: [{ name: 'Pseudópode', description: 'Ataque corpo a corpo: +3 para atingir, alcance 1,5 m. Acerto: 6 (1d6 + 1) de dano de ácido.' }],
+        actions: [
+          {
+            name: 'Pseudópode',
+            description:
+              'Ataque corpo a corpo: +3 para atingir, alcance 1,5 m. Acerto: 6 (1d6 + 1) de dano de ácido.',
+          },
+        ],
         lore: ['Lodos famintos se escondem no teto de cavernas úmidas.'],
       },
     },
@@ -185,7 +233,9 @@ export const BOOK_PACK_EXAMPLE = {
         type: 'Item maravilhoso',
         rarity: 'Incomum',
         attunement: '',
-        description: ['A agulha desta bússola sempre aponta para o último lugar em que você fez um descanso longo.'],
+        description: [
+          'A agulha desta bússola sempre aponta para o último lugar em que você fez um descanso longo.',
+        ],
       },
     },
   ],

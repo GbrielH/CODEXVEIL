@@ -14,7 +14,12 @@
 import { ABILITIES, abilityLabels, type Ability } from '../abilities';
 import { dnd5eConditions } from '../conditions';
 import { SKILLS, skillDefinitions } from '../skills';
-import { dnd5eStatBlockSchema, type CreatureSize, type Dnd5eStatBlock, type StatBlockEntry } from '../stat-block';
+import {
+  dnd5eStatBlockSchema,
+  type CreatureSize,
+  type Dnd5eStatBlock,
+  type StatBlockEntry,
+} from '../stat-block';
 import { damageTypeLabels } from './equipment';
 import { ALIGNMENTS, SRD_LANGUAGES } from './languages';
 import type { DamageType } from './types';
@@ -93,12 +98,16 @@ let magicItems: Promise<readonly SrdMagicItem[]> | null = null;
 
 /** Descrições das magias (em inglês, como no SRD). Carregadas uma vez e reaproveitadas. */
 export function loadSrdSpellTexts(): Promise<SrdSpellTexts> {
-  spellTexts ??= import('./data/spell-texts.json').then((module) => module.default as unknown as SrdSpellTexts);
+  spellTexts ??= import('./data/spell-texts.json').then(
+    (module) => module.default as unknown as SrdSpellTexts,
+  );
   return spellTexts;
 }
 
 type MonsterSection = 'traits' | 'actions' | 'bonusActions' | 'reactions' | 'legendaryActions';
-interface MonsterPt extends Partial<Record<MonsterSection, { name: string | null; description: string | null }[]>> {
+interface MonsterPt extends Partial<
+  Record<MonsterSection, { name: string | null; description: string | null }[]>
+> {
   name: string | null;
 }
 interface ItemPt {
@@ -108,13 +117,25 @@ interface ItemPt {
 }
 
 /** Aplica a tradução (quando existe) mantendo o texto original onde ela falta. */
-function translateMonster(monster: Omit<SrdMonster, 'namePt'>, pt: MonsterPt | undefined): SrdMonster {
-  const sections: MonsterSection[] = ['traits', 'actions', 'bonusActions', 'reactions', 'legendaryActions'];
+function translateMonster(
+  monster: Omit<SrdMonster, 'namePt'>,
+  pt: MonsterPt | undefined,
+): SrdMonster {
+  const sections: MonsterSection[] = [
+    'traits',
+    'actions',
+    'bonusActions',
+    'reactions',
+    'legendaryActions',
+  ];
   const out = { ...monster, namePt: pt?.name ?? monster.name };
   for (const section of sections) {
     out[section] = (monster[section] ?? []).map((entry, index) => {
       const translated = pt?.[section]?.[index];
-      return { name: translated?.name ?? entry.name, description: translated?.description ?? entry.description };
+      return {
+        name: translated?.name ?? entry.name,
+        description: translated?.description ?? entry.description,
+      };
     });
   }
   return out;
@@ -122,7 +143,10 @@ function translateMonster(monster: Omit<SrdMonster, 'namePt'>, pt: MonsterPt | u
 
 /** Monstros e animais do SRD em português, em ordem alfabética pelo nome em português. */
 export function loadSrdMonsters(): Promise<readonly SrdMonster[]> {
-  monsters ??= Promise.all([import('./data/monsters.json'), import('./data/monsters.pt.json')]).then(([module, ptModule]) => {
+  monsters ??= Promise.all([
+    import('./data/monsters.json'),
+    import('./data/monsters.pt.json'),
+  ]).then(([module, ptModule]) => {
     const pt = ptModule.default as unknown as Record<string, MonsterPt>;
     return (module.default as unknown as Omit<SrdMonster, 'namePt'>[])
       .map((monster) => translateMonster(monster, pt[monster.name]))
@@ -133,7 +157,10 @@ export function loadSrdMonsters(): Promise<readonly SrdMonster[]> {
 
 /** Itens mágicos do SRD em português, em ordem alfabética pelo nome em português. */
 export function loadSrdMagicItems(): Promise<readonly SrdMagicItem[]> {
-  magicItems ??= Promise.all([import('./data/magic-items.json'), import('./data/magic-items.pt.json')]).then(([module, ptModule]) => {
+  magicItems ??= Promise.all([
+    import('./data/magic-items.json'),
+    import('./data/magic-items.pt.json'),
+  ]).then(([module, ptModule]) => {
     const pt = ptModule.default as unknown as Record<string, ItemPt>;
     return (module.default as unknown as Omit<SrdMagicItem, 'namePt'>[])
       .map((item) => {
@@ -142,7 +169,9 @@ export function loadSrdMagicItems(): Promise<readonly SrdMagicItem[]> {
           ...item,
           namePt: translated?.name ?? item.name,
           subtype: translated?.subtype ?? item.subtype,
-          description: item.description.map((paragraph, index) => translated?.description[index] ?? paragraph),
+          description: item.description.map(
+            (paragraph, index) => translated?.description[index] ?? paragraph,
+          ),
         };
       })
       .sort((a, b) => a.namePt.localeCompare(b.namePt, 'pt-BR'));
@@ -152,7 +181,11 @@ export function loadSrdMagicItems(): Promise<readonly SrdMagicItem[]> {
 
 /** Busca sem acento e sem diferença de maiúsculas, nos nomes em português e em inglês. */
 export function srdMatches(entry: { name: string; namePt: string }, query: string): boolean {
-  const plain = (text: string) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+  const plain = (text: string) =>
+    text
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase();
   const wanted = plain(query.trim());
   return !wanted || plain(entry.namePt).includes(wanted) || plain(entry.name).includes(wanted);
 }
@@ -179,10 +212,14 @@ export function feetToMeters(feet: number): string {
 /** Troca "30 ft." / "30 feet" / "30-foot" por metros num texto. */
 export function convertFeetInText(text: string): string {
   return text
-    .replace(/(\d[\d,]*)\/(\d[\d,]*) ft\.?/g, (_match, short: string, long: string) =>
-      `${feetToMeters(Number(short.replace(/,/g, ''))).replace(' m', '')}/${feetToMeters(Number(long.replace(/,/g, '')))}`,
+    .replace(
+      /(\d[\d,]*)\/(\d[\d,]*) ft\.?/g,
+      (_match, short: string, long: string) =>
+        `${feetToMeters(Number(short.replace(/,/g, ''))).replace(' m', '')}/${feetToMeters(Number(long.replace(/,/g, '')))}`,
     )
-    .replace(/(\d[\d,]*)(?: |-)(?:ft\.?|feet|foot)/g, (_match, feet: string) => feetToMeters(Number(feet.replace(/,/g, ''))));
+    .replace(/(\d[\d,]*)(?: |-)(?:ft\.?|feet|foot)/g, (_match, feet: string) =>
+      feetToMeters(Number(feet.replace(/,/g, ''))),
+    );
 }
 
 const SIZE_KEYS: Record<string, CreatureSize> = {
@@ -239,9 +276,9 @@ const CREATURE_TAGS: Record<string, string> = {
 };
 
 /** Tipos de criatura do SRD com o rótulo em português (para filtros). */
-export const srdCreatureTypes: readonly { value: string; label: string }[] = Object.entries(CREATURE_TYPES).map(
-  ([value, label]) => ({ value, label }),
-);
+export const srdCreatureTypes: readonly { value: string; label: string }[] = Object.entries(
+  CREATURE_TYPES,
+).map(([value, label]) => ({ value, label }));
 
 export function srdCreatureTypeLabel(type: string, tags = ''): string {
   const base = CREATURE_TYPES[type] ?? type;
@@ -274,14 +311,26 @@ const MOVEMENT_LABELS: Record<string, string> = {
   Burrow: 'escavação',
 };
 
-const FORM_LABELS: Record<string, string> = { bear: 'urso', boar: 'javali', rat: 'rato', tiger: 'tigre', wolf: 'lobo' };
+const FORM_LABELS: Record<string, string> = {
+  bear: 'urso',
+  boar: 'javali',
+  rat: 'rato',
+  tiger: 'tigre',
+  wolf: 'lobo',
+};
 
 /** "40 ft., Fly 80 ft. (hover)" → "12 m, voo 24 m (pairar)". */
 export function translateSrdSpeed(speed: string): string {
-  let text = speed.replace(/\b(Fly|Swim|Climb|Burrow)\b/g, (word: string) => MOVEMENT_LABELS[word] ?? word);
+  let text = speed.replace(
+    /\b(Fly|Swim|Climb|Burrow)\b/g,
+    (word: string) => MOVEMENT_LABELS[word] ?? word,
+  );
   text = text
     .replace(/\(hover\)/g, '(pairar)')
-    .replace(/\((\w+) form only\)/g, (_match, form: string) => `(só na forma de ${FORM_LABELS[form] ?? form})`)
+    .replace(
+      /\((\w+) form only\)/g,
+      (_match, form: string) => `(só na forma de ${FORM_LABELS[form] ?? form})`,
+    )
     .replace(/\(GM[’']s choice\)/g, '(à escolha do mestre)')
     .replace(/ or /g, ' ou ');
   return convertFeetInText(text);
@@ -297,7 +346,10 @@ const SENSES: Record<string, string> = {
 
 export function translateSrdSenses(senses: string): string {
   const text = senses
-    .replace(/Passive Perception|Blindsight|Darkvision|Tremorsense|Truesight/g, (word) => SENSES[word] ?? word)
+    .replace(
+      /Passive Perception|Blindsight|Darkvision|Tremorsense|Truesight/g,
+      (word) => SENSES[word] ?? word,
+    )
     .replace(/\(unimpeded by magical Darkness\)/g, '(não é impedida por Escuridão mágica)')
     .replace(/\(blind beyond this radius\)/g, '(cego além desse raio)');
   return convertFeetInText(text);
@@ -325,8 +377,19 @@ const LANGUAGE_IDS: Record<string, string> = {
   Undercommon: 'undercommon',
 };
 
-const PRIMORDIAL_DIALECTS: Record<string, string> = { Aquan: 'Aquano', Auran: 'Aurano', Ignan: 'Ignano', Terran: 'Terrano' };
-const NUMBER_WORDS: Record<string, string> = { one: 'um', two: 'dois', three: 'três', four: 'quatro', five: 'cinco' };
+const PRIMORDIAL_DIALECTS: Record<string, string> = {
+  Aquan: 'Aquano',
+  Auran: 'Aurano',
+  Ignan: 'Ignano',
+  Terran: 'Terrano',
+};
+const NUMBER_WORDS: Record<string, string> = {
+  one: 'um',
+  two: 'dois',
+  three: 'três',
+  four: 'quatro',
+  five: 'cinco',
+};
 
 export function translateSrdLanguages(languages: string): string {
   let text = languages;
@@ -334,22 +397,45 @@ export function translateSrdLanguages(languages: string): string {
     count === 'one' ? 'mais um idioma' : `mais ${NUMBER_WORDS[count] ?? count} idiomas`,
   );
   text = text
-    .replace(/Understands commands given in any language but can[’']t speak/g, 'Entende ordens em qualquer idioma, mas não fala')
+    .replace(
+      /Understands commands given in any language but can[’']t speak/g,
+      'Entende ordens em qualquer idioma, mas não fala',
+    )
     .replace(/\bunderstands\b/gi, 'entende')
     .replace(/ but can[’']t speak( them)?/g, ', mas não fala')
-    .replace(/\(can[’']t speak in (\w+) form\)/g, (_match, form: string) => `(não fala na forma de ${FORM_LABELS[form] ?? form})`)
+    .replace(
+      /\(can[’']t speak in (\w+) form\)/g,
+      (_match, form: string) => `(não fala na forma de ${FORM_LABELS[form] ?? form})`,
+    )
     .replace(/\btelepathy\b/g, 'telepatia')
-    .replace(/\(works only with creatures that understand (\w+)\)/g, '(só com criaturas que entendem $1)')
-    .replace(/\(doesn[’']t allow the receiving creature to respond telepathically\)/g, '(quem recebe não responde por telepatia)')
+    .replace(
+      /\(works only with creatures that understand (\w+)\)/g,
+      '(só com criaturas que entendem $1)',
+    )
+    .replace(
+      /\(doesn[’']t allow the receiving creature to respond telepathically\)/g,
+      '(quem recebe não responde por telepatia)',
+    )
     .replace(/\bplus\b/g, '')
     .replace(/\bNone\b/g, 'Nenhum')
     .replace(/\bAll\b/g, 'Todos');
-  text = text.replace(/\b(Aquan|Auran|Ignan|Terran)\b/g, (word) => PRIMORDIAL_DIALECTS[word] ?? word);
-  text = text.replace(/\b(Common Sign Language|Deep Speech|Thieves’ Cant|[A-Z][a-z]+)\b/g, (word) => {
-    const id = LANGUAGE_IDS[word];
-    return id ? (SRD_LANGUAGES.find((language) => language.id === id)?.name ?? word) : word;
-  });
-  return convertFeetInText(text.replace(/\s{2,}/g, ' ').replace(/ ,/g, ',').trim());
+  text = text.replace(
+    /\b(Aquan|Auran|Ignan|Terran)\b/g,
+    (word) => PRIMORDIAL_DIALECTS[word] ?? word,
+  );
+  text = text.replace(
+    /\b(Common Sign Language|Deep Speech|Thieves’ Cant|[A-Z][a-z]+)\b/g,
+    (word) => {
+      const id = LANGUAGE_IDS[word];
+      return id ? (SRD_LANGUAGES.find((language) => language.id === id)?.name ?? word) : word;
+    },
+  );
+  return convertFeetInText(
+    text
+      .replace(/\s{2,}/g, ' ')
+      .replace(/ ,/g, ',')
+      .trim(),
+  );
 }
 
 const DAMAGE_TYPE_KEYS = Object.keys(damageTypeLabels) as DamageType[];
@@ -359,7 +445,9 @@ function damageLabel(word: string): string | null {
   return DAMAGE_TYPE_KEYS.includes(key) ? damageTypeLabels[key] : null;
 }
 
-const conditionLabelsByEnglish = new Map<string, string>(dnd5eConditions.map((condition) => [condition.key, condition.label]));
+const conditionLabelsByEnglish = new Map<string, string>(
+  dnd5eConditions.map((condition) => [condition.key, condition.label]),
+);
 
 function conditionLabelFromEnglish(word: string): string | null {
   return conditionLabelsByEnglish.get(word.toLowerCase()) ?? null;
@@ -390,10 +478,13 @@ const SKILL_BY_ENGLISH = new Map<string, string>(
 
 /** "Perception +6, Stealth +3" → "Percepção +6, Furtividade +3". */
 export function translateSrdSkills(skills: string): string {
-  return skills.replace(/([A-Za-z][A-Za-z ]*?) ([+−-]\d+)/g, (match, name: string, bonus: string) => {
-    const label = SKILL_BY_ENGLISH.get(name.trim().toLowerCase());
-    return label ? `${label} ${bonus}` : match;
-  });
+  return skills.replace(
+    /([A-Za-z][A-Za-z ]*?) ([+−-]\d+)/g,
+    (match, name: string, bonus: string) => {
+      const label = SKILL_BY_ENGLISH.get(name.trim().toLowerCase());
+      return label ? `${label} ${bonus}` : match;
+    },
+  );
 }
 
 /** Salvaguardas diferentes do modificador (proficiência): "DES +5, SAB +6". */
@@ -427,10 +518,17 @@ export function srdMonsterToStatBlock(monster: SrdMonster): Dnd5eStatBlock {
     hitPoints: Math.max(1, Math.min(monster.hp, 9999)),
     hitPointFormula: monster.hpFormula.slice(0, 40),
     speed: translateSrdSpeed(monster.speed).slice(0, 120),
-    abilities: Object.fromEntries(ABILITIES.map((ability) => [ability, monster.abilities[ability].score])),
+    abilities: Object.fromEntries(
+      ABILITIES.map((ability) => [ability, monster.abilities[ability].score]),
+    ),
     savingThrows: srdSavingThrows(monster.abilities).slice(0, 200),
     skills: translateSrdSkills(monster.skills).slice(0, 300),
-    damageResistances: [translateSrdTraitList(monster.resistances), monster.vulnerabilities ? `Vulnerável: ${translateSrdTraitList(monster.vulnerabilities)}` : '']
+    damageResistances: [
+      translateSrdTraitList(monster.resistances),
+      monster.vulnerabilities
+        ? `Vulnerável: ${translateSrdTraitList(monster.vulnerabilities)}`
+        : '',
+    ]
       .filter(Boolean)
       .join('; ')
       .slice(0, 300),
@@ -472,14 +570,14 @@ const RARITIES: Record<string, string> = {
 };
 
 /** Categorias de itens mágicos do SRD com o rótulo em português (para filtros). */
-export const srdMagicItemCategories: readonly { value: string; label: string }[] = Object.entries(ITEM_CATEGORIES).map(
-  ([value, label]) => ({ value, label }),
-);
+export const srdMagicItemCategories: readonly { value: string; label: string }[] = Object.entries(
+  ITEM_CATEGORIES,
+).map(([value, label]) => ({ value, label }));
 
 /** Raridades em ordem crescente, com o rótulo em português (para filtros). */
-export const srdMagicItemRarities: readonly { value: string; label: string }[] = Object.entries(RARITIES).map(
-  ([value, label]) => ({ value, label }),
-);
+export const srdMagicItemRarities: readonly { value: string; label: string }[] = Object.entries(
+  RARITIES,
+).map(([value, label]) => ({ value, label }));
 
 export function srdMagicItemCategoryLabel(category: string): string {
   return ITEM_CATEGORIES[category] ?? category;
@@ -488,7 +586,10 @@ export function srdMagicItemCategoryLabel(category: string): string {
 /** "Very Rare" → "Muito raro"; "Uncommon (+1), Rare (+2), or Very Rare (+3)" também. */
 export function srdRarityLabel(rarity: string): string {
   return rarity
-    .replace(/Rarity Varies|Very Rare|Uncommon|Common|Rare|Legendary|Artifact/g, (word) => RARITIES[word] ?? word)
+    .replace(
+      /Rarity Varies|Very Rare|Uncommon|Common|Rare|Legendary|Artifact/g,
+      (word) => RARITIES[word] ?? word,
+    )
     .replace(/,? or /g, ' ou ');
 }
 
@@ -509,14 +610,20 @@ export function srdAttunementLabel(attunement: string): string {
   if (!attunement) return '';
   const by = /by an? (.+)$/.exec(attunement)?.[1];
   if (!by) return 'Exige sintonia';
-  const who = by.replace(/\b[A-Z][a-z]+\b/g, (word) => CLASS_NAMES[word] ?? word).replace(/ or an? /g, ' ou ').replace(/, an? /g, ', ');
+  const who = by
+    .replace(/\b[A-Z][a-z]+\b/g, (word) => CLASS_NAMES[word] ?? word)
+    .replace(/ or an? /g, ' ou ')
+    .replace(/, an? /g, ', ');
   return `Exige sintonia (${who})`;
 }
 
 /** Linha de resumo do item: "Item maravilhoso, Incomum · Exige sintonia". */
 export function describeSrdMagicItem(item: SrdMagicItem): string {
-  const category = srdMagicItemCategoryLabel(item.category) + (item.subtype ? ` (${item.subtype})` : '');
-  return [`${category}, ${srdRarityLabel(item.rarity)}`, srdAttunementLabel(item.attunement)].filter(Boolean).join(' · ');
+  const category =
+    srdMagicItemCategoryLabel(item.category) + (item.subtype ? ` (${item.subtype})` : '');
+  return [`${category}, ${srdRarityLabel(item.rarity)}`, srdAttunementLabel(item.attunement)]
+    .filter(Boolean)
+    .join(' · ');
 }
 
 // --------------------------------------------------------------------------- Magias
@@ -544,8 +651,12 @@ const AREA_SHAPES: Record<string, string> = {
   Emanation: 'Emanação',
 };
 
-const DAMAGE_WORDS = 'Acid|Bludgeoning|Cold|Fire|Force|Lightning|Necrotic|Piercing|Poison|Psychic|Radiant|Slashing|Thunder';
-const DAMAGE_PATTERN = new RegExp(`(\\d+d\\d+(?: ?\\+ ?\\d+)?|\\d+) ((?:(?:${DAMAGE_WORDS}),? (?:or )?)*(?:${DAMAGE_WORDS})) damage`, 'g');
+const DAMAGE_WORDS =
+  'Acid|Bludgeoning|Cold|Fire|Force|Lightning|Necrotic|Piercing|Poison|Psychic|Radiant|Slashing|Thunder';
+const DAMAGE_PATTERN = new RegExp(
+  `(\\d+d\\d+(?: ?\\+ ?\\d+)?|\\d+) ((?:(?:${DAMAGE_WORDS}),? (?:or )?)*(?:${DAMAGE_WORDS})) damage`,
+  'g',
+);
 
 function ordinal(level: string): string {
   return `${level}º`;
@@ -556,7 +667,10 @@ function ordinal(level: string): string {
  * resistência, dano, cura, área, condições e o que melhora em círculos maiores.
  */
 export function summarizeSrdSpell(paragraphs: readonly string[]): SrdSpellSummaryLine[] {
-  const upgrade = paragraphs.find((paragraph) => /^(Using a Higher-Level Spell Slot|Cantrip Upgrade)\./.test(paragraph)) ?? '';
+  const upgrade =
+    paragraphs.find((paragraph) =>
+      /^(Using a Higher-Level Spell Slot|Cantrip Upgrade)\./.test(paragraph),
+    ) ?? '';
   const main = paragraphs.filter((paragraph) => paragraph !== upgrade).join(' ');
   const lines: SrdSpellSummaryLine[] = [];
 
@@ -564,10 +678,13 @@ export function summarizeSrdSpell(paragraphs: readonly string[]): SrdSpellSummar
   for (const match of main.matchAll(/\b(melee|ranged) spell attack/gi)) {
     attacks.add(match[1]?.toLowerCase() === 'melee' ? 'corpo a corpo' : 'à distância');
   }
-  if (attacks.size > 0) lines.push({ label: 'Ataque', value: `Jogada de ataque mágico ${[...attacks].join(' ou ')}` });
+  if (attacks.size > 0)
+    lines.push({ label: 'Ataque', value: `Jogada de ataque mágico ${[...attacks].join(' ou ')}` });
 
   const saves = new Set<string>();
-  for (const match of main.matchAll(/\b(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) saving throw/g)) {
+  for (const match of main.matchAll(
+    /\b(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) saving throw/g,
+  )) {
     const ability = SAVE_ABILITIES[match[1] ?? ''];
     if (ability) saves.add(abilityLabels[ability].name);
   }
@@ -585,13 +702,20 @@ export function summarizeSrdSpell(paragraphs: readonly string[]): SrdSpellSummar
   if (damage.size > 0) lines.push({ label: 'Dano', value: [...damage].join('; ') });
 
   const healing =
-    /regains? (?:a number of )?Hit Points equal to (\d+d\d+(?: ?\+ ?\d+)?)( plus your spellcasting ability modifier)?/.exec(main) ??
-    /regains? (\d+d\d+(?: ?\+ ?\d+)?|\d+) Hit Points/.exec(main);
+    /regains? (?:a number of )?Hit Points equal to (\d+d\d+(?: ?\+ ?\d+)?)( plus your spellcasting ability modifier)?/.exec(
+      main,
+    ) ?? /regains? (\d+d\d+(?: ?\+ ?\d+)?|\d+) Hit Points/.exec(main);
   if (healing) {
-    lines.push({ label: 'Cura', value: `${healing[1]}${healing[2] ? ' + modificador de conjuração' : ''} PV` });
+    lines.push({
+      label: 'Cura',
+      value: `${healing[1]}${healing[2] ? ' + modificador de conjuração' : ''} PV`,
+    });
   }
 
-  const area = /(\d+)-foot(-radius)?(?:,? (\d+)-foot-(?:high|tall))? (Sphere|Cone|Cube|Line|Cylinder|Emanation)/.exec(main);
+  const area =
+    /(\d+)-foot(-radius)?(?:,? (\d+)-foot-(?:high|tall))? (Sphere|Cone|Cube|Line|Cylinder|Emanation)/.exec(
+      main,
+    );
   if (area) {
     const shape = AREA_SHAPES[area[4] ?? ''] ?? area[4] ?? '';
     const size = feetToMeters(Number(area[1]));
@@ -608,8 +732,12 @@ export function summarizeSrdSpell(paragraphs: readonly string[]): SrdSpellSummar
   }
   if (conditions.size > 0) lines.push({ label: 'Condições', value: [...conditions].join(', ') });
 
-  const perSlot = /The (damage|healing) increases by (\d+d\d+) for each spell slot level above (\d)/.exec(upgrade);
-  const targets = /You can target one additional creature for each spell slot level above (\d)/.exec(upgrade);
+  const perSlot =
+    /The (damage|healing) increases by (\d+d\d+) for each spell slot level above (\d)/.exec(
+      upgrade,
+    );
+  const targets =
+    /You can target one additional creature for each spell slot level above (\d)/.exec(upgrade);
   const cantrip = /levels 5 \(([^)]+)\), 11 \(([^)]+)\), and 17 \(([^)]+)\)/.exec(upgrade);
   if (perSlot) {
     lines.push({
@@ -617,9 +745,15 @@ export function summarizeSrdSpell(paragraphs: readonly string[]): SrdSpellSummar
       value: `+${perSlot[2]} de ${perSlot[1] === 'damage' ? 'dano' : 'cura'} por círculo acima do ${ordinal(perSlot[3] ?? '1')}`,
     });
   } else if (targets) {
-    lines.push({ label: 'Círculo maior', value: `+1 alvo por círculo acima do ${ordinal(targets[1] ?? '1')}` });
+    lines.push({
+      label: 'Círculo maior',
+      value: `+1 alvo por círculo acima do ${ordinal(targets[1] ?? '1')}`,
+    });
   } else if (cantrip) {
-    lines.push({ label: 'Evolução', value: `Nível 5: ${cantrip[1]}; nível 11: ${cantrip[2]}; nível 17: ${cantrip[3]}` });
+    lines.push({
+      label: 'Evolução',
+      value: `Nível 5: ${cantrip[1]}; nível 11: ${cantrip[2]}; nível 17: ${cantrip[3]}`,
+    });
   } else if (upgrade) {
     lines.push({ label: 'Círculo maior', value: 'Melhora em círculos maiores (veja o texto).' });
   }
@@ -641,11 +775,18 @@ export function srdMagicItemToCampaignItem(item: SrdMagicItem) {
   return {
     name: item.namePt.slice(0, 120),
     category: ITEM_CATEGORY_BY_SRD[item.category] ?? 'gear',
-    rarity: `${srdMagicItemCategoryLabel(item.category)}${subtype}, ${srdRarityLabel(item.rarity)}`.slice(0, 60),
+    rarity:
+      `${srdMagicItemCategoryLabel(item.category)}${subtype}, ${srdRarityLabel(item.rarity)}`.slice(
+        0,
+        60,
+      ),
     requiresAttunement: item.attunement !== '',
     weight: null,
     value: '',
-    description: [srdAttunementLabel(item.attunement), ...item.description].filter(Boolean).join('\n\n').slice(0, 8000),
+    description: [srdAttunementLabel(item.attunement), ...item.description]
+      .filter(Boolean)
+      .join('\n\n')
+      .slice(0, 8000),
     visibility: 'gm' as const,
   };
 }

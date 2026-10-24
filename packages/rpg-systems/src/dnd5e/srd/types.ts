@@ -110,7 +110,8 @@ export type WeaponProperty =
   | 'thrown'
   | 'two_handed'
   | 'versatile';
-export type WeaponMastery = 'cleave' | 'graze' | 'nick' | 'push' | 'sap' | 'slow' | 'topple' | 'vex';
+export type WeaponMastery =
+  'cleave' | 'graze' | 'nick' | 'push' | 'sap' | 'slow' | 'topple' | 'vex';
 
 export interface WeaponDefinition {
   id: string;
@@ -218,7 +219,11 @@ export interface ClassDefinition {
   armorLabel: string;
   /** Ferramentas fixas (nomes) e escolhas de ferramenta da classe. */
   tools: readonly string[];
-  toolChoice?: { count: number; kind: 'musical_instrument' | 'artisan_or_instrument'; label: string };
+  toolChoice?: {
+    count: number;
+    kind: 'musical_instrument' | 'artisan_or_instrument';
+    label: string;
+  };
   equipment: readonly EquipmentOption[];
   standardArray: Record<Ability, number>;
   /** Níveis com Aumento no Valor de Atributo (ou outro talento). */

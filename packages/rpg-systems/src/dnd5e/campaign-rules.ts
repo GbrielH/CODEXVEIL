@@ -26,7 +26,12 @@ export const dnd5eCampaignRulesSchema = z.object({
    * `DND5E_SOURCEBOOKS` para livros oficiais). Vazio = sistema base.
    */
   sourcebooks: z
-    .array(z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Livro desconhecido.').max(80))
+    .array(
+      z
+        .string()
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Livro desconhecido.')
+        .max(80),
+    )
     .max(80)
     .default([]),
 });
@@ -56,8 +61,13 @@ export function parseDnd5eCampaignRules(data: unknown): Dnd5eCampaignRules {
 }
 
 /** `bookNames` dá o nome dos livros importados (os oficiais têm nome no catálogo). */
-export function describeDnd5eCampaignRules(rules: Dnd5eCampaignRules, bookNames: Readonly<Record<string, string>> = {}): string[] {
-  const methods = rules.abilityScoreMethods.map((method) => abilityScoreMethodLabels[method].name.toLowerCase());
+export function describeDnd5eCampaignRules(
+  rules: Dnd5eCampaignRules,
+  bookNames: Readonly<Record<string, string>> = {},
+): string[] {
+  const methods = rules.abilityScoreMethods.map((method) =>
+    abilityScoreMethodLabels[method].name.toLowerCase(),
+  );
   return [
     `Personagens começam no ${rules.startingLevel}º nível.`,
     `Atributos: ${methods.join(', ')}.`,
@@ -75,7 +85,15 @@ export function describeDnd5eCampaignRules(rules: Dnd5eCampaignRules, bookNames:
 export function dnd5eCampaignIssues(
   character: {
     name: string;
-    sheet: { identity: { species: string; background: string; alignment: string; classes: { name: string; level: number }[]; sourcebooks?: readonly string[] } };
+    sheet: {
+      identity: {
+        species: string;
+        background: string;
+        alignment: string;
+        classes: { name: string; level: number }[];
+        sourcebooks?: readonly string[];
+      };
+    };
   },
   rules: Dnd5eCampaignRules,
 ): string[] {
@@ -84,18 +102,30 @@ export function dnd5eCampaignIssues(
   if (!character.name.trim()) issues.push('Dê um nome ao personagem.');
   if (!identity.species.trim()) issues.push('Escolha a espécie (aba Personagem).');
   if (!identity.background.trim()) issues.push('Escolha o antecedente (aba Personagem).');
-  if (identity.classes.some((entry) => !entry.name.trim())) issues.push('Toda classe precisa de nome (aba Personagem).');
-  const level = Math.min(20, identity.classes.reduce((total, entry) => total + entry.level, 0));
+  if (identity.classes.some((entry) => !entry.name.trim()))
+    issues.push('Toda classe precisa de nome (aba Personagem).');
+  const level = Math.min(
+    20,
+    identity.classes.reduce((total, entry) => total + entry.level, 0),
+  );
   if (level > rules.startingLevel) {
-    issues.push(`O personagem está no ${level}º nível e a campanha começa no ${rules.startingLevel}º: reduza os níveis das classes ou peça ao mestre para mudar a regra.`);
+    issues.push(
+      `O personagem está no ${level}º nível e a campanha começa no ${rules.startingLevel}º: reduza os níveis das classes ou peça ao mestre para mudar a regra.`,
+    );
   } else if (level < rules.startingLevel) {
-    issues.push(`A campanha começa no ${rules.startingLevel}º nível: suba o personagem do ${level}º para o ${rules.startingLevel}º antes de entrar.`);
+    issues.push(
+      `A campanha começa no ${rules.startingLevel}º nível: suba o personagem do ${level}º para o ${rules.startingLevel}º antes de entrar.`,
+    );
   }
   if (!rules.allowEvilAlignments && /\b(mau|maligno|evil)\b/i.test(identity.alignment)) {
-    issues.push(`O mestre não permite alinhamentos malignos: troque o alinhamento (${identity.alignment}).`);
+    issues.push(
+      `O mestre não permite alinhamentos malignos: troque o alinhamento (${identity.alignment}).`,
+    );
   }
   // A ficha só pode usar livros que o mestre liberou (o sistema base não libera nenhum).
-  const extraBooks = (identity.sourcebooks ?? []).filter((book) => !rules.sourcebooks.includes(book));
+  const extraBooks = (identity.sourcebooks ?? []).filter(
+    (book) => !rules.sourcebooks.includes(book),
+  );
   if (extraBooks.length > 0) {
     issues.push(
       `A ficha usa livros que o mestre não liberou: ${extraBooks.map((book) => findSourcebook(book)?.name ?? book).join(', ')}. Tire esses livros da ficha (aba Personagem) ou peça ao mestre para liberá-los.`,
@@ -110,6 +140,11 @@ export function dnd5eCampaignIssues(
  * campanhas de Tormenta20 (as regras delas têm outro formato).
  */
 export function campaignSourcebooks(characterRules: unknown): string[] {
-  const raw = characterRules && typeof characterRules === 'object' ? (characterRules as { sourcebooks?: unknown }).sourcebooks : undefined;
-  return Array.isArray(raw) ? raw.filter((entry): entry is string => typeof entry === 'string') : parseDnd5eCampaignRules(characterRules).sourcebooks;
+  const raw =
+    characterRules && typeof characterRules === 'object'
+      ? (characterRules as { sourcebooks?: unknown }).sourcebooks
+      : undefined;
+  return Array.isArray(raw)
+    ? raw.filter((entry): entry is string => typeof entry === 'string')
+    : parseDnd5eCampaignRules(characterRules).sourcebooks;
 }

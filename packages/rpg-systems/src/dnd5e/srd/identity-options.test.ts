@@ -8,7 +8,12 @@ describe('opções de identidade da ficha', () => {
     expect(species).toContain('Draconato (Preto (ácido))');
     expect(species).not.toContain('Draconato');
     expect(withCurrentOption(species, 'Aasimar de livro')[0]).toBe('Aasimar de livro');
-    expect(withCurrentOption(ALIGNMENTS.map((a) => a.name), 'Caótico e Bom')).toHaveLength(9);
+    expect(
+      withCurrentOption(
+        ALIGNMENTS.map((a) => a.name),
+        'Caótico e Bom',
+      ),
+    ).toHaveLength(9);
     expect(withCurrentOption(['A'], '')).toEqual(['A']);
   });
 });

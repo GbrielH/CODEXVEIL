@@ -4,7 +4,14 @@
 import type { ResourceTemplate } from '../types';
 import { abilityModifier } from './abilities';
 import { suggestedSpellSlots } from './progression';
-import { CURRENCIES, HIT_DICE, currencyLabels, type Currency, type Dnd5eSheet, type HitDie } from './sheet';
+import {
+  CURRENCIES,
+  HIT_DICE,
+  currencyLabels,
+  type Currency,
+  type Dnd5eSheet,
+  type HitDie,
+} from './sheet';
 
 export const DND5E_RESOURCE_KEYS = {
   hitPoints: 'hp',

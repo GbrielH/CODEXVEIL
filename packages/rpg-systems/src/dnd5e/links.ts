@@ -8,7 +8,8 @@ import type { OfficialLink } from '../types';
 export const dnd5eOfficialLinks: readonly OfficialLink[] = [
   {
     label: 'Regras gratuitas (2024)',
-    description: 'As regras oficiais e gratuitas do D&D 2024: como jogar, criar personagens e conjurar magias.',
+    description:
+      'As regras oficiais e gratuitas do D&D 2024: como jogar, criar personagens e conjurar magias.',
     url: 'https://www.dndbeyond.com/sources/dnd/br-2024',
     access: 'free',
   },

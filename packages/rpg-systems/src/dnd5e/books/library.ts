@@ -45,10 +45,13 @@ export function bookChallengeRating(text: string): string {
   return value && isChallengeRating(value) ? value : '0';
 }
 
-const clip = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
+const clip = (text: string, max: number) =>
+  text.length > max ? `${text.slice(0, max - 1)}…` : text;
 
 const toEntries = (entries: readonly { name: string; description: string }[]) =>
-  entries.slice(0, 40).map((entry) => ({ name: clip(entry.name, 80), description: clip(entry.description, 4000) }));
+  entries
+    .slice(0, 40)
+    .map((entry) => ({ name: clip(entry.name, 80), description: clip(entry.description, 4000) }));
 
 export function bookMonsterToStatBlock(data: BookEntryData<'monster'>): Dnd5eStatBlock {
   return dnd5eStatBlockSchema.parse({
@@ -63,7 +66,12 @@ export function bookMonsterToStatBlock(data: BookEntryData<'monster'>): Dnd5eSta
     abilities: Object.fromEntries(ABILITIES.map((ability) => [ability, data.abilities[ability]])),
     savingThrows: clip(data.savingThrows, 200),
     skills: clip(data.skills, 300),
-    damageResistances: clip([data.resistances, data.vulnerabilities ? `Vulnerável: ${data.vulnerabilities}` : ''].filter(Boolean).join('; '), 300),
+    damageResistances: clip(
+      [data.resistances, data.vulnerabilities ? `Vulnerável: ${data.vulnerabilities}` : '']
+        .filter(Boolean)
+        .join('; '),
+      300,
+    ),
     damageImmunities: clip(data.damageImmunities, 300),
     conditionImmunities: clip(data.conditionImmunities, 300),
     senses: clip(data.senses, 200),
@@ -84,7 +92,11 @@ const ITEM_CATEGORY_WORDS: [RegExp, 'weapon' | 'armor' | 'consumable'][] = [
 ];
 
 /** Item mágico do livro no formato dos itens da campanha (oculto dos jogadores). */
-export function bookMagicItemToCampaignItem(name: string, data: BookEntryData<'magic_item'>, bookName: string) {
+export function bookMagicItemToCampaignItem(
+  name: string,
+  data: BookEntryData<'magic_item'>,
+  bookName: string,
+) {
   const type = normalizeBookName(data.type);
   const category = ITEM_CATEGORY_WORDS.find(([pattern]) => pattern.test(type))?.[1] ?? 'gear';
   return {
@@ -94,7 +106,16 @@ export function bookMagicItemToCampaignItem(name: string, data: BookEntryData<'m
     requiresAttunement: data.attunement.trim() !== '',
     weight: null,
     value: '',
-    description: clip([data.attunement ? `Sintonização: ${data.attunement}` : '', ...data.description, `Fonte: ${bookName}.`].filter(Boolean).join('\n\n'), 8000),
+    description: clip(
+      [
+        data.attunement ? `Sintonização: ${data.attunement}` : '',
+        ...data.description,
+        `Fonte: ${bookName}.`,
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
+      8000,
+    ),
     visibility: 'gm' as const,
   };
 }

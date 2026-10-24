@@ -32,7 +32,11 @@ async function spellText(name: string) {
 
 describe('catálogo do SRD 5.2.1', () => {
   it('traz todas as magias, monstros, animais e itens mágicos do documento', async () => {
-    const [texts, monsters, items] = await Promise.all([loadSrdSpellTexts(), loadSrdMonsters(), loadSrdMagicItems()]);
+    const [texts, monsters, items] = await Promise.all([
+      loadSrdSpellTexts(),
+      loadSrdMonsters(),
+      loadSrdMagicItems(),
+    ]);
     expect(Object.keys(texts)).toHaveLength(339);
     expect(monsters).toHaveLength(330);
     expect(monsters.filter((entry) => entry.animal)).toHaveLength(95);
@@ -82,14 +86,22 @@ describe('catálogo do SRD 5.2.1', () => {
     expect(feetToMeters(120)).toBe('36 m');
     expect(translateSrdSpeed('30 ft., Fly 60 ft. (hover)')).toBe('9 m, voo 18 m (pairar)');
     expect(translateSrdSpeed('40 ft. (bear form only)')).toBe('12 m (só na forma de urso)');
-    expect(translateSrdSenses('Darkvision 60 ft. (unimpeded by magical Darkness); Passive Perception 12')).toBe(
-      'Visão no Escuro 18 m (não é impedida por Escuridão mágica); Percepção passiva 12',
+    expect(
+      translateSrdSenses(
+        'Darkvision 60 ft. (unimpeded by magical Darkness); Passive Perception 12',
+      ),
+    ).toBe('Visão no Escuro 18 m (não é impedida por Escuridão mágica); Percepção passiva 12');
+    expect(translateSrdLanguages('Deep Speech; telepathy 120 ft.')).toBe(
+      'Dialeto das Profundezas; telepatia 36 m',
     );
-    expect(translateSrdLanguages('Deep Speech; telepathy 120 ft.')).toBe('Dialeto das Profundezas; telepatia 36 m');
     expect(translateSrdLanguages('Common plus one other language')).toBe('Comum mais um idioma');
-    expect(translateSrdLanguages('Understands Common but can’t speak')).toBe('entende Comum, mas não fala');
+    expect(translateSrdLanguages('Understands Common but can’t speak')).toBe(
+      'entende Comum, mas não fala',
+    );
     expect(translateSrdLanguages('Primordial (Ignan)')).toBe('Primordial (Ignano)');
-    expect(translateSrdTraitList('Acid, Poison; Charmed, Poisoned')).toBe('Ácido, Veneno; Enfeitiçado, Envenenado');
+    expect(translateSrdTraitList('Acid, Poison; Charmed, Poisoned')).toBe(
+      'Ácido, Veneno; Enfeitiçado, Envenenado',
+    );
   });
 
   it('resume as especificações das magias em português', async () => {
@@ -126,12 +138,20 @@ describe('catálogo do SRD 5.2.1', () => {
     const [monsters, items] = await Promise.all([loadSrdMonsters(), loadSrdMagicItems()]);
     const aboleth = monsters.find((entry) => entry.name === 'Aboleth');
     expect(aboleth?.namePt).toBe('Aboleth');
-    expect(monsters.find((entry) => entry.name === 'Adult Red Dragon')?.namePt).toBe('Dragão Vermelho Adulto');
+    expect(monsters.find((entry) => entry.name === 'Adult Red Dragon')?.namePt).toBe(
+      'Dragão Vermelho Adulto',
+    );
     expect(aboleth?.traits[0]?.description).toBe('O aboleth pode respirar ar e água.');
     for (const monster of monsters) {
-      for (const entry of [...monster.traits, ...monster.actions]) expect(entry.description, monster.name).not.toMatch(/\b(?:the target|Melee Attack Roll|Saving Throw)\b/);
+      for (const entry of [...monster.traits, ...monster.actions])
+        expect(entry.description, monster.name).not.toMatch(
+          /\b(?:the target|Melee Attack Roll|Saving Throw)\b/,
+        );
     }
-    for (const item of items) expect(item.description.join(' '), item.name).not.toMatch(/\b(?:you can|While wearing)\b/);
-    expect(items.find((entry) => entry.name === 'Bag of Holding')?.namePt).toBe('Bolsa Guarda-Tudo');
+    for (const item of items)
+      expect(item.description.join(' '), item.name).not.toMatch(/\b(?:you can|While wearing)\b/);
+    expect(items.find((entry) => entry.name === 'Bag of Holding')?.namePt).toBe(
+      'Bolsa Guarda-Tudo',
+    );
   });
 });

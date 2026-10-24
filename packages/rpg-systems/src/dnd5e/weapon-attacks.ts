@@ -6,7 +6,12 @@
 import { abilityModifier } from './abilities';
 import type { Dnd5eAttackData } from './entries';
 import type { Dnd5eSheet } from './sheet';
-import { SRD_WEAPONS, damageTypeLabels, formatDistance, weaponPropertyLabels } from './srd/equipment';
+import {
+  SRD_WEAPONS,
+  damageTypeLabels,
+  formatDistance,
+  weaponPropertyLabels,
+} from './srd/equipment';
 import type { WeaponDefinition } from './srd/types';
 
 function normalize(text: string): string {
@@ -25,7 +30,11 @@ export function findSrdWeaponByName(itemName: string): WeaponDefinition | undefi
   return (
     weapons.find((weapon) => normalize(weapon.name) === target) ??
     // Plural simples: "Adagas", "Machadinhas".
-    weapons.find((weapon) => `${normalize(weapon.name)}s` === target || normalize(weapon.name).replace(/ /g, 's ') + 's' === target)
+    weapons.find(
+      (weapon) =>
+        `${normalize(weapon.name)}s` === target ||
+        normalize(weapon.name).replace(/ /g, 's ') + 's' === target,
+    )
   );
 }
 
@@ -48,8 +57,17 @@ export function weaponAttackEntry(weapon: WeaponDefinition, sheet: Dnd5eSheet): 
   const unit = sheet.combat.speedUnit;
   const str = abilityModifier(sheet.abilities.str);
   const dex = abilityModifier(sheet.abilities.dex);
-  const ability = weapon.kind === 'ranged' ? 'dex' : weapon.properties.includes('finesse') ? (dex > str ? 'dex' : 'str') : 'str';
-  const reach = weapon.properties.includes('reach') ? formatDistance(10, unit) : formatDistance(5, unit);
+  const ability =
+    weapon.kind === 'ranged'
+      ? 'dex'
+      : weapon.properties.includes('finesse')
+        ? dex > str
+          ? 'dex'
+          : 'str'
+        : 'str';
+  const reach = weapon.properties.includes('reach')
+    ? formatDistance(10, unit)
+    : formatDistance(5, unit);
   const range =
     weapon.kind === 'ranged' && weapon.range
       ? `${formatDistance(weapon.range[0], unit)}/${formatDistance(weapon.range[1], unit)}`
@@ -57,15 +75,36 @@ export function weaponAttackEntry(weapon: WeaponDefinition, sheet: Dnd5eSheet): 
         ? `${reach}; arremesso ${formatDistance(weapon.range[0], unit)}/${formatDistance(weapon.range[1], unit)}`
         : reach;
   const properties = weapon.properties
-    .map((property) => (property === 'versatile' && weapon.versatileDamage ? `Versátil (${weapon.versatileDamage})` : weaponPropertyLabels[property]))
+    .map((property) =>
+      property === 'versatile' && weapon.versatileDamage
+        ? `Versátil (${weapon.versatileDamage})`
+        : weaponPropertyLabels[property],
+    )
     .join(', ');
   const proficient = sheetHasWeaponProficiency(sheet, weapon);
   return {
     kind: 'attack',
     name: weapon.name,
     source: weapon.category === 'simple' ? 'Arma simples' : 'Arma marcial',
-    description: [properties ? `Propriedades: ${properties}.` : '', proficient ? '' : 'Sem proficiência: não soma o bônus de proficiência.'].filter(Boolean).join(' '),
-    data: { ability, proficient, bonus: 0, damage: weapon.damage, damageType: damageTypeLabels[weapon.damageType], range, damageBonus: 0, extraDamage: '', extraDamageType: '', critRange: 20, critExtra: '' },
+    description: [
+      properties ? `Propriedades: ${properties}.` : '',
+      proficient ? '' : 'Sem proficiência: não soma o bônus de proficiência.',
+    ]
+      .filter(Boolean)
+      .join(' '),
+    data: {
+      ability,
+      proficient,
+      bonus: 0,
+      damage: weapon.damage,
+      damageType: damageTypeLabels[weapon.damageType],
+      range,
+      damageBonus: 0,
+      extraDamage: '',
+      extraDamageType: '',
+      critRange: 20,
+      critExtra: '',
+    },
   };
 }
 
@@ -74,7 +113,10 @@ export function weaponAttackEntry(weapon: WeaponDefinition, sheet: Dnd5eSheet): 
  * vale com a arma equipada; ataques sem arma no inventário (desarmado, garras, magias de
  * ataque) valem sempre.
  */
-export function isAttackAvailable(attackName: string, items: readonly { name: string; isEquipped: boolean }[]): boolean {
+export function isAttackAvailable(
+  attackName: string,
+  items: readonly { name: string; isEquipped: boolean }[],
+): boolean {
   const target = normalize(attackName);
   const weapon = findSrdWeaponByName(attackName);
   const matches = items.filter((item) => {

@@ -3,7 +3,13 @@
  * conjuração, recursos e equipamento inicial. Os resumos foram escritos pelo Codexveil.
  */
 import { activeDnd5eBookContent } from '../books/active';
-import type { ClassDefinition, ClassId, LevelTable, ResourceDefinition, SubclassDefinition } from './types';
+import type {
+  ClassDefinition,
+  ClassId,
+  LevelTable,
+  ResourceDefinition,
+  SubclassDefinition,
+} from './types';
 import { mergeWithoutRepeats } from '../books/dedupe';
 
 /** Valor da tabela para o nível (1 a 20). */
@@ -37,7 +43,28 @@ export const WARLOCK_INVOCATIONS = steps({ 1: 1, 2: 3, 5: 5, 7: 6, 9: 7, 12: 8, 
 export const WARLOCK_PACT_SLOTS = steps({ 1: 1, 2: 2, 11: 3, 17: 4 });
 export const WARLOCK_SLOT_LEVEL = steps({ 1: 1, 3: 2, 5: 3, 7: 4, 9: 5 });
 export const SORCERER_METAMAGIC = steps({ 2: 2, 10: 4, 17: 6 });
-export const MONK_MARTIAL_ARTS_DIE = ['d6', 'd6', 'd6', 'd6', 'd8', 'd8', 'd8', 'd8', 'd8', 'd8', 'd10', 'd10', 'd10', 'd10', 'd10', 'd10', 'd12', 'd12', 'd12', 'd12'] as const;
+export const MONK_MARTIAL_ARTS_DIE = [
+  'd6',
+  'd6',
+  'd6',
+  'd6',
+  'd8',
+  'd8',
+  'd8',
+  'd8',
+  'd8',
+  'd8',
+  'd10',
+  'd10',
+  'd10',
+  'd10',
+  'd10',
+  'd10',
+  'd12',
+  'd12',
+  'd12',
+  'd12',
+] as const;
 /** Bônus de Movimento sem Armadura do monge, em pés. */
 export const MONK_UNARMORED_MOVEMENT = steps({ 2: 10, 6: 15, 10: 20, 14: 25, 18: 30 });
 
@@ -49,11 +76,17 @@ const uses = (
   display: ResourceDefinition['display'] = 'pool',
 ): ResourceDefinition => ({ key, label, recovery, display, max });
 
-const onceFrom = (key: string, label: string, minLevel: number, recovery: ResourceDefinition['recovery'] = 'long_rest') =>
-  uses(key, label, recovery, ({ level }) => (level >= minLevel ? 1 : null), 'checkboxes');
+const onceFrom = (
+  key: string,
+  label: string,
+  minLevel: number,
+  recovery: ResourceDefinition['recovery'] = 'long_rest',
+) => uses(key, label, recovery, ({ level }) => (level >= minLevel ? 1 : null), 'checkboxes');
 
-const modUses = (ability: 'wis' | 'cha', minLevel = 1) => (context: { level: number; modifiers: Record<string, number> }) =>
-  context.level >= minLevel ? Math.max(1, context.modifiers[ability] ?? 0) : null;
+const modUses =
+  (ability: 'wis' | 'cha', minLevel = 1) =>
+  (context: { level: number; modifiers: Record<string, number> }) =>
+    context.level >= minLevel ? Math.max(1, context.modifiers[ability] ?? 0) : null;
 
 const MASTERY_TEXT = 'Pode trocar uma das escolhas a cada descanso longo.';
 
@@ -67,14 +100,21 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     complexity: 'Média',
     hitDie: 'd12',
     savingThrows: ['str', 'con'],
-    skillChoices: { count: 2, options: ['animal_handling', 'athletics', 'intimidation', 'nature', 'perception', 'survival'] },
+    skillChoices: {
+      count: 2,
+      options: ['animal_handling', 'athletics', 'intimidation', 'nature', 'perception', 'survival'],
+    },
     weapons: { simple: true, martial: 'all' },
     weaponLabel: 'Armas simples e marciais',
     armor: ['light', 'medium', 'shield'],
     armorLabel: 'Armaduras leves e médias e escudos',
     tools: [],
     equipment: [
-      { id: 'A', items: [{ item: 'greataxe' }, { item: 'handaxe', quantity: 4 }, { item: 'explorers_pack' }], gold: 15 },
+      {
+        id: 'A',
+        items: [{ item: 'greataxe' }, { item: 'handaxe', quantity: 4 }, { item: 'explorers_pack' }],
+        gold: 15,
+      },
       { id: 'B', items: [], gold: 75 },
     ],
     standardArray: { str: 15, dex: 13, con: 14, int: 10, wis: 12, cha: 8 },
@@ -91,32 +131,120 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
         description:
           'Com uma ação bônus, sem armadura pesada, entra em Fúria: Resistência a dano de concussão, perfurante e cortante; bônus de dano em ataques que usam Força (+2; +3 no 9º nível; +4 no 16º); Vantagem em testes e resistências de Força; não mantém Concentração nem conjura magias. Dura até o fim do próximo turno e se estende atacando, forçando um teste de resistência ou com uma ação bônus (até 10 minutos). Usos: 2 (3 no 3º nível, 4 no 6º, 5 no 12º, 6 no 17º); recupera 1 uso no descanso curto e todos no longo.',
       },
-      { level: 1, name: 'Defesa sem Armadura', description: 'Sem armadura, sua CA base é 10 + mod. de Destreza + mod. de Constituição. Pode usar escudo.' },
-      { level: 1, name: 'Maestria em Armas', description: `Usa as propriedades de maestria de 2 tipos de armas simples ou marciais corpo a corpo (3 no 4º nível, 4 no 10º). ${MASTERY_TEXT}` },
-      { level: 2, name: 'Sentido de Perigo', description: 'Vantagem em testes de resistência de Destreza, a menos que esteja Incapacitado.' },
-      { level: 2, name: 'Ataque Imprudente', description: 'No primeiro ataque do turno, pode atacar imprudentemente: Vantagem nos ataques com Força até o início do próximo turno, mas ataques contra você também têm Vantagem.' },
-      { level: 3, name: 'Conhecimento Primitivo', description: 'Proficiência em mais uma perícia da lista do bárbaro. Em Fúria, testes de Acrobacia, Furtividade, Intimidação, Percepção e Sobrevivência podem ser feitos como testes de Força.' },
+      {
+        level: 1,
+        name: 'Defesa sem Armadura',
+        description:
+          'Sem armadura, sua CA base é 10 + mod. de Destreza + mod. de Constituição. Pode usar escudo.',
+      },
+      {
+        level: 1,
+        name: 'Maestria em Armas',
+        description: `Usa as propriedades de maestria de 2 tipos de armas simples ou marciais corpo a corpo (3 no 4º nível, 4 no 10º). ${MASTERY_TEXT}`,
+      },
+      {
+        level: 2,
+        name: 'Sentido de Perigo',
+        description:
+          'Vantagem em testes de resistência de Destreza, a menos que esteja Incapacitado.',
+      },
+      {
+        level: 2,
+        name: 'Ataque Imprudente',
+        description:
+          'No primeiro ataque do turno, pode atacar imprudentemente: Vantagem nos ataques com Força até o início do próximo turno, mas ataques contra você também têm Vantagem.',
+      },
+      {
+        level: 3,
+        name: 'Conhecimento Primitivo',
+        description:
+          'Proficiência em mais uma perícia da lista do bárbaro. Em Fúria, testes de Acrobacia, Furtividade, Intimidação, Percepção e Sobrevivência podem ser feitos como testes de Força.',
+      },
       { level: 5, name: 'Ataque Extra', description: 'Ataca duas vezes ao usar a ação de Ataque.' },
-      { level: 5, name: 'Movimento Rápido', description: '+3 m de Deslocamento sem armadura pesada.' },
+      {
+        level: 5,
+        name: 'Movimento Rápido',
+        description: '+3 m de Deslocamento sem armadura pesada.',
+      },
       { level: 7, name: 'Instinto Selvagem', description: 'Vantagem nas jogadas de Iniciativa.' },
-      { level: 7, name: 'Bote Instintivo', description: 'Ao entrar em Fúria com a ação bônus, pode se mover até metade do Deslocamento.' },
-      { level: 9, name: 'Golpe Brutal', description: 'Ao usar Ataque Imprudente, pode abrir mão da Vantagem num ataque com Força; se acertar, causa +1d10 de dano e aplica Golpe Forçado (empurra 4,5 m) ou Golpe Debilitante (−4,5 m de Deslocamento até o seu próximo turno).' },
-      { level: 11, name: 'Fúria Implacável', description: 'Se cair a 0 PV em Fúria, faz TR de Constituição CD 10 (+5 a cada uso, volta a 10 após um descanso); se passar, fica com PV iguais ao dobro do nível de bárbaro.' },
-      { level: 13, name: 'Golpe Brutal Aprimorado', description: 'Novas opções de Golpe Brutal: Golpe Atordoante (Desvantagem no próximo TR e sem ataques de oportunidade) e Golpe Despedaçador (+5 no próximo ataque de outra criatura contra o alvo).' },
-      { level: 15, name: 'Fúria Persistente', description: 'Ao rolar Iniciativa, recupera todos os usos de Fúria (uma vez por descanso longo). A Fúria dura 10 minutos sem precisar ser estendida e só termina se ficar Inconsciente ou vestir armadura pesada.' },
-      { level: 17, name: 'Golpe Brutal Superior', description: 'O dano extra do Golpe Brutal passa a 2d10 e você pode aplicar dois efeitos diferentes.' },
-      { level: 18, name: 'Poder Indomável', description: 'Se o total de um teste ou de um TR de Força for menor que o seu valor de Força, usa o valor no lugar do total.' },
-      { level: 20, name: 'Campeão Primitivo', description: 'Força e Constituição +4 (máximo 25), já aplicados aos atributos.' },
+      {
+        level: 7,
+        name: 'Bote Instintivo',
+        description:
+          'Ao entrar em Fúria com a ação bônus, pode se mover até metade do Deslocamento.',
+      },
+      {
+        level: 9,
+        name: 'Golpe Brutal',
+        description:
+          'Ao usar Ataque Imprudente, pode abrir mão da Vantagem num ataque com Força; se acertar, causa +1d10 de dano e aplica Golpe Forçado (empurra 4,5 m) ou Golpe Debilitante (−4,5 m de Deslocamento até o seu próximo turno).',
+      },
+      {
+        level: 11,
+        name: 'Fúria Implacável',
+        description:
+          'Se cair a 0 PV em Fúria, faz TR de Constituição CD 10 (+5 a cada uso, volta a 10 após um descanso); se passar, fica com PV iguais ao dobro do nível de bárbaro.',
+      },
+      {
+        level: 13,
+        name: 'Golpe Brutal Aprimorado',
+        description:
+          'Novas opções de Golpe Brutal: Golpe Atordoante (Desvantagem no próximo TR e sem ataques de oportunidade) e Golpe Despedaçador (+5 no próximo ataque de outra criatura contra o alvo).',
+      },
+      {
+        level: 15,
+        name: 'Fúria Persistente',
+        description:
+          'Ao rolar Iniciativa, recupera todos os usos de Fúria (uma vez por descanso longo). A Fúria dura 10 minutos sem precisar ser estendida e só termina se ficar Inconsciente ou vestir armadura pesada.',
+      },
+      {
+        level: 17,
+        name: 'Golpe Brutal Superior',
+        description:
+          'O dano extra do Golpe Brutal passa a 2d10 e você pode aplicar dois efeitos diferentes.',
+      },
+      {
+        level: 18,
+        name: 'Poder Indomável',
+        description:
+          'Se o total de um teste ou de um TR de Força for menor que o seu valor de Força, usa o valor no lugar do total.',
+      },
+      {
+        level: 20,
+        name: 'Campeão Primitivo',
+        description: 'Força e Constituição +4 (máximo 25), já aplicados aos atributos.',
+      },
     ],
     subclass: {
       id: 'berserker',
       name: 'Caminho do Berserker',
       description: 'Canaliza a Fúria em violência pura e se deleita no caos da batalha.',
       features: [
-        { level: 3, name: 'Frenesi', description: 'Ao usar Ataque Imprudente em Fúria, o primeiro alvo atingido no turno com um ataque de Força sofre dano extra: um número de d6 igual ao seu bônus de dano de Fúria.' },
-        { level: 6, name: 'Fúria Irracional', description: 'Imune a Enfeitiçado e Amedrontado em Fúria; essas condições terminam ao entrar em Fúria.' },
-        { level: 10, name: 'Retaliação', description: 'Ao sofrer dano de uma criatura a até 1,5 m, usa a reação para fazer um ataque corpo a corpo contra ela.' },
-        { level: 14, name: 'Presença Intimidadora', resourceKey: 'subclass_intimidating_presence', description: 'Com uma ação bônus, criaturas à escolha numa emanação de 9 m fazem TR de Sabedoria (CD 8 + mod. de Força + proficiência) ou ficam Amedrontadas por 1 minuto, repetindo o teste no fim de cada turno. Uma vez por descanso longo, ou gaste um uso de Fúria para recuperar.' },
+        {
+          level: 3,
+          name: 'Frenesi',
+          description:
+            'Ao usar Ataque Imprudente em Fúria, o primeiro alvo atingido no turno com um ataque de Força sofre dano extra: um número de d6 igual ao seu bônus de dano de Fúria.',
+        },
+        {
+          level: 6,
+          name: 'Fúria Irracional',
+          description:
+            'Imune a Enfeitiçado e Amedrontado em Fúria; essas condições terminam ao entrar em Fúria.',
+        },
+        {
+          level: 10,
+          name: 'Retaliação',
+          description:
+            'Ao sofrer dano de uma criatura a até 1,5 m, usa a reação para fazer um ataque corpo a corpo contra ela.',
+        },
+        {
+          level: 14,
+          name: 'Presença Intimidadora',
+          resourceKey: 'subclass_intimidating_presence',
+          description:
+            'Com uma ação bônus, criaturas à escolha numa emanação de 9 m fazem TR de Sabedoria (CD 8 + mod. de Força + proficiência) ou ficam Amedrontadas por 1 minuto, repetindo o teste no fim de cada turno. Uma vez por descanso longo, ou gaste um uso de Fúria para recuperar.',
+        },
       ],
       resources: [onceFrom('subclass_intimidating_presence', 'Presença Intimidadora', 14)],
     },
@@ -153,33 +281,113 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     ],
     standardArray: { str: 8, dex: 14, con: 12, int: 13, wis: 10, cha: 15 },
     asiLevels: [4, 8, 12, 16],
-    spellcasting: { ability: 'cha', list: 'bard', progression: 'full', cantrips: steps({ 1: 2, 4: 3, 10: 4 }), prepared: FULL_PREPARED },
-    alwaysPrepared: [{ level: 20, spells: ['Power Word Heal', 'Power Word Kill'], note: 'Palavras da Criação' }],
+    spellcasting: {
+      ability: 'cha',
+      list: 'bard',
+      progression: 'full',
+      cantrips: steps({ 1: 2, 4: 3, 10: 4 }),
+      prepared: FULL_PREPARED,
+    },
+    alwaysPrepared: [
+      { level: 20, spells: ['Power Word Heal', 'Power Word Kill'], note: 'Palavras da Criação' },
+    ],
     resources: [
-      uses('class_bardic_inspiration', 'Inspiração de Bardo', 'long_rest', (context) => (context.level < 5 ? Math.max(1, context.modifiers.cha) : null)),
-      uses('class_bardic_inspiration', 'Inspiração de Bardo', 'short_rest', (context) => (context.level >= 5 ? Math.max(1, context.modifiers.cha) : null)),
+      uses('class_bardic_inspiration', 'Inspiração de Bardo', 'long_rest', (context) =>
+        context.level < 5 ? Math.max(1, context.modifiers.cha) : null,
+      ),
+      uses('class_bardic_inspiration', 'Inspiração de Bardo', 'short_rest', (context) =>
+        context.level >= 5 ? Math.max(1, context.modifiers.cha) : null,
+      ),
     ],
     features: [
-      { level: 1, name: 'Inspiração de Bardo', resourceKey: 'class_bardic_inspiration', description: 'Com uma ação bônus, dá a uma criatura a até 18 m um dado de Inspiração (d6; d8 no 5º nível, d10 no 10º, d12 no 15º). Por 1 hora, ao falhar num Teste de D20, ela pode rolar o dado e somar ao resultado. Usos iguais ao mod. de Carisma (mín. 1) por descanso longo.' },
-      { level: 1, name: 'Conjuração', description: 'Conjura magias de bardo usando Carisma; um instrumento musical serve de foco. Truques e magias preparadas seguem a tabela da classe; ao subir de nível, pode trocar um truque e uma magia preparada.' },
-      { level: 2, name: 'Especialização', description: 'Especialização em duas perícias em que é proficiente.' },
-      { level: 2, name: 'Versatilidade', description: 'Soma metade do bônus de proficiência (arredondado para baixo) a testes de atributo com perícias em que não é proficiente (já aplicado às perícias).' },
-      { level: 5, name: 'Fonte de Inspiração', description: 'Recupera todos os usos de Inspiração de Bardo num descanso curto ou longo e pode gastar um espaço de magia para recuperar um uso.' },
-      { level: 7, name: 'Contraencanto', description: 'Quando você ou uma criatura a até 9 m falha num TR contra Enfeitiçado ou Amedrontado, usa a reação para que o teste seja refeito com Vantagem.' },
-      { level: 9, name: 'Especialização Adicional', description: 'Especialização em mais duas perícias em que é proficiente.' },
-      { level: 10, name: 'Segredos Mágicos', description: 'Ao preparar novas magias, pode escolhê-las das listas de bardo, clérigo, druida e mago; elas contam como magias de bardo.' },
-      { level: 18, name: 'Inspiração Superior', description: 'Ao rolar Iniciativa, recupera usos de Inspiração de Bardo até ter 2.' },
-      { level: 20, name: 'Palavras da Criação', description: 'Sempre tem Palavra de Poder: Curar e Palavra de Poder: Matar preparadas; ao conjurá-las, pode afetar também uma segunda criatura a até 3 m do primeiro alvo.' },
+      {
+        level: 1,
+        name: 'Inspiração de Bardo',
+        resourceKey: 'class_bardic_inspiration',
+        description:
+          'Com uma ação bônus, dá a uma criatura a até 18 m um dado de Inspiração (d6; d8 no 5º nível, d10 no 10º, d12 no 15º). Por 1 hora, ao falhar num Teste de D20, ela pode rolar o dado e somar ao resultado. Usos iguais ao mod. de Carisma (mín. 1) por descanso longo.',
+      },
+      {
+        level: 1,
+        name: 'Conjuração',
+        description:
+          'Conjura magias de bardo usando Carisma; um instrumento musical serve de foco. Truques e magias preparadas seguem a tabela da classe; ao subir de nível, pode trocar um truque e uma magia preparada.',
+      },
+      {
+        level: 2,
+        name: 'Especialização',
+        description: 'Especialização em duas perícias em que é proficiente.',
+      },
+      {
+        level: 2,
+        name: 'Versatilidade',
+        description:
+          'Soma metade do bônus de proficiência (arredondado para baixo) a testes de atributo com perícias em que não é proficiente (já aplicado às perícias).',
+      },
+      {
+        level: 5,
+        name: 'Fonte de Inspiração',
+        description:
+          'Recupera todos os usos de Inspiração de Bardo num descanso curto ou longo e pode gastar um espaço de magia para recuperar um uso.',
+      },
+      {
+        level: 7,
+        name: 'Contraencanto',
+        description:
+          'Quando você ou uma criatura a até 9 m falha num TR contra Enfeitiçado ou Amedrontado, usa a reação para que o teste seja refeito com Vantagem.',
+      },
+      {
+        level: 9,
+        name: 'Especialização Adicional',
+        description: 'Especialização em mais duas perícias em que é proficiente.',
+      },
+      {
+        level: 10,
+        name: 'Segredos Mágicos',
+        description:
+          'Ao preparar novas magias, pode escolhê-las das listas de bardo, clérigo, druida e mago; elas contam como magias de bardo.',
+      },
+      {
+        level: 18,
+        name: 'Inspiração Superior',
+        description: 'Ao rolar Iniciativa, recupera usos de Inspiração de Bardo até ter 2.',
+      },
+      {
+        level: 20,
+        name: 'Palavras da Criação',
+        description:
+          'Sempre tem Palavra de Poder: Curar e Palavra de Poder: Matar preparadas; ao conjurá-las, pode afetar também uma segunda criatura a até 3 m do primeiro alvo.',
+      },
     ],
     subclass: {
       id: 'lore',
       name: 'Colégio do Conhecimento',
-      description: 'Coleciona magias e segredos de todas as fontes e desarma os outros com a palavra.',
+      description:
+        'Coleciona magias e segredos de todas as fontes e desarma os outros com a palavra.',
       features: [
-        { level: 3, name: 'Proficiências Adicionais', description: 'Proficiência em três perícias à escolha.' },
-        { level: 3, name: 'Palavras Cortantes', description: 'Quando uma criatura a até 18 m faz uma jogada de dano ou acerta um teste ou ataque, usa a reação e um uso de Inspiração de Bardo para subtrair o dado do resultado.' },
-        { level: 6, name: 'Descobertas Mágicas', description: 'Aprende duas magias das listas de clérigo, druida ou mago (truques ou de círculos que pode conjurar); ficam sempre preparadas.' },
-        { level: 14, name: 'Perícia Inigualável', description: 'Ao falhar num teste de atributo ou numa jogada de ataque, gasta um uso de Inspiração de Bardo e soma o dado; se ainda falhar, o uso não é gasto.' },
+        {
+          level: 3,
+          name: 'Proficiências Adicionais',
+          description: 'Proficiência em três perícias à escolha.',
+        },
+        {
+          level: 3,
+          name: 'Palavras Cortantes',
+          description:
+            'Quando uma criatura a até 18 m faz uma jogada de dano ou acerta um teste ou ataque, usa a reação e um uso de Inspiração de Bardo para subtrair o dado do resultado.',
+        },
+        {
+          level: 6,
+          name: 'Descobertas Mágicas',
+          description:
+            'Aprende duas magias das listas de clérigo, druida ou mago (truques ou de círculos que pode conjurar); ficam sempre preparadas.',
+        },
+        {
+          level: 14,
+          name: 'Perícia Inigualável',
+          description:
+            'Ao falhar num teste de atributo ou numa jogada de ataque, gasta um uso de Inspiração de Bardo e soma o dado; se ainda falhar, o uso não é gasto.',
+        },
       ],
     },
   },
@@ -193,32 +401,98 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     complexity: 'Média',
     hitDie: 'd8',
     savingThrows: ['wis', 'cha'],
-    skillChoices: { count: 2, options: ['history', 'insight', 'medicine', 'persuasion', 'religion'] },
+    skillChoices: {
+      count: 2,
+      options: ['history', 'insight', 'medicine', 'persuasion', 'religion'],
+    },
     weapons: { simple: true, martial: 'none' },
     weaponLabel: 'Armas simples',
     armor: ['light', 'medium', 'shield'],
     armorLabel: 'Armaduras leves e médias e escudos',
     tools: [],
     equipment: [
-      { id: 'A', items: [{ item: 'chain_shirt' }, { item: 'shield' }, { item: 'mace' }, { item: 'holy_symbol' }, { item: 'priests_pack' }], gold: 7 },
+      {
+        id: 'A',
+        items: [
+          { item: 'chain_shirt' },
+          { item: 'shield' },
+          { item: 'mace' },
+          { item: 'holy_symbol' },
+          { item: 'priests_pack' },
+        ],
+        gold: 7,
+      },
       { id: 'B', items: [], gold: 110 },
     ],
     standardArray: { str: 14, dex: 8, con: 13, int: 10, wis: 15, cha: 12 },
     asiLevels: [4, 8, 12, 16],
-    spellcasting: { ability: 'wis', list: 'cleric', progression: 'full', cantrips: steps({ 1: 3, 4: 4, 10: 5 }), prepared: FULL_PREPARED },
+    spellcasting: {
+      ability: 'wis',
+      list: 'cleric',
+      progression: 'full',
+      cantrips: steps({ 1: 3, 4: 4, 10: 5 }),
+      prepared: FULL_PREPARED,
+    },
     resources: [
-      uses('class_channel_divinity', 'Canalizar Divindade', 'long_rest', ({ level }) => atLevel(CLERIC_CHANNEL_DIVINITY, level) || null),
+      uses(
+        'class_channel_divinity',
+        'Canalizar Divindade',
+        'long_rest',
+        ({ level }) => atLevel(CLERIC_CHANNEL_DIVINITY, level) || null,
+      ),
       onceFrom('class_divine_intervention', 'Intervenção Divina', 10),
     ],
     features: [
-      { level: 1, name: 'Conjuração', description: 'Conjura magias de clérigo usando Sabedoria; um símbolo sagrado serve de foco. Pode trocar as magias preparadas a cada descanso longo.' },
-      { level: 1, name: 'Ordem Divina', description: 'Protetor: proficiência com armas marciais e treino com armaduras pesadas. Taumaturgo: um truque extra e bônus igual ao mod. de Sabedoria (mín. +1) em testes de Inteligência (Arcanismo ou Religião).' },
-      { level: 2, name: 'Canalizar Divindade', resourceKey: 'class_channel_divinity', description: 'Usos: 2 (3 no 6º nível, 4 no 18º); recupera 1 uso no descanso curto e todos no longo. Centelha Divina: 1d8 + mod. de Sabedoria de cura, ou de dano necrótico ou radiante (TR de Constituição para metade); sobe para 2d8 (7º), 3d8 (13º) e 4d8 (18º). Expulsar Mortos-Vivos: mortos-vivos a até 9 m fazem TR de Sabedoria ou ficam Amedrontados e Incapacitados por 1 minuto.' },
-      { level: 5, name: 'Destruir Mortos-Vivos', description: 'Ao usar Expulsar Mortos-Vivos, rola d8s em número igual ao mod. de Sabedoria (mín. 1) e causa esse dano radiante a cada morto-vivo que falhar.' },
-      { level: 7, name: 'Golpes Abençoados', description: 'Golpe Divino: uma vez por turno, ao acertar com uma arma, +1d8 de dano necrótico ou radiante. Conjuração Potente: soma o mod. de Sabedoria ao dano de truques de clérigo.' },
-      { level: 10, name: 'Intervenção Divina', resourceKey: 'class_divine_intervention', description: 'Com uma ação de Magia, conjura qualquer magia de clérigo de 5º círculo ou menor (que não seja de reação) sem gastar espaço nem componentes materiais. Uma vez por descanso longo.' },
-      { level: 14, name: 'Golpes Abençoados Aprimorados', description: 'Golpe Divino passa a 2d8; ou, com Conjuração Potente, ao causar dano com um truque de clérigo, concede PV temporários iguais ao dobro do mod. de Sabedoria a uma criatura a até 18 m.' },
-      { level: 20, name: 'Intervenção Divina Maior', description: 'Ao usar Intervenção Divina, pode escolher Desejo; se o fizer, não pode usar Intervenção Divina de novo por 2d4 descansos longos.' },
+      {
+        level: 1,
+        name: 'Conjuração',
+        description:
+          'Conjura magias de clérigo usando Sabedoria; um símbolo sagrado serve de foco. Pode trocar as magias preparadas a cada descanso longo.',
+      },
+      {
+        level: 1,
+        name: 'Ordem Divina',
+        description:
+          'Protetor: proficiência com armas marciais e treino com armaduras pesadas. Taumaturgo: um truque extra e bônus igual ao mod. de Sabedoria (mín. +1) em testes de Inteligência (Arcanismo ou Religião).',
+      },
+      {
+        level: 2,
+        name: 'Canalizar Divindade',
+        resourceKey: 'class_channel_divinity',
+        description:
+          'Usos: 2 (3 no 6º nível, 4 no 18º); recupera 1 uso no descanso curto e todos no longo. Centelha Divina: 1d8 + mod. de Sabedoria de cura, ou de dano necrótico ou radiante (TR de Constituição para metade); sobe para 2d8 (7º), 3d8 (13º) e 4d8 (18º). Expulsar Mortos-Vivos: mortos-vivos a até 9 m fazem TR de Sabedoria ou ficam Amedrontados e Incapacitados por 1 minuto.',
+      },
+      {
+        level: 5,
+        name: 'Destruir Mortos-Vivos',
+        description:
+          'Ao usar Expulsar Mortos-Vivos, rola d8s em número igual ao mod. de Sabedoria (mín. 1) e causa esse dano radiante a cada morto-vivo que falhar.',
+      },
+      {
+        level: 7,
+        name: 'Golpes Abençoados',
+        description:
+          'Golpe Divino: uma vez por turno, ao acertar com uma arma, +1d8 de dano necrótico ou radiante. Conjuração Potente: soma o mod. de Sabedoria ao dano de truques de clérigo.',
+      },
+      {
+        level: 10,
+        name: 'Intervenção Divina',
+        resourceKey: 'class_divine_intervention',
+        description:
+          'Com uma ação de Magia, conjura qualquer magia de clérigo de 5º círculo ou menor (que não seja de reação) sem gastar espaço nem componentes materiais. Uma vez por descanso longo.',
+      },
+      {
+        level: 14,
+        name: 'Golpes Abençoados Aprimorados',
+        description:
+          'Golpe Divino passa a 2d8; ou, com Conjuração Potente, ao causar dano com um truque de clérigo, concede PV temporários iguais ao dobro do mod. de Sabedoria a uma criatura a até 18 m.',
+      },
+      {
+        level: 20,
+        name: 'Intervenção Divina Maior',
+        description:
+          'Ao usar Intervenção Divina, pode escolher Desejo; se o fizer, não pode usar Intervenção Divina de novo por 2d4 descansos longos.',
+      },
     ],
     subclass: {
       id: 'life',
@@ -231,11 +505,35 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
         { level: 9, spells: ['Greater Restoration', 'Mass Cure Wounds'] },
       ],
       features: [
-        { level: 3, name: 'Discípulo da Vida', description: 'Magias com espaço que restauram PV curam a mais 2 + o círculo do espaço.' },
-        { level: 3, name: 'Magias do Domínio da Vida', description: 'Sempre preparadas: Auxílio, Bênção, Curar Ferimentos e Restauração Menor (3º nível); Palavra Curativa em Massa e Revivificar (5º); Aura de Vida e Proteção contra a Morte (7º); Restauração Maior e Curar Ferimentos em Massa (9º).' },
-        { level: 3, name: 'Preservar a Vida', description: 'Com uma ação de Magia e um uso de Canalizar Divindade, distribui PV iguais a 5 × nível de clérigo entre criaturas Sangrando a até 9 m (até metade do máximo de cada uma).' },
-        { level: 6, name: 'Curandeiro Abençoado', description: 'Ao curar outras criaturas com uma magia de espaço, recupera 2 + o círculo do espaço.' },
-        { level: 17, name: 'Cura Suprema', description: 'Ao curar com magia ou Canalizar Divindade, usa o valor máximo de cada dado em vez de rolar.' },
+        {
+          level: 3,
+          name: 'Discípulo da Vida',
+          description: 'Magias com espaço que restauram PV curam a mais 2 + o círculo do espaço.',
+        },
+        {
+          level: 3,
+          name: 'Magias do Domínio da Vida',
+          description:
+            'Sempre preparadas: Auxílio, Bênção, Curar Ferimentos e Restauração Menor (3º nível); Palavra Curativa em Massa e Revivificar (5º); Aura de Vida e Proteção contra a Morte (7º); Restauração Maior e Curar Ferimentos em Massa (9º).',
+        },
+        {
+          level: 3,
+          name: 'Preservar a Vida',
+          description:
+            'Com uma ação de Magia e um uso de Canalizar Divindade, distribui PV iguais a 5 × nível de clérigo entre criaturas Sangrando a até 9 m (até metade do máximo de cada uma).',
+        },
+        {
+          level: 6,
+          name: 'Curandeiro Abençoado',
+          description:
+            'Ao curar outras criaturas com uma magia de espaço, recupera 2 + o círculo do espaço.',
+        },
+        {
+          level: 17,
+          name: 'Cura Suprema',
+          description:
+            'Ao curar com magia ou Canalizar Divindade, usa o valor máximo de cada dado em vez de rolar.',
+        },
       ],
     },
   },
@@ -249,7 +547,19 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     complexity: 'Alta',
     hitDie: 'd8',
     savingThrows: ['int', 'wis'],
-    skillChoices: { count: 2, options: ['animal_handling', 'arcana', 'insight', 'medicine', 'nature', 'perception', 'religion', 'survival'] },
+    skillChoices: {
+      count: 2,
+      options: [
+        'animal_handling',
+        'arcana',
+        'insight',
+        'medicine',
+        'nature',
+        'perception',
+        'religion',
+        'survival',
+      ],
+    },
     weapons: { simple: true, martial: 'none' },
     weaponLabel: 'Armas simples',
     armor: ['light', 'shield'],
@@ -273,31 +583,119 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     ],
     standardArray: { str: 8, dex: 12, con: 14, int: 13, wis: 15, cha: 10 },
     asiLevels: [4, 8, 12, 16],
-    spellcasting: { ability: 'wis', list: 'druid', progression: 'full', cantrips: steps({ 1: 2, 4: 3, 10: 4 }), prepared: FULL_PREPARED },
+    spellcasting: {
+      ability: 'wis',
+      list: 'druid',
+      progression: 'full',
+      cantrips: steps({ 1: 2, 4: 3, 10: 4 }),
+      prepared: FULL_PREPARED,
+    },
     alwaysPrepared: [{ level: 1, spells: ['Speak with Animals'], note: 'Druídico' }],
-    resources: [uses('class_wild_shape', 'Forma Selvagem', 'long_rest', ({ level }) => atLevel(DRUID_WILD_SHAPE, level) || null)],
+    resources: [
+      uses(
+        'class_wild_shape',
+        'Forma Selvagem',
+        'long_rest',
+        ({ level }) => atLevel(DRUID_WILD_SHAPE, level) || null,
+      ),
+    ],
     features: [
-      { level: 1, name: 'Conjuração', description: 'Conjura magias de druida usando Sabedoria; um foco druídico serve de foco. Pode trocar as magias preparadas a cada descanso longo.' },
-      { level: 1, name: 'Druídico', description: 'Conhece o idioma secreto Druídico e sempre tem Falar com Animais preparada.' },
-      { level: 1, name: 'Ordem Primal', description: 'Mágico: um truque extra e bônus igual ao mod. de Sabedoria (mín. +1) em testes de Inteligência (Arcanismo ou Natureza). Guardião: proficiência com armas marciais e treino com armaduras médias.' },
-      { level: 2, name: 'Forma Selvagem', resourceKey: 'class_wild_shape', description: 'Com uma ação bônus, assume a forma de uma Fera conhecida (ND até 1/4 e sem voo no 2º nível; 1/2 no 4º; 1 e com voo no 8º) por horas iguais à metade do nível de druida e ganha PV temporários iguais ao nível. Usos: 2 (3 no 6º nível, 4 no 17º); recupera 1 uso no descanso curto e todos no longo.' },
-      { level: 2, name: 'Companheiro Selvagem', description: 'Gasta um espaço de magia ou um uso de Forma Selvagem para conjurar Convocar Familiar sem componentes materiais; o familiar é uma Fada e some no descanso longo.' },
-      { level: 5, name: 'Ressurgimento Selvagem', description: 'Sem usos de Forma Selvagem, gasta um espaço de magia para recuperar um (uma vez por turno). Uma vez por descanso longo, gasta um uso de Forma Selvagem para ganhar um espaço de 1º círculo.' },
-      { level: 7, name: 'Fúria Elemental', description: 'Conjuração Potente: soma o mod. de Sabedoria ao dano de truques de druida. Golpe Primal: uma vez por turno, ao acertar com uma arma ou ataque de Fera, +1d8 de dano de frio, fogo, elétrico ou trovejante.' },
-      { level: 15, name: 'Fúria Elemental Aprimorada', description: 'Conjuração Potente: truques de druida com alcance de 3 m ou mais ganham +90 m de alcance. Golpe Primal: o dano extra passa a 2d8.' },
-      { level: 18, name: 'Magias Bestiais', description: 'Pode conjurar magias em Forma Selvagem, exceto as que têm componente material com custo ou que seja consumido.' },
-      { level: 20, name: 'Arquidruida', description: 'Ao rolar Iniciativa sem usos de Forma Selvagem, recupera um. Uma vez por descanso longo, converte usos de Forma Selvagem num espaço de magia (2 círculos por uso). Envelhece 1 ano a cada 10.' },
+      {
+        level: 1,
+        name: 'Conjuração',
+        description:
+          'Conjura magias de druida usando Sabedoria; um foco druídico serve de foco. Pode trocar as magias preparadas a cada descanso longo.',
+      },
+      {
+        level: 1,
+        name: 'Druídico',
+        description: 'Conhece o idioma secreto Druídico e sempre tem Falar com Animais preparada.',
+      },
+      {
+        level: 1,
+        name: 'Ordem Primal',
+        description:
+          'Mágico: um truque extra e bônus igual ao mod. de Sabedoria (mín. +1) em testes de Inteligência (Arcanismo ou Natureza). Guardião: proficiência com armas marciais e treino com armaduras médias.',
+      },
+      {
+        level: 2,
+        name: 'Forma Selvagem',
+        resourceKey: 'class_wild_shape',
+        description:
+          'Com uma ação bônus, assume a forma de uma Fera conhecida (ND até 1/4 e sem voo no 2º nível; 1/2 no 4º; 1 e com voo no 8º) por horas iguais à metade do nível de druida e ganha PV temporários iguais ao nível. Usos: 2 (3 no 6º nível, 4 no 17º); recupera 1 uso no descanso curto e todos no longo.',
+      },
+      {
+        level: 2,
+        name: 'Companheiro Selvagem',
+        description:
+          'Gasta um espaço de magia ou um uso de Forma Selvagem para conjurar Convocar Familiar sem componentes materiais; o familiar é uma Fada e some no descanso longo.',
+      },
+      {
+        level: 5,
+        name: 'Ressurgimento Selvagem',
+        description:
+          'Sem usos de Forma Selvagem, gasta um espaço de magia para recuperar um (uma vez por turno). Uma vez por descanso longo, gasta um uso de Forma Selvagem para ganhar um espaço de 1º círculo.',
+      },
+      {
+        level: 7,
+        name: 'Fúria Elemental',
+        description:
+          'Conjuração Potente: soma o mod. de Sabedoria ao dano de truques de druida. Golpe Primal: uma vez por turno, ao acertar com uma arma ou ataque de Fera, +1d8 de dano de frio, fogo, elétrico ou trovejante.',
+      },
+      {
+        level: 15,
+        name: 'Fúria Elemental Aprimorada',
+        description:
+          'Conjuração Potente: truques de druida com alcance de 3 m ou mais ganham +90 m de alcance. Golpe Primal: o dano extra passa a 2d8.',
+      },
+      {
+        level: 18,
+        name: 'Magias Bestiais',
+        description:
+          'Pode conjurar magias em Forma Selvagem, exceto as que têm componente material com custo ou que seja consumido.',
+      },
+      {
+        level: 20,
+        name: 'Arquidruida',
+        description:
+          'Ao rolar Iniciativa sem usos de Forma Selvagem, recupera um. Uma vez por descanso longo, converte usos de Forma Selvagem num espaço de magia (2 círculos por uso). Envelhece 1 ano a cada 10.',
+      },
     ],
     subclass: {
       id: 'land',
       name: 'Círculo da Terra',
       description: 'Místico que guarda saberes antigos e tira poder da terra que escolhe.',
       features: [
-        { level: 3, name: 'Magias do Círculo da Terra', description: 'A cada descanso longo, escolhe um tipo de terra (árida, polar, temperada ou tropical) e tem preparadas as magias dessa terra até o seu nível de druida.' },
-        { level: 3, name: 'Auxílio da Terra', description: 'Com uma ação de Magia e um uso de Forma Selvagem, numa esfera de 3 m a até 18 m: criaturas à escolha fazem TR de Constituição ou sofrem 2d6 de dano necrótico (metade se passar) e uma criatura recupera 2d6 PV. Sobe para 3d6 no 10º nível e 4d6 no 14º.' },
-        { level: 6, name: 'Recuperação Natural', description: 'Conjura uma magia de 1º círculo ou maior do Círculo sem gastar espaço (uma vez por descanso longo). Num descanso curto, recupera espaços de magia somando até metade do nível de druida (arredondado para cima), nenhum de 6º círculo ou maior (uma vez por descanso longo).' },
-        { level: 10, name: 'Proteção da Natureza', description: 'Imune a Envenenado e com Resistência ao dano da terra escolhida (árida: fogo; polar: frio; temperada: elétrico; tropical: veneno).' },
-        { level: 14, name: 'Santuário da Natureza', description: 'Com uma ação de Magia e um uso de Forma Selvagem, cria um cubo de 4,5 m a até 36 m por 1 minuto: você e aliados têm meia cobertura e os aliados ganham a Resistência da Proteção da Natureza.' },
+        {
+          level: 3,
+          name: 'Magias do Círculo da Terra',
+          description:
+            'A cada descanso longo, escolhe um tipo de terra (árida, polar, temperada ou tropical) e tem preparadas as magias dessa terra até o seu nível de druida.',
+        },
+        {
+          level: 3,
+          name: 'Auxílio da Terra',
+          description:
+            'Com uma ação de Magia e um uso de Forma Selvagem, numa esfera de 3 m a até 18 m: criaturas à escolha fazem TR de Constituição ou sofrem 2d6 de dano necrótico (metade se passar) e uma criatura recupera 2d6 PV. Sobe para 3d6 no 10º nível e 4d6 no 14º.',
+        },
+        {
+          level: 6,
+          name: 'Recuperação Natural',
+          description:
+            'Conjura uma magia de 1º círculo ou maior do Círculo sem gastar espaço (uma vez por descanso longo). Num descanso curto, recupera espaços de magia somando até metade do nível de druida (arredondado para cima), nenhum de 6º círculo ou maior (uma vez por descanso longo).',
+        },
+        {
+          level: 10,
+          name: 'Proteção da Natureza',
+          description:
+            'Imune a Envenenado e com Resistência ao dano da terra escolhida (árida: fogo; polar: frio; temperada: elétrico; tropical: veneno).',
+        },
+        {
+          level: 14,
+          name: 'Santuário da Natureza',
+          description:
+            'Com uma ação de Magia e um uso de Forma Selvagem, cria um cubo de 4,5 m a até 36 m por 1 minuto: você e aliados têm meia cobertura e os aliados ganham a Resistência da Proteção da Natureza.',
+        },
       ],
     },
   },
@@ -311,14 +709,37 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     complexity: 'Baixa',
     hitDie: 'd10',
     savingThrows: ['str', 'con'],
-    skillChoices: { count: 2, options: ['acrobatics', 'animal_handling', 'athletics', 'history', 'insight', 'intimidation', 'persuasion', 'perception', 'survival'] },
+    skillChoices: {
+      count: 2,
+      options: [
+        'acrobatics',
+        'animal_handling',
+        'athletics',
+        'history',
+        'insight',
+        'intimidation',
+        'persuasion',
+        'perception',
+        'survival',
+      ],
+    },
     weapons: { simple: true, martial: 'all' },
     weaponLabel: 'Armas simples e marciais',
     armor: ['light', 'medium', 'heavy', 'shield'],
     armorLabel: 'Todas as armaduras e escudos',
     tools: [],
     equipment: [
-      { id: 'A', items: [{ item: 'chain_mail' }, { item: 'greatsword' }, { item: 'flail' }, { item: 'javelin', quantity: 8 }, { item: 'dungeoneers_pack' }], gold: 4 },
+      {
+        id: 'A',
+        items: [
+          { item: 'chain_mail' },
+          { item: 'greatsword' },
+          { item: 'flail' },
+          { item: 'javelin', quantity: 8 },
+          { item: 'dungeoneers_pack' },
+        ],
+        gold: 4,
+      },
       {
         id: 'B',
         items: [
@@ -338,35 +759,130 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     asiLevels: [4, 6, 8, 12, 14, 16],
     weaponMastery: steps({ 1: 3, 4: 4, 10: 5, 16: 6 }),
     resources: [
-      uses('class_second_wind', 'Retomar o Fôlego', 'long_rest', ({ level }) => atLevel(FIGHTER_SECOND_WIND, level)),
-      uses('class_action_surge', 'Surto de Ação', 'short_rest', ({ level }) => (level >= 17 ? 2 : level >= 2 ? 1 : null), 'checkboxes'),
-      uses('class_indomitable', 'Indomável', 'long_rest', ({ level }) => (level >= 17 ? 3 : level >= 13 ? 2 : level >= 9 ? 1 : null), 'checkboxes'),
+      uses('class_second_wind', 'Retomar o Fôlego', 'long_rest', ({ level }) =>
+        atLevel(FIGHTER_SECOND_WIND, level),
+      ),
+      uses(
+        'class_action_surge',
+        'Surto de Ação',
+        'short_rest',
+        ({ level }) => (level >= 17 ? 2 : level >= 2 ? 1 : null),
+        'checkboxes',
+      ),
+      uses(
+        'class_indomitable',
+        'Indomável',
+        'long_rest',
+        ({ level }) => (level >= 17 ? 3 : level >= 13 ? 2 : level >= 9 ? 1 : null),
+        'checkboxes',
+      ),
     ],
     features: [
-      { level: 1, name: 'Estilo de Luta', description: 'Ganha um talento de Estilo de Luta (Defesa é o recomendado); pode trocá-lo ao subir de nível.' },
-      { level: 1, name: 'Retomar o Fôlego', resourceKey: 'class_second_wind', description: 'Com uma ação bônus, recupera 1d10 + nível de guerreiro PV. Usos: 2 (3 no 4º nível, 4 no 10º); recupera 1 uso no descanso curto e todos no longo.' },
-      { level: 1, name: 'Maestria em Armas', description: `Usa a maestria de 3 tipos de armas simples ou marciais (4 no 4º nível, 5 no 10º, 6 no 16º). ${MASTERY_TEXT}` },
-      { level: 2, name: 'Surto de Ação', resourceKey: 'class_action_surge', description: 'No seu turno, faz uma ação adicional (exceto a ação de Magia). Uma vez por descanso curto ou longo; duas vezes a partir do 17º nível, mas só uma por turno.' },
-      { level: 2, name: 'Mente Tática', description: 'Ao falhar num teste de atributo, gasta um uso de Retomar o Fôlego para somar 1d10; se ainda falhar, o uso não é gasto.' },
+      {
+        level: 1,
+        name: 'Estilo de Luta',
+        description:
+          'Ganha um talento de Estilo de Luta (Defesa é o recomendado); pode trocá-lo ao subir de nível.',
+      },
+      {
+        level: 1,
+        name: 'Retomar o Fôlego',
+        resourceKey: 'class_second_wind',
+        description:
+          'Com uma ação bônus, recupera 1d10 + nível de guerreiro PV. Usos: 2 (3 no 4º nível, 4 no 10º); recupera 1 uso no descanso curto e todos no longo.',
+      },
+      {
+        level: 1,
+        name: 'Maestria em Armas',
+        description: `Usa a maestria de 3 tipos de armas simples ou marciais (4 no 4º nível, 5 no 10º, 6 no 16º). ${MASTERY_TEXT}`,
+      },
+      {
+        level: 2,
+        name: 'Surto de Ação',
+        resourceKey: 'class_action_surge',
+        description:
+          'No seu turno, faz uma ação adicional (exceto a ação de Magia). Uma vez por descanso curto ou longo; duas vezes a partir do 17º nível, mas só uma por turno.',
+      },
+      {
+        level: 2,
+        name: 'Mente Tática',
+        description:
+          'Ao falhar num teste de atributo, gasta um uso de Retomar o Fôlego para somar 1d10; se ainda falhar, o uso não é gasto.',
+      },
       { level: 5, name: 'Ataque Extra', description: 'Ataca duas vezes ao usar a ação de Ataque.' },
-      { level: 5, name: 'Mudança Tática', description: 'Ao ativar Retomar o Fôlego com a ação bônus, move-se até metade do Deslocamento sem provocar ataques de oportunidade.' },
-      { level: 9, name: 'Indomável', resourceKey: 'class_indomitable', description: 'Ao falhar num teste de resistência, rola de novo com bônus igual ao nível de guerreiro. Usos: 1 (2 no 13º nível, 3 no 17º) por descanso longo.' },
-      { level: 9, name: 'Mestre Tático', description: 'Ao atacar com uma arma cuja maestria você usa, pode trocá-la por Empurrão, Enfraquecer ou Lentidão nesse ataque.' },
-      { level: 11, name: 'Dois Ataques Extras', description: 'Ataca três vezes ao usar a ação de Ataque.' },
-      { level: 13, name: 'Ataques Estudados', description: 'Ao errar um ataque contra uma criatura, tem Vantagem no próximo ataque contra ela até o fim do seu próximo turno.' },
-      { level: 20, name: 'Três Ataques Extras', description: 'Ataca quatro vezes ao usar a ação de Ataque.' },
+      {
+        level: 5,
+        name: 'Mudança Tática',
+        description:
+          'Ao ativar Retomar o Fôlego com a ação bônus, move-se até metade do Deslocamento sem provocar ataques de oportunidade.',
+      },
+      {
+        level: 9,
+        name: 'Indomável',
+        resourceKey: 'class_indomitable',
+        description:
+          'Ao falhar num teste de resistência, rola de novo com bônus igual ao nível de guerreiro. Usos: 1 (2 no 13º nível, 3 no 17º) por descanso longo.',
+      },
+      {
+        level: 9,
+        name: 'Mestre Tático',
+        description:
+          'Ao atacar com uma arma cuja maestria você usa, pode trocá-la por Empurrão, Enfraquecer ou Lentidão nesse ataque.',
+      },
+      {
+        level: 11,
+        name: 'Dois Ataques Extras',
+        description: 'Ataca três vezes ao usar a ação de Ataque.',
+      },
+      {
+        level: 13,
+        name: 'Ataques Estudados',
+        description:
+          'Ao errar um ataque contra uma criatura, tem Vantagem no próximo ataque contra ela até o fim do seu próximo turno.',
+      },
+      {
+        level: 20,
+        name: 'Três Ataques Extras',
+        description: 'Ataca quatro vezes ao usar a ação de Ataque.',
+      },
     ],
     subclass: {
       id: 'champion',
       name: 'Campeão',
       description: 'Busca a excelência física e golpes devastadores, em batalha ou competição.',
       features: [
-        { level: 3, name: 'Crítico Aprimorado', description: 'Ataques com arma e desarmados são críticos com 19 ou 20 no d20.' },
-        { level: 3, name: 'Atleta Notável', description: 'Vantagem em Iniciativa e em testes de Força (Atletismo); após um crítico, move-se até metade do Deslocamento sem provocar ataques de oportunidade.' },
-        { level: 7, name: 'Estilo de Luta Adicional', description: 'Ganha outro talento de Estilo de Luta.' },
-        { level: 10, name: 'Guerreiro Heroico', description: 'Em combate, ganha Inspiração Heroica no início do turno se não a tiver.' },
-        { level: 15, name: 'Crítico Superior', description: 'Ataques com arma e desarmados são críticos com 18 a 20 no d20.' },
-        { level: 18, name: 'Sobrevivente', description: 'Vantagem em testes contra a morte (18 a 20 contam como 20). No início de cada turno, se estiver Sangrando com pelo menos 1 PV, recupera 5 + mod. de Constituição PV.' },
+        {
+          level: 3,
+          name: 'Crítico Aprimorado',
+          description: 'Ataques com arma e desarmados são críticos com 19 ou 20 no d20.',
+        },
+        {
+          level: 3,
+          name: 'Atleta Notável',
+          description:
+            'Vantagem em Iniciativa e em testes de Força (Atletismo); após um crítico, move-se até metade do Deslocamento sem provocar ataques de oportunidade.',
+        },
+        {
+          level: 7,
+          name: 'Estilo de Luta Adicional',
+          description: 'Ganha outro talento de Estilo de Luta.',
+        },
+        {
+          level: 10,
+          name: 'Guerreiro Heroico',
+          description: 'Em combate, ganha Inspiração Heroica no início do turno se não a tiver.',
+        },
+        {
+          level: 15,
+          name: 'Crítico Superior',
+          description: 'Ataques com arma e desarmados são críticos com 18 a 20 no d20.',
+        },
+        {
+          level: 18,
+          name: 'Sobrevivente',
+          description:
+            'Vantagem em testes contra a morte (18 a 20 contam como 20). No início de cada turno, se estiver Sangrando com pelo menos 1 PV, recupera 5 + mod. de Constituição PV.',
+        },
       ],
     },
   },
@@ -374,61 +890,192 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
   monk: {
     id: 'monk',
     name: 'Monge',
-    summary: 'Artista marcial que canaliza o foco interior em golpes rápidos e defesa sem armadura.',
+    summary:
+      'Artista marcial que canaliza o foco interior em golpes rápidos e defesa sem armadura.',
     primaryAbilities: ['dex', 'wis'],
     primaryAbilityLabel: 'Destreza e Sabedoria',
     complexity: 'Alta',
     hitDie: 'd8',
     savingThrows: ['str', 'dex'],
-    skillChoices: { count: 2, options: ['acrobatics', 'athletics', 'history', 'insight', 'religion', 'stealth'] },
+    skillChoices: {
+      count: 2,
+      options: ['acrobatics', 'athletics', 'history', 'insight', 'religion', 'stealth'],
+    },
     weapons: { simple: true, martial: 'light' },
     weaponLabel: 'Armas simples e armas marciais com a propriedade Leve',
     armor: [],
     armorLabel: 'Nenhuma',
     tools: [],
-    toolChoice: { count: 1, kind: 'artisan_or_instrument', label: 'Ferramenta de artesão ou instrumento musical' },
+    toolChoice: {
+      count: 1,
+      kind: 'artisan_or_instrument',
+      label: 'Ferramenta de artesão ou instrumento musical',
+    },
     equipment: [
-      { id: 'A', items: [{ item: 'spear' }, { item: 'dagger', quantity: 5 }, { item: 'flute', choice: 'class_tool' }, { item: 'explorers_pack' }], gold: 11 },
+      {
+        id: 'A',
+        items: [
+          { item: 'spear' },
+          { item: 'dagger', quantity: 5 },
+          { item: 'flute', choice: 'class_tool' },
+          { item: 'explorers_pack' },
+        ],
+        gold: 11,
+      },
       { id: 'B', items: [], gold: 50 },
     ],
     standardArray: { str: 12, dex: 15, con: 13, int: 10, wis: 14, cha: 8 },
     asiLevels: [4, 8, 12, 16],
     resources: [
-      uses('class_focus_points', 'Pontos de Foco', 'short_rest', ({ level }) => (level >= 2 ? level : null)),
+      uses('class_focus_points', 'Pontos de Foco', 'short_rest', ({ level }) =>
+        level >= 2 ? level : null,
+      ),
       onceFrom('class_uncanny_metabolism', 'Metabolismo Sobrenatural', 2),
     ],
     features: [
-      { level: 1, name: 'Artes Marciais', description: 'Sem armadura nem escudo, desarmado ou com armas de monge (simples corpo a corpo e marciais corpo a corpo com Leve): Ataque Desarmado como ação bônus; dado de Artes Marciais no lugar do dano normal (d6; d8 no 5º nível, d10 no 11º, d12 no 17º); usa Destreza no lugar da Força nos ataques e no dano.' },
-      { level: 1, name: 'Defesa sem Armadura', description: 'Sem armadura nem escudo, sua CA base é 10 + mod. de Destreza + mod. de Sabedoria.' },
-      { level: 2, name: 'Foco do Monge', resourceKey: 'class_focus_points', description: 'Pontos de Foco iguais ao nível de monge, recuperados num descanso curto ou longo (CD = 8 + mod. de Sabedoria + proficiência). Rajada de Golpes: 1 ponto para dois ataques desarmados com a ação bônus. Defesa Paciente: Desengajar como ação bônus, ou 1 ponto para Desengajar e Esquivar. Passo do Vento: Disparada como ação bônus, ou 1 ponto para Desengajar e Disparada com o salto dobrado.' },
-      { level: 2, name: 'Movimento sem Armadura', description: '+3 m de Deslocamento sem armadura nem escudo (+4,5 m no 6º nível, +6 m no 10º, +7,5 m no 14º, +9 m no 18º).' },
-      { level: 2, name: 'Metabolismo Sobrenatural', resourceKey: 'class_uncanny_metabolism', description: 'Ao rolar Iniciativa, recupera todos os Pontos de Foco e PV iguais ao nível de monge + um dado de Artes Marciais. Uma vez por descanso longo.' },
-      { level: 3, name: 'Desviar Ataques', description: 'Quando um ataque com dano de concussão, perfurante ou cortante o acerta, usa a reação para reduzir o dano em 1d10 + mod. de Destreza + nível de monge; se zerar o dano, pode gastar 1 ponto de Foco para redirecionar o golpe (TR de Destreza ou dois dados de Artes Marciais + mod. de Destreza).' },
-      { level: 4, name: 'Queda Lenta', description: 'Usa a reação ao cair para reduzir o dano da queda em 5 × nível de monge.' },
+      {
+        level: 1,
+        name: 'Artes Marciais',
+        description:
+          'Sem armadura nem escudo, desarmado ou com armas de monge (simples corpo a corpo e marciais corpo a corpo com Leve): Ataque Desarmado como ação bônus; dado de Artes Marciais no lugar do dano normal (d6; d8 no 5º nível, d10 no 11º, d12 no 17º); usa Destreza no lugar da Força nos ataques e no dano.',
+      },
+      {
+        level: 1,
+        name: 'Defesa sem Armadura',
+        description:
+          'Sem armadura nem escudo, sua CA base é 10 + mod. de Destreza + mod. de Sabedoria.',
+      },
+      {
+        level: 2,
+        name: 'Foco do Monge',
+        resourceKey: 'class_focus_points',
+        description:
+          'Pontos de Foco iguais ao nível de monge, recuperados num descanso curto ou longo (CD = 8 + mod. de Sabedoria + proficiência). Rajada de Golpes: 1 ponto para dois ataques desarmados com a ação bônus. Defesa Paciente: Desengajar como ação bônus, ou 1 ponto para Desengajar e Esquivar. Passo do Vento: Disparada como ação bônus, ou 1 ponto para Desengajar e Disparada com o salto dobrado.',
+      },
+      {
+        level: 2,
+        name: 'Movimento sem Armadura',
+        description:
+          '+3 m de Deslocamento sem armadura nem escudo (+4,5 m no 6º nível, +6 m no 10º, +7,5 m no 14º, +9 m no 18º).',
+      },
+      {
+        level: 2,
+        name: 'Metabolismo Sobrenatural',
+        resourceKey: 'class_uncanny_metabolism',
+        description:
+          'Ao rolar Iniciativa, recupera todos os Pontos de Foco e PV iguais ao nível de monge + um dado de Artes Marciais. Uma vez por descanso longo.',
+      },
+      {
+        level: 3,
+        name: 'Desviar Ataques',
+        description:
+          'Quando um ataque com dano de concussão, perfurante ou cortante o acerta, usa a reação para reduzir o dano em 1d10 + mod. de Destreza + nível de monge; se zerar o dano, pode gastar 1 ponto de Foco para redirecionar o golpe (TR de Destreza ou dois dados de Artes Marciais + mod. de Destreza).',
+      },
+      {
+        level: 4,
+        name: 'Queda Lenta',
+        description: 'Usa a reação ao cair para reduzir o dano da queda em 5 × nível de monge.',
+      },
       { level: 5, name: 'Ataque Extra', description: 'Ataca duas vezes ao usar a ação de Ataque.' },
-      { level: 5, name: 'Golpe Atordoante', description: 'Uma vez por turno, ao acertar com arma de monge ou desarmado, gasta 1 ponto de Foco: o alvo faz TR de Constituição ou fica Atordoado até o início do seu próximo turno; se passar, tem o Deslocamento reduzido à metade e o próximo ataque contra ele tem Vantagem.' },
-      { level: 6, name: 'Golpes Fortalecidos', description: 'Seus ataques desarmados podem causar dano de energia ou o tipo normal.' },
-      { level: 7, name: 'Evasão', description: 'Em efeitos com TR de Destreza para metade do dano, não sofre dano se passar e só metade se falhar (exceto Incapacitado).' },
-      { level: 9, name: 'Movimento Acrobático', description: 'Sem armadura nem escudo, move-se por superfícies verticais e sobre líquidos durante o turno.' },
-      { level: 10, name: 'Foco Elevado', description: 'Rajada de Golpes passa a três ataques; Defesa Paciente com Foco dá PV temporários iguais a dois dados de Artes Marciais; Passo do Vento com Foco leva junto uma criatura disposta.' },
-      { level: 10, name: 'Autorrestauração', description: 'No fim de cada turno, pode encerrar Enfeitiçado, Amedrontado ou Envenenado em si mesmo. Ficar sem comer e beber não causa Exaustão.' },
-      { level: 13, name: 'Desviar Energia', description: 'Desviar Ataques passa a funcionar contra qualquer tipo de dano.' },
-      { level: 14, name: 'Sobrevivente Disciplinado', description: 'Proficiência em todos os testes de resistência (já aplicada); ao falhar num, pode gastar 1 ponto de Foco para rolar de novo.' },
-      { level: 15, name: 'Foco Perfeito', description: 'Ao rolar Iniciativa sem usar Metabolismo Sobrenatural, recupera Pontos de Foco até ter 4.' },
-      { level: 18, name: 'Defesa Superior', description: 'No início do turno, gasta 3 pontos de Foco para ter Resistência a todo dano, exceto energia, por 1 minuto.' },
-      { level: 20, name: 'Corpo e Mente', description: 'Destreza e Sabedoria +4 (máximo 25), já aplicados aos atributos.' },
+      {
+        level: 5,
+        name: 'Golpe Atordoante',
+        description:
+          'Uma vez por turno, ao acertar com arma de monge ou desarmado, gasta 1 ponto de Foco: o alvo faz TR de Constituição ou fica Atordoado até o início do seu próximo turno; se passar, tem o Deslocamento reduzido à metade e o próximo ataque contra ele tem Vantagem.',
+      },
+      {
+        level: 6,
+        name: 'Golpes Fortalecidos',
+        description: 'Seus ataques desarmados podem causar dano de energia ou o tipo normal.',
+      },
+      {
+        level: 7,
+        name: 'Evasão',
+        description:
+          'Em efeitos com TR de Destreza para metade do dano, não sofre dano se passar e só metade se falhar (exceto Incapacitado).',
+      },
+      {
+        level: 9,
+        name: 'Movimento Acrobático',
+        description:
+          'Sem armadura nem escudo, move-se por superfícies verticais e sobre líquidos durante o turno.',
+      },
+      {
+        level: 10,
+        name: 'Foco Elevado',
+        description:
+          'Rajada de Golpes passa a três ataques; Defesa Paciente com Foco dá PV temporários iguais a dois dados de Artes Marciais; Passo do Vento com Foco leva junto uma criatura disposta.',
+      },
+      {
+        level: 10,
+        name: 'Autorrestauração',
+        description:
+          'No fim de cada turno, pode encerrar Enfeitiçado, Amedrontado ou Envenenado em si mesmo. Ficar sem comer e beber não causa Exaustão.',
+      },
+      {
+        level: 13,
+        name: 'Desviar Energia',
+        description: 'Desviar Ataques passa a funcionar contra qualquer tipo de dano.',
+      },
+      {
+        level: 14,
+        name: 'Sobrevivente Disciplinado',
+        description:
+          'Proficiência em todos os testes de resistência (já aplicada); ao falhar num, pode gastar 1 ponto de Foco para rolar de novo.',
+      },
+      {
+        level: 15,
+        name: 'Foco Perfeito',
+        description:
+          'Ao rolar Iniciativa sem usar Metabolismo Sobrenatural, recupera Pontos de Foco até ter 4.',
+      },
+      {
+        level: 18,
+        name: 'Defesa Superior',
+        description:
+          'No início do turno, gasta 3 pontos de Foco para ter Resistência a todo dano, exceto energia, por 1 minuto.',
+      },
+      {
+        level: 20,
+        name: 'Corpo e Mente',
+        description: 'Destreza e Sabedoria +4 (máximo 25), já aplicados aos atributos.',
+      },
     ],
     subclass: {
       id: 'open_hand',
       name: 'Guerreiro da Mão Aberta',
-      description: 'Mestre do combate desarmado, que empurra, derruba e manipula a própria energia.',
+      description:
+        'Mestre do combate desarmado, que empurra, derruba e manipula a própria energia.',
       features: [
-        { level: 3, name: 'Técnica da Mão Aberta', description: 'Ao acertar com um ataque da Rajada de Golpes, impõe um efeito: Desconcertar (sem ataques de oportunidade até o próximo turno do alvo), Empurrar (TR de Força ou é empurrado até 4,5 m) ou Derrubar (TR de Destreza ou fica Caído).' },
-        { level: 6, name: 'Integridade Corporal', resourceKey: 'subclass_wholeness_of_body', description: 'Com uma ação bônus, recupera PV iguais a um dado de Artes Marciais + mod. de Sabedoria (mín. 1). Usos iguais ao mod. de Sabedoria (mín. 1) por descanso longo.' },
-        { level: 11, name: 'Passo Veloz', description: 'Ao usar uma ação bônus que não seja Passo do Vento, pode usar Passo do Vento logo depois.' },
-        { level: 17, name: 'Palma Vibrante', description: 'Ao acertar um ataque desarmado, gasta 4 pontos de Foco para criar vibrações que duram dias iguais ao nível de monge; ao encerrá-las, o alvo faz TR de Constituição e sofre 10d12 de dano de energia (metade se passar).' },
+        {
+          level: 3,
+          name: 'Técnica da Mão Aberta',
+          description:
+            'Ao acertar com um ataque da Rajada de Golpes, impõe um efeito: Desconcertar (sem ataques de oportunidade até o próximo turno do alvo), Empurrar (TR de Força ou é empurrado até 4,5 m) ou Derrubar (TR de Destreza ou fica Caído).',
+        },
+        {
+          level: 6,
+          name: 'Integridade Corporal',
+          resourceKey: 'subclass_wholeness_of_body',
+          description:
+            'Com uma ação bônus, recupera PV iguais a um dado de Artes Marciais + mod. de Sabedoria (mín. 1). Usos iguais ao mod. de Sabedoria (mín. 1) por descanso longo.',
+        },
+        {
+          level: 11,
+          name: 'Passo Veloz',
+          description:
+            'Ao usar uma ação bônus que não seja Passo do Vento, pode usar Passo do Vento logo depois.',
+        },
+        {
+          level: 17,
+          name: 'Palma Vibrante',
+          description:
+            'Ao acertar um ataque desarmado, gasta 4 pontos de Foco para criar vibrações que duram dias iguais ao nível de monge; ao encerrá-las, o alvo faz TR de Constituição e sofre 10d12 de dano de energia (metade se passar).',
+        },
       ],
-      resources: [uses('subclass_wholeness_of_body', 'Integridade Corporal', 'long_rest', modUses('wis', 6))],
+      resources: [
+        uses('subclass_wholeness_of_body', 'Integridade Corporal', 'long_rest', modUses('wis', 6)),
+      ],
     },
   },
 
@@ -441,7 +1088,10 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     complexity: 'Média',
     hitDie: 'd10',
     savingThrows: ['wis', 'cha'],
-    skillChoices: { count: 2, options: ['athletics', 'insight', 'intimidation', 'medicine', 'persuasion', 'religion'] },
+    skillChoices: {
+      count: 2,
+      options: ['athletics', 'insight', 'intimidation', 'medicine', 'persuasion', 'religion'],
+    },
     weapons: { simple: true, martial: 'all' },
     weaponLabel: 'Armas simples e marciais',
     armor: ['light', 'medium', 'heavy', 'shield'],
@@ -450,7 +1100,14 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     equipment: [
       {
         id: 'A',
-        items: [{ item: 'chain_mail' }, { item: 'shield' }, { item: 'longsword' }, { item: 'javelin', quantity: 6 }, { item: 'holy_symbol' }, { item: 'priests_pack' }],
+        items: [
+          { item: 'chain_mail' },
+          { item: 'shield' },
+          { item: 'longsword' },
+          { item: 'javelin', quantity: 6 },
+          { item: 'holy_symbol' },
+          { item: 'priests_pack' },
+        ],
         gold: 9,
       },
       { id: 'B', items: [], gold: 150 },
@@ -458,32 +1115,109 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     standardArray: { str: 15, dex: 10, con: 13, int: 8, wis: 12, cha: 14 },
     asiLevels: [4, 8, 12, 16],
     weaponMastery: steps({ 1: 2 }),
-    spellcasting: { ability: 'cha', list: 'paladin', progression: 'half', cantrips: null, prepared: HALF_PREPARED },
+    spellcasting: {
+      ability: 'cha',
+      list: 'paladin',
+      progression: 'half',
+      cantrips: null,
+      prepared: HALF_PREPARED,
+    },
     alwaysPrepared: [
       { level: 2, spells: ['Divine Smite'], note: 'Destruição do Paladino' },
       { level: 5, spells: ['Find Steed'], note: 'Montaria Fiel' },
     ],
     resources: [
       uses('class_lay_on_hands', 'Cura pelas Mãos', 'long_rest', ({ level }) => level * 5),
-      uses('class_channel_divinity', 'Canalizar Divindade', 'long_rest', ({ level }) => atLevel(PALADIN_CHANNEL_DIVINITY, level) || null),
+      uses(
+        'class_channel_divinity',
+        'Canalizar Divindade',
+        'long_rest',
+        ({ level }) => atLevel(PALADIN_CHANNEL_DIVINITY, level) || null,
+      ),
       onceFrom('class_paladins_smite', 'Divine Smite sem espaço', 2),
       onceFrom('class_faithful_steed', 'Find Steed sem espaço', 5),
     ],
     features: [
-      { level: 1, name: 'Cura pelas Mãos', resourceKey: 'class_lay_on_hands', description: 'Reserva de cura igual a 5 × nível de paladino por descanso longo. Com uma ação bônus, toca uma criatura e restaura PV da reserva; gastar 5 pontos remove a condição Envenenado.' },
-      { level: 1, name: 'Conjuração', description: 'Conjura magias de paladino usando Carisma; um símbolo sagrado serve de foco. Pode trocar uma magia preparada a cada descanso longo.' },
-      { level: 1, name: 'Maestria em Armas', description: `Usa a maestria de 2 tipos de armas com que tem proficiência. ${MASTERY_TEXT}` },
-      { level: 2, name: 'Estilo de Luta', description: 'Ganha um talento de Estilo de Luta ou a opção Guerreiro Abençoado: dois truques de clérigo que contam como magias de paladino (usando Carisma).' },
-      { level: 2, name: 'Destruição do Paladino', resourceKey: 'class_paladins_smite', description: 'Sempre tem Destruição Divina preparada e pode conjurá-la uma vez sem gastar espaço por descanso longo.' },
-      { level: 3, name: 'Canalizar Divindade', resourceKey: 'class_channel_divinity', description: 'Usos: 2 (3 no 11º nível); recupera 1 uso no descanso curto e todos no longo. Sentido Divino: com uma ação bônus, por 10 minutos sabe a localização de celestiais, ínferos e mortos-vivos a até 18 m.' },
+      {
+        level: 1,
+        name: 'Cura pelas Mãos',
+        resourceKey: 'class_lay_on_hands',
+        description:
+          'Reserva de cura igual a 5 × nível de paladino por descanso longo. Com uma ação bônus, toca uma criatura e restaura PV da reserva; gastar 5 pontos remove a condição Envenenado.',
+      },
+      {
+        level: 1,
+        name: 'Conjuração',
+        description:
+          'Conjura magias de paladino usando Carisma; um símbolo sagrado serve de foco. Pode trocar uma magia preparada a cada descanso longo.',
+      },
+      {
+        level: 1,
+        name: 'Maestria em Armas',
+        description: `Usa a maestria de 2 tipos de armas com que tem proficiência. ${MASTERY_TEXT}`,
+      },
+      {
+        level: 2,
+        name: 'Estilo de Luta',
+        description:
+          'Ganha um talento de Estilo de Luta ou a opção Guerreiro Abençoado: dois truques de clérigo que contam como magias de paladino (usando Carisma).',
+      },
+      {
+        level: 2,
+        name: 'Destruição do Paladino',
+        resourceKey: 'class_paladins_smite',
+        description:
+          'Sempre tem Destruição Divina preparada e pode conjurá-la uma vez sem gastar espaço por descanso longo.',
+      },
+      {
+        level: 3,
+        name: 'Canalizar Divindade',
+        resourceKey: 'class_channel_divinity',
+        description:
+          'Usos: 2 (3 no 11º nível); recupera 1 uso no descanso curto e todos no longo. Sentido Divino: com uma ação bônus, por 10 minutos sabe a localização de celestiais, ínferos e mortos-vivos a até 18 m.',
+      },
       { level: 5, name: 'Ataque Extra', description: 'Ataca duas vezes ao usar a ação de Ataque.' },
-      { level: 5, name: 'Montaria Fiel', resourceKey: 'class_faithful_steed', description: 'Sempre tem Convocar Montaria preparada e pode conjurá-la uma vez sem gastar espaço por descanso longo.' },
-      { level: 6, name: 'Aura de Proteção', description: 'Emanação de 3 m (9 m no 18º nível): você e aliados somam o mod. de Carisma (mín. +1) aos testes de resistência, enquanto você não estiver Incapacitado.' },
-      { level: 9, name: 'Abjurar Inimigos', description: 'Com uma ação de Magia e um uso de Canalizar Divindade, criaturas em número igual ao mod. de Carisma (mín. 1) a até 18 m fazem TR de Sabedoria ou ficam Amedrontadas por 1 minuto, podendo só se mover, agir ou usar ação bônus no turno.' },
-      { level: 10, name: 'Aura de Coragem', description: 'Você e aliados na Aura de Proteção são imunes a Amedrontado.' },
-      { level: 11, name: 'Golpes Radiantes', description: 'Ao acertar com uma arma corpo a corpo ou um ataque desarmado, causa +1d8 de dano radiante.' },
-      { level: 14, name: 'Toque Restaurador', description: 'Ao usar Cura pelas Mãos, gasta 5 pontos da reserva por condição para remover Cego, Enfeitiçado, Surdo, Amedrontado, Paralisado ou Atordoado.' },
-      { level: 18, name: 'Expansão da Aura', description: 'A Aura de Proteção passa a ser uma emanação de 9 m.' },
+      {
+        level: 5,
+        name: 'Montaria Fiel',
+        resourceKey: 'class_faithful_steed',
+        description:
+          'Sempre tem Convocar Montaria preparada e pode conjurá-la uma vez sem gastar espaço por descanso longo.',
+      },
+      {
+        level: 6,
+        name: 'Aura de Proteção',
+        description:
+          'Emanação de 3 m (9 m no 18º nível): você e aliados somam o mod. de Carisma (mín. +1) aos testes de resistência, enquanto você não estiver Incapacitado.',
+      },
+      {
+        level: 9,
+        name: 'Abjurar Inimigos',
+        description:
+          'Com uma ação de Magia e um uso de Canalizar Divindade, criaturas em número igual ao mod. de Carisma (mín. 1) a até 18 m fazem TR de Sabedoria ou ficam Amedrontadas por 1 minuto, podendo só se mover, agir ou usar ação bônus no turno.',
+      },
+      {
+        level: 10,
+        name: 'Aura de Coragem',
+        description: 'Você e aliados na Aura de Proteção são imunes a Amedrontado.',
+      },
+      {
+        level: 11,
+        name: 'Golpes Radiantes',
+        description:
+          'Ao acertar com uma arma corpo a corpo ou um ataque desarmado, causa +1d8 de dano radiante.',
+      },
+      {
+        level: 14,
+        name: 'Toque Restaurador',
+        description:
+          'Ao usar Cura pelas Mãos, gasta 5 pontos da reserva por condição para remover Cego, Enfeitiçado, Surdo, Amedrontado, Paralisado ou Atordoado.',
+      },
+      {
+        level: 18,
+        name: 'Expansão da Aura',
+        description: 'A Aura de Proteção passa a ser uma emanação de 9 m.',
+      },
     ],
     subclass: {
       id: 'devotion',
@@ -497,11 +1231,36 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
         { level: 17, spells: ['Commune', 'Flame Strike'] },
       ],
       features: [
-        { level: 3, name: 'Magias do Juramento de Devoção', description: 'Sempre preparadas: Proteção contra o Bem e o Mal e Escudo da Fé (3º nível); Auxílio e Zona da Verdade (5º); Sinal de Esperança e Dissipar Magia (9º); Movimentação Livre e Guardião da Fé (13º); Comunhão e Coluna de Chamas (17º).' },
-        { level: 3, name: 'Arma Sagrada', description: 'Ao usar a ação de Ataque, gasta um uso de Canalizar Divindade: por 10 minutos, uma arma corpo a corpo soma o mod. de Carisma (mín. +1) aos ataques, pode causar dano radiante e emite luz.' },
-        { level: 7, name: 'Aura de Devoção', description: 'Você e aliados na Aura de Proteção são imunes a Enfeitiçado.' },
-        { level: 15, name: 'Destruição Protetora', description: 'Ao conjurar Destruição Divina, você e aliados na aura têm meia cobertura até o início do seu próximo turno.' },
-        { level: 20, name: 'Nimbo Sagrado', resourceKey: 'subclass_holy_nimbus', description: 'Com uma ação bônus, por 10 minutos a aura emite luz solar, dá Vantagem em TR contra ínferos e mortos-vivos, e inimigos que começam o turno nela sofrem dano radiante igual ao mod. de Carisma + proficiência. Uma vez por descanso longo (ou gaste um espaço de 5º círculo).' },
+        {
+          level: 3,
+          name: 'Magias do Juramento de Devoção',
+          description:
+            'Sempre preparadas: Proteção contra o Bem e o Mal e Escudo da Fé (3º nível); Auxílio e Zona da Verdade (5º); Sinal de Esperança e Dissipar Magia (9º); Movimentação Livre e Guardião da Fé (13º); Comunhão e Coluna de Chamas (17º).',
+        },
+        {
+          level: 3,
+          name: 'Arma Sagrada',
+          description:
+            'Ao usar a ação de Ataque, gasta um uso de Canalizar Divindade: por 10 minutos, uma arma corpo a corpo soma o mod. de Carisma (mín. +1) aos ataques, pode causar dano radiante e emite luz.',
+        },
+        {
+          level: 7,
+          name: 'Aura de Devoção',
+          description: 'Você e aliados na Aura de Proteção são imunes a Enfeitiçado.',
+        },
+        {
+          level: 15,
+          name: 'Destruição Protetora',
+          description:
+            'Ao conjurar Destruição Divina, você e aliados na aura têm meia cobertura até o início do seu próximo turno.',
+        },
+        {
+          level: 20,
+          name: 'Nimbo Sagrado',
+          resourceKey: 'subclass_holy_nimbus',
+          description:
+            'Com uma ação bônus, por 10 minutos a aura emite luz solar, dá Vantagem em TR contra ínferos e mortos-vivos, e inimigos que começam o turno nela sofrem dano radiante igual ao mod. de Carisma + proficiência. Uma vez por descanso longo (ou gaste um espaço de 5º círculo).',
+        },
       ],
       resources: [onceFrom('subclass_holy_nimbus', 'Nimbo Sagrado', 20)],
     },
@@ -516,7 +1275,19 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     complexity: 'Média',
     hitDie: 'd10',
     savingThrows: ['str', 'dex'],
-    skillChoices: { count: 3, options: ['animal_handling', 'athletics', 'insight', 'investigation', 'nature', 'perception', 'stealth', 'survival'] },
+    skillChoices: {
+      count: 3,
+      options: [
+        'animal_handling',
+        'athletics',
+        'insight',
+        'investigation',
+        'nature',
+        'perception',
+        'stealth',
+        'survival',
+      ],
+    },
     weapons: { simple: true, martial: 'all' },
     weaponLabel: 'Armas simples e marciais',
     armor: ['light', 'medium', 'shield'],
@@ -542,39 +1313,129 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     standardArray: { str: 12, dex: 15, con: 13, int: 8, wis: 14, cha: 10 },
     asiLevels: [4, 8, 12, 16],
     weaponMastery: steps({ 1: 2 }),
-    spellcasting: { ability: 'wis', list: 'ranger', progression: 'half', cantrips: null, prepared: HALF_PREPARED },
+    spellcasting: {
+      ability: 'wis',
+      list: 'ranger',
+      progression: 'half',
+      cantrips: null,
+      prepared: HALF_PREPARED,
+    },
     alwaysPrepared: [{ level: 1, spells: ["Hunter's Mark"], note: 'Inimigo Favorito' }],
     resources: [
-      uses('class_favored_enemy', "Hunter's Mark sem espaço", 'long_rest', ({ level }) => atLevel(RANGER_FAVORED_ENEMY, level)),
+      uses('class_favored_enemy', "Hunter's Mark sem espaço", 'long_rest', ({ level }) =>
+        atLevel(RANGER_FAVORED_ENEMY, level),
+      ),
       uses('class_tireless', 'Incansável', 'long_rest', modUses('wis', 10)),
       uses('class_natures_veil', 'Véu da Natureza', 'long_rest', modUses('wis', 14)),
     ],
     features: [
-      { level: 1, name: 'Conjuração', description: 'Conjura magias de patrulheiro usando Sabedoria; um foco druídico serve de foco. Pode trocar uma magia preparada a cada descanso longo.' },
-      { level: 1, name: 'Inimigo Favorito', resourceKey: 'class_favored_enemy', description: "Sempre tem Marca do Caçador preparada e pode conjurá-la sem gastar espaço: 2 vezes (3 no 5º nível, 4 no 9º, 5 no 13º, 6 no 17º) por descanso longo." },
-      { level: 1, name: 'Maestria em Armas', description: `Usa a maestria de 2 tipos de armas com que tem proficiência. ${MASTERY_TEXT}` },
-      { level: 2, name: 'Explorador Hábil', description: 'Especialização em uma perícia em que é proficiente e dois idiomas à escolha.' },
-      { level: 2, name: 'Estilo de Luta', description: 'Ganha um talento de Estilo de Luta ou a opção Guerreiro Druídico: dois truques de druida que contam como magias de patrulheiro (usando Sabedoria).' },
+      {
+        level: 1,
+        name: 'Conjuração',
+        description:
+          'Conjura magias de patrulheiro usando Sabedoria; um foco druídico serve de foco. Pode trocar uma magia preparada a cada descanso longo.',
+      },
+      {
+        level: 1,
+        name: 'Inimigo Favorito',
+        resourceKey: 'class_favored_enemy',
+        description:
+          'Sempre tem Marca do Caçador preparada e pode conjurá-la sem gastar espaço: 2 vezes (3 no 5º nível, 4 no 9º, 5 no 13º, 6 no 17º) por descanso longo.',
+      },
+      {
+        level: 1,
+        name: 'Maestria em Armas',
+        description: `Usa a maestria de 2 tipos de armas com que tem proficiência. ${MASTERY_TEXT}`,
+      },
+      {
+        level: 2,
+        name: 'Explorador Hábil',
+        description: 'Especialização em uma perícia em que é proficiente e dois idiomas à escolha.',
+      },
+      {
+        level: 2,
+        name: 'Estilo de Luta',
+        description:
+          'Ganha um talento de Estilo de Luta ou a opção Guerreiro Druídico: dois truques de druida que contam como magias de patrulheiro (usando Sabedoria).',
+      },
       { level: 5, name: 'Ataque Extra', description: 'Ataca duas vezes ao usar a ação de Ataque.' },
-      { level: 6, name: 'Errante', description: '+3 m de Deslocamento sem armadura pesada e Deslocamento de escalada e de natação iguais ao Deslocamento.' },
-      { level: 9, name: 'Especialização', description: 'Especialização em duas perícias em que é proficiente.' },
-      { level: 10, name: 'Incansável', resourceKey: 'class_tireless', description: 'Com uma ação de Magia, ganha PV temporários iguais a 1d8 + mod. de Sabedoria (mín. 1); usos iguais ao mod. de Sabedoria (mín. 1) por descanso longo. Cada descanso curto reduz 1 nível de Exaustão.' },
-      { level: 13, name: 'Caçador Implacável', description: "Sofrer dano não quebra a sua Concentração em Marca do Caçador." },
-      { level: 14, name: 'Véu da Natureza', resourceKey: 'class_natures_veil', description: 'Com uma ação bônus, fica Invisível até o fim do próximo turno. Usos iguais ao mod. de Sabedoria (mín. 1) por descanso longo.' },
-      { level: 17, name: 'Caçador Preciso', description: "Vantagem nos ataques contra a criatura marcada pela sua Marca do Caçador." },
+      {
+        level: 6,
+        name: 'Errante',
+        description:
+          '+3 m de Deslocamento sem armadura pesada e Deslocamento de escalada e de natação iguais ao Deslocamento.',
+      },
+      {
+        level: 9,
+        name: 'Especialização',
+        description: 'Especialização em duas perícias em que é proficiente.',
+      },
+      {
+        level: 10,
+        name: 'Incansável',
+        resourceKey: 'class_tireless',
+        description:
+          'Com uma ação de Magia, ganha PV temporários iguais a 1d8 + mod. de Sabedoria (mín. 1); usos iguais ao mod. de Sabedoria (mín. 1) por descanso longo. Cada descanso curto reduz 1 nível de Exaustão.',
+      },
+      {
+        level: 13,
+        name: 'Caçador Implacável',
+        description: 'Sofrer dano não quebra a sua Concentração em Marca do Caçador.',
+      },
+      {
+        level: 14,
+        name: 'Véu da Natureza',
+        resourceKey: 'class_natures_veil',
+        description:
+          'Com uma ação bônus, fica Invisível até o fim do próximo turno. Usos iguais ao mod. de Sabedoria (mín. 1) por descanso longo.',
+      },
+      {
+        level: 17,
+        name: 'Caçador Preciso',
+        description: 'Vantagem nos ataques contra a criatura marcada pela sua Marca do Caçador.',
+      },
       { level: 18, name: 'Sentidos Selvagens', description: 'Percepção às cegas de 9 m.' },
-      { level: 20, name: 'Matador de Inimigos', description: "O dado de dano de Marca do Caçador passa a d10." },
+      {
+        level: 20,
+        name: 'Matador de Inimigos',
+        description: 'O dado de dano de Marca do Caçador passa a d10.',
+      },
     ],
     subclass: {
       id: 'hunter',
       name: 'Caçador',
       description: 'Protege a fronteira entre a civilização e os horrores dos ermos.',
       features: [
-        { level: 3, name: 'Conhecimento do Caçador', description: "Enquanto uma criatura está marcada pela sua Marca do Caçador, você sabe se ela tem Imunidades, Resistências ou Vulnerabilidades." },
-        { level: 3, name: 'Presa do Caçador', description: 'Escolha (pode trocar a cada descanso): Assassino de Colossos (+1d8 uma vez por turno contra alvo abaixo do máximo de PV) ou Ataque Horda (uma vez por turno, ataque extra contra outra criatura a até 1,5 m do alvo).' },
-        { level: 7, name: 'Táticas Defensivas', description: 'Escolha (pode trocar a cada descanso): Escapar da Horda (ataques de oportunidade contra você têm Desvantagem) ou Defesa contra Ataques Múltiplos (depois de ser atingido, os ataques da mesma criatura contra você têm Desvantagem até o fim do turno).' },
-        { level: 11, name: 'Presa do Caçador Superior', description: "Uma vez por turno, ao causar dano a uma criatura marcada, causa também o dano extra de Marca do Caçador a outra criatura visível a até 9 m dela." },
-        { level: 15, name: 'Defesa do Caçador Superior', description: 'Ao sofrer dano, usa a reação para ter Resistência a esse dano e a outros do mesmo tipo até o fim do turno.' },
+        {
+          level: 3,
+          name: 'Conhecimento do Caçador',
+          description:
+            'Enquanto uma criatura está marcada pela sua Marca do Caçador, você sabe se ela tem Imunidades, Resistências ou Vulnerabilidades.',
+        },
+        {
+          level: 3,
+          name: 'Presa do Caçador',
+          description:
+            'Escolha (pode trocar a cada descanso): Assassino de Colossos (+1d8 uma vez por turno contra alvo abaixo do máximo de PV) ou Ataque Horda (uma vez por turno, ataque extra contra outra criatura a até 1,5 m do alvo).',
+        },
+        {
+          level: 7,
+          name: 'Táticas Defensivas',
+          description:
+            'Escolha (pode trocar a cada descanso): Escapar da Horda (ataques de oportunidade contra você têm Desvantagem) ou Defesa contra Ataques Múltiplos (depois de ser atingido, os ataques da mesma criatura contra você têm Desvantagem até o fim do turno).',
+        },
+        {
+          level: 11,
+          name: 'Presa do Caçador Superior',
+          description:
+            'Uma vez por turno, ao causar dano a uma criatura marcada, causa também o dano extra de Marca do Caçador a outra criatura visível a até 9 m dela.',
+        },
+        {
+          level: 15,
+          name: 'Defesa do Caçador Superior',
+          description:
+            'Ao sofrer dano, usa a reação para ter Resistência a esse dano e a outros do mesmo tipo até o fim do turno.',
+        },
       ],
     },
   },
@@ -588,7 +1449,21 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     complexity: 'Baixa',
     hitDie: 'd8',
     savingThrows: ['dex', 'int'],
-    skillChoices: { count: 4, options: ['acrobatics', 'athletics', 'deception', 'insight', 'intimidation', 'investigation', 'perception', 'persuasion', 'sleight_of_hand', 'stealth'] },
+    skillChoices: {
+      count: 4,
+      options: [
+        'acrobatics',
+        'athletics',
+        'deception',
+        'insight',
+        'intimidation',
+        'investigation',
+        'perception',
+        'persuasion',
+        'sleight_of_hand',
+        'stealth',
+      ],
+    },
     weapons: { simple: true, martial: 'finesse_or_light' },
     weaponLabel: 'Armas simples e armas marciais com Acuidade ou Leve',
     armor: ['light'],
@@ -617,33 +1492,132 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     weaponMastery: steps({ 1: 2 }),
     resources: [onceFrom('class_stroke_of_luck', 'Golpe de Sorte', 20, 'short_rest')],
     features: [
-      { level: 1, name: 'Especialização', description: 'Especialização em duas perícias em que é proficiente (Prestidigitação e Furtividade são as recomendadas).' },
-      { level: 1, name: 'Ataque Furtivo', description: 'Uma vez por turno, causa dano extra ao acertar com arma de Acuidade ou à distância se tiver Vantagem, ou se um aliado não Incapacitado estiver a até 1,5 m do alvo e você não tiver Desvantagem. Dano: 1d6 no 1º nível e +1d6 a cada dois níveis (10d6 no 19º).' },
-      { level: 1, name: 'Gíria de Ladrão', description: 'Conhece a Gíria de Ladrão e mais um idioma à escolha.' },
-      { level: 1, name: 'Maestria em Armas', description: `Usa a maestria de 2 tipos de armas com que tem proficiência. ${MASTERY_TEXT}` },
-      { level: 2, name: 'Ação Ardilosa', description: 'Pode usar Disparada, Desengajar ou Esconder como ação bônus.' },
-      { level: 3, name: 'Mira Firme', description: 'Com uma ação bônus, ganha Vantagem no próximo ataque do turno se não tiver se movido; depois disso, seu Deslocamento fica 0 até o fim do turno.' },
-      { level: 5, name: 'Golpe Astuto', description: 'Ao causar Ataque Furtivo, troca dados do dano por efeitos (CD 8 + mod. de Destreza + proficiência): Veneno (1d6, exige kit de envenenador), Derrubar (1d6) ou Recuar (1d6).' },
-      { level: 5, name: 'Esquiva Sobrenatural', description: 'Usa a reação para reduzir à metade o dano de um ataque que você vê.' },
-      { level: 6, name: 'Especialização Adicional', description: 'Especialização em mais duas perícias em que é proficiente.' },
-      { level: 7, name: 'Evasão', description: 'Em efeitos com TR de Destreza para metade do dano, não sofre dano se passar e só metade se falhar (exceto Incapacitado).' },
-      { level: 7, name: 'Talento Confiável', description: 'Em testes com perícias ou ferramentas em que é proficiente, trata um 9 ou menos no d20 como 10.' },
-      { level: 11, name: 'Golpe Astuto Aprimorado', description: 'Pode usar até dois efeitos de Golpe Astuto por Ataque Furtivo.' },
-      { level: 14, name: 'Golpes Traiçoeiros', description: 'Novos efeitos de Golpe Astuto: Atordoar (2d6), Nocautear (6d6) e Ofuscar (3d6).' },
-      { level: 15, name: 'Mente Escorregadia', description: 'Proficiência em testes de resistência de Sabedoria e Carisma (já aplicada).' },
-      { level: 18, name: 'Elusivo', description: 'Nenhuma jogada de ataque tem Vantagem contra você, a menos que esteja Incapacitado.' },
-      { level: 20, name: 'Golpe de Sorte', resourceKey: 'class_stroke_of_luck', description: 'Ao falhar num Teste de D20, transforma o resultado em 20. Uma vez por descanso curto ou longo.' },
+      {
+        level: 1,
+        name: 'Especialização',
+        description:
+          'Especialização em duas perícias em que é proficiente (Prestidigitação e Furtividade são as recomendadas).',
+      },
+      {
+        level: 1,
+        name: 'Ataque Furtivo',
+        description:
+          'Uma vez por turno, causa dano extra ao acertar com arma de Acuidade ou à distância se tiver Vantagem, ou se um aliado não Incapacitado estiver a até 1,5 m do alvo e você não tiver Desvantagem. Dano: 1d6 no 1º nível e +1d6 a cada dois níveis (10d6 no 19º).',
+      },
+      {
+        level: 1,
+        name: 'Gíria de Ladrão',
+        description: 'Conhece a Gíria de Ladrão e mais um idioma à escolha.',
+      },
+      {
+        level: 1,
+        name: 'Maestria em Armas',
+        description: `Usa a maestria de 2 tipos de armas com que tem proficiência. ${MASTERY_TEXT}`,
+      },
+      {
+        level: 2,
+        name: 'Ação Ardilosa',
+        description: 'Pode usar Disparada, Desengajar ou Esconder como ação bônus.',
+      },
+      {
+        level: 3,
+        name: 'Mira Firme',
+        description:
+          'Com uma ação bônus, ganha Vantagem no próximo ataque do turno se não tiver se movido; depois disso, seu Deslocamento fica 0 até o fim do turno.',
+      },
+      {
+        level: 5,
+        name: 'Golpe Astuto',
+        description:
+          'Ao causar Ataque Furtivo, troca dados do dano por efeitos (CD 8 + mod. de Destreza + proficiência): Veneno (1d6, exige kit de envenenador), Derrubar (1d6) ou Recuar (1d6).',
+      },
+      {
+        level: 5,
+        name: 'Esquiva Sobrenatural',
+        description: 'Usa a reação para reduzir à metade o dano de um ataque que você vê.',
+      },
+      {
+        level: 6,
+        name: 'Especialização Adicional',
+        description: 'Especialização em mais duas perícias em que é proficiente.',
+      },
+      {
+        level: 7,
+        name: 'Evasão',
+        description:
+          'Em efeitos com TR de Destreza para metade do dano, não sofre dano se passar e só metade se falhar (exceto Incapacitado).',
+      },
+      {
+        level: 7,
+        name: 'Talento Confiável',
+        description:
+          'Em testes com perícias ou ferramentas em que é proficiente, trata um 9 ou menos no d20 como 10.',
+      },
+      {
+        level: 11,
+        name: 'Golpe Astuto Aprimorado',
+        description: 'Pode usar até dois efeitos de Golpe Astuto por Ataque Furtivo.',
+      },
+      {
+        level: 14,
+        name: 'Golpes Traiçoeiros',
+        description:
+          'Novos efeitos de Golpe Astuto: Atordoar (2d6), Nocautear (6d6) e Ofuscar (3d6).',
+      },
+      {
+        level: 15,
+        name: 'Mente Escorregadia',
+        description: 'Proficiência em testes de resistência de Sabedoria e Carisma (já aplicada).',
+      },
+      {
+        level: 18,
+        name: 'Elusivo',
+        description:
+          'Nenhuma jogada de ataque tem Vantagem contra você, a menos que esteja Incapacitado.',
+      },
+      {
+        level: 20,
+        name: 'Golpe de Sorte',
+        resourceKey: 'class_stroke_of_luck',
+        description:
+          'Ao falhar num Teste de D20, transforma o resultado em 20. Uma vez por descanso curto ou longo.',
+      },
     ],
     subclass: {
       id: 'thief',
       name: 'Ladrão',
       description: 'Mistura de assaltante, caçador de tesouros e explorador de ruínas.',
       features: [
-        { level: 3, name: 'Mãos Rápidas', description: 'Com uma ação bônus, faz um teste de Destreza (Prestidigitação) para abrir fechaduras, desarmar armadilhas ou bater carteiras, ou usa a ação Utilizar ou a de Magia com um item mágico.' },
-        { level: 3, name: 'Trabalho de Segundo Andar', description: 'Deslocamento de escalada igual ao Deslocamento e usa Destreza no lugar da Força para calcular saltos.' },
-        { level: 9, name: 'Furtividade Suprema', description: 'Nova opção de Golpe Astuto: Ataque Furtivo (1d6) mantém a condição Invisível da ação Esconder se você terminar o turno com três quartos de cobertura ou cobertura total.' },
-        { level: 13, name: 'Usar Dispositivo Mágico', description: 'Sintoniza até quatro itens mágicos; ao gastar cargas, rola 1d6 e não as gasta com 6; usa qualquer Pergaminho de Magia com Inteligência (teste de Arcanismo para círculos acima do 1º).' },
-        { level: 17, name: 'Reflexos de Ladrão', description: 'Faz dois turnos na primeira rodada de combate: um na sua Iniciativa e outro na Iniciativa − 10.' },
+        {
+          level: 3,
+          name: 'Mãos Rápidas',
+          description:
+            'Com uma ação bônus, faz um teste de Destreza (Prestidigitação) para abrir fechaduras, desarmar armadilhas ou bater carteiras, ou usa a ação Utilizar ou a de Magia com um item mágico.',
+        },
+        {
+          level: 3,
+          name: 'Trabalho de Segundo Andar',
+          description:
+            'Deslocamento de escalada igual ao Deslocamento e usa Destreza no lugar da Força para calcular saltos.',
+        },
+        {
+          level: 9,
+          name: 'Furtividade Suprema',
+          description:
+            'Nova opção de Golpe Astuto: Ataque Furtivo (1d6) mantém a condição Invisível da ação Esconder se você terminar o turno com três quartos de cobertura ou cobertura total.',
+        },
+        {
+          level: 13,
+          name: 'Usar Dispositivo Mágico',
+          description:
+            'Sintoniza até quatro itens mágicos; ao gastar cargas, rola 1d6 e não as gasta com 6; usa qualquer Pergaminho de Magia com Inteligência (teste de Arcanismo para círculos acima do 1º).',
+        },
+        {
+          level: 17,
+          name: 'Reflexos de Ladrão',
+          description:
+            'Faz dois turnos na primeira rodada de combate: um na sua Iniciativa e outro na Iniciativa − 10.',
+        },
       ],
     },
   },
@@ -657,14 +1631,26 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     complexity: 'Alta',
     hitDie: 'd6',
     savingThrows: ['con', 'cha'],
-    skillChoices: { count: 2, options: ['arcana', 'deception', 'insight', 'intimidation', 'persuasion', 'religion'] },
+    skillChoices: {
+      count: 2,
+      options: ['arcana', 'deception', 'insight', 'intimidation', 'persuasion', 'religion'],
+    },
     weapons: { simple: true, martial: 'none' },
     weaponLabel: 'Armas simples',
     armor: [],
     armorLabel: 'Nenhuma',
     tools: [],
     equipment: [
-      { id: 'A', items: [{ item: 'spear' }, { item: 'dagger', quantity: 2 }, { item: 'arcane_focus_crystal' }, { item: 'dungeoneers_pack' }], gold: 28 },
+      {
+        id: 'A',
+        items: [
+          { item: 'spear' },
+          { item: 'dagger', quantity: 2 },
+          { item: 'arcane_focus_crystal' },
+          { item: 'dungeoneers_pack' },
+        ],
+        gold: 28,
+      },
       { id: 'B', items: [], gold: 50 },
     ],
     standardArray: { str: 10, dex: 13, con: 14, int: 8, wis: 12, cha: 15 },
@@ -677,17 +1663,56 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
       prepared: [2, 4, 6, 7, 9, 10, 11, 12, 14, 15, 16, 16, 17, 17, 18, 18, 19, 20, 21, 22],
     },
     resources: [
-      uses('class_sorcery_points', 'Pontos de Feitiçaria', 'long_rest', ({ level }) => (level >= 2 ? level : null)),
+      uses('class_sorcery_points', 'Pontos de Feitiçaria', 'long_rest', ({ level }) =>
+        level >= 2 ? level : null,
+      ),
       uses('class_innate_sorcery', 'Feitiçaria Inata', 'long_rest', () => 2, 'checkboxes'),
     ],
     features: [
-      { level: 1, name: 'Conjuração', description: 'Conjura magias de feiticeiro usando Carisma; um foco arcano serve de foco. Ao subir de nível, pode trocar um truque e uma magia preparada.' },
-      { level: 1, name: 'Feitiçaria Inata', resourceKey: 'class_innate_sorcery', description: 'Com uma ação bônus, por 1 minuto: +1 na CD das suas magias de feiticeiro e Vantagem nos ataques dessas magias. Duas vezes por descanso longo.' },
-      { level: 2, name: 'Fonte de Magia', resourceKey: 'class_sorcery_points', description: 'Pontos de Feitiçaria iguais ao nível de feiticeiro, recuperados no descanso longo. Converte espaços de magia em pontos (pontos = círculo) e, com ação bônus, pontos em espaços (1º círculo: 2 pontos; 2º: 3; 3º: 5; 4º: 6; 5º: 7).' },
-      { level: 2, name: 'Metamagia', description: 'Conhece duas opções de Metamagia (mais duas no 10º nível e no 17º); só uma por magia, salvo indicação.' },
-      { level: 5, name: 'Restauração Feiticeira', description: 'Num descanso curto, recupera Pontos de Feitiçaria até metade do nível de feiticeiro (arredondado para baixo). Uma vez por descanso longo.' },
-      { level: 7, name: 'Feitiçaria Encarnada', description: 'Sem usos de Feitiçaria Inata, pode ativá-la gastando 2 Pontos de Feitiçaria; com ela ativa, usa até duas opções de Metamagia por magia.' },
-      { level: 20, name: 'Apoteose Arcana', description: 'Com Feitiçaria Inata ativa, usa uma opção de Metamagia por turno sem gastar pontos.' },
+      {
+        level: 1,
+        name: 'Conjuração',
+        description:
+          'Conjura magias de feiticeiro usando Carisma; um foco arcano serve de foco. Ao subir de nível, pode trocar um truque e uma magia preparada.',
+      },
+      {
+        level: 1,
+        name: 'Feitiçaria Inata',
+        resourceKey: 'class_innate_sorcery',
+        description:
+          'Com uma ação bônus, por 1 minuto: +1 na CD das suas magias de feiticeiro e Vantagem nos ataques dessas magias. Duas vezes por descanso longo.',
+      },
+      {
+        level: 2,
+        name: 'Fonte de Magia',
+        resourceKey: 'class_sorcery_points',
+        description:
+          'Pontos de Feitiçaria iguais ao nível de feiticeiro, recuperados no descanso longo. Converte espaços de magia em pontos (pontos = círculo) e, com ação bônus, pontos em espaços (1º círculo: 2 pontos; 2º: 3; 3º: 5; 4º: 6; 5º: 7).',
+      },
+      {
+        level: 2,
+        name: 'Metamagia',
+        description:
+          'Conhece duas opções de Metamagia (mais duas no 10º nível e no 17º); só uma por magia, salvo indicação.',
+      },
+      {
+        level: 5,
+        name: 'Restauração Feiticeira',
+        description:
+          'Num descanso curto, recupera Pontos de Feitiçaria até metade do nível de feiticeiro (arredondado para baixo). Uma vez por descanso longo.',
+      },
+      {
+        level: 7,
+        name: 'Feitiçaria Encarnada',
+        description:
+          'Sem usos de Feitiçaria Inata, pode ativá-la gastando 2 Pontos de Feitiçaria; com ela ativa, usa até duas opções de Metamagia por magia.',
+      },
+      {
+        level: 20,
+        name: 'Apoteose Arcana',
+        description:
+          'Com Feitiçaria Inata ativa, usa uma opção de Metamagia por turno sem gastar pontos.',
+      },
     ],
     subclass: {
       id: 'draconic',
@@ -700,13 +1725,43 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
         { level: 9, spells: ['Legend Lore', 'Summon Dragon'] },
       ],
       features: [
-        { level: 3, name: 'Resiliência Dracônica', description: 'Máximo de PV +3 e +1 a cada nível de feiticeiro seguinte (já incluído). Sem armadura, sua CA base é 10 + mod. de Destreza + mod. de Carisma.' },
-        { level: 3, name: 'Magias Dracônicas', description: "Sempre preparadas: Alterar-se, Orbe Cromático, Comando e Sopro do Dragão (3º nível); Medo e Voo (5º); Olho Arcano e Enfeitiçar Monstro (7º); Conhecimento Lendário e Invocar Dragão (9º)." },
-        { level: 6, name: 'Afinidade Elemental', description: 'Escolha ácido, frio, fogo, elétrico ou veneno: Resistência a esse tipo de dano e soma o mod. de Carisma a uma jogada de dano das suas magias desse tipo.' },
-        { level: 14, name: 'Asas de Dragão', resourceKey: 'subclass_dragon_wings', description: 'Com uma ação bônus, asas dão Deslocamento de voo de 18 m por 1 hora. Uma vez por descanso longo (ou gaste 3 Pontos de Feitiçaria).' },
-        { level: 18, name: 'Companheiro Dracônico', resourceKey: 'subclass_dragon_companion', description: 'Conjura Invocar Dragão sem componente material, uma vez sem gastar espaço por descanso longo, e pode dispensar a Concentração (a duração vira 1 minuto).' },
+        {
+          level: 3,
+          name: 'Resiliência Dracônica',
+          description:
+            'Máximo de PV +3 e +1 a cada nível de feiticeiro seguinte (já incluído). Sem armadura, sua CA base é 10 + mod. de Destreza + mod. de Carisma.',
+        },
+        {
+          level: 3,
+          name: 'Magias Dracônicas',
+          description:
+            'Sempre preparadas: Alterar-se, Orbe Cromático, Comando e Sopro do Dragão (3º nível); Medo e Voo (5º); Olho Arcano e Enfeitiçar Monstro (7º); Conhecimento Lendário e Invocar Dragão (9º).',
+        },
+        {
+          level: 6,
+          name: 'Afinidade Elemental',
+          description:
+            'Escolha ácido, frio, fogo, elétrico ou veneno: Resistência a esse tipo de dano e soma o mod. de Carisma a uma jogada de dano das suas magias desse tipo.',
+        },
+        {
+          level: 14,
+          name: 'Asas de Dragão',
+          resourceKey: 'subclass_dragon_wings',
+          description:
+            'Com uma ação bônus, asas dão Deslocamento de voo de 18 m por 1 hora. Uma vez por descanso longo (ou gaste 3 Pontos de Feitiçaria).',
+        },
+        {
+          level: 18,
+          name: 'Companheiro Dracônico',
+          resourceKey: 'subclass_dragon_companion',
+          description:
+            'Conjura Invocar Dragão sem componente material, uma vez sem gastar espaço por descanso longo, e pode dispensar a Concentração (a duração vira 1 minuto).',
+        },
       ],
-      resources: [onceFrom('subclass_dragon_wings', 'Asas de Dragão', 14), onceFrom('subclass_dragon_companion', 'Summon Dragon sem espaço', 18)],
+      resources: [
+        onceFrom('subclass_dragon_wings', 'Asas de Dragão', 14),
+        onceFrom('subclass_dragon_companion', 'Summon Dragon sem espaço', 18),
+      ],
     },
   },
 
@@ -719,7 +1774,18 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     complexity: 'Alta',
     hitDie: 'd8',
     savingThrows: ['wis', 'cha'],
-    skillChoices: { count: 2, options: ['arcana', 'deception', 'history', 'intimidation', 'investigation', 'nature', 'religion'] },
+    skillChoices: {
+      count: 2,
+      options: [
+        'arcana',
+        'deception',
+        'history',
+        'intimidation',
+        'investigation',
+        'nature',
+        'religion',
+      ],
+    },
     weapons: { simple: true, martial: 'none' },
     weaponLabel: 'Armas simples',
     armor: ['light'],
@@ -755,12 +1821,43 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
       onceFrom('class_contact_patron', 'Contatar Patrono', 9),
     ],
     features: [
-      { level: 1, name: 'Invocações Místicas', description: 'Conhece invocações (1 no 1º nível; 3 no 2º; 5 no 5º; 6 no 7º; 7 no 9º; 8 no 12º; 9 no 15º; 10 no 18º). Ao subir de nível, pode trocar uma.' },
-      { level: 1, name: 'Magia de Pacto', description: 'Conjura magias de bruxo usando Carisma; um foco arcano serve de foco. Todos os espaços de pacto têm o mesmo círculo e voltam num descanso curto ou longo. Ao subir de nível, pode trocar um truque e uma magia preparada.' },
-      { level: 2, name: 'Astúcia Mística', resourceKey: 'class_magical_cunning', description: 'Com um rito de 1 minuto, recupera espaços de pacto gastos até metade do máximo (arredondado para cima). Uma vez por descanso longo.' },
-      { level: 9, name: 'Contatar Patrono', resourceKey: 'class_contact_patron', description: 'Sempre tem Contato Extraplanar preparada; pode conjurá-la sem gastar espaço para falar com o patrono, passando automaticamente no teste. Uma vez por descanso longo.' },
-      { level: 11, name: 'Arcana Mística', description: 'Escolhe uma magia de bruxo de 6º círculo (e de 7º no 13º nível, 8º no 15º, 9º no 17º); cada uma pode ser conjurada uma vez sem gastar espaço por descanso longo.' },
-      { level: 20, name: 'Mestre Místico', description: 'Ao usar Astúcia Mística, recupera todos os espaços de pacto.' },
+      {
+        level: 1,
+        name: 'Invocações Místicas',
+        description:
+          'Conhece invocações (1 no 1º nível; 3 no 2º; 5 no 5º; 6 no 7º; 7 no 9º; 8 no 12º; 9 no 15º; 10 no 18º). Ao subir de nível, pode trocar uma.',
+      },
+      {
+        level: 1,
+        name: 'Magia de Pacto',
+        description:
+          'Conjura magias de bruxo usando Carisma; um foco arcano serve de foco. Todos os espaços de pacto têm o mesmo círculo e voltam num descanso curto ou longo. Ao subir de nível, pode trocar um truque e uma magia preparada.',
+      },
+      {
+        level: 2,
+        name: 'Astúcia Mística',
+        resourceKey: 'class_magical_cunning',
+        description:
+          'Com um rito de 1 minuto, recupera espaços de pacto gastos até metade do máximo (arredondado para cima). Uma vez por descanso longo.',
+      },
+      {
+        level: 9,
+        name: 'Contatar Patrono',
+        resourceKey: 'class_contact_patron',
+        description:
+          'Sempre tem Contato Extraplanar preparada; pode conjurá-la sem gastar espaço para falar com o patrono, passando automaticamente no teste. Uma vez por descanso longo.',
+      },
+      {
+        level: 11,
+        name: 'Arcana Mística',
+        description:
+          'Escolhe uma magia de bruxo de 6º círculo (e de 7º no 13º nível, 8º no 15º, 9º no 17º); cada uma pode ser conjurada uma vez sem gastar espaço por descanso longo.',
+      },
+      {
+        level: 20,
+        name: 'Mestre Místico',
+        description: 'Ao usar Astúcia Mística, recupera todos os espaços de pacto.',
+      },
     ],
     subclass: {
       id: 'fiend',
@@ -773,11 +1870,38 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
         { level: 9, spells: ['Geas', 'Insect Plague'] },
       ],
       features: [
-        { level: 3, name: 'Bênção do Tenebroso', description: 'Ao reduzir um inimigo a 0 PV (ou quando alguém o faz a até 3 m de você), ganha PV temporários iguais ao mod. de Carisma + nível de bruxo (mín. 1).' },
-        { level: 3, name: 'Magias do Ínfero', description: 'Sempre preparadas: Mãos Flamejantes, Comando, Raio Ardente e Sugestão (3º nível); Bola de Fogo e Névoa Fétida (5º); Escudo de Fogo e Muralha de Fogo (7º); Missão e Praga de Insetos (9º).' },
-        { level: 6, name: 'Sorte do Tenebroso', resourceKey: 'subclass_dark_ones_own_luck', description: 'Soma 1d10 a um teste de atributo ou de resistência depois de ver a rolagem. Usos iguais ao mod. de Carisma (mín. 1) por descanso longo, no máximo um por rolagem.' },
-        { level: 10, name: 'Resiliência Ínfera', description: 'A cada descanso curto ou longo, escolhe um tipo de dano (exceto energia) e tem Resistência a ele.' },
-        { level: 14, name: 'Arremessar pelo Inferno', resourceKey: 'subclass_hurl_through_hell', description: 'Uma vez por turno, ao acertar um ataque, o alvo faz TR de Carisma (CD das suas magias) ou atravessa os Planos Inferiores: sofre 8d10 de dano psíquico (se não for ínfero) e fica Incapacitado até o fim do seu próximo turno. Uma vez por descanso longo (ou gaste um espaço de pacto).' },
+        {
+          level: 3,
+          name: 'Bênção do Tenebroso',
+          description:
+            'Ao reduzir um inimigo a 0 PV (ou quando alguém o faz a até 3 m de você), ganha PV temporários iguais ao mod. de Carisma + nível de bruxo (mín. 1).',
+        },
+        {
+          level: 3,
+          name: 'Magias do Ínfero',
+          description:
+            'Sempre preparadas: Mãos Flamejantes, Comando, Raio Ardente e Sugestão (3º nível); Bola de Fogo e Névoa Fétida (5º); Escudo de Fogo e Muralha de Fogo (7º); Missão e Praga de Insetos (9º).',
+        },
+        {
+          level: 6,
+          name: 'Sorte do Tenebroso',
+          resourceKey: 'subclass_dark_ones_own_luck',
+          description:
+            'Soma 1d10 a um teste de atributo ou de resistência depois de ver a rolagem. Usos iguais ao mod. de Carisma (mín. 1) por descanso longo, no máximo um por rolagem.',
+        },
+        {
+          level: 10,
+          name: 'Resiliência Ínfera',
+          description:
+            'A cada descanso curto ou longo, escolhe um tipo de dano (exceto energia) e tem Resistência a ele.',
+        },
+        {
+          level: 14,
+          name: 'Arremessar pelo Inferno',
+          resourceKey: 'subclass_hurl_through_hell',
+          description:
+            'Uma vez por turno, ao acertar um ataque, o alvo faz TR de Carisma (CD das suas magias) ou atravessa os Planos Inferiores: sofre 8d10 de dano psíquico (se não for ínfero) e fica Incapacitado até o fim do seu próximo turno. Uma vez por descanso longo (ou gaste um espaço de pacto).',
+        },
       ],
       resources: [
         uses('subclass_dark_ones_own_luck', 'Sorte do Tenebroso', 'long_rest', modUses('cha', 6)),
@@ -795,7 +1919,10 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     complexity: 'Média',
     hitDie: 'd6',
     savingThrows: ['int', 'wis'],
-    skillChoices: { count: 2, options: ['arcana', 'history', 'insight', 'investigation', 'medicine', 'nature', 'religion'] },
+    skillChoices: {
+      count: 2,
+      options: ['arcana', 'history', 'insight', 'investigation', 'medicine', 'nature', 'religion'],
+    },
     weapons: { simple: true, martial: 'none' },
     weaponLabel: 'Armas simples',
     armor: [],
@@ -827,24 +1954,86 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
     },
     resources: [onceFrom('class_arcane_recovery', 'Recuperação Arcana', 1)],
     features: [
-      { level: 1, name: 'Conjuração', description: 'Conjura magias de mago usando Inteligência; um foco arcano ou o grimório serve de foco. O grimório começa com seis magias de 1º círculo e recebe duas a cada nível; você prepara magias do grimório e pode trocar a lista a cada descanso longo.' },
-      { level: 1, name: 'Adepto de Rituais', description: 'Conjura como ritual qualquer magia com a marca Ritual que esteja no grimório, sem precisar prepará-la.' },
-      { level: 1, name: 'Recuperação Arcana', resourceKey: 'class_arcane_recovery', description: 'Num descanso curto, recupera espaços de magia somando até metade do nível de mago (arredondado para cima), nenhum de 6º círculo ou maior. Uma vez por descanso longo.' },
-      { level: 2, name: 'Estudioso', description: 'Especialização em uma perícia em que é proficiente: Arcanismo, História, Investigação, Medicina, Natureza ou Religião.' },
-      { level: 5, name: 'Memorizar Magia', description: 'Num descanso curto, troca uma magia preparada por outra do grimório.' },
-      { level: 18, name: 'Maestria em Magia', description: 'Escolhe uma magia de 1º e uma de 2º círculo do grimório com tempo de conjuração de uma ação: ficam sempre preparadas e podem ser conjuradas no círculo mínimo sem gastar espaço (registre as escolhas na ficha).' },
-      { level: 20, name: 'Magias Assinatura', description: 'Escolhe duas magias de 3º círculo do grimório: ficam sempre preparadas e cada uma pode ser conjurada uma vez no 3º círculo sem gastar espaço por descanso curto ou longo (registre as escolhas na ficha).' },
+      {
+        level: 1,
+        name: 'Conjuração',
+        description:
+          'Conjura magias de mago usando Inteligência; um foco arcano ou o grimório serve de foco. O grimório começa com seis magias de 1º círculo e recebe duas a cada nível; você prepara magias do grimório e pode trocar a lista a cada descanso longo.',
+      },
+      {
+        level: 1,
+        name: 'Adepto de Rituais',
+        description:
+          'Conjura como ritual qualquer magia com a marca Ritual que esteja no grimório, sem precisar prepará-la.',
+      },
+      {
+        level: 1,
+        name: 'Recuperação Arcana',
+        resourceKey: 'class_arcane_recovery',
+        description:
+          'Num descanso curto, recupera espaços de magia somando até metade do nível de mago (arredondado para cima), nenhum de 6º círculo ou maior. Uma vez por descanso longo.',
+      },
+      {
+        level: 2,
+        name: 'Estudioso',
+        description:
+          'Especialização em uma perícia em que é proficiente: Arcanismo, História, Investigação, Medicina, Natureza ou Religião.',
+      },
+      {
+        level: 5,
+        name: 'Memorizar Magia',
+        description: 'Num descanso curto, troca uma magia preparada por outra do grimório.',
+      },
+      {
+        level: 18,
+        name: 'Maestria em Magia',
+        description:
+          'Escolhe uma magia de 1º e uma de 2º círculo do grimório com tempo de conjuração de uma ação: ficam sempre preparadas e podem ser conjuradas no círculo mínimo sem gastar espaço (registre as escolhas na ficha).',
+      },
+      {
+        level: 20,
+        name: 'Magias Assinatura',
+        description:
+          'Escolhe duas magias de 3º círculo do grimório: ficam sempre preparadas e cada uma pode ser conjurada uma vez no 3º círculo sem gastar espaço por descanso curto ou longo (registre as escolhas na ficha).',
+      },
     ],
     subclass: {
       id: 'evoker',
       name: 'Evocador',
-      description: 'Especialista em efeitos elementais explosivos: frio, fogo, trovão, raio e ácido.',
+      description:
+        'Especialista em efeitos elementais explosivos: frio, fogo, trovão, raio e ácido.',
       features: [
-        { level: 3, name: 'Sábio da Evocação', description: 'Adiciona ao grimório, de graça, duas magias de evocação de mago de até 2º círculo; a cada novo círculo de espaços de magia, adiciona mais uma de evocação.' },
-        { level: 3, name: 'Truque Potente', description: 'Quando um alvo passa no teste de resistência ou você erra o ataque de um truque, o alvo ainda sofre metade do dano (sem efeitos adicionais).' },
-        { level: 6, name: 'Esculpir Magias', description: 'Ao conjurar uma magia de evocação, escolhe 1 + o círculo da magia criaturas que passam automaticamente no TR e não sofrem dano se sofreriam metade.' },
-        { level: 10, name: 'Evocação Fortalecida', description: 'Soma o mod. de Inteligência a uma jogada de dano das suas magias de evocação de mago.' },
-        { level: 14, name: 'Sobrecanalizar', resourceKey: 'subclass_overchannel', description: 'Ao conjurar uma magia de mago de 1º a 5º círculo que cause dano, causa o dano máximo. Repetir antes de um descanso longo causa 2d12 de dano necrótico por círculo do espaço (+1d12 a cada novo uso).' },
+        {
+          level: 3,
+          name: 'Sábio da Evocação',
+          description:
+            'Adiciona ao grimório, de graça, duas magias de evocação de mago de até 2º círculo; a cada novo círculo de espaços de magia, adiciona mais uma de evocação.',
+        },
+        {
+          level: 3,
+          name: 'Truque Potente',
+          description:
+            'Quando um alvo passa no teste de resistência ou você erra o ataque de um truque, o alvo ainda sofre metade do dano (sem efeitos adicionais).',
+        },
+        {
+          level: 6,
+          name: 'Esculpir Magias',
+          description:
+            'Ao conjurar uma magia de evocação, escolhe 1 + o círculo da magia criaturas que passam automaticamente no TR e não sofrem dano se sofreriam metade.',
+        },
+        {
+          level: 10,
+          name: 'Evocação Fortalecida',
+          description:
+            'Soma o mod. de Inteligência a uma jogada de dano das suas magias de evocação de mago.',
+        },
+        {
+          level: 14,
+          name: 'Sobrecanalizar',
+          resourceKey: 'subclass_overchannel',
+          description:
+            'Ao conjurar uma magia de mago de 1º a 5º círculo que cause dano, causa o dano máximo. Repetir antes de um descanso longo causa 2d12 de dano necrótico por círculo do espaço (+1d12 a cada novo uso).',
+        },
       ],
       resources: [onceFrom('subclass_overchannel', 'Sobrecanalizar sem custo', 14)],
     },
@@ -852,7 +2041,10 @@ export const SRD_CLASSES: Record<ClassId, ClassDefinition> = {
 };
 
 export function findClass(id: string): ClassDefinition | undefined {
-  return (SRD_CLASSES as Record<string, ClassDefinition | undefined>)[id] ?? activeDnd5eBookContent().classes.find((entry) => entry.id === id);
+  return (
+    (SRD_CLASSES as Record<string, ClassDefinition | undefined>)[id] ??
+    activeDnd5eBookContent().classes.find((entry) => entry.id === id)
+  );
 }
 
 /** Classes do SRD e dos livros liberados. */
@@ -862,6 +2054,8 @@ export function listClasses(): ClassDefinition[] {
 
 /** Subclasses disponíveis para a classe: a do SRD e as dos livros liberados. */
 export function listSubclasses(classDef: ClassDefinition): SubclassDefinition[] {
-  const books = activeDnd5eBookContent().subclasses.filter((subclass) => subclass.classId === classDef.id);
+  const books = activeDnd5eBookContent().subclasses.filter(
+    (subclass) => subclass.classId === classDef.id,
+  );
   return mergeWithoutRepeats(classDef.subclass.id ? [classDef.subclass] : [], books);
 }

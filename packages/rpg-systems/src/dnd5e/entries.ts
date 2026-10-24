@@ -74,17 +74,25 @@ export function critRangeLabel(critRange: number): string {
 
 /** Dobra a quantidade de dados de uma fórmula ("1d8+2" → "2d8+2"). */
 export function doubleDice(formula: string): string {
-  return formula.replace(/(\d*)d(\d+)/gi, (_, count: string, sides: string) => `${(Number(count) || 1) * 2}d${sides}`);
+  return formula.replace(
+    /(\d*)d(\d+)/gi,
+    (_, count: string, sides: string) => `${(Number(count) || 1) * 2}d${sides}`,
+  );
 }
 
 /**
  * Fórmula de dano do ataque: dados da arma + modificador + bônus de dano + dano adicional. No
  * crítico, os dados (da arma e do adicional) dobram e entra o dano extra de crítico.
  */
-export function attackDamageFormula(attack: Dnd5eAttackData, scores: Record<Ability, number>, critical = false): string | null {
+export function attackDamageFormula(
+  attack: Dnd5eAttackData,
+  scores: Record<Ability, number>,
+  critical = false,
+): string | null {
   if (!attack.damage.trim()) return null;
   const parts = [critical ? doubleDice(attack.damage) : attack.damage];
-  if (attack.extraDamage.trim()) parts.push(critical ? doubleDice(attack.extraDamage) : attack.extraDamage);
+  if (attack.extraDamage.trim())
+    parts.push(critical ? doubleDice(attack.extraDamage) : attack.extraDamage);
   if (critical && attack.critExtra.trim()) parts.push(attack.critExtra);
   const modifier = attackDamageModifier(attack.ability, scores) + attack.damageBonus;
   return withBonus(parts.map((part) => part.trim()).join('+'), modifier);

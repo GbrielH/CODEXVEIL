@@ -73,7 +73,10 @@ export function setActiveDnd5eBookContent(content: Dnd5eBookContent | null | und
 }
 
 /** Executa `run` com o conteúdo indicado e restaura o anterior (uso no servidor). */
-export function withDnd5eBookContent<T>(content: Dnd5eBookContent | null | undefined, run: () => T): T {
+export function withDnd5eBookContent<T>(
+  content: Dnd5eBookContent | null | undefined,
+  run: () => T,
+): T {
   const previous = active;
   active = content ?? EMPTY_DND5E_BOOK_CONTENT;
   try {

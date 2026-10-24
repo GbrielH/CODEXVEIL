@@ -29,7 +29,11 @@ export function comparableName(name: string): string {
  * substitui a do SRD de mesmo nome, e entre livros vale a do primeiro. `group` separa listas em que
  * o mesmo nome pode existir em grupos diferentes (subclasses de classes diferentes).
  */
-export function mergeWithoutRepeats<T extends { name: string }>(srd: readonly T[], books: readonly T[], group: (item: T) => string = () => ''): T[] {
+export function mergeWithoutRepeats<T extends { name: string }>(
+  srd: readonly T[],
+  books: readonly T[],
+  group: (item: T) => string = () => '',
+): T[] {
   const seen = new Set<string>();
   const fromBooks = books.filter((item) => {
     const key = `${group(item)}|${comparableName(item.name)}`;
@@ -37,5 +41,8 @@ export function mergeWithoutRepeats<T extends { name: string }>(srd: readonly T[
     seen.add(key);
     return true;
   });
-  return [...srd.filter((item) => !seen.has(`${group(item)}|${comparableName(item.name)}`)), ...fromBooks];
+  return [
+    ...srd.filter((item) => !seen.has(`${group(item)}|${comparableName(item.name)}`)),
+    ...fromBooks,
+  ];
 }

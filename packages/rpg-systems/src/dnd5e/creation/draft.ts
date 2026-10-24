@@ -8,7 +8,10 @@ import { ABILITIES, type Ability } from '../abilities';
 export const ABILITY_SCORE_METHODS = ['standard_array', 'point_buy', 'random'] as const;
 export type AbilityScoreMethod = (typeof ABILITY_SCORE_METHODS)[number];
 
-export const abilityScoreMethodLabels: Record<AbilityScoreMethod, { name: string; description: string }> = {
+export const abilityScoreMethodLabels: Record<
+  AbilityScoreMethod,
+  { name: string; description: string }
+> = {
   standard_array: {
     name: 'Conjunto padrão',
     description: 'Distribua os valores 15, 14, 13, 12, 10 e 8 entre os seis atributos.',
@@ -19,7 +22,8 @@ export const abilityScoreMethodLabels: Record<AbilityScoreMethod, { name: string
   },
   random: {
     name: 'Rolagem',
-    description: 'Role 4d6 seis vezes, descarte o menor dado de cada rolagem e distribua os totais.',
+    description:
+      'Role 4d6 seis vezes, descarte o menor dado de cada rolagem e distribua os totais.',
   },
 };
 
@@ -29,7 +33,16 @@ export const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8] as const;
 export const POINT_BUY_BUDGET = 27;
 export const POINT_BUY_MIN = 8;
 export const POINT_BUY_MAX = 15;
-export const POINT_BUY_COSTS: Readonly<Record<number, number>> = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
+export const POINT_BUY_COSTS: Readonly<Record<number, number>> = {
+  8: 0,
+  9: 1,
+  10: 2,
+  11: 3,
+  12: 4,
+  13: 5,
+  14: 7,
+  15: 9,
+};
 
 /** Custo total na compra de pontos; `null` se algum valor estiver fora de 8 a 15. */
 export function pointBuyCost(scores: Partial<Record<Ability, number | null>>): number | null {
@@ -60,7 +73,8 @@ const selectionSchema = z.union([
 ]);
 export type Selection = z.output<typeof selectionSchema>;
 
-const text = (max: number) => z.string().trim().max(max, `Use no máximo ${max} caracteres.`).default('');
+const text = (max: number) =>
+  z.string().trim().max(max, `Use no máximo ${max} caracteres.`).default('');
 
 export const dnd5eDraftSchema = z.object({
   name: text(80),
@@ -73,10 +87,12 @@ export const dnd5eDraftSchema = z.object({
   /** Valores gerados pelo método, antes dos aumentos do antecedente e dos talentos. */
   baseScores: z
     .object(
-      Object.fromEntries(ABILITIES.map((ability) => [ability, z.number().int().min(1).max(30).nullable().default(null)])) as Record<
-        Ability,
-        z.ZodDefault<z.ZodNullable<z.ZodNumber>>
-      >,
+      Object.fromEntries(
+        ABILITIES.map((ability) => [
+          ability,
+          z.number().int().min(1).max(30).nullable().default(null),
+        ]),
+      ) as Record<Ability, z.ZodDefault<z.ZodNullable<z.ZodNumber>>>,
     )
     .prefault({}),
   /** Respostas das escolhas, indexadas pelo identificador de cada escolha. */

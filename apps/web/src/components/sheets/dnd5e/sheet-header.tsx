@@ -4,10 +4,12 @@ import type { AutosaveStatus, RealtimeStatus } from '@codexveil/database';
 import { dnd5eSystem } from '@codexveil/rpg-systems/dnd5e';
 import type { Route } from 'next';
 import Link from 'next/link';
+import { useState } from 'react';
 import { Portrait } from '@/components/characters/portrait';
 import { Badge } from '@/components/ui/badge';
 import { LiveBadge, SaveStatus } from '@/components/ui/save-status';
 import { campaignPath } from '@/lib/routes';
+import { CharacterCardModal } from './character-card';
 import { useSheet } from './context';
 
 export function SheetHeader({
@@ -19,10 +21,20 @@ export function SheetHeader({
 }) {
   const { character, permissions, name, setName, sheet, derived } = useSheet();
   const summary = dnd5eSystem.summarize(sheet);
+  const [cardOpen, setCardOpen] = useState(false);
 
   return (
     <header className="flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-end">
-      <Portrait name={name} url={character.portraitUrl} size="lg" />
+      <button
+        type="button"
+        onClick={() => setCardOpen(true)}
+        aria-label="Abrir a carta do personagem"
+        title="Abrir a carta do personagem"
+        className="self-start rounded-t-[999px] rounded-b-md transition-transform hover:scale-[1.03] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-parchment-300"
+      >
+        <Portrait name={name} url={character.portraitUrl} size="lg" />
+      </button>
+      <CharacterCardModal open={cardOpen} onClose={() => setCardOpen(false)} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone="parchment">D&amp;D 5e</Badge>
