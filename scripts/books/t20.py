@@ -598,6 +598,13 @@ def threats(book, first_page=288, last_page=329):
                  and not re.match(r'^ND\s', book.texts[j], re.I) and book.rows[j]['c'] == book.rows[k]['c']]
         if lines:
             titles.append((k, ' '.join(book.texts[j] for j in lines[-2:] if book.rows[j]['s'] == book.rows[lines[-1]]['s']), lines[-2:][0]))
+    # Fichas com o "ND" na mesma linha do nome ("Capelão de Guerra<tab>ND 4").
+    for k in range(start, end):
+        if book.rows[k]['f'].startswith(TITLE) and book.rows[k]['s'] >= 16 and re.search(r'\sND\s*[\d/]+\s*$', book.texts[k]):
+            name = re.sub(r'\s*ND\s*[\d/]+\s*$', '', book.texts[k]).strip()
+            if name:
+                titles.append((k, name, k))
+    titles.sort()
     for n, (last_line, name, first_line) in enumerate(titles):
         stop = titles[n + 1][2] if n + 1 < len(titles) else end
         nd_row = last_line
@@ -632,7 +639,7 @@ def threats(book, first_page=288, last_page=329):
         hp = re.match(r'(\d+)', join_lines(fields.get('Pontos de Vida', {}).get('lines', [])))
         first_stat = block[0]
         out.append({
-            'name': name, 'nd': re.sub(r'^ND\s*', '', book.texts[nd_row], flags=re.I).strip(), 'type': kind,
+            'name': name, 'nd': re.search(r'ND\s*(\S+)\s*$', book.texts[nd_row], re.I).group(1) if re.search(r'ND\s*(\S+)\s*$', book.texts[nd_row], re.I) else '', 'type': kind,
             'summary': book.paragraphs(nd_row + 1, first_stat),
             'attributes': mods, 'defense': int(dm.group(1)) if dm else 0, 'defenseText': defense,
             'hp': int(hp.group(1)) if hp else 0,

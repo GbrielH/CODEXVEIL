@@ -164,6 +164,77 @@ def threat(t):
     return entry('monster', t['name'][:1].upper() + t['name'][1:], data)
 
 
+# Capítulos com o título desenhado (imagem): número → nome.
+IMAGE_CHAPTERS = {'8': 'Recompensas'}
+
+
+def text_sections(layout):
+    """Texto corrido do livro (todos os capítulos), do layout do PDF: capítulo → seção, subtítulos em Markdown.
+
+    Títulos pelo tamanho da fonte do livro (Tormenta20-Regular): ≥ 60 capítulo, 26–27 seção, 16–21
+    subtítulo. Capitulares (letra grande no começo do parágrafo) voltam para a frente da linha.
+    Ficam de fora a abertura (créditos e sumário) e a ficha de personagem do fim.
+    """
+    import sections
+    import bookkit
+    rows = bookkit.load(layout)
+    merged, carry = [], ''
+    for r in rows:
+        t = r.get('t', '')
+        if r['s'] >= 40 and len(t.strip()) == 1 and t.strip().isalpha():
+            carry = t.strip()
+            continue
+        if carry:
+            t = carry + t.lstrip()
+            carry = ''
+        # Hífen opcional do fim da linha (U+00AD): vira hífen comum para a palavra se juntar.
+        if t.rstrip().endswith('­'):
+            t = t.rstrip()[:-1] + '-'
+        r = {**r, 't': t.replace('­', '')}
+        # Títulos em duas linhas ("O que é" / "Tormenta20?") viram um título só.
+        prev = merged[-1] if merged else None
+        if (prev and 'Tormenta20' in r['f'] and 'Tormenta20' in prev['f'] and 15.5 <= r['s'] < 60
+                and abs(r['s'] - prev['s']) < 0.5 and r['p'] == prev['p'] and 0 < r['y'] - prev['y'] <= r['s'] * 1.6
+                and prev['t'].strip() != r['t'].strip()):
+            merged[-1] = {**prev, 't': f"{prev['t'].strip()} {r['t'].strip()}"}
+            continue
+        # Título de capítulo: impresso duas vezes (sombra) e em linhas de tamanhos diferentes
+        # ("Construção de" / "personagem"); junta as partes da mesma página sem repetir.
+        # Capítulo cujo título é imagem (só o número sai no texto do PDF).
+        if 'Tormenta20' in r['f'] and r['s'] >= 40 and t.strip() in IMAGE_CHAPTERS:
+            merged.append({**r, 's': 100, 't': IMAGE_CHAPTERS[t.strip()]})
+            continue
+        if r['s'] >= 60:
+            part = ' '.join(r['t'].split())
+            if part.isdigit():
+                continue  # número do capítulo
+            if prev and prev['s'] >= 60 and r['p'] == prev['p']:
+                if part not in ' '.join(prev['t'].split()):
+                    merged[-1] = {**prev, 't': f"{' '.join(prev['t'].split())} {part}"}
+                continue
+            r = {**r, 't': part}
+        merged.append(r)
+
+    def classify(r, t):
+        title_font = 'Tormenta20' in r['f']
+        if r['s'] >= 60:
+            return 1
+        if title_font and r['s'] >= 25.5:
+            return 2
+        if title_font and r['s'] >= 15.5:
+            return 3
+        if title_font:
+            return -1  # números de página e marcadores
+        return 0 if r['s'] >= 7.5 else -1
+
+    found = sections.build(merged, classify, skip=lambda r, t: r['p'] <= 11 or r['p'] >= 405)
+    out = []
+    for e in found:
+        out.append({'kind': 'section', 'key': e['key'], 'name': e['name'],
+                    'data': {'chapter': e['data']['chapter'], 'order': e['data']['order'], 'body': e['data']['body']}})
+    return out
+
+
 def main():
     d = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8'))
     entries = []
@@ -210,6 +281,8 @@ def main():
         entries.append(entry('magic_item', m['name'], {'kind': m['kind'], 'price': m['price'], 'effect': m['effect'][:300], 'text': m['text'][:12000]},
                              key=slug(f"{m['kind']}-{m['name']}")))
     entries += [threat(t) for t in d['threats']]
+    if len(sys.argv) > 3:
+        entries += text_sections(pathlib.Path(sys.argv[3]))
     # Chaves repetidas (mesmo nome em grupos diferentes): sufixo numérico.
     seen = {}
     for e in entries:
