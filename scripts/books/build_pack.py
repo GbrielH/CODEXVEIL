@@ -17,7 +17,8 @@ from run_monsters import extract  # noqa: E402
 ORIGIN = 'PDF do exemplar do usuário (uso pessoal, não distribuir)'
 PACKS = {
     'MANUAL DE MONSTROS': {'id': 'mm-2014', 'name': 'Manual dos Monstros', 'category': 'core', 'species': None, 'toc_end': 5},
-    'MONSTROS DO MULTIVERSO': {'id': 'mpmm', 'name': 'Monstros do Multiverso', 'category': 'monsters', 'species': (7, 37)},
+    'MONSTROS DO MULTIVERSO': {'id': 'mpmm', 'name': 'Monstros do Multiverso', 'category': 'monsters', 'species': (7, 37),
+                               'table_pages': (287, 289)},
     # Livro do Jogador 2014: as magias vêm do compêndio "Livro de Magias" (fonte "Livro do Jogador");
     # o capítulo de regras de conjuração do compêndio entra como texto.
     'LIVRO DE MAGIAS': {'id': 'phb-2014', 'name': 'Livro do Jogador (2014)', 'category': 'core', 'species': None,
@@ -129,6 +130,8 @@ def phb(rows, layout_dir):
         return []
     ocr = bookkit.load(source)
     subs = subclasses.parse_phb(ocr, PHB_CLASS_PAGES)
+    known = [s['name'] for s in spells.parse(bookkit.load(layout_dir / 'LIVRO DE MAGIAS.jsonl'))]
+    print('  terrenos do Círculo da Terra:', subclasses.add_land_terrains(ocr, subs, known))
     print('  magias de domínio/juramento:', subclasses.add_table_spells(ocr, subs), 'subclasses')
     text = ocr_sections(ocr, skip_pages=lambda page: page <= 2 or 211 <= page <= 287, key_prefix='phb')
     print('  texto do livro (OCR):', len(text), 'seções')
@@ -263,6 +266,32 @@ def build(book, rows, layout_dir, out_dir, pdf_dir):
     toc_end = info.get('toc_end', 6)
     if info.get('sections', True):
         entries += sections.build(rows, classifier(rows, **info.get('text', {})), exclude=frozenset(used), skip=lambda r, t: r['p'] <= toc_end)
+    if info.get('table_pages'):
+        # Tabelas em outra fonte (ex.: "Blocos de Estatísticas por Ambiente"): títulos (≥ 8,4 e
+        # negrito/maiores) abrem uma tabela; as células da mesma altura viram uma linha "ND — criaturas".
+        first, last = info['table_pages']
+        tables, current = [], None
+        lines = collections.OrderedDict()
+        for r in sorted((r for r in rows if first <= r['p'] <= last), key=lambda r: (r['p'], r['c'], round(r['y'] / 4), r['x'])):
+            lines.setdefault((r['p'], r['c'], round(r['y'] / 4)), []).append(r)
+        for cells in lines.values():
+            text = ' — '.join(bookkit.clean(c['t']) for c in cells if bookkit.clean(c['t']))
+            if 'APÊNDICE |' in text:
+                continue  # rodapé da página
+            if not text or re.fullmatch(r'\d{1,3}', text):
+                continue
+            if len(cells) == 1 and text.startswith('Criaturas') and len(text) < 50:
+                current = {'title': text, 'lines': [], 'page': cells[0]['p']}
+                tables.append(current)
+            elif current is not None:
+                if current['lines'] and text[:1].islower():
+                    current['lines'][-1] += ' ' + text  # célula quebrada em duas linhas
+                else:
+                    current['lines'].append(text)
+        for order, table in enumerate(t for t in tables if t['lines']):
+            entries.append({'kind': 'section', 'key': bookkit.slug(f"tabela-{table['title']}")[:80].rstrip('-'), 'name': table['title'][:200],
+                            'data': {'chapter': 'Blocos de Estatísticas por Ambiente', 'path': ['Blocos de Estatísticas por Ambiente', table['title']],
+                                     'order': 100000 + order, 'page': table['page'], 'body': chr(10).join(f'- {line}' for line in table['lines'])[:60000]}})
     if any(e['kind'] == 'subclass' for e in entries):
         # Magias sempre preparadas das subclasses: tabelas do livro, com os nomes corrigidos pela
         # lista de magias do próprio livro e do Livro de Magias.
@@ -272,6 +301,7 @@ def build(book, rows, layout_dir, out_dir, pdf_dir):
             known += [s['name'] for s in spells.parse(bookkit.load(compendium))]
         print('  tabelas de magias de subclasse:', subclasses.add_spell_tables(rows, entries, known))
         subclasses.fix_prepared_names(entries, known)
+        subclasses.apply_prepared_errata(entries)
     pack = {'format': 'codexveil.dnd5e.book', 'version': 1,
             'book': {'id': info['id'], 'name': info['name'], 'category': info['category'], 'edition': '2014', 'origin': ORIGIN},
             'entries': entries}

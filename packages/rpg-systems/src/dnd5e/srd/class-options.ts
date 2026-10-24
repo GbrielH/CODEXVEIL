@@ -334,3 +334,12 @@ export const CIRCLE_OF_THE_LAND = [
     ],
   },
 ] as const;
+
+/** Terrenos do Círculo da Terra de uma subclasse: os do SRD ou os do livro (2014). */
+export function landOptionsFor(
+  subclass: { id: string; landOptions?: readonly { id: string; name: string; spells: readonly { level: number; spells: readonly string[] }[] }[] } | undefined | null,
+): readonly { id: string; name: string; spells: readonly { level: number; spells: readonly string[] }[] }[] {
+  if (!subclass) return [];
+  if (subclass.id === 'land') return CIRCLE_OF_THE_LAND;
+  return subclass.landOptions ?? [];
+}

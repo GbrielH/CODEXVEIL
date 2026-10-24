@@ -12,7 +12,7 @@ import type { SpellSchool } from '../entries';
 import { suggestedSpellSlots } from '../progression';
 import { SKILLS, skillDefinitions, type Skill } from '../skills';
 import { findBackground } from '../srd/backgrounds';
-import { CIRCLE_OF_THE_LAND, SRD_INVOCATIONS, SRD_METAMAGIC } from '../srd/class-options';
+import { SRD_INVOCATIONS, SRD_METAMAGIC, landOptionsFor } from '../srd/class-options';
 import {
   SORCERER_METAMAGIC,
   WARLOCK_INVOCATIONS,
@@ -847,14 +847,14 @@ export function fixedSpells(draft: Dnd5eDraft): FixedSpell[] {
       if (entry.level <= draft.level)
         for (const name of entry.spells) result.push({ name, source: subclass.name });
     }
-    if (subclass.id === 'land') {
-      const land = CIRCLE_OF_THE_LAND.find(
+    if (landOptionsFor(subclass).length) {
+      const land = landOptionsFor(subclass).find(
         (option) => option.id === selectionText(draft, 'subclass.land'),
       );
       for (const entry of land?.spells ?? []) {
         if (entry.level <= draft.level)
           for (const name of entry.spells)
-            result.push({ name, source: `Círculo da Terra (${land!.name})` });
+            result.push({ name, source: `${subclass.name} (${land!.name})` });
       }
     }
   }
@@ -1220,16 +1220,18 @@ export function listDnd5eChoices(draft: Dnd5eDraft): ChoiceSpec[] {
         })),
       });
     }
-    if (subclass?.id === 'land') {
+    if (landOptionsFor(subclass).length) {
       specs.push({
         kind: 'option',
         id: 'subclass.land',
         step: 'class',
         label: 'Tipo de terra (Círculo da Terra)',
         description:
-          'Pode ser trocado a cada descanso longo; define as magias do Círculo preparadas agora.',
-        source: subclass.name,
-        options: CIRCLE_OF_THE_LAND.map((land) => ({
+          subclass?.id === 'land'
+            ? 'Pode ser trocado a cada descanso longo; define as magias do Círculo preparadas agora.'
+            : 'O terreno em que você se tornou druida: define as magias de círculo (sempre preparadas).',
+        source: subclass?.name ?? "",
+        options: landOptionsFor(subclass).map((land) => ({
           id: land.id,
           name: land.name,
           description: land.spells

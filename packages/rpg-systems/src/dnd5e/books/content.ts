@@ -256,6 +256,14 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
               level: shift ? Math.max(3, group.level) : group.level,
               spells: group.spells.map((name) => srdSpellNameFor(name) ?? name),
             })),
+            landOptions: data.landOptions.map((land) => ({
+              id: normalizeBookName(land.name).replace(/ /g, '-'),
+              name: land.name,
+              spells: land.spells.map((group) => ({
+                level: shift ? Math.max(3, group.level) : group.level,
+                spells: group.spells.map((name) => srdSpellNameFor(name) ?? name),
+              })),
+            })),
           });
           break;
         }
@@ -412,6 +420,11 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
         srdSpellNameFor(name) ??
         name);
   for (const subclass of subclasses) {
+    if (subclass.landOptions)
+      subclass.landOptions = subclass.landOptions.map((land) => ({
+        ...land,
+        spells: land.spells.map((group) => ({ ...group, spells: group.spells.map(resolve) })),
+      }));
     if (subclass.alwaysPrepared)
       subclass.alwaysPrepared = subclass.alwaysPrepared.map((group) => ({
         ...group,

@@ -27,6 +27,7 @@ import {
   listClasses,
   listSubclasses,
 } from './srd/classes';
+import { landOptionsFor } from './srd/class-options';
 import { MUSICAL_INSTRUMENTS } from './srd/equipment';
 import { findFeat, listFeats } from './srd/feats';
 import { findSpell, listSpells } from './srd/spells';
@@ -192,6 +193,8 @@ export interface Dnd5eLevelUpPlan {
   subclassOptions: SubclassDefinition[];
   /** Subclasse que o personagem já tem (para as magias sempre preparadas do novo nível). */
   currentSubclass: SubclassDefinition | null;
+  /** Nomes das entradas que o personagem já tem (reconhece o terreno do Círculo da Terra). */
+  knownNames: readonly string[];
   /** Nível com Aumento no Valor de Atributo (ou talento). */
   abilityScoreImprovement: boolean;
   /** 19º nível: Dádiva Épica (os talentos épicos entram nas opções). */
@@ -424,6 +427,7 @@ export function planDnd5eLevelUp(
     features,
     subclass: singleSubclass,
     currentSubclass: currentSubclass ?? null,
+    knownNames,
     subclassOptions: subclassArrives && !singleSubclass ? subclasses : [],
     abilityScoreImprovement,
     epicBoon,
@@ -880,6 +884,11 @@ export function applyDnd5eLevelUp(
           .filter((group) => group.level === plan.newClassLevel)
           .map((group) => ({ spells: group.spells, owner: plan.currentSubclass!.name }))),
   ];
+  // Círculo da Terra: magias do terreno no nível novo (o terreno vem das magias que já tem).
+  const land = plan.currentSubclass ? detectLandOption(plan.currentSubclass, plan.knownNames) : null;
+  if (land)
+    for (const group of land.spells.filter((entry) => entry.level === plan.newClassLevel))
+      preparedGroups.push({ spells: group.spells, owner: `${plan.currentSubclass!.name} (${land.name})` });
   for (const group of preparedGroups) {
     for (const name of group.spells) {
       const spell = findSpell(name);
@@ -985,6 +994,10 @@ export function listDnd5ePendingUpdates(
     const groups = [
       ...(classDef.alwaysPrepared ?? []).map((group) => ({ ...group, owner: classDef.name })),
       ...(subclass?.alwaysPrepared ?? []).map((group) => ({ ...group, owner: subclass!.name })),
+      ...(() => {
+        const land = detectLandOption(subclass, abilityNames);
+        return land ? land.spells.map((group) => ({ ...group, owner: `${subclass!.name} (${land.name})` })) : [];
+      })(),
     ].filter((group) => group.level <= entry.level);
     for (const group of groups) {
       for (const name of group.spells) {
@@ -1013,4 +1026,20 @@ export function listDnd5ePendingUpdates(
     });
   }
   return updates;
+}
+
+/**
+ * Terreno do Círculo da Terra já escolhido, reconhecido pelas magias de círculo que o personagem
+ * tem (a ficha não guarda o terreno): o que tiver mais magias em comum.
+ */
+export function detectLandOption(subclass: SubclassDefinition | null | undefined, knownNames: readonly string[]) {
+  const known = new Set(knownNames.map(normalize));
+  let best: { land: ReturnType<typeof landOptionsFor>[number]; score: number } | null = null;
+  for (const land of landOptionsFor(subclass)) {
+    const score = land.spells
+      .flatMap((group) => group.spells)
+      .filter((name) => known.has(normalize(findSpell(name)?.name ?? name))).length;
+    if (score > 0 && (!best || score > best.score)) best = { land, score };
+  }
+  return best?.land ?? null;
 }

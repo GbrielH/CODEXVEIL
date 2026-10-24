@@ -92,9 +92,21 @@ opcionais de classe, patronos de grupo, ferramentas do mestre, origem personaliz
 (regras de aventura, viagem, descanso como texto; o descanso já existe na ficha) e T20 (perigos,
 tesouro por ND, mundo de Arton).
 
-**Pendente da revisão:** Domínio da Ordem (magias 7 e 9), Círculo da Terra, tabelas por ambiente
-do Monstros do Multiverso, qualidade do OCR do Xanathar e do PHB (erros residuais que o
-vocabulário não corrige com segurança), e decidir quais regras opcionais viram automação.
+**2ª rodada (2026-10-25):**
+
+- [x] Domínio da Ordem: o próprio PDF do Tasha traz "Greyhawk" e "Reinos Esquecidos" no 7º e 9º;
+      corrigido por errata no script (`PREPARED_ERRATA`: Compulsão, Movimentação Livre; Comunhão,
+      Dominar Pessoa).
+- [x] Círculo da Terra do Livro do Jogador: 8 terrenos lidos do PDF (`add_land_terrains`) e novo
+      campo `landOptions` da subclasse no pacote. A criação pergunta o terreno (escolha fixa, como
+      em 2014); a subida de nível e o popup de pendências reconhecem o terreno pelas magias que o
+      personagem já tem (`detectLandOption`).
+- [x] Sinônimos de tradução também no script (`SPELL_ALIASES_PT`): corrigiu o Juramento dos Anciões
+      (9º: Proteção Contra Elementos, antes saía Veneno) e o Deserto (Deteriorar = Malogro).
+- [x] Monstros do Multiverso: as 11 tabelas "Blocos de Estatísticas por Ambiente" como seções.
+- [ ] Ainda em aberto: escolher o terreno quando o Círculo da Terra do livro é escolhido **na
+      subida de nível** (hoje só na criação); erros residuais de OCR do Xanathar/PHB que o
+      vocabulário não corrige com segurança; decidir quais regras opcionais viram automação.
 
 ### B2a. Texto original do pedido, página por página (pedido de 2026-10-24)
 

@@ -18,7 +18,7 @@ import {
 import { parseDnd5eSheet, type Dnd5eSheet } from '../sheet';
 import { isSourcebookId } from '../sourcebooks';
 import { SKILLS, skillDefinitions, type ProficiencyLevel, type Skill } from '../skills';
-import { CIRCLE_OF_THE_LAND, SRD_INVOCATIONS, SRD_METAMAGIC } from '../srd/class-options';
+import { SRD_INVOCATIONS, SRD_METAMAGIC, landOptionsFor } from '../srd/class-options';
 import {
   MONK_MARTIAL_ARTS_DIE,
   MONK_UNARMORED_MOVEMENT,
@@ -524,7 +524,7 @@ function featureChoiceNotes(draft: Dnd5eDraft): Record<string, string> {
     notes['Conhecimento Primitivo'] = `Perícia: ${namesOf(primalKnowledge, skill)}.`;
   const lore = selectionList(draft, 'subclass.lore_proficiencies');
   if (lore.length) notes['Proficiências Adicionais'] = `Perícias: ${namesOf(lore, skill)}.`;
-  const land = CIRCLE_OF_THE_LAND.find(
+  const land = landOptionsFor(draftSubclass(draft)).find(
     (entry) => entry.id === selectionText(draft, 'subclass.land'),
   );
   if (land) notes['Magias do Círculo da Terra'] = `Terra atual: ${land.name}.`;

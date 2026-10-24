@@ -148,6 +148,16 @@ export const bookSubclassSchema = z.object({
     .array(z.object({ level, spells: z.array(z.string().trim().max(120)).max(10) }))
     .max(10)
     .default([]),
+  /** Escolha de terreno com magias próprias (Círculo da Terra do Livro do Jogador 2014). */
+  landOptions: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1).max(60),
+        spells: z.array(z.object({ level, spells: z.array(z.string().trim().max(120)).max(10) })).max(10),
+      }),
+    )
+    .max(12)
+    .default([]),
 });
 
 export const bookSpeciesSchema = z.object({

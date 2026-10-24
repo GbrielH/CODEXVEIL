@@ -302,6 +302,18 @@ def _ocr_level(text):
     return int(match.group(1)) if match else None
 
 
+# Nomes que o Livro do Jogador escaneado e o Livro de Magias traduzem diferente (só nomes).
+SPELL_ALIASES_PT = {
+    'protecao contra energia': 'Proteção Contra Elementos', 'praga': 'Deteriorar', 'malogro': 'Deteriorar',
+    'vinha esmagadora': 'Vinha Sufocante', 'caminhar em arvores': 'Passo entre árvores', 'passo de arvore': 'Passo entre árvores',
+    'pele de pedra': 'Pele Rochosa', 'invocar barragem': 'Conjurar Rajada', 'banimento destruidor': 'Punição Banidora',
+    'passo nebuloso': 'Passo das Brumas', 'revivificar': 'Reviver', 'toque arrepiante': 'Toque Macabro',
+    'orientacao': 'Guia', 'amizade': 'Amigos', 'glifo de vigilancia': 'Símbolo de Proteção',
+    'caminhar em': 'Passo entre árvores', 'golpe constritor': 'Ataque Constritor', 'espiritos guardioes': 'Guardiões Espirituais',
+    'conhecimento lendario': 'Lendas e Histórias', 'dificultar deteccao': 'Indetectável',
+}
+
+
 def _match_spell(name, known):
     """Nome da magia corrigido pela lista conhecida (OCR e quebras de linha)."""
     import difflib
@@ -311,6 +323,9 @@ def _match_spell(name, known):
     by_plain = {_plain(k): k for k in known}
     if plain in by_plain:
         return by_plain[plain]
+    alias = {_plain(k): v for k, v in SPELL_ALIASES_PT.items()}.get(plain)
+    if alias and _plain(alias) in by_plain:
+        return by_plain[_plain(alias)]
     starts = [k for p, k in by_plain.items() if p.startswith(plain + ' ')]
     if len(starts) == 1:
         return starts[0]
@@ -441,3 +456,56 @@ def fix_prepared_names(entries, known):
             continue
         for group in entry['data'].get('alwaysPrepared') or []:
             group['spells'] = [_match_spell(name, known) or name for name in group['spells']]
+
+
+# Círculo da Terra (Livro do Jogador 2014): uma tabela por terreno ("ÁRTICO", "COSTA"…), com uma
+# linha de magias para cada nível de druida (3º, 5º, 7º e 9º).
+_TERRAINS = ['ártico', 'costa', 'deserto', 'floresta', 'montanha', 'pântano', 'planície', 'subterrâneo']
+
+
+def add_land_terrains(rows, entries, known, pages=(73, 76)):
+    land = next((e for e in entries if e['kind'] == 'subclass' and 'terra' in _plain(e['name']) and e['data']['classId'] == 'druid'), None)
+    if land is None:
+        return 0
+    region = [r for r in rows if pages[0] <= r['p'] <= pages[1]]
+    region.sort(key=lambda r: (r['p'], r['c'], r['y']))
+    options = []
+    for index, row in enumerate(region):
+        name = next((t for t in _TERRAINS if _plain(row['t'].strip()) == _plain(t)), None)
+        if not name:
+            continue
+        cells = []
+        for other in region[index + 1:index + 14]:
+            text = other['t'].strip()
+            if _plain(text) in [_plain(t) for t in _TERRAINS]:
+                break
+            if ',' in text and text[:1].islower():
+                cells.append(text)
+            if len(cells) == 4:
+                break
+        if len(cells) == 4:
+            options.append({'name': name.capitalize(), 'spells': [
+                {'level': level, 'spells': [_match_spell(part, known) for part in cell.split(',') if part.strip()]}
+                for level, cell in zip([3, 5, 7, 9], cells)]})
+    land['data']['landOptions'] = options
+    return len(options)
+
+
+# Erros do próprio PDF nas tabelas de magias (nomes trocados pelo de outro quadro da página).
+PREPARED_ERRATA = {
+    # Caldeirão de Tasha, Domínio da Ordem: 7º e 9º saíram "Greyhawk" e "Reinos Esquecidos".
+    ('cleric', 'dominio da ordem'): {7: ['Compulsão', 'Movimentação Livre'], 9: ['Comunhão', 'Dominar Pessoa']},
+}
+
+
+def apply_prepared_errata(entries):
+    for entry in entries:
+        if entry['kind'] != 'subclass':
+            continue
+        fixes = next((v for (cls, name), v in PREPARED_ERRATA.items() if cls == entry['data']['classId'] and _plain(name) == _plain(entry['name'])), None)
+        if not fixes:
+            continue
+        groups = {group['level']: group for group in entry['data'].get('alwaysPrepared') or []}
+        for level, spells in fixes.items():
+            groups[level] = {'level': level, 'spells': spells}
+        entry['data']['alwaysPrepared'] = [groups[level] for level in sorted(groups)]
