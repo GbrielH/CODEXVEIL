@@ -6,9 +6,11 @@ Gera <saída>/<id>.book.json. O id é o do livro oficial (`DND5E_SOURCEBOOKS`): 
 campanha libera o conteúdo na criação de personagem. As magias do compêndio "Livro de Magias"
 vão para o livro de origem (Livro do Jogador → phb-2014; as do Xanathar entram no xgte).
 """
-import collections, json, pathlib, re, sys
+import collections
+import re, json, pathlib, re, sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
+import ocr_fix  # noqa: E402
 import backgrounds, bookkit, feats_items, monsters, races_ocr, sections, species, spells, subclasses  # noqa: E402
 from run_monsters import extract  # noqa: E402
 
@@ -104,8 +106,10 @@ def xanathar(rows, layout_dir):
         listed = class_lists.get(spells.ocr_spell_name(spell['name']), set()) | set(fix[1] if fix else ())
         spell['data'] = spell['data'] | {'classes': sorted(set(spell['data']['classes']) | listed)}
         found.append(spell)
+    text = ocr_sections(rows, skip_pages=lambda page: page <= 3 or 150 <= page <= 174, key_prefix='xgte')
+    print('  texto do livro (OCR):', len(text), 'seções')
     return (subclasses.parse_ocr(rows, XANATHAR_CLASS_PAGES) + found + feats_items.feats_ocr(rows, 76, 79)
-            + feats_items.items(rows, 130, 150, 8.0, 10.6, ocr=True))
+            + feats_items.items(rows, 130, 150, 8.0, 10.6, ocr=True) + text)
 
 
 PHB_BACKGROUNDS = ['Acólito', 'Artesão de Guilda', 'Artista', 'Charlatão', 'Criminoso', 'Eremita', 'Forasteiro',
@@ -126,9 +130,79 @@ def phb(rows, layout_dir):
     ocr = bookkit.load(source)
     subs = subclasses.parse_phb(ocr, PHB_CLASS_PAGES)
     print('  magias de domínio/juramento:', subclasses.add_table_spells(ocr, subs), 'subclasses')
+    text = ocr_sections(ocr, skip_pages=lambda page: page <= 2 or 211 <= page <= 287, key_prefix='phb')
+    print('  texto do livro (OCR):', len(text), 'seções')
     return (races_ocr.parse(ocr, 17, 44) + subs + backgrounds.parse(ocr, PHB_BACKGROUNDS, 127, 142)
             + feats_items.feats_ocr(ocr, 166, 171, (15, 40), (15, 40), None,
-                                    skip=('talentos', 'espaço de magia por nível de magia')))
+                                    skip=('talentos', 'espaço de magia por nível de magia'))
+            + text)
+
+
+_WORD = re.compile(r'[A-Za-zÀ-ÿ]+')
+PUNCT = '.,;:!?()"“”\'—–-'
+
+
+def readable(text):
+    """Linha de OCR que é texto de verdade (e não ruído de imagem/marca d'água): a maioria das
+    palavras tem vogal e só letras."""
+    words = text.split()
+    if not words:
+        return False
+    good = sum(1 for w in words if _WORD.fullmatch(w.strip(PUNCT)) and re.search(r'[aeiouáéíóúâêôãõà]', w, re.I))
+    return good / len(words) >= 0.6
+
+
+_VOCAB = None
+
+
+def _ocr_vocabulary():
+    global _VOCAB
+    if _VOCAB is None:
+        layout = pathlib.Path(sys.argv[1])
+        _VOCAB = ocr_fix.build_vocabulary([layout / f for f in ('T20.jsonl', 'CALDEIRÃO DE TASHA.jsonl', 'LIVRO DE MAGIAS.jsonl',
+                                                                 'MONSTROS DO MULTIVERSO.jsonl', 'MANUAL DE MONSTROS.jsonl')])
+    return _VOCAB
+
+
+def _bare(text):
+    """Texto sem acento, pontuação e espaço (para comparar variações de OCR)."""
+    import unicodedata
+    text = unicodedata.normalize('NFD', text)
+    return re.sub(r'[^a-z0-9]', '', ''.join(c for c in text if unicodedata.category(c) != 'Mn').lower())
+
+
+def ocr_sections(rows, skip_pages, key_prefix):
+    """Texto corrido de um livro escaneado: "CAPÍTULO N" abre capítulo; linha curta em MAIÚSCULAS
+    abre seção; o resto é texto (parágrafo novo pelo recuo). Linhas ilegíveis ficam de fora."""
+    state = {'chapter': ''}
+
+    def classify(r, t):
+        letters = [c for c in t if c.isalpha()]
+        upper = letters and sum(c.isupper() for c in letters) / len(letters) >= 0.85
+        if re.match(r'^(CAP[ÍI]TULO\s+\d+|AP[ÊE]NDICE\s+[A-Z])\s*:', t) and len(t) < 70:
+            state['chapter'] = t
+            return 1
+        # Rodapé com o capítulo ("CAPÍTULO 1 I OPÇÕES DE PERSONALIZAÇÃO"): abre o capítulo quando muda.
+        footer = re.match(r'^(CAP[ÍI]TULO\s+\d+|AP[ÊE]NDICE\s+[A-Z])\s*[I|l1]\s+(.+)$', t)
+        if footer and len(t) < 80:
+            name = f"{footer.group(1)}: {footer.group(2)}"
+            if _bare(name) == _bare(state['chapter']):
+                return -1
+            state['chapter'] = name
+            return 1
+        if upper and 3 <= len(t) <= 45 and not t.endswith('.') and readable(t):
+            return 2
+        return 0 if readable(t) else -1
+
+    found = sections.build(rows, classify, skip=lambda r, t: skip_pages(r['p']), min_size=0)
+    # Erros típicos de OCR corrigidos pelo vocabulário dos livros com texto limpo.
+    vocab = _ocr_vocabulary()
+    for entry in found:
+        entry['name'] = ocr_fix.fix_text(entry['name'], vocab).lstrip('~|][ ')
+        entry['data']['body'] = ocr_fix.fix_text(entry['data']['body'], vocab)
+    for entry in found:
+        entry['key'] = f"{key_prefix}-{entry['key']}"[:80].rstrip('-')
+    return found
 
 
 EXTRAS = {'tasha': lambda rows, layout_dir: tasha(rows), 'xanathar': xanathar, 'phb': phb}

@@ -93,7 +93,10 @@ def parse(rows, title_min=TITLE_MIN, classes_by_name=None, body_max=9.5, upper_n
                 continue  # número de página
             if not body(k):
                 # Títulos de outras magias (ilustração de página inteira no meio) são pulados;
-                # qualquer outro título encerra a magia.
+                # qualquer outro título encerra a magia. No compêndio, a página de ilustração tem
+                # o nome em letra decorativa bem maior (≥ 18) que o título de magia (14).
+                if rows[k]['s'] >= 18 and 'Script' in rows[k].get('f', ''):
+                    continue
                 if rows[k]['s'] >= title_min and not any(_level(texts[j]) for j in range(k + 1, min(k + 4, len(rows)))):
                     break
                 continue
