@@ -73,6 +73,7 @@ export function BookImporter({ userId, existingKeys }: { userId: string; existin
   const input = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<State>({ step: 'idle' });
 
+  const [dragging, setDragging] = useState(false);
   const read = async (file: File) => {
     try {
       const parsed = readPack(JSON.parse(await file.text()) as unknown);
@@ -134,7 +135,22 @@ export function BookImporter({ userId, existingKeys }: { userId: string; existin
         }}
       />
       {state.step === 'idle' || state.step === 'error' ? (
-        <div>
+        // Arraste o arquivo para a área ou clique no botão.
+        <div
+          onDragOver={(event) => {
+            event.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(event) => {
+            event.preventDefault();
+            setDragging(false);
+            const file = event.dataTransfer.files?.[0];
+            if (file) void read(file);
+          }}
+          className={`flex flex-col items-center gap-3 rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors ${dragging ? 'border-wine-400 bg-wine-900/30' : 'border-line'}`}
+        >
+          <p className="text-sm text-fg-muted">Arraste o arquivo do livro (.json) para cá ou</p>
           <Button
             icon={<FileUp className="h-4 w-4" aria-hidden="true" />}
             onClick={() => input.current?.click()}
