@@ -36,17 +36,33 @@ export interface BookEntryRow {
   sortOrder: number;
 }
 
-const PACK_COLUMNS = 'id, owner_id, system_id, book_key, name, category, edition, origin, entry_counts, is_ready, updated_at' as const;
+const PACK_COLUMNS =
+  'id, owner_id, system_id, book_key, name, category, edition, origin, entry_counts, is_ready, updated_at' as const;
 
 type PackRow = Pick<
   Tables<'book_packs'>,
-  'id' | 'owner_id' | 'system_id' | 'book_key' | 'name' | 'category' | 'edition' | 'origin' | 'entry_counts' | 'is_ready' | 'updated_at'
+  | 'id'
+  | 'owner_id'
+  | 'system_id'
+  | 'book_key'
+  | 'name'
+  | 'category'
+  | 'edition'
+  | 'origin'
+  | 'entry_counts'
+  | 'is_ready'
+  | 'updated_at'
 >;
 
 function toPack(row: PackRow): BookPackSummary {
   const counts: Record<string, number> = {};
-  if (row.entry_counts && typeof row.entry_counts === 'object' && !Array.isArray(row.entry_counts)) {
-    for (const [kind, value] of Object.entries(row.entry_counts)) if (typeof value === 'number') counts[kind] = value;
+  if (
+    row.entry_counts &&
+    typeof row.entry_counts === 'object' &&
+    !Array.isArray(row.entry_counts)
+  ) {
+    for (const [kind, value] of Object.entries(row.entry_counts))
+      if (typeof value === 'number') counts[kind] = value;
   }
   return {
     id: row.id,
@@ -64,8 +80,15 @@ function toPack(row: PackRow): BookPackSummary {
 }
 
 /** Livros importados pelo usuário (prontos ou não), em ordem alfabética. */
-export async function listMyBookPacks(client: CodexveilClient, ownerId: string): Promise<BookPackSummary[]> {
-  const { data, error } = await client.from('book_packs').select(PACK_COLUMNS).eq('owner_id', ownerId).order('name');
+export async function listMyBookPacks(
+  client: CodexveilClient,
+  ownerId: string,
+): Promise<BookPackSummary[]> {
+  const { data, error } = await client
+    .from('book_packs')
+    .select(PACK_COLUMNS)
+    .eq('owner_id', ownerId)
+    .order('name');
   if (error) throw toAppError(error);
   return data.map(toPack);
 }
@@ -74,7 +97,11 @@ export async function listMyBookPacks(client: CodexveilClient, ownerId: string):
  * Livros prontos do dono da campanha entre os liberados (`bookKeys`), na ordem de `bookKeys`.
  * Livros que o dono apagou (ou que o usuário não pode ver) simplesmente não voltam.
  */
-export async function listCampaignBookPacks(client: CodexveilClient, ownerId: string, bookKeys: readonly string[]): Promise<BookPackSummary[]> {
+export async function listCampaignBookPacks(
+  client: CodexveilClient,
+  ownerId: string,
+  bookKeys: readonly string[],
+): Promise<BookPackSummary[]> {
   if (bookKeys.length === 0) return [];
   const { data, error } = await client
     .from('book_packs')
@@ -86,8 +113,15 @@ export async function listCampaignBookPacks(client: CodexveilClient, ownerId: st
   return data.map(toPack).sort((a, b) => bookKeys.indexOf(a.bookKey) - bookKeys.indexOf(b.bookKey));
 }
 
-export async function getBookPack(client: CodexveilClient, packId: string): Promise<BookPackSummary | null> {
-  const { data, error } = await client.from('book_packs').select(PACK_COLUMNS).eq('id', packId).maybeSingle();
+export async function getBookPack(
+  client: CodexveilClient,
+  packId: string,
+): Promise<BookPackSummary | null> {
+  const { data, error } = await client
+    .from('book_packs')
+    .select(PACK_COLUMNS)
+    .eq('id', packId)
+    .maybeSingle();
   if (error) throw toAppError(error);
   return data ? toPack(data) : null;
 }
@@ -99,8 +133,41 @@ export async function deleteBookPack(client: CodexveilClient, packId: string): P
 
 const PAGE = 1000;
 
+/**
+ * Livros com conteúdo idêntico guardam as entradas uma vez só (`content_pack_id`): devolve, para
+ * cada livro pedido, o livro onde estão as entradas.
+ */
+async function contentPackIds(
+  client: CodexveilClient,
+  packIds: readonly string[],
+): Promise<Map<string, string>> {
+  const map = new Map(packIds.map((id) => [id, id]));
+  if (packIds.length === 0) return map;
+  const { data, error } = await client
+    .from('book_packs')
+    .select('id, content_pack_id')
+    .in('id', [...packIds]);
+  if (error) throw toAppError(error);
+  for (const row of data ?? []) if (row.content_pack_id) map.set(row.id, row.content_pack_id);
+  return map;
+}
+
+/** Repete as entradas do conteúdo para cada livro pedido que aponta para ele. */
+function spreadToPacks<T extends { packId: string }>(
+  rows: readonly T[],
+  map: Map<string, string>,
+): T[] {
+  const result: T[] = [];
+  for (const [packId, contentId] of map) {
+    for (const row of rows) if (row.packId === contentId) result.push({ ...row, packId });
+  }
+  return result;
+}
+
 /** Lê todas as linhas de uma consulta paginada (o PostgREST devolve no máximo 1000 por vez). */
-async function readAll<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[]> {
+async function readAll<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
+): Promise<T[]> {
   const rows: T[] = [];
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await page(from, from + PAGE - 1);
@@ -111,13 +178,18 @@ async function readAll<T>(page: (from: number, to: number) => PromiseLike<{ data
 }
 
 /** Entradas completas dos livros indicados, dos tipos pedidos (ex.: os usados na criação de personagens). */
-export async function listBookEntries(client: CodexveilClient, packIds: readonly string[], kinds: readonly string[]): Promise<BookEntryRow[]> {
+export async function listBookEntries(
+  client: CodexveilClient,
+  packIds: readonly string[],
+  kinds: readonly string[],
+): Promise<BookEntryRow[]> {
   if (packIds.length === 0 || kinds.length === 0) return [];
+  const map = await contentPackIds(client, packIds);
   const rows = await readAll((from, to) =>
     client
       .from('book_entries')
       .select('id, pack_id, kind, key, name, data, sort_order')
-      .in('pack_id', [...packIds])
+      .in('pack_id', [...new Set(map.values())])
       .in('kind', [...kinds])
       .order('pack_id')
       .order('kind')
@@ -125,7 +197,18 @@ export async function listBookEntries(client: CodexveilClient, packIds: readonly
       .order('key')
       .range(from, to),
   );
-  return rows.map((row) => ({ id: row.id, packId: row.pack_id, kind: row.kind, key: row.key, name: fixBookOrdinals(row.name), data: fixBookOrdinalsDeep(row.data), sortOrder: row.sort_order }));
+  return spreadToPacks(
+    rows.map((row) => ({
+      id: row.id,
+      packId: row.pack_id,
+      kind: row.kind,
+      key: row.key,
+      name: fixBookOrdinals(row.name),
+      data: fixBookOrdinalsDeep(row.data),
+      sortOrder: row.sort_order,
+    })),
+    map,
+  );
 }
 
 export interface BookEntryListing {
@@ -153,21 +236,26 @@ const META_FIELDS: Record<string, string> = {
 };
 
 /** Lista leve (sem o conteúdo) de um tipo de entrada, para índices e buscas. */
-export async function listBookEntryIndex(client: CodexveilClient, packIds: readonly string[], kind: string): Promise<BookEntryListing[]> {
+export async function listBookEntryIndex(
+  client: CodexveilClient,
+  packIds: readonly string[],
+  kind: string,
+): Promise<BookEntryListing[]> {
   if (packIds.length === 0) return [];
   const extra = META_FIELDS[kind];
+  const map = await contentPackIds(client, packIds);
   const rows = await readAll((from, to) =>
     client
       .from('book_entries')
       .select(`id, pack_id, kind, key, name, sort_order${extra ? `, ${extra}` : ''}`)
-      .in('pack_id', [...packIds])
+      .in('pack_id', [...new Set(map.values())])
       .eq('kind', kind)
       .order('pack_id')
       .order('sort_order')
       .order('name')
       .range(from, to),
   );
-  return (rows as unknown as Record<string, unknown>[]).map((row) => {
+  const listing = (rows as unknown as Record<string, unknown>[]).map((row) => {
     const meta: Record<string, string> = {};
     for (const [field, value] of Object.entries(row)) {
       if (['id', 'pack_id', 'kind', 'key', 'name', 'sort_order'].includes(field)) continue;
@@ -183,18 +271,35 @@ export async function listBookEntryIndex(client: CodexveilClient, packIds: reado
       meta,
     };
   });
+  return spreadToPacks(listing, map);
 }
 
-export async function getBookEntry(client: CodexveilClient, packId: string, kind: string, key: string): Promise<BookEntryRow | null> {
+export async function getBookEntry(
+  client: CodexveilClient,
+  packId: string,
+  kind: string,
+  key: string,
+): Promise<BookEntryRow | null> {
+  const contentId = (await contentPackIds(client, [packId])).get(packId) ?? packId;
   const { data, error } = await client
     .from('book_entries')
     .select('id, pack_id, kind, key, name, data, sort_order')
-    .eq('pack_id', packId)
+    .eq('pack_id', contentId)
     .eq('kind', kind)
     .eq('key', key)
     .maybeSingle();
   if (error) throw toAppError(error);
-  return data ? { id: data.id, packId: data.pack_id, kind: data.kind, key: data.key, name: fixBookOrdinals(data.name), data: fixBookOrdinalsDeep(data.data), sortOrder: data.sort_order } : null;
+  return data
+    ? {
+        id: data.id,
+        packId,
+        kind: data.kind,
+        key: data.key,
+        name: fixBookOrdinals(data.name),
+        data: fixBookOrdinalsDeep(data.data),
+        sortOrder: data.sort_order,
+      }
+    : null;
 }
 
 // ----------------------------------------------------------------------------- Importação
@@ -221,7 +326,11 @@ export async function importBookPack(
   input: BookImportInput,
   onProgress?: (done: number, total: number) => void,
 ): Promise<BookPackSummary> {
-  const { error: removeError } = await client.from('book_packs').delete().eq('owner_id', ownerId).eq('book_key', input.book.id);
+  const { error: removeError } = await client
+    .from('book_packs')
+    .delete()
+    .eq('owner_id', ownerId)
+    .eq('book_key', input.book.id);
   if (removeError) throw toAppError(removeError);
 
   const { data: pack, error } = await client
@@ -240,7 +349,14 @@ export async function importBookPack(
 
   const total = input.entries.length;
   const counts: Record<string, number> = {};
-  let batch: { pack_id: string; kind: string; key: string; name: string; data: Json; sort_order: number }[] = [];
+  let batch: {
+    pack_id: string;
+    kind: string;
+    key: string;
+    name: string;
+    data: Json;
+    sort_order: number;
+  }[] = [];
   let batchBytes = 0;
   let done = 0;
   const flush = async () => {
@@ -256,19 +372,29 @@ export async function importBookPack(
   for (const [index, entry] of input.entries.entries()) {
     const data = (entry.data ?? {}) as Json;
     const size = JSON.stringify(data).length + entry.name.length + 100;
-    if (batch.length > 0 && (batchBytes + size > BATCH_BYTES || batch.length >= BATCH_ROWS)) await flush();
-    batch.push({ pack_id: pack.id, kind: entry.kind, key: entry.key, name: entry.name, data, sort_order: index });
+    if (batch.length > 0 && (batchBytes + size > BATCH_BYTES || batch.length >= BATCH_ROWS))
+      await flush();
+    batch.push({
+      pack_id: pack.id,
+      kind: entry.kind,
+      key: entry.key,
+      name: entry.name,
+      data,
+      sort_order: index,
+    });
     batchBytes += size;
     counts[entry.kind] = (counts[entry.kind] ?? 0) + 1;
   }
   await flush();
 
-  const { data: ready, error: readyError } = await client
-    .from('book_packs')
-    .update({ entry_counts: counts, is_ready: true })
-    .eq('id', pack.id)
-    .select(PACK_COLUMNS)
-    .single();
-  if (readyError) throw toAppError(readyError);
-  return toPack(ready);
+  // O banco confere se já existe um livro com o mesmo conteúdo: se sim, apaga esta cópia e liga
+  // o livro ao conteúdo existente (cada livro ocupa espaço uma vez só).
+  const { error: finishError } = await client.rpc('finish_book_import', {
+    p_pack_id: pack.id,
+    p_entry_counts: counts as Json,
+  });
+  if (finishError) throw toAppError(finishError);
+  const ready = await getBookPack(client, pack.id);
+  if (!ready) throw toAppError(new Error('Livro não encontrado depois da importação.'));
+  return ready;
 }

@@ -82,6 +82,8 @@ export type Database = {
       book_packs: {
         Row: {
           book_key: string;
+          content_hash: string | null;
+          content_pack_id: string | null;
           category: string;
           content_bytes: number;
           created_at: string;
@@ -98,6 +100,8 @@ export type Database = {
         };
         Insert: {
           book_key: string;
+          content_hash?: string | null;
+          content_pack_id?: string | null;
           category: string;
           content_bytes?: number;
           created_at?: string;
@@ -114,6 +118,8 @@ export type Database = {
         };
         Update: {
           book_key?: string;
+          content_hash?: string | null;
+          content_pack_id?: string | null;
           category?: string;
           content_bytes?: number;
           created_at?: string;
@@ -2080,6 +2086,13 @@ export type Database = {
         Args: {
           p_character_id: string;
           p_campaign_id: string;
+        };
+        Returns: undefined;
+      };
+      finish_book_import: {
+        Args: {
+          p_pack_id: string;
+          p_entry_counts: Json;
         };
         Returns: undefined;
       };
