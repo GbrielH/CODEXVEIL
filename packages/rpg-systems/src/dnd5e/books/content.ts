@@ -45,6 +45,45 @@ for (const spell of SRD_SPELLS) SRD_BY_NAME.set(normalizeBookName(spell.name), s
 for (const [en, pt] of Object.entries(SRD_SPELL_NAMES_PT))
   SRD_BY_NAME.set(normalizeBookName(pt), en);
 
+/**
+ * Nomes das traduções brasileiras dos livros de 2014 que diferem da tradução do SRD 5.2.1 (só os
+ * nomes, para ligar as tabelas de magias das subclasses à magia certa).
+ */
+const SPELL_NAME_ALIASES: Record<string, string> = {
+  'auxilio divino': 'Aid',
+  'farol de esperanca': 'Beacon of Hope',
+  malogro: 'Blight',
+  'falsa vitalidade': 'False Life',
+  'cupula antivida': 'Antilife Shell',
+  'palavra de cura em massa': 'Mass Healing Word',
+  remeter: 'Sending',
+  'pequena cabana de leomund': 'Tiny Hut',
+  'aura de devocao': 'Aura of Life',
+  'toque necrotico': 'Chill Touch',
+  'crescimento de plantas': 'Plant Growth',
+  'escudo ardente': 'Fire Shield',
+  'raio guiador': 'Guiding Bolt',
+  celeridade: 'Haste',
+  'pele rochosa': 'Stoneskin',
+  'pele de pedra': 'Stoneskin',
+  similaridade: 'Seeming',
+  'circulo de teleporte': 'Teleportation Circle',
+  'tempestade glacial': 'Ice Storm',
+  'dificultar deteccao': 'Nondetection',
+  'caminhar em arvores': 'Tree Stride',
+  'caminhar em': 'Tree Stride',
+};
+/** O mesmo, entre livros: o nome usado numa tabela de subclasse e o da magia no livro de magias. */
+const BOOK_SPELL_ALIASES: Record<string, string> = {
+  'vinha esmagadora': 'vinha sufocante',
+  'invocar barragem': 'conjurar rajada',
+  'banimento destruidor': 'punicao banidora',
+};
+for (const [pt, en] of Object.entries(SPELL_NAME_ALIASES)) {
+  if (SRD_SPELLS.some((spell) => spell.name === en) && !SRD_BY_NAME.has(pt))
+    SRD_BY_NAME.set(pt, en);
+}
+
 /** Nome sem artigos e preposições, para casar traduções ("contra o Bem e o Mal" = "contra Bem e Mal"). */
 function looseSpellName(name: string): string {
   return normalizeBookName(name)
@@ -368,7 +407,10 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
   const resolve = (name: string) =>
     SRD_SPELLS.some((spell) => spell.name === name)
       ? name
-      : (bookByLoose.get(looseSpellName(name)) ?? name);
+      : (bookByLoose.get(looseSpellName(name)) ??
+        bookByLoose.get(looseSpellName(BOOK_SPELL_ALIASES[normalizeBookName(name)] ?? '')) ??
+        srdSpellNameFor(name) ??
+        name);
   for (const subclass of subclasses) {
     if (subclass.alwaysPrepared)
       subclass.alwaysPrepared = subclass.alwaysPrepared.map((group) => ({

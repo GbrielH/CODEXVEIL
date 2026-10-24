@@ -284,3 +284,160 @@ def add_table_spells(rows, entries):
             entry['data']['alwaysPrepared'] = [{'level': level, 'spells': spells[:10]} for level, spells in zip(levels, lines)]
             found += 1
     return found
+
+
+# Tabelas de magias sempre preparadas de qualquer subclasse (Xanathar, Tasha…): "Magias do
+# Domínio da Forja", "Magias de Alquimista", "Magias do Círculo dos Esporos"… seguidas de
+# "Nível de <classe>". Ficam de fora as magias expandidas do bruxo (só ampliam a lista).
+_ANY_TABLE = re.compile(r'^magias (?:d[aoe]s? )?(.+)$', re.I)
+_LEVEL_CELL = re.compile(r'^\s*(\d{1,2})\s*[º°ºoQq]?\s*$')
+_DEFAULT_LEVELS = {'cleric': [1, 3, 5, 7, 9], 'paladin': [3, 5, 9, 13, 17], 'ranger': [3, 5, 9, 13, 17],
+                   'sorcerer': [1, 3, 5, 7, 9], 'artificer': [3, 5, 9, 13, 17], 'druid': [3, 5, 7, 9]}
+
+
+def _ocr_level(text):
+    """'lQ', '3º', '13°' → número do nível (o OCR troca 1 por l/I e º por Q)."""
+    fixed = text.strip().replace('l', '1').replace('I', '1').replace('O', '0')
+    match = _LEVEL_CELL.match(fixed)
+    return int(match.group(1)) if match else None
+
+
+def _match_spell(name, known):
+    """Nome da magia corrigido pela lista conhecida (OCR e quebras de linha)."""
+    import difflib
+    plain = _plain(name).strip(' ,.;')
+    if not plain:
+        return None
+    by_plain = {_plain(k): k for k in known}
+    if plain in by_plain:
+        return by_plain[plain]
+    starts = [k for p, k in by_plain.items() if p.startswith(plain + ' ')]
+    if len(starts) == 1:
+        return starts[0]
+    close = difflib.get_close_matches(plain, list(by_plain), n=1, cutoff=0.78)
+    return by_plain[close[0]] if close else name.strip(' ,.;')
+
+
+def add_spell_tables(rows, entries, known):
+    """Preenche `alwaysPrepared` das subclasses sem ele a partir das tabelas do livro."""
+    subs = [e for e in entries if e['kind'] == 'subclass']
+    # Onde começa cada subclasse no texto (o título dela).
+    starts = []
+    for sub in subs:
+        target = _plain(sub['name'])
+        at = next((i for i, r in enumerate(rows) if _plain(r['t']) == target and r['s'] >= 11), None)
+        if at is not None:
+            starts.append((at, sub))
+    starts.sort(key=lambda pair: pair[0])
+    found = 0
+    for index, row in enumerate(rows):
+        text = row['t'].strip()
+        match = _ANY_TABLE.match(text)
+        if not match or len(text) > 60 or 'expandid' in _plain(text):
+            continue
+        header = next((j for j in range(index + 1, min(index + 3, len(rows))) if _plain(rows[j]['t']).startswith('nive')), None)
+        if header is None:
+            continue
+        # Dono da tabela: a subclasse com o nome mais parecido com o do título ("Magias do Domínio
+        # da Forja" → Domínio da Forja); senão, a última subclasse antes da tabela.
+        import difflib
+        tail = _plain(match.group(1))
+        scored = sorted(((difflib.SequenceMatcher(None, tail, _plain(sub['name'])).ratio(), n) for n, sub in enumerate(subs)), reverse=True)
+        owner = subs[scored[0][1]] if scored and scored[0][0] >= 0.7 else None
+        if owner is None:
+            for at, sub in starts:
+                if at <= index:
+                    owner = sub
+        if owner is None or owner['data'].get('alwaysPrepared'):
+            continue
+        skip = {'magia', 'magias', 'caracteristicas'} | {_plain(name) for name in CLASS_IDS}
+        markers, texts = [], []
+        last_y = rows[header]['y']
+        for other in rows[header + 1:header + 30]:
+            cell = other['t'].strip()
+            if other['p'] != rows[header]['p'] or other['y'] - last_y > 28:
+                break
+            if _plain(cell).strip(' ,.') in skip:
+                continue
+            level = _ocr_level(cell)
+            # Marcador de nível: "3º", "13°" ou o que o OCR fez dele ("lQ", "SQ", "]Q", "llQ").
+            if len(cell) <= 4 and (level is not None or re.match(r'^\S{1,3}[Qº°]$', cell)):
+                markers.append((other['y'], level))
+                last_y = other['y']
+                continue
+            if len(cell) > 70 or cell.endswith('.') or other['s'] > row['s'] + 1:
+                break
+            # Fim da tabela: a letra muda de tamanho (título ou texto corrido logo abaixo).
+            if texts and abs(other['s'] - texts[0][2]) > 0.95:
+                break
+            texts.append((other['y'], cell, other['s']))
+            last_y = other['y']
+        class_id = owner['data']['classId']
+        cells_by_level = []
+        defaults = _DEFAULT_LEVELS.get(class_id, [3, 5, 9, 13, 17])
+        plausible = {1, 2, 3, 5, 7, 9, 13, 17}
+        if len(markers) >= 4:
+            # Cada linha de magias vai para o nível marcado na mesma altura (ou logo acima).
+            buckets = {y: [] for y, _ in markers}
+            for y, cell, _ in texts:
+                above = [my for my, _ in markers if my <= y + 4]
+                if above:
+                    buckets[max(above)].append(cell)
+            rows_by_marker = [(level, ' '.join(buckets[y])) for y, level in markers if buckets[y]]
+            read = [level for level, _ in rows_by_marker]
+            # Níveis lidos confiáveis (todos plausíveis e em ordem); senão, os da classe.
+            if all(level in plausible for level in read) and read == sorted(read):
+                levels = read
+            elif class_id == 'druid' and len(rows_by_marker) == 5:
+                levels = [2, 3, 5, 7, 9]
+            else:
+                levels = defaults[:len(rows_by_marker)]
+            cells_by_level = list(zip(levels, [cell for _, cell in rows_by_marker]))
+        else:
+            cells = []
+            for _, cell, _ in texts:
+                # Marcadores de nível que o OCR colou no meio da linha ("SQ", "]Q") separam células.
+                for n, piece in enumerate(re.split(r'\s+[0-9lIS\]]{1,2}Q\s+', cell)):
+                    piece = re.sub(r'(\s+[A-ZÀ-Ú]{3,})+$', '', piece).strip()
+                    if not piece:
+                        continue
+                    if n == 0 and cells and cells[-1].endswith(','):
+                        cells[-1] += ' ' + piece
+                    else:
+                        cells.append(piece)
+            if class_id == 'druid' and len(cells) == 5:
+                defaults = [2, 3, 5, 7, 9]
+            cells_by_level = list(zip(defaults, cells))
+        if len(cells_by_level) < 3:
+            continue
+        known_plain = {_plain(k) for k in known}
+        groups, total, matched = [], 0, 0
+        for level, cell in cells_by_level:
+            cell = re.sub(r'(\s+[A-ZÀ-Ú]{3,})+$', '', cell).strip()
+            names = [_match_spell(part, known) for part in cell.split(',')]
+            names = [n for n in names if n and _plain(n) not in skip]
+            total += len(names)
+            matched += sum(1 for n in names if _plain(n) in known_plain)
+            if names:
+                groups.append({'level': level, 'spells': names[:10], 'known': any(_plain(n) in known_plain for n in names)})
+        # Níveis finais sem nenhuma magia conhecida são quadro lateral ou legenda, não a tabela.
+        while groups and not groups[-1]['known']:
+            groups.pop()
+        for group in groups:
+            group.pop('known')
+        # Tabela que não é de magias (ou ilegível): a maioria dos nomes precisa ser de magias.
+        if total == 0 or matched / total < 0.6:
+            continue
+        if groups:
+            owner['data']['alwaysPrepared'] = groups
+            found += 1
+    return found
+
+
+def fix_prepared_names(entries, known):
+    """Corrige pela lista conhecida os nomes das magias já lidas (ex.: tabelas do Livro do Jogador)."""
+    for entry in entries:
+        if entry['kind'] != 'subclass':
+            continue
+        for group in entry['data'].get('alwaysPrepared') or []:
+            group['spells'] = [_match_spell(name, known) or name for name in group['spells']]

@@ -430,6 +430,32 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-24 (noite) — auditoria completa do QA (todas as classes e sistemas)
+
+Auditoria automática feita com os livros do responsável (PHB 2014, Xanathar, Tasha, Monstros do
+Multiverso) e o Tormenta20 JdA, com testes temporários fora do repositório (dependem dos arquivos
+locais):
+
+- **D&D, subida de nível 1→20:** todas as classes e as 101 subclasses (SRD e livros). Conferido:
+  sem pendências em nenhum nível, todas as características de classe e de subclasse entram, e
+  todas as magias sempre preparadas entram e são encontradas. Resultado final: sem problemas.
+- **D&D, criação já no nível 3 e no 20:** as mesmas 101 subclasses (203 personagens montados pelo
+  preenchedor automático dos testes). Resultado: sem problemas.
+- **Tormenta20, subida 1→20:** as 14 classes, com poderes, magias e habilidades com escolha.
+  Resultado: sem problemas. A criação em nível alto já monta habilidades, poderes e magias por
+  nível.
+- **Corrigido no caminho:** Xanathar e Tasha não traziam as magias sempre preparadas das
+  subclasses (Forja, Sepultura, Ordem, Paz, Crepúsculo, Conquista, Redenção, Glória,
+  Vigilância, Esporos, Fogo Selvagem, Mente Aberrante, Alma Cronométrica, patrulheiros e
+  artífices). O leitor genérico de tabelas (`subclasses.add_spell_tables`) as extrai agora;
+  nomes corrigidos pela lista do Livro de Magias. Diferenças de tradução entre os livros de
+  2014 e o SRD 5.2.1 viraram sinônimos em `content.ts` (só nomes).
+- **Limitação:** o Domínio da Ordem ficou sem os níveis 7 e 9 (a tabela continua noutra coluna
+  do PDF). O Círculo da Terra (magias por terreno) segue sem as magias.
+- [ ] O responsável precisa reimportar `phb-2014`, `xgte` e `tcoe` (pasta
+      `livros-trabalho/out`). Os amigos com o mesmo livro só voltam a compartilhar a cópia
+      quando reimportarem também o arquivo novo.
+
 ### 2026-10-24 (noite) — livros sem cópias repetidas e pendências da ficha
 
 - [x] **Uma cópia por livro:** migração `20261024120000_book_content_dedupe.sql` (aplicada). Ao

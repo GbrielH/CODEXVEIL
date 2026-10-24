@@ -388,3 +388,12 @@ describe('conteúdo dos livros nas regras', () => {
     expect(findClassByName('Mago')?.id).toBe('wizard');
   });
 });
+
+describe('nomes de magias das traduções de 2014', () => {
+  it('ligam as tabelas de subclasse à magia do SRD', () => {
+    expect(srdSpellNameFor('Auxílio Divino')).toBe('Aid');
+    expect(srdSpellNameFor('Remeter')).toBe('Sending');
+    expect(srdSpellNameFor('Pequena Cabana de Leomund')).toBe('Tiny Hut');
+    expect(srdSpellNameFor('Proteção contra o Bem e Mal')).toBe(srdSpellNameFor('Proteção contra o Bem e o Mal'));
+  });
+});

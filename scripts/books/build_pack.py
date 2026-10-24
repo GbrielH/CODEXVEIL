@@ -178,6 +178,15 @@ def build(book, rows, layout_dir, out_dir, pdf_dir):
     toc_end = 6
     if info.get('sections', True):
         entries += sections.build(rows, classifier(rows), exclude=frozenset(used), skip=lambda r, t: r['p'] <= toc_end)
+    if any(e['kind'] == 'subclass' for e in entries):
+        # Magias sempre preparadas das subclasses: tabelas do livro, com os nomes corrigidos pela
+        # lista de magias do próprio livro e do Livro de Magias.
+        known = [e['name'] for e in entries if e['kind'] == 'spell']
+        compendium = layout_dir / 'LIVRO DE MAGIAS.jsonl'
+        if compendium.exists():
+            known += [s['name'] for s in spells.parse(bookkit.load(compendium))]
+        print('  tabelas de magias de subclasse:', subclasses.add_spell_tables(rows, entries, known))
+        subclasses.fix_prepared_names(entries, known)
     pack = {'format': 'codexveil.dnd5e.book', 'version': 1,
             'book': {'id': info['id'], 'name': info['name'], 'category': info['category'], 'edition': '2014', 'origin': ORIGIN},
             'entries': entries}
