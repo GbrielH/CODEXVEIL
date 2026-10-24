@@ -430,6 +430,13 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-23 — pedido: efeito visual em habilidades ativas (a fazer)
+
+- [ ] Habilidades ativáveis da ficha (cartão com "Ligada/Desligada", como "Entrar em Fúria")
+      ganham um efeito leve e condizente enquanto estão ligadas. Ex.: Fúria com fogo/brasas
+      emanando da borda do cartão. Mapear efeito por habilidade (padrão: brilho suave), respeitar
+      `prefers-reduced-motion`, fazer no site e no app.
+
 ### 2026-10-23 — QA: magias de domínio/juramento sempre preparadas
 
 - [x] `scripts/books/subclasses.py` (`add_table_spells`) lê as tabelas "Magias do Domínio/do
