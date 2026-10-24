@@ -82,10 +82,10 @@ export type Database = {
       book_packs: {
         Row: {
           book_key: string;
-          content_hash: string | null;
-          content_pack_id: string | null;
           category: string;
           content_bytes: number;
+          content_hash: string | null;
+          content_pack_id: string | null;
           created_at: string;
           edition: string;
           entry_counts: Json;
@@ -100,10 +100,10 @@ export type Database = {
         };
         Insert: {
           book_key: string;
-          content_hash?: string | null;
-          content_pack_id?: string | null;
           category: string;
           content_bytes?: number;
+          content_hash?: string | null;
+          content_pack_id?: string | null;
           created_at?: string;
           edition?: string;
           entry_counts?: Json;
@@ -118,10 +118,10 @@ export type Database = {
         };
         Update: {
           book_key?: string;
-          content_hash?: string | null;
-          content_pack_id?: string | null;
           category?: string;
           content_bytes?: number;
+          content_hash?: string | null;
+          content_pack_id?: string | null;
           created_at?: string;
           edition?: string;
           entry_counts?: Json;
@@ -135,6 +135,13 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'book_packs_content_pack_id_fkey';
+            columns: ['content_pack_id'];
+            isOneToOne: false;
+            referencedRelation: 'book_packs';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'book_packs_owner_id_fkey';
             columns: ['owner_id'];
@@ -1980,6 +1987,13 @@ export type Database = {
         };
         Returns: unknown[];
       };
+      finish_book_import: {
+        Args: {
+          p_pack_id: string;
+          p_entry_counts: Json;
+        };
+        Returns: undefined;
+      };
       get_invite_preview: {
         Args: {
           p_code: string;
@@ -2086,13 +2100,6 @@ export type Database = {
         Args: {
           p_character_id: string;
           p_campaign_id: string;
-        };
-        Returns: undefined;
-      };
-      finish_book_import: {
-        Args: {
-          p_pack_id: string;
-          p_entry_counts: Json;
         };
         Returns: undefined;
       };
