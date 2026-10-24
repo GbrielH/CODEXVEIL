@@ -57,7 +57,11 @@ falta isto, em ordem:
    rascunho).
 4. **App:** "Escolher do livro" ao adicionar item (existe só no site); mesa de dados 3D ao vivo
    da aba Dados (existe só no site); borda colorida da presença no início do app.
-5. **Popup de pendências:** hoje cobre magias sempre preparadas (D&D) e habilidades de classe
+5. **Tomo, o Mestre (pedido de 2026-10-24):** mudar de aba ou de página não pode fechar o chat
+   nem apagar a conversa. O painel e as mensagens precisam continuar abertos ao navegar (estado
+   acima das páginas, no layout do app, e guardado na sessão do navegador para sobreviver a
+   recarregar).
+6. **Popup de pendências:** hoje cobre magias sempre preparadas (D&D) e habilidades de classe
    (T20). Cada atualização futura que mexer em dados de personagem entra em
    `listDnd5ePendingUpdates`/`listT20PendingUpdates`.
 
