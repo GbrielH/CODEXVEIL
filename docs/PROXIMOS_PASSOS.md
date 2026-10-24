@@ -430,6 +430,27 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-24 (tarde) — mesa de dados, retratos, vida e limpezas
+
+- [x] Aba Dados: mural abaixo de "Rolar dados"; à direita, a **Mesa de dados** 3D ao vivo para
+      todos (`DiceTable`), sem as rolagens só para o mestre.
+- [x] Retratos de perfil por classe (13 silhuetas em SVG no código, `avatar-icons.tsx`); a
+      escolha fica em `profiles.preferences.avatar` e aparece no menu e em Participantes (site).
+      Falta: mostrar no app.
+- [x] Vida: anão/anão da colina (+1/nível), talento Robusto (+2/nível) e feiticeiro dracônico
+      na criação e na subida de nível (`hitPointBonusPerLevel`). Robusto já existente não é
+      detectado na subida (a ficha não guarda o id do talento).
+- [x] Fúria com fogo também no app (`RageGlow`).
+- [x] Tormenta20: atributos por pontos não passam de 10 (o "+" trava), aviso duplicado
+      removido, rolagem 4d6 com dados 3D e só uma vez (`rollT20AttributeDice`). A rolagem é
+      sorteada no navegador; recarregar a página permite rolar de novo.
+- [x] Tomo: respostas em Markdown formatado (`AssistantMarkdown`).
+- [x] Painel sem "Atalhos rápidos"; tema claro removido; rodapé com o nome inteiro.
+- [x] Presença: depois de responder, a aba Roteiros também mostra só a resposta e "Mudar".
+- [ ] Pendente: popup de pendências da ficha após atualizações; efeitos para outras
+      habilidades ativáveis; retratos no app; reduzir o espaço dos livros no banco (ver
+      `PROGRESS.md`).
+
 ### 2026-10-24 — Painel, presença, cor dos dados e Fúria
 
 - [x] Painel (site e app): botões "Vou/Não vou" em cada sessão agendada das campanhas em que o

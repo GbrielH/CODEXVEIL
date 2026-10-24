@@ -91,7 +91,7 @@ export function MemberList({
             className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="flex min-w-0 items-center gap-3">
-              <Avatar name={member.displayName} />
+              <Avatar name={member.displayName} icon={member.avatarIcon} />
               <div className="min-w-0">
                 <p className="truncate font-medium text-fg">
                   {member.displayName}

@@ -5,11 +5,30 @@ import { optionalText } from './common';
 export const DENSITIES = ['comfortable', 'compact'] as const;
 export const MOTION_PREFERENCES = ['system', 'reduce'] as const;
 
+/** Retratos de perfil por classe (desenhados no código; o banco guarda só a escolha). */
+export const AVATAR_ICONS = [
+  'encapuzado',
+  'barbaro',
+  'bardo',
+  'bruxo',
+  'clerigo',
+  'druida',
+  'feiticeiro',
+  'guerreiro',
+  'ladino',
+  'mago',
+  'monge',
+  'paladino',
+  'patrulheiro',
+] as const;
+export type AvatarIcon = (typeof AVATAR_ICONS)[number];
+
 /** Preferências de interface guardadas em `profiles.preferences`. */
 export const preferencesSchema = z
   .object({
     density: z.enum(DENSITIES).default('comfortable'),
     motion: z.enum(MOTION_PREFERENCES).default('system'),
+    avatar: z.enum(AVATAR_ICONS).nullable().default(null).catch(null),
   })
   .prefault({});
 export type Preferences = z.output<typeof preferencesSchema>;

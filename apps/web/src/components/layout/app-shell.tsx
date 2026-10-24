@@ -1,3 +1,4 @@
+import type { AvatarIcon } from '@codexveil/validation';
 import {
   BookOpen,
   LayoutDashboard,
@@ -61,6 +62,8 @@ const navItems: NavItem[] = [
 
 interface AppShellProps {
   displayName: string;
+  /** Retrato escolhido no perfil. */
+  avatarIcon?: AvatarIcon | null;
   /** Mostra o card do assistente de IA (só com a chave configurada no servidor). */
   assistant?: boolean;
   /** Campanhas e personagens para a busca da barra superior. */
@@ -94,6 +97,7 @@ function SignOutButton({ compact = false }: { compact?: boolean }) {
  */
 export function AppShell({
   displayName,
+  avatarIcon = null,
   assistant = false,
   search = [],
   motion,
@@ -132,7 +136,7 @@ export function AppShell({
         ) : null}
         <div className="mx-3 mb-3 flex items-center gap-3 rounded-xl border border-line bg-card/70 px-3 py-3 group-data-[collapsed=true]/shell:mx-2 group-data-[collapsed=true]/shell:flex-col group-data-[collapsed=true]/shell:px-1">
           <span className="relative shrink-0">
-            <Avatar name={displayName} size="sm" />
+            <Avatar name={displayName} size="sm" icon={avatarIcon} />
             <span
               className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-emerald-400"
               aria-hidden="true"
@@ -162,7 +166,7 @@ export function AppShell({
           </Link>
           <div className="flex items-center gap-1">
             {assistant ? <AssistantCard compact /> : null}
-            <Avatar name={displayName} size="sm" />
+            <Avatar name={displayName} size="sm" icon={avatarIcon} />
             <SignOutButton compact />
           </div>
         </header>

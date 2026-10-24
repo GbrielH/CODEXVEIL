@@ -17,6 +17,7 @@ export async function updateProfileAction(_previous: FormState, formData: FormDa
     preferences: {
       density: readText(formData, 'density') || undefined,
       motion: readText(formData, 'motion') || undefined,
+      avatar: readText(formData, 'avatar') || null,
     },
   };
   const parsed = profileUpdateSchema.safeParse(raw);

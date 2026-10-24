@@ -38,6 +38,7 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
   return (
     <AppShell
       displayName={profile?.displayName ?? 'Aventureiro'}
+      avatarIcon={profile?.preferences.avatar ?? null}
       assistant={assistantEnabled()}
       search={search}
       motion={profile?.preferences.motion ?? 'system'}

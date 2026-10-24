@@ -1,6 +1,17 @@
-import type { CampaignRole, CampaignSettings, CampaignStatus, TurnMode, TurnOrderMode } from '@codexveil/domain';
+import type {
+  CampaignRole,
+  CampaignSettings,
+  CampaignStatus,
+  TurnMode,
+  TurnOrderMode,
+} from '@codexveil/domain';
 import { AppError, TURN_MODES } from '@codexveil/domain';
-import type { CampaignCreate, CampaignUpdate } from '@codexveil/validation';
+import {
+  preferencesSchema,
+  type AvatarIcon,
+  type CampaignCreate,
+  type CampaignUpdate,
+} from '@codexveil/validation';
 import type { CodexveilClient } from '../client';
 import { toAppError } from '../errors';
 import type { Json } from '../types.gen';
@@ -47,10 +58,15 @@ export interface CampaignMember {
   isOwner: boolean;
   joinedAt: string;
   displayName: string;
+  /** Retrato escolhido no perfil (`preferences.avatar`). */
+  avatarIcon: AvatarIcon | null;
 }
 
 /** Campanhas das quais o usuário participa (ativas primeiro, mais recentes antes). */
-export async function listMyCampaigns(client: CodexveilClient, userId: string): Promise<CampaignSummary[]> {
+export async function listMyCampaigns(
+  client: CodexveilClient,
+  userId: string,
+): Promise<CampaignSummary[]> {
   const { data, error } = await client
     .from('campaigns')
     .select(
@@ -116,7 +132,9 @@ export async function getCampaign(
     },
     customActions: parseCustomActions(data.custom_actions),
     turnSettings: {
-      defaultMode: (TURN_MODES as readonly string[]).includes(data.default_turn_mode) ? (data.default_turn_mode as TurnMode) : 'combat',
+      defaultMode: (TURN_MODES as readonly string[]).includes(data.default_turn_mode)
+        ? (data.default_turn_mode as TurnMode)
+        : 'combat',
       defaultOrder: data.default_turn_order === 'manual' ? 'manual' : 'initiative',
       playersSeeOrder: data.players_see_turn_order,
     },
@@ -131,7 +149,7 @@ export async function listCampaignMembers(
 ): Promise<CampaignMember[]> {
   const { data, error } = await client
     .from('campaign_members')
-    .select('user_id, role, joined_at, profile:profiles(display_name)')
+    .select('user_id, role, joined_at, profile:profiles(display_name, preferences)')
     .eq('campaign_id', campaignId)
     .order('joined_at', { ascending: true });
   if (error) throw toAppError(error);
@@ -143,11 +161,18 @@ export async function listCampaignMembers(
       isOwner: row.user_id === ownerId,
       joinedAt: row.joined_at,
       displayName: row.profile?.display_name ?? 'Participante',
+      avatarIcon: preferencesSchema.safeParse(row.profile?.preferences).data?.avatar ?? null,
     }))
-    .sort((a, b) => Number(b.isOwner) - Number(a.isOwner) || (a.role === b.role ? 0 : a.role === 'gm' ? -1 : 1));
+    .sort(
+      (a, b) =>
+        Number(b.isOwner) - Number(a.isOwner) || (a.role === b.role ? 0 : a.role === 'gm' ? -1 : 1),
+    );
 }
 
-export async function createCampaign(client: CodexveilClient, input: CampaignCreate): Promise<string> {
+export async function createCampaign(
+  client: CodexveilClient,
+  input: CampaignCreate,
+): Promise<string> {
   const { data, error } = await client
     .from('campaigns')
     .insert({
@@ -297,11 +322,15 @@ const CUSTOM_ACTION_KINDS = ['action', 'bonus_action', 'reaction', 'movement', '
 export function parseCustomActions(raw: unknown): CustomAction[] {
   if (!Array.isArray(raw)) return [];
   return raw
-    .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+    .filter(
+      (entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null,
+    )
     .map((entry) => ({
-      id: (typeof entry.id === 'string' ? entry.id : ''),
+      id: typeof entry.id === 'string' ? entry.id : '',
       name: (typeof entry.name === 'string' ? entry.name : '').slice(0, 80),
-      kind: (CUSTOM_ACTION_KINDS as readonly string[]).includes(String(entry.kind)) ? (entry.kind as CustomAction['kind']) : 'action',
+      kind: (CUSTOM_ACTION_KINDS as readonly string[]).includes(String(entry.kind))
+        ? (entry.kind as CustomAction['kind'])
+        : 'action',
       description: (typeof entry.description === 'string' ? entry.description : '').slice(0, 1000),
       roll: (typeof entry.roll === 'string' ? entry.roll : '').slice(0, 40),
     }))
@@ -309,7 +338,11 @@ export function parseCustomActions(raw: unknown): CustomAction[] {
 }
 
 /** Mestre: grava as ações de combate personalizadas da campanha. */
-export async function updateCampaignCustomActions(client: CodexveilClient, campaignId: string, actions: readonly CustomAction[]): Promise<void> {
+export async function updateCampaignCustomActions(
+  client: CodexveilClient,
+  campaignId: string,
+  actions: readonly CustomAction[],
+): Promise<void> {
   const { data, error } = await client
     .from('campaigns')
     .update({ custom_actions: actions.slice(0, 40) as unknown as Json })
@@ -320,8 +353,15 @@ export async function updateCampaignCustomActions(client: CodexveilClient, campa
 }
 
 /** Ações de combate personalizadas da campanha (para o turno dos jogadores). */
-export async function getCampaignCustomActions(client: CodexveilClient, campaignId: string): Promise<CustomAction[]> {
-  const { data, error } = await client.from('campaigns').select('custom_actions').eq('id', campaignId).maybeSingle();
+export async function getCampaignCustomActions(
+  client: CodexveilClient,
+  campaignId: string,
+): Promise<CustomAction[]> {
+  const { data, error } = await client
+    .from('campaigns')
+    .select('custom_actions')
+    .eq('id', campaignId)
+    .maybeSingle();
   if (error) throw toAppError(error);
   return parseCustomActions(data?.custom_actions);
 }
