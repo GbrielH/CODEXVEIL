@@ -187,7 +187,11 @@ export async function updateSession(
 /** Muda o estado da sessão. Só uma sessão por campanha pode estar em andamento. */
 /** Publica a sessão para os jogadores (feito ao liberar o primeiro trecho na mesa). */
 export async function publishSession(client: CodexveilClient, sessionId: string): Promise<void> {
-  const { data, error } = await client.from('sessions').update({ is_published: true }).eq('id', sessionId).select('id');
+  const { data, error } = await client
+    .from('sessions')
+    .update({ is_published: true })
+    .eq('id', sessionId)
+    .select('id');
   if (error) throw toAppError(error);
   if (data.length === 0) throw new AppError('forbidden');
 }
@@ -222,7 +226,10 @@ export async function deleteSession(client: CodexveilClient, sessionId: string):
 }
 
 /** Duplica sessão e blocos; a cópia nasce planejada e não publicada. */
-export async function duplicateSession(client: CodexveilClient, sessionId: string): Promise<string> {
+export async function duplicateSession(
+  client: CodexveilClient,
+  sessionId: string,
+): Promise<string> {
   const { data, error } = await client.rpc('duplicate_session', { p_session_id: sessionId });
   if (error) throw toAppError(error);
   return data;
@@ -245,7 +252,8 @@ export interface StoredSessionBlock {
   updatedAt: string;
 }
 
-const BLOCK_COLUMNS = 'id, session_id, type, position, visibility, revealable, data, updated_at' as const;
+const BLOCK_COLUMNS =
+  'id, session_id, type, position, visibility, revealable, data, updated_at' as const;
 
 type BlockRow = Pick<
   Tables<'session_blocks'>,
@@ -310,7 +318,12 @@ export async function createSessionBlock(
 export async function updateSessionBlock(
   client: CodexveilClient,
   blockId: string,
-  patch: { visibility?: SharedVisibility; content?: SessionBlockContent; position?: number; revealable?: boolean },
+  patch: {
+    visibility?: SharedVisibility;
+    content?: SessionBlockContent;
+    position?: number;
+    revealable?: boolean;
+  },
 ): Promise<StoredSessionBlock> {
   const { data, error } = await client
     .from('session_blocks')
@@ -389,7 +402,12 @@ function collectIds(blocks: readonly StoredSessionBlock[]) {
         break;
     }
   }
-  return { creatures: [...creatures], characters: [...characters], sessions: [...sessions], notes: [...notes] };
+  return {
+    creatures: [...creatures],
+    characters: [...characters],
+    sessions: [...sessions],
+    notes: [...notes],
+  };
 }
 
 /**
@@ -450,8 +468,14 @@ export function sessionImagePath(campaignId: string, sessionId: string, fileName
 export type AttendanceStatus = 'yes' | 'no';
 
 /** Respostas de presença das sessões da campanha: sessão → (usuário → resposta). */
-export async function listCampaignAttendance(client: CodexveilClient, campaignId: string): Promise<Record<string, Record<string, AttendanceStatus>>> {
-  const { data, error } = await client.from('session_attendance').select('session_id, user_id, status').eq('campaign_id', campaignId);
+export async function listCampaignAttendance(
+  client: CodexveilClient,
+  campaignId: string,
+): Promise<Record<string, Record<string, AttendanceStatus>>> {
+  const { data, error } = await client
+    .from('session_attendance')
+    .select('session_id, user_id, status')
+    .eq('campaign_id', campaignId);
   if (error) throw toAppError(error);
   const result: Record<string, Record<string, AttendanceStatus>> = {};
   for (const row of data ?? []) {
@@ -461,9 +485,36 @@ export async function listCampaignAttendance(client: CodexveilClient, campaignId
 }
 
 /** O usuário responde se vai à sessão agendada (cria ou muda a resposta). */
-export async function setMyAttendance(client: CodexveilClient, sessionId: string, campaignId: string, userId: string, status: AttendanceStatus): Promise<void> {
+export async function setMyAttendance(
+  client: CodexveilClient,
+  sessionId: string,
+  campaignId: string,
+  userId: string,
+  status: AttendanceStatus,
+): Promise<void> {
   const { error } = await client
     .from('session_attendance')
-    .upsert({ session_id: sessionId, campaign_id: campaignId, user_id: userId, status }, { onConflict: 'session_id,user_id' });
+    .upsert(
+      { session_id: sessionId, campaign_id: campaignId, user_id: userId, status },
+      { onConflict: 'session_id,user_id' },
+    );
   if (error) throw toAppError(error);
+}
+
+/** Respostas de presença do usuário nas sessões indicadas: sessão → resposta. */
+export async function listMyAttendance(
+  client: CodexveilClient,
+  userId: string,
+  sessionIds: readonly string[],
+): Promise<Record<string, AttendanceStatus>> {
+  if (sessionIds.length === 0) return {};
+  const { data, error } = await client
+    .from('session_attendance')
+    .select('session_id, status')
+    .eq('user_id', userId)
+    .in('session_id', [...sessionIds]);
+  if (error) throw toAppError(error);
+  const result: Record<string, AttendanceStatus> = {};
+  for (const row of data ?? []) result[row.session_id] = row.status === 'yes' ? 'yes' : 'no';
+  return result;
 }

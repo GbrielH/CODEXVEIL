@@ -36,12 +36,23 @@ describe('perfis', () => {
   it('contas do Google usam o nome enviado pelo Google', async () => {
     const id = '0f3c2b1a-0000-4000-8000-00000000c0de';
     await db.as({ kind: 'admin' }, (s) =>
-      s.query(`insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values ($1, 'google@teste.dev', now(), $2)`, [
+      s.query(
+        `insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values ($1, 'google@teste.dev', now(), $2)`,
+        [
+          id,
+          JSON.stringify({
+            full_name: 'Gabriel Henrique',
+            name: 'Gabriel Henrique',
+            avatar_url: 'https://exemplo/foto.png',
+          }),
+        ],
+      ),
+    );
+    const profile = await db.as({ kind: 'admin' }, (s) =>
+      s.one<{ display_name: string }>(`select display_name from public.profiles where id = $1`, [
         id,
-        JSON.stringify({ full_name: 'Gabriel Henrique', name: 'Gabriel Henrique', avatar_url: 'https://exemplo/foto.png' }),
       ]),
     );
-    const profile = await db.as({ kind: 'admin' }, (s) => s.one<{ display_name: string }>(`select display_name from public.profiles where id = $1`, [id]));
     expect(profile.display_name).toBe('Gabriel Henrique');
   });
 
@@ -106,7 +117,9 @@ describe('acesso anônimo', () => {
   });
 
   it('pode listar os sistemas de RPG suportados', async () => {
-    const systems = await db.as(anon, (s) => s.query(`select id from public.rpg_systems order by id`));
+    const systems = await db.as(anon, (s) =>
+      s.query(`select id from public.rpg_systems order by id`),
+    );
     expect(systems).toEqual([{ id: 'dnd5e' }, { id: 'tormenta20' }]);
   });
 });
@@ -128,29 +141,52 @@ describe('campanhas', () => {
   it('regras de criação: o mestre define, o jogador só lê, e precisam ser um objeto pequeno', async () => {
     const { gm, player, campaign } = await createTable(db);
     const initial = await db.as(player, (s) =>
-      s.one<{ character_rules: unknown }>(`select character_rules from public.campaigns where id = $1`, [campaign.id]),
+      s.one<{ character_rules: unknown }>(
+        `select character_rules from public.campaigns where id = $1`,
+        [campaign.id],
+      ),
     );
     expect(initial.character_rules).toEqual({});
 
-    const rules = { startingLevel: 3, abilityScoreMethods: ['point_buy'], allowEvilAlignments: false };
+    const rules = {
+      startingLevel: 3,
+      abilityScoreMethods: ['point_buy'],
+      allowEvilAlignments: false,
+    };
     await db.as(gm, (s) =>
-      s.query(`update public.campaigns set character_rules = $1::jsonb where id = $2`, [JSON.stringify(rules), campaign.id]),
+      s.query(`update public.campaigns set character_rules = $1::jsonb where id = $2`, [
+        JSON.stringify(rules),
+        campaign.id,
+      ]),
     );
     const updated = await db.as(player, (s) =>
-      s.one<{ character_rules: unknown }>(`select character_rules from public.campaigns where id = $1`, [campaign.id]),
+      s.one<{ character_rules: unknown }>(
+        `select character_rules from public.campaigns where id = $1`,
+        [campaign.id],
+      ),
     );
     expect(updated.character_rules).toEqual(rules);
 
     // O jogador não altera (o RLS filtra a linha) e o banco recusa o que não é objeto.
     await db.as(player, (s) =>
-      s.query(`update public.campaigns set character_rules = '{"startingLevel":20}'::jsonb where id = $1`, [campaign.id]),
+      s.query(
+        `update public.campaigns set character_rules = '{"startingLevel":20}'::jsonb where id = $1`,
+        [campaign.id],
+      ),
     );
     const unchanged = await db.as(gm, (s) =>
-      s.one<{ character_rules: { startingLevel: number } }>(`select character_rules from public.campaigns where id = $1`, [campaign.id]),
+      s.one<{ character_rules: { startingLevel: number } }>(
+        `select character_rules from public.campaigns where id = $1`,
+        [campaign.id],
+      ),
     );
     expect(unchanged.character_rules.startingLevel).toBe(3);
     await expectSqlError(
-      db.as(gm, (s) => s.query(`update public.campaigns set character_rules = '[1, 2]'::jsonb where id = $1`, [campaign.id])),
+      db.as(gm, (s) =>
+        s.query(`update public.campaigns set character_rules = '[1, 2]'::jsonb where id = $1`, [
+          campaign.id,
+        ]),
+      ),
       '23514',
     );
   });
@@ -160,9 +196,10 @@ describe('campanhas', () => {
     const victim = await db.createUser('Vítima');
     await expectSqlError(
       db.as(attacker, (s) =>
-        s.query(`insert into public.campaigns (name, system_id, owner_id) values ('X X', 'dnd5e', $1)`, [
-          victim.id,
-        ]),
+        s.query(
+          `insert into public.campaigns (name, system_id, owner_id) values ('X X', 'dnd5e', $1)`,
+          [victim.id],
+        ),
       ),
       '42501',
     );
@@ -178,7 +215,9 @@ describe('campanhas', () => {
     );
     await expectSqlError(
       db.as(gm, (s) =>
-        s.query(`insert into public.campaigns (name, system_id, status) values ('Mesa', 'dnd5e', 'archived')`),
+        s.query(
+          `insert into public.campaigns (name, system_id, status) values ('Mesa', 'dnd5e', 'archived')`,
+        ),
       ),
       '42501',
     );
@@ -229,9 +268,15 @@ describe('campanhas', () => {
 
   it('status, dono e sistema não mudam por atualização direta', async () => {
     const { campaign, gm, player } = await createTable(db);
-    for (const assignment of ["status = 'archived'", `owner_id = '${player.id}'`, "system_id = 'dnd5e'"]) {
+    for (const assignment of [
+      "status = 'archived'",
+      `owner_id = '${player.id}'`,
+      "system_id = 'dnd5e'",
+    ]) {
       await expectSqlError(
-        db.as(gm, (s) => s.query(`update public.campaigns set ${assignment} where id = $1`, [campaign.id])),
+        db.as(gm, (s) =>
+          s.query(`update public.campaigns set ${assignment} where id = $1`, [campaign.id]),
+        ),
         '42501',
       );
     }
@@ -282,20 +327,26 @@ describe('arquivamento', () => {
     expect(row.archived_at).not.toBeNull();
 
     const edited = await db.as(gm, (s) =>
-      s.query(`update public.campaigns set name = 'Nova' where id = $1 returning id`, [campaign.id]),
+      s.query(`update public.campaigns set name = 'Nova' where id = $1 returning id`, [
+        campaign.id,
+      ]),
     );
     expect(edited).toHaveLength(0);
 
     await expectSqlError(
       db.as(gm, (s) =>
-        s.query(`insert into public.sessions (campaign_id, title) values ($1, 'Depois')`, [campaign.id]),
+        s.query(`insert into public.sessions (campaign_id, title) values ($1, 'Depois')`, [
+          campaign.id,
+        ]),
       ),
       '42501',
     );
 
     await db.as(gm, (s) => s.query(`select public.unarchive_campaign($1)`, [campaign.id]));
     const reopened = await db.as(gm, (s) =>
-      s.query(`update public.campaigns set name = 'Reaberta' where id = $1 returning id`, [campaign.id]),
+      s.query(`update public.campaigns set name = 'Reaberta' where id = $1 returning id`, [
+        campaign.id,
+      ]),
     );
     expect(reopened).toHaveLength(1);
   });
@@ -318,13 +369,16 @@ describe('gestão de participantes', () => {
       s.query(`select public.remove_campaign_member($1, $2)`, [campaign.id, otherPlayer.id]),
     );
     await expectSqlError(
-      db.as(coGm, (s) => s.query(`select public.remove_campaign_member($1, $2)`, [campaign.id, gm.id])),
+      db.as(coGm, (s) =>
+        s.query(`select public.remove_campaign_member($1, $2)`, [campaign.id, gm.id]),
+      ),
       '42501',
     );
     const remaining = await db.as(gm, (s) =>
-      s.query<{ user_id: string }>(`select user_id from public.campaign_members where campaign_id = $1`, [
-        campaign.id,
-      ]),
+      s.query<{ user_id: string }>(
+        `select user_id from public.campaign_members where campaign_id = $1`,
+        [campaign.id],
+      ),
     );
     expect(remaining.map((r) => r.user_id)).not.toContain(otherPlayer.id);
   });
@@ -350,9 +404,10 @@ describe('gestão de participantes', () => {
     expect(visibleCampaign).toHaveLength(0);
 
     const character = await db.as(player, (s) =>
-      s.one<{ campaign_id: string | null }>(`select campaign_id from public.characters where id = $1`, [
-        characterId,
-      ]),
+      s.one<{ campaign_id: string | null }>(
+        `select campaign_id from public.characters where id = $1`,
+        [characterId],
+      ),
     );
     expect(character.campaign_id).toBeNull();
 
@@ -369,7 +424,9 @@ describe('gestão de participantes', () => {
       '42501',
     );
     await expectSqlError(
-      db.as(coGm, (s) => s.query(`select public.remove_campaign_member($1, $2)`, [campaign.id, gm.id])),
+      db.as(coGm, (s) =>
+        s.query(`select public.remove_campaign_member($1, $2)`, [campaign.id, gm.id]),
+      ),
       '42501',
     );
   });
@@ -392,7 +449,9 @@ describe('gestão de participantes', () => {
       s.query(`select public.transfer_campaign_ownership($1, $2)`, [campaign.id, coGm.id]),
     );
     const row = await db.as(coGm, (s) =>
-      s.one<{ owner_id: string }>(`select owner_id from public.campaigns where id = $1`, [campaign.id]),
+      s.one<{ owner_id: string }>(`select owner_id from public.campaigns where id = $1`, [
+        campaign.id,
+      ]),
     );
     expect(row.owner_id).toBe(coGm.id);
   });
@@ -408,7 +467,9 @@ describe('limites de plano', () => {
     );
     const user = await db.createUser('Limitada');
     await db.as(service, (s) =>
-      s.query(`insert into public.user_plans (user_id, plan_id) values ($1, 'teste-limitado')`, [user.id]),
+      s.query(`insert into public.user_plans (user_id, plan_id) values ($1, 'teste-limitado')`, [
+        user.id,
+      ]),
     );
 
     await createCampaign(db, user, 'Primeira');

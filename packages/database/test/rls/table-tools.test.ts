@@ -16,7 +16,10 @@ afterAll(async () => {
 async function playing() {
   const table = await createTable(db);
   await db.as(table.gm, (s) =>
-    s.query(`insert into public.sessions (campaign_id, title, is_published, status) values ($1, 'Em jogo', true, 'in_progress')`, [table.campaign.id]),
+    s.query(
+      `insert into public.sessions (campaign_id, title, is_published, status) values ($1, 'Em jogo', true, 'in_progress')`,
+      [table.campaign.id],
+    ),
   );
   await chooseDiceColors(db, table);
   return table;
@@ -44,19 +47,30 @@ describe('itens da campanha', () => {
       ),
     );
     const seen = await db.as(player, (s) =>
-      s.query<{ name: string }>(`select name from public.campaign_items where campaign_id = $1 order by name`, [campaign.id]),
+      s.query<{ name: string }>(
+        `select name from public.campaign_items where campaign_id = $1 order by name`,
+        [campaign.id],
+      ),
     );
     expect(seen.map((row) => row.name)).toEqual(['Poção Amarga']);
-    expect(await db.as(outsider, (s) => s.query(`select 1 from public.campaign_items`))).toEqual([]);
+    expect(await db.as(outsider, (s) => s.query(`select 1 from public.campaign_items`))).toEqual(
+      [],
+    );
 
     await expectSqlError(
       db.as(player, (s) =>
-        s.query(`insert into public.campaign_items (campaign_id, name) values ($1, 'Item roubado')`, [campaign.id]),
+        s.query(
+          `insert into public.campaign_items (campaign_id, name) values ($1, 'Item roubado')`,
+          [campaign.id],
+        ),
       ),
       '42501',
     );
     const updated = await db.as(player, (s) =>
-      s.query(`update public.campaign_items set name = 'Mudado' where campaign_id = $1 returning id`, [campaign.id]),
+      s.query(
+        `update public.campaign_items set name = 'Mudado' where campaign_id = $1 returning id`,
+        [campaign.id],
+      ),
     );
     expect(updated).toEqual([]);
   });
@@ -72,7 +86,9 @@ describe('itens da campanha', () => {
       ),
     );
     const items = await db.as(player, (s) =>
-      s.query<{ name: string }>(`select name from public.character_items where character_id = $1`, [characterId]),
+      s.query<{ name: string }>(`select name from public.character_items where character_id = $1`, [
+        characterId,
+      ]),
     );
     expect(items.map((row) => row.name)).toContain('Bag of Holding');
   });
@@ -82,7 +98,9 @@ describe('rolagens de dados', () => {
   it('o servidor rola, soma e grava; ninguém grava um resultado escolhido', async () => {
     const { player, campaign } = await playing();
     const roll = await db.as(player, (s) =>
-      s.one<RollRow>(`select * from public.roll_dice($1, ' 2d6 + 1d4 + 3 ', 'Dano da espada')`, [campaign.id]),
+      s.one<RollRow>(`select * from public.roll_dice($1, ' 2d6 + 1d4 + 3 ', 'Dano da espada')`, [
+        campaign.id,
+      ]),
     );
     expect(roll.expression).toBe('2d6+1d4+3');
     expect(roll.modifier).toBe(3);
@@ -105,7 +123,9 @@ describe('rolagens de dados', () => {
       '42501',
     );
     await expectSqlError(
-      db.as(player, (s) => s.query(`update public.dice_rolls set total = 99 where id = $1`, [roll.id])),
+      db.as(player, (s) =>
+        s.query(`update public.dice_rolls set total = 99 where id = $1`, [roll.id]),
+      ),
       '42501',
     );
   });
@@ -113,38 +133,70 @@ describe('rolagens de dados', () => {
   it('vantagem rola dois d20 e fica com o maior; desvantagem, com o menor', async () => {
     const { player, campaign } = await playing();
     for (let attempt = 0; attempt < 5; attempt++) {
-      const best = await db.as(player, (s) => s.one<RollRow>(`select * from public.roll_dice($1, '1d20+2', '', 'advantage')`, [campaign.id]));
+      const best = await db.as(player, (s) =>
+        s.one<RollRow>(`select * from public.roll_dice($1, '1d20+2', '', 'advantage')`, [
+          campaign.id,
+        ]),
+      );
       expect(best.mode).toBe('advantage');
       expect(best.dice[0]?.values).toHaveLength(2);
       expect(best.dice[0]?.kept).toEqual([Math.max(...(best.dice[0]?.values ?? []))]);
       expect(best.total).toBe(Math.max(...(best.dice[0]?.values ?? [])) + 2);
 
-      const worst = await db.as(player, (s) => s.one<RollRow>(`select * from public.roll_dice($1, 'd20', '', 'disadvantage')`, [campaign.id]));
+      const worst = await db.as(player, (s) =>
+        s.one<RollRow>(`select * from public.roll_dice($1, 'd20', '', 'disadvantage')`, [
+          campaign.id,
+        ]),
+      );
       expect(worst.dice[0]?.kept).toEqual([Math.min(...(worst.dice[0]?.values ?? []))]);
     }
     // Sem d20, a vantagem não se aplica.
-    const plain = await db.as(player, (s) => s.one<RollRow>(`select * from public.roll_dice($1, '2d6', '', 'advantage')`, [campaign.id]));
+    const plain = await db.as(player, (s) =>
+      s.one<RollRow>(`select * from public.roll_dice($1, '2d6', '', 'advantage')`, [campaign.id]),
+    );
     expect(plain.mode).toBe('normal');
   });
 
   it('recusa expressões inválidas e quem não participa da campanha', async () => {
     const { player, outsider, campaign } = await playing();
-    for (const expression of ['', 'abc', '1d1', '101d6', '1d20; drop table x', '5', '1d6+1d6+1d6+1d6+1d6+1d6+1d6+1d6+1d6+1d6+1d6']) {
-      await expectSqlError(db.as(player, (s) => s.query(`select public.roll_dice($1, $2)`, [campaign.id, expression])), '22023');
+    for (const expression of [
+      '',
+      'abc',
+      '1d1',
+      '101d6',
+      '1d20; drop table x',
+      '5',
+      '1d6+1d6+1d6+1d6+1d6+1d6+1d6+1d6+1d6+1d6+1d6',
+    ]) {
+      await expectSqlError(
+        db.as(player, (s) => s.query(`select public.roll_dice($1, $2)`, [campaign.id, expression])),
+        '22023',
+      );
     }
-    await expectSqlError(db.as(outsider, (s) => s.query(`select public.roll_dice($1, '1d20')`, [campaign.id])), '42501');
+    await expectSqlError(
+      db.as(outsider, (s) => s.query(`select public.roll_dice($1, '1d20')`, [campaign.id])),
+      '42501',
+    );
   });
 
   it('rolagens secretas só aparecem para quem rolou e para os mestres', async () => {
     const { gm, coGm, player, otherPlayer, outsider, campaign } = await playing();
-    const open = await db.as(player, (s) => s.one<RollRow>(`select * from public.roll_dice($1, '1d20', 'Percepção')`, [campaign.id]));
+    const open = await db.as(player, (s) =>
+      s.one<RollRow>(`select * from public.roll_dice($1, '1d20', 'Percepção')`, [campaign.id]),
+    );
     const secret = await db.as(player, (s) =>
-      s.one<RollRow>(`select * from public.roll_dice($1, '1d20', 'Furtividade', 'normal', 'gm')`, [campaign.id]),
+      s.one<RollRow>(`select * from public.roll_dice($1, '1d20', 'Furtividade', 'normal', 'gm')`, [
+        campaign.id,
+      ]),
     );
     const visible = async (user: typeof gm) =>
-      (await db.as(user, (s) => s.query<{ id: string }>(`select id from public.dice_rolls where campaign_id = $1`, [campaign.id]))).map(
-        (row) => row.id,
-      );
+      (
+        await db.as(user, (s) =>
+          s.query<{ id: string }>(`select id from public.dice_rolls where campaign_id = $1`, [
+            campaign.id,
+          ]),
+        )
+      ).map((row) => row.id);
     expect(await visible(gm)).toEqual(expect.arrayContaining([open.id, secret.id]));
     expect(await visible(coGm)).toEqual(expect.arrayContaining([open.id, secret.id]));
     expect(await visible(player)).toEqual(expect.arrayContaining([open.id, secret.id]));
@@ -156,16 +208,27 @@ describe('rolagens de dados', () => {
     const { gm, player, otherPlayer, campaign } = await playing();
     const lyra = await createCharacter(db, player, campaign.id, 'Lyra');
     const roll = await db.as(player, (s) =>
-      s.one<RollRow>(`select * from public.roll_dice($1, '1d20+5', 'Ataque', 'normal', 'members', $2)`, [campaign.id, lyra]),
+      s.one<RollRow>(
+        `select * from public.roll_dice($1, '1d20+5', 'Ataque', 'normal', 'members', $2)`,
+        [campaign.id, lyra],
+      ),
     );
     expect(roll.roller_name).toBe('Lyra');
     await expectSqlError(
-      db.as(otherPlayer, (s) => s.query(`select public.roll_dice($1, '1d20', '', 'normal', 'members', $2)`, [campaign.id, lyra])),
+      db.as(otherPlayer, (s) =>
+        s.query(`select public.roll_dice($1, '1d20', '', 'normal', 'members', $2)`, [
+          campaign.id,
+          lyra,
+        ]),
+      ),
       '42501',
     );
     // O mestre pode rolar por qualquer personagem da mesa.
     const byGm = await db.as(gm, (s) =>
-      s.one<RollRow>(`select * from public.roll_dice($1, '1d20', '', 'normal', 'gm', $2)`, [campaign.id, lyra]),
+      s.one<RollRow>(`select * from public.roll_dice($1, '1d20', '', 'normal', 'gm', $2)`, [
+        campaign.id,
+        lyra,
+      ]),
     );
     expect(byGm.roller_name).toBe('Lyra');
   });
@@ -176,7 +239,10 @@ describe('rolagens de dados', () => {
       await db.as(player, (s) => s.query(`select public.roll_dice($1, '1d4')`, [campaign.id]));
     }
     const count = await db.as(admin, (s) =>
-      s.one<{ count: number }>(`select count(*)::int as count from public.dice_rolls where campaign_id = $1`, [campaign.id]),
+      s.one<{ count: number }>(
+        `select count(*)::int as count from public.dice_rolls where campaign_id = $1`,
+        [campaign.id],
+      ),
     );
     expect(count.count).toBe(200);
   });
@@ -230,15 +296,28 @@ describe('turnos', () => {
     const { gm, player, outsider, campaign, encounter, combatants, lyra } = await setupEncounter();
     const lyraCombatant = combatants[0]?.id;
     await db.as(gm, (s) =>
-      s.query(`update public.encounters set status = 'active', round = 1, active_combatant_id = $2 where id = $1`, [encounter, lyraCombatant]),
+      s.query(
+        `update public.encounters set status = 'active', round = 1, active_combatant_id = $2 where id = $1`,
+        [encounter, lyraCombatant],
+      ),
     );
-    const turn = await db.as(player, (s) => s.one<TurnRow>(`select * from public.campaign_turns where campaign_id = $1`, [campaign.id]));
-    expect(turn).toMatchObject({ mode: 'investigation', status: 'active', round: 1, active_name: 'Lyra', active_character_id: lyra });
+    const turn = await db.as(player, (s) =>
+      s.one<TurnRow>(`select * from public.campaign_turns where campaign_id = $1`, [campaign.id]),
+    );
+    expect(turn).toMatchObject({
+      mode: 'investigation',
+      status: 'active',
+      round: 1,
+      active_name: 'Lyra',
+      active_character_id: lyra,
+    });
     expect(turn.turn_order.map((entry) => [entry.name, entry.current])).toEqual([
       ['Goblin', false],
       ['Lyra', true],
     ]);
-    expect(await db.as(outsider, (s) => s.query(`select 1 from public.campaign_turns`))).toEqual([]);
+    expect(await db.as(outsider, (s) => s.query(`select 1 from public.campaign_turns`))).toEqual(
+      [],
+    );
     // Os encontros continuam exclusivos do mestre.
     expect(await db.as(player, (s) => s.query(`select 1 from public.encounters`))).toEqual([]);
   });
@@ -247,36 +326,70 @@ describe('turnos', () => {
     const { gm, player, campaign, encounter, combatants } = await setupEncounter();
     const lurker = combatants[2]?.id;
     await db.as(gm, (s) =>
-      s.query(`update public.encounters set status = 'active', round = 1, active_combatant_id = $2 where id = $1`, [encounter, lurker]),
+      s.query(
+        `update public.encounters set status = 'active', round = 1, active_combatant_id = $2 where id = $1`,
+        [encounter, lurker],
+      ),
     );
-    let turn = await db.as(player, (s) => s.one<TurnRow>(`select * from public.campaign_turns where campaign_id = $1`, [campaign.id]));
+    let turn = await db.as(player, (s) =>
+      s.one<TurnRow>(`select * from public.campaign_turns where campaign_id = $1`, [campaign.id]),
+    );
     expect(turn.active_name).toBeNull();
     expect(turn.turn_order.some((entry) => entry.name === 'Espreitador')).toBe(false);
 
-    await db.as(gm, (s) => s.query(`update public.encounters set order_mode = 'manual' where id = $1`, [encounter]));
-    await db.as(gm, (s) => s.query(`update public.encounter_combatants set sort_order = 1 where id = $1`, [combatants[1]?.id]));
-    await db.as(gm, (s) => s.query(`update public.encounter_combatants set sort_order = 2 where id = $1`, [combatants[0]?.id]));
-    turn = await db.as(player, (s) => s.one<TurnRow>(`select * from public.campaign_turns where campaign_id = $1`, [campaign.id]));
+    await db.as(gm, (s) =>
+      s.query(`update public.encounters set order_mode = 'manual' where id = $1`, [encounter]),
+    );
+    await db.as(gm, (s) =>
+      s.query(`update public.encounter_combatants set sort_order = 1 where id = $1`, [
+        combatants[1]?.id,
+      ]),
+    );
+    await db.as(gm, (s) =>
+      s.query(`update public.encounter_combatants set sort_order = 2 where id = $1`, [
+        combatants[0]?.id,
+      ]),
+    );
+    turn = await db.as(player, (s) =>
+      s.one<TurnRow>(`select * from public.campaign_turns where campaign_id = $1`, [campaign.id]),
+    );
     expect(turn.turn_order.map((entry) => entry.name)).toEqual(['Goblin', 'Lyra']);
 
     // Sem a ordem completa, os jogadores só sabem de quem é a vez.
-    await db.as(gm, (s) => s.query(`update public.campaigns set players_see_turn_order = false where id = $1`, [campaign.id]));
-    turn = await db.as(player, (s) => s.one<TurnRow>(`select * from public.campaign_turns where campaign_id = $1`, [campaign.id]));
+    await db.as(gm, (s) =>
+      s.query(`update public.campaigns set players_see_turn_order = false where id = $1`, [
+        campaign.id,
+      ]),
+    );
+    turn = await db.as(player, (s) =>
+      s.one<TurnRow>(`select * from public.campaign_turns where campaign_id = $1`, [campaign.id]),
+    );
     expect(turn.turn_order).toEqual([]);
   });
 
   it('o resumo some quando o encontro termina e jogadores não alteram o turno', async () => {
     const { gm, player, campaign, encounter, combatants } = await setupEncounter();
     const changed = await db.as(player, (s) =>
-      s.query(`update public.encounter_combatants set turn_state = '{"action": true}' where id = $1 returning id`, [combatants[0]?.id]),
+      s.query(
+        `update public.encounter_combatants set turn_state = '{"action": true}' where id = $1 returning id`,
+        [combatants[0]?.id],
+      ),
     );
     expect(changed).toEqual([]);
     await expectSqlError(
-      db.as(player, (s) => s.query(`update public.campaign_turns set round = 9 where campaign_id = $1`, [campaign.id])),
+      db.as(player, (s) =>
+        s.query(`update public.campaign_turns set round = 9 where campaign_id = $1`, [campaign.id]),
+      ),
       '42501',
     );
-    await db.as(gm, (s) => s.query(`update public.encounters set status = 'ended' where id = $1`, [encounter]));
-    expect(await db.as(player, (s) => s.query(`select 1 from public.campaign_turns where campaign_id = $1`, [campaign.id]))).toEqual([]);
+    await db.as(gm, (s) =>
+      s.query(`update public.encounters set status = 'ended' where id = $1`, [encounter]),
+    );
+    expect(
+      await db.as(player, (s) =>
+        s.query(`select 1 from public.campaign_turns where campaign_id = $1`, [campaign.id]),
+      ),
+    ).toEqual([]);
   });
 });
 
@@ -285,19 +398,37 @@ describe('notificações push', () => {
 
   it('cada conta registra e vê só os próprios aparelhos; o aparelho fica com a última conta', async () => {
     const { player, otherPlayer } = await createTable(db);
-    await db.as(player, (s) => s.query(`select public.register_push_token($1, 'android')`, [token('a')]));
-    await db.as(otherPlayer, (s) => s.query(`select public.register_push_token($1, 'android')`, [token('b')]));
+    await db.as(player, (s) =>
+      s.query(`select public.register_push_token($1, 'android')`, [token('a')]),
+    );
+    await db.as(otherPlayer, (s) =>
+      s.query(`select public.register_push_token($1, 'android')`, [token('b')]),
+    );
 
-    const mine = await db.as(player, (s) => s.query<{ token: string }>(`select token from public.push_tokens`));
+    const mine = await db.as(player, (s) =>
+      s.query<{ token: string }>(`select token from public.push_tokens`),
+    );
     expect(mine.map((row) => row.token)).toEqual([token('a')]);
 
     // O mesmo aparelho, agora com outra conta.
-    await db.as(otherPlayer, (s) => s.query(`select public.register_push_token($1, 'android')`, [token('a')]));
+    await db.as(otherPlayer, (s) =>
+      s.query(`select public.register_push_token($1, 'android')`, [token('a')]),
+    );
     expect(await db.as(player, (s) => s.query(`select token from public.push_tokens`))).toEqual([]);
 
-    await expectSqlError(db.as(player, (s) => s.query(`select public.register_push_token('qualquer coisa', 'android')`)), '22023');
     await expectSqlError(
-      db.as(player, (s) => s.query(`insert into public.push_tokens (token, user_id, platform) values ($1, $2, 'android')`, [token('c'), player.id])),
+      db.as(player, (s) =>
+        s.query(`select public.register_push_token('qualquer coisa', 'android')`),
+      ),
+      '22023',
+    );
+    await expectSqlError(
+      db.as(player, (s) =>
+        s.query(
+          `insert into public.push_tokens (token, user_id, platform) values ($1, $2, 'android')`,
+          [token('c'), player.id],
+        ),
+      ),
       '42501',
     );
   });
@@ -306,13 +437,25 @@ describe('notificações push', () => {
     const { gm, player, campaign } = await createTable(db);
     const session = await createSession(db, gm, campaign.id, { published: true });
     await expectSqlError(
-      db.as(gm, (s) => s.query(`insert into public.session_notifications (session_id, scheduled_for) values ($1, now())`, [session])),
+      db.as(gm, (s) =>
+        s.query(
+          `insert into public.session_notifications (session_id, scheduled_for) values ($1, now())`,
+          [session],
+        ),
+      ),
       '42501',
     );
     await db.as(service, (s) =>
-      s.query(`insert into public.session_notifications (session_id, scheduled_for, recipients) values ($1, now(), 3)`, [session]),
+      s.query(
+        `insert into public.session_notifications (session_id, scheduled_for, recipients) values ($1, now(), 3)`,
+        [session],
+      ),
     );
-    expect(await db.as(gm, (s) => s.query(`select recipients from public.session_notifications`))).toEqual([{ recipients: 3 }]);
-    expect(await db.as(player, (s) => s.query(`select 1 from public.session_notifications`))).toEqual([]);
+    expect(
+      await db.as(gm, (s) => s.query(`select recipients from public.session_notifications`)),
+    ).toEqual([{ recipients: 3 }]);
+    expect(
+      await db.as(player, (s) => s.query(`select 1 from public.session_notifications`)),
+    ).toEqual([]);
   });
 });

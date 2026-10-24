@@ -108,7 +108,7 @@ export function CampaignColorsProvider({
     const byUser = new Map(palette.members.map((member) => [member.userId, member]));
     const me = userId ? byUser.get(userId) : undefined;
     const colorOfUser = (id: string | null | undefined) =>
-      id ? (byUser.get(id)?.color ?? null) : null;
+      id && needsDice ? (byUser.get(id)?.color ?? null) : null;
     return {
       campaignId,
       userId,

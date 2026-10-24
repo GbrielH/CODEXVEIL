@@ -1,11 +1,9 @@
 'use client';
 
-import { Bell, ScrollText, Search, Swords } from 'lucide-react';
+import { ScrollText, Search, Swords } from 'lucide-react';
 import type { Route } from 'next';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useId, useMemo, useState } from 'react';
-import { Avatar } from '@/components/ui/avatar';
 import { cx } from '@/lib/cx';
 
 export interface SearchEntry {
@@ -23,10 +21,10 @@ const plain = (text: string) =>
     .toLowerCase();
 
 /**
- * Barra superior (telas largas): busca rápida das suas campanhas e personagens, convites
- * pendentes (sino) e o perfil.
+ * Barra superior (telas largas): busca rápida das suas campanhas e personagens. O perfil fica
+ * no rodapé do menu lateral; os convites, no Painel.
  */
-export function TopBar({ displayName, entries, invites }: { displayName: string; entries: SearchEntry[]; invites: number }) {
+export function TopBar({ entries }: { entries: SearchEntry[] }) {
   const router = useRouter();
   const listId = useId();
   const [query, setQuery] = useState('');
@@ -35,7 +33,11 @@ export function TopBar({ displayName, entries, invites }: { displayName: string;
   const results = useMemo(() => {
     const words = plain(query).split(/\s+/).filter(Boolean);
     if (!words.length) return [];
-    return entries.filter((entry) => words.every((word) => plain(`${entry.name} ${entry.detail}`).includes(word))).slice(0, 8);
+    return entries
+      .filter((entry) =>
+        words.every((word) => plain(`${entry.name} ${entry.detail}`).includes(word)),
+      )
+      .slice(0, 8);
   }, [entries, query]);
 
   const go = (entry: SearchEntry) => {
@@ -79,7 +81,11 @@ export function TopBar({ displayName, entries, invites }: { displayName: string;
           />
         </label>
         {open && query.trim() ? (
-          <ul id={listId} role="listbox" className="absolute inset-x-0 top-12 z-40 overflow-hidden rounded-xl border border-line-strong bg-raised shadow-2xl">
+          <ul
+            id={listId}
+            role="listbox"
+            className="absolute inset-x-0 top-12 z-40 overflow-hidden rounded-xl border border-line-strong bg-raised shadow-2xl"
+          >
             {results.length === 0 ? (
               <li className="px-4 py-3 text-sm text-fg-muted">Nada encontrado.</li>
             ) : (
@@ -89,10 +95,17 @@ export function TopBar({ displayName, entries, invites }: { displayName: string;
                     type="button"
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => go(entry)}
-                    className={cx('flex w-full items-center gap-3 px-4 py-2.5 text-left', index === active ? 'bg-wine-900/60' : 'hover:bg-hover')}
+                    className={cx(
+                      'flex w-full items-center gap-3 px-4 py-2.5 text-left',
+                      index === active ? 'bg-wine-900/60' : 'hover:bg-hover',
+                    )}
                   >
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-wine-400/25 bg-wine-950 text-wine-300">
-                      {entry.kind === 'campaign' ? <ScrollText className="h-4 w-4" aria-hidden="true" /> : <Swords className="h-4 w-4" aria-hidden="true" />}
+                      {entry.kind === 'campaign' ? (
+                        <ScrollText className="h-4 w-4" aria-hidden="true" />
+                      ) : (
+                        <Swords className="h-4 w-4" aria-hidden="true" />
+                      )}
                     </span>
                     <span className="min-w-0">
                       <span className="block truncate text-sm text-fg">{entry.name}</span>
@@ -104,22 +117,6 @@ export function TopBar({ displayName, entries, invites }: { displayName: string;
             )}
           </ul>
         ) : null}
-      </div>
-      <div className="ml-auto flex items-center gap-2">
-        <Link
-          href="/painel"
-          aria-label={invites ? `${invites} convite(s) pendente(s)` : 'Sem convites pendentes'}
-          title={invites ? `${invites} convite(s) pendente(s)` : 'Sem convites pendentes'}
-          className="relative flex h-10 w-10 items-center justify-center rounded-full text-fg-muted hover:bg-hover hover:text-fg"
-        >
-          <Bell className="h-5 w-5" aria-hidden="true" />
-          {invites ? (
-            <span className="absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-wine-500 px-1 text-[10px] font-semibold text-parchment-50">{invites}</span>
-          ) : null}
-        </Link>
-        <Link href="/perfil" aria-label="Perfil" className="rounded-full ring-2 ring-wine-400/40 hover:ring-wine-300">
-          <Avatar name={displayName} size="sm" />
-        </Link>
       </div>
     </div>
   );

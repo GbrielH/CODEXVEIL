@@ -162,11 +162,19 @@ describe.skipIf(!live)('Supabase real (integração)', () => {
       name: `[TESTE] Campanha ${runId}`,
       description: '',
       systemId: 'dnd5e',
-      characterRules: { startingLevel: 3, abilityScoreMethods: ['point_buy'], allowEvilAlignments: false },
+      characterRules: {
+        startingLevel: 3,
+        abilityScoreMethods: ['point_buy'],
+        allowEvilAlignments: false,
+      },
     });
     const campaign = await getCampaign(gm.client, campaignId, gm.id);
     expect(campaign?.role).toBe('gm');
-    expect(campaign?.characterRules).toEqual({ startingLevel: 3, abilityScoreMethods: ['point_buy'], allowEvilAlignments: false });
+    expect(campaign?.characterRules).toEqual({
+      startingLevel: 3,
+      abilityScoreMethods: ['point_buy'],
+      allowEvilAlignments: false,
+    });
     expect(campaign?.isOwner).toBe(true);
     expect((await listMyCampaigns(gm.client, gm.id)).map((c) => c.id)).toContain(campaignId);
   });
@@ -202,7 +210,13 @@ describe.skipIf(!live)('Supabase real (integração)', () => {
 
   it('mestre não cria personagem na própria campanha', async () => {
     await expectAppError(
-      createCharacter(gm.client, { name: '[TESTE] Do mestre', systemId: 'dnd5e', campaignId, sheet: {}, resources: [] }),
+      createCharacter(gm.client, {
+        name: '[TESTE] Do mestre',
+        systemId: 'dnd5e',
+        campaignId,
+        sheet: {},
+        resources: [],
+      }),
       'forbidden',
     );
   });
@@ -234,10 +248,27 @@ describe.skipIf(!live)('Supabase real (integração)', () => {
         },
       ],
       items: [
-        { name: '[TESTE] Machado grande', category: 'weapon', quantity: 1, weight: 3.5, description: '', notes: '', isEquipped: false, sortOrder: 0 },
+        {
+          name: '[TESTE] Machado grande',
+          category: 'weapon',
+          quantity: 1,
+          weight: 3.5,
+          description: '',
+          notes: '',
+          isEquipped: false,
+          sortOrder: 0,
+        },
       ],
       abilities: [
-        { kind: 'class_feature', name: '[TESTE] Fúria', source: 'Bárbaro 1º nível', description: '', data: {}, resourceKey: 'class_rage', sortOrder: 0 },
+        {
+          kind: 'class_feature',
+          name: '[TESTE] Fúria',
+          source: 'Bárbaro 1º nível',
+          description: '',
+          data: {},
+          resourceKey: 'class_rage',
+          sortOrder: 0,
+        },
       ],
     });
     const mine = await getCharacter(player.client, characterId, player.id);

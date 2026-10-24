@@ -37,9 +37,33 @@ export async function addMember(
 }
 
 export const defaultResources = [
-  { key: 'hp', label: 'Pontos de vida', current: 20, max: 20, recovery: 'long_rest', display: 'health', sortOrder: 0 },
-  { key: 'hit_dice_d8', label: 'Dados de vida (d8)', current: 3, max: 3, recovery: 'long_rest', display: 'pool', sortOrder: 10 },
-  { key: 'ki', label: 'Ki', current: 2, max: 2, recovery: 'short_rest', display: 'pool', sortOrder: 20 },
+  {
+    key: 'hp',
+    label: 'Pontos de vida',
+    current: 20,
+    max: 20,
+    recovery: 'long_rest',
+    display: 'health',
+    sortOrder: 0,
+  },
+  {
+    key: 'hit_dice_d8',
+    label: 'Dados de vida (d8)',
+    current: 3,
+    max: 3,
+    recovery: 'long_rest',
+    display: 'pool',
+    sortOrder: 10,
+  },
+  {
+    key: 'ki',
+    label: 'Ki',
+    current: 2,
+    max: 2,
+    recovery: 'short_rest',
+    display: 'pool',
+    sortOrder: 20,
+  },
 ];
 
 export async function createCharacter(
@@ -57,7 +81,11 @@ export async function createCharacter(
   return row.id;
 }
 
-export async function resourceId(db: TestDatabase, characterId: string, key: string): Promise<string> {
+export async function resourceId(
+  db: TestDatabase,
+  characterId: string,
+  key: string,
+): Promise<string> {
   const row = await db.as(admin, (s) =>
     s.one<{ id: string }>(
       `select id from public.character_resources where character_id = $1 and key = $2`,
@@ -118,15 +146,30 @@ export async function createTable(db: TestDatabase) {
   await addMember(db, campaign.id, coGm, 'gm');
   await addMember(db, campaign.id, player);
   await addMember(db, campaign.id, otherPlayer);
-  const table = { gm, coGm, player, otherPlayer, outsider, campaign };
-  await chooseDiceColors(db, table);
-  return table;
+  // Sem cores: elas só existem com uma sessão em andamento (chooseDiceColors depois de iniciá-la).
+  return { gm, coGm, player, otherPlayer, outsider, campaign };
 }
 
-/** Cor dos dados (obrigatória para rolar e zerada ao iniciar/encerrar sessão): o mestre primeiro. */
-export async function chooseDiceColors(db: TestDatabase, table: { gm: TestUser; coGm: TestUser; player: TestUser; otherPlayer: TestUser; campaign: { id: string } }) {
-  const colors: [TestUser, string][] = [[table.gm, '#7a1f2b'], [table.coGm, '#d98e04'], [table.player, '#2f7d4a'], [table.otherPlayer, '#1f6f8b']];
+/** Cor dos dados (só com sessão em andamento; obrigatória para rolar nela): o mestre primeiro. */
+export async function chooseDiceColors(
+  db: TestDatabase,
+  table: {
+    gm: TestUser;
+    coGm: TestUser;
+    player: TestUser;
+    otherPlayer: TestUser;
+    campaign: { id: string };
+  },
+) {
+  const colors: [TestUser, string][] = [
+    [table.gm, '#7a1f2b'],
+    [table.coGm, '#d98e04'],
+    [table.player, '#2f7d4a'],
+    [table.otherPlayer, '#1f6f8b'],
+  ];
   for (const [actor, color] of colors) {
-    await db.as(actor, (s) => s.query(`select public.set_my_dice_color($1, $2)`, [table.campaign.id, color]));
+    await db.as(actor, (s) =>
+      s.query(`select public.set_my_dice_color($1, $2)`, [table.campaign.id, color]),
+    );
   }
 }

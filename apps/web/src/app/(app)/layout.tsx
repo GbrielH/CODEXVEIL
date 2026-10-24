@@ -1,4 +1,4 @@
-import { getMyPendingInvites, getProfile, listMyCampaigns, listMyCharacters } from '@codexveil/database';
+import { getProfile, listMyCampaigns, listMyCharacters } from '@codexveil/database';
 import { campaignRoleLabels } from '@codexveil/domain';
 import { findSystem } from '@codexveil/rpg-systems';
 import type { ReactNode } from 'react';
@@ -14,11 +14,10 @@ export const dynamic = 'force-dynamic';
 export default async function AuthenticatedLayout({ children }: { children: ReactNode }) {
   const user = await requireSessionUser('/painel');
   const supabase = await createSupabaseServerClient();
-  const [profile, campaigns, characters, invites] = await Promise.all([
+  const [profile, campaigns, characters] = await Promise.all([
     getProfile(supabase, user.id),
     listMyCampaigns(supabase, user.id),
     listMyCharacters(supabase, user.id),
-    getMyPendingInvites(supabase),
   ]);
   // Busca rápida da barra superior: só nomes e endereços do que a pessoa já vê.
   const search = [
@@ -41,7 +40,6 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
       displayName={profile?.displayName ?? 'Aventureiro'}
       assistant={assistantEnabled()}
       search={search}
-      invites={invites.length}
       motion={profile?.preferences.motion ?? 'system'}
     >
       {children}

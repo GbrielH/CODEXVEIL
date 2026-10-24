@@ -32,7 +32,13 @@ export function AssistantCard({ compact = false }: { compact?: boolean }) {
             : 'flex w-full items-center gap-3 rounded-lg border border-line bg-card px-3 py-2.5 text-left hover:border-line-strong hover:bg-hover'
         }
       >
-        <Image src="/mestre/icone.webp" alt="" width={36} height={36} className={compact ? 'h-8 w-8 rounded-md' : 'h-9 w-9 shrink-0 rounded-md'} />
+        <Image
+          src="/mestre/icone.webp"
+          alt=""
+          width={36}
+          height={36}
+          className={compact ? 'h-8 w-8 rounded-md' : 'h-9 w-9 shrink-0 rounded-md'}
+        />
         {compact ? null : (
           <span className="min-w-0">
             <span className="block text-sm font-medium text-fg">{MASCOT_NAME}, o Mestre</span>
@@ -78,7 +84,8 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
     event.preventDefault();
   };
 
-  const scrollDown = () => requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
+  const scrollDown = () =>
+    requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
 
   async function ask(event: FormEvent) {
     event.preventDefault();
@@ -123,7 +130,9 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
       ref={panelRef}
       role="dialog"
       aria-label="Assistente de IA"
-      style={position ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' } : undefined}
+      style={
+        position ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' } : undefined
+      }
       className="fixed right-4 bottom-24 z-[100] flex max-h-[min(640px,calc(100dvh-8rem))] w-[min(420px,calc(100vw-2rem))] flex-col rounded-xl border border-line-strong bg-raised shadow-2xl lg:bottom-6 lg:left-[calc(var(--sidebar-width,16rem)+1rem)] lg:right-auto"
     >
       <header
@@ -131,19 +140,36 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
         title="Arraste para mover"
         className="flex cursor-grab touch-none items-center gap-2 border-b border-line px-4 py-3 select-none active:cursor-grabbing"
       >
-        <Image src="/mestre/icone.webp" alt="" width={28} height={28} className="h-7 w-7 rounded-md" />
+        <Image
+          src="/mestre/icone.webp"
+          alt=""
+          width={28}
+          height={28}
+          className="h-7 w-7 rounded-md"
+        />
         <h2 className="flex-1 text-sm font-medium text-fg">{MASCOT_NAME}, o Mestre</h2>
-        <button type="button" onClick={onClose} aria-label="Fechar" className="rounded p-1 text-fg-muted hover:bg-hover hover:text-fg">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Fechar"
+          className="rounded p-1 text-fg-muted hover:bg-hover hover:text-fg"
+        >
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </header>
       <div ref={listRef} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-2 text-center">
-            <Image src="/mestre/feliz.webp" alt={`${MASCOT_NAME}, o grimório mestre`} width={160} height={154} className="h-auto w-36" />
+            <Image
+              src="/mestre/feliz.webp"
+              alt={`${MASCOT_NAME}, o grimório mestre`}
+              width={160}
+              height={154}
+              className="h-auto w-36"
+            />
             <p className="text-sm text-fg-muted">
-              Saudações, aventureiro! Eu sou {MASCOT_NAME}. Pergunte sobre regras, a ficha ou a campanha aberta. Só consulto: não mudo
-              nada. Posso errar; a regra do livro vale.
+              Saudações, aventureiro! Eu sou {MASCOT_NAME}. Pergunte sobre regras, a ficha ou a
+              campanha aberta. Só consulto: não mudo nada. Posso errar; a regra do livro vale.
             </p>
           </div>
         ) : (
@@ -159,7 +185,13 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
               {message.content ||
                 (busy ? (
                   <span className="flex items-center gap-2 text-fg-muted">
-                    <Image src="/mestre/pensando.webp" alt="" width={40} height={45} className="h-11 w-10 animate-pulse" />
+                    <Image
+                      src="/mestre/pensando.webp"
+                      alt=""
+                      width={40}
+                      height={45}
+                      className="h-11 w-10 animate-pulse"
+                    />
                     {MASCOT_NAME} está consultando o grimório…
                   </span>
                 ) : (
@@ -179,7 +211,10 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
           ))
         )}
       </div>
-      <form onSubmit={(event) => void ask(event)} className="flex items-end gap-2 border-t border-line p-3">
+      <form
+        onSubmit={(event) => void ask(event)}
+        className="flex items-end gap-2 border-t border-line p-3"
+      >
         <textarea
           value={draft}
           onChange={(event) => setDraft(event.target.value)}

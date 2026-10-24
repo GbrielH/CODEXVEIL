@@ -430,23 +430,42 @@ de segurança).
 
 ## Histórico
 
-### 2026-10-23 — pedido: confirmar presença pelo card do Painel (a fazer)
+### 2026-10-24 — Painel, presença, cor dos dados e Fúria
 
-- [ ] No card "Próximas sessões" do Painel, cada sessão agendada ganha o botão de confirmar
+- [x] Painel (site e app): botões "Vou/Não vou" em cada sessão agendada das campanhas em que o
+      usuário joga (`listMyAttendance`). Borda da sessão no site: verde (vou), vermelha (não
+      vou), amarela (sem resposta).
+- [x] Limpeza do Painel: sem a fileira de contadores (repetia menu e seções), sem o atalho
+      "Meus livros"; barra superior sem sino e sem avatar (perfil só pelo menu lateral).
+- [x] Perfil: removidos "Densidade da interface" e "Animações" (não funcionavam).
+- [x] Cor dos dados só com sessão em andamento: migração
+      `20261024100000_dice_color_session_only.sql` (aplicada em produção) recusa escolher fora
+      da sessão, não exige cor para rolar fora dela e apagou as cores que sobraram; a insígnia
+      e o sublinhado só aparecem durante a sessão (site e app).
+- [x] Fúria ligada no site: brilho de fogo tremulando e brasas na borda (`.ability-rage`,
+      respeita `prefers-reduced-motion`). Falta: app e efeitos de outras habilidades.
+- [ ] Pedidos novos: aba Dados com o mural abaixo de "Rolar dados" e, à direita, uma mesa
+      grande que mostra a todos os dados rolando ao vivo (menos rolagens ocultas); painel
+      "Seus dados" de volta fixo no canto inferior direito; card de Pontos de vida mais
+      centralizado.
+
+### 2026-10-23 — pedido: confirmar presença pelo card do Painel (feito em 2026-10-24)
+
+- [x] No card "Próximas sessões" do Painel, cada sessão agendada ganha o botão de confirmar
       presença (vou / não vou), sem precisar entrar na campanha. Mostrar o estado atual da
       resposta do jogador e permitir mudar. Site e app.
 
-### 2026-10-23 — pedido: cor dos dados por sessão (a fazer)
+### 2026-10-23 — pedido: cor dos dados por sessão (feito em 2026-10-24)
 
-- [ ] A cor dos dados é escolhida **só no início de cada sessão** e vale apenas para ela; não
+- [x] A cor dos dados é escolhida **só no início de cada sessão** e vale apenas para ela; não
       fica gravada para a campanha inteira. Fora de uma sessão, a insígnia de dado e o sublinhado
       colorido do nome (`ColoredName` em `apps/web/src/components/dice/campaign-colors.tsx`) não
       aparecem (hoje aparecem na aba Grupo). Ao encerrar a sessão, as cores são liberadas.
       Conferir o esquema (onde a cor é gravada) e fazer migração se preciso; site e app.
 
-### 2026-10-23 — pedido: efeito visual em habilidades ativas (a fazer)
+### 2026-10-23 — pedido: efeito visual em habilidades ativas (site feito em 2026-10-24)
 
-- [ ] Habilidades ativáveis da ficha (cartão com "Ligada/Desligada", como "Entrar em Fúria")
+- [x] (site, Fúria) Habilidades ativáveis da ficha (cartão com "Ligada/Desligada", como "Entrar em Fúria")
       ganham um efeito leve e condizente enquanto estão ligadas. Ex.: Fúria com fogo/brasas
       emanando da borda do cartão. Mapear efeito por habilidade (padrão: brilho suave), respeitar
       `prefers-reduced-motion`, fazer no site e no app.

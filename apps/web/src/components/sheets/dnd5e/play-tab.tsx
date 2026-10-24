@@ -202,7 +202,7 @@ export function PlayTab() {
             disabled={!permissions.canEditPlay}
             aria-pressed={activeEffects.rage}
             onClick={() => setActiveEffects({ ...activeEffects, rage: !activeEffects.rage })}
-            className={`flex items-center justify-between gap-3 rounded-md border px-4 py-3 text-left ${activeEffects.rage ? 'border-red-400/60 bg-red-500/15 text-red-200' : 'border-line bg-raised text-fg hover:bg-hover'}`}
+            className={`flex items-center justify-between gap-3 rounded-md border px-4 py-3 text-left ${activeEffects.rage ? 'ability-rage border-red-400/60 bg-red-500/15 text-red-200' : 'border-line bg-raised text-fg hover:bg-hover'}`}
           >
             <span>
               <span className="block font-display text-lg">{activeEffects.rage ? 'Em Fúria!' : 'Entrar em Fúria'}</span>

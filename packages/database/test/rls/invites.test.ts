@@ -38,7 +38,12 @@ async function createInvite(
       `insert into public.campaign_invites (campaign_id, invited_email, max_uses, expires_at)
        values ($1, $2, $3, now() + make_interval(days => $4))
        returning id, code, max_uses, uses_count, created_by`,
-      [campaignId, options.email ?? null, options.maxUses === undefined ? 1 : options.maxUses, options.days ?? 7],
+      [
+        campaignId,
+        options.email ?? null,
+        options.maxUses === undefined ? 1 : options.maxUses,
+        options.days ?? 7,
+      ],
     ),
   );
 }
@@ -118,7 +123,10 @@ describe('criação de convites', () => {
 
   it('convites pessoais são sempre de uso único', async () => {
     const { gm, campaign } = await createTable(db);
-    const invite = await createInvite(gm, campaign.id, { email: 'Pessoa@Exemplo.com', maxUses: null });
+    const invite = await createInvite(gm, campaign.id, {
+      email: 'Pessoa@Exemplo.com',
+      maxUses: null,
+    });
     expect(invite.max_uses).toBe(1);
   });
 });
@@ -253,7 +261,10 @@ describe('convites pessoais', () => {
     );
     expect(intruderPending.invites).toEqual([]);
 
-    expect(await accept(intruder, invite.code)).toMatchObject({ ok: false, reason: 'email_mismatch' });
+    expect(await accept(intruder, invite.code)).toMatchObject({
+      ok: false,
+      reason: 'email_mismatch',
+    });
     expect((await accept(invitee, invite.code)).ok).toBe(true);
   });
 
@@ -275,7 +286,9 @@ describe('convites pessoais', () => {
     const invitee = await db.createUser('Recusa', { email: 'recusa@exemplo.com' });
     const invite = await createInvite(gm, campaign.id, { email: 'recusa@exemplo.com' });
     const declined = await db.as(invitee, (s) =>
-      s.one<{ result: RpcResult }>(`select public.decline_campaign_invite($1) as result`, [invite.code]),
+      s.one<{ result: RpcResult }>(`select public.decline_campaign_invite($1) as result`, [
+        invite.code,
+      ]),
     );
     expect(declined.result.ok).toBe(true);
     expect(await accept(invitee, invite.code)).toMatchObject({ ok: false, reason: 'declined' });

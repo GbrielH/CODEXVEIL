@@ -34,7 +34,12 @@ describe('buckets', () => {
   it('limitam tipo e tamanho dos arquivos', async () => {
     const { gm } = await createTable(db);
     const buckets = await db.as(gm, (s) =>
-      s.query<{ id: string; public: boolean; file_size_limit: string; allowed_mime_types: string[] }>(
+      s.query<{
+        id: string;
+        public: boolean;
+        file_size_limit: string;
+        allowed_mime_types: string[];
+      }>(
         `select id, public, file_size_limit::text, allowed_mime_types from storage.buckets order by id`,
       ),
     );
@@ -65,7 +70,12 @@ describe('avatares', () => {
   it('o perfil não aceita mais caminho de avatar', async () => {
     const { player } = await createTable(db);
     await expectSqlError(
-      db.as(player, (s) => s.query(`update public.profiles set avatar_path = $1 where id = $2`, [`${player.id}/a.webp`, player.id])),
+      db.as(player, (s) =>
+        s.query(`update public.profiles set avatar_path = $1 where id = $2`, [
+          `${player.id}/a.webp`,
+          player.id,
+        ]),
+      ),
       '42501',
     );
   });
@@ -128,7 +138,11 @@ describe('mídia de campanha', () => {
     const tableB = await createTable(db);
     const sessionB = await createSession(db, tableB.gm, tableB.campaign.id);
     await expectSqlError(
-      upload(tableA.gm, 'campaign-media', `campaigns/${tableA.campaign.id}/sessions/${sessionB}/x.png`),
+      upload(
+        tableA.gm,
+        'campaign-media',
+        `campaigns/${tableA.campaign.id}/sessions/${sessionB}/x.png`,
+      ),
       '42501',
     );
     await expectSqlError(

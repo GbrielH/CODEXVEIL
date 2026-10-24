@@ -103,7 +103,7 @@ function DiceProviderInner({
 }: DiceProviderProps) {
   const { toast } = useToast();
   const colors = useCampaignColors();
-  const needsColor = Boolean(campaignId && colors && colors.userId && !colors.myColor);
+  const needsColor = Boolean(campaignId && colors && colors.userId && colors.needsDice && !colors.myColor);
   const [pending, setPending] = useState<TrayRoll | null>(null);
   const [physical, setPhysical] = useState(false);
   const gated = Boolean(campaignId && sessionGate);

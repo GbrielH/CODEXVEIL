@@ -17,11 +17,24 @@ describe('equipar itens', () => {
     const { player, campaign } = await createTable(db);
     const character = await createCharacter(db, player, campaign.id, 'Rodolfo');
     const item = await db.as(player, (s) =>
-      s.one<{ id: string }>(`insert into public.character_items (character_id, name, category) values ($1, 'Machado Grande', 'weapon') returning id`, [character]),
+      s.one<{ id: string }>(
+        `insert into public.character_items (character_id, name, category) values ($1, 'Machado Grande', 'weapon') returning id`,
+        [character],
+      ),
     );
-    const on = await db.as(player, (s) => s.query<{ id: string }>(`update public.character_items set is_equipped = true where id = $1 returning id`, [item.id]));
+    const on = await db.as(player, (s) =>
+      s.query<{ id: string }>(
+        `update public.character_items set is_equipped = true where id = $1 returning id`,
+        [item.id],
+      ),
+    );
     expect(on).toHaveLength(1);
-    const off = await db.as(player, (s) => s.query<{ id: string }>(`update public.character_items set is_equipped = false where id = $1 returning id`, [item.id]));
+    const off = await db.as(player, (s) =>
+      s.query<{ id: string }>(
+        `update public.character_items set is_equipped = false where id = $1 returning id`,
+        [item.id],
+      ),
+    );
     expect(off).toHaveLength(1);
   });
 });

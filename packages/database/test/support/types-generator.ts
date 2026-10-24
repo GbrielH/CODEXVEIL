@@ -47,8 +47,20 @@ interface FunctionInfo {
 }
 
 const stringTypes = new Set([
-  'uuid', 'text', 'varchar', 'bpchar', 'citext', 'date', 'time', 'timetz', 'timestamp',
-  'timestamptz', 'interval', 'bytea', 'inet', 'name',
+  'uuid',
+  'text',
+  'varchar',
+  'bpchar',
+  'citext',
+  'date',
+  'time',
+  'timetz',
+  'timestamp',
+  'timestamptz',
+  'interval',
+  'bytea',
+  'inet',
+  'name',
 ]);
 const numberTypes = new Set(['int2', 'int4', 'int8', 'float4', 'float8', 'numeric', 'oid']);
 
@@ -295,12 +307,8 @@ function render(data: Awaited<ReturnType<typeof introspect>>): string {
     );
   }
 
-  const enumLines = data.enums.map(
-    (e) => `${e.name}: ${e.labels.map(quote).join(' | ')};`,
-  );
-  const constantLines = data.enums.map(
-    (e) => `${e.name}: [${e.labels.map(quote).join(', ')}],`,
-  );
+  const enumLines = data.enums.map((e) => `${e.name}: ${e.labels.map(quote).join(' | ')};`);
+  const constantLines = data.enums.map((e) => `${e.name}: [${e.labels.map(quote).join(', ')}],`);
 
   return [
     '// Arquivo gerado por packages/database/scripts/generate-types.ts — não edite manualmente.',

@@ -61,7 +61,9 @@ describe('sessões e roteiros', () => {
 
     // Mesmo pedindo explicitamente pelos blocos secretos, nada é devolvido.
     const forced = await db.as(player, (s) =>
-      s.query(`select * from public.session_blocks where session_id = $1 and visibility = 'gm'`, [session]),
+      s.query(`select * from public.session_blocks where session_id = $1 and visibility = 'gm'`, [
+        session,
+      ]),
     );
     expect(forced).toEqual([]);
   });
@@ -86,15 +88,24 @@ describe('sessões e roteiros', () => {
     const { gm, campaign } = await createTable(db);
     const session = await createSession(db, gm, campaign.id);
     await expectSqlError(
-      addBlock(db, gm, session, campaign.id, { type: 'paragraph', data: { html: '<script>x</script>' } }),
+      addBlock(db, gm, session, campaign.id, {
+        type: 'paragraph',
+        data: { html: '<script>x</script>' },
+      }),
       '23514',
     );
     await expectSqlError(
-      addBlock(db, gm, session, campaign.id, { type: 'list', data: { style: 'bulleted', items: [1, 2] } }),
+      addBlock(db, gm, session, campaign.id, {
+        type: 'list',
+        data: { style: 'bulleted', items: [1, 2] },
+      }),
       '23514',
     );
     await expectSqlError(
-      addBlock(db, gm, session, campaign.id, { type: 'npc_ref', data: { creatureId: 'abc', note: null } }),
+      addBlock(db, gm, session, campaign.id, {
+        type: 'npc_ref',
+        data: { creatureId: 'abc', note: null },
+      }),
       '23514',
     );
   });
@@ -124,11 +135,17 @@ describe('sessões e roteiros', () => {
     const tableB = await createTable(db);
     const sessionB = await createSession(db, tableB.gm, tableB.campaign.id);
     await expectSqlError(
-      addBlock(db, tableA.gm, sessionB, tableA.campaign.id, { type: 'paragraph', data: { text: 'x' } }),
+      addBlock(db, tableA.gm, sessionB, tableA.campaign.id, {
+        type: 'paragraph',
+        data: { text: 'x' },
+      }),
       '23503',
     );
     await expectSqlError(
-      addBlock(db, tableA.gm, sessionB, tableB.campaign.id, { type: 'paragraph', data: { text: 'x' } }),
+      addBlock(db, tableA.gm, sessionB, tableB.campaign.id, {
+        type: 'paragraph',
+        data: { text: 'x' },
+      }),
       '42501',
     );
   });
@@ -149,15 +166,24 @@ describe('sessões e roteiros', () => {
       s.query(`update public.sessions set status = 'in_progress' where id = $1`, [first]),
     );
     await expectSqlError(
-      db.as(gm, (s) => s.query(`update public.sessions set status = 'in_progress' where id = $1`, [second])),
+      db.as(gm, (s) =>
+        s.query(`update public.sessions set status = 'in_progress' where id = $1`, [second]),
+      ),
       '23505',
     );
   });
 
   it('duplica uma sessão com seus blocos, sem publicar a cópia', async () => {
     const { gm, campaign } = await createTable(db);
-    const session = await createSession(db, gm, campaign.id, { title: 'Original', published: true });
-    await addBlock(db, gm, session, campaign.id, { type: 'heading', data: { text: 'Ato I' }, position: 1 });
+    const session = await createSession(db, gm, campaign.id, {
+      title: 'Original',
+      published: true,
+    });
+    await addBlock(db, gm, session, campaign.id, {
+      type: 'heading',
+      data: { text: 'Ato I' },
+      position: 1,
+    });
     await addBlock(db, gm, session, campaign.id, {
       type: 'gm_note',
       data: { text: 'Segredo' },
@@ -180,18 +206,32 @@ describe('sessões e roteiros', () => {
   it('reordena blocos exigindo a lista completa', async () => {
     const { gm, player, campaign } = await createTable(db);
     const session = await createSession(db, gm, campaign.id, { published: true });
-    const a = await addBlock(db, gm, session, campaign.id, { type: 'paragraph', data: { text: 'A' }, position: 1 });
-    const b = await addBlock(db, gm, session, campaign.id, { type: 'paragraph', data: { text: 'B' }, position: 2 });
-    await db.as(gm, (s) => s.query(`select public.reorder_session_blocks($1, $2::uuid[])`, [session, [b, a]]));
+    const a = await addBlock(db, gm, session, campaign.id, {
+      type: 'paragraph',
+      data: { text: 'A' },
+      position: 1,
+    });
+    const b = await addBlock(db, gm, session, campaign.id, {
+      type: 'paragraph',
+      data: { text: 'B' },
+      position: 2,
+    });
+    await db.as(gm, (s) =>
+      s.query(`select public.reorder_session_blocks($1, $2::uuid[])`, [session, [b, a]]),
+    );
     expect(await blockTexts(gm, session)).toEqual(['B', 'A']);
 
     await expectSqlError(
-      db.as(gm, (s) => s.query(`select public.reorder_session_blocks($1, $2::uuid[])`, [session, [a]])),
+      db.as(gm, (s) =>
+        s.query(`select public.reorder_session_blocks($1, $2::uuid[])`, [session, [a]]),
+      ),
       '22023',
     );
     // O jogador enxerga os blocos públicos, mas o RLS impede a alteração: erro explícito.
     await expectSqlError(
-      db.as(player, (s) => s.query(`select public.reorder_session_blocks($1, $2::uuid[])`, [session, [a, b]])),
+      db.as(player, (s) =>
+        s.query(`select public.reorder_session_blocks($1, $2::uuid[])`, [session, [a, b]]),
+      ),
       '42501',
     );
     expect(await blockTexts(gm, session)).toEqual(['B', 'A']);
@@ -209,9 +249,10 @@ describe('biblioteca de NPCs e monstros', () => {
       ),
     );
     await db.as(gm, (s) =>
-      s.query(`update public.creature_gm_data set secrets = 'É o necromante.' where creature_id = $1`, [
-        creature.id,
-      ]),
+      s.query(
+        `update public.creature_gm_data set secrets = 'É o necromante.' where creature_id = $1`,
+        [creature.id],
+      ),
     );
 
     const publicProfile = await db.as(player, (s) =>
@@ -251,9 +292,10 @@ describe('biblioteca de NPCs e monstros', () => {
     const { gm, player, campaign } = await createTable(db);
     await expectSqlError(
       db.as(player, (s) =>
-        s.query(`insert into public.creatures (campaign_id, kind, name) values ($1, 'npc', 'Falso')`, [
-          campaign.id,
-        ]),
+        s.query(
+          `insert into public.creatures (campaign_id, kind, name) values ($1, 'npc', 'Falso')`,
+          [campaign.id],
+        ),
       ),
       '42501',
     );
@@ -264,9 +306,10 @@ describe('biblioteca de NPCs e monstros', () => {
       ),
     );
     const changed = await db.as(player, (s) =>
-      s.query(`update public.creature_gm_data set stats = '{"hp":1}' where creature_id = $1 returning creature_id`, [
-        creature.id,
-      ]),
+      s.query(
+        `update public.creature_gm_data set stats = '{"hp":1}' where creature_id = $1 returning creature_id`,
+        [creature.id],
+      ),
     );
     expect(changed).toHaveLength(0);
   });
@@ -282,14 +325,39 @@ describe('tamanho das criaturas (token da grade)', () => {
       ),
     );
     expect(dragon.size).toBe('huge');
-    const stats = await db.as(gm, (s) => s.one<{ size: string }>(`select stats ->> 'size' as size from public.creature_gm_data where creature_id = $1`, [dragon.id]));
+    const stats = await db.as(gm, (s) =>
+      s.one<{ size: string }>(
+        `select stats ->> 'size' as size from public.creature_gm_data where creature_id = $1`,
+        [dragon.id],
+      ),
+    );
     expect(stats.size).toBe('huge');
-    await db.as(gm, (s) => s.query(`update public.creature_gm_data set stats = jsonb_set(stats, '{size}', '"gargantuan"') where creature_id = $1`, [dragon.id]));
-    const seen = await db.as(player, (s) => s.one<{ size: string }>(`select size from public.creatures where id = $1`, [dragon.id]));
+    await db.as(gm, (s) =>
+      s.query(
+        `update public.creature_gm_data set stats = jsonb_set(stats, '{size}', '"gargantuan"') where creature_id = $1`,
+        [dragon.id],
+      ),
+    );
+    const seen = await db.as(player, (s) =>
+      s.one<{ size: string }>(`select size from public.creatures where id = $1`, [dragon.id]),
+    );
     expect(seen.size).toBe('gargantuan');
-    const goblin = await db.as(gm, (s) => s.one<{ size: string }>(`insert into public.creatures (campaign_id, kind, name) values ($1, 'monster', 'Goblin') returning size`, [campaign.id]));
+    const goblin = await db.as(gm, (s) =>
+      s.one<{ size: string }>(
+        `insert into public.creatures (campaign_id, kind, name) values ($1, 'monster', 'Goblin') returning size`,
+        [campaign.id],
+      ),
+    );
     expect(goblin.size).toBe('medium');
-    await expectSqlError(db.as(gm, (s) => s.query(`insert into public.creatures (campaign_id, kind, name, size) values ($1, 'monster', 'X', 'enorme')`, [campaign.id])), '23514');
+    await expectSqlError(
+      db.as(gm, (s) =>
+        s.query(
+          `insert into public.creatures (campaign_id, kind, name, size) values ($1, 'monster', 'X', 'enorme')`,
+          [campaign.id],
+        ),
+      ),
+      '23514',
+    );
   });
 });
 
@@ -326,7 +394,10 @@ describe('cena e combate', () => {
     );
     expect(hit.hp_current).toBe(2);
     const other = await db.as(gm, (s) =>
-      s.one<{ hp_current: number }>(`select hp_current from public.session_entities where id = $1`, [goblinB]),
+      s.one<{ hp_current: number }>(
+        `select hp_current from public.session_entities where id = $1`,
+        [goblinB],
+      ),
     );
     expect(other.hp_current).toBe(7);
   });
@@ -352,7 +423,9 @@ describe('cena e combate', () => {
       expect(rows, table).toEqual([]);
     }
     await expectSqlError(
-      db.as(player, (s) => s.query(`select * from public.adjust_session_entity_hp($1, 'heal', 5)`, [goblinA])),
+      db.as(player, (s) =>
+        s.query(`select * from public.adjust_session_entity_hp($1, 'heal', 5)`, [goblinA]),
+      ),
       'P0002',
     );
   });
@@ -360,7 +433,12 @@ describe('cena e combate', () => {
   it('personagens só entram em combates da própria campanha', async () => {
     const { gm, session, campaign } = await setupScene();
     const elsewhere = await createTable(db);
-    const stranger = await createCharacter(db, elsewhere.player, elsewhere.campaign.id, 'Forasteira');
+    const stranger = await createCharacter(
+      db,
+      elsewhere.player,
+      elsewhere.campaign.id,
+      'Forasteira',
+    );
     const encounter = await db.as(gm, (s) =>
       s.one<{ id: string }>(
         `insert into public.encounters (session_id, campaign_id) values ($1, $2) returning id`,
@@ -389,7 +467,10 @@ describe('cena e combate', () => {
       );
     const tick = async (rounds = 1) => {
       const rows = await db.as(gm, (s) =>
-        s.query<{ key: string }>(`select key from public.tick_session_entity_conditions($1, $2) as key`, [goblinA, rounds]),
+        s.query<{ key: string }>(
+          `select key from public.tick_session_entity_conditions($1, $2) as key`,
+          [goblinA, rounds],
+        ),
       );
       return rows.map((row) => row.key);
     };
@@ -401,36 +482,55 @@ describe('cena e combate', () => {
         [goblinA, ['poisoned', 'prone'], JSON.stringify({ poisoned: 2, blinded: 3 })],
       ),
     );
-    expect(await state()).toEqual({ conditions: ['poisoned', 'prone'], condition_rounds: { poisoned: 2 } });
+    expect(await state()).toEqual({
+      conditions: ['poisoned', 'prone'],
+      condition_rounds: { poisoned: 2 },
+    });
 
     expect(await tick()).toEqual([]);
-    expect(await state()).toEqual({ conditions: ['poisoned', 'prone'], condition_rounds: { poisoned: 1 } });
+    expect(await state()).toEqual({
+      conditions: ['poisoned', 'prone'],
+      condition_rounds: { poisoned: 1 },
+    });
     expect(await tick()).toEqual(['poisoned']);
     expect(await state()).toEqual({ conditions: ['prone'], condition_rounds: {} });
 
     // Remover a condição da lista remove também a duração.
     await db.as(gm, (s) =>
-      s.query(`update public.session_entities set conditions = '{blinded}', condition_rounds = '{"blinded": 5}' where id = $1`, [goblinA]),
+      s.query(
+        `update public.session_entities set conditions = '{blinded}', condition_rounds = '{"blinded": 5}' where id = $1`,
+        [goblinA],
+      ),
     );
-    await db.as(gm, (s) => s.query(`update public.session_entities set conditions = '{}' where id = $1`, [goblinA]));
+    await db.as(gm, (s) =>
+      s.query(`update public.session_entities set conditions = '{}' where id = $1`, [goblinA]),
+    );
     expect(await state()).toEqual({ conditions: [], condition_rounds: {} });
   });
 
   it('rejeita mapas de rodadas inválidos e jogadores não passam rodadas da cena', async () => {
     const { gm, player, goblinA } = await setupScene();
-    for (const value of ['{"poisoned": 0}', '{"poisoned": 1.5}', '{"poisoned": "2"}', '[]', '{"poisoned": 10001}']) {
+    for (const value of [
+      '{"poisoned": 0}',
+      '{"poisoned": 1.5}',
+      '{"poisoned": "2"}',
+      '[]',
+      '{"poisoned": 10001}',
+    ]) {
       await expectSqlError(
         db.as(gm, (s) =>
-          s.query(`update public.session_entities set conditions = '{poisoned}', condition_rounds = $2::jsonb where id = $1`, [
-            goblinA,
-            value,
-          ]),
+          s.query(
+            `update public.session_entities set conditions = '{poisoned}', condition_rounds = $2::jsonb where id = $1`,
+            [goblinA, value],
+          ),
         ),
         '23514',
       );
     }
     await expectSqlError(
-      db.as(player, (s) => s.query(`select * from public.tick_session_entity_conditions($1)`, [goblinA])),
+      db.as(player, (s) =>
+        s.query(`select * from public.tick_session_entity_conditions($1)`, [goblinA]),
+      ),
       'P0002',
     );
   });
@@ -502,7 +602,9 @@ describe('anotações', () => {
       ),
     );
     const byGm = await db.as(gm, (s) =>
-      s.query(`update public.campaign_notes set title = 'Do mestre' where id = $1 returning id`, [note.id]),
+      s.query(`update public.campaign_notes set title = 'Do mestre' where id = $1 returning id`, [
+        note.id,
+      ]),
     );
     expect(byGm).toHaveLength(0);
   });
@@ -535,12 +637,19 @@ describe('anotações', () => {
       ),
     );
     const session = await createSession(db, gm, campaign.id, { published: true });
-    await addBlock(db, gm, session, campaign.id, { type: 'npc_ref', data: { creatureId: hidden.id, note: null } });
+    await addBlock(db, gm, session, campaign.id, {
+      type: 'npc_ref',
+      data: { creatureId: hidden.id, note: null },
+    });
 
     // O bloco público chega ao jogador, mas o nome do NPC oculto não (consulta usada pela interface).
-    const blocks = await db.as(player, (s) => s.query(`select id from public.session_blocks where session_id = $1`, [session]));
+    const blocks = await db.as(player, (s) =>
+      s.query(`select id from public.session_blocks where session_id = $1`, [session]),
+    );
     expect(blocks).toHaveLength(1);
-    const names = await db.as(player, (s) => s.query(`select name from public.creatures where id = $1`, [hidden.id]));
+    const names = await db.as(player, (s) =>
+      s.query(`select name from public.creatures where id = $1`, [hidden.id]),
+    );
     expect(names).toHaveLength(0);
   });
 });
@@ -549,18 +658,45 @@ describe('confirmar presença', () => {
   it('o jogador responde só por si, em sessão agendada; todos da mesa veem', async () => {
     const { gm, player, otherPlayer, outsider, campaign } = await createTable(db);
     const session = await db.as(gm, (s) =>
-      s.one<{ id: string }>(`insert into public.sessions (campaign_id, title, is_published, scheduled_at) values ($1, 'Noite 2', true, now() + interval '2 days') returning id`, [campaign.id]),
+      s.one<{ id: string }>(
+        `insert into public.sessions (campaign_id, title, is_published, scheduled_at) values ($1, 'Noite 2', true, now() + interval '2 days') returning id`,
+        [campaign.id],
+      ),
     );
-    await db.as(player, (s) => s.query(`insert into public.session_attendance (session_id, campaign_id, status) values ($1, $2, 'yes')`, [session.id, campaign.id]));
-    await db.as(player, (s) => s.query(`update public.session_attendance set status = 'no' where session_id = $1`, [session.id]));
-    const seen = await db.as(gm, (s) => s.query<{ status: string }>(`select status from public.session_attendance where session_id = $1`, [session.id]));
+    await db.as(player, (s) =>
+      s.query(
+        `insert into public.session_attendance (session_id, campaign_id, status) values ($1, $2, 'yes')`,
+        [session.id, campaign.id],
+      ),
+    );
+    await db.as(player, (s) =>
+      s.query(`update public.session_attendance set status = 'no' where session_id = $1`, [
+        session.id,
+      ]),
+    );
+    const seen = await db.as(gm, (s) =>
+      s.query<{ status: string }>(
+        `select status from public.session_attendance where session_id = $1`,
+        [session.id],
+      ),
+    );
     expect(seen.map((row) => row.status)).toEqual(['no']);
     await expectSqlError(
-      db.as(otherPlayer, (s) => s.query(`insert into public.session_attendance (session_id, campaign_id, user_id, status) values ($1, $2, $3, 'yes')`, [session.id, campaign.id, player.id])),
+      db.as(otherPlayer, (s) =>
+        s.query(
+          `insert into public.session_attendance (session_id, campaign_id, user_id, status) values ($1, $2, $3, 'yes')`,
+          [session.id, campaign.id, player.id],
+        ),
+      ),
       '42501',
     );
     await expectSqlError(
-      db.as(outsider, (s) => s.query(`insert into public.session_attendance (session_id, campaign_id, status) values ($1, $2, 'yes')`, [session.id, campaign.id])),
+      db.as(outsider, (s) =>
+        s.query(
+          `insert into public.session_attendance (session_id, campaign_id, status) values ($1, $2, 'yes')`,
+          [session.id, campaign.id],
+        ),
+      ),
       '42501',
     );
   });

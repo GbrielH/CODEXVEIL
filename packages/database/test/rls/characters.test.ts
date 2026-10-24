@@ -1,6 +1,12 @@
 import { applyDamage, applyHealing, type TrackValue } from '@codexveil/domain';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { addMember, createCampaign, createCharacter, createTable, resourceId } from '../support/fixtures';
+import {
+  addMember,
+  createCampaign,
+  createCharacter,
+  createTable,
+  resourceId,
+} from '../support/fixtures';
 import { TestDatabase, admin, expectSqlError, type TestUser } from '../support/pglite';
 
 let db: TestDatabase;
@@ -64,7 +70,9 @@ describe('criação', () => {
   it('exige o mesmo sistema da campanha', async () => {
     const { player, campaign } = await createTable(db);
     await db.as(admin, (s) =>
-      s.exec(`insert into public.rpg_systems (id, name, short_name) values ('outro', 'Outro sistema', 'Outro')`),
+      s.exec(
+        `insert into public.rpg_systems (id, name, short_name) values ('outro', 'Outro sistema', 'Outro')`,
+      ),
     );
     await expectSqlError(
       db.as(player, (s) =>
@@ -78,9 +86,10 @@ describe('criação', () => {
     const { player, otherPlayer } = await createTable(db);
     await expectSqlError(
       db.as(player, (s) =>
-        s.query(`insert into public.characters (name, system_id, owner_id) values ('X', 'dnd5e', $1)`, [
-          otherPlayer.id,
-        ]),
+        s.query(
+          `insert into public.characters (name, system_id, owner_id) values ('X', 'dnd5e', $1)`,
+          [otherPlayer.id],
+        ),
       ),
       '42501',
     );
@@ -89,13 +98,53 @@ describe('criação', () => {
 
 describe('criação guiada (inventário e habilidades iniciais)', () => {
   const items = [
-    { name: 'Cota de malha', category: 'armor', quantity: 1, weight: 27.5, description: '', notes: '', isEquipped: true, sortOrder: 0 },
-    { name: 'Azagaia', category: 'weapon', quantity: 8, weight: 1, description: '', notes: '', isEquipped: false, sortOrder: 1 },
+    {
+      name: 'Cota de malha',
+      category: 'armor',
+      quantity: 1,
+      weight: 27.5,
+      description: '',
+      notes: '',
+      isEquipped: true,
+      sortOrder: 0,
+    },
+    {
+      name: 'Azagaia',
+      category: 'weapon',
+      quantity: 8,
+      weight: 1,
+      description: '',
+      notes: '',
+      isEquipped: false,
+      sortOrder: 1,
+    },
   ];
   const abilities = [
-    { kind: 'class_feature', name: 'Fúria', source: 'Bárbaro 1º nível', description: 'Resumo', data: {}, resourceKey: 'ki', sortOrder: 0 },
-    { kind: 'spell', name: 'Bless', source: 'Clérigo · SRD 5.2', description: '', data: { circle: 1 }, sortOrder: 1 },
-    { kind: 'attack', name: 'Espada grande', source: 'Arma marcial', description: '', data: { damage: '2d6' }, sortOrder: 2 },
+    {
+      kind: 'class_feature',
+      name: 'Fúria',
+      source: 'Bárbaro 1º nível',
+      description: 'Resumo',
+      data: {},
+      resourceKey: 'ki',
+      sortOrder: 0,
+    },
+    {
+      kind: 'spell',
+      name: 'Bless',
+      source: 'Clérigo · SRD 5.2',
+      description: '',
+      data: { circle: 1 },
+      sortOrder: 1,
+    },
+    {
+      kind: 'attack',
+      name: 'Espada grande',
+      source: 'Arma marcial',
+      description: '',
+      data: { damage: '2d6' },
+      sortOrder: 2,
+    },
   ];
 
   function createFull(owner: TestUser, campaignId: string | null) {
@@ -105,7 +154,17 @@ describe('criação guiada (inventário e habilidades iniciais)', () => {
         [
           campaignId,
           JSON.stringify({ schemaVersion: 1 }),
-          JSON.stringify([{ key: 'ki', label: 'Fúria', current: 2, max: 2, recovery: 'long_rest', display: 'pool', sortOrder: 100 }]),
+          JSON.stringify([
+            {
+              key: 'ki',
+              label: 'Fúria',
+              current: 2,
+              max: 2,
+              recovery: 'long_rest',
+              display: 'pool',
+              sortOrder: 100,
+            },
+          ]),
           JSON.stringify(items),
           JSON.stringify(abilities),
         ],
@@ -147,13 +206,19 @@ describe('criação guiada (inventário e habilidades iniciais)', () => {
     await setCampaignFlags(campaign.id, { players_can_edit_sheets: false });
     const { id } = await createFull(player, campaign.id);
     const count = await db.as(player, (s) =>
-      s.one<{ total: number }>(`select count(*)::int as total from public.character_abilities where character_id = $1`, [id]),
+      s.one<{ total: number }>(
+        `select count(*)::int as total from public.character_abilities where character_id = $1`,
+        [id],
+      ),
     );
     expect(count.total).toBe(3);
     // Depois da criação, a construção volta a ser exclusiva do mestre.
     await expectSqlError(
       db.as(player, (s) =>
-        s.query(`insert into public.character_abilities (character_id, kind, name) values ($1, 'feat', 'Sortudo')`, [id]),
+        s.query(
+          `insert into public.character_abilities (character_id, kind, name) values ($1, 'feat', 'Sortudo')`,
+          [id],
+        ),
       ),
       '42501',
     );
@@ -163,9 +228,10 @@ describe('criação guiada (inventário e habilidades iniciais)', () => {
     const { player } = await createTable(db);
     await expectSqlError(
       db.as(player, (s) =>
-        s.query(`select public.create_character('X', 'dnd5e', null, '{}'::jsonb, '[]'::jsonb, $1::jsonb)`, [
-          JSON.stringify(Array.from({ length: 201 }, (_, index) => ({ name: `Item ${index}` }))),
-        ]),
+        s.query(
+          `select public.create_character('X', 'dnd5e', null, '{}'::jsonb, '[]'::jsonb, $1::jsonb)`,
+          [JSON.stringify(Array.from({ length: 201 }, (_, index) => ({ name: `Item ${index}` })))],
+        ),
       ),
       '22023',
     );
@@ -183,7 +249,9 @@ describe('mestres e personagens', () => {
     const { gm, campaign } = await createTable(db);
     const personal = await createCharacter(db, gm, null, 'Ficha pessoal');
     await expectSqlError(
-      db.as(gm, (s) => s.query(`select public.set_character_campaign($1, $2)`, [personal, campaign.id])),
+      db.as(gm, (s) =>
+        s.query(`select public.set_character_campaign($1, $2)`, [personal, campaign.id]),
+      ),
       'CVGMC',
     );
   });
@@ -224,7 +292,9 @@ describe('visibilidade das fichas', () => {
   it('personagem sem campanha é privado', async () => {
     const { gm, player } = await createTable(db);
     const solo = await createCharacter(db, player, null, 'Solo');
-    const seen = await db.as(gm, (s) => s.query(`select id from public.characters where id = $1`, [solo]));
+    const seen = await db.as(gm, (s) =>
+      s.query(`select id from public.characters where id = $1`, [solo]),
+    );
     expect(seen).toHaveLength(0);
   });
 });
@@ -243,9 +313,10 @@ describe('edição', () => {
 
     await expectSqlError(
       db.as(player, (s) =>
-        s.query(`insert into public.character_items (character_id, name) values ($1, 'Item plantado')`, [
-          borin,
-        ]),
+        s.query(
+          `insert into public.character_items (character_id, name) values ($1, 'Item plantado')`,
+          [borin],
+        ),
       ),
       '42501',
     );
@@ -255,7 +326,9 @@ describe('edição', () => {
     const { gm, player, campaign } = await createTable(db);
     const aria = await createCharacter(db, player, campaign.id, 'Aria');
     const byGm = await db.as(gm, (s) =>
-      s.query(`update public.characters set name = 'Aria, a Bruxa' where id = $1 returning id`, [aria]),
+      s.query(`update public.characters set name = 'Aria, a Bruxa' where id = $1 returning id`, [
+        aria,
+      ]),
     );
     expect(byGm).toHaveLength(1);
     const byOwner = await db.as(player, (s) =>
@@ -278,7 +351,9 @@ describe('edição', () => {
     expect(hp.current).toBe(17);
 
     await db.as(player, (s) =>
-      s.query(`insert into public.character_items (character_id, name) values ($1, 'Corda')`, [aria]),
+      s.query(`insert into public.character_items (character_id, name) values ($1, 'Corda')`, [
+        aria,
+      ]),
     );
   });
 
@@ -301,22 +376,34 @@ describe('edição', () => {
     // Habilidades fazem parte da construção da ficha, travada pelo mestre.
     await expectSqlError(
       db.as(player, (s) =>
-        s.query(`insert into public.character_abilities (character_id, kind, name) values ($1, 'feat', 'Sortudo')`, [aria]),
+        s.query(
+          `insert into public.character_abilities (character_id, kind, name) values ($1, 'feat', 'Sortudo')`,
+          [aria],
+        ),
       ),
       '42501',
     );
 
     await db.as(gm, (s) =>
-      s.query(`insert into public.character_abilities (character_id, kind, name) values ($1, 'feat', 'Sortudo')`, [aria]),
+      s.query(
+        `insert into public.character_abilities (character_id, kind, name) values ($1, 'feat', 'Sortudo')`,
+        [aria],
+      ),
     );
   });
 
   it('versão e dono não são alterados diretamente pelo cliente', async () => {
     const { player, otherPlayer, campaign } = await createTable(db);
     const aria = await createCharacter(db, player, campaign.id, 'Aria');
-    for (const assignment of ['version = 99', `owner_id = '${otherPlayer.id}'`, "system_id = 'dnd5e'"]) {
+    for (const assignment of [
+      'version = 99',
+      `owner_id = '${otherPlayer.id}'`,
+      "system_id = 'dnd5e'",
+    ]) {
       await expectSqlError(
-        db.as(player, (s) => s.query(`update public.characters set ${assignment} where id = $1`, [aria])),
+        db.as(player, (s) =>
+          s.query(`update public.characters set ${assignment} where id = $1`, [aria]),
+        ),
         '42501',
       );
     }
@@ -391,7 +478,8 @@ describe('operações atômicas de recursos', () => {
       ['heal', 50],
     ] as const) {
       const actual = await adjust(player, hp, operation, amount);
-      expected = operation === 'damage' ? applyDamage(expected, amount) : applyHealing(expected, amount);
+      expected =
+        operation === 'damage' ? applyDamage(expected, amount) : applyHealing(expected, amount);
       expect(actual, `${operation} ${amount}`).toEqual(expected);
     }
   });
@@ -406,7 +494,9 @@ describe('operações atômicas de recursos', () => {
       adjust(gm, hp, 'heal', 1),
     ]);
     const final = await db.as(player, (s) =>
-      s.one<{ current: number }>(`select current from public.character_resources where id = $1`, [hp]),
+      s.one<{ current: number }>(`select current from public.character_resources where id = $1`, [
+        hp,
+      ]),
     );
     expect(final.current).toBe(20 - 7 - 2 + 1);
   });
@@ -428,7 +518,9 @@ describe('operações atômicas de recursos', () => {
     await adjust(player, hp, 'set_temp', 4);
     await adjust(player, ki, 'spend', 2);
 
-    await db.as(player, (s) => s.query(`select public.take_character_rest($1, 'short_rest')`, [aria]));
+    await db.as(player, (s) =>
+      s.query(`select public.take_character_rest($1, 'short_rest')`, [aria]),
+    );
     const afterShort = await db.as(player, (s) =>
       s.query<{ key: string; current: number; temp: number }>(
         `select key, current, temp from public.character_resources where character_id = $1 and key in ('hp','ki') order by key`,
@@ -440,7 +532,9 @@ describe('operações atômicas de recursos', () => {
       { key: 'ki', current: 2, temp: 0 },
     ]);
 
-    await db.as(player, (s) => s.query(`select public.take_character_rest($1, 'long_rest')`, [aria]));
+    await db.as(player, (s) =>
+      s.query(`select public.take_character_rest($1, 'long_rest')`, [aria]),
+    );
     const hpAfterLong = await db.as(player, (s) =>
       s.one<{ current: number; temp: number }>(
         `select current, temp from public.character_resources where id = $1`,
@@ -460,14 +554,21 @@ describe('operações atômicas de recursos', () => {
       ),
     );
     const result = await db.as(player, (s) =>
-      s.one<{ quantity: number }>(`select quantity from public.adjust_item_quantity($1, -5)`, [item.id]),
+      s.one<{ quantity: number }>(`select quantity from public.adjust_item_quantity($1, -5)`, [
+        item.id,
+      ]),
     );
     expect(result.quantity).toBe(0);
   });
 });
 
 describe('duração das condições', () => {
-  async function applyCondition(user: TestUser, characterId: string, key: string, rounds: number | null) {
+  async function applyCondition(
+    user: TestUser,
+    characterId: string,
+    key: string,
+    rounds: number | null,
+  ) {
     await db.as(user, (s) =>
       s.query(
         `insert into public.character_conditions (character_id, key, rounds_remaining) values ($1, $2, $3)`,
@@ -487,10 +588,10 @@ describe('duração das condições', () => {
 
   async function tick(user: TestUser, characterId: string, rounds = 1) {
     const rows = await db.as(user, (s) =>
-      s.query<{ key: string }>(`select key from public.tick_character_conditions($1, $2) as key order by key`, [
-        characterId,
-        rounds,
-      ]),
+      s.query<{ key: string }>(
+        `select key from public.tick_character_conditions($1, $2) as key order by key`,
+        [characterId, rounds],
+      ),
     );
     return rows.map((row) => row.key);
   }
@@ -543,10 +644,16 @@ describe('duração das condições', () => {
     const aria = await createCharacter(db, player, campaign.id, 'Aria');
     await applyCondition(player, aria, 'poisoned', null);
     await db.as(player, (s) =>
-      s.query(`update public.character_conditions set rounds_remaining = 4 where character_id = $1`, [aria]),
+      s.query(
+        `update public.character_conditions set rounds_remaining = 4 where character_id = $1`,
+        [aria],
+      ),
     );
     const blocked = await db.as(otherPlayer, (s) =>
-      s.query(`update public.character_conditions set rounds_remaining = 1 where character_id = $1 returning id`, [aria]),
+      s.query(
+        `update public.character_conditions set rounds_remaining = 1 where character_id = $1 returning id`,
+        [aria],
+      ),
     );
     expect(blocked).toEqual([]);
     expect(await conditionsOf(player, aria)).toEqual([{ key: 'poisoned', rounds_remaining: 4 }]);
@@ -558,10 +665,14 @@ describe('histórico e cópias de segurança', () => {
     const { player, campaign } = await createTable(db);
     const aria = await createCharacter(db, player, campaign.id, 'Aria');
     await db.as(player, (s) =>
-      s.query(`update public.characters set sheet = '{"schemaVersion":1,"x":1}' where id = $1`, [aria]),
+      s.query(`update public.characters set sheet = '{"schemaVersion":1,"x":1}' where id = $1`, [
+        aria,
+      ]),
     );
     await db.as(player, (s) =>
-      s.query(`update public.characters set sheet = '{"schemaVersion":1,"x":2}' where id = $1`, [aria]),
+      s.query(`update public.characters set sheet = '{"schemaVersion":1,"x":2}' where id = $1`, [
+        aria,
+      ]),
     );
     const snapshots = await db.as(player, (s) =>
       s.query<{ sheet: unknown; version: number }>(
@@ -592,7 +703,9 @@ describe('histórico e cópias de segurança', () => {
       '42501',
     );
     await expectSqlError(
-      db.as(player, (s) => s.query(`delete from public.character_events where character_id = $1`, [aria])),
+      db.as(player, (s) =>
+        s.query(`delete from public.character_events where character_id = $1`, [aria]),
+      ),
       '42501',
     );
   });

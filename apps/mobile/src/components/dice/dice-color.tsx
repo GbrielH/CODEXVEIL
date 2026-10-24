@@ -35,7 +35,7 @@ export function useDicePalette(campaignId: string) {
   const members = data?.members ?? [];
   const me = members.find((member) => member.userId === userId);
   const colorOfUser = (id: string | null | undefined) =>
-    id ? (members.find((member) => member.userId === id)?.color ?? null) : null;
+    id && data?.needsDice ? (members.find((member) => member.userId === id)?.color ?? null) : null;
   return {
     loaded: data !== null,
     needsDice: data?.needsDice ?? false,

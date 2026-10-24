@@ -25,6 +25,7 @@ import { ArcaneScene } from '@/components/ui/arcane-scene';
 import { AppText } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states';
+import { AttendanceCard } from '@/components/sessions/attendance';
 import { useAsyncData } from '@/lib/hooks';
 import { useUserId } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase';
@@ -82,6 +83,10 @@ export default function DashboardScreen() {
         character.campaignId && active.some((campaign) => campaign.id === character.campaignId),
     ) ?? null;
   const nextSession = data?.sessions[0] ?? null;
+  // Presença só nas campanhas em que o usuário joga (o mestre vê as respostas na sessão).
+  const plays = (campaignId: string) =>
+    data?.campaigns.some((campaign) => campaign.id === campaignId && campaign.role !== 'gm') ??
+    false;
 
   return (
     <Screen
@@ -107,15 +112,26 @@ export default function DashboardScreen() {
           minHeight: 150,
         }}
       >
-        <ArcaneScene seed="Bem-vindo de volta" options={{ noMoon: true }} style={{ opacity: 0.8 }} />
+        <ArcaneScene
+          seed="Bem-vindo de volta"
+          options={{ noMoon: true }}
+          style={{ opacity: 0.8 }}
+        />
         <View style={{ flex: 1, gap: 4 }}>
           <AppText variant="eyebrow" style={{ color: colors.fgBrand }}>
             Bem-vindo de volta
           </AppText>
-          <AppText style={{ color: colors.fgAccent, fontSize: 16 }}>Suas campanhas, em um só lugar.</AppText>
+          <AppText style={{ color: colors.fgAccent, fontSize: 16 }}>
+            Suas campanhas, em um só lugar.
+          </AppText>
           <AppText variant="small">Que suas próximas sessões sejam lendárias.</AppText>
         </View>
-        <Image source={TOMO_HERO} style={{ width: 120, height: 112 }} resizeMode="contain" accessibilityIgnoresInvertColors />
+        <Image
+          source={TOMO_HERO}
+          style={{ width: 120, height: 112 }}
+          resizeMode="contain"
+          accessibilityIgnoresInvertColors
+        />
       </View>
       {data ? (
         <>
@@ -194,6 +210,9 @@ export default function DashboardScreen() {
                 router.push({ pathname: '/sessao/[id]', params: { id: nextSession.id } })
               }
             />
+          ) : null}
+          {nextSession && plays(nextSession.campaignId) ? (
+            <AttendanceCard sessionId={nextSession.id} campaignId={nextSession.campaignId} />
           ) : null}
 
           {data.invites.length > 0 ? (
@@ -288,15 +307,19 @@ export default function DashboardScreen() {
                 title="Agenda"
               />
               {data.sessions.slice(1).map((session) => (
-                <ListRow
-                  key={session.id}
-                  title={`Sessão ${session.number}: ${session.title}`}
-                  subtitle={session.campaignName}
-                  meta={dateFormat.format(new Date(session.scheduledAt))}
-                  onPress={() =>
-                    router.push({ pathname: '/sessao/[id]', params: { id: session.id } })
-                  }
-                />
+                <View key={session.id} style={{ gap: 6 }}>
+                  <ListRow
+                    title={`Sessão ${session.number}: ${session.title}`}
+                    subtitle={session.campaignName}
+                    meta={dateFormat.format(new Date(session.scheduledAt))}
+                    onPress={() =>
+                      router.push({ pathname: '/sessao/[id]', params: { id: session.id } })
+                    }
+                  />
+                  {plays(session.campaignId) ? (
+                    <AttendanceCard sessionId={session.id} campaignId={session.campaignId} />
+                  ) : null}
+                </View>
               ))}
             </>
           ) : null}

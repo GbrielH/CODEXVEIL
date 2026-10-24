@@ -66,8 +66,6 @@ interface AppShellProps {
   assistant?: boolean;
   /** Campanhas e personagens para a busca da barra superior. */
   search?: SearchEntry[];
-  /** Convites pendentes (sino). */
-  invites?: number;
   motion: 'system' | 'reduce';
   children: ReactNode;
 }
@@ -95,7 +93,13 @@ function SignOutButton({ compact = false }: { compact?: boolean }) {
  * Estrutura das áreas autenticadas: barra lateral no desktop e navegação inferior no
  * celular (alvos de toque de 56 px), com o conteúdo principal ao centro.
  */
-export function AppShell({ displayName, assistant = false, search = [], invites = 0, motion, children }: AppShellProps) {
+export function AppShell({
+  displayName,
+  assistant = false,
+  search = [],
+  motion,
+  children,
+}: AppShellProps) {
   return (
     <ShellFrame motion={motion}>
       <EmberField />
@@ -128,10 +132,13 @@ export function AppShell({ displayName, assistant = false, search = [], invites 
           </div>
         ) : null}
         <div className="mx-3 mb-3 flex items-center gap-3 rounded-xl border border-line bg-card/70 px-3 py-3 group-data-[collapsed=true]/shell:mx-2 group-data-[collapsed=true]/shell:flex-col group-data-[collapsed=true]/shell:px-1">
-          <Link href={routes.profile} aria-label="Perfil" className="relative shrink-0">
+          <span className="relative shrink-0">
             <Avatar name={displayName} size="sm" />
-            <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-emerald-400" aria-hidden="true" />
-          </Link>
+            <span
+              className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-emerald-400"
+              aria-hidden="true"
+            />
+          </span>
           <div className="min-w-0 flex-1 group-data-[collapsed=true]/shell:hidden">
             <p className="truncate text-sm font-medium text-fg">{displayName}</p>
             <p className="text-[11px] text-emerald-300/90">Online</p>
@@ -147,7 +154,7 @@ export function AppShell({ displayName, assistant = false, search = [], invites 
       </aside>
 
       <div className="flex min-h-dvh min-w-0 flex-col">
-        <TopBar displayName={displayName} entries={search} invites={invites} />
+        <TopBar entries={search} />
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-canvas/90 px-4 backdrop-blur lg:hidden">
           <Link
             href={routes.dashboard}

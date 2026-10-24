@@ -306,6 +306,10 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-24:** Painel limpo com presença colorida, cor dos dados só na sessão (migração
+  aplicada), Fúria com fogo no site; testes do banco 197 passando. Próximo: mesa de dados ao
+  vivo na aba Dados, painel de dados fixo e card de vida.
+
 - **2026-10-23 (QA):** magias de domínio/juramento sempre preparadas na criação e na subida de
   nível; `pnpm check` 20/20 (rpg-systems dnd5e 182 testes). Reimportar `phb-2014.book.json`.
   Próximo: popup de pendências de ficha após atualizações (ver `PROXIMOS_PASSOS.md`).

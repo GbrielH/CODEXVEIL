@@ -112,7 +112,8 @@ export class TestDatabase {
     options: { emailConfirmed?: boolean; email?: string } = {},
   ): Promise<TestUser> {
     const id = randomUUID();
-    const email = options.email ?? `${name.toLowerCase().replace(/\W+/g, '.')}.${id.slice(0, 8)}@teste.dev`;
+    const email =
+      options.email ?? `${name.toLowerCase().replace(/\W+/g, '.')}.${id.slice(0, 8)}@teste.dev`;
     await this.pg.query(
       `insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data)
        values ($1, $2, $3, $4)`,

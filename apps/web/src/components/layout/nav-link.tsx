@@ -32,7 +32,12 @@ export function NavLink({ href, icon, label, variant }: NavLinkProps) {
           active ? 'text-fg-accent' : 'text-fg-muted hover:text-fg',
         )}
       >
-        <span className={cx('rounded-full px-4 py-1 transition-colors', active && 'bg-wine-700 text-parchment-50 shadow-[0_0_16px_-4px_rgb(107_59_198/0.9)]')}>
+        <span
+          className={cx(
+            'rounded-full px-4 py-1 transition-colors',
+            active && 'bg-wine-700 text-parchment-50 shadow-[0_0_16px_-4px_rgb(107_59_198/0.9)]',
+          )}
+        >
           {icon}
         </span>
         {label}
