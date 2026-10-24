@@ -16,7 +16,7 @@ from run_monsters import extract  # noqa: E402
 
 ORIGIN = 'PDF do exemplar do usuário (uso pessoal, não distribuir)'
 PACKS = {
-    'MANUAL DE MONSTROS': {'id': 'mm-2014', 'name': 'Manual dos Monstros', 'category': 'core', 'species': None},
+    'MANUAL DE MONSTROS': {'id': 'mm-2014', 'name': 'Manual dos Monstros', 'category': 'core', 'species': None, 'toc_end': 5},
     'MONSTROS DO MULTIVERSO': {'id': 'mpmm', 'name': 'Monstros do Multiverso', 'category': 'monsters', 'species': (7, 37)},
     # Livro do Jogador 2014: as magias vêm do compêndio "Livro de Magias" (fonte "Livro do Jogador");
     # o capítulo de regras de conjuração do compêndio entra como texto.
@@ -25,7 +25,7 @@ PACKS = {
     'XANATAR': {'id': 'xgte', 'name': 'Guia de Xanathar para Todas as Coisas', 'category': 'player', 'species': None,
                 'monsters': False, 'extras': 'xanathar', 'sections': False},
     'CALDEIRÃO DE TASHA': {'id': 'tcoe', 'name': 'Caldeirão de Tudo de Tasha', 'category': 'player', 'species': None,
-                           'monsters': False, 'extras': 'tasha'},
+                           'monsters': False, 'extras': 'tasha', 'text': {'any_body_font': True, 'body_min': 8.5}, 'toc_end': 3},
 }
 
 
@@ -208,11 +208,22 @@ def ocr_sections(rows, skip_pages, key_prefix):
 EXTRAS = {'tasha': lambda rows, layout_dir: tasha(rows), 'xanathar': xanathar, 'phb': phb}
 
 
-def classifier(rows):
-    """Títulos pelo tamanho; texto só na fonte do corpo (tabelas e blocos em outra fonte ficam de fora)."""
+def classifier(rows, any_body_font=False, body_min=9.0):
+    """Títulos pelo tamanho; texto só na fonte do corpo (tabelas e blocos em outra fonte ficam de fora).
+
+    `any_body_font`/`body_min`: livros com o corpo em mais de uma fonte ou menor que 9 (Tasha: 8,9).
+    """
     body = collections.Counter(bookkit.family(r['f']) for r in rows if 9.5 <= r['s'] <= 10.6).most_common(1)[0][0]
 
     def classify(r, t):
+        if any_body_font:
+            if 25 <= r['s'] <= 40:
+                return 1
+            if r['s'] >= 17 and len(t) > 2:
+                return 2 if r['s'] < 40 else -1  # acima de 40: capitular
+            if r['s'] >= 10.8 and len(t) > 2:
+                return 3
+            return 0 if body_min <= r['s'] <= 10.7 else -1
         if r['s'] >= 17:
             return 1
         if r['s'] >= 12.5 and len(t) > 2:
@@ -249,9 +260,9 @@ def build(book, rows, layout_dir, out_dir, pdf_dir):
             used |= s.pop('_rows')
         entries += sp
     # As páginas iniciais (créditos e sumário) ficam de fora do texto.
-    toc_end = 6
+    toc_end = info.get('toc_end', 6)
     if info.get('sections', True):
-        entries += sections.build(rows, classifier(rows), exclude=frozenset(used), skip=lambda r, t: r['p'] <= toc_end)
+        entries += sections.build(rows, classifier(rows, **info.get('text', {})), exclude=frozenset(used), skip=lambda r, t: r['p'] <= toc_end)
     if any(e['kind'] == 'subclass' for e in entries):
         # Magias sempre preparadas das subclasses: tabelas do livro, com os nomes corrigidos pela
         # lista de magias do próprio livro e do Livro de Magias.

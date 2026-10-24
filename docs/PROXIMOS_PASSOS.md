@@ -65,7 +65,38 @@ conversa, retomar por esta lista:
    (T20). Cada atualização futura que mexer em dados de personagem entra em
    `listDnd5ePendingUpdates`/`listT20PendingUpdates`.
 
-### B2. Próxima tarefa grande: revisão completa dos livros, página por página (pedido de 2026-10-24)
+### B2. Revisão completa dos livros — 1ª rodada feita em 2026-10-25 (resultado abaixo)
+
+**Método:** cobertura página a página (`scratchpad/tools/coverage.py`, fora do repositório): para
+cada linha de texto do PDF (≥ 4 palavras), se os trigramas de palavras aparecem em alguma entrada
+do pacote. Páginas abaixo de 60% foram lidas e corrigidas.
+
+| Livro                       | Antes | Depois | O que mudou                                                                                                                                                                                                                                                                                                                 |
+| --------------------------- | ----- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tormenta20 JdA              | 53%   | 99,0%  | 175 seções de texto (os 10 capítulos, inclusive "Recompensas", cujo título é imagem); 4 ameaças com o ND na mesma linha do nome (Lobo-das-Cavernas, Capelão de Guerra, Cultista de Sszzaas, Tirano do Terceiro); extração refeita (35 origens, 433 poderes, 84 ameaças); hífen opcional e títulos em duas linhas corrigidos |
+| Livro do Jogador 2014 (OCR) | 40%   | 91,1%  | 1.317 seções (capítulos 1–11 e apêndices A–E); o resto são páginas de magia com outra tradução (as magias vêm do Livro de Magias)                                                                                                                                                                                           |
+| Livro de Magias             | 78%   | 88,8%  | 13 magias do PHB que a página de ilustração cortava (Escuridão, Velocidade, Campo Antimagia, Guardião da Fé…): 363 magias com fonte e texto; o resto é de outros livros (Mal Elemental, Unearthed Arcana) e índice                                                                                                          |
+| Guia de Xanathar (OCR)      | 34%   | 93,9%  | 743 seções com capítulos pelo rodapé; linhas ilegíveis (marca d'água) descartadas; correção de OCR por vocabulário (`ocr_fix.py`: "rn"→"m", "1"→"l", "Ü"→"O", sujeira) — trocas ambíguas foram testadas e removidas por estragarem palavras certas                                                                          |
+| Caldeirão de Tasha          | 71%   | 99,9%  | o corpo do livro é 8,9 pt e ficava fora; 80 seções por capítulo/classe                                                                                                                                                                                                                                                      |
+| Manual dos Monstros         | 96%   | 96,5%  | introdução "Estatísticas"                                                                                                                                                                                                                                                                                                   |
+| Monstros do Multiverso      | 93%   | 93,3%  | sem mudança; faltam as tabelas "Blocos de Estatísticas por Ambiente" (p. 287–289)                                                                                                                                                                                                                                           |
+
+Todos os pacotes passam no `parseBookPack`/`parseT20BookPack` sem nenhum problema. **O
+responsável precisa reimportar os 6 pacotes** (`livros-trabalho/out`).
+
+**Sistemas do livro x Codexveil:** condições do T20 (35) e do D&D: todas no sistema; classes,
+raças, origens, poderes, magias, equipamento, itens e ameaças viram dados usados pela criação, pela
+ficha e pela biblioteca. Regras opcionais que hoje são **só texto** (não automatizadas): Xanathar
+(queda, sono, proficiência com ferramentas, atividades de folga, armadilhas), Tasha (características
+opcionais de classe, patronos de grupo, ferramentas do mestre, origem personalizada), PHB
+(regras de aventura, viagem, descanso como texto; o descanso já existe na ficha) e T20 (perigos,
+tesouro por ND, mundo de Arton).
+
+**Pendente da revisão:** Domínio da Ordem (magias 7 e 9), Círculo da Terra, tabelas por ambiente
+do Monstros do Multiverso, qualidade do OCR do Xanathar e do PHB (erros residuais que o
+vocabulário não corrige com segurança), e decidir quais regras opcionais viram automação.
+
+### B2a. Texto original do pedido, página por página (pedido de 2026-10-24)
 
 Ler **todos** os livros de D&D (Livro do Jogador 2014, Livro de Magias, Guia de Xanathar,
 Caldeirão de Tasha, Manual dos Monstros, Monstros do Multiverso) e do Tormenta20 (JdA)
