@@ -1,6 +1,6 @@
 # Próximos passos
 
-> Relatório atualizado em **2026-10-24** (veja [Para encerrar o projeto](#para-encerrar-o-projeto-levantado-em-2026-10-24)). Mantenha este arquivo em dia a cada etapa concluída
+> Relatório atualizado em **2026-10-24** (veja [Continuidade](#continuidade-parada-em-2026-10-24-retomar-daqui)). Mantenha este arquivo em dia a cada etapa concluída
 > (veja [Como manter a documentação](#como-manter-a-documentação)). O inventário completo do
 > que falta em relação ao escopo inicial está em [`PENDENCIAS.md`](PENDENCIAS.md), e os
 > procedimentos de publicação em [`DEPLOY.md`](DEPLOY.md).
@@ -24,10 +24,10 @@
   navegador** em que o pedido foi feito.
 - A **recuperação de senha pedida pelo app não funciona**.
 
-## Para encerrar o projeto (levantado em 2026-10-24)
+## Continuidade: parada em 2026-10-24 (retomar daqui)
 
-Tudo o que foi pedido até 2026-10-24 está implementado. Para considerar o Codexveil encerrado,
-falta isto, em ordem:
+Fim do dia 2026-10-24. Tudo o que foi pedido até aqui está implementado e publicado. Na próxima
+conversa, retomar por esta lista:
 
 ### A. Verificações do responsável (sem elas, nada está comprovado em uso real)
 
@@ -45,7 +45,7 @@ falta isto, em ordem:
 5. **Amigos:** reimportar os livros com os arquivos novos (opcional; só economiza espaço no
    banco por voltar a compartilhar a cópia).
 
-### B. Lacunas conhecidas (Claude)
+### B. Próximas tarefas (Claude)
 
 1. **Livros:** Domínio da Ordem sem as magias dos níveis 7 e 9 (tabela partida no PDF); Círculo
    da Terra sem as magias por terreno (escolha do terreno na criação e na subida); texto
@@ -65,7 +65,7 @@ falta isto, em ordem:
    (T20). Cada atualização futura que mexer em dados de personagem entra em
    `listDnd5ePendingUpdates`/`listT20PendingUpdates`.
 
-### B2. Revisão completa dos livros, página por página (pedido de 2026-10-24)
+### B2. Próxima tarefa grande: revisão completa dos livros, página por página (pedido de 2026-10-24)
 
 Ler **todos** os livros de D&D (Livro do Jogador 2014, Livro de Magias, Guia de Xanathar,
 Caldeirão de Tasha, Manual dos Monstros, Monstros do Multiverso) e do Tormenta20 (JdA)
@@ -98,8 +98,8 @@ terreno) e o texto corrido do Livro do Jogador 2014 (só 7 seções).
 
 - **Behind the Magic** (Manual de Runas): ver [`MELHORIAS_FUTURAS.md`](MELHORIAS_FUTURAS.md).
 
-**Encerrado quando:** A.1 a A.4 forem feitos sem falhas novas e o responsável decidir se B entra
-ou fica para depois.
+**Ordem sugerida para retomar:** B.5 (chat do Tomo), as verificações de A com o responsável e
+depois a revisão completa dos livros (B2).
 
 ## Pedidos do responsável em 2026-10-20 (a fazer, em ordem de importância)
 
@@ -649,7 +649,7 @@ locais):
       subclasse atual ou recém-escolhida) entram na ficha. Teste em `books.test.ts`.
 - [x] Criação em nível alto já pede subclasse, aumentos de atributo e magias até o nível.
 - [x] O responsável reimportou `phb-2014.book.json` (2026-10-24).
-- [x] Nomes sem casar resolvidos por sinônimos (2026-10-24). Círculo da Terra: ver "Para encerrar".
+- [x] Nomes sem casar resolvidos por sinônimos (2026-10-24). Círculo da Terra: ver "Continuidade".
 - [x] **Feito em 2026-10-24:** pendências de personagem após atualizações. Quando uma atualização nossa
       acrescentar informação de personagem/campanha que falta num personagem já criado (ex.:
       magias sempre preparadas, escolhas novas), abrir um popup ao acessar o personagem ou a
