@@ -17,7 +17,9 @@ import {
   findT20Race,
   formatT20Bonus,
   plainT20,
-  rollT20Attributes,
+  rollT20AttributeDice,
+  t20PointBuyCost,
+  t20RollTotal,
   t20AttributeFromRoll,
   t20AttributeLabels,
   t20AttributeMethodLabels,
@@ -68,6 +70,7 @@ import {
 } from 'lucide-react';
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
+import { Dice3DOverlay } from '@/components/dice/dice-3d-overlay';
 import { useMemo, useRef, useState, useTransition, type ReactNode } from 'react';
 import { createT20CharacterAction } from '@/app/(app)/personagens/actions-t20';
 import { Alert } from '@/components/ui/alert';
@@ -1089,7 +1092,6 @@ function AttributesStep({
   draft,
   update,
   methods,
-  error,
 }: {
   draft: T20Draft;
   update: (patch: Partial<T20Draft>) => void;
@@ -1097,6 +1099,7 @@ function AttributesStep({
   error?: string | undefined;
 }) {
   const spent = t20PointsSpent(draft.points);
+  const [throwing, setThrowing] = useState<number[][] | null>(null);
   return (
     <div className="flex flex-col gap-5">
       {methods.length > 1 ? (
@@ -1154,7 +1157,13 @@ function AttributesStep({
                     size="sm"
                     variant="ghost"
                     aria-label={`Aumentar ${t20AttributeLabels[key].name}`}
-                    disabled={draft.points[key] >= T20_POINT_BUY_MAX}
+                    disabled={
+                      draft.points[key] >= T20_POINT_BUY_MAX ||
+                      spent -
+                        t20PointBuyCost(draft.points[key]) +
+                        t20PointBuyCost(draft.points[key] + 1) >
+                        T20_POINT_BUY_BUDGET
+                    }
                     onClick={() =>
                       update({ points: { ...draft.points, [key]: draft.points[key] + 1 } })
                     }
@@ -1168,20 +1177,30 @@ function AttributesStep({
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-3">
-            <Button
-              variant="secondary"
-              icon={<Dices className="h-4 w-4" aria-hidden="true" />}
-              onClick={() =>
-                update({
-                  rolls: rollT20Attributes(),
-                  rollAssignment: Object.fromEntries(
-                    T20_ATTRIBUTES.map((key) => [key, null]),
-                  ) as T20Draft['rollAssignment'],
-                })
-              }
-            >
-              {draft.rolls.length ? 'Rolar de novo' : 'Rolar 4d6 seis vezes'}
-            </Button>
+            {draft.rolls.length === 0 ? (
+              <Button
+                variant="secondary"
+                icon={<Dices className="h-4 w-4" aria-hidden="true" />}
+                disabled={throwing !== null}
+                onClick={() => setThrowing(rollT20AttributeDice())}
+              >
+                Rolar 4d6 seis vezes (uma vez só)
+              </Button>
+            ) : null}
+            {throwing ? (
+              <Dice3DOverlay
+                notation={`${throwing.map(() => '4d6').join('+')}@${throwing.flat().join(',')}`}
+                onDone={() => {
+                  update({
+                    rolls: throwing.map(t20RollTotal),
+                    rollAssignment: Object.fromEntries(
+                      T20_ATTRIBUTES.map((key) => [key, null]),
+                    ) as T20Draft['rollAssignment'],
+                  });
+                  setThrowing(null);
+                }}
+              />
+            ) : null}
             {draft.rolls.length ? (
               <span className="text-sm text-fg-secondary">
                 Resultados:{' '}
@@ -1228,7 +1247,6 @@ function AttributesStep({
           ) : null}
         </>
       )}
-      {error ? <Alert tone="danger">{error}</Alert> : null}
     </div>
   );
 }

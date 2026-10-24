@@ -39,9 +39,28 @@ import { t20HitPointsFor, t20ManaPointsFor } from './derived';
 import { T20_STARTING_MONEY, t20Tier } from './progression';
 import { t20DefaultResources } from './resources';
 import { parseT20Sheet, type T20Sheet } from './sheet';
-import { T20_SKILLS, T20_SKILL_IDS, t20SkillFromName, t20SkillSummaries, type T20Skill } from './skills';
+import {
+  T20_SKILLS,
+  T20_SKILL_IDS,
+  t20SkillFromName,
+  t20SkillSummaries,
+  type T20Skill,
+} from './skills';
 
-export const T20_STEPS = ['inicio', 'atributos', 'raca', 'classe', 'origem', 'divindade', 'pericias', 'poderes', 'magias', 'equipamento', 'detalhes', 'revisao'] as const;
+export const T20_STEPS = [
+  'inicio',
+  'atributos',
+  'raca',
+  'classe',
+  'origem',
+  'divindade',
+  'pericias',
+  'poderes',
+  'magias',
+  'equipamento',
+  'detalhes',
+  'revisao',
+] as const;
 export type T20Step = (typeof T20_STEPS)[number];
 
 export const t20StepLabels: Record<T20Step, string> = {
@@ -116,8 +135,14 @@ export interface T20Draft {
 }
 
 export function createT20Draft(level = 1, method: T20AttributeMethodChoice = 'pontos'): T20Draft {
-  const zero = Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, 0])) as Record<T20Attribute, number>;
-  const none = Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, null])) as Record<T20Attribute, number | null>;
+  const zero = Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, 0])) as Record<
+    T20Attribute,
+    number
+  >;
+  const none = Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, null])) as Record<
+    T20Attribute,
+    number | null
+  >;
   return {
     name: '',
     level,
@@ -173,34 +198,59 @@ export function t20BaseAttributes(draft: T20Draft): Record<T20Attribute, number 
   return Object.fromEntries(
     T20_ATTRIBUTES.map((key) => {
       const index = draft.rollAssignment[key];
-      return [key, index === null || draft.rolls[index] === undefined ? null : t20AttributeFromRoll(draft.rolls[index])];
+      return [
+        key,
+        index === null || draft.rolls[index] === undefined
+          ? null
+          : t20AttributeFromRoll(draft.rolls[index]),
+      ];
     }),
   ) as Record<T20Attribute, number | null>;
 }
 
 /** Modificadores da raça (fixos, variante e os +1 escolhidos). */
-export function t20RaceModifiers(content: T20Content, draft: T20Draft): Record<T20Attribute, number> {
-  const mods = Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, 0])) as Record<T20Attribute, number>;
+export function t20RaceModifiers(
+  content: T20Content,
+  draft: T20Draft,
+): Record<T20Attribute, number> {
+  const mods = Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, 0])) as Record<
+    T20Attribute,
+    number
+  >;
   const race = findT20Race(content, draft.raceId);
   if (!race) return mods;
   for (const [key, value] of Object.entries(race.attributes)) mods[key as T20Attribute] += value;
   const variant = race.variants.find((entry) => entry.name === draft.raceVariant);
-  for (const [key, value] of Object.entries(variant?.attributes ?? {})) mods[key as T20Attribute] += value;
-  if (race.attributeChoice) for (const key of draft.raceAttributeChoices.slice(0, race.attributeChoice.count)) mods[key] += race.attributeChoice.value;
+  for (const [key, value] of Object.entries(variant?.attributes ?? {}))
+    mods[key as T20Attribute] += value;
+  if (race.attributeChoice)
+    for (const key of draft.raceAttributeChoices.slice(0, race.attributeChoice.count))
+      mods[key] += race.attributeChoice.value;
   return mods;
 }
 
 /** Atributos finais (base + raça); atributos indefinidos contam como 0. */
-export function t20FinalAttributes(content: T20Content, draft: T20Draft): Record<T20Attribute, number> {
+export function t20FinalAttributes(
+  content: T20Content,
+  draft: T20Draft,
+): Record<T20Attribute, number> {
   const base = t20BaseAttributes(draft);
   const race = t20RaceModifiers(content, draft);
   const increases = t20LevelAttributeIncreases(content, draft);
-  return Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, (base[key] ?? 0) + race[key] + increases[key]])) as Record<T20Attribute, number>;
+  return Object.fromEntries(
+    T20_ATTRIBUTES.map((key) => [key, (base[key] ?? 0) + race[key] + increases[key]]),
+  ) as Record<T20Attribute, number>;
 }
 
 /** +1 de cada "Aumento de Atributo" escolhido como poder de nível na criação. */
-export function t20LevelAttributeIncreases(content: T20Content, draft: T20Draft): Record<T20Attribute, number> {
-  const totals = Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, 0])) as Record<T20Attribute, number>;
+export function t20LevelAttributeIncreases(
+  content: T20Content,
+  draft: T20Draft,
+): Record<T20Attribute, number> {
+  const totals = Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, 0])) as Record<
+    T20Attribute,
+    number
+  >;
   for (const [level, id] of Object.entries(draft.levelPowers)) {
     if (Number(level) > draft.level) continue;
     const power = content.powers.find((entry) => entry.id === id);
@@ -211,28 +261,51 @@ export function t20LevelAttributeIncreases(content: T20Content, draft: T20Draft)
 }
 
 /** Habilidades com escolha de todos os níveis da criação (2º nível em diante). */
-export function t20CreationFeatureChoices(content: T20Content, draft: T20Draft): (T20FeatureChoice & { key: string; level: number })[] {
+export function t20CreationFeatureChoices(
+  content: T20Content,
+  draft: T20Draft,
+): (T20FeatureChoice & { key: string; level: number })[] {
   const klass = t20ClassOf(content, draft) ?? null;
   const list: (T20FeatureChoice & { key: string; level: number })[] = [];
   for (let level = 2; level <= draft.level; level += 1) {
-    for (const choice of t20FeatureChoicesAt(content, klass, level)) list.push({ ...choice, level, key: `${level}:${choice.ability}` });
+    for (const choice of t20FeatureChoicesAt(content, klass, level))
+      list.push({ ...choice, level, key: `${level}:${choice.ability}` });
   }
   return list;
 }
 
-/** Rola 4d6 descartando o menor, seis vezes; repete o menor até a soma dos atributos ser ≥ 6. */
-export function rollT20Attributes(random: () => number = Math.random): number[] {
+/** Total de um 4d6 descartando o menor. */
+export function t20RollTotal(dice: readonly number[]): number {
+  return [...dice]
+    .sort((a, b) => a - b)
+    .slice(1)
+    .reduce((sum, value) => sum + value, 0);
+}
+
+/**
+ * Rola 4d6 seis vezes e devolve os quatro dados de cada rolagem (para a animação 3D); repete a
+ * menor até a soma dos atributos ser ≥ 6.
+ */
+export function rollT20AttributeDice(random: () => number = Math.random): number[][] {
   const d6 = () => 1 + Math.floor(random() * 6);
-  const roll = () => {
-    const dice = [d6(), d6(), d6(), d6()].sort((a, b) => a - b);
-    return dice[1]! + dice[2]! + dice[3]!;
-  };
+  const roll = () => [d6(), d6(), d6(), d6()];
   const rolls = Array.from({ length: 6 }, roll);
-  for (let guard = 0; guard < 50 && rolls.reduce((sum, value) => sum + t20AttributeFromRoll(value), 0) < T20_ROLL_MINIMUM_SUM; guard += 1) {
-    const lowest = rolls.indexOf(Math.min(...rolls));
-    rolls[lowest] = roll();
+  const totals = () => rolls.map(t20RollTotal);
+  for (
+    let guard = 0;
+    guard < 50 &&
+    totals().reduce((sum, value) => sum + t20AttributeFromRoll(value), 0) < T20_ROLL_MINIMUM_SUM;
+    guard += 1
+  ) {
+    const current = totals();
+    rolls[current.indexOf(Math.min(...current))] = roll();
   }
   return rolls;
+}
+
+/** Rola 4d6 descartando o menor, seis vezes; repete o menor até a soma dos atributos ser ≥ 6. */
+export function rollT20Attributes(random: () => number = Math.random): number[] {
+  return rollT20AttributeDice(random).map(t20RollTotal);
 }
 
 // ---------------------------------------------------------------------------
@@ -259,7 +332,9 @@ export function t20SpellAttribute(content: T20Content, draft: T20Draft): T20Attr
 
 /** Maior círculo de magia no nível de classe. */
 export function t20MaxCircle(klass: T20Item<'class'>, level: number): number {
-  const circles = Object.entries(klass.spellcasting?.circles ?? {}).filter(([, from]) => from <= level);
+  const circles = Object.entries(klass.spellcasting?.circles ?? {}).filter(
+    ([, from]) => from <= level,
+  );
   return circles.reduce((max, [circle]) => Math.max(max, Number(circle)), 0);
 }
 
@@ -270,7 +345,8 @@ export function t20SpellCount(content: T20Content, draft: T20Draft): number {
   const { initial, learnEvery } = klass.spellcasting;
   let learned = 0;
   for (let level = 2; level <= draft.level; level += 1) {
-    if (isArcanist(klass) && draft.arcanistPath === 'feiticeiro') learned += level % 2 === 1 ? 1 : 0;
+    if (isArcanist(klass) && draft.arcanistPath === 'feiticeiro')
+      learned += level % 2 === 1 ? 1 : 0;
     else if (level % learnEvery === 0) learned += 1;
   }
   return initial + learned;
@@ -287,11 +363,22 @@ export function t20AvailableSpells(content: T20Content, draft: T20Draft): T20Ite
     (spell) =>
       spell.circle <= maxCircle &&
       (spell.type === type || spell.type === 'universal') &&
-      (klass.spellcasting!.schoolsChoice === 0 || schools.size === 0 || schools.has(plainT20(spell.school))),
+      (klass.spellcasting!.schoolsChoice === 0 ||
+        schools.size === 0 ||
+        schools.has(plainT20(spell.school))),
   );
 }
 
-export const T20_SPELL_SCHOOLS = ['Abjuração', 'Adivinhação', 'Convocação', 'Encantamento', 'Evocação', 'Ilusão', 'Necromancia', 'Transmutação'] as const;
+export const T20_SPELL_SCHOOLS = [
+  'Abjuração',
+  'Adivinhação',
+  'Convocação',
+  'Encantamento',
+  'Evocação',
+  'Ilusão',
+  'Necromancia',
+  'Transmutação',
+] as const;
 
 /** Níveis em que a classe ganha um poder (a tabela cita "Poder de <classe>"). */
 export function t20PowerLevels(klass: T20Item<'class'>, level: number): number[] {
@@ -307,7 +394,8 @@ export function t20Lineages(klass: T20Item<'class'> | undefined): string[] {
   const section = klass?.sections.find((entry) => /linhage/i.test(entry.title));
   if (!section) return [];
   const names = new Set<string>();
-  for (const match of section.text.matchAll(/Linhagem [A-ZÁÉÍÓÚÂÊÔÃÕÇ][\wáéíóúâêôãõç]+/g)) names.add(match[0]);
+  for (const match of section.text.matchAll(/Linhagem [A-ZÁÉÍÓÚÂÊÔÃÕÇ][\wáéíóúâêôãõç]+/g))
+    names.add(match[0]);
   return [...names];
 }
 
@@ -316,38 +404,63 @@ export function t20Lineages(klass: T20Item<'class'> | undefined): string[] {
 // ---------------------------------------------------------------------------
 
 function originSkills(draft: T20Draft): T20Skill[] {
-  return draft.originBenefits.filter((entry) => entry.startsWith('skill:')).map((entry) => entry.slice(6) as T20Skill);
+  return draft.originBenefits
+    .filter((entry) => entry.startsWith('skill:'))
+    .map((entry) => entry.slice(6) as T20Skill);
 }
 
 /** Perícias treinadas que vêm de graça (fixas da classe, escolhas "X ou Y" e origem). */
 export function t20GrantedSkills(content: T20Content, draft: T20Draft): T20Skill[] {
   const klass = t20ClassOf(content, draft);
-  return [...new Set([...(klass?.skillsFixed ?? []), ...draft.classFixedChoices, ...originSkills(draft)])];
+  return [
+    ...new Set([...(klass?.skillsFixed ?? []), ...draft.classFixedChoices, ...originSkills(draft)]),
+  ];
 }
 
 /** Todas as perícias treinadas do rascunho. */
-const ATTRIBUTE_BY_WORD: Record<string, T20Attribute> = { forca: 'for', destreza: 'des', constituicao: 'con', inteligencia: 'int', sabedoria: 'sab', carisma: 'car' };
+const ATTRIBUTE_BY_WORD: Record<string, T20Attribute> = {
+  forca: 'for',
+  destreza: 'des',
+  constituicao: 'con',
+  inteligencia: 'int',
+  sabedoria: 'sab',
+  carisma: 'car',
+};
 
 /**
  * Habilidade de 1º nível que pede perícias treinadas em quantidade igual a um atributo (no livro:
  * Especialista do Ladino, "igual a sua Inteligência… mínimo 1"). Vale para qualquer classe com
  * esse texto.
  */
-export function t20ExpertiseRule(content: T20Content, draft: T20Draft): { ability: string; count: number; attribute: T20Attribute } | null {
+export function t20ExpertiseRule(
+  content: T20Content,
+  draft: T20Draft,
+): { ability: string; count: number; attribute: T20Attribute } | null {
   const klass = t20ClassOf(content, draft);
   for (const ability of klass?.abilities ?? []) {
     if (ability.level > 1) continue;
-    const match = /escolha um numero de pericias treinadas igual a sua (\w+)/.exec(plainT20(ability.text));
+    const match = /escolha um numero de pericias treinadas igual a sua (\w+)/.exec(
+      plainT20(ability.text),
+    );
     const attribute = match?.[1] ? ATTRIBUTE_BY_WORD[match[1]] : undefined;
     if (!attribute) continue;
-    const value = (t20BaseAttributes(draft)[attribute] ?? 0) + t20RaceModifiers(content, draft)[attribute];
+    const value =
+      (t20BaseAttributes(draft)[attribute] ?? 0) + t20RaceModifiers(content, draft)[attribute];
     return { ability: ability.name, count: Math.max(1, value), attribute };
   }
   return null;
 }
 
 export function t20TrainedSkills(content: T20Content, draft: T20Draft): T20Skill[] {
-  return [...new Set([...t20GrantedSkills(content, draft), ...draft.classSkills, ...draft.intSkills, ...draft.raceSkills, ...t20LevelPowerTrainedSkills(content, draft)])];
+  return [
+    ...new Set([
+      ...t20GrantedSkills(content, draft),
+      ...draft.classSkills,
+      ...draft.intSkills,
+      ...draft.raceSkills,
+      ...t20LevelPowerTrainedSkills(content, draft),
+    ]),
+  ];
 }
 
 /** Perícias treinadas por poderes de nível como "Treinamento em Perícia". */
@@ -356,7 +469,8 @@ export function t20LevelPowerTrainedSkills(content: T20Content, draft: T20Draft)
   for (const [level, id] of Object.entries(draft.levelPowers)) {
     if (Number(level) > draft.level) continue;
     const power = content.powers.find((entry) => entry.id === id);
-    if (power && t20PowerSkillPick(power)?.trains) out.push(...(draft.levelPowerSkills[level] ?? []));
+    if (power && t20PowerSkillPick(power)?.trains)
+      out.push(...(draft.levelPowerSkills[level] ?? []));
   }
   return out;
 }
@@ -385,7 +499,10 @@ export function t20EligibleDeities(content: T20Content, draft: T20Draft): T20Ite
     const devotos = plainT20(deity.details['Devotos'] ?? '');
     if (!devotos || devotos.startsWith('quaisquer')) return true;
     const stem = (word: string) => word.slice(0, Math.max(4, word.length - 2));
-    return (raceName && devotos.includes(stem(raceName.split(/[/ ]/)[0]!))) || (className && devotos.includes(stem(className)));
+    return (
+      (raceName && devotos.includes(stem(raceName.split(/[/ ]/)[0]!))) ||
+      (className && devotos.includes(stem(className)))
+    );
   });
 }
 
@@ -396,7 +513,13 @@ export function t20EligibleDeities(content: T20Content, draft: T20Draft): T20Ite
 /** Pré-requisitos que o Codexveil confere: atributos, perícias treinadas, nível e poderes. */
 export function t20PrerequisiteProblems(
   prerequisite: string,
-  context: { attributes: Record<T20Attribute, number>; skills: readonly T20Skill[]; level: number; powers: readonly string[]; content: T20Content },
+  context: {
+    attributes: Record<T20Attribute, number>;
+    skills: readonly T20Skill[];
+    level: number;
+    powers: readonly string[];
+    content: T20Content;
+  },
 ): string[] {
   const problems: string[] = [];
   if (!prerequisite) return problems;
@@ -406,13 +529,15 @@ export function t20PrerequisiteProblems(
     const attr = /^(For|Des|Con|Int|Sab|Car)\s+(-?\d+)/i.exec(part);
     if (attr) {
       const key = attr[1]!.toLowerCase() as T20Attribute;
-      if (context.attributes[key] < Number(attr[2])) problems.push(`${t20AttributeLabels[key].abbreviation} ${attr[2]}`);
+      if (context.attributes[key] < Number(attr[2]))
+        problems.push(`${t20AttributeLabels[key].abbreviation} ${attr[2]}`);
       continue;
     }
     const trained = /treinado em ([^,]+)/i.exec(part);
     if (trained) {
       const skill = t20SkillFromName(trained[1]!);
-      if (skill && !context.skills.includes(skill)) problems.push(`treinado em ${T20_SKILLS[skill].label}`);
+      if (skill && !context.skills.includes(skill))
+        problems.push(`treinado em ${T20_SKILLS[skill].label}`);
       continue;
     }
     const level = /(\d+)º nível/i.exec(part);
@@ -421,7 +546,8 @@ export function t20PrerequisiteProblems(
       continue;
     }
     const power = findT20PowerByName(context.content, part);
-    if (power && !context.powers.some((name) => plainT20(name) === plainT20(power.name))) problems.push(power.name);
+    if (power && !context.powers.some((name) => plainT20(name) === plainT20(power.name)))
+      problems.push(power.name);
   }
   return problems;
 }
@@ -431,7 +557,10 @@ export function t20PowerOptions(content: T20Content, draft: T20Draft): T20Item<'
   const klass = t20ClassOf(content, draft);
   // Poderes que só vêm de uma habilidade com escolha (ex.: Égide Sagrada) não entram na lista.
   const choiceOnly = t20ChoiceOnlyPowers(klass ?? null);
-  return [...(klass ? t20ClassPowers(content, klass.name) : []), ...t20GeneralPowers(content)].filter((power) => !choiceOnly.has(plainT20(power.name)));
+  return [
+    ...(klass ? t20ClassPowers(content, klass.name) : []),
+    ...t20GeneralPowers(content),
+  ].filter((power) => !choiceOnly.has(plainT20(power.name)));
 }
 
 /**
@@ -441,19 +570,29 @@ export function t20PowerOptions(content: T20Content, draft: T20Draft): T20Item<'
 export function t20GenericPowerGroups(benefitName: string): string[] | null {
   const text = plainT20(benefitName);
   if (!text.includes('a sua escolha') && !text.startsWith('um poder')) return null;
-  for (const group of ['combate', 'destino', 'magia', 'tormenta']) if (text.includes(group)) return [group];
+  for (const group of ['combate', 'destino', 'magia', 'tormenta'])
+    if (text.includes(group)) return [group];
   return ['combate', 'destino', 'magia', 'tormenta'];
 }
 
 /** Poderes que podem ser escolhidos num benefício genérico da origem. */
-export function t20GenericPowerOptions(content: T20Content, benefitName: string): T20Item<'feat'>[] {
+export function t20GenericPowerOptions(
+  content: T20Content,
+  benefitName: string,
+): T20Item<'feat'>[] {
   const groups = t20GenericPowerGroups(benefitName) ?? [];
   return content.powers.filter((power) => groups.includes(power.group));
 }
 
 /** Poder efetivo de um benefício de origem `power:<nome>` (o escolhido, se for genérico). */
-function originBenefitPower(content: T20Content, draft: T20Draft, name: string, originName?: string): T20Item<'feat'> | undefined {
-  if (t20GenericPowerGroups(name)) return content.powers.find((power) => power.id === draft.originPowerChoices[name]);
+function originBenefitPower(
+  content: T20Content,
+  draft: T20Draft,
+  name: string,
+  originName?: string,
+): T20Item<'feat'> | undefined {
+  if (t20GenericPowerGroups(name))
+    return content.powers.find((power) => power.id === draft.originPowerChoices[name]);
   return findT20PowerByName(content, name, originName);
 }
 
@@ -463,7 +602,9 @@ export function t20DraftPowerNames(content: T20Content, draft: T20Draft): string
   for (const benefit of draft.originBenefits) {
     if (!benefit.startsWith('power:')) continue;
     const name = benefit.slice(6);
-    const chosen = t20GenericPowerGroups(name) ? originBenefitPower(content, draft, name)?.name : name;
+    const chosen = t20GenericPowerGroups(name)
+      ? originBenefitPower(content, draft, name)?.name
+      : name;
     if (chosen) names.push(chosen);
   }
   const granted = content.powers.find((power) => power.id === draft.grantedPowerId);
@@ -485,19 +626,28 @@ const STARTING_LIGHT_ARMORS = ['armadura de couro', 'couro batido', 'gibao de pe
 
 export function t20EquipmentOptions(content: T20Content, draft: T20Draft) {
   const klass = t20ClassOf(content, draft);
-  const weapons = content.equipment.filter((item) => item.group === 'arma' && item.damage && item.damage !== '—');
+  const weapons = content.equipment.filter(
+    (item) => item.group === 'arma' && item.damage && item.damage !== '—',
+  );
   const armors = content.equipment.filter((item) => item.group === 'armadura');
   const proficiency = klass?.proficiencies ?? { weapons: ['simples'], armors: ['leves'], text: '' };
   const noArmor = isArcanist(klass);
   return {
     simple: weapons.filter((item) => item.category === 'simples'),
-    martial: proficiency.weapons.includes('marciais') ? weapons.filter((item) => item.category === 'marciais') : [],
+    martial: proficiency.weapons.includes('marciais')
+      ? weapons.filter((item) => item.category === 'marciais')
+      : [],
     armors: noArmor
       ? []
       : armors.filter(
-          (item) => STARTING_LIGHT_ARMORS.includes(plainT20(item.name)) || (proficiency.armors.includes('pesadas') && plainT20(item.name) === 'brunea'),
+          (item) =>
+            STARTING_LIGHT_ARMORS.includes(plainT20(item.name)) ||
+            (proficiency.armors.includes('pesadas') && plainT20(item.name) === 'brunea'),
         ),
-    shield: !noArmor && proficiency.armors.includes('escudos') ? armors.find((item) => plainT20(item.name) === 'escudo leve') : undefined,
+    shield:
+      !noArmor && proficiency.armors.includes('escudos')
+        ? armors.find((item) => plainT20(item.name) === 'escudo leve')
+        : undefined,
   };
 }
 
@@ -505,23 +655,41 @@ export function t20EquipmentOptions(content: T20Content, draft: T20Draft) {
 // Validação
 // ---------------------------------------------------------------------------
 
-export function t20DraftIssues(content: T20Content, draft: T20Draft, context: { allowedMethods?: readonly T20AttributeMethodChoice[] } = {}): T20Issue[] {
+export function t20DraftIssues(
+  content: T20Content,
+  draft: T20Draft,
+  context: { allowedMethods?: readonly T20AttributeMethodChoice[] } = {},
+): T20Issue[] {
   const issues: T20Issue[] = [];
-  const add = (step: T20Step, path: string, message: string) => issues.push({ step, path, message });
+  const add = (step: T20Step, path: string, message: string) =>
+    issues.push({ step, path, message });
 
   if (!draft.name.trim()) add('inicio', 'name', 'Dê um nome ao personagem.');
-  if (context.allowedMethods && !context.allowedMethods.includes(draft.attributeMethod)) add('atributos', 'attributeMethod', 'O mestre não liberou este método de atributos.');
+  if (context.allowedMethods && !context.allowedMethods.includes(draft.attributeMethod))
+    add('atributos', 'attributeMethod', 'O mestre não liberou este método de atributos.');
 
   // Atributos
   if (draft.attributeMethod === 'pontos') {
     const spent = t20PointsSpent(draft.points);
-    if (T20_ATTRIBUTES.some((key) => draft.points[key] < T20_POINT_BUY_MIN || draft.points[key] > T20_POINT_BUY_MAX)) add('atributos', 'points', 'Na compra por pontos, os valores vão de –1 a 4.');
-    if (spent > T20_POINT_BUY_BUDGET) add('atributos', 'points', `Você gastou ${spent} pontos; o limite é ${T20_POINT_BUY_BUDGET}.`);
+    if (
+      T20_ATTRIBUTES.some(
+        (key) => draft.points[key] < T20_POINT_BUY_MIN || draft.points[key] > T20_POINT_BUY_MAX,
+      )
+    )
+      add('atributos', 'points', 'Na compra por pontos, os valores vão de –1 a 4.');
+    if (spent > T20_POINT_BUY_BUDGET)
+      add(
+        'atributos',
+        'points',
+        `Você gastou ${spent} pontos; o limite é ${T20_POINT_BUY_BUDGET}.`,
+      );
   } else {
     if (draft.rolls.length !== 6) add('atributos', 'rolls', 'Role os atributos.');
     const used = T20_ATTRIBUTES.map((key) => draft.rollAssignment[key]);
-    if (used.some((value) => value === null)) add('atributos', 'rollAssignment', 'Distribua um resultado em cada atributo.');
-    else if (new Set(used).size !== 6) add('atributos', 'rollAssignment', 'Cada resultado só pode ir em um atributo.');
+    if (used.some((value) => value === null))
+      add('atributos', 'rollAssignment', 'Distribua um resultado em cada atributo.');
+    else if (new Set(used).size !== 6)
+      add('atributos', 'rollAssignment', 'Cada resultado só pode ir em um atributo.');
   }
 
   // Raça
@@ -530,15 +698,36 @@ export function t20DraftIssues(content: T20Content, draft: T20Draft, context: { 
   else {
     if (race.attributeChoice) {
       const picks = new Set(draft.raceAttributeChoices);
-      if (picks.size !== race.attributeChoice.count || draft.raceAttributeChoices.length !== race.attributeChoice.count) {
-        add('raca', 'raceAttributeChoices', `Escolha ${race.attributeChoice.count} atributos diferentes para o bônus da raça.`);
+      if (
+        picks.size !== race.attributeChoice.count ||
+        draft.raceAttributeChoices.length !== race.attributeChoice.count
+      ) {
+        add(
+          'raca',
+          'raceAttributeChoices',
+          `Escolha ${race.attributeChoice.count} atributos diferentes para o bônus da raça.`,
+        );
       }
-      if (draft.raceAttributeChoices.some((key) => race.attributeChoice!.exclude.includes(key))) add('raca', 'raceAttributeChoices', 'Um dos atributos escolhidos não pode receber o bônus desta raça.');
+      if (draft.raceAttributeChoices.some((key) => race.attributeChoice!.exclude.includes(key)))
+        add(
+          'raca',
+          'raceAttributeChoices',
+          'Um dos atributos escolhidos não pode receber o bônus desta raça.',
+        );
     }
-    if (race.variants.length > 0 && !race.variants.some((variant) => variant.name === draft.raceVariant)) add('raca', 'raceVariant', 'Escolha a variante da raça.');
+    if (
+      race.variants.length > 0 &&
+      !race.variants.some((variant) => variant.name === draft.raceVariant)
+    )
+      add('raca', 'raceVariant', 'Escolha a variante da raça.');
     if (raceIsVersatile(race)) {
       const wanted = draft.raceSkillPower ? 1 : 2;
-      if (draft.raceSkills.length !== wanted) add('pericias', 'raceSkills', `Versátil: escolha ${wanted === 2 ? 'duas perícias' : 'uma perícia'}${draft.raceSkillPower ? ' (a outra virou um poder)' : ''}.`);
+      if (draft.raceSkills.length !== wanted)
+        add(
+          'pericias',
+          'raceSkills',
+          `Versátil: escolha ${wanted === 2 ? 'duas perícias' : 'uma perícia'}${draft.raceSkillPower ? ' (a outra virou um poder)' : ''}.`,
+        );
     }
   }
 
@@ -546,45 +735,96 @@ export function t20DraftIssues(content: T20Content, draft: T20Draft, context: { 
   const klass = t20ClassOf(content, draft);
   if (!klass) add('classe', 'classId', 'Escolha uma classe.');
   else {
-    if (draft.classFixedChoices.length !== klass.skillsFixedChoices.length) add('pericias', 'classFixedChoices', 'Escolha as perícias de classe com opção ("Luta ou Pontaria").');
-    if (draft.classSkills.length !== klass.skillsChoice.count) add('pericias', 'classSkills', `Escolha ${klass.skillsChoice.count} perícias da classe.`);
-    if (draft.classSkills.some((skill) => !klass.skillsChoice.options.includes(skill))) add('pericias', 'classSkills', 'Uma das perícias escolhidas não é da lista da classe.');
-    if (isArcanist(klass) && !draft.arcanistPath) add('classe', 'arcanistPath', 'Escolha o caminho do arcanista.');
-    if (isArcanist(klass) && draft.arcanistPath === 'feiticeiro' && t20Lineages(klass).length > 0 && !draft.lineage) add('classe', 'lineage', 'Escolha a linhagem do feiticeiro.');
-    if (klass.spellcasting && klass.spellcasting.schoolsChoice > 0 && draft.spellSchools.length !== klass.spellcasting.schoolsChoice) {
-      add('magias', 'spellSchools', `Escolha ${klass.spellcasting.schoolsChoice} escolas de magia.`);
+    if (draft.classFixedChoices.length !== klass.skillsFixedChoices.length)
+      add(
+        'pericias',
+        'classFixedChoices',
+        'Escolha as perícias de classe com opção ("Luta ou Pontaria").',
+      );
+    if (draft.classSkills.length !== klass.skillsChoice.count)
+      add('pericias', 'classSkills', `Escolha ${klass.skillsChoice.count} perícias da classe.`);
+    if (draft.classSkills.some((skill) => !klass.skillsChoice.options.includes(skill)))
+      add('pericias', 'classSkills', 'Uma das perícias escolhidas não é da lista da classe.');
+    if (isArcanist(klass) && !draft.arcanistPath)
+      add('classe', 'arcanistPath', 'Escolha o caminho do arcanista.');
+    if (
+      isArcanist(klass) &&
+      draft.arcanistPath === 'feiticeiro' &&
+      t20Lineages(klass).length > 0 &&
+      !draft.lineage
+    )
+      add('classe', 'lineage', 'Escolha a linhagem do feiticeiro.');
+    if (
+      klass.spellcasting &&
+      klass.spellcasting.schoolsChoice > 0 &&
+      draft.spellSchools.length !== klass.spellcasting.schoolsChoice
+    ) {
+      add(
+        'magias',
+        'spellSchools',
+        `Escolha ${klass.spellcasting.schoolsChoice} escolas de magia.`,
+      );
     }
   }
 
   // Perícias por Inteligência
   const finalAttributes = t20FinalAttributes(content, draft);
   const intCount = Math.max(0, finalAttributes.int);
-  if (draft.intSkills.length !== intCount) add('pericias', 'intSkills', intCount ? `Escolha ${intCount} perícia(s) pela Inteligência.` : 'Sem perícias extras pela Inteligência.');
-  const allTrained = [...t20GrantedSkills(content, draft), ...draft.classSkills, ...draft.intSkills, ...draft.raceSkills];
-  if (new Set(allTrained).size !== allTrained.length) add('pericias', 'skills', 'Há perícias repetidas: troque as que já vêm treinadas.');
+  if (draft.intSkills.length !== intCount)
+    add(
+      'pericias',
+      'intSkills',
+      intCount
+        ? `Escolha ${intCount} perícia(s) pela Inteligência.`
+        : 'Sem perícias extras pela Inteligência.',
+    );
+  const allTrained = [
+    ...t20GrantedSkills(content, draft),
+    ...draft.classSkills,
+    ...draft.intSkills,
+    ...draft.raceSkills,
+  ];
+  if (new Set(allTrained).size !== allTrained.length)
+    add('pericias', 'skills', 'Há perícias repetidas: troque as que já vêm treinadas.');
   const expertise = t20ExpertiseRule(content, draft);
   if (expertise) {
     const trained = t20TrainedSkills(content, draft);
-    if (draft.expertSkills.length !== expertise.count || draft.expertSkills.some((skill) => !trained.includes(skill))) add('pericias', 'expertSkills', `${expertise.ability}: escolha ${expertise.count} perícia(s) treinada(s).`);
+    if (
+      draft.expertSkills.length !== expertise.count ||
+      draft.expertSkills.some((skill) => !trained.includes(skill))
+    )
+      add(
+        'pericias',
+        'expertSkills',
+        `${expertise.ability}: escolha ${expertise.count} perícia(s) treinada(s).`,
+      );
   }
 
   // Origem
   const origin = findT20Origin(content, draft.originId);
   if (!origin) add('origem', 'originId', 'Escolha uma origem.');
-  else if (origin.benefitSkills.length + origin.benefitPowers.length > 0 && draft.originBenefits.length !== 2) add('origem', 'originBenefits', 'Escolha dois benefícios da origem.');
+  else if (
+    origin.benefitSkills.length + origin.benefitPowers.length > 0 &&
+    draft.originBenefits.length !== 2
+  )
+    add('origem', 'originBenefits', 'Escolha dois benefícios da origem.');
   for (const benefit of draft.originBenefits) {
     const name = benefit.startsWith('power:') ? benefit.slice(6) : '';
-    if (name && t20GenericPowerGroups(name) && !originBenefitPower(content, draft, name)) add('origem', 'originPowerChoices', `Escolha o poder de "${name}".`);
+    if (name && t20GenericPowerGroups(name) && !originBenefitPower(content, draft, name))
+      add('origem', 'originPowerChoices', `Escolha o poder de "${name}".`);
   }
 
   // Divindade
-  if (t20MustBeDevoted(content, draft) && !draft.deityId) add('divindade', 'deityId', 'Sua classe exige ser devoto de uma divindade.');
+  if (t20MustBeDevoted(content, draft) && !draft.deityId)
+    add('divindade', 'deityId', 'Sua classe exige ser devoto de uma divindade.');
   if (draft.deityId) {
     const deity = findT20Deity(content, draft.deityId);
     if (!deity) add('divindade', 'deityId', 'Divindade inválida.');
     else {
-      if (!t20EligibleDeities(content, draft).some((entry) => entry.id === deity.id)) add('divindade', 'deityId', 'Sua raça ou classe não pode ser devota desta divindade.');
-      if (!t20GrantedPowers(content, deity.name).some((power) => power.id === draft.grantedPowerId)) add('divindade', 'grantedPowerId', 'Escolha um poder concedido da divindade.');
+      if (!t20EligibleDeities(content, draft).some((entry) => entry.id === deity.id))
+        add('divindade', 'deityId', 'Sua raça ou classe não pode ser devota desta divindade.');
+      if (!t20GrantedPowers(content, deity.name).some((power) => power.id === draft.grantedPowerId))
+        add('divindade', 'grantedPowerId', 'Escolha um poder concedido da divindade.');
     }
   }
 
@@ -604,34 +844,63 @@ export function t20DraftIssues(content: T20Content, draft: T20Draft, context: { 
         powers: powers.filter((name) => plainT20(name) !== plainT20(chosen.name)),
         content,
       });
-      if (problems.length) add('poderes', `levelPowers.${level}`, `${chosen.name}: falta ${problems.join(', ')}.`);
+      if (problems.length)
+        add('poderes', `levelPowers.${level}`, `${chosen.name}: falta ${problems.join(', ')}.`);
     }
     for (const level of t20PowerLevels(klass, draft.level)) {
       const chosen = content.powers.find((power) => power.id === draft.levelPowers[String(level)]);
       if (!chosen || !isT20AttributeIncrease(chosen.name)) continue;
       const attribute = draft.levelPowerAttributes[String(level)];
-      if (!attribute) add('poderes', `levelPowers.${level}`, `Escolha o atributo do Aumento de Atributo do ${level}º nível.`);
+      if (!attribute)
+        add(
+          'poderes',
+          `levelPowers.${level}`,
+          `Escolha o atributo do Aumento de Atributo do ${level}º nível.`,
+        );
       else {
         const sameTier = t20PowerLevels(klass, draft.level).filter(
-          (other) => other !== level && t20Tier(other) === t20Tier(level) && draft.levelPowerAttributes[String(other)] === attribute && isT20AttributeIncrease(content.powers.find((power) => power.id === draft.levelPowers[String(other)])?.name ?? ''),
+          (other) =>
+            other !== level &&
+            t20Tier(other) === t20Tier(level) &&
+            draft.levelPowerAttributes[String(other)] === attribute &&
+            isT20AttributeIncrease(
+              content.powers.find((power) => power.id === draft.levelPowers[String(other)])?.name ??
+                '',
+            ),
         );
-        if (sameTier.length) add('poderes', `levelPowers.${level}`, 'Cada atributo só pode receber um Aumento de Atributo por patamar.');
+        if (sameTier.length)
+          add(
+            'poderes',
+            `levelPowers.${level}`,
+            'Cada atributo só pode receber um Aumento de Atributo por patamar.',
+          );
       }
     }
     for (const choice of t20CreationFeatureChoices(content, draft)) {
-      if (!choice.options.some((option) => option.id === draft.featureChoices[choice.key])) add('poderes', `featureChoices.${choice.key}`, `${choice.ability} (${choice.level}º nível): escolha uma opção.`);
+      if (!choice.options.some((option) => option.id === draft.featureChoices[choice.key]))
+        add(
+          'poderes',
+          `featureChoices.${choice.key}`,
+          `${choice.ability} (${choice.level}º nível): escolha uma opção.`,
+        );
     }
     for (const level of t20PowerLevels(klass, draft.level)) {
       const chosen = content.powers.find((power) => power.id === draft.levelPowers[String(level)]);
       const pick = chosen ? t20PowerSkillPick(chosen) : null;
-      if (chosen && pick && (draft.levelPowerSkills[String(level)] ?? []).length !== pick.count) add('poderes', `levelPowers.${level}`, `${chosen.name} (${level}º nível): escolha ${pick.count} perícia(s).`);
+      if (chosen && pick && (draft.levelPowerSkills[String(level)] ?? []).length !== pick.count)
+        add(
+          'poderes',
+          `levelPowers.${level}`,
+          `${chosen.name} (${level}º nível): escolha ${pick.count} perícia(s).`,
+        );
     }
     // Poderes repetíveis ("Aumento de Atributo", "Treinamento em Perícia") podem repetir; os outros, não.
     const repeated = Object.values(draft.levelPowers).filter((id, index, all) => {
       const power = content.powers.find((entry) => entry.id === id);
       return all.indexOf(id) !== index && !(power && t20PowerRepeatable(power));
     });
-    if (repeated.length) add('poderes', 'levelPowers', 'O mesmo poder foi escolhido mais de uma vez.');
+    if (repeated.length)
+      add('poderes', 'levelPowers', 'O mesmo poder foi escolhido mais de uma vez.');
   }
 
   // Magias
@@ -639,15 +908,24 @@ export function t20DraftIssues(content: T20Content, draft: T20Draft, context: { 
     const wanted = t20SpellCount(content, draft);
     const available = new Set(t20AvailableSpells(content, draft).map((spell) => spell.id));
     if (draft.spellIds.length !== wanted) add('magias', 'spellIds', `Escolha ${wanted} magias.`);
-    if (draft.spellIds.some((id) => !available.has(id))) add('magias', 'spellIds', 'Uma das magias não pode ser aprendida pela sua classe neste nível.');
+    if (draft.spellIds.some((id) => !available.has(id)))
+      add(
+        'magias',
+        'spellIds',
+        'Uma das magias não pode ser aprendida pela sua classe neste nível.',
+      );
   }
 
   // Equipamento
   const options = t20EquipmentOptions(content, draft);
-  if (options.simple.length && !draft.equipment.simple) add('equipamento', 'equipment.simple', 'Escolha uma arma simples.');
-  if (options.martial.length && !draft.equipment.martial) add('equipamento', 'equipment.martial', 'Escolha uma arma marcial.');
-  if (options.armors.length && !draft.equipment.armor) add('equipamento', 'equipment.armor', 'Escolha a armadura.');
-  if (draft.level === 1 && draft.money === null) add('equipamento', 'money', 'Role o dinheiro inicial (4d6 T$).');
+  if (options.simple.length && !draft.equipment.simple)
+    add('equipamento', 'equipment.simple', 'Escolha uma arma simples.');
+  if (options.martial.length && !draft.equipment.martial)
+    add('equipamento', 'equipment.martial', 'Escolha uma arma marcial.');
+  if (options.armors.length && !draft.equipment.armor)
+    add('equipamento', 'equipment.armor', 'Escolha a armadura.');
+  if (draft.level === 1 && draft.money === null)
+    add('equipamento', 'money', 'Role o dinheiro inicial (4d6 T$).');
 
   return issues;
 }
@@ -678,18 +956,33 @@ export interface T20BuiltCharacter {
   abilities: AbilityEntryTemplate[];
 }
 
-export function buildT20Character(content: T20Content, draft: T20Draft, sourcebooks: readonly string[] = []): T20BuiltCharacter {
+export function buildT20Character(
+  content: T20Content,
+  draft: T20Draft,
+  sourcebooks: readonly string[] = [],
+): T20BuiltCharacter {
   const race = findT20Race(content, draft.raceId);
   const klass = t20ClassOf(content, draft);
   const origin = findT20Origin(content, draft.originId);
   const deity = findT20Deity(content, draft.deityId);
   const attributes = t20FinalAttributes(content, draft);
   const spellAttribute = t20SpellAttribute(content, draft);
-  const trained = t20TrainedSkills(content, draft).filter((skill) => (T20_SKILL_IDS as readonly string[]).includes(skill));
+  const trained = t20TrainedSkills(content, draft).filter((skill) =>
+    (T20_SKILL_IDS as readonly string[]).includes(skill),
+  );
 
-  const hitPoints = klass ? t20HitPointsFor([{ pvInitial: klass.pvInitial, pvPerLevel: klass.pvPerLevel, level: draft.level }], attributes.con, raceHitPointBonus(race, draft.level)) : 1;
+  const hitPoints = klass
+    ? t20HitPointsFor(
+        [{ pvInitial: klass.pvInitial, pvPerLevel: klass.pvPerLevel, level: draft.level }],
+        attributes.con,
+        raceHitPointBonus(race, draft.level),
+      )
+    : 1;
   const manaPoints = klass
-    ? t20ManaPointsFor([{ pmPerLevel: klass.pmPerLevel, level: draft.level }], klass.spellcasting?.addsAttributeToPm && spellAttribute ? attributes[spellAttribute] : 0)
+    ? t20ManaPointsFor(
+        [{ pmPerLevel: klass.pmPerLevel, level: draft.level }],
+        klass.spellcasting?.addsAttributeToPm && spellAttribute ? attributes[spellAttribute] : 0,
+      )
     : 0;
 
   const options = t20EquipmentOptions(content, draft);
@@ -697,24 +990,61 @@ export function buildT20Character(content: T20Content, draft: T20Draft, sourcebo
   const shield = draft.equipment.shield ? options.shield : undefined;
   const heavy = armor?.category === 'armaduras pesadas';
 
-  const powerRefs: { key: string; name: string; source: string; level: number; attribute?: T20Attribute }[] = [];
+  const powerRefs: {
+    key: string;
+    name: string;
+    source: string;
+    level: number;
+    attribute?: T20Attribute;
+  }[] = [];
   const pushPower = (power: T20Item<'feat'> | undefined, source: string, level: number) => {
     if (power) powerRefs.push({ key: power.id, name: power.name, source, level });
   };
   for (const benefit of draft.originBenefits) {
-    if (benefit.startsWith('power:')) pushPower(originBenefitPower(content, draft, benefit.slice(6), origin?.name), `Origem: ${origin?.name ?? ''}`, 1);
+    if (benefit.startsWith('power:'))
+      pushPower(
+        originBenefitPower(content, draft, benefit.slice(6), origin?.name),
+        `Origem: ${origin?.name ?? ''}`,
+        1,
+      );
   }
-  pushPower(content.powers.find((power) => power.id === draft.grantedPowerId), `Devoto de ${deity?.name ?? ''}`, 1);
-  pushPower(content.powers.find((power) => power.id === draft.raceSkillPower), `Raça: ${race?.name ?? ''} (Versátil)`, 1);
+  pushPower(
+    content.powers.find((power) => power.id === draft.grantedPowerId),
+    `Devoto de ${deity?.name ?? ''}`,
+    1,
+  );
+  pushPower(
+    content.powers.find((power) => power.id === draft.raceSkillPower),
+    `Raça: ${race?.name ?? ''} (Versátil)`,
+    1,
+  );
   for (const [level, id] of Object.entries(draft.levelPowers)) {
     if (!klass || !t20PowerLevels(klass, draft.level).includes(Number(level))) continue;
     const power = content.powers.find((entry) => entry.id === id);
     const attribute = draft.levelPowerAttributes[level];
     if (power && attribute && isT20AttributeIncrease(power.name)) {
-      const names: Record<T20Attribute, string> = { for: 'Força', des: 'Destreza', con: 'Constituição', int: 'Inteligência', sab: 'Sabedoria', car: 'Carisma' };
-      powerRefs.push({ key: power.id, name: `${power.name} (${names[attribute]})`, source: `${klass.name} ${level}º nível`, level: Number(level), attribute });
+      const names: Record<T20Attribute, string> = {
+        for: 'Força',
+        des: 'Destreza',
+        con: 'Constituição',
+        int: 'Inteligência',
+        sab: 'Sabedoria',
+        car: 'Carisma',
+      };
+      powerRefs.push({
+        key: power.id,
+        name: `${power.name} (${names[attribute]})`,
+        source: `${klass.name} ${level}º nível`,
+        level: Number(level),
+        attribute,
+      });
     } else if (power && t20PowerSkillPick(power) && (draft.levelPowerSkills[level] ?? []).length) {
-      powerRefs.push({ key: power.id, name: `${power.name} (${(draft.levelPowerSkills[level] ?? []).map((skill) => T20_SKILLS[skill].label).join(', ')})`, source: `${klass.name} ${level}º nível`, level: Number(level) });
+      powerRefs.push({
+        key: power.id,
+        name: `${power.name} (${(draft.levelPowerSkills[level] ?? []).map((skill) => T20_SKILLS[skill].label).join(', ')})`,
+        source: `${klass.name} ${level}º nível`,
+        level: Number(level),
+      });
     } else pushPower(power, `${klass.name} ${level}º nível`, Number(level));
   }
   const featurePicks = t20CreationFeatureChoices(content, draft).flatMap((choice) => {
@@ -722,7 +1052,13 @@ export function buildT20Character(content: T20Content, draft: T20Draft, sourcebo
     return option ? [{ choice, option }] : [];
   });
   for (const { choice, option } of featurePicks) {
-    if (!option.id.startsWith('opcao:')) powerRefs.push({ key: option.id, name: option.name, source: `${klass?.name ?? ''} ${choice.level}º nível (${choice.ability})`, level: choice.level });
+    if (!option.id.startsWith('opcao:'))
+      powerRefs.push({
+        key: option.id,
+        name: option.name,
+        source: `${klass?.name ?? ''} ${choice.level}º nível (${choice.ability})`,
+        level: choice.level,
+      });
   }
 
   const spells = draft.spellIds
@@ -757,9 +1093,22 @@ export function buildT20Character(content: T20Content, draft: T20Draft, sourcebo
       useDexterity: !heavy,
       armorPenalty: (armor?.penalty ?? 0) + (shield?.penalty ?? 0),
     },
-    proficiencies: { weapons: klass?.proficiencies.weapons ?? ['simples'], armors: klass?.proficiencies.armors ?? ['leves'], other: klass?.proficiencies.text ?? '' },
+    proficiencies: {
+      weapons: klass?.proficiencies.weapons ?? ['simples'],
+      armors: klass?.proficiencies.armors ?? ['leves'],
+      other: klass?.proficiencies.text ?? '',
+    },
     powers: powerRefs,
-    spells: { attribute: spellAttribute, known: spells.map((spell) => ({ key: spell.id, name: spell.name, source: klass?.name ?? '', circle: spell.circle, type: spell.type })) },
+    spells: {
+      attribute: spellAttribute,
+      known: spells.map((spell) => ({
+        key: spell.id,
+        name: spell.name,
+        source: klass?.name ?? '',
+        circle: spell.circle,
+        type: spell.type,
+      })),
+    },
   });
 
   // Inventário: kit de todo aventureiro, armas, armadura, escudo e os itens da origem.
@@ -769,66 +1118,174 @@ export function buildT20Character(content: T20Content, draft: T20Draft, sourcebo
     const value = Number.parseFloat((item?.spaces ?? '').replace(',', '.'));
     return Number.isFinite(value) && value >= 0 ? value : null;
   };
-  const addItem = (name: string, category: ItemTemplate['category'], description = '', equipped = false, spaces: number | null = null) =>
-    items.push({ name: name.slice(0, 120), category, quantity: 1, weight: spaces, description: description.slice(0, 4000), notes: '', isEquipped: equipped, sortOrder: items.length });
+  const addItem = (
+    name: string,
+    category: ItemTemplate['category'],
+    description = '',
+    equipped = false,
+    spaces: number | null = null,
+  ) =>
+    items.push({
+      name: name.slice(0, 120),
+      category,
+      quantity: 1,
+      weight: spaces,
+      description: description.slice(0, 4000),
+      notes: '',
+      isEquipped: equipped,
+      sortOrder: items.length,
+    });
   addItem('Mochila', 'gear');
   addItem('Saco de dormir', 'gear');
   addItem('Traje de viajante', 'gear');
   const weaponText = (item: T20Item<'equipment'> | undefined) =>
-    item ? [`Dano ${item.damage}`, `crítico ${item.critical}`, item.range && item.range !== '—' ? `alcance ${item.range}` : '', item.damageType].filter(Boolean).join(', ') : '';
+    item
+      ? [
+          `Dano ${item.damage}`,
+          `crítico ${item.critical}`,
+          item.range && item.range !== '—' ? `alcance ${item.range}` : '',
+          item.damageType,
+        ]
+          .filter(Boolean)
+          .join(', ')
+      : '';
   const simple = options.simple.find((item) => item.id === draft.equipment.simple);
   const martial = options.martial.find((item) => item.id === draft.equipment.martial);
   if (simple) addItem(simple.name, 'weapon', weaponText(simple), true, spacesOf(simple));
   if (martial) addItem(martial.name, 'weapon', weaponText(martial), true, spacesOf(martial));
-  if (armor) addItem(armor.name, 'armor', `Defesa +${armor.defense ?? 0}, penalidade ${armor.penalty ?? 0}`, true, spacesOf(armor));
-  if (shield) addItem(shield.name, 'armor', `Defesa +${shield.defense ?? 0}, penalidade ${shield.penalty ?? 0}`, true, spacesOf(shield));
+  if (armor)
+    addItem(
+      armor.name,
+      'armor',
+      `Defesa +${armor.defense ?? 0}, penalidade ${armor.penalty ?? 0}`,
+      true,
+      spacesOf(armor),
+    );
+  if (shield)
+    addItem(
+      shield.name,
+      'armor',
+      `Defesa +${shield.defense ?? 0}, penalidade ${shield.penalty ?? 0}`,
+      true,
+      spacesOf(shield),
+    );
   if (origin?.items) addItem(`Itens da origem (${origin.name})`, 'gear', origin.items);
 
   // Habilidades: raça, classe até o nível, poderes e magias.
   const abilities: AbilityEntryTemplate[] = [];
-  const addAbility = (entry: Omit<AbilityEntryTemplate, 'sortOrder'>) => abilities.push({ ...entry, sortOrder: abilities.length });
-  for (const ability of race?.abilities ?? []) addAbility({ kind: 'species_trait', name: ability.name, source: race!.name, description: ability.text, data: {} });
+  const addAbility = (entry: Omit<AbilityEntryTemplate, 'sortOrder'>) =>
+    abilities.push({ ...entry, sortOrder: abilities.length });
+  for (const ability of race?.abilities ?? [])
+    addAbility({
+      kind: 'species_trait',
+      name: ability.name,
+      source: race!.name,
+      description: ability.text,
+      data: {},
+    });
   for (const ability of klass?.abilities ?? []) {
     if (ability.level > draft.level || /^poder de /i.test(ability.name)) continue;
-    const description = ability.options.length ? `${ability.text}\n\n${ability.options.map((option) => `• ${option.name}. ${option.text}`).join('\n')}` : ability.text;
-    addAbility({ kind: 'class_feature', name: ability.name, source: `${klass!.name} ${ability.level}º nível`, description, data: { level: ability.level } });
+    const description = ability.options.length
+      ? `${ability.text}\n\n${ability.options.map((option) => `• ${option.name}. ${option.text}`).join('\n')}`
+      : ability.text;
+    addAbility({
+      kind: 'class_feature',
+      name: ability.name,
+      source: `${klass!.name} ${ability.level}º nível`,
+      description,
+      data: { level: ability.level },
+    });
   }
   if (isArcanist(klass) && draft.arcanistPath) {
-    const path = klass!.abilities.flatMap((ability) => ability.options).find((option) => plainT20(option.name) === draft.arcanistPath);
-    if (path) addAbility({ kind: 'class_feature', name: `Caminho: ${path.name}`, source: klass!.name, description: path.text, data: {} });
+    const path = klass!.abilities
+      .flatMap((ability) => ability.options)
+      .find((option) => plainT20(option.name) === draft.arcanistPath);
+    if (path)
+      addAbility({
+        kind: 'class_feature',
+        name: `Caminho: ${path.name}`,
+        source: klass!.name,
+        description: path.text,
+        data: {},
+      });
   }
   const expertise = t20ExpertiseRule(content, draft);
   if (expertise && draft.expertSkills.length) {
-    const index = abilities.findIndex((entry) => entry.kind === 'class_feature' && plainT20(entry.name) === plainT20(expertise.ability));
+    const index = abilities.findIndex(
+      (entry) =>
+        entry.kind === 'class_feature' && plainT20(entry.name) === plainT20(expertise.ability),
+    );
     const label = draft.expertSkills.map((skill) => T20_SKILLS[skill].label).join(', ');
-    if (index >= 0) abilities[index] = { ...abilities[index]!, name: `${expertise.ability} (${label})`.slice(0, 120) };
+    if (index >= 0)
+      abilities[index] = {
+        ...abilities[index]!,
+        name: `${expertise.ability} (${label})`.slice(0, 120),
+      };
   }
   for (const { choice, option } of featurePicks) {
-    if (option.id.startsWith('opcao:')) addAbility({ kind: 'class_feature', name: option.name, source: `${klass?.name ?? ''} ${choice.level}º nível`, description: option.text, data: { level: choice.level } });
+    if (option.id.startsWith('opcao:'))
+      addAbility({
+        kind: 'class_feature',
+        name: option.name,
+        source: `${klass?.name ?? ''} ${choice.level}º nível`,
+        description: option.text,
+        data: { level: choice.level },
+      });
   }
   if (draft.lineage) {
     const section = klass?.sections.find((entry) => /linhage/i.test(entry.title));
-    addAbility({ kind: 'class_feature', name: draft.lineage, source: 'Feiticeiro', description: section?.text ?? '', data: {} });
+    addAbility({
+      kind: 'class_feature',
+      name: draft.lineage,
+      source: 'Feiticeiro',
+      description: section?.text ?? '',
+      data: {},
+    });
   }
   for (const power of origin?.uniquePowers ?? []) {
     if (powerRefs.some((ref) => plainT20(ref.name) === plainT20(power.name))) continue;
-    if (draft.originBenefits.some((benefit) => benefit === `power:${power.name}`)) addAbility({ kind: 'background_feature', name: power.name, source: origin!.name, description: power.text, data: {} });
+    if (draft.originBenefits.some((benefit) => benefit === `power:${power.name}`))
+      addAbility({
+        kind: 'background_feature',
+        name: power.name,
+        source: origin!.name,
+        description: power.text,
+        data: {},
+      });
   }
   for (const ref of powerRefs) {
     const power = content.powers.find((entry) => entry.id === ref.key);
-    addAbility({ kind: 'feat', name: ref.name, source: ref.source, description: power?.text ?? '', data: { prerequisite: power?.prerequisite ?? '' } });
+    addAbility({
+      kind: 'feat',
+      name: ref.name,
+      source: ref.source,
+      description: power?.text ?? '',
+      data: { prerequisite: power?.prerequisite ?? '' },
+    });
   }
   for (const spell of spells) {
-    const header = [`${spell.type} ${spell.circle} (${spell.school})`, spell.execution && `Execução: ${spell.execution}`, spell.range && `Alcance: ${spell.range}`, spell.duration && `Duração: ${spell.duration}`]
+    const header = [
+      `${spell.type} ${spell.circle} (${spell.school})`,
+      spell.execution && `Execução: ${spell.execution}`,
+      spell.range && `Alcance: ${spell.range}`,
+      spell.duration && `Duração: ${spell.duration}`,
+    ]
       .filter(Boolean)
       .join(' · ');
-    const upgrades = spell.upgrades.map((upgrade) => `+${upgrade.cost} PM: ${upgrade.text}`).join('\n');
+    const upgrades = spell.upgrades
+      .map((upgrade) => `+${upgrade.cost} PM: ${upgrade.text}`)
+      .join('\n');
     addAbility({
       kind: 'spell',
       name: spell.name,
       source: klass?.name ?? '',
       description: [header, spell.text, upgrades].filter(Boolean).join('\n\n').slice(0, 12000),
-      data: { circle: spell.circle, type: spell.type, school: spell.school, cost: [1, 3, 6, 10, 15][spell.circle - 1] ?? 1 },
+      data: {
+        circle: spell.circle,
+        type: spell.type,
+        school: spell.school,
+        cost: [1, 3, 6, 10, 15][spell.circle - 1] ?? 1,
+      },
     });
   }
 
@@ -848,7 +1305,11 @@ export function buildT20Character(content: T20Content, draft: T20Draft, sourcebo
 const shortText = (max: number) => z.string().trim().max(max).catch('');
 const idList = (max: number) => z.array(z.string().trim().min(1).max(160)).max(max).catch([]);
 const attributeNumbers = (min: number, max: number) =>
-  z.object(Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, z.number().int().min(min).max(max).catch(0)])) as Record<T20Attribute, z.ZodCatch<z.ZodNumber>>);
+  z.object(
+    Object.fromEntries(
+      T20_ATTRIBUTES.map((key) => [key, z.number().int().min(min).max(max).catch(0)]),
+    ) as Record<T20Attribute, z.ZodCatch<z.ZodNumber>>,
+  );
 
 const t20DraftSchema = z.object({
   name: shortText(80),
@@ -857,18 +1318,37 @@ const t20DraftSchema = z.object({
   points: attributeNumbers(-1, 4).catch(createT20Draft().points),
   rolls: z.array(z.number().int().min(3).max(18)).max(6).catch([]),
   rollAssignment: z
-    .object(Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, z.number().int().min(0).max(5).nullable().catch(null)])) as Record<T20Attribute, z.ZodCatch<z.ZodNullable<z.ZodNumber>>>)
+    .object(
+      Object.fromEntries(
+        T20_ATTRIBUTES.map((key) => [key, z.number().int().min(0).max(5).nullable().catch(null)]),
+      ) as Record<T20Attribute, z.ZodCatch<z.ZodNullable<z.ZodNumber>>>,
+    )
     .catch(createT20Draft().rollAssignment),
   raceId: shortText(160),
   raceAttributeChoices: z.array(z.enum(T20_ATTRIBUTES)).max(6).catch([]),
   raceVariant: shortText(80),
-  raceSkills: z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(4).catch([]),
+  raceSkills: z
+    .array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]]))
+    .max(4)
+    .catch([]),
   raceSkillPower: shortText(160),
   classId: shortText(160),
-  classFixedChoices: z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(4).catch([]),
-  classSkills: z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(12).catch([]),
-  intSkills: z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(12).catch([]),
-  expertSkills: z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(12).catch([]),
+  classFixedChoices: z
+    .array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]]))
+    .max(4)
+    .catch([]),
+  classSkills: z
+    .array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]]))
+    .max(12)
+    .catch([]),
+  intSkills: z
+    .array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]]))
+    .max(12)
+    .catch([]),
+  expertSkills: z
+    .array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]]))
+    .max(12)
+    .catch([]),
   arcanistPath: z.enum(['bruxo', 'feiticeiro', 'mago', '']).catch(''),
   lineage: shortText(80),
   spellSchools: z.array(z.string().trim().max(40)).max(8).catch([]),
@@ -879,11 +1359,18 @@ const t20DraftSchema = z.object({
   grantedPowerId: shortText(160),
   levelPowers: z.record(z.string().max(4), z.string().trim().max(160)).catch({}),
   levelPowerAttributes: z.record(z.string().max(4), z.enum(T20_ATTRIBUTES)).catch({}),
-  levelPowerSkills: z.record(z.string().max(4), z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(3)).catch({}),
+  levelPowerSkills: z
+    .record(z.string().max(4), z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(3))
+    .catch({}),
   featureChoices: z.record(z.string().max(220), z.string().trim().max(160)).catch({}),
   spellIds: idList(60),
   equipment: z
-    .object({ simple: shortText(160), martial: shortText(160), armor: shortText(160), shield: z.boolean().catch(false) })
+    .object({
+      simple: shortText(160),
+      martial: shortText(160),
+      armor: shortText(160),
+      shield: z.boolean().catch(false),
+    })
     .catch({ simple: '', martial: '', armor: '', shield: false }),
   money: z.number().int().min(4).max(24).nullable().catch(null),
   appearance: shortText(4000),
@@ -898,16 +1385,24 @@ export function parseT20Draft(input: unknown): T20Draft {
 }
 
 /** Opções de benefício da origem com uma descrição curta (perícia: para que serve; poder: texto). */
-export function t20OriginBenefitOptions(content: T20Content, origin: T20Content['origins'][number]): { id: string; name: string; description: string }[] {
+export function t20OriginBenefitOptions(
+  content: T20Content,
+  origin: T20Content['origins'][number],
+): { id: string; name: string; description: string }[] {
   const clip = (text: string) => (text.length > 180 ? `${text.slice(0, 179).trimEnd()}…` : text);
   return [
-    ...origin.benefitSkills.map((skill) => ({ id: `skill:${skill}`, name: `Perícia: ${T20_SKILLS[skill].label}`, description: t20SkillSummaries[skill] })),
+    ...origin.benefitSkills.map((skill) => ({
+      id: `skill:${skill}`,
+      name: `Perícia: ${T20_SKILLS[skill].label}`,
+      description: t20SkillSummaries[skill],
+    })),
     ...origin.benefitPowers.map((name) => {
       const unique = origin.uniquePowers.find((power) => plainT20(power.name) === plainT20(name));
       const power = unique ?? findT20PowerByName(content, name, origin.name);
-      const description = t20GenericPowerGroups(name) ? 'Você escolhe o poder logo abaixo.' : clip(power?.text ?? '');
+      const description = t20GenericPowerGroups(name)
+        ? 'Você escolhe o poder logo abaixo.'
+        : clip(power?.text ?? '');
       return { id: `power:${name}`, name: `Poder: ${name}`, description };
     }),
   ];
 }
-

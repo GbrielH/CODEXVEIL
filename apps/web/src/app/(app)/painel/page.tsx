@@ -9,17 +9,7 @@ import {
 } from '@codexveil/database';
 import { findSystem, summarizeSheet } from '@codexveil/rpg-systems';
 import { formatInviteCode } from '@codexveil/domain';
-import {
-  CalendarClock,
-  ChevronRight,
-  KeyRound,
-  Mail,
-  Play,
-  Plus,
-  ScrollText,
-  Swords,
-  UserPlus,
-} from 'lucide-react';
+import { CalendarClock, KeyRound, Mail, Play, Plus, ScrollText, Swords } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -81,24 +71,6 @@ export default async function DashboardPage({ searchParams }: PageProps<'/painel
 
   const archivedCount = campaigns.length - active.length;
   const firstName = (profile?.displayName ?? 'aventureiro').split(' ')[0];
-
-  const shortcuts = [
-    {
-      href: routes.newCampaign,
-      icon: <Plus className="h-4 w-4" aria-hidden="true" />,
-      label: 'Nova campanha',
-    },
-    {
-      href: routes.newCharacter,
-      icon: <UserPlus className="h-4 w-4" aria-hidden="true" />,
-      label: 'Novo personagem',
-    },
-    {
-      href: '/convite',
-      icon: <KeyRound className="h-4 w-4" aria-hidden="true" />,
-      label: 'Entrar com código',
-    },
-  ];
 
   return (
     <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_20rem]">
@@ -258,30 +230,8 @@ export default async function DashboardPage({ searchParams }: PageProps<'/painel
         </section>
       </div>
 
-      {/* Coluna da direita: atalhos, agenda e personagens. */}
+      {/* Coluna da direita: agenda e personagens (a navegação fica no menu lateral). */}
       <aside aria-label="Atalhos e agenda" className="flex flex-col gap-6">
-        <Card>
-          <CardHeader title="Atalhos rápidos" />
-          <ul className="flex flex-col gap-2">
-            {shortcuts.map((shortcut) => (
-              <li key={shortcut.label}>
-                <Link
-                  href={shortcut.href as Route}
-                  className="group flex items-center gap-3 rounded-lg border border-line px-3 py-2.5 text-sm text-fg transition-colors hover:border-wine-400/50 hover:bg-hover"
-                >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-md bg-wine-900/60 text-wine-300">
-                    {shortcut.icon}
-                  </span>
-                  <span className="flex-1">{shortcut.label}</span>
-                  <ChevronRight
-                    className="h-4 w-4 text-fg-subtle group-hover:text-wine-300"
-                    aria-hidden="true"
-                  />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Card>
         <Card>
           <CardHeader
             icon={<CalendarClock className="h-5 w-5" aria-hidden="true" />}

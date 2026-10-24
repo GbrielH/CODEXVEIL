@@ -18,7 +18,6 @@ import { routes } from '@/lib/routes';
 import { AssistantCard } from './assistant-card';
 import { NavLink } from './nav-link';
 import { ShellFrame, SidebarToggle } from './shell-frame';
-import { ThemeToggle } from './theme-toggle';
 import { TopBar, type SearchEntry } from './top-bar';
 
 interface NavItem {
@@ -143,13 +142,8 @@ export function AppShell({
             <p className="truncate text-sm font-medium text-fg">{displayName}</p>
             <p className="text-[11px] text-emerald-300/90">Online</p>
           </div>
-          <ThemeToggle compact />
-          <span className="group-data-[collapsed=true]/shell:hidden">
-            <SignOutButton />
-          </span>
-          <span className="hidden group-data-[collapsed=true]/shell:block">
-            <SignOutButton compact />
-          </span>
+          {/* Só o ícone de sair: o nome cabe inteiro no rodapé. */}
+          <SignOutButton compact />
         </div>
       </aside>
 
@@ -168,7 +162,6 @@ export function AppShell({
           </Link>
           <div className="flex items-center gap-1">
             {assistant ? <AssistantCard compact /> : null}
-            <ThemeToggle compact />
             <Avatar name={displayName} size="sm" />
             <SignOutButton compact />
           </div>
