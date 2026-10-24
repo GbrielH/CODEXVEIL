@@ -61,6 +61,35 @@ falta isto, em ordem:
    (T20). Cada atualização futura que mexer em dados de personagem entra em
    `listDnd5ePendingUpdates`/`listT20PendingUpdates`.
 
+### B2. Revisão completa dos livros, página por página (pedido de 2026-10-24)
+
+Ler **todos** os livros de D&D (Livro do Jogador 2014, Livro de Magias, Guia de Xanathar,
+Caldeirão de Tasha, Manual dos Monstros, Monstros do Multiverso) e do Tormenta20 (JdA)
+**página por página**, do início ao fim, e conferir se **tudo** está nos pacotes JSON
+(`livros-trabalho/out/*.book.json`): cada texto, cada tabela, cada quadro lateral, cada regra,
+cada raça, classe, subclasse, característica, magia, talento, antecedente, origem, divindade,
+poder, equipamento, item mágico, monstro e ameaça. Nada pode ficar de fora.
+
+Como fazer:
+
+1. Para cada livro, gerar uma lista página → conteúdo esperado a partir do PDF (texto extraído
+   em `livros-trabalho/layout/*.jsonl` e, nos livros escaneados, o OCR em `ddocr/`).
+2. Comparar com o pacote: para cada página, marcar onde cada trecho foi parar (qual entrada e
+   campo) e listar o que não aparece em nenhuma entrada. Conferir também o texto corrido
+   (`section`), as tabelas (ex.: magias de subclasse, progressão de classe, preços) e os quadros
+   laterais.
+3. Conferir as contagens com os sumários e índices de cada livro (quantidade de magias, monstros,
+   itens, talentos…), e a qualidade do texto (erros de OCR, palavras partidas, ordem das colunas).
+4. Corrigir os scripts em `scripts/books/` (nunca colocar o conteúdo do livro no repositório),
+   gerar os pacotes de novo e registrar aqui, por livro, o que foi conferido, o que faltava e o
+   que foi corrigido.
+5. O responsável reimporta os pacotes novos em Meus livros.
+
+Lacunas já sabidas para começar: Domínio da Ordem (níveis 7 e 9), Círculo da Terra (magias por
+terreno) e o texto corrido do Livro do Jogador 2014 (só 7 seções).
+
+**Pronto quando:** cada livro tiver um registro de revisão página por página sem pendências.
+
 ### C. Adiado por decisão do responsável
 
 - **Behind the Magic** (Manual de Runas): ver [`MELHORIAS_FUTURAS.md`](MELHORIAS_FUTURAS.md).
