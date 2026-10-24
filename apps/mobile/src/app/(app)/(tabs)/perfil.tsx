@@ -1,8 +1,16 @@
 import { getProfile, updateProfile } from '@codexveil/database';
-import { fieldErrorsFrom, profileUpdateSchema, type FieldErrors } from '@codexveil/validation';
+import {
+  AVATAR_ICONS,
+  fieldErrorsFrom,
+  profileUpdateSchema,
+  type AvatarIcon,
+  type FieldErrors,
+} from '@codexveil/validation';
 import { LogOut } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
+import { Avatar } from '@/components/ui/avatar';
+import { AVATAR_SVGS } from '@/components/ui/avatar-svgs.gen';
 import { Button } from '@/components/ui/button';
 import { CheckRow } from '@/components/ui/controls';
 import { useConfirm } from '@/components/ui/dialog';
@@ -24,6 +32,7 @@ function ProfileForm({ profile, onSaved }: { profile: Profile; onSaved: () => vo
   const toast = useToast();
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [bio, setBio] = useState(profile.bio);
+  const [avatar, setAvatar] = useState<AvatarIcon | null>(profile.preferences.avatar);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
 
@@ -31,7 +40,7 @@ function ProfileForm({ profile, onSaved }: { profile: Profile; onSaved: () => vo
     const parsed = profileUpdateSchema.safeParse({
       displayName,
       bio,
-      preferences: profile.preferences,
+      preferences: { ...profile.preferences, avatar },
     });
     if (!parsed.success) {
       setErrors(fieldErrorsFrom(parsed.error));
@@ -72,6 +81,26 @@ function ProfileForm({ profile, onSaved }: { profile: Profile; onSaved: () => vo
         multiline
         error={errors.bio}
       />
+      <AppText variant="small">Retrato (aparece na mesa; sem retrato, ficam as iniciais)</AppText>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {[null, ...AVATAR_ICONS].map((icon) => (
+          <Pressable
+            key={icon ?? 'iniciais'}
+            onPress={() => setAvatar(icon)}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: avatar === icon }}
+            accessibilityLabel={icon ? AVATAR_SVGS[icon].label : 'Iniciais'}
+            style={{
+              padding: 4,
+              borderRadius: 10,
+              borderWidth: 2,
+              borderColor: avatar === icon ? colors.fgAccent : 'transparent',
+            }}
+          >
+            <Avatar name={displayName || '?'} icon={icon} size={52} />
+          </Pressable>
+        ))}
+      </View>
       <Button label="Salvar perfil" onPress={() => void save()} loading={busy} />
     </Card>
   );

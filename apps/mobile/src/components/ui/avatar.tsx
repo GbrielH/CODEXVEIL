@@ -1,0 +1,53 @@
+import type { AvatarIcon } from '@codexveil/validation';
+import { View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
+import { colors, fonts } from '@/lib/theme';
+import { AVATAR_SVGS } from './avatar-svgs.gen';
+import { AppText } from './primitives';
+
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] ?? '?';
+  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : '';
+  return (first + last).toUpperCase();
+}
+
+/** Retrato escolhido no perfil (silhueta por classe) ou as iniciais, como no site. */
+export function Avatar({
+  name,
+  icon,
+  size = 36,
+}: {
+  name: string;
+  icon?: AvatarIcon | null;
+  size?: number;
+}) {
+  if (icon)
+    return (
+      <SvgXml
+        xml={AVATAR_SVGS[icon].svg}
+        width={size}
+        height={size}
+        accessibilityLabel={AVATAR_SVGS[icon].label}
+      />
+    );
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        borderWidth: 1,
+        borderColor: colors.line,
+        backgroundColor: '#2a1230',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      accessibilityElementsHidden
+    >
+      <AppText style={{ fontFamily: fonts.display, color: colors.fgAccent, fontSize: size * 0.38 }}>
+        {initialsOf(name)}
+      </AppText>
+    </View>
+  );
+}

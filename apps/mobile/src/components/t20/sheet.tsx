@@ -14,6 +14,7 @@ import {
   type CharacterItem,
   type CharacterResource,
 } from '@codexveil/database';
+import { PendingUpdatesPrompt } from '@/components/sheet/pending-updates';
 import {
   groupByCategory,
   itemCategoryLabels,
@@ -27,6 +28,7 @@ import {
   T20_REST_QUALITY,
   applyT20LevelUp,
   buildT20Content,
+  listT20PendingUpdates,
   isT20AttributeIncrease,
   t20PowerSkillPick,
   T20_SKILLS,
@@ -143,11 +145,27 @@ function T20SheetBody(props: Props) {
     }
   };
   const content = useMemo(() => buildT20Content(props.sources), [props.sources]);
+  // Habilidades do nível que faltam na ficha (livro corrigido depois da criação…).
+  const pendingUpdates = useMemo(
+    () =>
+      listT20PendingUpdates(
+        content,
+        sheet,
+        abilities.map((ability) => ability.name),
+      ),
+    [content, sheet, abilities],
+  );
 
   // Defesa automática: armadura e escudo equipados no inventário (grava na ficha ao mudar).
   const gearDefense = useMemo(() => t20DefenseFromItems(items), [items]);
-  const effectiveSheet = useMemo(() => (gearDefense ? { ...sheet, defense: { ...gearDefense, other: sheet.defense.other } } : sheet), [sheet, gearDefense]);
-  const defenseKey = gearDefense ? JSON.stringify({ ...gearDefense, other: sheet.defense.other }) : null;
+  const effectiveSheet = useMemo(
+    () =>
+      gearDefense ? { ...sheet, defense: { ...gearDefense, other: sheet.defense.other } } : sheet,
+    [sheet, gearDefense],
+  );
+  const defenseKey = gearDefense
+    ? JSON.stringify({ ...gearDefense, other: sheet.defense.other })
+    : null;
   useEffect(() => {
     if (!defenseKey || !props.canEditSheet || JSON.stringify(sheet.defense) === defenseKey) return;
     const next = { ...sheet, defense: JSON.parse(defenseKey) as typeof sheet.defense };
@@ -208,6 +226,12 @@ function T20SheetBody(props: Props) {
       style={{ flex: 1, backgroundColor: colors.canvas }}
       contentContainerStyle={styles.content}
     >
+      <PendingUpdatesPrompt
+        characterId={props.character.id}
+        enabled={props.gate.isOwner && props.canEditSheet && content.classes.length > 0}
+        updates={pendingUpdates}
+        onCreated={(created) => setAbilities((current) => [...current, ...created])}
+      />
       <Card ornate>
         <AppText variant="eyebrow">Tormenta20 · nível {derived.level}</AppText>
         <AppText variant="title">{props.character.name}</AppText>

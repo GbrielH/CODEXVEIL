@@ -13,6 +13,7 @@ import {
   type CharacterItem,
   type CharacterResource,
 } from '@codexveil/database';
+import { Dnd5ePendingUpdates } from './pending-updates';
 import { applyTrackOperation, type TrackOperation } from '@codexveil/domain';
 import {
   computeDnd5eDerived,
@@ -99,7 +100,9 @@ export function SheetScreen(props: SheetScreenProps) {
   // CA, deslocamento e atributos vêm do que está equipado e das características (automático).
   const derived = computeDnd5eDerived(sheet, {
     items,
-    features: abilities.filter((entry) => entry.kind !== 'attack' && entry.kind !== 'spell').map((entry) => entry.name),
+    features: abilities
+      .filter((entry) => entry.kind !== 'attack' && entry.kind !== 'spell')
+      .map((entry) => entry.name),
   });
   // Grava na ficha a CA e o deslocamento calculados (o mestre, o grupo e o mapa leem a ficha).
   const knownSpecies = speciesSpeedFeet(sheet.identity.species) !== null;
@@ -109,8 +112,23 @@ export function SheetScreen(props: SheetScreenProps) {
     const acChanged = derived.armorClass !== sheet.combat.armorClass;
     const speedChanged = knownSpecies && derived.speed !== sheet.combat.speed;
     if (!acChanged && !speedChanged) return;
-    updateSheet((current) => ({ ...current, combat: { ...current.combat, armorClass: derived.armorClass, ...(speedChanged ? { speed: derived.speed } : {}) } }));
-  }, [derived.armorClass, derived.speed, knownSpecies, props.canEditSheet, sheet.combat.armorClass, sheet.combat.speed, updateSheet]);
+    updateSheet((current) => ({
+      ...current,
+      combat: {
+        ...current.combat,
+        armorClass: derived.armorClass,
+        ...(speedChanged ? { speed: derived.speed } : {}),
+      },
+    }));
+  }, [
+    derived.armorClass,
+    derived.speed,
+    knownSpecies,
+    props.canEditSheet,
+    sheet.combat.armorClass,
+    sheet.combat.speed,
+    updateSheet,
+  ]);
   const conditionEffects = dnd5eConditionEffects(conditions);
 
   const reloadPlayState = async () => {
@@ -242,6 +260,7 @@ export function SheetScreen(props: SheetScreenProps) {
     <SheetContext.Provider value={context}>
       {/* Rolagens da ficha são testes do jogador: ficam no aparelho e não vão para o mural. */}
       <DiceProvider campaignId={null} characterId={character.id} enabled={props.canEditPlay}>
+        <Dnd5ePendingUpdates isOwner={character.viewer.isOwner} />
         <Screen
           eyebrow={character.campaign?.name ?? 'Sem campanha'}
           title={character.name}

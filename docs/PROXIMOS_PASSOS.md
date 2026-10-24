@@ -430,6 +430,20 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-24 (madrugada) — pendências em todos os sistemas, retratos no app, Fúria T20
+
+- [x] Popup de pendências genérico: site (`components/sheets/pending-updates-modal.tsx`) e app
+      (`components/sheet/pending-updates.tsx`), para D&D e Tormenta20. Pendência do T20
+      (`listT20PendingUpdates`): habilidades de classe do nível atual que faltam na ficha
+      (habilidades com escolha ficam para a subida). Conferido nas 14 classes, do 1º ao 20º
+      nível: nenhum falso positivo.
+- [x] Fogo da Fúria também na Fúria do Tormenta20 (site e app). Hoje não há outras habilidades
+      ativáveis no sistema; novas usam `.ability-rage`/`RageGlow` ou um efeito próprio.
+- [x] Retratos no app: `components/ui/avatar.tsx` com os SVGs gerados do site
+      (`avatar-svgs.gen.ts`), seletor na aba Perfil e retrato em Participantes.
+- [x] Menu do site sem o item "Perfil": o cartão do usuário no rodapé (e o retrato no topo do
+      celular) abre o perfil.
+
 ### 2026-10-24 (noite) — auditoria completa do QA (todas as classes e sistemas)
 
 Auditoria automática feita com os livros do responsável (PHB 2014, Xanathar, Tasha, Monstros do

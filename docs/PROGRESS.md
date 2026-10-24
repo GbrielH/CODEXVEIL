@@ -306,6 +306,14 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **Retratos de perfil (manutenção):** o desenho fica em `apps/web/src/components/ui/avatar-icons.tsx`.
+  Ao mudar, gere de novo `apps/mobile/src/components/ui/avatar-svgs.gen.ts` com um teste temporário
+  no `apps/web` que renderiza cada `AvatarIconArt` com `renderToStaticMarkup` (sem `class` e
+  `role`) e grava o mapa `AVATAR_SVGS`.
+- **2026-10-24 (madrugada):** auditoria completa do QA sem problemas (D&D 101 subclasses na subida
+  1→20 e na criação nos níveis 3 e 20; T20 14 classes). Próximo: o responsável reimporta
+  `phb-2014`, `xgte` e `tcoe` e testa o popup "Sua ficha tem novidades".
+
 - **2026-10-24:** Painel limpo com presença colorida, cor dos dados só na sessão (migração
   aplicada), Fúria com fogo no site; testes do banco 197 passando. Próximo: mesa de dados ao
   vivo na aba Dados, painel de dados fixo e card de vida.

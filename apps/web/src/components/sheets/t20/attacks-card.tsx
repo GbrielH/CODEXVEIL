@@ -74,12 +74,15 @@ export function T20AttacksCard({
       <CardHeader icon={<Swords className="h-5 w-5" aria-hidden="true" />} title="Ataques" />
       {rageMax > 0 ? (
         <div
-          className={`mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border px-4 py-3 ${activeRage ? 'border-red-400/60 bg-red-500/15' : 'border-line bg-raised'}`}
+          className={`mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border px-4 py-3 ${activeRage ? 'ability-rage border-red-400/60 bg-red-500/15' : 'border-line bg-raised'}`}
         >
           <span>
-            <span className="block font-display text-lg text-fg">{activeRage ? `Em Fúria (+${activeRage})` : 'Fúria'}</span>
+            <span className="block font-display text-lg text-fg">
+              {activeRage ? `Em Fúria (+${activeRage})` : 'Fúria'}
+            </span>
             <span className="block text-xs text-fg-muted">
-              2 PM: +2 no ataque e no dano corpo a corpo. A cada cinco níveis, +1 PM aumenta o bônus em +1 (máx. +{rageMax}).
+              2 PM: +2 no ataque e no dano corpo a corpo. A cada cinco níveis, +1 PM aumenta o bônus
+              em +1 (máx. +{rageMax}).
             </span>
           </span>
           <span className="flex items-center gap-1">
@@ -106,7 +109,10 @@ export function T20AttacksCard({
         </div>
       ) : null}
       {weapons.length === 0 ? (
-        <p className="text-sm text-fg-muted">Nenhuma arma equipada. Equipe uma arma no Inventário (de preferência escolhida do livro) para atacar com ela.</p>
+        <p className="text-sm text-fg-muted">
+          Nenhuma arma equipada. Equipe uma arma no Inventário (de preferência escolhida do livro)
+          para atacar com ela.
+        </p>
       ) : (
         <ul className="divide-y divide-line">
           {weapons.map(({ item, stats }) => {
@@ -115,41 +121,83 @@ export function T20AttacksCard({
                 <li key={item.id} className="py-3">
                   <p className="text-sm font-medium text-fg">{item.name}</p>
                   <p className="text-xs text-fg-muted">
-                    Não encontrei o dano desta arma. Escolha-a pelo &quot;Escolher do livro&quot; no Inventário, ou escreva na descrição: &quot;Dano 1d8 · Crítico
-                    19/x3&quot;.
+                    Não encontrei o dano desta arma. Escolha-a pelo &quot;Escolher do livro&quot; no
+                    Inventário, ou escreva na descrição: &quot;Dano 1d8 · Crítico 19/x3&quot;.
                   </p>
                 </li>
               );
             }
-            const attack = resolveT20Attack(stats, sheet, derived, { rage: activeRage, offHandBusy: shieldEquipped || weapons.length > 1 });
+            const attack = resolveT20Attack(stats, sheet, derived, {
+              rage: activeRage,
+              offHandBusy: shieldEquipped || weapons.length > 1,
+            });
             const critLabel = `${attack.critMargin < 20 ? `${attack.critMargin}` : '20'}/x${attack.critMultiplier}`;
             return (
               <li key={item.id} className="flex flex-col gap-2 py-3">
                 <span>
                   <span className="block text-sm font-medium text-fg">{item.name}</span>
                   <span className="block text-xs text-fg-muted">
-                    {[stats.damage, stats.damageType, stats.kind === 'ranged' ? 'disparo' : stats.kind === 'thrown' ? 'arremesso' : stats.kind === 'melee-thrown' ? 'corpo a corpo ou arremesso' : 'corpo a corpo', stats.grip ? t20GripLabels[stats.grip] : '', stats.range && !/^[—–-]$/.test(stats.range) ? stats.range : '']
+                    {[
+                      stats.damage,
+                      stats.damageType,
+                      stats.kind === 'ranged'
+                        ? 'disparo'
+                        : stats.kind === 'thrown'
+                          ? 'arremesso'
+                          : stats.kind === 'melee-thrown'
+                            ? 'corpo a corpo ou arremesso'
+                            : 'corpo a corpo',
+                      stats.grip ? t20GripLabels[stats.grip] : '',
+                      stats.range && !/^[—–-]$/.test(stats.range) ? stats.range : '',
+                    ]
                       .filter(Boolean)
                       .join(' · ')}
                   </span>
                 </span>
                 <div className="grid grid-cols-3 gap-2">
-                  <RollButton expression={d20Expression(attack.toHit)} label={`Ataque: ${item.name}`} mode={mode} critRange={attack.critMargin} className="w-full">
+                  <RollButton
+                    expression={d20Expression(attack.toHit)}
+                    label={`Ataque: ${item.name}`}
+                    mode={mode}
+                    critRange={attack.critMargin}
+                    className="w-full"
+                  >
                     <span className="flex w-full flex-col items-center rounded-md border border-line-strong bg-raised px-2 py-1.5">
-                      <span className="text-[11px] tracking-wider text-fg-muted uppercase">Acerto</span>
-                      <span className="tabular font-display text-lg text-fg-accent">{formatT20Bonus(attack.toHit)}</span>
+                      <span className="text-[11px] tracking-wider text-fg-muted uppercase">
+                        Acerto
+                      </span>
+                      <span className="tabular font-display text-lg text-fg-accent">
+                        {formatT20Bonus(attack.toHit)}
+                      </span>
                     </span>
                   </RollButton>
-                  <RollButton expression={attack.damage} label={`Dano: ${item.name}`} className="w-full">
+                  <RollButton
+                    expression={attack.damage}
+                    label={`Dano: ${item.name}`}
+                    className="w-full"
+                  >
                     <span className="flex w-full flex-col items-center rounded-md border border-line-strong bg-raised px-2 py-1.5">
-                      <span className="text-[11px] tracking-wider text-fg-muted uppercase">Dano</span>
-                      <span className="tabular font-display text-lg text-ember-300">{attack.damage}</span>
+                      <span className="text-[11px] tracking-wider text-fg-muted uppercase">
+                        Dano
+                      </span>
+                      <span className="tabular font-display text-lg text-ember-300">
+                        {attack.damage}
+                      </span>
                     </span>
                   </RollButton>
-                  <RollButton expression={attack.critical} label={`Dano crítico: ${item.name}`} className="w-full" title={`Crítico com ${critLabel}: dados multiplicados por ${attack.critMultiplier}`}>
+                  <RollButton
+                    expression={attack.critical}
+                    label={`Dano crítico: ${item.name}`}
+                    className="w-full"
+                    title={`Crítico com ${critLabel}: dados multiplicados por ${attack.critMultiplier}`}
+                  >
                     <span className="flex w-full flex-col items-center rounded-md border border-amber-400/30 bg-raised px-2 py-1.5">
-                      <span className="text-[11px] tracking-wider text-fg-muted uppercase">Crítico ({critLabel})</span>
-                      <span className="tabular font-display text-lg text-amber-300">{attack.critical}</span>
+                      <span className="text-[11px] tracking-wider text-fg-muted uppercase">
+                        Crítico ({critLabel})
+                      </span>
+                      <span className="tabular font-display text-lg text-amber-300">
+                        {attack.critical}
+                      </span>
                     </span>
                   </RollButton>
                 </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { PendingUpdatesModal } from '../pending-updates-modal';
 import {
   adjustCharacterResource,
   applyCharacterCondition,
@@ -19,6 +20,7 @@ import {
   T20_RESOURCE_KEYS,
   T20_REST_QUALITY,
   buildT20Content,
+  listT20PendingUpdates,
   computeT20Derived,
   t20DefenseFromItems,
   findT20Condition,
@@ -134,13 +136,30 @@ function T20SheetBody(props: T20SheetScreenProps) {
   const [items, setItems] = useState(props.items);
   const [abilities, setAbilities] = useState(props.abilities);
   const content = useMemo(() => buildT20Content(props.sources ?? []), [props.sources]);
+  // Habilidades do nível que faltam na ficha (livro corrigido depois da criação…).
+  const pendingUpdates = useMemo(
+    () =>
+      listT20PendingUpdates(
+        content,
+        sheet,
+        abilities.map((ability) => ability.name),
+      ),
+    [content, sheet, abilities],
+  );
 
   // Defesa automática: armadura e escudo equipados no inventário (grava na ficha ao mudar).
   const gearDefense = useMemo(() => t20DefenseFromItems(items), [items]);
-  const effectiveSheet = useMemo(() => (gearDefense ? { ...sheet, defense: { ...gearDefense, other: sheet.defense.other } } : sheet), [sheet, gearDefense]);
-  const defenseKey = gearDefense ? JSON.stringify({ ...gearDefense, other: sheet.defense.other }) : null;
+  const effectiveSheet = useMemo(
+    () =>
+      gearDefense ? { ...sheet, defense: { ...gearDefense, other: sheet.defense.other } } : sheet,
+    [sheet, gearDefense],
+  );
+  const defenseKey = gearDefense
+    ? JSON.stringify({ ...gearDefense, other: sheet.defense.other })
+    : null;
   useEffect(() => {
-    if (!defenseKey || !permissions.canEditSheet || JSON.stringify(sheet.defense) === defenseKey) return;
+    if (!defenseKey || !permissions.canEditSheet || JSON.stringify(sheet.defense) === defenseKey)
+      return;
     const next = { ...sheet, defense: JSON.parse(defenseKey) as typeof sheet.defense };
     saveCharacterSheet(getSupabaseBrowserClient(), character.id, version, { sheet: next })
       .then((saved) => {
@@ -235,6 +254,12 @@ function T20SheetBody(props: T20SheetScreenProps) {
 
   return (
     <div className="flex flex-col gap-6">
+      <PendingUpdatesModal
+        characterId={character.id}
+        enabled={permissions.isOwner && permissions.canEditSheet && content.classes.length > 0}
+        updates={pendingUpdates}
+        onCreated={(created) => setAbilities((current) => [...current, ...created])}
+      />
       <Card ornate>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           {character.portraitUrl ? (
@@ -600,7 +625,9 @@ function T20SheetBody(props: T20SheetScreenProps) {
         </Card>
       ) : null}
 
-      {tab === 'personagem' && permissions.canEditSheet ? <TokenImageCard characterId={character.id} portraitUrl={character.portraitUrl} /> : null}
+      {tab === 'personagem' && permissions.canEditSheet ? (
+        <TokenImageCard characterId={character.id} portraitUrl={character.portraitUrl} />
+      ) : null}
 
       {tab === 'personagem' && permissions.isOwner ? (
         <DeleteCharacterCard

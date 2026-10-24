@@ -1,4 +1,5 @@
 export type {
+  AbilityEntryTemplate,
   CharacterSummary,
   CombatDefaults,
   ConditionDefinition,

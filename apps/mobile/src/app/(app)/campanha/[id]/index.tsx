@@ -9,6 +9,7 @@ import {
   setCampaignCover,
   signedMediaUrls,
 } from '@codexveil/database';
+import { Avatar } from '@/components/ui/avatar';
 import { campaignRoleLabels } from '@codexveil/domain';
 import { conditionLabel, findSystem, summarizeSheet } from '@codexveil/rpg-systems';
 import {
@@ -422,10 +423,13 @@ export default function CampaignScreen() {
               paddingVertical: 4,
             }}
           >
-            <AppText>
-              {member.displayName}
-              {member.userId === userId ? ' (você)' : ''}
-            </AppText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 }}>
+              <Avatar name={member.displayName} icon={member.avatarIcon} size={32} />
+              <AppText>
+                {member.displayName}
+                {member.userId === userId ? ' (você)' : ''}
+              </AppText>
+            </View>
             <Badge
               label={member.isOwner ? 'Mestre responsável' : campaignRoleLabels[member.role]}
               tone={member.role === 'gm' ? 'brand' : 'neutral'}
