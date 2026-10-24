@@ -430,6 +430,12 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-23 — pedido: confirmar presença pelo card do Painel (a fazer)
+
+- [ ] No card "Próximas sessões" do Painel, cada sessão agendada ganha o botão de confirmar
+      presença (vou / não vou), sem precisar entrar na campanha. Mostrar o estado atual da
+      resposta do jogador e permitir mudar. Site e app.
+
 ### 2026-10-23 — pedido: cor dos dados por sessão (a fazer)
 
 - [ ] A cor dos dados é escolhida **só no início de cada sessão** e vale apenas para ela; não
