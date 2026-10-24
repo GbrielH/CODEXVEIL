@@ -2,6 +2,7 @@ import { getSessionState, listCampaignCharacters, listDiceRolls } from '@codexve
 import { Dices, ScrollText } from 'lucide-react';
 import type { Metadata } from 'next';
 import { DicePanel, DiceProvider } from '@/components/dice/dice-roller';
+import { DiceTable } from '@/components/dice/dice-table';
 import { RollFeed } from '@/components/dice/roll-feed';
 import { Alert } from '@/components/ui/alert';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -21,46 +22,67 @@ export default async function DicePage({ params }: PageProps<'/campanhas/[campai
     getSessionState(supabase, campaign.id),
   ]);
   const isGm = campaign.role === 'gm';
-  const ownCharacter = isGm ? null : (party.find((character) => character.ownerId === user.id) ?? null);
+  const ownCharacter = isGm
+    ? null
+    : (party.find((character) => character.ownerId === user.id) ?? null);
   const canRoll = campaign.status === 'active';
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,26rem)_1fr]">
-      {canRoll ? (
-        <Card ornate>
+      <div className="flex flex-col gap-6">
+        {canRoll ? (
+          <Card ornate>
+            <CardHeader
+              icon={<Dices className="h-5 w-5" aria-hidden="true" />}
+              title="Rolar dados"
+              description={
+                isGm
+                  ? 'Os jogadores veem as rolagens abertas; as secretas ficam só com os mestres.'
+                  : 'O resultado aparece no mural da mesa. Marque “Só para o mestre” para uma rolagem escondida.'
+              }
+            />
+            {!isGm && session.playing && session.physicalDice ? (
+              <Alert tone="info" title="Sessão com dados presenciais">
+                O mestre escolheu dados físicos para esta sessão: role na mesa. As ações do turno
+                ficam registradas no mural, com o resultado que você anotar.
+              </Alert>
+            ) : isGm || session.playing ? (
+              <DiceProvider campaignId={campaign.id} characterId={ownCharacter?.id ?? null}>
+                <DicePanel isGm={isGm} characterName={ownCharacter?.name ?? null} />
+              </DiceProvider>
+            ) : (
+              <Alert tone="warning" title="A sessão ainda não começou">
+                As rolagens da mesa ficam liberadas quando o mestre iniciar a sessão. Para testar,
+                role na ficha do personagem: lá os dados são locais e não vão para o mural. Atualize
+                a página quando a sessão começar.
+              </Alert>
+            )}
+          </Card>
+        ) : null}
+        <Card>
           <CardHeader
-            icon={<Dices className="h-5 w-5" aria-hidden="true" />}
-            title="Rolar dados"
+            icon={<ScrollText className="h-5 w-5" aria-hidden="true" />}
+            title="Mural de rolagens"
             description={
               isGm
-                ? 'Os jogadores veem as rolagens abertas; as secretas ficam só com os mestres.'
-                : 'O resultado aparece no mural da mesa. Marque “Só para o mestre” para uma rolagem escondida.'
+                ? 'Todas as rolagens da campanha, inclusive as secretas.'
+                : 'Rolagens abertas da mesa e as suas.'
             }
           />
-          {!isGm && session.playing && session.physicalDice ? (
-            <Alert tone="info" title="Sessão com dados presenciais">
-              O mestre escolheu dados físicos para esta sessão: role na mesa. As ações do turno ficam registradas no mural, com o
-              resultado que você anotar.
-            </Alert>
-          ) : isGm || session.playing ? (
-            <DiceProvider campaignId={campaign.id} characterId={ownCharacter?.id ?? null}>
-              <DicePanel isGm={isGm} characterName={ownCharacter?.name ?? null} />
-            </DiceProvider>
-          ) : (
-            <Alert tone="warning" title="A sessão ainda não começou">
-              As rolagens da mesa ficam liberadas quando o mestre iniciar a sessão. Para testar, role na ficha do personagem: lá os
-              dados são locais e não vão para o mural. Atualize a página quando a sessão começar.
-            </Alert>
-          )}
+          <RollFeed
+            campaignId={campaign.id}
+            initialRolls={rolls}
+            canClear={isGm && campaign.status === 'active'}
+          />
         </Card>
-      ) : null}
-      <Card>
+      </div>
+      <Card className="lg:sticky lg:top-20 lg:self-start">
         <CardHeader
-          icon={<ScrollText className="h-5 w-5" aria-hidden="true" />}
-          title="Mural de rolagens"
-          description={isGm ? 'Todas as rolagens da campanha, inclusive as secretas.' : 'Rolagens abertas da mesa e as suas.'}
+          icon={<Dices className="h-5 w-5" aria-hidden="true" />}
+          title="Mesa de dados"
+          description="Todos veem os dados caindo ao vivo. Rolagens só para o mestre não aparecem aqui."
         />
-        <RollFeed campaignId={campaign.id} initialRolls={rolls} canClear={isGm && campaign.status === 'active'} />
+        <DiceTable campaignId={campaign.id} />
       </Card>
     </div>
   );

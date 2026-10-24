@@ -1,0 +1,166 @@
+'use client';
+
+import type { DiceRoll } from '@codexveil/database';
+import type DiceBox from '@3d-dice/dice-box-threejs';
+import { describeDiceRoll } from '@codexveil/domain';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { useRealtimeRefresh } from '@/lib/use-realtime';
+import { DICE_COLORS, useCampaignColors } from './campaign-colors';
+import { diceNotation, textColorFor, type TrayRoll } from './dice-tray';
+
+const DEFAULT_COLOR = DICE_COLORS[0]!.hex;
+
+/**
+ * Mesa de dados grande da aba Dados: todos os participantes veem, ao vivo, os dados de cada
+ * rolagem aberta caindo (as ocultas, "só para o mestre", não aparecem aqui).
+ */
+export function DiceTable({ campaignId }: { campaignId: string }) {
+  const containerId = `mesa-dados-${useId().replace(/:/g, '')}`;
+  const colors = useCampaignColors();
+  const boxRef = useRef<DiceBox | null>(null);
+  const queue = useRef<TrayRoll[]>([]);
+  const running = useRef(false);
+  const seen = useRef(new Set<string>());
+  const [current, setCurrent] = useState<TrayRoll | null>(null);
+  const [last, setLast] = useState<TrayRoll | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const off = window.setTimeout(() => setUnavailable(true), 0);
+      return () => window.clearTimeout(off);
+    }
+    let cancelled = false;
+    void import('@3d-dice/dice-box-threejs')
+      .then(async ({ default: Box }) => {
+        if (cancelled) return;
+        const box = new Box(`#${containerId}`, {
+          sounds: false,
+          shadows: true,
+          theme_material: 'plastic',
+          gravity_multiplier: 400,
+          baseScale: 90,
+          strength: 1.4,
+          light_intensity: 0.9,
+        });
+        await box.initialize();
+        if (!cancelled) boxRef.current = box;
+      })
+      .catch((error: unknown) => {
+        console.error('[codexveil] mesa de dados 3D indisponível', error);
+        setUnavailable(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [containerId]);
+
+  const play = useCallback(async () => {
+    if (running.current) return;
+    running.current = true;
+    while (queue.current.length) {
+      const next = queue.current.shift()!;
+      const box = boxRef.current;
+      const text = diceNotation(next.roll);
+      setCurrent(next);
+      if (box && text) {
+        const color = colors?.colorOfUser(next.userId) ?? DEFAULT_COLOR;
+        try {
+          await box.updateConfig({
+            theme_customColorset: {
+              name: `mesa-${color.slice(1)}`,
+              background: color,
+              foreground: textColorFor(color),
+              outline: '#000000',
+              texture: 'none',
+              material: 'plastic',
+            },
+          });
+          await box.roll(text);
+        } catch (error) {
+          console.error('[codexveil] falha ao rolar na mesa', error);
+        }
+      }
+      setCurrent(null);
+      setLast(next);
+    }
+    running.current = false;
+  }, [colors]);
+
+  useRealtimeRefresh(
+    `mesa-dados:${campaignId}`,
+    [{ table: 'dice_rolls', filter: `campaign_id=eq.${campaignId}` }],
+    () => {
+      void getSupabaseBrowserClient()
+        .from('dice_rolls')
+        .select(
+          'id, user_id, roller_name, label, dice, total, expression, mode, modifier, visibility',
+        )
+        .eq('campaign_id', campaignId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .then(({ data }) => {
+          const row = data?.[0];
+          if (!row || row.visibility === 'gm' || seen.current.has(row.id)) return;
+          seen.current.add(row.id);
+          queue.current = [
+            ...queue.current,
+            {
+              key: row.id,
+              userId: row.user_id,
+              rollerName: row.roller_name,
+              secret: false,
+              roll: {
+                dice: row.dice as unknown as DiceRoll['dice'],
+                total: row.total,
+                label: row.label,
+                expression: row.expression,
+                mode: row.mode as DiceRoll['mode'],
+                modifier: row.modifier,
+              },
+            },
+          ].slice(-3);
+          void play();
+        });
+    },
+  );
+
+  const shown = current ?? last;
+  return (
+    <div className="relative h-[28rem] overflow-hidden rounded-xl border border-parchment-400/25 bg-[radial-gradient(ellipse_at_center,rgb(60_30_90/0.55),rgb(11_11_15/0.95))] shadow-inner">
+      <div
+        id={containerId}
+        aria-hidden="true"
+        className="absolute inset-0 [&>canvas]:h-full [&>canvas]:w-full"
+      />
+      <div
+        aria-live="polite"
+        className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-1 bg-gradient-to-t from-black/70 to-transparent px-4 pt-10 pb-4 text-center"
+      >
+        {shown ? (
+          <>
+            <p className="text-sm text-fg-secondary">
+              {shown.rollerName}
+              {shown.roll.label ? ` · ${shown.roll.label}` : ''}
+            </p>
+            {current ? (
+              <p className="font-display text-xl text-fg-muted">Rolando…</p>
+            ) : (
+              <>
+                <p className="font-display text-4xl text-fg-accent">{shown.roll.total}</p>
+                <p className="text-xs text-fg-muted">{describeDiceRoll(shown.roll)}</p>
+              </>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-fg-muted">
+            {unavailable
+              ? 'Animação dos dados desligada neste aparelho; os resultados aparecem aqui.'
+              : 'As rolagens abertas da mesa caem aqui, ao vivo, para todos.'}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

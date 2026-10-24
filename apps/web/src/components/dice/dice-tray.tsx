@@ -36,7 +36,7 @@ export interface TrayRoll {
 const BUBBLE_MS = 7000;
 
 /** "2d20+1d6@3,17,4": a notação da biblioteca com o resultado já sorteado pelo servidor. */
-function notation(roll: TrayRoll['roll']): string | null {
+export function diceNotation(roll: TrayRoll['roll']): string | null {
   const groups: string[] = [];
   const values: number[] = [];
   let used = 0;
@@ -64,7 +64,7 @@ function notation(roll: TrayRoll['roll']): string | null {
   return groups.length ? `${groups.join('+')}@${values.join(',')}` : null;
 }
 
-function textColorFor(hex: string): string {
+export function textColorFor(hex: string): string {
   const value = Number.parseInt(hex.slice(1), 16);
   const luminance =
     (0.299 * ((value >> 16) & 255) + 0.587 * ((value >> 8) & 255) + 0.114 * (value & 255)) / 255;
@@ -143,7 +143,7 @@ export function DiceTray({
     while (queue.current.length) {
       const next = queue.current.shift()!;
       const box = boxRef.current;
-      const text = notation(next.roll);
+      const text = diceNotation(next.roll);
       if (box && text) {
         // O resultado (balão, cabeçalho e animação de crítico) só aparece quando os dados param.
         setRolling(next);

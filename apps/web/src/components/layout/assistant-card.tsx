@@ -1,5 +1,6 @@
 'use client';
 
+import { AssistantMarkdown } from './assistant-markdown';
 import { Copy, Send, X } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -179,10 +180,14 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
               className={
                 message.role === 'user'
                   ? 'self-end rounded-lg bg-ember-400/15 px-3 py-2 text-sm text-fg'
-                  : 'group relative self-start rounded-lg border border-line bg-card px-3 py-2 text-sm whitespace-pre-wrap text-fg'
+                  : 'group relative self-start rounded-lg border border-line bg-card px-3 py-2 text-sm text-fg'
               }
             >
-              {message.content ||
+              {(message.content && message.role === 'assistant' ? (
+                <AssistantMarkdown text={message.content} />
+              ) : (
+                message.content
+              )) ||
                 (busy ? (
                   <span className="flex items-center gap-2 text-fg-muted">
                     <Image
