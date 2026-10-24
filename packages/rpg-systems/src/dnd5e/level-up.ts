@@ -134,6 +134,8 @@ export interface Dnd5eLevelUpPlan {
   subclass: SubclassDefinition | null;
   /** Subclasses para escolher neste nível (SRD e livros liberados); vazio se não houver escolha. */
   subclassOptions: SubclassDefinition[];
+  /** Subclasse que o personagem já tem (para as magias sempre preparadas do novo nível). */
+  currentSubclass: SubclassDefinition | null;
   /** Nível com Aumento no Valor de Atributo (ou talento). */
   abilityScoreImprovement: boolean;
   /** 19º nível: Dádiva Épica (os talentos épicos entram nas opções). */
@@ -294,6 +296,7 @@ export function planDnd5eLevelUp(sheet: Dnd5eSheet, classIndex: number, knownNam
     conModifier,
     features,
     subclass: singleSubclass,
+    currentSubclass: currentSubclass ?? null,
     subclassOptions: subclassArrives && !singleSubclass ? subclasses : [],
     abilityScoreImprovement,
     epicBoon,
@@ -580,6 +583,23 @@ export function applyDnd5eLevelUp(sheet: Dnd5eSheet, plan: Dnd5eLevelUpPlan, cho
   for (const name of [...choices.cantrips, ...choices.spells]) {
     const spell = findSpell(name);
     if (spell) entries.push(spellEntry(spell, levelSource, order++));
+  }
+  // Magias sempre preparadas que chegam com o nível (domínio, juramento, círculo, classe): não
+  // gastam escolhas de magia. Subclasse nova traz as do nível atual e as anteriores.
+  const preparedGroups = [
+    ...(plan.classDef?.alwaysPrepared ?? []).filter((group) => group.level === plan.newClassLevel).map((group) => ({ spells: group.spells, owner: className })),
+    ...(chosenSubclass && !plan.currentSubclass
+      ? (chosenSubclass.alwaysPrepared ?? []).filter((group) => group.level <= plan.newClassLevel).map((group) => ({ spells: group.spells, owner: chosenSubclass.name }))
+      : (plan.currentSubclass?.alwaysPrepared ?? []).filter((group) => group.level === plan.newClassLevel).map((group) => ({ spells: group.spells, owner: plan.currentSubclass!.name }))),
+  ];
+  for (const group of preparedGroups) {
+    for (const name of group.spells) {
+      const spell = findSpell(name);
+      if (spell && !choices.spells.includes(spell.name)) {
+        const entry = spellEntry(spell, `${group.owner} (sempre preparada)`, order++);
+        entries.push({ ...entry, description: `Sempre preparada; não conta no limite de magias preparadas.\n\n${entry.description}`.slice(0, 8000) });
+      }
+    }
   }
   for (const id of choices.invocations) {
     const invocation = SRD_INVOCATIONS.find((entry) => entry.id === id);

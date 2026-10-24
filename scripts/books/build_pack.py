@@ -124,7 +124,9 @@ def phb(rows, layout_dir):
         print('  faltando', source, '(rode o OCR do Livro do Jogador)')
         return []
     ocr = bookkit.load(source)
-    return (races_ocr.parse(ocr, 17, 44) + subclasses.parse_phb(ocr, PHB_CLASS_PAGES) + backgrounds.parse(ocr, PHB_BACKGROUNDS, 127, 142)
+    subs = subclasses.parse_phb(ocr, PHB_CLASS_PAGES)
+    print('  magias de domínio/juramento:', subclasses.add_table_spells(ocr, subs), 'subclasses')
+    return (races_ocr.parse(ocr, 17, 44) + subs + backgrounds.parse(ocr, PHB_BACKGROUNDS, 127, 142)
             + feats_items.feats_ocr(ocr, 166, 171, (15, 40), (15, 40), None,
                                     skip=('talentos', 'espaço de magia por nível de magia')))
 

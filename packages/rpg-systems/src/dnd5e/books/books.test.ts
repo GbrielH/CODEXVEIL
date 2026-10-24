@@ -228,7 +228,7 @@ describe('conteúdo dos livros nas regras', () => {
     });
     expect(result.issues).toEqual([]);
     expect(result.sheet.identity.classes[0]?.subclass).toBe('Escola de Teste');
-    expect(result.abilities.map((ability) => ability.name)).toEqual(expect.arrayContaining(['Erudição de Teste', 'Raio de Teste']));
+    expect(result.abilities.map((ability) => ability.name)).toEqual(expect.arrayContaining(['Erudição de Teste', 'Raio de Teste', 'Fireball']));
     expect(findClassByName('Mago')?.id).toBe('wizard');
   });
 });

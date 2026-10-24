@@ -430,6 +430,24 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-23 — QA: magias de domínio/juramento sempre preparadas
+
+- [x] `scripts/books/subclasses.py` (`add_table_spells`) lê as tabelas "Magias do Domínio/do
+      Juramento" do PHB 2014: 10 subclasses (7 domínios, 3 juramentos) ganham `alwaysPrepared`.
+- [x] `content.ts`: casamento de nomes sem artigos/preposições e resolução para o nome da magia
+      do livro; na criação elas aparecem como "Já vem de…" e não gastam escolhas.
+- [x] `level-up.ts`: ao subir de nível, as magias sempre preparadas do novo nível (classe,
+      subclasse atual ou recém-escolhida) entram na ficha. Teste em `books.test.ts`.
+- [x] Criação em nível alto já pede subclasse, aumentos de atributo e magias até o nível.
+- [ ] O responsável precisa reimportar `phb-2014.book.json` em Meus livros.
+- [ ] Nomes ainda sem casar (OCR/tradução): "dificultar detecção", "vinha esmagadora",
+      "caminhar em…"; magias de terreno do Círculo da Terra.
+- [ ] **Pedido novo:** pendências de personagem após atualizações. Quando uma atualização nossa
+      acrescentar informação de personagem/campanha que falta num personagem já criado (ex.:
+      magias sempre preparadas, escolhas novas), abrir um popup ao acessar o personagem ou a
+      campanha pedindo para preencher/escolher o que falta. Vale para todas as atualizações
+      futuras (registro versionado de "migrações de ficha" com verificação e formulário).
+
 ### 2026-10-23 — assistente de IA (card no menu)
 
 - [x] Card "Assistente" acima do perfil/"Sair" (site), painel de conversa por cima da página,

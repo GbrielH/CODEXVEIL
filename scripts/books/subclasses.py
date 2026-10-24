@@ -246,3 +246,41 @@ def _title_case(t):
     small = ('da', 'de', 'do', 'das', 'dos', 'e', 'em', 'com', 'a', 'o')
     words = t.lower().split()
     return ' '.join(w if (w in small and n) else w.capitalize() for n, w in enumerate(words))
+
+
+# Magias de domínio (clérigo) e de juramento (paladino): tabelas "MAGIAS DO DOMÍNIO DA GUERRA",
+# "MAGIAS DE JURAMENTO DE DEVOÇÃO"… com uma linha de magias por nível, na ordem da tabela.
+_SPELL_TABLE = re.compile(r'^MAGIAS (?:DO|DE) (DOM.N.O|JURAMENTO) (?:D[AOE]S? )?(.+)$', re.I)
+_TABLE_LEVELS = {'cleric': [1, 3, 5, 7, 9], 'paladin': [3, 5, 9, 13, 17]}
+
+
+def _plain(text):
+    import unicodedata
+    text = unicodedata.normalize('NFD', text)
+    return ''.join(ch for ch in text if unicodedata.category(ch) != 'Mn').lower().replace('l', 'i').strip()
+
+
+def add_table_spells(rows, entries):
+    """Preenche `alwaysPrepared` das subclasses do Livro do Jogador a partir das tabelas de magias."""
+    found = 0
+    for index, row in enumerate(rows):
+        match = _SPELL_TABLE.match(row['t'].strip())
+        if not match or len(row['t']) > 60:
+            continue
+        tail = _plain(match.group(2))
+        lines = []
+        for other in rows[index + 1:index + 16]:
+            text = other['t'].strip()
+            if ',' in text and text[:1].islower() and not text.endswith('.'):
+                lines.append([part.strip() for part in text.split(',') if part.strip()])
+            if len(lines) == 5:
+                break
+        for entry in entries:
+            if entry['kind'] != 'subclass' or tail not in _plain(entry['name']):
+                continue
+            levels = _TABLE_LEVELS.get(entry['data']['classId'])
+            if not levels or entry['data'].get('alwaysPrepared'):
+                continue
+            entry['data']['alwaysPrepared'] = [{'level': level, 'spells': spells[:10]} for level, spells in zip(levels, lines)]
+            found += 1
+    return found

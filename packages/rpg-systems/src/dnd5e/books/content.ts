@@ -38,9 +38,20 @@ const SRD_BY_NAME = new Map<string, string>();
 for (const spell of SRD_SPELLS) SRD_BY_NAME.set(normalizeBookName(spell.name), spell.name);
 for (const [en, pt] of Object.entries(SRD_SPELL_NAMES_PT)) SRD_BY_NAME.set(normalizeBookName(pt), en);
 
+/** Nome sem artigos e preposições, para casar traduções ("contra o Bem e o Mal" = "contra Bem e Mal"). */
+function looseSpellName(name: string): string {
+  return normalizeBookName(name)
+    .split(' ')
+    .filter((word) => !['o', 'a', 'os', 'as', 'e', 'de', 'do', 'da', 'dos', 'das', 'of', 'the', 'and'].includes(word))
+    .join(' ');
+}
+
+const SRD_BY_LOOSE_NAME = new Map<string, string>();
+for (const [key, value] of SRD_BY_NAME) SRD_BY_LOOSE_NAME.set(looseSpellName(key), value);
+
 /** Nome original da magia do SRD que corresponde ao nome (em inglês ou português), se houver. */
 export function srdSpellNameFor(name: string): string | undefined {
-  return SRD_BY_NAME.get(normalizeBookName(name));
+  return SRD_BY_NAME.get(normalizeBookName(name)) ?? SRD_BY_LOOSE_NAME.get(looseSpellName(name));
 }
 
 export function bookEntityId(bookId: string, key: string): string {
@@ -312,6 +323,17 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
     const key = normalizeBookName(name);
     const spell = spells.get(key);
     if (spell && !spell.classes.includes(list)) spells.set(key, { ...spell, classes: [...spell.classes, list] });
+  }
+
+  // Magias sempre preparadas que não são do SRD: usa o nome da magia do livro (as tabelas das
+  // subclasses vêm em minúsculas e às vezes com outra tradução).
+  const bookByLoose = new Map([...spells.values()].map((spell) => [looseSpellName(spell.name), spell.name]));
+  const resolve = (name: string) => (SRD_SPELLS.some((spell) => spell.name === name) ? name : (bookByLoose.get(looseSpellName(name)) ?? name));
+  for (const subclass of subclasses) {
+    if (subclass.alwaysPrepared) subclass.alwaysPrepared = subclass.alwaysPrepared.map((group) => ({ ...group, spells: group.spells.map(resolve) }));
+  }
+  for (const entry of species) {
+    if (entry.cantrips) entry.cantrips = entry.cantrips.map(resolve);
   }
 
   return {

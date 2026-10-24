@@ -306,6 +306,10 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-23 (QA):** magias de domínio/juramento sempre preparadas na criação e na subida de
+  nível; `pnpm check` 20/20 (rpg-systems dnd5e 182 testes). Reimportar `phb-2014.book.json`.
+  Próximo: popup de pendências de ficha após atualizações (ver `PROXIMOS_PASSOS.md`).
+
 - **2026-10-23:** criar `GEMINI_API_KEY` na Vercel e testar o assistente; reimportar o livro T20 corrigido em Meus livros.
 - **2026-10-20 (tradução do SRD):** monstros e itens mágicos 100% em português (`pnpm check`
   20/20). Próximo: pedidos de 2026-10-20 (sessão presencial/online, grid, ação de combate do
