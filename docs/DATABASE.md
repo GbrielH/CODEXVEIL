@@ -19,6 +19,9 @@ em [`SECURITY.md`](SECURITY.md).
 ## Migrações
 
 | `20261019120000_tormenta20.sql` | Sistema `tormenta20` em `rpg_systems`; `book_entries.kind` aceita `deity` e `equipment`; edição livre em `book_packs` (ex.: "Jogo do Ano"); jogadores leem divindades e equipamento dos livros liberados |
+| `20261024100000_dice_color_session_only.sql` | Cor dos dados só com sessão em andamento; rolagens fora da sessão não exigem cor |
+| `20261024110000_set_my_attendance.sql` | `set_my_attendance`: resposta de presença validada no banco |
+| `20261024120000_book_content_dedupe.sql` | Livros com conteúdo idêntico guardam as entradas uma vez só (`content_hash`, `content_pack_id`, `finish_book_import`) |
 
 | Arquivo                                       | Conteúdo                                                                                                                                                                                                                    |
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

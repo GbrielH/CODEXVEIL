@@ -43,6 +43,7 @@ import {
   type SheetPermissions,
 } from './context';
 import { AttributesTab, Proficiencies } from './attributes-tab';
+import { PendingUpdatesDialog } from './pending-updates';
 import { FeaturesTab } from './features-tab';
 import { InventoryTab } from './inventory-tab';
 import { PlayTab } from './play-tab';
@@ -118,14 +119,26 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
   const { value: draft, update, reset, state: saveState } = autosave;
 
   // CA, deslocamento e atributos vêm do que está equipado e das características (automático).
-  const featureNames = useMemo(() => abilities.filter((entry) => entry.kind !== 'attack' && entry.kind !== 'spell').map((entry) => entry.name), [abilities]);
-  const derived = useMemo(() => computeDnd5eDerived(draft.sheet, { items, features: featureNames }), [draft.sheet, items, featureNames]);
+  const featureNames = useMemo(
+    () =>
+      abilities
+        .filter((entry) => entry.kind !== 'attack' && entry.kind !== 'spell')
+        .map((entry) => entry.name),
+    [abilities],
+  );
+  const derived = useMemo(
+    () => computeDnd5eDerived(draft.sheet, { items, features: featureNames }),
+    [draft.sheet, items, featureNames],
+  );
   // Fúria e outros efeitos ligados durante o jogo: ficam neste navegador, por personagem.
   const effectsKey = `codexveil:efeitos:${character.id}`;
   const [activeEffects, setActiveEffectsState] = useState<Dnd5eActiveEffects>(() => {
     try {
       const stored = typeof window === 'undefined' ? null : window.localStorage.getItem(effectsKey);
-      return { rage: false, ...(stored ? (JSON.parse(stored) as Partial<Dnd5eActiveEffects>) : {}) };
+      return {
+        rage: false,
+        ...(stored ? (JSON.parse(stored) as Partial<Dnd5eActiveEffects>) : {}),
+      };
     } catch {
       return { rage: false };
     }
@@ -151,10 +164,21 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
       ...current,
       sheet: {
         ...current.sheet,
-        combat: { ...current.sheet.combat, armorClass: derived.armorClass, ...(speedChanged ? { speed: derived.speed } : {}) },
+        combat: {
+          ...current.sheet.combat,
+          armorClass: derived.armorClass,
+          ...(speedChanged ? { speed: derived.speed } : {}),
+        },
       },
     }));
-  }, [derived.armorClass, derived.speed, knownSpecies, permissions.canEditSheet, draft.sheet.combat, update]);
+  }, [
+    derived.armorClass,
+    derived.speed,
+    knownSpecies,
+    permissions.canEditSheet,
+    draft.sheet.combat,
+    update,
+  ]);
   const conditionEffects = useMemo(() => dnd5eConditionEffects(conditions), [conditions]);
 
   const run = useCallback(
@@ -311,7 +335,14 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
     adoptVersion: autosave.adoptVersion,
     activeEffects,
     setActiveEffects,
-    resolveAttack: (name, data) => resolveDnd5eAttack(name, data, { sheet: draft.sheet, derived, items, features: featureNames, effects: activeEffects }),
+    resolveAttack: (name, data) =>
+      resolveDnd5eAttack(name, data, {
+        sheet: draft.sheet,
+        derived,
+        items,
+        features: featureNames,
+        effects: activeEffects,
+      }),
   };
 
   const readOnlyReason = !permissions.canEditPlay
@@ -334,6 +365,7 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
       >
         <div className="flex flex-col gap-5">
           <SheetHeader saveStatus={saveState.status} liveStatus={liveStatus} />
+          <PendingUpdatesDialog />
 
           {saveState.status === 'conflict' ? (
             <Alert

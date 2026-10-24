@@ -430,6 +430,22 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-24 (noite) — livros sem cópias repetidas e pendências da ficha
+
+- [x] **Uma cópia por livro:** migração `20261024120000_book_content_dedupe.sql` (aplicada). Ao
+      terminar a importação (`finish_book_import`), o banco calcula o md5 do conteúdo; se outro
+      livro pronto do mesmo `book_key` tem o mesmo conteúdo, apaga a cópia e liga o livro a ele
+      (`content_pack_id`). Se o dono do conteúdo apagar o livro, o conteúdo passa para um dos
+      outros. A migração já deduplicou o que estava no banco. As consultas
+      (`listBookEntries`, `listBookEntryIndex`, `getBookEntry`) seguem o conteúdo compartilhado.
+      Teste: `book-dedupe.test.ts`. O espaço liberado volta ao Postgres pelo autovacuum; o
+      número do painel do Supabase pode demorar a cair.
+- [x] **Pendências da ficha (site, D&D):** ao abrir a ficha (também em "Meu personagem"), o dono
+      vê "Sua ficha tem novidades" quando uma atualização acrescentou algo que falta
+      (`listDnd5ePendingUpdates`). Primeira pendência: magias sempre preparadas de
+      domínio/juramento. "Aplicar na ficha" cria as entradas; "Agora não" guarda neste navegador.
+      Novas atualizações entram na mesma função. Falta: app e Tormenta20.
+
 ### 2026-10-24 (tarde) — mesa de dados, retratos, vida e limpezas
 
 - [x] Aba Dados: mural abaixo de "Rolar dados"; à direita, a **Mesa de dados** 3D ao vivo para

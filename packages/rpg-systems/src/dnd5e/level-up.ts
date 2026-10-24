@@ -946,3 +946,71 @@ export function applyDnd5eLevelUp(
     summary: `Subiu de nível: ${parts.join(' · ')}.`.slice(0, 300),
   };
 }
+
+// -----------------------------------------------------------------------------
+// Pendências da ficha depois de atualizações do Codexveil
+// -----------------------------------------------------------------------------
+
+/**
+ * Algo que uma atualização do sistema acrescentou e a ficha (criada antes) ainda não tem. A
+ * ficha mostra um aviso ao abrir, e o jogador aplica com um toque. Novas atualizações que mexem
+ * em dados de personagem entram nesta lista.
+ */
+export interface Dnd5ePendingUpdate {
+  /** Fixo por atualização: guarda que o jogador já viu ou dispensou. */
+  id: string;
+  title: string;
+  description: string;
+  abilities: AbilityEntryTemplate[];
+}
+
+/** Pendências da ficha (com o conteúdo ativo dos livros): hoje, as magias sempre preparadas. */
+export function listDnd5ePendingUpdates(
+  sheet: Dnd5eSheet,
+  abilityNames: readonly string[],
+): Dnd5ePendingUpdate[] {
+  const owned = new Set(abilityNames.map(normalize));
+  const updates: Dnd5ePendingUpdate[] = [];
+  const missing: AbilityEntryTemplate[] = [];
+  const owners: string[] = [];
+  let order = 9000;
+  for (const entry of sheet.identity.classes) {
+    const classDef = findClassByName(entry.name);
+    if (!classDef) continue;
+    const subclass = entry.subclass.trim()
+      ? listSubclasses(classDef).find(
+          (option) => normalize(option.name) === normalize(entry.subclass),
+        )
+      : undefined;
+    const groups = [
+      ...(classDef.alwaysPrepared ?? []).map((group) => ({ ...group, owner: classDef.name })),
+      ...(subclass?.alwaysPrepared ?? []).map((group) => ({ ...group, owner: subclass!.name })),
+    ].filter((group) => group.level <= entry.level);
+    for (const group of groups) {
+      for (const name of group.spells) {
+        const spell = findSpell(name);
+        if (!spell || owned.has(normalize(spell.name))) continue;
+        owned.add(normalize(spell.name));
+        const template = spellEntry(spell, `${group.owner} (sempre preparada)`, order++);
+        missing.push({
+          ...template,
+          description:
+            `Sempre preparada; não conta no limite de magias preparadas.\n\n${template.description}`.slice(
+              0,
+              8000,
+            ),
+        });
+        if (!owners.includes(group.owner)) owners.push(group.owner);
+      }
+    }
+  }
+  if (missing.length > 0) {
+    updates.push({
+      id: 'magias-sempre-preparadas-2026-10',
+      title: 'Magias sempre preparadas',
+      description: `${owners.join(', ')} concede magias que ficam sempre preparadas e não gastam escolhas. Elas ainda não estão na sua ficha: ${missing.map((spell) => spell.name).join(', ')}.`,
+      abilities: missing,
+    });
+  }
+  return updates;
+}
