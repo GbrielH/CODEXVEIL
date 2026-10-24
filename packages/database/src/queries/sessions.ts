@@ -484,20 +484,9 @@ export async function listCampaignAttendance(
   return result;
 }
 
-/** O usuário responde se vai à sessão agendada (cria ou muda a resposta). */
-export async function setMyAttendance(
-  client: CodexveilClient,
-  sessionId: string,
-  campaignId: string,
-  userId: string,
-  status: AttendanceStatus,
-): Promise<void> {
-  const { error } = await client
-    .from('session_attendance')
-    .upsert(
-      { session_id: sessionId, campaign_id: campaignId, user_id: userId, status },
-      { onConflict: 'session_id,user_id' },
-    );
+/** O usuário responde se vai à sessão agendada (cria ou muda a resposta; validado no banco). */
+export async function setMyAttendance(client: CodexveilClient, sessionId: string, _campaignId: string, _userId: string, status: AttendanceStatus): Promise<void> {
+  const { error } = await client.rpc('set_my_attendance', { p_session_id: sessionId, p_status: status });
   if (error) throw toAppError(error);
 }
 

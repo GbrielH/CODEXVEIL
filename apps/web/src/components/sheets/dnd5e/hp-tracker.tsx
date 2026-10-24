@@ -91,20 +91,20 @@ export function HpTracker() {
 
   return (
     <Card ornate className={cx(status === 'down' && 'border-ember-400/50')}>
-      <div className="flex items-center justify-between gap-3">
+      <div className="relative flex items-center justify-center gap-3">
         <h2 className="flex items-center gap-2 text-lg">
           <Heart className="h-5 w-5 text-fg-brand" aria-hidden="true" />
           Pontos de vida
         </h2>
         {pending ? (
-          <span className="inline-flex items-center gap-1 text-xs text-fg-muted" role="status">
+          <span className="absolute right-0 inline-flex items-center gap-1 text-xs text-fg-muted" role="status">
             <LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
             Salvando…
           </span>
         ) : null}
       </div>
 
-      <div className="mt-3 flex items-end gap-3" aria-live="polite">
+      <div className="mt-3 flex flex-wrap items-end justify-center gap-3" aria-live="polite">
         <span className="tabular font-display text-5xl leading-none text-fg-accent">
           {hp.current}
         </span>
@@ -133,7 +133,7 @@ export function HpTracker() {
       {!disabled ? (
         <>
           <div className="mt-4 flex flex-col gap-2">
-            <label htmlFor={inputId} className="text-sm font-medium text-fg">
+            <label htmlFor={inputId} className="text-center text-sm font-medium text-fg">
               Quantidade
             </label>
             <div className="grid grid-cols-[minmax(4.5rem,6rem)_1fr_1fr_1fr] gap-2">
@@ -180,12 +180,12 @@ export function HpTracker() {
                 {error}
               </p>
             ) : (
-              <p id={`${inputId}-hint`} className="text-xs text-fg-muted">
+              <p id={`${inputId}-hint`} className="text-center text-xs text-fg-muted">
                 Enter aplica dano. O dano consome primeiro os pontos temporários.
               </p>
             )}
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
             {[
               { label: '−5', operation: 'damage' as const, value: 5 },
               { label: '−1', operation: 'damage' as const, value: 1 },
@@ -206,7 +206,6 @@ export function HpTracker() {
             <Button
               size="sm"
               variant="ghost"
-              className="ml-auto"
               onClick={() => {
                 setNewMax(hp.max);
                 setMaxOpen(true);
@@ -323,7 +322,7 @@ function DeathSaves() {
   );
   if (!successes && !failures && !inspiration) return null;
   return (
-    <div className="mt-5 flex flex-col gap-2 border-t border-line pt-4">
+    <div className="mx-auto mt-5 flex w-full max-w-md flex-col gap-2 border-t border-line pt-4">
       {successes ? (
         <CheckboxTrack resource={successes} label="Sucessos contra a morte" tone="success" />
       ) : null}

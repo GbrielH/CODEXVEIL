@@ -33,7 +33,8 @@ const proficiencyMarks: Record<ProficiencyLevel, string> = {
   expertise: '◆',
 };
 
-export function AttributesTab() {
+/** `withoutProficiencies`: a ficha da campanha mostra as proficiências abaixo das características. */
+export function AttributesTab({ withoutProficiencies = false }: { withoutProficiencies?: boolean } = {}) {
   return (
     <div className="flex flex-col gap-5">
       <AbilityScores />
@@ -45,7 +46,7 @@ export function AttributesTab() {
         </div>
         <SkillsTable />
       </div>
-      <Proficiencies />
+      {withoutProficiencies ? null : <Proficiencies />}
     </div>
   );
 }
@@ -61,19 +62,20 @@ function AbilityScores() {
           key={ability}
           className="ornate flex flex-col items-center gap-2 rounded-lg border border-line bg-card px-2 py-3 shadow-card"
         >
-          <label htmlFor={`${id}-${ability}`} className="text-center">
-            <span className="block font-display text-xs tracking-[0.2em] text-fg-secondary">
-              {abilityLabels[ability].abbreviation}
-            </span>
-            <span className="block text-[11px] text-fg-muted">{abilityLabels[ability].name}</span>
-          </label>
-          {/* Clicar no modificador rola o teste do atributo (d20 + modificador). */}
+          {/* Clicar no cartão (nome e modificador) rola o teste do atributo (d20 + modificador). */}
           <RollButton
             expression={d20Expression(derived.abilityModifiers[ability] - penalty)}
             label={`Teste de ${abilityLabels[ability].name}`}
             mode={rollModeFrom(effects.abilityChecks)}
             title={`Rolar teste de ${abilityLabels[ability].name}`}
+            className="flex w-full flex-col items-center gap-2 py-1"
           >
+            <span className="text-center">
+              <span className="block font-display text-xs tracking-[0.2em] text-fg-secondary">
+                {abilityLabels[ability].abbreviation}
+              </span>
+              <span className="block text-[11px] text-fg-muted">{abilityLabels[ability].name}</span>
+            </span>
             <span
               className={cx('tabular font-display text-3xl leading-none', penalty > 0 ? 'text-amber-300' : 'text-fg-accent')}
               aria-label={`Modificador ${formatModifier(derived.abilityModifiers[ability] - penalty)}`}
@@ -83,6 +85,7 @@ function AbilityScores() {
           </RollButton>
           <NumberInput
             id={`${id}-${ability}`}
+            aria-label={`Valor de ${abilityLabels[ability].name}`}
             value={sheet.abilities[ability]}
             min={ABILITY_SCORE_MIN}
             max={ABILITY_SCORE_MAX}
@@ -404,7 +407,7 @@ function Spellcasting() {
   );
 }
 
-function Proficiencies() {
+export function Proficiencies() {
   const { sheet, updateSheet, permissions } = useSheet();
   // Armaduras, armas e ferramentas vêm da classe, do antecedente e das evoluções (criação e
   // subida de nível gravam sozinhas): só exibição.

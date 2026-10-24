@@ -57,30 +57,27 @@ function Stat({
       {value}
     </span>
   );
-  return (
-    <div
-      className={`flex flex-col items-center gap-1 rounded-md border bg-raised px-2 py-3 text-center ${changed ? 'border-amber-400/40' : 'border-line'}`}
-    >
+  const cardClass = `flex w-full flex-col items-center gap-1 rounded-md border bg-raised px-2 py-3 text-center ${changed ? 'border-amber-400/40' : 'border-line'}`;
+  const content = (
+    <>
       <span className="text-fg-brand">{icon}</span>
       <span className="flex items-center gap-1">
-        {roll ? (
-          <RollButton
-            expression={roll.expression}
-            label={roll.label}
-            mode={roll.mode}
-            className="px-1.5 py-0.5"
-          >
-            {number}
-          </RollButton>
-        ) : (
-          number
-        )}
+        {number}
         {badge}
       </span>
       <span className="text-[11px] uppercase tracking-wider text-fg-muted">{label}</span>
       {hint ? <span className="text-[11px] text-fg-subtle">{hint}</span> : null}
-    </div>
+    </>
   );
+  // Com rolagem, o cartão inteiro é o botão (mais fácil de acertar).
+  if (roll) {
+    return (
+      <RollButton expression={roll.expression} label={roll.label} mode={roll.mode} className={cardClass}>
+        {content}
+      </RollButton>
+    );
+  }
+  return <div className={cardClass}>{content}</div>;
 }
 
 export function parseAttack(data: unknown): Dnd5eAttackData {

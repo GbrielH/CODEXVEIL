@@ -2083,6 +2083,13 @@ export type Database = {
         };
         Returns: undefined;
       };
+      set_my_attendance: {
+        Args: {
+          p_session_id: string;
+          p_status: string;
+        };
+        Returns: undefined;
+      };
       set_my_dice_color: {
         Args: {
           p_campaign_id: string;

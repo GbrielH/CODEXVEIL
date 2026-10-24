@@ -42,7 +42,7 @@ import {
   type SheetContextValue,
   type SheetPermissions,
 } from './context';
-import { AttributesTab } from './attributes-tab';
+import { AttributesTab, Proficiencies } from './attributes-tab';
 import { FeaturesTab } from './features-tab';
 import { InventoryTab } from './inventory-tab';
 import { PlayTab } from './play-tab';
@@ -398,8 +398,9 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
                 content:
                   props.variant === 'campaign' ? (
                     <div className="flex flex-col gap-5">
-                      <AttributesTab />
+                      <AttributesTab withoutProficiencies />
                       <FeaturesTab show="passive" />
+                      <Proficiencies />
                     </div>
                   ) : (
                     <AttributesTab />
