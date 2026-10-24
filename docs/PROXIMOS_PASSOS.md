@@ -449,6 +449,9 @@ de segurança).
       `20261024110000_set_my_attendance.sql`, aplicada; teste `attendance-rpc.test.ts`).
 - [x] Tormenta20 na ficha pessoal: o assistente começava sem livros marcados e o aviso "Sem
       livros" escondia a lista; agora começa com todos marcados (site e app).
+- [x] Painel: borda da presença (verde/vermelha/amarela) muda na hora; respondida, mostra a
+      resposta e "Mudar" no lugar dos botões (`AttendanceFrame`).
+- [x] "Dados da mesa" fixo no canto inferior direito (sem arrastar).
 - [x] Ficha D&D (site): cartões de Iniciativa e de atributo inteiros clicáveis para rolar;
       Pontos de vida centralizado; na ficha da campanha, Proficiências e idiomas abaixo das
       Características; espécie sem parênteses aninhados (`formatSpeciesName`); clicar no retrato
@@ -456,11 +459,9 @@ de segurança).
 - [ ] **A fazer (pedidos de 2026-10-24):**
   - Aba Dados: mural abaixo de "Rolar dados" e, à direita, uma mesa grande que mostra a todos
     os dados rolando ao vivo (menos rolagens ocultas).
-  - Painel "Seus dados"/"Dados da mesa" de volta fixo no canto inferior direito (solto ficou
-    ruim).
-  - Cálculo automático da ficha: vida máxima pelos dados de vida + CON (e talentos/espécie),
-    e o que mais depende de atributos/perícias, recalculado ao mudar atributo ou subir nível
-    (hoje o máximo é editável e não acompanha). Conferir também as resistências e perícias.
+  - Cálculo automático da ficha: falta recalcular a vida por talentos/espécie (Robusto, anão
+    da colina) e conferir os demais números derivados. Feito: a vida máxima (e a atual, ao
+    subir) acompanha a mudança do modificador de CON × nível.
   - Efeitos de Fúria no app e efeitos para outras habilidades ativáveis.
   - Popup de pendências de ficha após atualizações (pedido de 2026-10-23).
 

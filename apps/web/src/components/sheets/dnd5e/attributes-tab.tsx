@@ -3,6 +3,7 @@
 import { d20Expression } from '@codexveil/domain';
 import {
   ABILITIES,
+  DND5E_RESOURCE_KEYS,
   ABILITY_SCORE_MAX,
   ABILITY_SCORE_MIN,
   PROFICIENCY_LEVELS,
@@ -34,7 +35,9 @@ const proficiencyMarks: Record<ProficiencyLevel, string> = {
 };
 
 /** `withoutProficiencies`: a ficha da campanha mostra as proficiências abaixo das características. */
-export function AttributesTab({ withoutProficiencies = false }: { withoutProficiencies?: boolean } = {}) {
+export function AttributesTab({
+  withoutProficiencies = false,
+}: { withoutProficiencies?: boolean } = {}) {
   return (
     <div className="flex flex-col gap-5">
       <AbilityScores />
@@ -52,9 +55,26 @@ export function AttributesTab({ withoutProficiencies = false }: { withoutProfici
 }
 
 function AbilityScores() {
-  const { sheet, derived, updateSheet, permissions, conditionEffects: effects } = useSheet();
+  const {
+    sheet,
+    derived,
+    updateSheet,
+    permissions,
+    conditionEffects: effects,
+    resources,
+    adjustResource,
+  } = useSheet();
   const penalty = effects.d20Penalty;
   const id = useId();
+  // Vida máxima acompanha a Constituição: cada ponto de modificador vale 1 PV por nível.
+  const syncHitPoints = (previousScore: number, nextScore: number) => {
+    const delta =
+      (Math.floor((nextScore - 10) / 2) - Math.floor((previousScore - 10) / 2)) * derived.level;
+    const hp = resources.find((resource) => resource.key === DND5E_RESOURCE_KEYS.hitPoints);
+    if (delta === 0 || !hp || hp.max === null) return;
+    adjustResource(hp, 'set_max', Math.max(1, hp.max + delta));
+    if (delta > 0) adjustResource(hp, 'heal', delta);
+  };
   return (
     <section aria-label="Atributos" className="grid grid-cols-3 gap-3 sm:grid-cols-6">
       {ABILITIES.map((ability) => (
@@ -77,7 +97,10 @@ function AbilityScores() {
               <span className="block text-[11px] text-fg-muted">{abilityLabels[ability].name}</span>
             </span>
             <span
-              className={cx('tabular font-display text-3xl leading-none', penalty > 0 ? 'text-amber-300' : 'text-fg-accent')}
+              className={cx(
+                'tabular font-display text-3xl leading-none',
+                penalty > 0 ? 'text-amber-300' : 'text-fg-accent',
+              )}
               aria-label={`Modificador ${formatModifier(derived.abilityModifiers[ability] - penalty)}`}
             >
               {formatModifier(derived.abilityModifiers[ability] - penalty)}
@@ -90,16 +113,20 @@ function AbilityScores() {
             min={ABILITY_SCORE_MIN}
             max={ABILITY_SCORE_MAX}
             disabled={!permissions.canEditSheet}
-            onCommit={(value) =>
+            onCommit={(value) => {
+              if (ability === 'con') syncHitPoints(sheet.abilities.con, value ?? 10);
               updateSheet((current) => ({
                 ...current,
                 abilities: { ...current.abilities, [ability]: value ?? 10 },
-              }))
-            }
+              }));
+            }}
             className="h-9 w-16 text-base"
           />
           {derived.abilities[ability] !== sheet.abilities[ability] ? (
-            <span className="text-center text-[11px] text-emerald-300" title={derived.abilityNotes.join('; ')}>
+            <span
+              className="text-center text-[11px] text-emerald-300"
+              title={derived.abilityNotes.join('; ')}
+            >
               Com itens: {derived.abilities[ability]}
             </span>
           ) : null}
@@ -283,20 +310,39 @@ function CombatBasics() {
   const id = useId();
   const unit = sheet.combat.speedUnit;
   const stats = [
-    { label: 'Classe de armadura', value: String(derived.armorClass), notes: derived.armorClassBreakdown },
+    {
+      label: 'Classe de armadura',
+      value: String(derived.armorClass),
+      notes: derived.armorClassBreakdown,
+    },
     {
       label: 'Iniciativa',
       value: formatModifier(derived.initiative),
-      notes: [`Destreza ${formatModifier(derived.abilityModifiers.dex)}`, ...(derived.initiative !== derived.abilityModifiers.dex ? ['+ proficiência/bônus de talentos'] : [])],
+      notes: [
+        `Destreza ${formatModifier(derived.abilityModifiers.dex)}`,
+        ...(derived.initiative !== derived.abilityModifiers.dex
+          ? ['+ proficiência/bônus de talentos']
+          : []),
+      ],
     },
-    { label: 'Deslocamento', value: `${derived.speed.toLocaleString('pt-BR')} ${unit}`, notes: derived.speedNotes },
+    {
+      label: 'Deslocamento',
+      value: `${derived.speed.toLocaleString('pt-BR')} ${unit}`,
+      notes: derived.speedNotes,
+    },
   ];
   return (
     <Card>
-      <CardHeader title="Combate" description="Calculado automaticamente pela espécie, classe, atributos e pelo que está equipado." />
+      <CardHeader
+        title="Combate"
+        description="Calculado automaticamente pela espécie, classe, atributos e pelo que está equipado."
+      />
       <div className="grid gap-3 sm:grid-cols-3">
         {stats.map((stat) => (
-          <div key={stat.label} className="flex flex-col gap-1 rounded-md border border-line bg-raised p-3">
+          <div
+            key={stat.label}
+            className="flex flex-col gap-1 rounded-md border border-line bg-raised p-3"
+          >
             <span className="text-xs text-fg-muted">{stat.label}</span>
             <span className="tabular font-display text-2xl text-fg-accent">{stat.value}</span>
             {stat.notes.length ? (
@@ -316,7 +362,11 @@ function CombatBasics() {
           ))}
         </ul>
       ) : null}
-      {derived.abilityNotes.length ? <p className="mt-2 text-xs text-fg-muted">Atributos alterados por itens: {derived.abilityNotes.join('; ')}.</p> : null}
+      {derived.abilityNotes.length ? (
+        <p className="mt-2 text-xs text-fg-muted">
+          Atributos alterados por itens: {derived.abilityNotes.join('; ')}.
+        </p>
+      ) : null}
       <div className="mt-3 flex items-center gap-2">
         <label htmlFor={`${id}-unit`} className="text-xs text-fg-muted">
           Unidade de distância
@@ -325,7 +375,12 @@ function CombatBasics() {
           id={`${id}-unit`}
           value={unit}
           disabled={!permissions.canEditSheet}
-          onChange={(event) => updateSheet((current) => ({ ...current, combat: { ...current.combat, speedUnit: event.target.value === 'ft' ? 'ft' : 'm' } }))}
+          onChange={(event) =>
+            updateSheet((current) => ({
+              ...current,
+              combat: { ...current.combat, speedUnit: event.target.value === 'ft' ? 'ft' : 'm' },
+            }))
+          }
           className="w-32"
         >
           <option value="m">metros</option>
@@ -420,16 +475,30 @@ export function Proficiencies() {
     .split(/,\s*/)
     .map((entry) => entry.trim())
     .filter(Boolean);
-  const all = [...SRD_LANGUAGES.map((language) => language.name), ...known.filter((name) => !SRD_LANGUAGES.some((language) => language.name === name))];
+  const all = [
+    ...SRD_LANGUAGES.map((language) => language.name),
+    ...known.filter((name) => !SRD_LANGUAGES.some((language) => language.name === name)),
+  ];
   const toggle = (name: string, checked: boolean) =>
     updateSheet((current) => {
-      const currentKnown = current.proficiencies.languages.split(/,\s*/).map((entry) => entry.trim()).filter(Boolean);
-      const next = checked ? [...currentKnown, name] : currentKnown.filter((entry) => entry !== name);
-      return { ...current, proficiencies: { ...current.proficiencies, languages: [...new Set(next)].join(', ') } };
+      const currentKnown = current.proficiencies.languages
+        .split(/,\s*/)
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+      const next = checked
+        ? [...currentKnown, name]
+        : currentKnown.filter((entry) => entry !== name);
+      return {
+        ...current,
+        proficiencies: { ...current.proficiencies, languages: [...new Set(next)].join(', ') },
+      };
     });
   return (
     <Card>
-      <CardHeader title="Proficiências e idiomas" description="Proficiências automáticas pela classe, antecedente e evoluções." />
+      <CardHeader
+        title="Proficiências e idiomas"
+        description="Proficiências automáticas pela classe, antecedente e evoluções."
+      />
       <dl className="grid gap-3 sm:grid-cols-3">
         {fixed.map((field) => (
           <div key={field.key} className="rounded-md border border-line bg-raised p-3">
@@ -444,8 +513,22 @@ export function Proficiencies() {
           {all.map((name) => {
             const checked = known.includes(name);
             return (
-              <label key={name} className={cx('flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm', checked ? 'border-parchment-300/60 bg-parchment-200/10 text-fg' : 'border-line text-fg-secondary')}>
-                <input type="checkbox" className="h-4 w-4 accent-wine-500" checked={checked} disabled={!permissions.canEditSheet} onChange={(event) => toggle(name, event.target.checked)} />
+              <label
+                key={name}
+                className={cx(
+                  'flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm',
+                  checked
+                    ? 'border-parchment-300/60 bg-parchment-200/10 text-fg'
+                    : 'border-line text-fg-secondary',
+                )}
+              >
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-wine-500"
+                  checked={checked}
+                  disabled={!permissions.canEditSheet}
+                  onChange={(event) => toggle(name, event.target.checked)}
+                />
                 {name}
               </label>
             );

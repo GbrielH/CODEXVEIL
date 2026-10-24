@@ -27,7 +27,7 @@ import { CampaignCard } from '@/components/campaigns/campaign-card';
 import { CampaignCover } from '@/components/campaigns/campaign-cover';
 import { ArcaneSigil } from '@/components/brand/arcane-sigil';
 import { CharacterCard } from '@/components/characters/character-card';
-import { AttendanceButtons } from '@/components/sessions/attendance-buttons';
+import { AttendanceFrame } from '@/components/sessions/attendance-frame';
 import { ButtonLink } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Notice } from '@/components/ui/notice';
@@ -293,19 +293,8 @@ export default async function DashboardPage({ searchParams }: PageProps<'/painel
             </p>
           ) : (
             <ul className="flex flex-col gap-3">
-              {sessions.map((session) => (
-                <li
-                  key={session.id}
-                  className={`flex flex-col gap-2 rounded-lg border px-3 py-2 ${
-                    !playerCampaignIds.has(session.campaignId)
-                      ? 'border-line hover:border-wine-400/40'
-                      : attendance[session.id] === 'yes'
-                        ? 'border-emerald-400/70'
-                        : attendance[session.id] === 'no'
-                          ? 'border-red-400/70'
-                          : 'border-amber-400/70'
-                  }`}
-                >
+              {sessions.map((session) => {
+                const summary = (
                   <Link
                     href={`/campanhas/${session.campaignId}`}
                     className="flex gap-3 rounded-md hover:bg-hover"
@@ -326,16 +315,26 @@ export default async function DashboardPage({ searchParams }: PageProps<'/painel
                       </span>
                     </span>
                   </Link>
-                  {playerCampaignIds.has(session.campaignId) ? (
-                    <AttendanceButtons
-                      sessionId={session.id}
-                      campaignId={session.campaignId}
-                      userId={user.id}
-                      initial={attendance[session.id] ?? null}
-                    />
-                  ) : null}
-                </li>
-              ))}
+                );
+                return (
+                  <li key={session.id}>
+                    {playerCampaignIds.has(session.campaignId) ? (
+                      <AttendanceFrame
+                        sessionId={session.id}
+                        campaignId={session.campaignId}
+                        userId={user.id}
+                        initial={attendance[session.id] ?? null}
+                      >
+                        {summary}
+                      </AttendanceFrame>
+                    ) : (
+                      <div className="rounded-lg border border-line px-3 py-2 hover:border-wine-400/40">
+                        {summary}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </Card>

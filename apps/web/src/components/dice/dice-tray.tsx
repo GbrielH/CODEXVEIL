@@ -4,7 +4,7 @@ import type { DiceRoll } from '@codexveil/database';
 import type DiceBox from '@3d-dice/dice-box-threejs';
 import { describeDiceRoll, naturalD20 } from '@codexveil/domain';
 import { ChevronDown, ChevronUp, Dices, Lock } from 'lucide-react';
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { cx } from '@/lib/cx';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
@@ -20,7 +20,6 @@ const SUPPORTED_SIDES = new Set([4, 6, 8, 10, 12, 20, 100]);
 const DEFAULT_COLOR = DICE_COLORS[0]!.hex;
 const STORAGE_KEY = 'codexveil:dice-tray-open';
 // Posição pela base (o balão do resultado cresce para cima sem empurrar a caixinha para fora da tela).
-const POSITION_KEY = 'codexveil:dice-tray-anchor';
 
 export interface TrayRoll {
   key: string;
@@ -50,7 +49,10 @@ function notation(roll: TrayRoll['roll']): string | null {
       if (take.length === 0) continue;
       used += take.length * 2;
       groups.push(`${take.length}d100`, `${take.length}d10`);
-      values.push(...take.map((value) => Math.floor((value % 100) / 10)), ...take.map((value) => value % 10));
+      values.push(
+        ...take.map((value) => Math.floor((value % 100) / 10)),
+        ...take.map((value) => value % 10),
+      );
       continue;
     }
     const take = group.values.slice(0, Math.max(0, MAX_TRAY_DICE - used));
@@ -97,46 +99,13 @@ export function DiceTray({
   const [last, setLast] = useState<TrayRoll | null>(null);
   const [picking, setPicking] = useState(false);
   const [rolling, setRolling] = useState<TrayRoll | null>(null);
-  const trayRef = useRef<HTMLDivElement>(null);
-  // Posição escolhida ao arrastar pelo cabeçalho (fica guardada neste navegador).
-  const [position, setPosition] = useState<{ x: number; bottom: number } | null>(() => {
-    try {
-      const stored = typeof window === 'undefined' ? null : window.localStorage.getItem(POSITION_KEY);
-      return stored ? (JSON.parse(stored) as { x: number; bottom: number }) : null;
-    } catch {
-      return null;
-    }
-  });
-  const startDrag = (event: ReactPointerEvent<HTMLElement>) => {
-    if ((event.target as HTMLElement).closest('button') || !trayRef.current) return;
-    const rect = trayRef.current.getBoundingClientRect();
-    const offsetX = event.clientX - rect.left;
-    const offsetY = event.clientY - rect.top;
-    let latest: { x: number; bottom: number } | null = null;
-    const move = (moveEvent: PointerEvent) => {
-      const top = moveEvent.clientY - offsetY;
-      latest = {
-        x: Math.min(Math.max(0, moveEvent.clientX - offsetX), Math.max(0, window.innerWidth - rect.width)),
-        bottom: Math.min(Math.max(0, window.innerHeight - (top + rect.height)), Math.max(0, window.innerHeight - rect.height)),
-      };
-      setPosition(latest);
-    };
-    const stop = () => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', stop);
-      try {
-        if (latest) window.localStorage.setItem(POSITION_KEY, JSON.stringify(latest));
-      } catch {
-        // Sem armazenamento: vale só nesta página.
-      }
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', stop);
-    event.preventDefault();
-  };
   // A caixinha vai para o <body> (portal): dentro do <main>, a animação de entrada (transform) fazia o
   // "fixed" valer em relação ao conteúdo, e ela aparecia no fim da página em vez de presa à tela.
-  const mounted = useSyncExternalStore(subscribeNothing, () => true, () => false);
+  const mounted = useSyncExternalStore(
+    subscribeNothing,
+    () => true,
+    () => false,
+  );
   const userId = palette?.userId ?? null;
   const myColor = palette?.myColor ?? null;
 
@@ -267,7 +236,12 @@ export function DiceTray({
   }, [last]);
   const naturalRoll = last ? naturalD20(last.roll) : null;
   // Crítico pela margem da arma (19–20 do Campeão…); falha só no 1 natural.
-  const natural = naturalRoll !== null && naturalRoll >= (last?.critRange ?? 20) ? 20 : naturalRoll === 1 ? 1 : null;
+  const natural =
+    naturalRoll !== null && naturalRoll >= (last?.critRange ?? 20)
+      ? 20
+      : naturalRoll === 1
+        ? 1
+        : null;
 
   const toggle = () => {
     setOpen((current) => {
@@ -283,154 +257,150 @@ export function DiceTray({
   if (!mounted) return null;
   return createPortal(
     <>
-    {/* Crítico (20 natural) ou falha (1 natural): explosão na tela, sem bloquear cliques. */}
-    {last && bubbleKey === last.key && (natural === 20 || natural === 1) ? (
-      <div key={last.key} aria-hidden="true" className="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center overflow-hidden">
-        <div className={cx('absolute inset-0', natural === 20 ? 'animate-crit-flash bg-[radial-gradient(circle,rgb(251_191_36/0.45),transparent_60%)]' : 'animate-crit-flash bg-[radial-gradient(circle,rgb(239_68_68/0.4),transparent_60%)]')} />
-        <p
-          className={cx(
-            'font-display text-6xl tracking-wider uppercase sm:text-8xl',
-            natural === 20 ? 'animate-crit-banner text-amber-300 [text-shadow:0_0_24px_rgb(251_191_36/0.9),0_0_60px_rgb(251_191_36/0.6)]' : 'animate-fumble-banner text-red-400 [text-shadow:0_0_24px_rgb(239_68_68/0.8)]',
-          )}
+      {/* Crítico (20 natural) ou falha (1 natural): explosão na tela, sem bloquear cliques. */}
+      {last && bubbleKey === last.key && (natural === 20 || natural === 1) ? (
+        <div
+          key={last.key}
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center overflow-hidden"
         >
-          {natural === 20 ? 'Crítico!' : 'Falha crítica'}
-        </p>
-      </div>
-    ) : null}
-    <div
-      ref={trayRef}
-      style={
-        position
-          ? {
-              // Trava também ao diminuir a janela: a caixinha nunca sai da tela.
-              left: `min(${position.x}px, calc(100vw - min(24rem, 100vw - 1.5rem)))`,
-              bottom: `min(${position.bottom}px, calc(100dvh - 3rem))`,
-              right: 'auto',
-              top: 'auto',
-              maxHeight: '100dvh',
-            }
-          : undefined
-      }
-      className="fixed right-3 bottom-20 z-50 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col items-stretch gap-2 lg:bottom-4">
-      {/* Resultado da última rolagem, logo acima da caixinha. */}
-      <div aria-live="polite" className="min-h-0">
-        {last && bubbleKey === last.key ? (
           <div
             className={cx(
-              'animate-pop rounded-lg border bg-raised/95 px-3 py-2 shadow-xl backdrop-blur',
+              'absolute inset-0',
               natural === 20
-                ? 'border-emerald-400/60'
-                : natural === 1
-                  ? 'border-red-400/60'
-                  : 'border-line-strong',
+                ? 'animate-crit-flash bg-[radial-gradient(circle,rgb(251_191_36/0.45),transparent_60%)]'
+                : 'animate-crit-flash bg-[radial-gradient(circle,rgb(239_68_68/0.4),transparent_60%)]',
+            )}
+          />
+          <p
+            className={cx(
+              'font-display text-6xl tracking-wider uppercase sm:text-8xl',
+              natural === 20
+                ? 'animate-crit-banner text-amber-300 [text-shadow:0_0_24px_rgb(251_191_36/0.9),0_0_60px_rgb(251_191_36/0.6)]'
+                : 'animate-fumble-banner text-red-400 [text-shadow:0_0_24px_rgb(239_68_68/0.8)]',
             )}
           >
-            <p className="flex items-baseline gap-2">
-              <span className="font-display text-2xl text-fg">{last.roll.total}</span>
-              <span className="min-w-0 flex-1 truncate text-sm text-fg-secondary">
-                {last.rollerName}
-                {last.roll.label ? ` · ${last.roll.label}` : ''}
-              </span>
-            </p>
-            <p className="truncate text-xs text-fg-muted">
-              {describeDiceRoll(last.roll)}
-              {natural === 20 ? (naturalRoll === 20 ? ' · 20 natural!' : ` · ${naturalRoll} natural: crítico!`) : natural === 1 ? ' · 1 natural' : ''}
-            </p>
-            {last.secret ? (
-              <p className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-200">
-                <Lock className="h-3 w-3" aria-hidden="true" />
-                Apenas quem rolou e o mestre veem
+            {natural === 20 ? 'Crítico!' : 'Falha crítica'}
+          </p>
+        </div>
+      ) : null}
+      <div className="fixed right-3 bottom-20 z-50 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col items-stretch gap-2 lg:bottom-4">
+        {/* Resultado da última rolagem, logo acima da caixinha. */}
+        <div aria-live="polite" className="min-h-0">
+          {last && bubbleKey === last.key ? (
+            <div
+              className={cx(
+                'animate-pop rounded-lg border bg-raised/95 px-3 py-2 shadow-xl backdrop-blur',
+                natural === 20
+                  ? 'border-emerald-400/60'
+                  : natural === 1
+                    ? 'border-red-400/60'
+                    : 'border-line-strong',
+              )}
+            >
+              <p className="flex items-baseline gap-2">
+                <span className="font-display text-2xl text-fg">{last.roll.total}</span>
+                <span className="min-w-0 flex-1 truncate text-sm text-fg-secondary">
+                  {last.rollerName}
+                  {last.roll.label ? ` · ${last.roll.label}` : ''}
+                </span>
+              </p>
+              <p className="truncate text-xs text-fg-muted">
+                {describeDiceRoll(last.roll)}
+                {natural === 20
+                  ? naturalRoll === 20
+                    ? ' · 20 natural!'
+                    : ` · ${naturalRoll} natural: crítico!`
+                  : natural === 1
+                    ? ' · 1 natural'
+                    : ''}
+              </p>
+              {last.secret ? (
+                <p className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-200">
+                  <Lock className="h-3 w-3" aria-hidden="true" />
+                  Apenas quem rolou e o mestre veem
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+        <aside
+          aria-label="Dados"
+          className="overflow-hidden rounded-lg border border-line-strong bg-raised/95 shadow-2xl backdrop-blur"
+        >
+          <div className="flex items-center gap-2 border-b border-line px-3 py-1.5 select-none">
+            <Dices className="h-4 w-4 text-fg-accent" aria-hidden="true" />
+            <span className="min-w-0 flex-1 truncate text-xs text-fg-secondary">
+              {rolling ? (
+                <>
+                  Rolando… · {rolling.rollerName}
+                  {rolling.roll.label ? ` · ${rolling.roll.label}` : ''}
+                </>
+              ) : last ? (
+                <>
+                  {last.secret ? (
+                    <Lock className="mr-1 inline h-3 w-3 text-amber-300" aria-label="Secreta" />
+                  ) : null}
+                  <strong className="text-fg">{last.roll.total}</strong> · {last.rollerName}
+                  {last.roll.label ? ` · ${last.roll.label}` : ''}
+                </>
+              ) : (
+                'Dados da mesa'
+              )}
+            </span>
+            {palette ? (
+              <button
+                type="button"
+                onClick={() => setPicking((current) => !current)}
+                aria-label="Escolher a cor dos seus dados"
+                title="Cor dos seus dados"
+                className="rounded p-0.5 hover:bg-hover"
+              >
+                {myColor ? (
+                  <DieIcon color={myColor} className="h-5 w-5" />
+                ) : (
+                  <span className="block h-5 w-5 rounded border border-dashed border-line-strong" />
+                )}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={toggle}
+              aria-label={open ? 'Recolher os dados' : 'Abrir os dados'}
+              className="rounded p-0.5 text-fg-muted hover:text-fg"
+            >
+              {open ? (
+                <ChevronDown className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <ChevronUp className="h-4 w-4" aria-hidden="true" />
+              )}
+            </button>
+          </div>
+          {picking ? (
+            <div className="border-b border-line px-3 py-2">
+              <DiceColorPalette onPicked={() => setPicking(false)} />
+            </div>
+          ) : null}
+          {/* O canvas da biblioteca fica preso ao tamanho da área (senão ele estica a caixinha). */}
+          <div
+            id={containerId}
+            className={cx(
+              'relative h-56 w-full overflow-hidden [&_canvas]:absolute [&_canvas]:inset-0 [&_canvas]:!h-full [&_canvas]:!w-full',
+              !open && 'hidden',
+            )}
+          >
+            {!ready ? (
+              <p className="absolute inset-0 flex items-center justify-center text-xs text-fg-muted">
+                As rolagens aparecem aqui.
               </p>
             ) : null}
           </div>
-        ) : null}
+          <p className="flex items-center gap-1 border-t border-line px-3 py-1 text-[11px] text-fg-muted">
+            <Lock className="h-3 w-3" aria-hidden="true" /> = rolagem secreta (só quem rolou e o
+            mestre)
+          </p>
+        </aside>
       </div>
-      <aside
-        aria-label="Dados"
-        className="overflow-hidden rounded-lg border border-line-strong bg-raised/95 shadow-2xl backdrop-blur"
-      >
-        <div
-          onPointerDown={startDrag}
-          onDoubleClick={() => {
-            setPosition(null);
-            try {
-              window.localStorage.removeItem(POSITION_KEY);
-            } catch {
-              // Sem armazenamento.
-            }
-          }}
-          title="Arraste para mover (duplo clique volta ao canto)"
-          className="flex cursor-grab touch-none items-center gap-2 border-b border-line px-3 py-1.5 select-none active:cursor-grabbing"
-        >
-          <Dices className="h-4 w-4 text-fg-accent" aria-hidden="true" />
-          <span className="min-w-0 flex-1 truncate text-xs text-fg-secondary">
-            {rolling ? (
-              <>Rolando… · {rolling.rollerName}{rolling.roll.label ? ` · ${rolling.roll.label}` : ''}</>
-            ) : last ? (
-              <>
-                {last.secret ? (
-                  <Lock className="mr-1 inline h-3 w-3 text-amber-300" aria-label="Secreta" />
-                ) : null}
-                <strong className="text-fg">{last.roll.total}</strong> · {last.rollerName}
-                {last.roll.label ? ` · ${last.roll.label}` : ''}
-              </>
-            ) : (
-              'Dados da mesa'
-            )}
-          </span>
-          {palette ? (
-            <button
-              type="button"
-              onClick={() => setPicking((current) => !current)}
-              aria-label="Escolher a cor dos seus dados"
-              title="Cor dos seus dados"
-              className="rounded p-0.5 hover:bg-hover"
-            >
-              {myColor ? (
-                <DieIcon color={myColor} className="h-5 w-5" />
-              ) : (
-                <span className="block h-5 w-5 rounded border border-dashed border-line-strong" />
-              )}
-            </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label={open ? 'Recolher os dados' : 'Abrir os dados'}
-            className="rounded p-0.5 text-fg-muted hover:text-fg"
-          >
-            {open ? (
-              <ChevronDown className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <ChevronUp className="h-4 w-4" aria-hidden="true" />
-            )}
-          </button>
-        </div>
-        {picking ? (
-          <div className="border-b border-line px-3 py-2">
-            <DiceColorPalette onPicked={() => setPicking(false)} />
-          </div>
-        ) : null}
-        {/* O canvas da biblioteca fica preso ao tamanho da área (senão ele estica a caixinha). */}
-        <div
-          id={containerId}
-          className={cx(
-            'relative h-56 w-full overflow-hidden [&_canvas]:absolute [&_canvas]:inset-0 [&_canvas]:!h-full [&_canvas]:!w-full',
-            !open && 'hidden',
-          )}
-        >
-          {!ready ? (
-            <p className="absolute inset-0 flex items-center justify-center text-xs text-fg-muted">
-              As rolagens aparecem aqui.
-            </p>
-          ) : null}
-        </div>
-        <p className="flex items-center gap-1 border-t border-line px-3 py-1 text-[11px] text-fg-muted">
-          <Lock className="h-3 w-3" aria-hidden="true" /> = rolagem secreta (só quem rolou e o
-          mestre)
-        </p>
-      </aside>
-    </div>
     </>,
     document.body,
   );
