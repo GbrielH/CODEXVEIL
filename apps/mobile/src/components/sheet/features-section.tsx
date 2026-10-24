@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { RollButton } from '@/components/dice/dice';
 import { useRage } from '@/lib/active-effects';
+import { RageGlow } from './rage-glow';
 import { Button, IconButton } from '@/components/ui/button';
 import { AppText, Badge, Card } from '@/components/ui/primitives';
 import { colors, fonts, spacing } from '@/lib/theme';
@@ -106,10 +107,19 @@ export function FeaturesSection({ show = 'all' }: { show?: 'all' | 'usable' | 'p
             backgroundColor: rage > 0 ? 'rgba(239,68,68,0.15)' : 'transparent',
           }}
         >
-          <AppText style={{ fontFamily: fonts.display, color: colors.fg }}>{rage > 0 ? 'Em Fúria! (toque para sair)' : 'Entrar em Fúria'}</AppText>
+          {rage > 0 ? <RageGlow /> : null}
+          <AppText style={{ fontFamily: fonts.display, color: colors.fg }}>
+            {rage > 0 ? 'Em Fúria! (toque para sair)' : 'Entrar em Fúria'}
+          </AppText>
           <AppText variant="small">
-            +{rageDamageBonus(sheet.identity.classes.filter((entry) => /b[aá]rbaro|barbarian/i.test(entry.name)).reduce((total, entry) => total + entry.level, 0))} no dano com
-            Força corpo a corpo; vantagem em testes e salvaguardas de Força; resistência a dano contundente, cortante e perfurante.
+            +
+            {rageDamageBonus(
+              sheet.identity.classes
+                .filter((entry) => /b[aá]rbaro|barbarian/i.test(entry.name))
+                .reduce((total, entry) => total + entry.level, 0),
+            )}{' '}
+            no dano com Força corpo a corpo; vantagem em testes e salvaguardas de Força; resistência
+            a dano contundente, cortante e perfurante.
           </AppText>
         </Pressable>
       ) : null}
@@ -130,7 +140,9 @@ export function FeaturesSection({ show = 'all' }: { show?: 'all' | 'usable' | 'p
               sheet,
               derived,
               items,
-              features: allAbilities.filter((item) => item.kind !== 'attack' && item.kind !== 'spell').map((item) => item.name),
+              features: allAbilities
+                .filter((item) => item.kind !== 'attack' && item.kind !== 'spell')
+                .map((item) => item.name),
               effects: { rage: rage > 0 },
             })
           : null;
@@ -180,8 +192,22 @@ export function FeaturesSection({ show = 'all' }: { show?: 'all' | 'usable' | 'p
               // As três rolagens, na ordem do jogo: acerto, dano e dano crítico.
               <View style={{ flexDirection: 'row', gap: 6 }}>
                 {[
-                  { key: 'acerto', title: 'Acerto', expression: d20Expression(attackBonus), value: formatModifier(attackBonus), color: colors.fgAccent, label: `Ataque: ${entry.name}` },
-                  { key: 'dano', title: 'Dano', expression: damage, value: damage ?? '—', color: '#EC9384', label: `Dano: ${entry.name}` },
+                  {
+                    key: 'acerto',
+                    title: 'Acerto',
+                    expression: d20Expression(attackBonus),
+                    value: formatModifier(attackBonus),
+                    color: colors.fgAccent,
+                    label: `Ataque: ${entry.name}`,
+                  },
+                  {
+                    key: 'dano',
+                    title: 'Dano',
+                    expression: damage,
+                    value: damage ?? '—',
+                    color: '#EC9384',
+                    label: `Dano: ${entry.name}`,
+                  },
                   {
                     key: 'critico',
                     title: `Crítico (${critRangeLabel(resolved?.critRange ?? attack.data.critRange)})`,
@@ -191,8 +217,21 @@ export function FeaturesSection({ show = 'all' }: { show?: 'all' | 'usable' | 'p
                     label: `Dano crítico: ${entry.name}`,
                   },
                 ].map((roll) => (
-                  <RollButton key={roll.key} expression={roll.expression} label={roll.label} style={{ flex: 1 }}>
-                    <View style={{ alignItems: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: 8, paddingVertical: 6 }}>
+                  <RollButton
+                    key={roll.key}
+                    expression={roll.expression}
+                    label={roll.label}
+                    style={{ flex: 1 }}
+                  >
+                    <View
+                      style={{
+                        alignItems: 'center',
+                        borderWidth: 1,
+                        borderColor: colors.line,
+                        borderRadius: 8,
+                        paddingVertical: 6,
+                      }}
+                    >
                       <AppText variant="small" style={{ fontSize: 11 }}>
                         {roll.title}
                       </AppText>

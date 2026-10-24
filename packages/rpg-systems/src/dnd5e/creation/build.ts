@@ -228,6 +228,23 @@ export interface CombatSummary {
   hitPointMax: number;
 }
 
+/**
+ * PV extras por nível: Tenacidade Anã (anão do SRD 2024 e anão da colina de 2014), talento
+ * Robusto (+2) e Resiliência Dracônica do feiticeiro (SRD, a partir do 3º nível).
+ */
+export function hitPointBonusPerLevel(input: {
+  speciesId: string | null;
+  speciesName: string;
+  featNames: readonly string[];
+  sorcererLevel: number;
+}): number {
+  let bonus = 0;
+  if (input.speciesId === 'dwarf' || /colina|hill/i.test(input.speciesName)) bonus += 1;
+  if (input.featNames.some((name) => /\b(tough|robusto)\b/i.test(name))) bonus += 2;
+  if (input.sorcererLevel >= 3) bonus += 1;
+  return bonus;
+}
+
 export function combatSummary(draft: Dnd5eDraft): CombatSummary {
   const classDef = draftClass(draft);
   const species = draftSpecies(draft);
@@ -296,8 +313,14 @@ export function combatSummary(draft: Dnd5eDraft): CombatSummary {
       hitPointMax += Math.max(1, (current === 1 ? size : size / 2 + 1) + mods.con);
     }
   }
-  if (species?.id === 'dwarf') hitPointMax += level;
-  if (classDef?.id === 'sorcerer' && level >= 3) hitPointMax += level;
+  hitPointMax +=
+    level *
+    hitPointBonusPerLevel({
+      speciesId: species?.id ?? null,
+      speciesName: `${species?.name ?? ''} ${lineage?.name ?? ''}`,
+      featNames: feats.map((id) => `${id} ${findFeat(id)?.name ?? ''}`),
+      sorcererLevel: classDef?.id === 'sorcerer' ? level : 0,
+    });
   return { armorClass, armorClassSource, speedFeet, hitPointMax: Math.max(1, hitPointMax) };
 }
 

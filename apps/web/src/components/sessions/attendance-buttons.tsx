@@ -25,11 +25,14 @@ export function AttendanceButtons({
   const router = useRouter();
   const [status, setStatus] = useState<AttendanceStatus | null>(initial);
   const [busy, setBusy] = useState(false);
+  // Respondida, mostra só a resposta e "Mudar" (os botões voltam ao mudar).
+  const [editing, setEditing] = useState(initial === null);
   const answer = async (next: AttendanceStatus) => {
     setBusy(true);
     try {
       await setMyAttendance(getSupabaseBrowserClient(), sessionId, campaignId, userId, next);
       setStatus(next);
+      setEditing(false);
       router.refresh();
       toast({
         tone: 'success',
@@ -45,6 +48,22 @@ export function AttendanceButtons({
       setBusy(false);
     }
   };
+  if (!editing && status) {
+    return (
+      <p className="flex items-center gap-2 text-xs">
+        <span className={status === 'yes' ? 'text-emerald-300' : 'text-red-300'}>
+          {status === 'yes' ? 'Você confirmou presença.' : 'Você avisou que não vai.'}
+        </span>
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="text-fg-muted underline-offset-2 hover:text-fg hover:underline"
+        >
+          Mudar
+        </button>
+      </p>
+    );
+  }
   return (
     <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Confirmar presença">
       <span className="text-xs text-fg-muted">

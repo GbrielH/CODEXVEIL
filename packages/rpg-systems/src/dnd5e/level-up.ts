@@ -693,9 +693,29 @@ export function applyDnd5eLevelUp(
       ? choices.hitPoints.die
       : Math.floor(plan.hitDieSides / 2) + 1;
   // Constituição maior aumenta o máximo de PV também nos níveis anteriores.
+  // Extras por nível: anão (Tenacidade Anã) e feiticeiro dracônico ganham +1 por nível; o
+  // talento Robusto escolhido agora vale +2 por nível de personagem, retroativo.
+  const sorcererDraconic =
+    plan.classDef?.id === 'sorcerer' &&
+    /drac|dragon/i.test((chosenSubclass ?? plan.currentSubclass)?.name ?? '');
+  const toughNow = /\b(tough|robusto)\b/i.test(
+    `${chosenFeatId} ${findFeat(chosenFeatId)?.name ?? ''}`,
+  );
+  const extraHp =
+    (/an[aã]o|dwarf/i.test(sheet.identity.species) ? 1 : 0) +
+    (sorcererDraconic
+      ? plan.newClassLevel === 3 && !plan.currentSubclass
+        ? 3
+        : plan.newClassLevel > 3
+          ? 1
+          : 0
+      : 0) +
+    (toughNow ? 2 * plan.newTotalLevel : 0);
   const hpGain = Math.max(
     1,
-    hitPointsGained(die, abilityModifier(abilities.con)) + conChange * (plan.newTotalLevel - 1),
+    hitPointsGained(die, abilityModifier(abilities.con)) +
+      conChange * (plan.newTotalLevel - 1) +
+      extraHp,
   );
 
   const classes = plan.classes.map((entry, position) =>
