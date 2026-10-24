@@ -57,7 +57,7 @@ conversa, retomar por esta lista:
    rascunho).
 4. **App:** "Escolher do livro" ao adicionar item (existe só no site); mesa de dados 3D ao vivo
    da aba Dados (existe só no site); borda colorida da presença no início do app.
-5. **Tomo, o Mestre (pedido de 2026-10-24):** mudar de aba ou de página não pode fechar o chat
+5. **[Feito em 2026-10-25] Tomo, o Mestre (pedido de 2026-10-24):** mudar de aba ou de página não pode fechar o chat
    nem apagar a conversa. O painel e as mensagens precisam continuar abertos ao navegar (estado
    acima das páginas, no layout do app, e guardado na sessão do navegador para sobreviver a
    recarregar).
@@ -506,6 +506,19 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-10-25 — rascunho de personagem, chat do Tomo e cartão de iniciativa
+
+- [x] **Salvar rascunho** na criação de personagem (D&D e Tormenta20, site): grava a criação
+      incompleta na conta (tabela `character_drafts`, migração `20261025100000_character_drafts.sql`,
+      aplicada; só o dono vê; até 20 por pessoa). "Personagens" lista os rascunhos com Continuar e
+      Apagar; ao criar o personagem, o rascunho some. Teste: `test/rls/drafts.test.ts`. Falta no app.
+- [x] Chat do Tomo: estado fora das telas e guardado na sessão do navegador; mudar de aba, de
+      página ou recarregar não fecha o painel nem apaga a conversa (`AssistantHost` no layout).
+- [x] Barra superior do site (busca de campanhas e personagens) removida a pedido; o layout não
+      carrega mais campanhas e personagens em toda página.
+- [x] Cartão de Iniciativa desmontado quando a ficha estava sem rolagem disponível (o botão
+      devolvia o conteúdo sem a caixa); agora mantém o cartão.
 
 ### 2026-10-24 (madrugada) — pendências em todos os sistemas, retratos no app, Fúria T20
 

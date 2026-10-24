@@ -610,6 +610,61 @@ export type Database = {
           },
         ];
       };
+      character_drafts: {
+        Row: {
+          campaign_id: string | null;
+          created_at: string;
+          id: string;
+          name: string;
+          owner_id: string;
+          payload: Json;
+          system_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          campaign_id?: string | null;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          owner_id?: string;
+          payload?: Json;
+          system_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          campaign_id?: string | null;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          owner_id?: string;
+          payload?: Json;
+          system_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'character_drafts_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'character_drafts_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'character_drafts_system_id_fkey';
+            columns: ['system_id'];
+            isOneToOne: false;
+            referencedRelation: 'rpg_systems';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       character_events: {
         Row: {
           actor_id: string | null;

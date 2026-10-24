@@ -13,7 +13,7 @@ export interface PlanLimits {
 }
 
 /** Recursos limitados: os do plano e os limites fixos que protegem o espaço do banco. */
-export type LimitedResource = keyof PlanLimits | 'maxBookPacks' | 'maxBookEntries' | 'maxBookBytes' | 'maxBookStorage';
+export type LimitedResource = keyof PlanLimits | 'maxBookPacks' | 'maxBookEntries' | 'maxBookBytes' | 'maxBookStorage' | 'maxCharacterDrafts';
 
 /** `null` significa ilimitado. */
 export function isWithinLimit(currentCount: number, limit: number | null): boolean {
@@ -33,4 +33,5 @@ export const limitReachedMessages: Record<LimitedResource, string> = {
   maxBookEntries: 'O livro passou do limite de 6.000 entradas. Divida o pacote em mais de um livro.',
   maxBookBytes: 'O livro passou do limite de 25 MB. Divida o pacote em mais de um livro.',
   maxBookStorage: 'Seus livros passaram do limite de 60 MB por conta. Remova um livro para importar outro.',
+  maxCharacterDrafts: 'Você atingiu o limite de 20 rascunhos de personagem. Apague um rascunho para salvar outro.',
 };

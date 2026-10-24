@@ -4,7 +4,13 @@ import { AssistantMarkdown } from './assistant-markdown';
 import { Copy, Send, X } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type FormEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import { createPortal } from 'react-dom';
 
 interface ChatMessage {
@@ -15,17 +21,64 @@ interface ChatMessage {
 /** Mascote: Tomo, o grimório encapuzado que mestra (arte do responsável, em `public/mestre`). */
 const MASCOT_NAME = 'Tomo';
 
+/*
+ * Estado do chat fora dos componentes e guardado na sessão do navegador: mudar de aba, de página
+ * ou recarregar não fecha o painel nem apaga a conversa.
+ */
+interface AssistantState {
+  open: boolean;
+  messages: ChatMessage[];
+}
+const STORE_KEY = 'codexveil:tomo';
+const EMPTY: AssistantState = { open: false, messages: [] };
+let state: AssistantState = EMPTY;
+let loaded = false;
+const listeners = new Set<() => void>();
+
+function readState(): AssistantState {
+  if (!loaded && typeof window !== 'undefined') {
+    loaded = true;
+    try {
+      const stored = window.sessionStorage.getItem(STORE_KEY);
+      if (stored) state = { ...EMPTY, ...(JSON.parse(stored) as Partial<AssistantState>) };
+    } catch {
+      // Sem armazenamento: o chat vale só enquanto a página estiver aberta.
+    }
+  }
+  return state;
+}
+
+function setState(update: (current: AssistantState) => AssistantState) {
+  state = update(readState());
+  try {
+    window.sessionStorage.setItem(STORE_KEY, JSON.stringify(state));
+  } catch {
+    // Idem.
+  }
+  for (const listener of listeners) listener();
+}
+
+function useAssistantState(): AssistantState {
+  return useSyncExternalStore(
+    (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    readState,
+    () => EMPTY,
+  );
+}
+
 /**
  * Assistente de IA: card no menu (acima do perfil/"Sair") que abre um painel de conversa por
  * cima da página atual. O histórico fica só nesta aba do navegador.
  */
 export function AssistantCard({ compact = false }: { compact?: boolean }) {
-  const [open, setOpen] = useState(false);
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => setState((current) => ({ ...current, open: true }))}
         aria-label={compact ? `${MASCOT_NAME}, o Mestre (assistente de IA)` : undefined}
         className={
           compact
@@ -47,15 +100,32 @@ export function AssistantCard({ compact = false }: { compact?: boolean }) {
           </span>
         )}
       </button>
-      {/* Portal no body: o menu lateral cria um contexto de empilhamento que prendia o painel atrás da página. */}
-      {open ? createPortal(<AssistantPanel onClose={() => setOpen(false)} />, document.body) : null}
     </>
   );
 }
 
+/**
+ * O painel do chat, montado uma vez só no layout (os cards só o abrem). Portal no body: o menu
+ * lateral cria um contexto de empilhamento que prendia o painel atrás da página.
+ */
+export function AssistantHost() {
+  const { open } = useAssistantState();
+  return open
+    ? createPortal(
+        <AssistantPanel onClose={() => setState((current) => ({ ...current, open: false }))} />,
+        document.body,
+      )
+    : null;
+}
+
 function AssistantPanel({ onClose }: { onClose: () => void }) {
   const pathname = usePathname();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const { messages } = useAssistantState();
+  const setMessages = (update: ChatMessage[] | ((current: ChatMessage[]) => ChatMessage[])) =>
+    setState((current) => ({
+      ...current,
+      messages: typeof update === 'function' ? update(current.messages) : update,
+    }));
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);

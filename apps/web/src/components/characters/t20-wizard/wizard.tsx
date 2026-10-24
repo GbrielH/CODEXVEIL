@@ -1,6 +1,10 @@
 'use client';
 
 import {
+  SaveDraftButton,
+  discardDraftAfterCreate,
+} from '@/components/characters/save-draft-button';
+import {
   T20_ATTRIBUTES,
   T20_POINT_BUY_BUDGET,
   T20_POINT_BUY_MAX,
@@ -8,6 +12,7 @@ import {
   T20_SKILLS,
   T20_SPELL_SCHOOLS,
   T20_STEPS,
+  parseT20Draft,
   buildT20Content,
   createT20Draft,
   describeT20CampaignRules,
@@ -93,6 +98,21 @@ interface T20WizardProps {
   campaign: T20WizardCampaign | null;
   /** Conteúdo dos livros T20 disponíveis (da campanha ou do próprio usuário). */
   sources: T20ContentSource[];
+  /** Rascunho salvo na conta ("Salvar rascunho"), para continuar de onde parou. */
+  remoteDraft?: { id: string; payload: unknown } | null;
+}
+
+/** Estado salvo num rascunho da conta: rascunho do T20 e passo. */
+function readRemote(
+  remoteDraft: T20WizardProps['remoteDraft'],
+): { draft: T20Draft; step: string } | null {
+  const payload = remoteDraft?.payload as { draft?: unknown; step?: string } | undefined;
+  if (!payload?.draft) return null;
+  try {
+    return { draft: parseT20Draft(payload.draft), step: payload.step ?? 'inicio' };
+  } catch {
+    return null;
+  }
 }
 
 const SKIPPABLE: T20Step[] = ['magias', 'poderes', 'divindade'];
@@ -102,7 +122,7 @@ function d6(): number {
 }
 
 /** Assistente de criação de personagem do Tormenta20, com as regras de `@codexveil/rpg-systems/tormenta20`. */
-export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
+export function T20CreationWizard({ campaign, sources, remoteDraft = null }: T20WizardProps) {
   const router = useRouter();
   const rules = campaign?.rules;
   const allowedMethods = useMemo(
@@ -111,7 +131,10 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
   );
   // Ficha pessoal: começa com todos os livros importados marcados (antes começava sem nenhum e
   // o aviso "Sem livros" escondia a lista para marcá-los).
+  const [draftId, setDraftId] = useState<string | null>(remoteDraft?.id ?? null);
   const [draft, setDraft] = useState<T20Draft>(() => {
+    const saved = readRemote(remoteDraft);
+    if (saved) return saved.draft;
     const initial = createT20Draft(rules?.startingLevel ?? 1, allowedMethods[0] ?? 'pontos');
     return campaign
       ? initial
@@ -124,7 +147,12 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
     [campaign, sources, draft.sourcebooks],
   );
   const content = useMemo(() => buildT20Content(selectedSources), [selectedSources]);
-  const [step, setStep] = useState<T20Step>('inicio');
+  const [step, setStep] = useState<T20Step>(() => {
+    const saved = readRemote(remoteDraft)?.step;
+    return saved && (T20_STEPS as readonly string[]).includes(saved)
+      ? (saved as T20Step)
+      : 'inicio';
+  });
   const [attempted, setAttempted] = useState<Set<T20Step>>(new Set());
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -171,6 +199,7 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
     startTransition(async () => {
       const result = await createT20CharacterAction({ campaignId: campaign?.id ?? null, draft });
       if (result.ok) {
+        await discardDraftAfterCreate(draftId);
         router.push(`${characterPath(result.characterId)}?aviso=personagem-criado` as Route);
         return;
       }
@@ -886,6 +915,14 @@ export function T20CreationWizard({ campaign, sources }: T20WizardProps) {
             >
               Voltar
             </Button>
+            <SaveDraftButton
+              systemId="tormenta20"
+              campaignId={campaign?.id ?? null}
+              name={draft.name}
+              draftId={draftId}
+              onSaved={setDraftId}
+              getPayload={() => ({ draft, step })}
+            />
             {step === 'revisao' ? (
               <Button
                 icon={<Sparkles className="h-4 w-4" aria-hidden="true" />}

@@ -8,10 +8,9 @@ import { Emblem, Wordmark } from '@/components/brand/emblem';
 import { EmberField } from '@/components/brand/ember-field';
 import { Avatar } from '@/components/ui/avatar';
 import { routes } from '@/lib/routes';
-import { AssistantCard } from './assistant-card';
+import { AssistantCard, AssistantHost } from './assistant-card';
 import { NavLink } from './nav-link';
 import { ShellFrame, SidebarToggle } from './shell-frame';
-import { TopBar, type SearchEntry } from './top-bar';
 
 interface NavItem {
   href: Route;
@@ -53,8 +52,6 @@ interface AppShellProps {
   avatarIcon?: AvatarIcon | null;
   /** Mostra o card do assistente de IA (só com a chave configurada no servidor). */
   assistant?: boolean;
-  /** Campanhas e personagens para a busca da barra superior. */
-  search?: SearchEntry[];
   motion: 'system' | 'reduce';
   children: ReactNode;
 }
@@ -86,7 +83,6 @@ export function AppShell({
   displayName,
   avatarIcon = null,
   assistant = false,
-  search = [],
   motion,
   children,
 }: AppShellProps) {
@@ -145,8 +141,8 @@ export function AppShell({
         </div>
       </aside>
 
+      {assistant ? <AssistantHost /> : null}
       <div className="flex min-h-dvh min-w-0 flex-col">
-        <TopBar entries={search} />
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-canvas/90 px-4 backdrop-blur lg:hidden">
           <Link
             href={routes.dashboard}

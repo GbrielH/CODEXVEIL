@@ -31,6 +31,7 @@ export * from './queries/scene';
 export * from './queries/notes';
 export * from './queries/items';
 export * from './queries/books';
+export * from './queries/drafts';
 export * from './queries/dice';
 export * from './queries/maps';
 export * from './queries/turns';

@@ -30,6 +30,10 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from 'react';
 import { createDnd5eCharacterAction } from '@/app/(app)/personagens/actions';
 import { SourcebookLinks, SourcebookPicker } from '@/components/campaigns/sourcebook-picker';
+import {
+  SaveDraftButton,
+  discardDraftAfterCreate,
+} from '@/components/characters/save-draft-button';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -70,6 +74,17 @@ interface WizardProps {
   storageKey: string;
   /** A campanha (ou a ficha pessoal) já foi escolhida no passo anterior: o assistente não a troca. */
   lockCampaign?: boolean;
+  /** Rascunho salvo na conta ("Salvar rascunho"), para continuar de onde parou. */
+  remoteDraft?: { id: string; payload: unknown } | null;
+}
+
+/** Estado salvo num rascunho da conta, se for válido. */
+function readRemote(
+  remoteDraft: WizardProps['remoteDraft'],
+): (StoredDraft & { draft: Dnd5eDraft }) | null {
+  const stored = remoteDraft?.payload as StoredDraft | undefined;
+  const parsed = dnd5eDraftSchema.safeParse(stored?.draft);
+  return stored && parsed.success ? { ...stored, draft: parsed.data } : null;
 }
 
 interface StoredDraft {
@@ -134,16 +149,20 @@ export function Dnd5eCreationWizard({
   defaultCampaignId,
   storageKey,
   lockCampaign = false,
+  remoteDraft = null,
 }: WizardProps) {
   const router = useRouter();
   const [campaignId, setCampaignId] = useState(defaultCampaignId);
   const campaign = campaigns.find((entry) => entry.id === campaignId);
   const context = useMemo(() => contextFor(campaign), [campaign]);
-  const [draft, setDraft] = useState<Dnd5eDraft>(() =>
-    createDnd5eDraft({
-      level: campaign?.rules.startingLevel ?? 1,
-      abilityMethod: contextFor(campaign).abilityScoreMethods[0] ?? 'standard_array',
-    }),
+  const [draftId, setDraftId] = useState<string | null>(remoteDraft?.id ?? null);
+  const [draft, setDraft] = useState<Dnd5eDraft>(
+    () =>
+      readRemote(remoteDraft)?.draft ??
+      createDnd5eDraft({
+        level: campaign?.rules.startingLevel ?? 1,
+        abilityMethod: contextFor(campaign).abilityScoreMethods[0] ?? 'standard_array',
+      }),
   );
   // Livros: na campanha, os do mestre; na ficha pessoal, só os importados que estão marcados no
   // seletor de livros (um livro desmarcado não traz nada para a criação).
@@ -168,8 +187,13 @@ export function Dnd5eCreationWizard({
   );
   // As regras de criação consultam o SRD e os livros da campanha escolhida.
   setActiveDnd5eBookContent(bookContent);
-  const [rolls, setRolls] = useState<RollState>(EMPTY_ROLLS);
-  const [step, setStep] = useState<Dnd5eStep>('start');
+  const [rolls, setRolls] = useState<RollState>(
+    () => readRemote(remoteDraft)?.rolls ?? EMPTY_ROLLS,
+  );
+  const [step, setStep] = useState<Dnd5eStep>(() => {
+    const saved = readRemote(remoteDraft)?.step;
+    return saved && (DND5E_STEPS as readonly string[]).includes(saved) ? saved : 'start';
+  });
   const [attempted, setAttempted] = useState<Set<Dnd5eStep>>(new Set());
   /** O rascunho só é gravado no navegador depois de a pessoa mexer em algo (ou continuar o salvo). */
   const [dirty, setDirty] = useState(false);
@@ -284,6 +308,7 @@ export function Dnd5eCreationWizard({
       if (result.ok) {
         setDirty(false);
         writeStorage(storageKey, null);
+        await discardDraftAfterCreate(draftId);
         router.push(`${characterPath(result.characterId)}?aviso=personagem-criado` as Route);
         return;
       }
@@ -301,16 +326,24 @@ export function Dnd5eCreationWizard({
 
   const stepSpecs = specs.filter((spec) => spec.step === step);
   // Treino em armaduras e escudos (fixo pela classe): logo depois da Maestria em Armas.
-  const armorTraining = step === 'class' && classDef ? (
-    <section key="treino-armaduras" className="flex flex-col gap-1 rounded-md border border-line bg-raised p-4" aria-labelledby="treino-armaduras">
-      <h3 id="treino-armaduras" className="font-display text-base text-fg">
-        Armaduras e escudos
-      </h3>
-      <p className="text-xs text-fg-muted">Classe: {classDef.name}</p>
-      <p className="text-sm text-fg">Treino: {classDef.armorLabel || 'nenhum'}.</p>
-      <p className="text-xs text-fg-muted">Fixo pela classe, sem escolha. Usar armadura sem treino dá desvantagem em testes de Força e Destreza e impede conjurar magias; escudo sem treino não soma na CA.</p>
-    </section>
-  ) : null;
+  const armorTraining =
+    step === 'class' && classDef ? (
+      <section
+        key="treino-armaduras"
+        className="flex flex-col gap-1 rounded-md border border-line bg-raised p-4"
+        aria-labelledby="treino-armaduras"
+      >
+        <h3 id="treino-armaduras" className="font-display text-base text-fg">
+          Armaduras e escudos
+        </h3>
+        <p className="text-xs text-fg-muted">Classe: {classDef.name}</p>
+        <p className="text-sm text-fg">Treino: {classDef.armorLabel || 'nenhum'}.</p>
+        <p className="text-xs text-fg-muted">
+          Fixo pela classe, sem escolha. Usar armadura sem treino dá desvantagem em testes de Força
+          e Destreza e impede conjurar magias; escudo sem treino não soma na CA.
+        </p>
+      </section>
+    ) : null;
   const renderSpecs = () => {
     const fields = stepSpecs.flatMap((spec) => {
       const field = (
@@ -324,7 +357,9 @@ export function Dnd5eCreationWizard({
       );
       return spec.id === 'class.weapon_mastery' && armorTraining ? [field, armorTraining] : [field];
     });
-    return stepSpecs.some((spec) => spec.id === 'class.weapon_mastery') || !armorTraining ? fields : [...fields, armorTraining];
+    return stepSpecs.some((spec) => spec.id === 'class.weapon_mastery') || !armorTraining
+      ? fields
+      : [...fields, armorTraining];
   };
 
   return (
@@ -619,6 +654,14 @@ export function Dnd5eCreationWizard({
             >
               Voltar
             </Button>
+            <SaveDraftButton
+              systemId="dnd5e"
+              campaignId={campaignId || null}
+              name={draft.name}
+              draftId={draftId}
+              onSaved={setDraftId}
+              getPayload={() => ({ campaignId, draft, rolls, step }) satisfies StoredDraft}
+            />
             {step === 'review' ? (
               <Button
                 icon={<Sparkles className="h-4 w-4" aria-hidden="true" />}

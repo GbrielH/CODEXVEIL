@@ -103,7 +103,9 @@ function DiceProviderInner({
 }: DiceProviderProps) {
   const { toast } = useToast();
   const colors = useCampaignColors();
-  const needsColor = Boolean(campaignId && colors && colors.userId && colors.needsDice && !colors.myColor);
+  const needsColor = Boolean(
+    campaignId && colors && colors.userId && colors.needsDice && !colors.myColor,
+  );
   const [pending, setPending] = useState<TrayRoll | null>(null);
   const [physical, setPhysical] = useState(false);
   const gated = Boolean(campaignId && sessionGate);
@@ -236,7 +238,9 @@ export function RollButton({
 }) {
   const dice = useDice();
   const [busy, setBusy] = useState(false);
-  if (!dice || !expression) return <>{children}</>;
+  // Sem dados disponíveis: só o conteúdo, mas com a mesma caixa (cartões inteiros clicáveis não se desmontam).
+  if (!dice || !expression)
+    return className ? <span className={className}>{children}</span> : <>{children}</>;
   // Dados físicos: sem botão de rolar; só a indicação do dado a rolar na mesa.
   if (dice.physical) {
     return (
