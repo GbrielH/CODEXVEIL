@@ -1,6 +1,6 @@
 # Próximos passos
 
-> Relatório atualizado em **2026-10-18**. Mantenha este arquivo em dia a cada etapa concluída
+> Relatório atualizado em **2026-10-24** (veja [Para encerrar o projeto](#para-encerrar-o-projeto-levantado-em-2026-10-24)). Mantenha este arquivo em dia a cada etapa concluída
 > (veja [Como manter a documentação](#como-manter-a-documentação)). O inventário completo do
 > que falta em relação ao escopo inicial está em [`PENDENCIAS.md`](PENDENCIAS.md), e os
 > procedimentos de publicação em [`DEPLOY.md`](DEPLOY.md).
@@ -23,6 +23,50 @@
 - No site, a confirmação e a recuperação de senha só funcionam se o link for aberto **no mesmo
   navegador** em que o pedido foi feito.
 - A **recuperação de senha pedida pelo app não funciona**.
+
+## Para encerrar o projeto (levantado em 2026-10-24)
+
+Tudo o que foi pedido até 2026-10-24 está implementado. Para considerar o Codexveil encerrado,
+falta isto, em ordem:
+
+### A. Verificações do responsável (sem elas, nada está comprovado em uso real)
+
+1. **Teste com duas contas** (mestre e jogador, site e app): o roteiro está em
+   [2. Usar o site e o app com duas contas](#2-usar-o-site-e-o-app-com-duas-contas--você) mais abaixo. Ninguém fez esse percurso completo
+   ainda; inclui convite, criação guiada, mesa, sessão privada x publicada, grid, dados ao vivo
+   na aba Dados, presença no Painel e o popup "Sua ficha tem novidades".
+2. **E-mails (Brevo):** confirmar que chegam o de cadastro (com uma conta de fora) e o de
+   recuperação de senha pedido pelo app.
+3. **Notificações de sessão agendada:** criar o projeto no Firebase e enviar a chave ao Expo
+   (passos em [0c](#0c-notificações-de-sessão-agendada--você-e-claude)); depois o Claude gera
+   o APK com notificações (gasta um build da cota do EAS).
+4. **APK:** instalar o mais recente no celular de cada jogador (link no README); as mudanças
+   seguintes chegam por OTA.
+5. **Amigos:** reimportar os livros com os arquivos novos (opcional; só economiza espaço no
+   banco por voltar a compartilhar a cópia).
+
+### B. Lacunas conhecidas (Claude)
+
+1. **Livros:** Domínio da Ordem sem as magias dos níveis 7 e 9 (tabela partida no PDF); Círculo
+   da Terra sem as magias por terreno (escolha do terreno na criação e na subida); texto
+   corrido do Livro do Jogador 2014 (só 7 seções importadas).
+2. **Ficha D&D:** talento Robusto escolhido antes não é detectado na subida de nível (a ficha
+   não guarda o id do talento); conferir os demais números derivados com o QA.
+3. **Tormenta20:** a rolagem de atributos é sorteada no navegador; recarregar a página permite
+   rolar de novo (para valer "uma vez só" de verdade, sortear no servidor e guardar no
+   rascunho).
+4. **App:** "Escolher do livro" ao adicionar item (existe só no site); mesa de dados 3D ao vivo
+   da aba Dados (existe só no site); borda colorida da presença no início do app.
+5. **Popup de pendências:** hoje cobre magias sempre preparadas (D&D) e habilidades de classe
+   (T20). Cada atualização futura que mexer em dados de personagem entra em
+   `listDnd5ePendingUpdates`/`listT20PendingUpdates`.
+
+### C. Adiado por decisão do responsável
+
+- **Behind the Magic** (Manual de Runas): ver [`MELHORIAS_FUTURAS.md`](MELHORIAS_FUTURAS.md).
+
+**Encerrado quando:** A.1 a A.4 forem feitos sem falhas novas e o responsável decidir se B entra
+ou fica para depois.
 
 ## Pedidos do responsável em 2026-10-20 (a fazer, em ordem de importância)
 
@@ -466,7 +510,7 @@ locais):
   2014 e o SRD 5.2.1 viraram sinônimos em `content.ts` (só nomes).
 - **Limitação:** o Domínio da Ordem ficou sem os níveis 7 e 9 (a tabela continua noutra coluna
   do PDF). O Círculo da Terra (magias por terreno) segue sem as magias.
-- [ ] O responsável precisa reimportar `phb-2014`, `xgte` e `tcoe` (pasta
+- [x] O responsável reimportou `phb-2014`, `xgte` e `tcoe` em 2026-10-24 (pasta
       `livros-trabalho/out`). Os amigos com o mesmo livro só voltam a compartilhar a cópia
       quando reimportarem também o arquivo novo.
 
@@ -503,9 +547,8 @@ locais):
 - [x] Tomo: respostas em Markdown formatado (`AssistantMarkdown`).
 - [x] Painel sem "Atalhos rápidos"; tema claro removido; rodapé com o nome inteiro.
 - [x] Presença: depois de responder, a aba Roteiros também mostra só a resposta e "Mudar".
-- [ ] Pendente: popup de pendências da ficha após atualizações; efeitos para outras
-      habilidades ativáveis; retratos no app; reduzir o espaço dos livros no banco (ver
-      `PROGRESS.md`).
+- [x] Popup de pendências, efeitos (Fúria D&D e T20), retratos no app e uma cópia por livro:
+      feitos em 2026-10-24.
 
 ### 2026-10-24 — Painel, presença, cor dos dados e Fúria
 
@@ -533,7 +576,7 @@ locais):
       Pontos de vida centralizado; na ficha da campanha, Proficiências e idiomas abaixo das
       Características; espécie sem parênteses aninhados (`formatSpeciesName`); clicar no retrato
       abre a carta do personagem (estilo carta colecionável).
-- [ ] **A fazer (pedidos de 2026-10-24):**
+- [x] **Pedidos de 2026-10-24 (todos feitos no mesmo dia):**
   - Aba Dados: mural abaixo de "Rolar dados" e, à direita, uma mesa grande que mostra a todos
     os dados rolando ao vivo (menos rolagens ocultas).
   - Cálculo automático da ficha: falta recalcular a vida por talentos/espécie (Robusto, anão
@@ -572,10 +615,9 @@ locais):
 - [x] `level-up.ts`: ao subir de nível, as magias sempre preparadas do novo nível (classe,
       subclasse atual ou recém-escolhida) entram na ficha. Teste em `books.test.ts`.
 - [x] Criação em nível alto já pede subclasse, aumentos de atributo e magias até o nível.
-- [ ] O responsável precisa reimportar `phb-2014.book.json` em Meus livros.
-- [ ] Nomes ainda sem casar (OCR/tradução): "dificultar detecção", "vinha esmagadora",
-      "caminhar em…"; magias de terreno do Círculo da Terra.
-- [ ] **Pedido novo:** pendências de personagem após atualizações. Quando uma atualização nossa
+- [x] O responsável reimportou `phb-2014.book.json` (2026-10-24).
+- [x] Nomes sem casar resolvidos por sinônimos (2026-10-24). Círculo da Terra: ver "Para encerrar".
+- [x] **Feito em 2026-10-24:** pendências de personagem após atualizações. Quando uma atualização nossa
       acrescentar informação de personagem/campanha que falta num personagem já criado (ex.:
       magias sempre preparadas, escolhas novas), abrir um popup ao acessar o personagem ou a
       campanha pedindo para preencher/escolher o que falta. Vale para todas as atualizações
@@ -592,7 +634,7 @@ locais):
       o Flash levou 60 s), com `gemini-flash-lite-latest` de reserva. Testado em produção ("oi").
 - [x] Mascote **Tomo, o Mestre** (grimório encapuzado, arte do responsável): ícone no card e no
       painel, pose feliz na abertura e pose "?" enquanto responde (`apps/web/public/mestre/*.webp`).
-- [ ] Criar `GEMINI_API_KEY` na Vercel (o card só aparece com ela) (chave grátis em aistudio.google.com) e testar uma pergunta real.
+- [x] `GEMINI_API_KEY` criada na Vercel; o Tomo responde em produção (respostas vistas pelo responsável em 2026-10-24).
 - [x] QA: "Escolher do livro" ao adicionar item (site, D&D e T20): catálogo com busca e filtro por
       tipo, do SRD 5.2.1 (D&D, itens e itens mágicos) e dos livros ativos da ficha; preenche o
       formulário (`components/sheets/item-catalog.tsx`). Falta no app.
