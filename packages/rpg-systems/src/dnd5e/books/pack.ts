@@ -26,6 +26,7 @@ export const BOOK_ENTRY_KINDS = [
   'spell_list',
   'monster',
   'magic_item',
+  'class_option',
 ] as const;
 export type BookEntryKind = (typeof BOOK_ENTRY_KINDS)[number];
 
@@ -40,6 +41,7 @@ export const bookEntryKindLabels: Record<BookEntryKind, { one: string; many: str
   spell_list: { one: 'Lista de magias', many: 'Listas de magias' },
   monster: { one: 'Monstro', many: 'Monstros' },
   magic_item: { one: 'Item mágico', many: 'Itens mágicos' },
+  class_option: { one: 'Característica opcional', many: 'Características opcionais de classe' },
 };
 
 /** Tipos usados na criação e na subida de nível dos personagens. */
@@ -51,6 +53,7 @@ export const CHARACTER_BOOK_KINDS = [
   'feat',
   'spell',
   'spell_list',
+  'class_option',
 ] as const satisfies readonly BookEntryKind[];
 
 /** Categorias cujo texto os jogadores leem (as outras podem ter surpresas da mesa). */
@@ -153,7 +156,9 @@ export const bookSubclassSchema = z.object({
     .array(
       z.object({
         name: z.string().trim().min(1).max(60),
-        spells: z.array(z.object({ level, spells: z.array(z.string().trim().max(120)).max(10) })).max(10),
+        spells: z
+          .array(z.object({ level, spells: z.array(z.string().trim().max(120)).max(10) }))
+          .max(10),
       }),
     )
     .max(12)
@@ -298,6 +303,15 @@ export const bookMagicItemSchema = z.object({
   description: paragraphs,
 });
 
+/** Característica opcional de classe (Caldeirão de Tasha): ganha no nível, às vezes no lugar de outra. */
+export const bookClassOptionSchema = z.object({
+  classId: z.string().trim().min(1).max(40),
+  level,
+  /** Característica da classe que esta substitui ("Explorador Natural"); vazio = soma. */
+  replaces: text(200),
+  description: text(8000),
+});
+
 export const bookEntryDataSchemas = {
   section: bookSectionSchema,
   class: bookClassSchema,
@@ -309,6 +323,7 @@ export const bookEntryDataSchemas = {
   spell_list: bookSpellListSchema,
   monster: bookMonsterSchema,
   magic_item: bookMagicItemSchema,
+  class_option: bookClassOptionSchema,
 } as const satisfies Record<BookEntryKind, z.ZodType>;
 
 export type BookEntryData<K extends BookEntryKind> = z.output<(typeof bookEntryDataSchemas)[K]>;

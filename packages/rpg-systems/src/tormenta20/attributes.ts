@@ -17,7 +17,14 @@ export const t20AttributeLabels: Record<T20Attribute, { name: string; abbreviati
 export const T20_POINT_BUY_BUDGET = 10;
 
 /** Custo acumulado de cada valor na compra por pontos; –1 devolve 1 ponto. */
-export const T20_POINT_BUY_COST: Readonly<Record<number, number>> = { [-1]: -1, 0: 0, 1: 1, 2: 2, 3: 4, 4: 7 };
+export const T20_POINT_BUY_COST: Readonly<Record<number, number>> = {
+  [-1]: -1,
+  0: 0,
+  1: 1,
+  2: 2,
+  3: 4,
+  4: 7,
+};
 export const T20_POINT_BUY_MIN = -1;
 export const T20_POINT_BUY_MAX = 4;
 

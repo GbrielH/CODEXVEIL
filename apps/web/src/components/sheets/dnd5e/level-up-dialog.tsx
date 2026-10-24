@@ -171,6 +171,7 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
   const [multiclassInstrument, setMulticlassInstrument] = useState('');
   const [subclassId, setSubclassId] = useState('');
   const [landId, setLandId] = useState('');
+  const [optionalIds, setOptionalIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
   const featOptions = plan.feats.filter((feat) => feat.id !== 'ability_score_improvement');
@@ -200,6 +201,7 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
     magicInitiate: initiate,
     ...(subclassId ? { subclassId } : {}),
     ...(landId ? { landId } : {}),
+    optionalFeatures: optionalIds,
   };
   const result = applyDnd5eLevelUp(sheet, plan, choices);
   const blockedOptions = multiclassOptions.filter((option) => option.blocked.length > 0);
@@ -405,6 +407,42 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
           {plan.subclass.description} Outras subclasses aparecem aqui quando o mestre libera livros
           na campanha.
         </Alert>
+      ) : null}
+      {plan.optionalFeatures.length > 0 ? (
+        <Section title="Características opcionais (Caldeirão de Tasha)">
+          <p className="text-xs text-fg-muted">
+            Opcionais: marque as que quiser. Se substituir outra característica, apague a original
+            da ficha depois.
+          </p>
+          <ul className="flex flex-col gap-2">
+            {plan.optionalFeatures.map((option) => (
+              <li key={option.id}>
+                <label className="flex cursor-pointer gap-2 rounded-md border border-line p-2 text-sm has-[:checked]:border-wine-400">
+                  <input
+                    type="checkbox"
+                    checked={optionalIds.includes(option.id)}
+                    onChange={(event) =>
+                      setOptionalIds((current) =>
+                        event.target.checked
+                          ? [...current, option.id]
+                          : current.filter((id) => id !== option.id),
+                      )
+                    }
+                  />
+                  <span>
+                    <span className="font-medium text-fg">{option.name}</span>
+                    {option.replaces ? (
+                      <span className="text-fg-muted"> — no lugar de {option.replaces}</span>
+                    ) : null}
+                    <span className="block text-xs text-fg-muted">
+                      {option.description.slice(0, 300)}
+                    </span>
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </Section>
       ) : null}
       {plan.subclassOptions.length > 0 ? (
         <Section title="Subclasse">

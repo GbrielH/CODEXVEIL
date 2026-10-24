@@ -37,6 +37,18 @@ export interface BookSubclass extends SubclassDefinition {
   classId: string;
 }
 
+/** Característica opcional de classe (Caldeirão de Tasha). */
+export interface ClassOptionDefinition {
+  id: string;
+  classId: string;
+  name: string;
+  level: number;
+  /** Característica da classe que esta substitui; vazio = soma. */
+  replaces: string;
+  description: string;
+  book: string;
+}
+
 export interface Dnd5eBookContent {
   books: readonly BookRef[];
   classes: readonly ClassDefinition[];
@@ -48,6 +60,8 @@ export interface Dnd5eBookContent {
   spells: readonly BookSpell[];
   /** Listas de classe acrescentadas às magias do SRD (nome original → listas). */
   srdSpellLists: Readonly<Record<string, readonly string[]>>;
+  /** Características opcionais de classe (Tasha); só existem com o livro liberado. */
+  classOptions: readonly ClassOptionDefinition[];
 }
 
 export const EMPTY_DND5E_BOOK_CONTENT: Dnd5eBookContent = {
@@ -59,6 +73,7 @@ export const EMPTY_DND5E_BOOK_CONTENT: Dnd5eBookContent = {
   feats: [],
   spells: [],
   srdSpellLists: {},
+  classOptions: [],
 };
 
 let active: Dnd5eBookContent = EMPTY_DND5E_BOOK_CONTENT;

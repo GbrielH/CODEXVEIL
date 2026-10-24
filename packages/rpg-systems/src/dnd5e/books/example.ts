@@ -238,5 +238,16 @@ export const BOOK_PACK_EXAMPLE = {
         ],
       },
     },
+    {
+      kind: 'class_option',
+      key: 'wizard-estudo-guiado',
+      name: 'Estudo Guiado',
+      data: {
+        classId: 'wizard',
+        level: 3,
+        replaces: '',
+        description: 'Inventada para o exemplo: uma vez por descanso longo, você relê uma anotação e refaz um teste de Inteligência.',
+      },
+    },
   ],
 } as const;

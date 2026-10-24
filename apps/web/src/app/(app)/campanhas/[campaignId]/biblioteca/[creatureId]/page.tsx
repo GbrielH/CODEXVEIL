@@ -1,7 +1,9 @@
 import { getCreature, signedMediaUrls } from '@codexveil/database';
 import { parseDnd5eStatBlock } from '@codexveil/rpg-systems/dnd5e';
-import { parseT20StatBlock } from '@codexveil/rpg-systems/tormenta20';
+import { buildT20Content, parseT20StatBlock } from '@codexveil/rpg-systems/tormenta20';
 import { T20ThreatEditor, T20ThreatView } from '@/components/library/t20-threat';
+import { T20TreasureRoller } from '@/components/library/t20-treasure';
+import { campaignBookPacks, loadBookSources, packsOfSystem } from '@/lib/books';
 import { creatureKindLabels, uuidSchema } from '@codexveil/validation';
 import { EyeOff, Skull, UserRound } from 'lucide-react';
 import type { Metadata, Route } from 'next';
@@ -39,6 +41,17 @@ export default async function CreaturePage({ params }: Props) {
   const imageUrl = creature.imagePath ? (images[creature.imagePath] ?? null) : null;
   const isGm = campaign.role === 'gm';
   const canManage = isGm && campaign.status === 'active';
+  // Tabelas de tesouro dos livros T20 liberados (só o mestre lê).
+  const treasureTables =
+    isGm && campaign.systemId === 'tormenta20'
+      ? buildT20Content(
+          await loadBookSources(
+            supabase,
+            packsOfSystem(await campaignBookPacks(supabase, campaign), 'tormenta20'),
+            ['table'],
+          ),
+        ).tables
+      : [];
 
   let statBlock = null;
   let statBlockInvalid = false;
@@ -52,7 +65,10 @@ export default async function CreaturePage({ params }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href={campaignPath(campaign.id, '/biblioteca') as Route} className="text-sm text-fg-muted hover:text-fg">
+      <Link
+        href={campaignPath(campaign.id, '/biblioteca') as Route}
+        className="text-sm text-fg-muted hover:text-fg"
+      >
         ← Biblioteca
       </Link>
 
@@ -60,7 +76,11 @@ export default async function CreaturePage({ params }: Props) {
         <span className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-parchment-400/30 bg-wine-950 text-parchment-300 shadow-card">
           {imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt={`Imagem de ${creature.name}`} className="h-full w-full object-cover" />
+            <img
+              src={imageUrl}
+              alt={`Imagem de ${creature.name}`}
+              className="h-full w-full object-cover"
+            />
           ) : creature.kind === 'npc' ? (
             <UserRound className="h-12 w-12" aria-hidden="true" />
           ) : (
@@ -79,13 +99,18 @@ export default async function CreaturePage({ params }: Props) {
           <h2 className="mt-2 text-3xl leading-tight">{creature.name}</h2>
           {creature.subtitle ? <p className="text-fg-secondary">{creature.subtitle}</p> : null}
           {creature.description ? (
-            <p className="mt-3 max-w-3xl whitespace-pre-line font-serif text-lg leading-relaxed text-fg">{creature.description}</p>
+            <p className="mt-3 max-w-3xl whitespace-pre-line font-serif text-lg leading-relaxed text-fg">
+              {creature.description}
+            </p>
           ) : null}
         </div>
       </header>
 
       {statBlockInvalid ? (
-        <Alert tone="warning">As estatísticas deste registro não seguem o formato esperado. Salve-as novamente pelo editor.</Alert>
+        <Alert tone="warning">
+          As estatísticas deste registro não seguem o formato esperado. Salve-as novamente pelo
+          editor.
+        </Alert>
       ) : null}
 
       {isGm && creature.gm ? (
@@ -105,7 +130,9 @@ export default async function CreaturePage({ params }: Props) {
             }}
             systemId={campaign.systemId}
             gm={{ notes: creature.gm.notes, secrets: creature.gm.secrets }}
-            statBlock={campaign.systemId === 'dnd5e' ? (statBlock ?? parseDnd5eStatBlock({})) : null}
+            statBlock={
+              campaign.systemId === 'dnd5e' ? (statBlock ?? parseDnd5eStatBlock({})) : null
+            }
           />
         ) : statBlock ? (
           <StatBlockView name={creature.name} statBlock={statBlock} />
@@ -115,7 +142,17 @@ export default async function CreaturePage({ params }: Props) {
       {isGm && creature.gm && campaign.systemId === 'tormenta20' ? (
         <>
           <T20ThreatView name={creature.name} stats={parseT20StatBlock(creature.gm.stats)} />
-          {canManage ? <T20ThreatEditor creatureId={creature.id} stats={parseT20StatBlock(creature.gm.stats)} gm={{ notes: creature.gm.notes, secrets: creature.gm.secrets }} /> : null}
+          <T20TreasureRoller
+            tables={treasureTables}
+            defaultNd={parseT20StatBlock(creature.gm.stats).challenge}
+          />
+          {canManage ? (
+            <T20ThreatEditor
+              creatureId={creature.id}
+              stats={parseT20StatBlock(creature.gm.stats)}
+              gm={{ notes: creature.gm.notes, secrets: creature.gm.secrets }}
+            />
+          ) : null}
         </>
       ) : null}
     </div>

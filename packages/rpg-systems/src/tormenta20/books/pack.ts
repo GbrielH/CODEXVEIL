@@ -25,6 +25,7 @@ export const T20_BOOK_ENTRY_KINDS = [
   'equipment',
   'magic_item',
   'monster',
+  'table',
 ] as const;
 export type T20BookEntryKind = (typeof T20_BOOK_ENTRY_KINDS)[number];
 
@@ -39,15 +40,27 @@ export const t20BookEntryKindLabels: Record<T20BookEntryKind, { one: string; man
   equipment: { one: 'Equipamento', many: 'Equipamento' },
   magic_item: { one: 'Item mágico', many: 'Itens mágicos' },
   monster: { one: 'Ameaça', many: 'Ameaças' },
+  table: { one: 'Tabela', many: 'Tabelas' },
 };
 
 /** Tipos usados na criação e na subida de nível. */
-export const T20_CHARACTER_BOOK_KINDS = ['class', 'species', 'background', 'feat', 'spell', 'deity', 'equipment'] as const satisfies readonly T20BookEntryKind[];
+export const T20_CHARACTER_BOOK_KINDS = [
+  'class',
+  'species',
+  'background',
+  'feat',
+  'spell',
+  'deity',
+  'equipment',
+] as const satisfies readonly T20BookEntryKind[];
 
 const text = (max: number) => z.string().trim().max(max).default('');
 const skill = z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]]);
 const attribute = z.enum(T20_ATTRIBUTES);
-const named = z.object({ name: z.string().trim().min(1).max(200), text: z.string().trim().max(8000).default('') });
+const named = z.object({
+  name: z.string().trim().min(1).max(200),
+  text: z.string().trim().max(8000).default(''),
+});
 
 export const t20RaceSchema = z.object({
   summary: text(4000),
@@ -55,11 +68,20 @@ export const t20RaceSchema = z.object({
   attributes: z.partialRecord(attribute, z.number().int().min(-4).max(4)).default({}),
   /** "+1 em três atributos diferentes (exceto Car)". */
   attributeChoice: z
-    .object({ count: z.number().int().min(1).max(6), value: z.number().int().min(1).max(2), exclude: z.array(attribute).max(5).default([]) })
+    .object({
+      count: z.number().int().min(1).max(6),
+      value: z.number().int().min(1).max(2),
+      exclude: z.array(attribute).max(5).default([]),
+    })
     .optional(),
   /** Variantes com atributos próprios (Suraggel: aggelus e sulfure). */
   variants: z
-    .array(z.object({ name: z.string().trim().min(1).max(80), attributes: z.partialRecord(attribute, z.number().int().min(-4).max(4)).default({}) }))
+    .array(
+      z.object({
+        name: z.string().trim().min(1).max(80),
+        attributes: z.partialRecord(attribute, z.number().int().min(-4).max(4)).default({}),
+      }),
+    )
     .max(6)
     .default([]),
   size: z.enum(T20_SIZES).default('medio'),
@@ -76,24 +98,49 @@ export const t20ClassSchema = z.object({
   skillsFixed: z.array(skill).max(8).default([]),
   /** Perícias fixas com alternativa ("Luta ou Pontaria"). */
   skillsFixedChoices: z.array(z.array(skill).min(2).max(4)).max(4).default([]),
-  skillsChoice: z.object({ count: z.number().int().min(0).max(12), options: z.array(skill).max(29) }).default({ count: 0, options: [] }),
+  skillsChoice: z
+    .object({ count: z.number().int().min(0).max(12), options: z.array(skill).max(29) })
+    .default({ count: 0, options: [] }),
   proficiencies: z
     .object({
-      weapons: z.array(z.enum(['simples', 'marciais', 'exoticas', 'fogo'])).max(4).default(['simples']),
-      armors: z.array(z.enum(['leves', 'pesadas', 'escudos'])).max(3).default(['leves']),
+      weapons: z
+        .array(z.enum(['simples', 'marciais', 'exoticas', 'fogo']))
+        .max(4)
+        .default(['simples']),
+      armors: z
+        .array(z.enum(['leves', 'pesadas', 'escudos']))
+        .max(3)
+        .default(['leves']),
       text: text(400),
     })
     .prefault({}),
   /** Habilidades por nível ("Poder de X" marca o nível em que se escolhe um poder da classe). */
   abilities: z
-    .array(named.extend({ level: z.number().int().min(1).max(20), options: z.array(named).max(40).default([]) }))
+    .array(
+      named.extend({
+        level: z.number().int().min(1).max(20),
+        options: z.array(named).max(40).default([]),
+      }),
+    )
     .max(60)
     .default([]),
   /** Tabela da classe: o que se ganha em cada nível. */
   table: z.record(z.string(), z.string().trim().max(300)).default({}),
-  powers: z.array(named.extend({ prerequisite: text(400) })).max(80).default([]),
+  powers: z
+    .array(named.extend({ prerequisite: text(400) }))
+    .max(80)
+    .default([]),
   /** Seções extras (Linhagens, Forma Selvagem, Engenhocas, Golpe Pessoal…). */
-  sections: z.array(z.object({ title: z.string().trim().min(1).max(160), text: text(20000), entries: z.array(named).max(60).default([]) })).max(10).default([]),
+  sections: z
+    .array(
+      z.object({
+        title: z.string().trim().min(1).max(160),
+        text: text(20000),
+        entries: z.array(named).max(60).default([]),
+      }),
+    )
+    .max(10)
+    .default([]),
   spellcasting: z
     .object({
       type: z.enum(['arcana', 'divina', 'universal']),
@@ -122,7 +169,16 @@ export const t20OriginSchema = z.object({
   uniquePowers: z.array(named).max(4).default([]),
 });
 
-export const T20_POWER_GROUPS = ['combate', 'destino', 'magia', 'concedidos', 'tormenta', 'classe', 'origem', 'raca'] as const;
+export const T20_POWER_GROUPS = [
+  'combate',
+  'destino',
+  'magia',
+  'concedidos',
+  'tormenta',
+  'classe',
+  'origem',
+  'raca',
+] as const;
 
 export const t20PowerSchema = z.object({
   group: z.enum(T20_POWER_GROUPS),
@@ -144,7 +200,10 @@ export const t20SpellSchema = z.object({
   duration: text(160),
   resistance: text(200),
   text: z.string().trim().max(12000),
-  upgrades: z.array(z.object({ cost: z.number().int().min(0).max(30), text: z.string().trim().max(2000) })).max(20).default([]),
+  upgrades: z
+    .array(z.object({ cost: z.number().int().min(0).max(30), text: z.string().trim().max(2000) }))
+    .max(20)
+    .default([]),
 });
 
 export const t20DeitySchema = z.object({
@@ -176,7 +235,17 @@ export const t20EquipmentSchema = z.object({
 });
 
 export const t20MagicItemSchema = z.object({
-  kind: z.enum(['encanto-arma', 'arma-especifica', 'encanto-armadura', 'armadura-especifica', 'pocao', 'acessorio-menor', 'acessorio-medio', 'acessorio-maior', 'artefato']),
+  kind: z.enum([
+    'encanto-arma',
+    'arma-especifica',
+    'encanto-armadura',
+    'armadura-especifica',
+    'pocao',
+    'acessorio-menor',
+    'acessorio-medio',
+    'acessorio-maior',
+    'artefato',
+  ]),
   price: text(60),
   effect: text(300),
   text: text(12000),
@@ -186,6 +255,48 @@ export const t20SectionSchema = z.object({
   chapter: text(160),
   order: z.number().int().min(0).max(100000).default(0),
   body: text(60000),
+});
+
+const t20Range = z.object({
+  min: z.number().int().min(1).max(100),
+  max: z.number().int().min(1).max(100),
+});
+
+/** Tabela rolável do livro (tesouro): por ND (8-1), riquezas (8-2) ou d% com subtabelas. */
+export const t20TableSchema = z.object({
+  title: text(160),
+  format: z.enum(['nd', 'riches', 'd100']),
+  nd: z
+    .array(
+      z.object({
+        nd: z.string().trim().max(8),
+        money: z.array(t20Range.extend({ text: text(120) })).max(20),
+        items: z.array(t20Range.extend({ text: text(120) })).max(20),
+      }),
+    )
+    .max(40)
+    .default([]),
+  riches: z
+    .array(
+      z.object({
+        menor: t20Range.nullable(),
+        media: t20Range.nullable(),
+        maior: t20Range.nullable(),
+        value: text(40),
+        average: text(20),
+        example: text(600),
+      }),
+    )
+    .max(30)
+    .default([]),
+  subtables: z
+    .record(
+      z.string().max(60),
+      z
+        .array(t20Range.extend({ text: text(200), extra: z.array(text(80)).max(4).default([]) }))
+        .max(120),
+    )
+    .default({}),
 });
 
 export const t20BookEntryDataSchemas = {
@@ -199,9 +310,12 @@ export const t20BookEntryDataSchemas = {
   equipment: t20EquipmentSchema,
   magic_item: t20MagicItemSchema,
   monster: t20StatBlockSchema,
+  table: t20TableSchema,
 } as const satisfies Record<T20BookEntryKind, z.ZodType>;
 
-export type T20BookEntryData<K extends T20BookEntryKind> = z.output<(typeof t20BookEntryDataSchemas)[K]>;
+export type T20BookEntryData<K extends T20BookEntryKind> = z.output<
+  (typeof t20BookEntryDataSchemas)[K]
+>;
 
 export interface T20BookEntry<K extends T20BookEntryKind = T20BookEntryKind> {
   kind: K;
@@ -235,16 +349,26 @@ export interface T20BookPack {
 export const T20_MAX_BOOK_ENTRIES = 6000;
 
 /** Valida um pacote; entradas inválidas ficam de fora e voltam em `issues`. */
-export function parseT20BookPack(input: unknown): { pack: T20BookPack; issues: { index: number; kind?: string; key?: string; message: string }[] } {
+export function parseT20BookPack(input: unknown): {
+  pack: T20BookPack;
+  issues: { index: number; kind?: string; key?: string; message: string }[];
+} {
   const header = z
     .object({
-      format: z.literal(T20_BOOK_PACK_FORMAT, { error: 'Este arquivo não é um pacote de livro de Tormenta20.' }),
+      format: z.literal(T20_BOOK_PACK_FORMAT, {
+        error: 'Este arquivo não é um pacote de livro de Tormenta20.',
+      }),
       version: z.literal(T20_BOOK_PACK_VERSION, { error: 'Versão de pacote não suportada.' }),
       book: t20BookInfoSchema,
       entries: z.array(z.unknown()).max(T20_MAX_BOOK_ENTRIES),
     })
     .parse(input);
-  const raw = z.object({ kind: z.enum(T20_BOOK_ENTRY_KINDS), key: bookKey, name: z.string().trim().min(1).max(200), data: z.unknown() });
+  const raw = z.object({
+    kind: z.enum(T20_BOOK_ENTRY_KINDS),
+    key: bookKey,
+    name: z.string().trim().min(1).max(200),
+    data: z.unknown(),
+  });
   const issues: { index: number; kind?: string; key?: string; message: string }[] = [];
   const entries: T20BookEntry[] = [];
   const seen = new Set<string>();
@@ -262,17 +386,33 @@ export function parseT20BookPack(input: unknown): { pack: T20BookPack; issues: {
     const data = t20BookEntryDataSchemas[kind].safeParse(base.data.data);
     if (!data.success) {
       const issue = data.error.issues[0];
-      issues.push({ index, kind, key, message: `${issue?.path.join('.') || 'dados'}: ${issue?.message ?? 'inválido'}` });
+      issues.push({
+        index,
+        kind,
+        key,
+        message: `${issue?.path.join('.') || 'dados'}: ${issue?.message ?? 'inválido'}`,
+      });
       return;
     }
     seen.add(`${kind}:${key}`);
     entries.push({ kind, key, name, data: data.data });
   });
-  return { pack: { format: T20_BOOK_PACK_FORMAT, version: T20_BOOK_PACK_VERSION, book: header.book, entries }, issues };
+  return {
+    pack: {
+      format: T20_BOOK_PACK_FORMAT,
+      version: T20_BOOK_PACK_VERSION,
+      book: header.book,
+      entries,
+    },
+    issues,
+  };
 }
 
 /** Lê o conteúdo salvo no banco sem lançar: `null` se a entrada não for válida. */
-export function safeT20BookEntryData<K extends T20BookEntryKind>(kind: K, data: unknown): T20BookEntryData<K> | null {
+export function safeT20BookEntryData<K extends T20BookEntryKind>(
+  kind: K,
+  data: unknown,
+): T20BookEntryData<K> | null {
   const parsed = t20BookEntryDataSchemas[kind].safeParse(data);
   return parsed.success ? (parsed.data as T20BookEntryData<K>) : null;
 }

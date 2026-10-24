@@ -11,8 +11,20 @@ import { computeT20Derived, type T20Derived } from './derived';
 import { tormenta20License } from './license';
 import { t20OfficialLinks } from './links';
 import { t20DefaultResources } from './resources';
-import { T20_SHEET_VERSION, createDefaultT20Sheet, parseT20Sheet, t20Level, t20SheetSchema, type T20Sheet } from './sheet';
-import { createDefaultT20StatBlock, parseT20StatBlock, t20StatBlockSchema, type T20StatBlock } from './stat-block';
+import {
+  T20_SHEET_VERSION,
+  createDefaultT20Sheet,
+  parseT20Sheet,
+  t20Level,
+  t20SheetSchema,
+  type T20Sheet,
+} from './sheet';
+import {
+  createDefaultT20StatBlock,
+  parseT20StatBlock,
+  t20StatBlockSchema,
+  type T20StatBlock,
+} from './stat-block';
 
 function summarize(sheet: T20Sheet) {
   const classes = sheet.identity.classes.map((entry) => `${entry.name} ${entry.level}`).join(' / ');
@@ -45,7 +57,11 @@ export const tormenta20System: RpgSystem<T20Sheet, T20Derived, T20StatBlock, T20
   defaultResources: (sheet) => t20DefaultResources(sheet),
   createDefaultStatBlock: createDefaultT20StatBlock,
   parseStatBlock: parseT20StatBlock,
-  combatDefaults: (statBlock) => ({ hitPoints: statBlock.hitPoints, armorClass: statBlock.defense, initiativeBonus: statBlock.initiative }),
+  combatDefaults: (statBlock) => ({
+    hitPoints: statBlock.hitPoints,
+    armorClass: statBlock.defense,
+    initiativeBonus: statBlock.initiative,
+  }),
   initiativeBonus: (sheet) => computeT20Derived(sheet).initiative,
 };
 
@@ -54,6 +70,7 @@ export * from './attributes';
 export * from './skills';
 export * from './progression';
 export * from './conditions';
+export * from './treasure';
 export * from './sheet';
 export * from './derived';
 export * from './resources';

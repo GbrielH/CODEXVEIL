@@ -28,7 +28,15 @@ export function t20DefaultResources(sheet: T20Sheet, money = 0): ResourceTemplat
       display: 'pool',
       sortOrder: 1,
     },
-    { key: T20_RESOURCE_KEYS.money, label: 'Tibares (T$)', current: money, max: null, recovery: 'manual', display: 'pool', sortOrder: 200 },
+    {
+      key: T20_RESOURCE_KEYS.money,
+      label: 'Tibares (T$)',
+      current: money,
+      max: null,
+      recovery: 'manual',
+      display: 'pool',
+      sortOrder: 200,
+    },
   ];
 }
 

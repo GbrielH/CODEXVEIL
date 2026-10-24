@@ -289,6 +289,19 @@ function renderEntry(kind: BookEntryKind, name: string, raw: unknown): ReactNode
         </div>
       );
     }
+    case 'class_option': {
+      const data = safeBookEntryData('class_option', raw);
+      if (!data) return null;
+      return (
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-fg-muted italic">
+            Característica opcional de {data.level}º nível
+            {data.replaces ? `, no lugar de ${data.replaces}` : ''}
+          </p>
+          <BookText body={data.description} />
+        </div>
+      );
+    }
     default:
       return null;
   }

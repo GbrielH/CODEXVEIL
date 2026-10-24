@@ -20,6 +20,7 @@ import {
   type SpeciesDefinition,
 } from '../srd/types';
 import type { BookRef, BookSpell, BookSubclass, Dnd5eBookContent } from './active';
+import type { ClassOptionDefinition } from './active';
 import { equipmentFromText } from './equipment-text';
 import { languagesFromText } from './languages-text';
 import { safeBookEntryData } from './pack';
@@ -159,6 +160,7 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
   const feats: FeatDefinition[] = [];
   const spells = new Map<string, BookSpell>();
   const srdSpellLists = new Map<string, Set<string>>();
+  const classOptions: ClassOptionDefinition[] = [];
   const pendingLists: { list: string; name: string }[] = [];
 
   const addSrdList = (srdName: string, lists: readonly string[]) => {
@@ -382,6 +384,20 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
           });
           break;
         }
+        case 'class_option': {
+          const data = safeBookEntryData('class_option', entry.data);
+          if (!data) break;
+          classOptions.push({
+            id: `${book.id}:${entry.key}`,
+            classId: data.classId,
+            name: entry.name,
+            level: data.level,
+            replaces: data.replaces,
+            description: data.description,
+            book: book.name,
+          });
+          break;
+        }
         case 'spell_list': {
           const data = safeBookEntryData('spell_list', entry.data);
           if (!data) break;
@@ -446,5 +462,6 @@ export function buildDnd5eBookContent(sources: readonly BookContentSource[]): Dn
       (a, b) => a.level - b.level || a.name.localeCompare(b.name, 'pt-BR'),
     ),
     srdSpellLists: Object.fromEntries([...srdSpellLists].map(([name, set]) => [name, [...set]])),
+    classOptions,
   };
 }

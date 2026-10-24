@@ -26,7 +26,12 @@ export const T20_SKILLS = {
   iniciativa: { label: 'Iniciativa', attribute: 'des', trainedOnly: false, armorPenalty: false },
   intimidacao: { label: 'Intimidação', attribute: 'car', trainedOnly: false, armorPenalty: false },
   intuicao: { label: 'Intuição', attribute: 'sab', trainedOnly: false, armorPenalty: false },
-  investigacao: { label: 'Investigação', attribute: 'int', trainedOnly: false, armorPenalty: false },
+  investigacao: {
+    label: 'Investigação',
+    attribute: 'int',
+    trainedOnly: false,
+    armorPenalty: false,
+  },
   jogatina: { label: 'Jogatina', attribute: 'car', trainedOnly: true, armorPenalty: false },
   ladinagem: { label: 'Ladinagem', attribute: 'des', trainedOnly: true, armorPenalty: true },
   luta: { label: 'Luta', attribute: 'for', trainedOnly: false, armorPenalty: false },
@@ -38,7 +43,12 @@ export const T20_SKILLS = {
   pontaria: { label: 'Pontaria', attribute: 'des', trainedOnly: false, armorPenalty: false },
   reflexos: { label: 'Reflexos', attribute: 'des', trainedOnly: false, armorPenalty: false },
   religiao: { label: 'Religião', attribute: 'sab', trainedOnly: true, armorPenalty: false },
-  sobrevivencia: { label: 'Sobrevivência', attribute: 'sab', trainedOnly: false, armorPenalty: false },
+  sobrevivencia: {
+    label: 'Sobrevivência',
+    attribute: 'sab',
+    trainedOnly: false,
+    armorPenalty: false,
+  },
   vontade: { label: 'Vontade', attribute: 'sab', trainedOnly: false, armorPenalty: false },
 } as const satisfies Record<string, T20SkillDefinition>;
 
@@ -46,7 +56,11 @@ export type T20Skill = keyof typeof T20_SKILLS;
 export const T20_SKILL_IDS = Object.keys(T20_SKILLS) as T20Skill[];
 
 /** Testes de resistência são estas três perícias. */
-export const T20_SAVES = ['fortitude', 'reflexos', 'vontade'] as const satisfies readonly T20Skill[];
+export const T20_SAVES = [
+  'fortitude',
+  'reflexos',
+  'vontade',
+] as const satisfies readonly T20Skill[];
 
 function plain(text: string): string {
   return text
@@ -101,4 +115,3 @@ export const t20SkillSummaries: Record<T20Skill, string> = {
   sobrevivencia: 'Rastrear, orientar-se e sobreviver na natureza.',
   vontade: 'Resistir a efeitos mentais e de medo.',
 };
-

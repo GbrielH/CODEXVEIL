@@ -181,6 +181,7 @@ describe('pacote de livro', () => {
       'feat',
       'spell',
       'spell_list',
+      'class_option',
     ]);
     expect(visibleBookKinds('adventure', false)).not.toContain('section');
     expect(visibleBookKinds('monsters', false)).not.toContain('monster');
@@ -394,6 +395,8 @@ describe('nomes de magias das traduções de 2014', () => {
     expect(srdSpellNameFor('Auxílio Divino')).toBe('Aid');
     expect(srdSpellNameFor('Remeter')).toBe('Sending');
     expect(srdSpellNameFor('Pequena Cabana de Leomund')).toBe('Tiny Hut');
-    expect(srdSpellNameFor('Proteção contra o Bem e Mal')).toBe(srdSpellNameFor('Proteção contra o Bem e o Mal'));
+    expect(srdSpellNameFor('Proteção contra o Bem e Mal')).toBe(
+      srdSpellNameFor('Proteção contra o Bem e o Mal'),
+    );
   });
 });

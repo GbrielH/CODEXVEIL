@@ -5,7 +5,15 @@
  */
 import type { ConditionDefinition, ConditionDurationPreset } from '../types';
 
-export type T20ConditionTag = 'medo' | 'mental' | 'movimento' | 'sentidos' | 'metabolismo' | 'cansaco' | 'veneno' | 'metamorfose';
+export type T20ConditionTag =
+  | 'medo'
+  | 'mental'
+  | 'movimento'
+  | 'sentidos'
+  | 'metabolismo'
+  | 'cansaco'
+  | 'veneno'
+  | 'metamorfose';
 
 export interface T20ConditionMechanics {
   /** Penalidade em todos os testes de perícia. */
@@ -40,7 +48,14 @@ function condition(definition: T20ConditionDefinition): T20ConditionDefinition {
 }
 
 export const t20Conditions: readonly T20ConditionDefinition[] = [
-  condition({ key: 'abalado', label: 'Abalado', summary: '–2 em testes de perícia.', tags: ['medo'], mechanics: { skills: -2 }, escalatesTo: 'apavorado' }),
+  condition({
+    key: 'abalado',
+    label: 'Abalado',
+    summary: '–2 em testes de perícia.',
+    tags: ['medo'],
+    mechanics: { skills: -2 },
+    escalatesTo: 'apavorado',
+  }),
   condition({
     key: 'agarrado',
     label: 'Agarrado',
@@ -49,7 +64,13 @@ export const t20Conditions: readonly T20ConditionDefinition[] = [
     mechanics: { attacks: -2 },
     includes: ['desprevenido', 'imovel'],
   }),
-  condition({ key: 'alquebrado', label: 'Alquebrado', summary: 'Habilidades custam +1 PM.', tags: ['mental'], mechanics: { manaCost: 1 } }),
+  condition({
+    key: 'alquebrado',
+    label: 'Alquebrado',
+    summary: 'Habilidades custam +1 PM.',
+    tags: ['mental'],
+    mechanics: { manaCost: 1 },
+  }),
   condition({
     key: 'apavorado',
     label: 'Apavorado',
@@ -68,19 +89,27 @@ export const t20Conditions: readonly T20ConditionDefinition[] = [
   condition({
     key: 'caido',
     label: 'Caído',
-    summary: '–5 na Defesa e em ataques corpo a corpo, +5 na Defesa contra ataques à distância; deslocamento 1,5 m.',
+    summary:
+      '–5 na Defesa e em ataques corpo a corpo, +5 na Defesa contra ataques à distância; deslocamento 1,5 m.',
     tags: [],
     mechanics: {},
   }),
   condition({
     key: 'cego',
     label: 'Cego',
-    summary: 'Desprevenido e lento, sem Percepção pela visão, –5 em perícias de For e Des; alvos têm camuflagem total.',
+    summary:
+      'Desprevenido e lento, sem Percepção pela visão, –5 em perícias de For e Des; alvos têm camuflagem total.',
     tags: ['sentidos'],
     mechanics: {},
     includes: ['desprevenido', 'lento'],
   }),
-  condition({ key: 'confuso', label: 'Confuso', summary: 'Age ao acaso: role 1d6 no início de cada turno.', tags: ['mental'], mechanics: {} }),
+  condition({
+    key: 'confuso',
+    label: 'Confuso',
+    summary: 'Age ao acaso: role 1d6 no início de cada turno.',
+    tags: ['mental'],
+    mechanics: {},
+  }),
   condition({
     key: 'debilitado',
     label: 'Debilitado',
@@ -89,11 +118,41 @@ export const t20Conditions: readonly T20ConditionDefinition[] = [
     mechanics: { physical: -5 },
     escalatesTo: 'inconsciente',
   }),
-  condition({ key: 'desprevenido', label: 'Desprevenido', summary: '–5 na Defesa e em Reflexos.', tags: [], mechanics: { defense: -5, reflexes: -5 } }),
-  condition({ key: 'doente', label: 'Doente', summary: 'Sob efeito de uma doença.', tags: ['metabolismo'], mechanics: {} }),
-  condition({ key: 'em_chamas', label: 'Em Chamas', summary: '1d6 de dano de fogo no início de cada turno até apagar o fogo.', tags: [], mechanics: {} }),
-  condition({ key: 'enfeiticado', label: 'Enfeitiçado', summary: 'Prestativo com a fonte, que recebe +10 em Diplomacia com você.', tags: ['mental'], mechanics: {} }),
-  condition({ key: 'enjoado', label: 'Enjoado', summary: 'Só uma ação padrão ou de movimento por rodada.', tags: ['metabolismo'], mechanics: {} }),
+  condition({
+    key: 'desprevenido',
+    label: 'Desprevenido',
+    summary: '–5 na Defesa e em Reflexos.',
+    tags: [],
+    mechanics: { defense: -5, reflexes: -5 },
+  }),
+  condition({
+    key: 'doente',
+    label: 'Doente',
+    summary: 'Sob efeito de uma doença.',
+    tags: ['metabolismo'],
+    mechanics: {},
+  }),
+  condition({
+    key: 'em_chamas',
+    label: 'Em Chamas',
+    summary: '1d6 de dano de fogo no início de cada turno até apagar o fogo.',
+    tags: [],
+    mechanics: {},
+  }),
+  condition({
+    key: 'enfeiticado',
+    label: 'Enfeitiçado',
+    summary: 'Prestativo com a fonte, que recebe +10 em Diplomacia com você.',
+    tags: ['mental'],
+    mechanics: {},
+  }),
+  condition({
+    key: 'enjoado',
+    label: 'Enjoado',
+    summary: 'Só uma ação padrão ou de movimento por rodada.',
+    tags: ['metabolismo'],
+    mechanics: {},
+  }),
   condition({
     key: 'enredado',
     label: 'Enredado',
@@ -102,7 +161,13 @@ export const t20Conditions: readonly T20ConditionDefinition[] = [
     mechanics: { attacks: -2 },
     includes: ['lento', 'vulneravel'],
   }),
-  condition({ key: 'envenenado', label: 'Envenenado', summary: 'Efeito conforme o veneno.', tags: ['veneno'], mechanics: {} }),
+  condition({
+    key: 'envenenado',
+    label: 'Envenenado',
+    summary: 'Efeito conforme o veneno.',
+    tags: ['veneno'],
+    mechanics: {},
+  }),
   condition({
     key: 'esmorecido',
     label: 'Esmorecido',
@@ -151,7 +216,13 @@ export const t20Conditions: readonly T20ConditionDefinition[] = [
     mechanics: { mental: -2 },
     escalatesTo: 'esmorecido',
   }),
-  condition({ key: 'imovel', label: 'Imóvel', summary: 'Deslocamento 0.', tags: ['movimento'], mechanics: { speed: 'zero' } }),
+  condition({
+    key: 'imovel',
+    label: 'Imóvel',
+    summary: 'Deslocamento 0.',
+    tags: ['movimento'],
+    mechanics: { speed: 'zero' },
+  }),
   condition({
     key: 'inconsciente',
     label: 'Inconsciente',
@@ -168,8 +239,20 @@ export const t20Conditions: readonly T20ConditionDefinition[] = [
     mechanics: { defense: -10 },
     includes: ['desprevenido'],
   }),
-  condition({ key: 'lento', label: 'Lento', summary: 'Deslocamento pela metade; não corre nem faz investidas.', tags: ['movimento'], mechanics: { speed: 'half' } }),
-  condition({ key: 'ofuscado', label: 'Ofuscado', summary: '–2 em ataques e Percepção.', tags: ['sentidos'], mechanics: { attacks: -2, perception: -2 } }),
+  condition({
+    key: 'lento',
+    label: 'Lento',
+    summary: 'Deslocamento pela metade; não corre nem faz investidas.',
+    tags: ['movimento'],
+    mechanics: { speed: 'half' },
+  }),
+  condition({
+    key: 'ofuscado',
+    label: 'Ofuscado',
+    summary: '–2 em ataques e Percepção.',
+    tags: ['sentidos'],
+    mechanics: { attacks: -2, perception: -2 },
+  }),
   condition({
     key: 'paralisado',
     label: 'Paralisado',
@@ -178,7 +261,13 @@ export const t20Conditions: readonly T20ConditionDefinition[] = [
     mechanics: {},
     includes: ['imovel', 'indefeso'],
   }),
-  condition({ key: 'pasmo', label: 'Pasmo', summary: 'Sem ações.', tags: ['mental'], mechanics: { noActions: true } }),
+  condition({
+    key: 'pasmo',
+    label: 'Pasmo',
+    summary: 'Sem ações.',
+    tags: ['mental'],
+    mechanics: { noActions: true },
+  }),
   condition({
     key: 'petrificado',
     label: 'Petrificado',
@@ -190,7 +279,8 @@ export const t20Conditions: readonly T20ConditionDefinition[] = [
   condition({
     key: 'sangrando',
     label: 'Sangrando',
-    summary: 'Teste de Constituição (CD 15) no início do turno: se falhar, perde 1d6 PV; se passar, a condição termina.',
+    summary:
+      'Teste de Constituição (CD 15) no início do turno: se falhar, perde 1d6 PV; se passar, a condição termina.',
     tags: ['metabolismo'],
     mechanics: {},
   }),
@@ -216,7 +306,13 @@ export const t20Conditions: readonly T20ConditionDefinition[] = [
     mechanics: { noActions: true },
     includes: ['desprevenido'],
   }),
-  condition({ key: 'vulneravel', label: 'Vulnerável', summary: '–2 na Defesa.', tags: [], mechanics: { defense: -2 } }),
+  condition({
+    key: 'vulneravel',
+    label: 'Vulnerável',
+    summary: '–2 na Defesa.',
+    tags: [],
+    mechanics: { defense: -2 },
+  }),
 ];
 
 export function findT20Condition(key: string): T20ConditionDefinition | undefined {
@@ -237,11 +333,14 @@ export function expandT20Conditions(keys: readonly string[]): T20ConditionDefini
 }
 
 /** Efeitos somados das condições ativas (penalidades não se acumulam: vale a maior de cada tipo). */
-export function t20ConditionEffects(keys: readonly string[]): Required<Omit<T20ConditionMechanics, 'speed' | 'noActions'>> & {
+export function t20ConditionEffects(keys: readonly string[]): Required<
+  Omit<T20ConditionMechanics, 'speed' | 'noActions'>
+> & {
   speed: 'normal' | 'half' | 'zero';
   noActions: boolean;
 } {
-  const worst = (values: (number | undefined)[]) => Math.min(0, ...values.filter((value): value is number => value !== undefined));
+  const worst = (values: (number | undefined)[]) =>
+    Math.min(0, ...values.filter((value): value is number => value !== undefined));
   const active = expandT20Conditions(keys).map((entry) => entry.mechanics);
   const speeds = active.map((entry) => entry.speed);
   return {

@@ -12,17 +12,31 @@ export interface T20GearItem {
   isEquipped: boolean;
 }
 
-const HEAVY = ['brunea', 'cota de malha', 'loriga', 'meia armadura', 'meia-armadura', 'armadura completa', 'placas'];
+const HEAVY = [
+  'brunea',
+  'cota de malha',
+  'loriga',
+  'meia armadura',
+  'meia-armadura',
+  'armadura completa',
+  'placas',
+];
 
 function plain(text: string): string {
-  return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+  return text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
 }
 
 function stats(description: string): { defense: number; penalty: number } | null {
   const defense = /defesa\s*\+?\s*(\d+)/i.exec(description);
   if (!defense) return null;
   const penalty = /penalidade\s*([−-]?\s*\d+)/i.exec(description);
-  return { defense: Number(defense[1]), penalty: penalty ? -Math.abs(Number(penalty[1]!.replace(/[−\s]/g, '').replace('-', ''))) : 0 };
+  return {
+    defense: Number(defense[1]),
+    penalty: penalty ? -Math.abs(Number(penalty[1]!.replace(/[−\s]/g, '').replace('-', ''))) : 0,
+  };
 }
 
 /** Bônus de armadura/escudo equipados; `null` quando o inventário não tem armaduras (mantém a ficha). */

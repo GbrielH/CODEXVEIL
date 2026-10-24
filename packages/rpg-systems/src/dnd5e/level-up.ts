@@ -31,7 +31,7 @@ import { landOptionsFor } from './srd/class-options';
 import { MUSICAL_INSTRUMENTS } from './srd/equipment';
 import { findFeat, listFeats } from './srd/feats';
 import { findSpell, listSpells } from './srd/spells';
-import type { BookSpell } from './books/active';
+import { activeDnd5eBookContent, type BookSpell, type ClassOptionDefinition } from './books/active';
 import type {
   ClassDefinition,
   ClassId,
@@ -195,6 +195,8 @@ export interface Dnd5eLevelUpPlan {
   currentSubclass: SubclassDefinition | null;
   /** Nomes das entradas que o personagem já tem (reconhece o terreno do Círculo da Terra). */
   knownNames: readonly string[];
+  /** Características opcionais de classe (Tasha) deste nível, quando o livro está liberado. */
+  optionalFeatures: ClassOptionDefinition[];
   /** Nível com Aumento no Valor de Atributo (ou talento). */
   abilityScoreImprovement: boolean;
   /** 19º nível: Dádiva Épica (os talentos épicos entram nas opções). */
@@ -428,6 +430,11 @@ export function planDnd5eLevelUp(
     subclass: singleSubclass,
     currentSubclass: currentSubclass ?? null,
     knownNames,
+    optionalFeatures: classDef
+      ? activeDnd5eBookContent().classOptions.filter(
+          (option) => option.classId === classDef.id && option.level === newClassLevel,
+        )
+      : [],
     subclassOptions: subclassArrives && !singleSubclass ? subclasses : [],
     abilityScoreImprovement,
     epicBoon,
@@ -512,6 +519,8 @@ export interface Dnd5eLevelUpChoices {
   subclassId?: string;
   /** Terreno do Círculo da Terra de livro, quando a subclasse é escolhida nesta subida. */
   landId?: string;
+  /** Características opcionais de classe escolhidas (ids). */
+  optionalFeatures?: readonly string[];
 }
 
 export const MAGIC_INITIATE_LISTS = ['cleric', 'druid', 'wizard'] as const;
@@ -892,6 +901,24 @@ export function applyDnd5eLevelUp(
           .filter((group) => group.level === plan.newClassLevel)
           .map((group) => ({ spells: group.spells, owner: plan.currentSubclass!.name }))),
   ];
+  // Características opcionais de classe escolhidas (Tasha).
+  for (const option of plan.optionalFeatures.filter((entry) =>
+    choices.optionalFeatures?.includes(entry.id),
+  )) {
+    entries.push({
+      kind: 'class_feature',
+      name: option.name.slice(0, 120),
+      source: `${className} ${option.level}º nível (opcional, ${option.book})`.slice(0, 120),
+      description: (option.replaces
+        ? `No lugar de ${option.replaces} (apague a original da ficha).
+
+${option.description}`
+        : option.description
+      ).slice(0, 8000),
+      data: {},
+      sortOrder: order++,
+    });
+  }
   // Círculo da Terra: terreno escolhido agora (todas as magias até o nível) ou o já escolhido
   // (reconhecido pelas magias que tem; só as do nível novo).
   if (chosenLand)

@@ -3,18 +3,18 @@
  * liberados na campanha). Cada item ganha o id `livro:chave`; nomes repetidos entre livros ficam
  * só com a versão do primeiro livro.
  */
-import {
-  safeT20BookEntryData,
-  type T20BookEntryData,
-  type T20BookEntryKind,
-} from './books/pack';
+import { safeT20BookEntryData, type T20BookEntryData, type T20BookEntryKind } from './books/pack';
 
 export interface T20ContentSource {
   book: { id: string; name: string };
   entries: readonly { kind: string; key: string; name: string; data: unknown }[];
 }
 
-export type T20Item<K extends T20BookEntryKind> = T20BookEntryData<K> & { id: string; name: string; book: string };
+export type T20Item<K extends T20BookEntryKind> = T20BookEntryData<K> & {
+  id: string;
+  name: string;
+  book: string;
+};
 
 export interface T20Content {
   books: { id: string; name: string }[];
@@ -27,6 +27,8 @@ export interface T20Content {
   equipment: T20Item<'equipment'>[];
   magicItems: T20Item<'magic_item'>[];
   threats: T20Item<'monster'>[];
+  /** Tabelas roláveis (tesouro), só nos livros do mestre. */
+  tables: T20Item<'table'>[];
 }
 
 export const EMPTY_T20_CONTENT: T20Content = {
@@ -40,6 +42,7 @@ export const EMPTY_T20_CONTENT: T20Content = {
   equipment: [],
   magicItems: [],
   threats: [],
+  tables: [],
 };
 
 const KIND_FIELD: Record<Exclude<T20BookEntryKind, 'section'>, keyof Omit<T20Content, 'books'>> = {
@@ -52,6 +55,7 @@ const KIND_FIELD: Record<Exclude<T20BookEntryKind, 'section'>, keyof Omit<T20Con
   equipment: 'equipment',
   magic_item: 'magicItems',
   monster: 'threats',
+  table: 'tables',
 };
 
 export function plainT20(text: string): string {
@@ -64,7 +68,8 @@ export function plainT20(text: string): string {
 
 export function buildT20Content(sources: readonly T20ContentSource[]): T20Content {
   const content: T20Content = { ...EMPTY_T20_CONTENT, books: [] };
-  for (const field of Object.values(KIND_FIELD)) (content as unknown as Record<string, unknown[]>)[field] = [];
+  for (const field of Object.values(KIND_FIELD))
+    (content as unknown as Record<string, unknown[]>)[field] = [];
   const seen = new Set<string>();
   for (const { book, entries } of sources) {
     content.books.push(book);
@@ -74,11 +79,17 @@ export function buildT20Content(sources: readonly T20ContentSource[]): T20Conten
       const data = safeT20BookEntryData(entry.kind as T20BookEntryKind, entry.data);
       if (!data) continue;
       // Poderes de classe podem repetir o nome em classes diferentes (dono faz parte da chave).
-      const owner = entry.kind === 'feat' ? (data as T20BookEntryData<'feat'>).owners.join('|') : '';
+      const owner =
+        entry.kind === 'feat' ? (data as T20BookEntryData<'feat'>).owners.join('|') : '';
       const dedupe = `${entry.kind}|${owner}|${plainT20(entry.name)}`;
       if (seen.has(dedupe)) continue;
       seen.add(dedupe);
-      (content[field] as unknown[]).push({ ...data, id: `${book.id}:${entry.key}`, name: entry.name, book: book.name });
+      (content[field] as unknown[]).push({
+        ...data,
+        id: `${book.id}:${entry.key}`,
+        name: entry.name,
+        book: book.name,
+      });
     }
   }
   return content;
@@ -99,29 +110,42 @@ export function findT20Deity(content: T20Content, id: string) {
 export function findT20PowerByName(content: T20Content, name: string, owner?: string) {
   const key = plainT20(name);
   const matches = content.powers.filter((power) => plainT20(power.name) === key);
-  return (owner ? matches.find((power) => power.owners.some((entry) => plainT20(entry) === plainT20(owner))) : undefined) ?? matches[0];
+  return (
+    (owner
+      ? matches.find((power) => power.owners.some((entry) => plainT20(entry) === plainT20(owner)))
+      : undefined) ?? matches[0]
+  );
 }
 
 /** Poderes de uma classe (lista "Poderes de X"). */
 export function t20ClassPowers(content: T20Content, className: string) {
   const key = plainT20(className);
-  return content.powers.filter((power) => power.group === 'classe' && power.owners.some((owner) => plainT20(owner) === key));
+  return content.powers.filter(
+    (power) => power.group === 'classe' && power.owners.some((owner) => plainT20(owner) === key),
+  );
 }
 
 /** Poderes gerais (combate, destino, magia, Tormenta) — os concedidos dependem da devoção. */
 export function t20GeneralPowers(content: T20Content) {
-  return content.powers.filter((power) => ['combate', 'destino', 'magia', 'tormenta'].includes(power.group));
+  return content.powers.filter((power) =>
+    ['combate', 'destino', 'magia', 'tormenta'].includes(power.group),
+  );
 }
 
 /** Poderes concedidos de uma divindade. */
 export function t20GrantedPowers(content: T20Content, deityName: string) {
   const deity = content.deities.find((entry) => plainT20(entry.name) === plainT20(deityName));
   const names = new Set((deity?.grantedPowers ?? []).map(plainT20));
-  return content.powers.filter((power) => power.group === 'concedidos' && names.has(plainT20(power.name)));
+  return content.powers.filter(
+    (power) => power.group === 'concedidos' && names.has(plainT20(power.name)),
+  );
 }
 
 /** Opções de uma habilidade de classe com escolha: as `options` do livro ou "escolha entre X e Y" no texto. */
-export function t20AbilityChoiceNames(ability: { text: string; options?: { name: string }[] }): string[] {
+export function t20AbilityChoiceNames(ability: {
+  text: string;
+  options?: { name: string }[];
+}): string[] {
   if (ability.options?.length) return ability.options.map((option) => option.name);
   // "escolha entre X e Y" ou "escolha um tipo de terreno entre A, B ou C".
   const match = /escolha (?:[^.;:]{0,40}? )?entre ([^.;:]+?)(?:\.|;|:|$)/i.exec(ability.text);
@@ -135,12 +159,17 @@ export function t20AbilityChoiceNames(ability: { text: string; options?: { name:
 /** Poderes que só se ganham por uma habilidade com escolha (não entram na lista de poderes do nível). */
 export function t20ChoiceOnlyPowers(klass: T20Item<'class'> | null): Set<string> {
   const names = new Set<string>();
-  for (const ability of klass?.abilities ?? []) for (const name of t20AbilityChoiceNames(ability)) names.add(plainT20(name));
+  for (const ability of klass?.abilities ?? [])
+    for (const name of t20AbilityChoiceNames(ability)) names.add(plainT20(name));
   return names;
 }
 
 /** Custo em PM de usar um poder ou magia: o das magias (`data.cost`) ou o primeiro "N PM" do texto; 0 sem custo. */
-export function t20AbilityCost(ability: { kind: string; description?: string | null; data?: unknown }): number {
+export function t20AbilityCost(ability: {
+  kind: string;
+  description?: string | null;
+  data?: unknown;
+}): number {
   const data = ability.data as { cost?: number } | null | undefined;
   if (ability.kind === 'spell') return data?.cost ?? 1;
   const match = /(\d+)\s*PM\b/.exec(ability.description ?? '');
@@ -164,17 +193,36 @@ export interface T20FeatureChoice {
  * repete (ex.: Explorador do Caçador no 7º, 11º…). Opções que são poderes usam o poder; as outras
  * (ex.: tipos de terreno) viram "Explorador (Floresta)" com o texto da habilidade.
  */
-export function t20FeatureChoicesAt(content: T20Content, klass: T20Item<'class'> | null, classLevel: number): T20FeatureChoice[] {
+export function t20FeatureChoicesAt(
+  content: T20Content,
+  klass: T20Item<'class'> | null,
+  classLevel: number,
+): T20FeatureChoice[] {
   if (!klass) return [];
-  const tableNames = (klass.table[String(classLevel)] ?? '').split(',').map((segment) => plainT20(segment.replace(/\s*[(+−-].*$/, '').trim()));
+  const tableNames = (klass.table[String(classLevel)] ?? '')
+    .split(',')
+    .map((segment) => plainT20(segment.replace(/\s*[(+−-].*$/, '').trim()));
   return klass.abilities
-    .filter((ability) => !/^poder de /i.test(ability.name) && (ability.level === classLevel || (ability.level < classLevel && tableNames.includes(plainT20(ability.name)))))
+    .filter(
+      (ability) =>
+        !/^poder de /i.test(ability.name) &&
+        (ability.level === classLevel ||
+          (ability.level < classLevel && tableNames.includes(plainT20(ability.name)))),
+    )
     .map((ability) => ({
       ability: ability.name,
       options: t20AbilityChoiceNames(ability).map((name) => {
-        const power = content.powers.find((entry) => plainT20(entry.name) === plainT20(name) && entry.owners.some((owner) => plainT20(owner) === plainT20(klass.name)));
+        const power = content.powers.find(
+          (entry) =>
+            plainT20(entry.name) === plainT20(name) &&
+            entry.owners.some((owner) => plainT20(owner) === plainT20(klass.name)),
+        );
         const label = name.charAt(0).toUpperCase() + name.slice(1);
-        return { id: power?.id ?? `opcao:${plainT20(name)}`, name: power?.name ?? `${ability.name} (${label})`, text: power?.text ?? ability.text };
+        return {
+          id: power?.id ?? `opcao:${plainT20(name)}`,
+          name: power?.name ?? `${ability.name} (${label})`,
+          text: power?.text ?? ability.text,
+        };
       }),
     }))
     .filter((choice) => choice.options.length > 1);
@@ -184,16 +232,24 @@ export function t20FeatureChoicesAt(content: T20Content, klass: T20Item<'class'>
  * Poder que pede perícias à escolha ("Você se torna treinado em uma perícia a sua escolha",
  * "Escolha uma perícia…"): quantas e se o personagem passa a ser treinado nelas.
  */
-export function t20PowerSkillPick(power: { text: string }): { count: number; trains: boolean } | null {
+export function t20PowerSkillPick(power: {
+  text: string;
+}): { count: number; trains: boolean } | null {
   const text = plainT20(power.text);
   const trained = /treinado em (uma|duas|tres) pericias? [^.]*a sua escolha/.exec(text);
-  if (trained) return { count: { uma: 1, duas: 2, tres: 3 }[trained[1] as 'uma' | 'duas' | 'tres'], trains: true };
+  if (trained)
+    return {
+      count: { uma: 1, duas: 2, tres: 3 }[trained[1] as 'uma' | 'duas' | 'tres'],
+      trains: true,
+    };
   if (/^escolha uma pericia/.test(text)) return { count: 1, trains: false };
   return null;
 }
 
 /** Poder que pode ser escolhido mais de uma vez ("pode escolher este poder outras/várias vezes"). */
 export function t20PowerRepeatable(power: { name: string; text: string }): boolean {
-  return isT20AttributeIncrease(power.name) || /pode escolher este poder (outras|varias) vezes/.test(plainT20(power.text));
+  return (
+    isT20AttributeIncrease(power.name) ||
+    /pode escolher este poder (outras|varias) vezes/.test(plainT20(power.text))
+  );
 }
-

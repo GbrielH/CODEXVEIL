@@ -179,7 +179,11 @@ export interface SubclassDefinition {
   /** Magias sempre preparadas, liberadas no nível indicado. */
   alwaysPrepared?: readonly { level: number; spells: readonly string[] }[];
   /** Terrenos com magias próprias (Círculo da Terra de livro); o do SRD fica em `CIRCLE_OF_THE_LAND`. */
-  landOptions?: readonly { id: string; name: string; spells: readonly { level: number; spells: readonly string[] }[] }[];
+  landOptions?: readonly {
+    id: string;
+    name: string;
+    spells: readonly { level: number; spells: readonly string[] }[];
+  }[];
   resources?: readonly ResourceDefinition[];
 }
 

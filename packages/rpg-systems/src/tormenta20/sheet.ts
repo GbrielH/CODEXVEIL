@@ -31,10 +31,18 @@ export const T20_ARMOR_PROFICIENCIES = ['leves', 'pesadas', 'escudos'] as const;
 const text = (max: number) => z.string().trim().max(max).default('');
 const entityKey = z.string().trim().max(120).default('');
 const attributeRecord = z
-  .object(Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, z.number().int().min(-10).max(20).default(0)])) as Record<T20Attribute, z.ZodDefault<z.ZodNumber>>)
+  .object(
+    Object.fromEntries(
+      T20_ATTRIBUTES.map((key) => [key, z.number().int().min(-10).max(20).default(0)]),
+    ) as Record<T20Attribute, z.ZodDefault<z.ZodNumber>>,
+  )
   .prefault({});
 
-const namedRef = z.object({ key: entityKey, name: z.string().trim().min(1).max(200), source: text(200) });
+const namedRef = z.object({
+  key: entityKey,
+  name: z.string().trim().min(1).max(200),
+  source: text(200),
+});
 
 export const t20SheetSchema = z.object({
   schemaVersion: z.literal(T20_SHEET_VERSION).default(T20_SHEET_VERSION),
@@ -49,7 +57,13 @@ export const t20SheetSchema = z.object({
       deity: text(120),
       deityKey: entityKey,
       classes: z
-        .array(z.object({ key: entityKey, name: z.string().trim().min(1).max(120), level: z.number().int().min(1).max(20) }))
+        .array(
+          z.object({
+            key: entityKey,
+            name: z.string().trim().min(1).max(120),
+            level: z.number().int().min(1).max(20),
+          }),
+        )
         .max(6)
         .default([]),
       xp: z.number().int().min(0).max(10_000_000).default(0),
@@ -68,7 +82,10 @@ export const t20SheetSchema = z.object({
   attributes: attributeRecord,
   skills: z
     .object({
-      trained: z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(29).default([]),
+      trained: z
+        .array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]]))
+        .max(29)
+        .default([]),
       /** Bônus fixos por perícia (poderes, itens, raça). */
       bonuses: z.record(z.string(), z.number().int().min(-20).max(40)).default({}),
       /** Especialidades de Ofício treinadas (alquimista, ferreiro…). */
@@ -95,12 +112,30 @@ export const t20SheetSchema = z.object({
       other: text(500),
     })
     .prefault({}),
-  powers: z.array(namedRef.extend({ level: z.number().int().min(1).max(20).default(1), /** Aumento de Atributo: qual atributo subiu. */ attribute: z.enum(T20_ATTRIBUTES).optional() })).max(120).default([]),
+  powers: z
+    .array(
+      namedRef.extend({
+        level: z.number().int().min(1).max(20).default(1),
+        /** Aumento de Atributo: qual atributo subiu. */ attribute: z
+          .enum(T20_ATTRIBUTES)
+          .optional(),
+      }),
+    )
+    .max(120)
+    .default([]),
   spells: z
     .object({
       /** Atributo-chave das magias (Int para magos, Sab para clérigos…). */
       attribute: z.enum(T20_ATTRIBUTES).nullable().default(null),
-      known: z.array(namedRef.extend({ circle: z.number().int().min(1).max(5), type: z.enum(['arcana', 'divina', 'universal']) })).max(200).default([]),
+      known: z
+        .array(
+          namedRef.extend({
+            circle: z.number().int().min(1).max(5),
+            type: z.enum(['arcana', 'divina', 'universal']),
+          }),
+        )
+        .max(200)
+        .default([]),
     })
     .prefault({}),
 });

@@ -5,6 +5,7 @@
  * Funciona também com rascunhos incompletos (para a prévia); a criação de verdade só acontece
  * depois de `validateDnd5eDraft` não apontar pendências.
  */
+import { activeDnd5eBookContent } from '../books/active';
 import { ABILITIES, abilityLabels, abilityModifier, type Ability } from '../abilities';
 import { computeDnd5eDerived } from '../derived';
 import { spellSchoolLabels } from '../entries';
@@ -1069,6 +1070,43 @@ export function buildDnd5eCharacterFromDraft(draft: Dnd5eDraft): BuiltDnd5eChara
       sortOrder: index,
     };
   });
+
+  // Características opcionais de classe (Tasha) escolhidas: entram na ficha; a que ela substitui sai.
+  const plainName = (text: string) =>
+    text
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase()
+      .trim();
+  const options = activeDnd5eBookContent().classOptions;
+  for (const id of selectionList(draft, 'class.optional_features')) {
+    const option = options.find((entry) => entry.id === id);
+    if (!option) continue;
+    if (option.replaces) {
+      const index = abilities.findIndex(
+        (entry) => plainName(entry.name) === plainName(option.replaces),
+      );
+      if (index >= 0) abilities.splice(index, 1);
+    }
+    abilities.push({
+      kind: 'class_feature',
+      name: clip(option.name, 120),
+      source: clip(
+        `${classDef?.name ?? 'Classe'} ${option.level}º nível (opcional, ${option.book})`,
+        120,
+      ),
+      description: clip(
+        option.replaces
+          ? `No lugar de ${option.replaces}.
+
+${option.description}`
+          : option.description,
+        8000,
+      ),
+      data: {},
+      sortOrder: order++,
+    });
+  }
 
   return { name: draft.name.trim(), sheet, resources, abilities, items };
 }

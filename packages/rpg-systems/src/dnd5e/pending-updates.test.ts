@@ -7,10 +7,15 @@ describe('pendências da ficha', () => {
     const cleric = findClassByName('Clérigo')!;
     const subclass = listSubclasses(cleric).find((entry) => entry.alwaysPrepared?.length)!;
     const sheet = createDefaultDnd5eSheet();
-    sheet.identity.classes = [{ name: cleric.name, subclass: subclass.name, level: 3, hitDie: 'd8' }];
+    sheet.identity.classes = [
+      { name: cleric.name, subclass: subclass.name, level: 3, hitDie: 'd8' },
+    ];
     const [update] = listDnd5ePendingUpdates(sheet, []);
     expect(update?.abilities.length).toBeGreaterThan(0);
-    const complete = listDnd5ePendingUpdates(sheet, update!.abilities.map((entry) => entry.name));
+    const complete = listDnd5ePendingUpdates(
+      sheet,
+      update!.abilities.map((entry) => entry.name),
+    );
     expect(complete).toEqual([]);
   });
 });

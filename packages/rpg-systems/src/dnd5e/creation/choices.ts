@@ -7,6 +7,7 @@
  * escolha de que dependem é respondida. `validateDnd5eDraft` confere tudo, inclusive regras
  * que cruzam passos (perícias repetidas, pré-requisitos de talentos, limites de atributos).
  */
+import { activeDnd5eBookContent } from '../books/active';
 import { ABILITIES, abilityLabels, type Ability } from '../abilities';
 import type { SpellSchool } from '../entries';
 import { suggestedSpellSlots } from '../progression';
@@ -114,7 +115,13 @@ interface BaseChoice {
 
 export type ChoiceSpec =
   | (BaseChoice & { kind: 'option'; options: ChoiceOption[] })
-  | (BaseChoice & { kind: 'multi'; count: number; options: ChoiceOption[] })
+  | (BaseChoice & {
+      kind: 'multi';
+      count: number;
+      options: ChoiceOption[];
+      /** Escolha opcional: de 0 até `count` (características opcionais de classe). */
+      atMost?: boolean;
+    })
   | (BaseChoice & { kind: 'spells'; count: number; options: SpellOption[] })
   | (BaseChoice & {
       kind: 'ability_increase';
@@ -202,10 +209,32 @@ export function draftSpeciesBenefits(draft: Dnd5eDraft): SpeciesBenefits | null 
 }
 
 /** Aumentos de atributo da raça de livro: os fixos e os escolhidos. */
+/** Caldeirão de Tasha liberado: origem personalizada e características opcionais de classe. */
+export function tashaRulesActive(): boolean {
+  const content = activeDnd5eBookContent();
+  return content.classOptions.length > 0 || content.books.some((book) => book.id === 'tcoe');
+}
+
+/** Aumentos fixos da raça, do maior para o menor (origem personalizada: cada um num atributo). */
+function fixedIncreases(benefits: SpeciesBenefits): number[] {
+  return Object.values(benefits.fixed)
+    .filter((value): value is number => typeof value === 'number' && value > 0)
+    .sort((a, b) => b - a);
+}
+
 export function speciesIncrease(draft: Dnd5eDraft): Partial<Record<Ability, number>> {
   const benefits = draftSpeciesBenefits(draft);
   if (!benefits) return {};
-  const increase: Partial<Record<Ability, number>> = { ...benefits.fixed };
+  let increase: Partial<Record<Ability, number>> = { ...benefits.fixed };
+  // Origem personalizada (Tasha): os mesmos aumentos, nos atributos que o jogador escolher.
+  if (tashaRulesActive() && selectionText(draft, 'species.custom_origin') === 'custom') {
+    increase = {};
+    fixedIncreases(benefits).forEach((amount, index) => {
+      const ability = selectionText(draft, `species.custom_${index}`);
+      if ((ABILITIES as readonly string[]).includes(ability))
+        increase[ability as Ability] = (increase[ability as Ability] ?? 0) + amount;
+    });
+  }
   if (benefits.choiceCount > 0) {
     for (const id of selectionList(draft, 'species.book_abilities').slice(
       0,
@@ -1220,6 +1249,30 @@ export function listDnd5eChoices(draft: Dnd5eDraft): ChoiceSpec[] {
         })),
       });
     }
+    // Características opcionais de classe (Caldeirão de Tasha, com o livro liberado).
+    const optionalFeatures = classDef
+      ? activeDnd5eBookContent().classOptions.filter(
+          (option) => option.classId === classDef.id && option.level <= draft.level,
+        )
+      : [];
+    if (optionalFeatures.length > 0) {
+      specs.push({
+        kind: 'multi',
+        id: 'class.optional_features',
+        step: 'class',
+        label: 'Características opcionais de classe',
+        description:
+          'Caldeirão de Tasha: escolha as que quiser (ou nenhuma). Quando uma substitui outra característica, a original sai da ficha.',
+        source: optionalFeatures[0]!.book,
+        count: optionalFeatures.length,
+        atMost: true,
+        options: optionalFeatures.map((option) => ({
+          id: option.id,
+          name: `${option.name} (${option.level}º nível)`,
+          description: `${option.replaces ? `No lugar de ${option.replaces}. ` : ''}${option.description.slice(0, 400)}`,
+        })),
+      });
+    }
     if (landOptionsFor(subclass).length) {
       specs.push({
         kind: 'option',
@@ -1230,7 +1283,7 @@ export function listDnd5eChoices(draft: Dnd5eDraft): ChoiceSpec[] {
           subclass?.id === 'land'
             ? 'Pode ser trocado a cada descanso longo; define as magias do Círculo preparadas agora.'
             : 'O terreno em que você se tornou druida: define as magias de círculo (sempre preparadas).',
-        source: subclass?.name ?? "",
+        source: subclass?.name ?? '',
         options: landOptionsFor(subclass).map((land) => ({
           id: land.id,
           name: land.name,
@@ -1339,6 +1392,43 @@ export function listDnd5eChoices(draft: Dnd5eDraft): ChoiceSpec[] {
       });
     }
     const benefits = draftSpeciesBenefits(draft);
+    if (benefits && tashaRulesActive() && fixedIncreases(benefits).length > 0) {
+      specs.push({
+        kind: 'option',
+        id: 'species.custom_origin',
+        step: 'species',
+        label: 'Aumentos de atributo da raça',
+        description:
+          'Caldeirão de Tasha (Customizando sua Origem): você pode pôr os aumentos da raça em outros atributos.',
+        source,
+        options: [
+          { id: 'keep', name: 'Manter os da raça' },
+          { id: 'custom', name: 'Origem personalizada: escolher os atributos' },
+        ],
+      });
+      if (selectionText(draft, 'species.custom_origin') === 'custom') {
+        const amounts = fixedIncreases(benefits);
+        amounts.forEach((amount, index) => {
+          const others = amounts
+            .map((_, other) =>
+              other === index ? '' : selectionText(draft, `species.custom_${other}`),
+            )
+            .filter(Boolean);
+          specs.push({
+            kind: 'option',
+            id: `species.custom_${index}`,
+            step: 'species',
+            label: `Aumento de +${amount}`,
+            source,
+            options: abilityOptions(ABILITIES).map((option) =>
+              others.includes(option.id)
+                ? { ...option, disabledReason: 'Já recebe outro aumento.' }
+                : option,
+            ),
+          });
+        });
+      }
+    }
     if (benefits?.choiceCount) {
       specs.push({
         kind: 'multi',
@@ -1996,6 +2086,10 @@ function validateSpec(spec: ChoiceSpec, draft: Dnd5eDraft): string | null {
         const option = (spec.options as ChoiceOption[]).find((entry) => entry.id === value);
         if (!option) return `Opção inválida: ${value}.`;
         if (option.disabledReason) return `${option.name}: ${option.disabledReason}`;
+      }
+      if (spec.kind === 'multi' && spec.atMost) {
+        if (values.length > spec.count) return `Escolha no máximo ${spec.count}.`;
+        return null;
       }
       if (values.length !== spec.count) {
         return spec.count === 1

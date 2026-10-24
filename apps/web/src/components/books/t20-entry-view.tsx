@@ -317,6 +317,58 @@ export function T20BookEntryView({ kind, data }: { kind: string; data: unknown }
       if (!section) break;
       return <BookText body={section.body} />;
     }
+    case 'table': {
+      const table = safeT20BookEntryData('table', data);
+      if (!table) break;
+      const range = (row: { min: number; max: number }) =>
+        row.min === row.max
+          ? String(row.min).padStart(2, '0')
+          : `${String(row.min).padStart(2, '0')}–${row.max === 100 ? '00' : String(row.max).padStart(2, '0')}`;
+      if (table.format === 'nd')
+        return (
+          <div className="flex flex-col gap-3 text-sm">
+            {table.nd.map((row) => (
+              <div key={row.nd}>
+                <p className="font-medium text-fg">ND {row.nd}</p>
+                <p className="text-fg-secondary">
+                  Dinheiro: {row.money.map((entry) => `${range(entry)} ${entry.text}`).join(' · ')}
+                </p>
+                <p className="text-fg-secondary">
+                  Itens: {row.items.map((entry) => `${range(entry)} ${entry.text}`).join(' · ')}
+                </p>
+              </div>
+            ))}
+          </div>
+        );
+      if (table.format === 'riches')
+        return (
+          <ul className="flex flex-col gap-2 text-sm text-fg-secondary">
+            {table.riches.map((row, index) => (
+              <li key={index}>
+                <strong className="text-fg">{row.value}</strong> ({row.average}) — menor{' '}
+                {row.menor ? range(row.menor) : '—'}, média {row.media ? range(row.media) : '—'},
+                maior {row.maior ? range(row.maior) : '—'}. {row.example}
+              </li>
+            ))}
+          </ul>
+        );
+      return (
+        <div className="flex flex-col gap-4 text-sm">
+          {Object.entries(table.subtables).map(([label, rows]) => (
+            <div key={label}>
+              <p className="font-medium text-fg">{label}</p>
+              <ul className="text-fg-secondary">
+                {rows.map((row, index) => (
+                  <li key={index}>
+                    {range(row)} {[row.text, ...row.extra].join(' — ')}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      );
+    }
   }
   return <p className="text-sm text-fg-muted">Esta entrada não pôde ser exibida.</p>;
 }

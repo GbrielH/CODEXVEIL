@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { conditionLabel, conditionRoundsLabel, conditionsLeftAfter, findSystem, getSystem, isSystemId, listSystems } from './registry';
+import {
+  conditionLabel,
+  conditionRoundsLabel,
+  conditionsLeftAfter,
+  findSystem,
+  getSystem,
+  isSystemId,
+  listSystems,
+} from './registry';
 
 describe('registro de sistemas', () => {
   it('disponibiliza o D&D 5e', () => {
@@ -64,8 +72,16 @@ describe('conditionRoundsLabel', () => {
 describe('valores de combate do D&D 5e', () => {
   it('usam vida, CA e Destreza do bloco de estatísticas', () => {
     const system = getSystem('dnd5e');
-    const statBlock = system.parseStatBlock({ hitPoints: 22, armorClass: 13, abilities: { dex: 15 } });
-    expect(system.combatDefaults(statBlock)).toEqual({ hitPoints: 22, armorClass: 13, initiativeBonus: 2 });
+    const statBlock = system.parseStatBlock({
+      hitPoints: 22,
+      armorClass: 13,
+      abilities: { dex: 15 },
+    });
+    expect(system.combatDefaults(statBlock)).toEqual({
+      hitPoints: 22,
+      armorClass: 13,
+      initiativeBonus: 2,
+    });
   });
 
   it('a iniciativa do personagem soma Destreza e bônus', () => {

@@ -164,6 +164,32 @@ def threat(t):
     return entry('monster', t['name'][:1].upper() + t['name'][1:], data)
 
 
+TREASURE_TABLES = [
+    ('itens-diversos', 'Tabela 8-3: Itens Diversos', (337,), 1),
+    ('equipamento', 'Tabela 8-4: Equipamento', (337,), 1),
+    ('itens-superiores', 'Tabela 8-5: Itens Superiores', (338,), 1),
+    ('pocoes', 'Tabela 8-12: Poções', (347,), 2),
+    ('acessorios-menores', 'Tabela 8-13: Acessórios Menores', (348,), 2),
+    ('acessorios-medios', 'Tabela 8-14: Acessórios Médios', (349,), 2),
+    ('acessorios-maiores', 'Tabela 8-15: Acessórios Maiores', (349,), 2),
+]
+
+
+def treasure_tables(layout):
+    """Tabelas de tesouro do capítulo 8 (kind 'table'), usadas para rolar tesouro por ND."""
+    import bookkit
+    import t20_treasure
+    rows = bookkit.load(layout)
+    out = [
+        entry('table', 'Tabela 8-1: Tesouro por Nível de Desafio', {'title': 'Tabela 8-1: Tesouro por Nível de Desafio', 'format': 'nd', 'nd': t20_treasure.parse_nd_table(rows)}, key='tesouro-por-nd'),
+        entry('table', 'Tabela 8-2: Riquezas', {'title': 'Tabela 8-2: Riquezas', 'format': 'riches', 'riches': t20_treasure.parse_riches(rows)}, key='riquezas'),
+    ]
+    for key, title, pages, values in TREASURE_TABLES:
+        table = t20_treasure.parse_table(rows, title, pages, values)
+        out.append(entry('table', title, {'title': title, 'format': 'd100', 'subtables': table['subtables']}, key=key))
+    return out
+
+
 # Capítulos com o título desenhado (imagem): número → nome.
 IMAGE_CHAPTERS = {'8': 'Recompensas'}
 
@@ -283,6 +309,7 @@ def main():
     entries += [threat(t) for t in d['threats']]
     if len(sys.argv) > 3:
         entries += text_sections(pathlib.Path(sys.argv[3]))
+        entries += treasure_tables(pathlib.Path(sys.argv[3]))
     # Chaves repetidas (mesmo nome em grupos diferentes): sufixo numérico.
     seen = {}
     for e in entries:

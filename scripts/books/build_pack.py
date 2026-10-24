@@ -11,6 +11,7 @@ import re, json, pathlib, re, sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import ocr_fix  # noqa: E402
+import class_options  # noqa: E402
 import backgrounds, bookkit, feats_items, monsters, races_ocr, sections, species, spells, subclasses  # noqa: E402
 from run_monsters import extract  # noqa: E402
 
@@ -77,7 +78,7 @@ def tasha(rows):
     """Subclasses, magias, talentos e itens mágicos do Caldeirão de Tasha (tamanhos de título do PDF)."""
     classes = spells.table_classes(rows, {104}, 9.9)
     classes.setdefault('invocar feérico', classes.get('invocar fada', ''))  # nome diferente na tabela
-    return (artificer(rows) + subclasses.parse(rows, 27.7, 14.8, 12.9) + spells.parse(rows, 12.5, classes)
+    return (artificer(rows) + subclasses.parse(rows, 27.7, 14.8, 12.9) + class_options.parse(rows) + spells.parse(rows, 12.5, classes)
             + feats_items.feats(rows, 80, 84, 14.8) + feats_items.items(rows, 118, 136, 12.5))
 
 

@@ -4,8 +4,8 @@
 
 /** XP acumulado para alcançar cada nível (índice 0 = 1º nível). */
 export const T20_XP_BY_LEVEL = [
-  0, 1000, 3000, 6000, 10000, 15000, 21000, 28000, 36000, 45000, 55000, 66000, 78000, 91000, 105000, 120000, 136000, 153000,
-  171000, 190000,
+  0, 1000, 3000, 6000, 10000, 15000, 21000, 28000, 36000, 45000, 55000, 66000, 78000, 91000, 105000,
+  120000, 136000, 153000, 171000, 190000,
 ] as const;
 
 // O nível máximo (20) fica em `sheet.ts` (T20_MAX_LEVEL).
@@ -66,7 +66,10 @@ export function t20ManaLimit(level: number): number {
 }
 
 /** Círculo máximo de magia de uma classe conjuradora completa pelo nível (1º, 5º, 9º, 13º e 17º). */
-export function t20MaxSpellCircle(classLevel: number, progression: 'full' | 'half' = 'full'): number {
+export function t20MaxSpellCircle(
+  classLevel: number,
+  progression: 'full' | 'half' = 'full',
+): number {
   if (progression === 'half') {
     if (classLevel >= 14) return 4;
     if (classLevel >= 10) return 3;

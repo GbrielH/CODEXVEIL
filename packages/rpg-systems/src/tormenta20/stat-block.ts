@@ -5,7 +5,10 @@ import { z } from 'zod';
 import { T20_ATTRIBUTES, type T20Attribute } from './attributes';
 
 const text = (max: number) => z.string().trim().max(max).default('');
-const named = z.object({ name: z.string().trim().min(1).max(200), text: z.string().trim().max(8000).default('') });
+const named = z.object({
+  name: z.string().trim().min(1).max(200),
+  text: z.string().trim().max(8000).default(''),
+});
 
 export const t20StatBlockSchema = z.object({
   /** Tipo e tamanho ("Monstro Grande", "Humanoide (orc) Médio"). */
@@ -25,10 +28,11 @@ export const t20StatBlockSchema = z.object({
   ranged: text(1000),
   abilities: z.array(named).max(40).default([]),
   attributes: z
-    .object(Object.fromEntries(T20_ATTRIBUTES.map((key) => [key, z.number().int().min(-10).max(30).nullable().default(0)])) as Record<
-      T20Attribute,
-      z.ZodDefault<z.ZodNullable<z.ZodNumber>>
-    >)
+    .object(
+      Object.fromEntries(
+        T20_ATTRIBUTES.map((key) => [key, z.number().int().min(-10).max(30).nullable().default(0)]),
+      ) as Record<T20Attribute, z.ZodDefault<z.ZodNullable<z.ZodNumber>>>,
+    )
     .prefault({}),
   skills: text(600),
   equipment: text(600),
@@ -47,7 +51,9 @@ export function parseT20StatBlock(data: unknown): T20StatBlock {
 }
 
 /** Porte de uma ameaça a partir do texto de tipo ("Monstro Grande" → large). */
-export function t20SizeFromType(type: string): 'tiny' | 'small' | 'medium' | 'large' | 'huge' | 'gargantuan' {
+export function t20SizeFromType(
+  type: string,
+): 'tiny' | 'small' | 'medium' | 'large' | 'huge' | 'gargantuan' {
   const text = type.toLowerCase();
   if (text.includes('colossal')) return 'gargantuan';
   if (text.includes('enorme')) return 'huge';

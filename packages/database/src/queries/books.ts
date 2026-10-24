@@ -229,6 +229,7 @@ const META_FIELDS: Record<string, string> = {
   magic_item: 'rarity:data->>rarity, type:data->>type, itemKind:data->>kind, price:data->>price',
   spell: 'level:data->>level, school:data->>school, circle:data->>circle, spellType:data->>type',
   subclass: 'classId:data->>classId',
+  class_option: 'classId:data->>classId, level:data->>level',
   feat: 'category:data->>category, group:data->>group, prerequisite:data->>prerequisite',
   deity: 'energy:data->>energy',
   equipment: 'group:data->>group, category:data->>category, price:data->>price',

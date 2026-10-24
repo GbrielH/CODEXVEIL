@@ -63,12 +63,20 @@ function plain(text: string): string {
 export function parseT20Critical(text: string): { margin: number; multiplier: number } {
   const margin = /(?:^|\D)(1[89]|20)(?!\d)/.exec(text);
   const multiplier = /[x×](\d)/i.exec(text);
-  return { margin: margin ? Number(margin[1]) : 20, multiplier: multiplier ? Number(multiplier[1]) : 2 };
+  return {
+    margin: margin ? Number(margin[1]) : 20,
+    multiplier: multiplier ? Number(multiplier[1]) : 2,
+  };
 }
 
 const SHOOTING = /\b(arco|besta|funda|zarabatana|arcabuz|mosquete|pistola|bacamarte|canh[aã]o)\b/;
 
-function weaponKind(name: string, category: string, range: string, attack?: 'corpo' | 'distancia'): T20WeaponKind {
+function weaponKind(
+  name: string,
+  category: string,
+  range: string,
+  attack?: 'corpo' | 'distancia',
+): T20WeaponKind {
   const hasRange = Boolean(range.trim()) && !/^[—–-]$/.test(range.trim());
   if (!hasRange) return 'melee';
   if (SHOOTING.test(plain(name)) || plain(category).includes('fogo')) return 'ranged';
@@ -84,15 +92,25 @@ function gripFromText(text: string): T20Grip | null {
   return null;
 }
 
-export const t20GripLabels: Record<T20Grip, string> = { leve: 'leve', uma: 'uma mão', duas: 'duas mãos' };
+export const t20GripLabels: Record<T20Grip, string> = {
+  leve: 'leve',
+  uma: 'uma mão',
+  duas: 'duas mãos',
+};
 
 /**
  * Estatísticas da arma: do livro (equipamento com o mesmo nome) ou, sem o livro, da descrição que
  * o catálogo grava no item ("Dano 1d6 · Crítico 19 · Alcance Curto · Perfuração").
  */
-export function t20WeaponStats(itemName: string, description: string, content: T20Content | null): T20WeaponStats | null {
+export function t20WeaponStats(
+  itemName: string,
+  description: string,
+  content: T20Content | null,
+): T20WeaponStats | null {
   const target = plain(itemName);
-  const fromBook = content?.equipment.find((entry) => entry.group === 'arma' && plain(entry.name) === target);
+  const fromBook = content?.equipment.find(
+    (entry) => entry.group === 'arma' && plain(entry.name) === target,
+  );
   if (fromBook) {
     const crit = parseT20Critical(fromBook.critical);
     return {
@@ -114,14 +132,21 @@ export function t20WeaponStats(itemName: string, description: string, content: T
     damageType: '',
     critMargin: crit.margin,
     critMultiplier: crit.multiplier,
-    kind: weaponKind(itemName, '', range, /distância|distancia/i.test(description) ? 'distancia' : undefined),
+    kind: weaponKind(
+      itemName,
+      '',
+      range,
+      /distância|distancia/i.test(description) ? 'distancia' : undefined,
+    ),
     range,
     grip: gripFromText(description),
   };
 }
 
 function classLevel(sheet: T20Sheet, name: string): number {
-  return sheet.identity.classes.filter((entry) => plain(entry.name) === plain(name)).reduce((total, entry) => total + entry.level, 0);
+  return sheet.identity.classes
+    .filter((entry) => plain(entry.name) === plain(name))
+    .reduce((total, entry) => total + entry.level, 0);
 }
 
 /** Bônus máximo da Fúria pelo nível de Bárbaro (+2, e +1 a cada cinco níveis pagando +1 PM). */
@@ -142,10 +167,18 @@ function withBonus(formula: string, bonus: number): string {
 
 /** Multiplica só os dados ("1d8+2" ×3 → "3d8+2"). */
 function multiplyDice(formula: string, multiplier: number): string {
-  return formula.replace(/(\d*)d(\d+)/gi, (_, count: string, sides: string) => `${(Number(count) || 1) * multiplier}d${sides}`);
+  return formula.replace(
+    /(\d*)d(\d+)/gi,
+    (_, count: string, sides: string) => `${(Number(count) || 1) * multiplier}d${sides}`,
+  );
 }
 
-export function resolveT20Attack(stats: T20WeaponStats, sheet: T20Sheet, derived: T20Derived, effects: T20AttackEffects): ResolvedT20Attack {
+export function resolveT20Attack(
+  stats: T20WeaponStats,
+  sheet: T20Sheet,
+  derived: T20Derived,
+  effects: T20AttackEffects,
+): ResolvedT20Attack {
   const notes: string[] = [];
   const melee = stats.kind === 'melee' || stats.kind === 'melee-thrown';
   const skill = melee ? 'luta' : 'pontaria';
@@ -171,7 +204,11 @@ export function resolveT20Attack(stats: T20WeaponStats, sheet: T20Sheet, derived
     bonus += 5;
     notes.push('Estilo de Duas Mãos +5 no dano');
   }
-  if (melee && (stats.grip === 'leve' || stats.grip === 'uma') && hasPower(sheet, 'Estilo de Uma Arma')) {
+  if (
+    melee &&
+    (stats.grip === 'leve' || stats.grip === 'uma') &&
+    hasPower(sheet, 'Estilo de Uma Arma')
+  ) {
     if (effects.offHandBusy) notes.push('Estilo de Uma Arma: a outra mão está ocupada (sem o +2)');
     else {
       toHit += 2;
@@ -183,7 +220,10 @@ export function resolveT20Attack(stats: T20WeaponStats, sheet: T20Sheet, derived
     bonus += effects.rage;
     notes.push(`Fúria +${effects.rage} no ataque e no dano`);
   }
-  if (!stats.grip && (hasPower(sheet, 'Estilo de Duas Mãos') || hasPower(sheet, 'Estilo de Uma Arma'))) {
+  if (
+    !stats.grip &&
+    (hasPower(sheet, 'Estilo de Duas Mãos') || hasPower(sheet, 'Estilo de Uma Arma'))
+  ) {
     notes.push('Empunhadura desconhecida: reimporte o livro para aplicar os Estilos');
   }
 

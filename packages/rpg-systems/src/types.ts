@@ -72,13 +72,7 @@ export interface ResourceTemplate {
 
 /** Tipos de entrada de `character_abilities` (mesmos valores do enum do banco). */
 export type AbilityEntryKind =
-  | 'class_feature'
-  | 'species_trait'
-  | 'feat'
-  | 'background_feature'
-  | 'spell'
-  | 'attack'
-  | 'other';
+  'class_feature' | 'species_trait' | 'feat' | 'background_feature' | 'spell' | 'attack' | 'other';
 
 /** Habilidade, magia ou ataque criado junto com um novo personagem. */
 export interface AbilityEntryTemplate {
@@ -112,7 +106,12 @@ export interface CharacterSummary {
   level: number | null;
 }
 
-export interface RpgSystem<TSheet = unknown, TDerived = unknown, TStatBlock = unknown, TRules = unknown> {
+export interface RpgSystem<
+  TSheet = unknown,
+  TDerived = unknown,
+  TStatBlock = unknown,
+  TRules = unknown,
+> {
   readonly id: string;
   readonly name: string;
   readonly shortName: string;

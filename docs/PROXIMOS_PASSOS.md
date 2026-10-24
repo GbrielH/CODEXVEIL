@@ -552,6 +552,25 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-25 — regras opcionais automatizadas (pedido: itens 1, 2 e 4)
+
+- [x] **Características opcionais de classe (Tasha):** 43 lidas do livro (`scripts/books/class_options.py`,
+      kind novo `class_option`). Com o Tasha liberado, a criação oferece "Características opcionais
+      de classe" (escolha de 0 a N); a escolhida entra na ficha e a que ela substitui sai. Na subida
+      de nível (site), as do nível novo aparecem para marcar. Os jogadores leem esse tipo (RLS).
+- [x] **Origem personalizada (Tasha):** com o Tasha liberado e raça de livro com aumentos fixos, a
+      criação pergunta "Manter os da raça" ou "Origem personalizada", e cada aumento (+2, +1) vai no
+      atributo escolhido, sem repetir.
+- [x] **Tesouro por ND (Tormenta20):** Tabelas 8-1 a 8-5 e 8-12 a 8-15 lidas do livro
+      (`scripts/books/t20_treasure.py`, kind novo `table`, só o mestre lê), todas cobrindo 01–100.
+      `rollT20Treasure` rola dinheiro (moedas e riquezas, com +%) e itens (diverso, equipamento,
+      superior com melhorias, poções, mágico; 2D = duas opções). Botão "Rolar tesouro" na ficha da
+      ameaça da biblioteca da campanha (mestre). Armas e armaduras mágicas indicam a tabela do
+      livro (8-8/8-10). Migração `20261025110000_book_tables_class_options.sql` (aplicada).
+- [x] Tasha e Tormenta20 reimportados na conta do responsável.
+- [ ] Depois: opcionais de classe na subida de nível do app; regra da campanha para o mestre
+      desligar as opções do Tasha sem tirar o livro; tesouro também na mesa (encontro).
+
 ### 2026-10-25 — rascunho de personagem, chat do Tomo e cartão de iniciativa
 
 - [x] **Salvar rascunho** na criação de personagem (D&D e Tormenta20, site): grava a criação
