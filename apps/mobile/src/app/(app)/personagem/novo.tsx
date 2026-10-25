@@ -798,6 +798,12 @@ function Wizard({
           {errorFor('alignment') ? (
             <AppText style={{ color: '#EC9384' }}>{errorFor('alignment')}</AppText>
           ) : null}
+          <Field
+            label="Altura (ex.: 1,75 m)"
+            value={draft.details.height}
+            onChangeText={(text) => update({ details: { ...draft.details, height: text } })}
+            maxLength={40}
+          />
           {(
             [
               ['appearance', 'Aparência', 4000],

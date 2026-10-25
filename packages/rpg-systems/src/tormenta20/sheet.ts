@@ -70,6 +70,7 @@ export const t20SheetSchema = z.object({
       size: z.enum(T20_SIZES).default('medio'),
       /** Deslocamento em metros. */
       speed: z.number().min(0).max(120).default(9),
+      height: text(40),
       appearance: text(4000),
       personality: text(4000),
       history: text(8000),

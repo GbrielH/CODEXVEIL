@@ -333,6 +333,7 @@ export type Database = {
           campaign_id: string;
           created_at: string;
           id: string;
+          image_path: string | null;
           is_pinned: boolean;
           title: string;
           updated_at: string;
@@ -345,6 +346,7 @@ export type Database = {
           campaign_id: string;
           created_at?: string;
           id?: string;
+          image_path?: string | null;
           is_pinned?: boolean;
           title: string;
           updated_at?: string;
@@ -357,6 +359,7 @@ export type Database = {
           campaign_id?: string;
           created_at?: string;
           id?: string;
+          image_path?: string | null;
           is_pinned?: boolean;
           title?: string;
           updated_at?: string;
@@ -1736,6 +1739,7 @@ export type Database = {
       sessions: {
         Row: {
           campaign_id: string;
+          cover_path: string | null;
           created_at: string;
           created_by: string | null;
           id: string;
@@ -1752,6 +1756,7 @@ export type Database = {
         };
         Insert: {
           campaign_id: string;
+          cover_path?: string | null;
           created_at?: string;
           created_by?: string | null;
           id?: string;
@@ -1768,6 +1773,7 @@ export type Database = {
         };
         Update: {
           campaign_id?: string;
+          cover_path?: string | null;
           created_at?: string;
           created_by?: string | null;
           id?: string;

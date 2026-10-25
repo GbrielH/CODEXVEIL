@@ -13,6 +13,7 @@ import { CreatureEditor } from '@/components/library/creature-editor';
 import { StatBlockView } from '@/components/library/stat-block-view';
 import { Badge } from '@/components/ui/badge';
 import { Alert } from '@/components/ui/alert';
+import { ZoomableImage } from '@/components/ui/zoomable-image';
 import { loadCampaignOrNotFound } from '@/lib/campaigns';
 import { campaignPath } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -75,8 +76,7 @@ export default async function CreaturePage({ params }: Props) {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <span className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-parchment-400/30 bg-wine-950 text-parchment-300 shadow-card">
           {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <ZoomableImage
               src={imageUrl}
               alt={`Imagem de ${creature.name}`}
               className="h-full w-full object-cover"

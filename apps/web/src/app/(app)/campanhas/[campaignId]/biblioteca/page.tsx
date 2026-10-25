@@ -1,4 +1,5 @@
 import { listCreatures, signedMediaUrls, type CreatureSummary } from '@codexveil/database';
+import { ZoomableImage } from '@/components/ui/zoomable-image';
 import { creatureKindLabels } from '@codexveil/validation';
 import { BookOpen, EyeOff, Skull, UserRound } from 'lucide-react';
 import type { Metadata, Route } from 'next';
@@ -34,8 +35,11 @@ function CreatureCard({ creature, imageUrl, campaignId, isGm, canManage }: Creat
       >
         <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-line bg-wine-950 text-parchment-300">
           {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+            <ZoomableImage
+              src={imageUrl}
+              alt={creature.name}
+              className="h-full w-full object-cover"
+            />
           ) : creature.kind === 'npc' ? (
             <UserRound className="h-7 w-7" aria-hidden="true" />
           ) : (
@@ -43,8 +47,12 @@ function CreatureCard({ creature, imageUrl, campaignId, isGm, canManage }: Creat
           )}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-display text-lg text-fg-accent">{creature.name}</span>
-          {creature.subtitle ? <span className="block truncate text-sm text-fg-secondary">{creature.subtitle}</span> : null}
+          <span className="block truncate font-display text-lg text-fg-accent">
+            {creature.name}
+          </span>
+          {creature.subtitle ? (
+            <span className="block truncate text-sm text-fg-secondary">{creature.subtitle}</span>
+          ) : null}
           <span className="mt-1 flex flex-wrap gap-1.5">
             <Badge tone="neutral">{creatureKindLabels[creature.kind]}</Badge>
             {isGm && creature.visibility === 'gm' ? (
@@ -57,20 +65,30 @@ function CreatureCard({ creature, imageUrl, campaignId, isGm, canManage }: Creat
       </Link>
       {canManage ? (
         <div className="shrink-0 p-2">
-          <VisibilityToggle creatureId={creature.id} name={creature.name} visibility={creature.visibility} />
+          <VisibilityToggle
+            creatureId={creature.id}
+            name={creature.name}
+            visibility={creature.visibility}
+          />
         </div>
       ) : null}
     </div>
   );
 }
 
-export default async function LibraryPage({ params, searchParams }: PageProps<'/campanhas/[campaignId]/biblioteca'>) {
+export default async function LibraryPage({
+  params,
+  searchParams,
+}: PageProps<'/campanhas/[campaignId]/biblioteca'>) {
   const [{ campaignId }, query] = await Promise.all([params, searchParams]);
   const { campaign } = await loadCampaignOrNotFound(campaignId);
   const kind = query.tipo === 'monstros' ? 'monster' : query.tipo === 'npcs' ? 'npc' : undefined;
   const supabase = await createSupabaseServerClient();
   const creatures = await listCreatures(supabase, campaign.id, kind);
-  const images = await signedMediaUrls(supabase, creatures.map((creature) => creature.imagePath));
+  const images = await signedMediaUrls(
+    supabase,
+    creatures.map((creature) => creature.imagePath),
+  );
   const isGm = campaign.role === 'gm';
   const canManage = isGm && campaign.status === 'active';
 
@@ -79,9 +97,16 @@ export default async function LibraryPage({ params, searchParams }: PageProps<'/
       <Notice value={query.aviso} />
       <div className={canManage ? 'grid gap-6 lg:grid-cols-[1fr_20rem]' : 'flex flex-col gap-6'}>
         <section aria-label="Registros da biblioteca" className="flex flex-col gap-4">
-          <LibraryNav campaignId={campaign.id} active={kind ?? 'all'} isGm={isGm} systemId={campaign.systemId} />
+          <LibraryNav
+            campaignId={campaign.id}
+            active={kind ?? 'all'}
+            isGm={isGm}
+            systemId={campaign.systemId}
+          />
           {!isGm ? (
-            <p className="text-sm text-fg-muted">Personagens e criaturas que o mestre já revelou ao grupo.</p>
+            <p className="text-sm text-fg-muted">
+              Personagens e criaturas que o mestre já revelou ao grupo.
+            </p>
           ) : null}
           {creatures.length === 0 ? (
             <EmptyState
@@ -112,8 +137,15 @@ export default async function LibraryPage({ params, searchParams }: PageProps<'/
         {canManage ? (
           <aside>
             <Card ornate>
-              <CardHeader title="Novo registro" description="Estatísticas e segredos são preenchidos na página do registro." />
-              <NewCreatureForm campaignId={campaign.id} systemId={campaign.systemId} defaultKind={kind ?? 'npc'} />
+              <CardHeader
+                title="Novo registro"
+                description="Estatísticas e segredos são preenchidos na página do registro."
+              />
+              <NewCreatureForm
+                campaignId={campaign.id}
+                systemId={campaign.systemId}
+                defaultKind={kind ?? 'npc'}
+              />
             </Card>
           </aside>
         ) : null}

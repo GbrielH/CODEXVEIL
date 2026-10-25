@@ -552,6 +552,26 @@ de segurança).
 
 ## Histórico
 
+### 2026-10-25 (tarde) — dados, ficha, sessão, anotações e biblioteca
+
+- [x] Dados 3D: cada rolagem fica 12 s na mesa e some sozinha; a rolagem de outra pessoa não apaga
+      a sua (`dice-scene.ts`, `throwDice` com `add`); voltar à aba Dados não rola de novo as
+      rolagens antigas; o "Crítico!" espera os dados da mesa grande pararem.
+- [x] "Rolar dados": "Para quê" virou "Selecionar perícia" (bônus da ficha somado: D&D e T20).
+- [x] Altura obrigatória na criação (D&D e T20, site e app; `details.height`/`height`).
+- [x] Aba Sessão: aviso "Novo" quando o mestre libera um trecho e o jogador está em outra aba.
+- [x] Ficha D&D, Combate: números nas notas da CA; proficiência, PV máximos e dados de vida,
+      Percepção passiva (Intuição/Investigação) e CD/ataque de magia. (Os cálculos conferidos no
+      anexo estavam certos; se algum número ainda parecer errado, o responsável aponta qual.)
+- [x] Anotações com imagem (uma por anotação; só o autor envia; leitura pela visibilidade da
+      anotação). Migração `20261025120000_note_images.sql`.
+- [x] Foto de NPC/monstro abre em tela cheia ao clicar (lista e ficha da biblioteca).
+- [x] Capa da sessão: o mestre envia no editor do roteiro; aparece no topo da sessão (jogadores
+      veem nas sessões publicadas). Migração `20261025130000_session_covers.sql`.
+- [x] Chat do Tomo sem salvar: só na memória (fecha ao recarregar).
+- [ ] **Futuro (pedido de 2026-10-25, não fazer ainda):** aba "Dados" no perfil para o usuário
+      enviar a imagem (textura) dos próprios dados e escolher a cor do número.
+
 ### 2026-10-25 — regras opcionais automatizadas (pedido: itens 1, 2 e 4)
 
 - [x] **Características opcionais de classe (Tasha):** 43 lidas do livro (`scripts/books/class_options.py`,

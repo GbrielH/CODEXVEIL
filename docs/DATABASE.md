@@ -24,6 +24,8 @@ em [`SECURITY.md`](SECURITY.md).
 | `20261024120000_book_content_dedupe.sql` | Livros com conteúdo idêntico guardam as entradas uma vez só (`content_hash`, `content_pack_id`, `finish_book_import`) |
 | `20261025100000_character_drafts.sql` | `character_drafts`: criação de personagem salva incompleta (só o dono; até 20) |
 | `20261025110000_book_tables_class_options.sql` | Tipos de entrada `class_option` (Tasha; jogadores leem) e `table` (tabelas de tesouro do T20; só o mestre) |
+| `20261025120000_note_images.sql` | `campaign_notes.image_path` e imagens das anotações no `campaign-media` (só o autor envia; leitura pela visibilidade) |
+| `20261025130000_session_covers.sql` | `sessions.cover_path`: capa da sessão (jogadores veem nas publicadas) |
 
 | Arquivo                                       | Conteúdo                                                                                                                                                                                                                    |
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

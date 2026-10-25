@@ -166,23 +166,27 @@ export function computeDnd5eCombat(
       warnings.push(`${armor.name} exige Força ${armor.strength}: deslocamento −3 m.`);
   } else {
     // Sem armadura: 10 + Des, ou a melhor Defesa sem Armadura da classe.
+    const signed = (value: number) => (value >= 0 ? `+${value}` : `${value}`);
     const options: { value: number; label: string }[] = [
-      { value: 10 + mod('dex'), label: `Sem armadura: 10 + Des ${mod('dex')}` },
+      {
+        value: 10 + mod('dex'),
+        label: `Sem armadura: 10 + Des ${signed(mod('dex'))} = ${10 + mod('dex')}`,
+      },
     ];
     if (classLevel(sheet, 'Bárbaro', 'Barbarian') > 0)
       options.push({
         value: 10 + mod('dex') + mod('con'),
-        label: `Defesa sem Armadura (Bárbaro): 10 + Des + Con`,
+        label: `Defesa sem Armadura (Bárbaro): 10 + Des ${signed(mod('dex'))} + Con ${signed(mod('con'))}`,
       });
     if (classLevel(sheet, 'Monge', 'Monk') > 0 && !shield)
       options.push({
         value: 10 + mod('dex') + mod('wis'),
-        label: `Defesa sem Armadura (Monge): 10 + Des + Sab`,
+        label: `Defesa sem Armadura (Monge): 10 + Des ${signed(mod('dex'))} + Sab ${signed(mod('wis'))}`,
       });
     if (hasSubclass(sheet, 'dracon'))
       options.push({
         value: 10 + mod('dex') + mod('cha'),
-        label: `Resiliência Dracônica: 10 + Des + Car`,
+        label: `Resiliência Dracônica: 10 + Des ${signed(mod('dex'))} + Car ${signed(mod('cha'))}`,
       });
     const best = options.reduce((top, option) => (option.value > top.value ? option : top));
     armorClass = best.value;

@@ -284,9 +284,12 @@ export function RollButton({
 export function DicePanel({
   isGm,
   characterName,
+  skills = [],
 }: {
   isGm: boolean;
   characterName?: string | null;
+  /** Perícias da ficha com o bônus somado: escolher uma monta "1d20+bônus" sozinho. */
+  skills?: { label: string; bonus: number }[];
 }) {
   const dice = useDice();
   const id = useId();
@@ -355,16 +358,39 @@ export function DicePanel({
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor={`${id}-label`} className="text-sm font-medium">
-              Para quê <span className="font-normal text-fg-muted">(opcional)</span>
+              {skills.length ? 'Selecionar perícia' : 'Para quê'}{' '}
+              <span className="font-normal text-fg-muted">(opcional)</span>
             </label>
-            <input
-              id={`${id}-label`}
-              value={label}
-              maxLength={80}
-              onChange={(event) => setLabel(event.target.value)}
-              placeholder="Ex.: Percepção, Ataque com espada"
-              className={controlClasses(false, 'h-11 text-sm')}
-            />
+            {skills.length ? (
+              <select
+                id={`${id}-label`}
+                value={skills.some((skill) => skill.label === label) ? label : ''}
+                onChange={(event) => {
+                  const skill = skills.find((entry) => entry.label === event.target.value);
+                  setLabel(skill?.label ?? '');
+                  // A perícia já soma o bônus da ficha: 1d20 + atributo + treino/proficiência.
+                  if (skill) setExpression(`1d20${skill.bonus >= 0 ? '+' : ''}${skill.bonus}`);
+                }}
+                className={controlClasses(false, 'h-11 text-sm')}
+              >
+                <option value="">Nenhuma (rolagem livre)</option>
+                {skills.map((skill) => (
+                  <option key={skill.label} value={skill.label}>
+                    {skill.label} ({skill.bonus >= 0 ? '+' : ''}
+                    {skill.bonus})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                id={`${id}-label`}
+                value={label}
+                maxLength={80}
+                onChange={(event) => setLabel(event.target.value)}
+                placeholder="Ex.: Percepção, Ataque com espada"
+                className={controlClasses(false, 'h-11 text-sm')}
+              />
+            )}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Vantagem">

@@ -822,6 +822,15 @@ export function T20CreationWizard({ campaign, sources, remoteDraft = null }: T20
 
           {step === 'detalhes' ? (
             <div className="flex flex-col gap-4">
+              <TextField
+                id="t20-height"
+                label="Altura"
+                hint="Obrigatória. Ex.: 1,75 m."
+                maxLength={40}
+                value={draft.height}
+                error={errorFor('height')}
+                onChange={(event) => update({ height: event.target.value })}
+              />
               <TextareaField
                 id="t20-appearance"
                 label="Aparência"

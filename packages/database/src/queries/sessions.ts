@@ -34,6 +34,8 @@ export interface SessionSummary {
   /** Presencial ou online (online sempre usa dados virtuais). */
   mode: 'presencial' | 'online';
   updatedAt: string;
+  /** Capa da sessão no bucket `campaign-media`. */
+  coverPath: string | null;
 }
 
 export interface SessionDetail extends SessionSummary {
@@ -49,7 +51,7 @@ export const sessionStatusLabels: Record<SessionStatus, string> = {
 };
 
 const SESSION_COLUMNS =
-  'id, campaign_id, number, title, scheduled_at, status, is_published, physical_dice, mode, recap, version, created_at, updated_at' as const;
+  'id, campaign_id, number, title, scheduled_at, status, is_published, physical_dice, mode, recap, version, created_at, updated_at, cover_path' as const;
 
 type SessionRow = Pick<
   Tables<'sessions'>,
@@ -66,6 +68,7 @@ type SessionRow = Pick<
   | 'version'
   | 'created_at'
   | 'updated_at'
+  | 'cover_path'
 >;
 
 function toSessionDetail(row: SessionRow): SessionDetail {
@@ -83,6 +86,7 @@ function toSessionDetail(row: SessionRow): SessionDetail {
     version: row.version,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    coverPath: row.cover_path,
   };
 }
 
@@ -485,8 +489,17 @@ export async function listCampaignAttendance(
 }
 
 /** O usuário responde se vai à sessão agendada (cria ou muda a resposta; validado no banco). */
-export async function setMyAttendance(client: CodexveilClient, sessionId: string, _campaignId: string, _userId: string, status: AttendanceStatus): Promise<void> {
-  const { error } = await client.rpc('set_my_attendance', { p_session_id: sessionId, p_status: status });
+export async function setMyAttendance(
+  client: CodexveilClient,
+  sessionId: string,
+  _campaignId: string,
+  _userId: string,
+  status: AttendanceStatus,
+): Promise<void> {
+  const { error } = await client.rpc('set_my_attendance', {
+    p_session_id: sessionId,
+    p_status: status,
+  });
   if (error) throw toAppError(error);
 }
 
@@ -506,4 +519,19 @@ export async function listMyAttendance(
   const result: Record<string, AttendanceStatus> = {};
   for (const row of data ?? []) result[row.session_id] = row.status === 'yes' ? 'yes' : 'no';
   return result;
+}
+
+/** Troca (ou tira, com `null`) a capa da sessão; só o mestre consegue. */
+export async function setSessionCover(
+  client: CodexveilClient,
+  sessionId: string,
+  coverPath: string | null,
+): Promise<void> {
+  const { data, error } = await client
+    .from('sessions')
+    .update({ cover_path: coverPath })
+    .eq('id', sessionId)
+    .select('id');
+  if (error) throw toAppError(error);
+  if (data.length === 0) throw new AppError('forbidden');
 }

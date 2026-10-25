@@ -533,6 +533,14 @@ export function DetailsFields({
   const id = useId();
   return (
     <div className="grid gap-4 md:grid-cols-2">
+      <TextField
+        id={`${id}-height`}
+        label="Altura"
+        hint="Obrigatória. Ex.: 1,75 m."
+        maxLength={40}
+        value={draft.details.height}
+        onChange={(event) => onChange({ ...draft.details, height: event.target.value })}
+      />
       {DETAIL_FIELDS.map((field) => (
         <TextareaField
           key={field.key}

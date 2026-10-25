@@ -306,9 +306,10 @@ function SkillsTable() {
 }
 
 function CombatBasics() {
-  const { sheet, derived, updateSheet, permissions } = useSheet();
+  const { sheet, derived, updateSheet, permissions, resources } = useSheet();
   const id = useId();
   const unit = sheet.combat.speedUnit;
+  const hp = resources.find((resource) => resource.key === DND5E_RESOURCE_KEYS.hitPoints);
   const stats = [
     {
       label: 'Classe de armadura',
@@ -330,6 +331,38 @@ function CombatBasics() {
       value: `${derived.speed.toLocaleString('pt-BR')} ${unit}`,
       notes: derived.speedNotes,
     },
+    {
+      label: 'Bônus de proficiência',
+      value: formatModifier(derived.proficiencyBonus),
+      notes: [`Nível ${derived.level}`],
+    },
+    {
+      label: 'Pontos de vida máximos',
+      value: String(hp?.max ?? '—'),
+      notes: [
+        `Dados de vida: ${
+          Object.entries(derived.hitDice)
+            .filter(([, count]) => count > 0)
+            .map(([die, count]) => `${count}${die}`)
+            .join(' + ') || '—'
+        }`,
+        `Constituição ${formatModifier(derived.abilityModifiers.con)} por nível`,
+      ],
+    },
+    {
+      label: 'Percepção passiva',
+      value: String(derived.passivePerception),
+      notes: [`Intuição ${derived.passiveInsight} · Investigação ${derived.passiveInvestigation}`],
+    },
+    ...(derived.spellcasting
+      ? [
+          {
+            label: 'Magia',
+            value: `CD ${derived.spellcasting.saveDc}`,
+            notes: [`Ataque mágico ${formatModifier(derived.spellcasting.attackBonus)}`],
+          },
+        ]
+      : []),
   ];
   return (
     <Card>

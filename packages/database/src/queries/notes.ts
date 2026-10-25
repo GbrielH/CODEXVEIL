@@ -18,10 +18,12 @@ export interface CampaignNote {
   isPinned: boolean;
   version: number;
   updatedAt: string;
+  /** Imagem da anotação no bucket `campaign-media`. */
+  imagePath: string | null;
 }
 
 const NOTE_COLUMNS =
-  'id, campaign_id, author_id, title, body, visibility, is_pinned, version, updated_at, author:profiles(display_name)' as const;
+  'id, campaign_id, author_id, title, body, visibility, is_pinned, version, updated_at, image_path, author:profiles(display_name)' as const;
 
 export async function listCampaignNotes(
   client: CodexveilClient,
@@ -47,6 +49,7 @@ export async function listCampaignNotes(
     isPinned: row.is_pinned,
     version: row.version,
     updatedAt: row.updated_at,
+    imagePath: row.image_path,
   }));
 }
 
@@ -104,7 +107,11 @@ export async function updateCampaignNote(
 }
 
 export async function deleteCampaignNote(client: CodexveilClient, noteId: string): Promise<void> {
-  const { data, error } = await client.from('campaign_notes').delete().eq('id', noteId).select('id');
+  const { data, error } = await client
+    .from('campaign_notes')
+    .delete()
+    .eq('id', noteId)
+    .select('id');
   if (error) throw toAppError(error);
   if (data.length === 0) throw new AppError('forbidden');
 }
@@ -113,7 +120,12 @@ export async function deleteCampaignNote(client: CodexveilClient, noteId: string
  * Fixa (ou desfixa) a anotação. Cada pessoa fixa uma por campanha: a fixada antes por quem
  * fixa é desfixada primeiro.
  */
-export async function setCampaignNotePinned(client: CodexveilClient, note: CampaignNote, userId: string, pinned: boolean): Promise<void> {
+export async function setCampaignNotePinned(
+  client: CodexveilClient,
+  note: CampaignNote,
+  userId: string,
+  pinned: boolean,
+): Promise<void> {
   if (pinned) {
     const { error } = await client
       .from('campaign_notes')
@@ -123,7 +135,31 @@ export async function setCampaignNotePinned(client: CodexveilClient, note: Campa
       .eq('is_pinned', true);
     if (error) throw toAppError(error);
   }
-  const { data, error } = await client.from('campaign_notes').update({ is_pinned: pinned }).eq('id', note.id).select('id');
+  const { data, error } = await client
+    .from('campaign_notes')
+    .update({ is_pinned: pinned })
+    .eq('id', note.id)
+    .select('id');
+  if (error) throw toAppError(error);
+  if (data.length === 0) throw new AppError('forbidden');
+}
+
+/** Caminho da imagem de uma anotação no bucket `campaign-media` (formato exigido pelas policies). */
+export function noteImagePath(campaignId: string, noteId: string, fileName: string): string {
+  return `campaigns/${campaignId}/notes/${noteId}/${fileName}`;
+}
+
+/** Troca (ou tira, com `null`) a imagem da anotação; só o autor consegue. */
+export async function setCampaignNoteImage(
+  client: CodexveilClient,
+  noteId: string,
+  imagePath: string | null,
+): Promise<void> {
+  const { data, error } = await client
+    .from('campaign_notes')
+    .update({ image_path: imagePath })
+    .eq('id', noteId)
+    .select('id');
   if (error) throw toAppError(error);
   if (data.length === 0) throw new AppError('forbidden');
 }

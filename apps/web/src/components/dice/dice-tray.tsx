@@ -10,7 +10,25 @@ import { cx } from '@/lib/cx';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
 import { DICE_COLORS, DiceColorPalette, DieIcon, useCampaignColors } from './campaign-colors';
+import { TABLE_SETTLED_EVENT, throwDice } from './dice-scene';
 import type { ShownRoll } from './dice-roller';
+
+/** Espera a mesa grande avisar que os dados desta rolagem pararam (até 10 s). */
+function tableSettled(key: string): Promise<void> {
+  return new Promise((resolve) => {
+    const done = (event: Event) => {
+      if ((event as CustomEvent<string>).detail !== key) return;
+      document.removeEventListener(TABLE_SETTLED_EVENT, done);
+      window.clearTimeout(timer);
+      resolve();
+    };
+    const timer = window.setTimeout(() => {
+      document.removeEventListener(TABLE_SETTLED_EVENT, done);
+      resolve();
+    }, 10_000);
+    document.addEventListener(TABLE_SETTLED_EVENT, done);
+  });
+}
 
 const subscribeNothing = () => () => undefined;
 
@@ -97,6 +115,7 @@ export function DiceTray({
   });
   const [ready, setReady] = useState(false);
   const [last, setLast] = useState<TrayRoll | null>(null);
+  const [mountedAt] = useState(() => Date.now());
   const [picking, setPicking] = useState(false);
   const [rolling, setRolling] = useState<TrayRoll | null>(null);
   // A caixinha vai para o <body> (portal): dentro do <main>, a animação de entrada (transform) fazia o
@@ -159,12 +178,16 @@ export function DiceTray({
               material: 'plastic',
             },
           });
-          await box.roll(text);
+          await throwDice(box, text);
         } catch (error) {
           console.error('[codexveil] falha ao rolar os dados 3D', error);
         }
         setRolling(null);
       }
+      // Com a mesa grande aberta (aba Dados), o resultado e o "Crítico!" esperam os dados de lá
+      // pararem; sem ela, saem quando os desta caixinha param.
+      if (!next.secret && document.documentElement.dataset.diceTable === 'on')
+        await tableSettled(next.key);
       setLast(next);
     }
     running.current = false;
@@ -194,7 +217,7 @@ export function DiceTray({
       void getSupabaseBrowserClient()
         .from('dice_rolls')
         .select(
-          'id, user_id, roller_name, label, dice, total, expression, mode, modifier, visibility',
+          'id, user_id, roller_name, label, dice, total, expression, mode, modifier, visibility, created_at',
         )
         .eq('campaign_id', campaignId)
         .order('created_at', { ascending: false })
@@ -202,6 +225,8 @@ export function DiceTray({
         .then(({ data }) => {
           const row = data?.[0];
           if (!row || row.user_id === userId) return;
+          // Rolagem de antes de abrir a página: não rola de novo.
+          if (new Date(row.created_at).getTime() < mountedAt - 2000) return;
           enqueue({
             key: row.id,
             userId: row.user_id,

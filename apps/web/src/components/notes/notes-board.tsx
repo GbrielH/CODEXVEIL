@@ -1,7 +1,10 @@
 'use client';
 
 import {
+  CAMPAIGN_MEDIA_BUCKET,
   createCampaignNote,
+  noteImagePath,
+  setCampaignNoteImage,
   deleteCampaignNote,
   setCampaignNotePinned,
   updateCampaignNote,
@@ -13,7 +16,12 @@ import {
   visibilityLabels,
   type ContentVisibility,
 } from '@codexveil/domain';
-import { fieldErrorsFrom, noteSchema, type FieldErrors } from '@codexveil/validation';
+import {
+  IMAGE_EXTENSIONS,
+  fieldErrorsFrom,
+  noteSchema,
+  type FieldErrors,
+} from '@codexveil/validation';
 import {
   Globe,
   Lock,
@@ -38,10 +46,13 @@ import { failureMessage } from '@/lib/client-errors';
 import { cx } from '@/lib/cx';
 import { formatRelative } from '@/lib/format';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { prepareImage } from '@/lib/images';
 
 interface NotesBoardProps {
   campaignId: string;
   notes: CampaignNote[];
+  /** URLs assinadas das imagens das anotações (caminho → URL). */
+  images?: Record<string, string>;
   currentUserId: string;
   isGm: boolean;
   canWrite: boolean;
@@ -54,7 +65,14 @@ const visibilityIcons: Record<ContentVisibility, ReactNode> = {
 };
 
 /** Mural de anotações. O banco só entrega as notas que o usuário pode ver. */
-export function NotesBoard({ campaignId, notes, currentUserId, isGm, canWrite }: NotesBoardProps) {
+export function NotesBoard({
+  campaignId,
+  notes,
+  images = {},
+  currentUserId,
+  isGm,
+  canWrite,
+}: NotesBoardProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [editing, setEditing] = useState<CampaignNote | 'new' | null>(null);
@@ -171,6 +189,15 @@ export function NotesBoard({ campaignId, notes, currentUserId, isGm, canWrite }:
                     />
                   ) : null}
                 </div>
+                {note.imagePath && images[note.imagePath] ? (
+                  // URL assinada e temporária do Storage privado.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={images[note.imagePath]}
+                    alt=""
+                    className="mt-2 max-h-64 w-full rounded-md border border-line object-contain"
+                  />
+                ) : null}
                 {note.body ? (
                   <p className="mt-2 line-clamp-[12] whitespace-pre-line font-serif leading-relaxed text-ink">
                     {note.body}
@@ -253,10 +280,15 @@ function NoteFormModal({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
   const [openedFor, setOpenedFor] = useState<CampaignNote | 'new' | null>(null);
+  /** Imagem escolhida (enviada ao salvar) ou pedido de tirar a atual. */
+  const [image, setImage] = useState<File | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
 
   if (note !== openedFor) {
     setOpenedFor(note);
     setErrors({});
+    setImage(null);
+    setRemoveImage(false);
     setForm(
       note && note !== 'new'
         ? {
@@ -278,8 +310,29 @@ function NoteFormModal({
     setBusy(true);
     const client = getSupabaseBrowserClient();
     try {
-      if (isNew || !note) await createCampaignNote(client, campaignId, parsed.data);
-      else await updateCampaignNote(client, note.id, note.version, parsed.data);
+      const noteId =
+        isNew || !note
+          ? await createCampaignNote(client, campaignId, parsed.data)
+          : (await updateCampaignNote(client, note.id, note.version, parsed.data), note.id);
+      const previous = note && note !== 'new' ? note.imagePath : null;
+      if (image) {
+        const prepared = await prepareImage(image, 'creature');
+        if (!prepared.ok) throw new Error(prepared.message);
+        const path = noteImagePath(
+          campaignId,
+          noteId,
+          `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`,
+        );
+        const { error } = await client.storage
+          .from(CAMPAIGN_MEDIA_BUCKET)
+          .upload(path, prepared.file, { contentType: prepared.mimeType, upsert: false });
+        if (error) throw error;
+        await setCampaignNoteImage(client, noteId, path);
+        if (previous) await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([previous]);
+      } else if (removeImage && previous) {
+        await setCampaignNoteImage(client, noteId, null);
+        await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([previous]);
+      }
       toast({ tone: 'success', title: isNew ? 'Anotação criada.' : 'Anotação salva.' });
       onClose();
       router.refresh();
@@ -329,6 +382,31 @@ function NoteFormModal({
           onChange={(event) => setForm((current) => ({ ...current, body: event.target.value }))}
           error={errors.body}
         />
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium text-fg">Imagem (opcional)</span>
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={(event) => {
+              setImage(event.target.files?.[0] ?? null);
+              setRemoveImage(false);
+            }}
+            className="text-sm text-fg-secondary file:mr-3 file:rounded-md file:border file:border-line file:bg-raised file:px-3 file:py-1.5 file:text-fg"
+          />
+          {note && note !== 'new' && note.imagePath && !image ? (
+            <label className="flex items-center gap-2 text-xs text-fg-muted">
+              <input
+                type="checkbox"
+                checked={removeImage}
+                onChange={(event) => setRemoveImage(event.target.checked)}
+              />
+              Tirar a imagem atual
+            </label>
+          ) : null}
+          <span className="text-xs text-fg-muted">
+            PNG, JPG ou WebP; a imagem é reduzida antes do envio.
+          </span>
+        </div>
         <SelectField
           id={`${id}-visibility`}
           label="Quem pode ler"

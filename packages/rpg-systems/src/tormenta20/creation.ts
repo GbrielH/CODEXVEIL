@@ -127,6 +127,8 @@ export interface T20Draft {
   equipment: { simple: string; martial: string; armor: string; shield: boolean };
   /** Dinheiro inicial (4d6 rolado no 1º nível). */
   money: number | null;
+  /** Altura do personagem (ex.: "1,75 m"); pedida na criação. */
+  height: string;
   appearance: string;
   personality: string;
   history: string;
@@ -175,6 +177,7 @@ export function createT20Draft(level = 1, method: T20AttributeMethodChoice = 'po
     spellIds: [],
     equipment: { simple: '', martial: '', armor: '', shield: false },
     money: null,
+    height: '',
     appearance: '',
     personality: '',
     history: '',
@@ -665,6 +668,7 @@ export function t20DraftIssues(
     issues.push({ step, path, message });
 
   if (!draft.name.trim()) add('inicio', 'name', 'Dê um nome ao personagem.');
+  if (!draft.height.trim()) add('detalhes', 'height', 'Informe a altura do personagem.');
   if (context.allowedMethods && !context.allowedMethods.includes(draft.attributeMethod))
     add('atributos', 'attributeMethod', 'O mestre não liberou este método de atributos.');
 
@@ -1077,6 +1081,7 @@ export function buildT20Character(
       classes: klass ? [{ key: klass.id, name: klass.name, level: draft.level }] : [],
       size: race?.size ?? 'medio',
       speed: Math.max(0, (race?.speed ?? 9) - (heavy ? 3 : 0)),
+      height: draft.height,
       appearance: draft.appearance,
       personality: draft.personality,
       history: draft.history,
@@ -1373,6 +1378,7 @@ const t20DraftSchema = z.object({
     })
     .catch({ simple: '', martial: '', armor: '', shield: false }),
   money: z.number().int().min(4).max(24).nullable().catch(null),
+  height: shortText(40),
   appearance: shortText(4000),
   personality: shortText(4000),
   history: shortText(20000),

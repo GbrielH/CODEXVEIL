@@ -22,39 +22,23 @@ interface ChatMessage {
 const MASCOT_NAME = 'Tomo';
 
 /*
- * Estado do chat fora dos componentes e guardado na sessão do navegador: mudar de aba, de página
- * ou recarregar não fecha o painel nem apaga a conversa.
+ * Estado do chat fora dos componentes (só na memória): mudar de aba ou de página não fecha o
+ * painel nem apaga a conversa; recarregar ou fechar a página começa do zero (nada fica salvo).
  */
 interface AssistantState {
   open: boolean;
   messages: ChatMessage[];
 }
-const STORE_KEY = 'codexveil:tomo';
 const EMPTY: AssistantState = { open: false, messages: [] };
 let state: AssistantState = EMPTY;
-let loaded = false;
 const listeners = new Set<() => void>();
 
 function readState(): AssistantState {
-  if (!loaded && typeof window !== 'undefined') {
-    loaded = true;
-    try {
-      const stored = window.sessionStorage.getItem(STORE_KEY);
-      if (stored) state = { ...EMPTY, ...(JSON.parse(stored) as Partial<AssistantState>) };
-    } catch {
-      // Sem armazenamento: o chat vale só enquanto a página estiver aberta.
-    }
-  }
   return state;
 }
 
 function setState(update: (current: AssistantState) => AssistantState) {
-  state = update(readState());
-  try {
-    window.sessionStorage.setItem(STORE_KEY, JSON.stringify(state));
-  } catch {
-    // Idem.
-  }
+  state = update(state);
   for (const listener of listeners) listener();
 }
 

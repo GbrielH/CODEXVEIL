@@ -274,6 +274,7 @@ describe('conteúdo dos livros nas regras', () => {
       speciesId: 'livro-teste:povo-teste',
       backgroundId: 'livro-teste:testador',
       alignment: 'neutral_good',
+      details: { height: '1,70 m' },
       abilityMethod: 'standard_array',
       baseScores: { str: 8, dex: 14, con: 13, int: 15, wis: 12, cha: 10 },
       selections: {

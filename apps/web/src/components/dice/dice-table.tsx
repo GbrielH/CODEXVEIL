@@ -7,6 +7,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
 import { DICE_COLORS, useCampaignColors } from './campaign-colors';
+import { TABLE_SETTLED_EVENT, throwDice } from './dice-scene';
 import { diceNotation, textColorFor, type TrayRoll } from './dice-tray';
 
 const DEFAULT_COLOR = DICE_COLORS[0]!.hex;
@@ -22,9 +23,18 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
   const queue = useRef<TrayRoll[]>([]);
   const running = useRef(false);
   const seen = useRef(new Set<string>());
+  const [mountedAt] = useState(() => ({ current: Date.now() }));
   const [current, setCurrent] = useState<TrayRoll | null>(null);
   const [last, setLast] = useState<TrayRoll | null>(null);
   const [unavailable, setUnavailable] = useState(false);
+
+  // Marca a página: a caixinha de dados espera esta mesa antes de mostrar o resultado.
+  useEffect(() => {
+    document.documentElement.dataset.diceTable = 'on';
+    return () => {
+      delete document.documentElement.dataset.diceTable;
+    };
+  }, []);
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -77,13 +87,14 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
               material: 'plastic',
             },
           });
-          await box.roll(text);
+          await throwDice(box, text);
         } catch (error) {
           console.error('[codexveil] falha ao rolar na mesa', error);
         }
       }
       setCurrent(null);
       setLast(next);
+      document.dispatchEvent(new CustomEvent(TABLE_SETTLED_EVENT, { detail: next.key }));
     }
     running.current = false;
   }, [colors]);
@@ -95,7 +106,7 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
       void getSupabaseBrowserClient()
         .from('dice_rolls')
         .select(
-          'id, user_id, roller_name, label, dice, total, expression, mode, modifier, visibility',
+          'id, user_id, roller_name, label, dice, total, expression, mode, modifier, visibility, created_at',
         )
         .eq('campaign_id', campaignId)
         .order('created_at', { ascending: false })
@@ -104,6 +115,8 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
           const row = data?.[0];
           if (!row || row.visibility === 'gm' || seen.current.has(row.id)) return;
           seen.current.add(row.id);
+          // Rolagem de antes de abrir a aba: não rola de novo (só as novas caem na mesa).
+          if (new Date(row.created_at).getTime() < mountedAt.current - 2000) return;
           queue.current = [
             ...queue.current,
             {

@@ -102,6 +102,8 @@ export const dnd5eDraftSchema = z.object({
   sourcebooks: z.array(z.string().max(40)).max(80).default([]),
   details: z
     .object({
+      /** Altura do personagem (ex.: "1,75 m"); pedida na criação. */
+      height: text(40),
       appearance: text(4000),
       personality: text(4000),
       ideals: text(2000),

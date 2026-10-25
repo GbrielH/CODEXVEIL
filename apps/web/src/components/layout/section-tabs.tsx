@@ -3,6 +3,8 @@
 import type { Route } from 'next';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRealtimeRefresh } from '@/lib/use-realtime';
 import { cx } from '@/lib/cx';
 
 export interface SectionTab {
@@ -10,6 +12,34 @@ export interface SectionTab {
   label: string;
   /** Marca como ativa apenas na rota exata (para a aba "visão geral"). */
   exact?: boolean;
+  /** Aviso ao vivo: o mestre liberou algo na aba Sessão desta campanha (só para jogadores). */
+  sessionAlertCampaignId?: string;
+}
+
+/** Ponto de aviso na aba quando o mestre libera um trecho da sessão (some ao abrir a aba). */
+function SessionAlert({ campaignId, active }: { campaignId: string; active: boolean }) {
+  const [unseen, setUnseen] = useState(false);
+  const [mountedAt] = useState(() => Date.now());
+  useRealtimeRefresh(
+    `aviso-sessao:${campaignId}`,
+    [{ table: 'session_blocks', filter: `campaign_id=eq.${campaignId}` }],
+    () => {
+      // A assinatura também avisa ao conectar: só conta o que muda depois de abrir a página.
+      if (!active && Date.now() - mountedAt > 3000) setUnseen(true);
+    },
+  );
+  useEffect(() => {
+    if (!active) return;
+    const clear = window.setTimeout(() => setUnseen(false), 0);
+    return () => window.clearTimeout(clear);
+  }, [active]);
+  if (!unseen || active) return null;
+  return (
+    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-wine-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-wine-200">
+      <span className="h-2 w-2 animate-pulse rounded-full bg-wine-400" aria-hidden="true" />
+      Novo
+    </span>
+  );
 }
 
 /** Abas de navegação entre seções de uma página (rolam horizontalmente no celular). */
@@ -35,6 +65,9 @@ export function SectionTabs({ tabs, label }: { tabs: SectionTab[]; label: string
                 )}
               >
                 {tab.label}
+                {tab.sessionAlertCampaignId ? (
+                  <SessionAlert campaignId={tab.sessionAlertCampaignId} active={active} />
+                ) : null}
               </Link>
             </li>
           );

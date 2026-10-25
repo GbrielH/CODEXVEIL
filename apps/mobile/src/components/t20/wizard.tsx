@@ -866,6 +866,12 @@ export function T20MobileWizard({
       {step === 'detalhes' ? (
         <View style={{ gap: spacing[3] }}>
           <Field
+            label="Altura (ex.: 1,75 m)"
+            value={draft.height}
+            onChangeText={(height) => update({ height })}
+            maxLength={40}
+          />
+          <Field
             label="Aparência"
             multiline
             value={draft.appearance}
