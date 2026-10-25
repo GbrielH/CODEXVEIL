@@ -208,10 +208,17 @@ export function FeaturesTab({
                 if (list.length === 0) return null;
                 const title = FEATURE_GROUP_TITLES[kind] ?? abilityEntryKindLabels[kind];
                 return (
-                  <section key={kind} aria-label={title}>
-                    <h3 className="eyebrow mb-2 text-[11px]">
-                      {title} <span className="text-fg-muted">({list.length})</span>
-                    </h3>
+                  // Cada categoria se recolhe clicando no título.
+                  <details key={kind} open className="group/categoria">
+                    <summary className="mb-2 flex cursor-pointer list-none items-center gap-2 rounded-md py-1 select-none hover:text-fg [&::-webkit-details-marker]:hidden">
+                      <ChevronDown
+                        className="h-4 w-4 shrink-0 -rotate-90 text-fg-muted transition-transform group-open/categoria:rotate-0"
+                        aria-hidden="true"
+                      />
+                      <h3 className="eyebrow text-[11px]">
+                        {title} <span className="text-fg-muted">({list.length})</span>
+                      </h3>
+                    </summary>
                     <ul className="flex flex-col gap-2">
                       {list.map((feature) => (
                         <FeatureRow
@@ -221,7 +228,7 @@ export function FeaturesTab({
                         />
                       ))}
                     </ul>
-                  </section>
+                  </details>
                 );
               })}
             </div>
