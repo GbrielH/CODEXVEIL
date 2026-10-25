@@ -62,6 +62,15 @@ const FEATURE_KINDS: AbilityEntryKind[] = [
   'other',
 ];
 
+/** Títulos dos grupos de características, na ordem de `FEATURE_KINDS`. */
+const FEATURE_GROUP_TITLES: Partial<Record<AbilityEntryKind, string>> = {
+  class_feature: 'Habilidades de classe',
+  species_trait: 'Características de espécie',
+  feat: 'Talentos',
+  background_feature: 'Antecedente',
+  other: 'Outras',
+};
+
 /**
  * Habilidades e magias. Na ficha da campanha a lista se divide: a aba Jogo mostra só o que se usa
  * na mesa (`show="usable"`: custo de ação ou usos), e a aba Atributos, o restante (`show="passive"`).
@@ -193,15 +202,29 @@ export function FeaturesTab({
                 : 'Registre habilidades de classe, talentos e características de espécie.'}
             </p>
           ) : (
-            <ul className="flex flex-col gap-2">
-              {features.map((feature) => (
-                <FeatureRow
-                  key={feature.id}
-                  feature={feature}
-                  onEdit={() => setEditing({ entry: feature, kind: feature.kind })}
-                />
-              ))}
-            </ul>
+            <div className="flex flex-col gap-4">
+              {FEATURE_KINDS.map((kind) => {
+                const list = features.filter((feature) => feature.kind === kind);
+                if (list.length === 0) return null;
+                const title = FEATURE_GROUP_TITLES[kind] ?? abilityEntryKindLabels[kind];
+                return (
+                  <section key={kind} aria-label={title}>
+                    <h3 className="eyebrow mb-2 text-[11px]">
+                      {title} <span className="text-fg-muted">({list.length})</span>
+                    </h3>
+                    <ul className="flex flex-col gap-2">
+                      {list.map((feature) => (
+                        <FeatureRow
+                          key={feature.id}
+                          feature={feature}
+                          onEdit={() => setEditing({ entry: feature, kind: feature.kind })}
+                        />
+                      ))}
+                    </ul>
+                  </section>
+                );
+              })}
+            </div>
           )}
         </Card>
       ) : null}
@@ -218,10 +241,7 @@ function AttackRow({ attack, onEdit }: { attack: CharacterAbility; onEdit: () =>
   const bonus = formatModifier(resolved.toHit);
   return (
     <li className="flex items-center gap-3 py-2">
-      <RollButton
-        expression={d20Expression(resolved.toHit)}
-        label={`Ataque: ${attack.name}`}
-      >
+      <RollButton expression={d20Expression(resolved.toHit)} label={`Ataque: ${attack.name}`}>
         <span className="tabular block w-12 rounded-md border border-line-strong bg-raised py-1 text-center font-display text-lg text-fg-accent">
           {bonus}
         </span>
@@ -353,7 +373,6 @@ function FeatureRow({ feature, onEdit }: { feature: CharacterAbility; onEdit: ()
             className="flex min-w-0 flex-1 items-center gap-2 text-left"
           >
             <span className="truncate text-sm font-medium">{feature.name}</span>
-            <Badge tone="neutral">{abilityEntryKindLabels[feature.kind]}</Badge>
             <ChevronDown
               className={`ml-auto h-4 w-4 shrink-0 text-fg-muted transition-transform ${open ? 'rotate-180' : ''}`}
               aria-hidden="true"
