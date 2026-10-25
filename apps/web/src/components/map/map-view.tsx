@@ -1,9 +1,10 @@
 'use client';
 
-import { moveMyToken } from '@codexveil/database';
+import { addMyMapArea, clearMyMapAreas, moveMyToken } from '@codexveil/database';
 import { MAP_AREA_KINDS, type MapArea } from '@codexveil/domain';
 import { CircleDot, Expand, Map as MapIcon, MousePointer2, Ruler, Shrink, ZoomIn, ZoomOut } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { useCampaignColors } from '@/components/dice/campaign-colors';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { LiveBadge } from '@/components/ui/save-status';
@@ -21,12 +22,15 @@ export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: s
   const { map, tokens, imageUrl, tokenImages, tokenSpeeds, inCombat, layerUrls, loaded, live, reload, setData, track } = useMapData(campaignId, 'active');
   const [tool, setTool] = useState<MapTool>('move');
   const [areaKind, setAreaKind] = useState<MapArea['kind']>('circle');
+  // Áreas que não chegaram ao mapa (sem a função no banco ou erro): ficam só nesta tela.
   const [localAreas, setLocalAreas] = useState<MapArea[]>([]);
+  const userId = useCampaignColors()?.userId ?? null;
   const boardAreaRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { zoom, setZoom, fullscreen, toggleFullscreen } = useBoardViewport({ boardAreaRef, scrollRef, cols: map?.cols ?? 0, rows: map?.rows ?? 0, min: 0.4, max: 3 });
   if (!loaded) return null;
   if (!map) return <EmptyState title="Nenhum mapa na mesa" description="Quando o mestre mostrar um mapa, ele aparece aqui na hora." />;
+  const sharedMine = userId ? map.areas.filter((area) => area.by === userId).length : 0;
   const mine = tokens.some((token) => token.characterId !== null && token.characterId === myCharacterId);
 
   return (
@@ -66,14 +70,26 @@ export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: s
               </Button>
             ))
           : null}
-        {localAreas.length ? (
-          <Button size="sm" variant="ghost" onClick={() => setLocalAreas([])}>
+        {localAreas.length || sharedMine ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setLocalAreas([]);
+              if (!sharedMine) return;
+              setData((current) => (current.map ? { ...current, map: { ...current.map, areas: current.map.areas.filter((area) => area.by !== userId) } } : current));
+              void track(() => clearMyMapAreas(getSupabaseBrowserClient(), map.id)).catch((error: unknown) => {
+                toast({ tone: 'danger', title: 'As áreas não foram removidas', description: failureMessage(error, 'Tente novamente.') });
+                reload();
+              });
+            }}
+          >
             Limpar minhas áreas
           </Button>
         ) : null}
       </div>
       {tool === 'ruler' ? <p className="mb-2 text-xs text-fg-muted">Arraste de um quadrado a outro para medir.</p> : null}
-      {tool === 'area' ? <p className="mb-2 text-xs text-fg-muted">Arraste a partir de um canto de quadrado (círculo: comece no meio do quadrado para centrá-lo ali, como no do seu token). Só você vê as suas áreas (prévia para planejar a magia).</p> : null}
+      {tool === 'area' ? <p className="mb-2 text-xs text-fg-muted">Arraste a partir de um canto de quadrado (círculo: comece no meio do quadrado para centrá-lo ali, como no do seu token). Todos na mesa veem as áreas que você coloca.</p> : null}
       <div ref={boardAreaRef} className={fullscreen ? 'relative bg-canvas p-2' : 'relative'}>
       <Button
         size="sm"
@@ -102,7 +118,15 @@ export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: s
           tool={tool}
           areaKind={areaKind}
           localAreas={localAreas}
-          onAddArea={(shape) => setLocalAreas((current) => [...current, shape])}
+          onAddArea={(shape) => {
+            // Vai para o mapa de todos; se o banco recusar, fica só nesta tela como prévia.
+            setData((current) => (current.map ? { ...current, map: { ...current.map, areas: [...current.map.areas, { ...shape, ...(userId ? { by: userId } : {}) }] } } : current));
+            void track(() => addMyMapArea(getSupabaseBrowserClient(), map.id, shape)).catch((error: unknown) => {
+              setLocalAreas((current) => [...current, shape]);
+              toast({ tone: 'warning', title: 'A área ficou só na sua tela', description: failureMessage(error, 'Os outros jogadores não a veem.') });
+              reload();
+            });
+          }}
           onMoveToken={(token, x, y) => {
             setData((current) => ({ ...current, tokens: current.tokens.map((entry) => (entry.id === token.id ? { ...entry, x, y } : entry)) }));
             void track(() => moveMyToken(getSupabaseBrowserClient(), token.id, x, y)).catch((error: unknown) => {

@@ -737,6 +737,11 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                   setNoteText('');
                   setNoteAt(point);
                 }}
+                onMoveDrawing={(index, secret, x, y) => {
+                  const move = (list: MapDrawing[]) => list.map((drawing, position) => (position === index && drawing.type === 'note' ? { ...drawing, x, y } : drawing));
+                  if (secret) saveSecrets(move(secrets));
+                  else patchMap({ drawings: move(map.drawings) });
+                }}
                 onRemoveDrawing={(index, secret) =>
                   secret ? saveSecrets(secrets.filter((_, position) => position !== index)) : patchMap({ drawings: map.drawings.filter((_, position) => position !== index) })
                 }

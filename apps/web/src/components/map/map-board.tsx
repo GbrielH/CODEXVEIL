@@ -87,6 +87,8 @@ interface MapBoardProps {
   onRequestNote?: (point: Point) => void;
   /** Apaga um desenho: índice na lista pública ou na secreta. */
   onRemoveDrawing?: (index: number, secret: boolean) => void;
+  /** Mestre arrastou uma anotação (ferramenta Mover): nova posição em quadrados. */
+  onMoveDrawing?: (index: number, secret: boolean, x: number, y: number) => void;
 }
 
 /**
@@ -124,6 +126,7 @@ export function MapBoard({
   onAddDrawing,
   onRequestNote,
   onRemoveDrawing,
+  onMoveDrawing,
 }: MapBoardProps) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const colors = useCampaignColors();
@@ -146,6 +149,7 @@ export function MapBoard({
   useEffect(() => () => {
     if (nameTimer.current) window.clearTimeout(nameTimer.current);
   }, []);
+  const [noteDrag, setNoteDrag] = useState<{ index: number; secret: boolean; offsetX: number; offsetY: number; x: number; y: number } | null>(null);
   const [layerDrag, setLayerDrag] = useState<{ index: number; offsetX: number; offsetY: number; x: number; y: number } | null>(null);
   // Proporção (altura/largura) de cada imagem, para o contorno e a área de arrastar.
   const [aspects, setAspects] = useState<Record<string, number>>({});
@@ -295,6 +299,10 @@ export function MapBoard({
       setLayerDrag({ ...layerDrag, x: point.x - layerDrag.offsetX, y: point.y - layerDrag.offsetY });
       return;
     }
+    if (noteDrag) {
+      setNoteDrag({ ...noteDrag, x: point.x - noteDrag.offsetX, y: point.y - noteDrag.offsetY });
+      return;
+    }
     if (ruler?.active) {
       setRuler({ ...ruler, end: center(point) });
       return;
@@ -324,6 +332,10 @@ export function MapBoard({
   };
 
   const onBoardUp = () => {
+    if (noteDrag) {
+      onMoveDrawing?.(noteDrag.index, noteDrag.secret, Math.round(noteDrag.x * 4) / 4, Math.round(noteDrag.y * 4) / 4);
+      setNoteDrag(null);
+    }
     if (layerDrag) {
       onMoveLayer?.(layerDrag.index, Math.round(layerDrag.x * 4) / 4, Math.round(layerDrag.y * 4) / 4);
       setLayerDrag(null);
@@ -484,12 +496,28 @@ export function MapBoard({
           );
         }
         const width = Math.max(1, drawing.text.length * 0.17 + 0.4);
+        // Mestre com "Mover": arrasta a anotação.
+        const movable = isGm && tool === 'move' && Boolean(onMoveDrawing);
+        const dragging = noteDrag?.index === index && noteDrag.secret === secret;
+        const noteX = dragging ? noteDrag.x : drawing.x;
+        const noteY = dragging ? noteDrag.y : drawing.y;
         return (
           <g
             key={`nota-${secret ? 's' : 'p'}-${index}`}
-            transform={`translate(${drawing.x} ${drawing.y})`}
-            style={{ pointerEvents: erasing ? 'auto' : 'none', cursor: erasing ? 'pointer' : 'default' }}
-            onPointerDown={erasing ? onErase : undefined}
+            transform={`translate(${noteX} ${noteY})`}
+            style={{ pointerEvents: erasing || movable ? 'auto' : 'none', cursor: erasing ? 'pointer' : movable ? 'move' : 'default' }}
+            onPointerDown={
+              erasing
+                ? onErase
+                : movable
+                  ? (event) => {
+                      event.stopPropagation();
+                      svgRef.current?.setPointerCapture(event.pointerId);
+                      const point = toGrid(event);
+                      setNoteDrag({ index, secret, offsetX: point.x - drawing.x, offsetY: point.y - drawing.y, x: drawing.x, y: drawing.y });
+                    }
+                  : undefined
+            }
           >
             <rect x={0} y={-0.25} width={width} height={0.5} rx={0.08} fill="rgba(20,16,12,0.88)" stroke={drawing.color} strokeWidth={0.04} strokeDasharray={secret ? '0.15 0.08' : undefined} />
             <text x={0.2} y={0} dominantBaseline="central" fontSize={0.28} fill={drawing.color}>

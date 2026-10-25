@@ -1955,6 +1955,13 @@ export type Database = {
         };
         Returns: Json;
       };
+      add_my_map_area: {
+        Args: {
+          p_map_id: string;
+          p_area: Json;
+        };
+        Returns: undefined;
+      };
       adjust_character_resource: {
         Args: {
           p_resource_id: string;
@@ -2013,6 +2020,12 @@ export type Database = {
           p_campaign_id: string;
         };
         Returns: Json;
+      };
+      clear_my_map_areas: {
+        Args: {
+          p_map_id: string;
+        };
+        Returns: undefined;
       };
       consume_assistant_question: {
         Args: never;

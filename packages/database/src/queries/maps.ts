@@ -327,6 +327,18 @@ export async function moveMyToken(client: CodexveilClient, tokenId: string, x: n
   if (error) throw toAppError(error);
 }
 
+/** Jogador: coloca uma área de magia no mapa ativo, vista por todos (marcada com o autor). */
+export async function addMyMapArea(client: CodexveilClient, mapId: string, area: MapArea): Promise<void> {
+  const { error } = await client.rpc('add_my_map_area', { p_map_id: mapId, p_area: area as unknown as Json });
+  if (error) throw toAppError(error);
+}
+
+/** Jogador: tira do mapa todas as áreas que ele colocou. */
+export async function clearMyMapAreas(client: CodexveilClient, mapId: string): Promise<void> {
+  const { error } = await client.rpc('clear_my_map_areas', { p_map_id: mapId });
+  if (error) throw toAppError(error);
+}
+
 /** Em combate, o mapa mostrado acompanha de quem é a vez? (opção da campanha) */
 export async function getMapFollowsTurn(client: CodexveilClient, campaignId: string): Promise<boolean> {
   const { data, error } = await client.from('campaigns').select('map_follows_turn').eq('id', campaignId).maybeSingle();

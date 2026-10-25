@@ -4,7 +4,10 @@
  */
 import { METERS_PER_SQUARE, type Point } from './map-geometry';
 
-export type MapArea =
+/** Área no mapa; `by` = jogador que a colocou (as do mestre não têm). */
+export type MapArea = MapAreaShape & { by?: string };
+
+type MapAreaShape =
   /** Círculo: centro numa interseção da grade e raio em metros. */
   | { kind: 'circle'; x: number; y: number; meters: number; color?: string }
   /** Cone: vértice, direção (graus) e comprimento; a largura no fim é igual ao comprimento. */
