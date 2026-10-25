@@ -73,7 +73,7 @@ export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: s
         ) : null}
       </div>
       {tool === 'ruler' ? <p className="mb-2 text-xs text-fg-muted">Arraste de um quadrado a outro para medir.</p> : null}
-      {tool === 'area' ? <p className="mb-2 text-xs text-fg-muted">Arraste a partir de um canto de quadrado. Só você vê as suas áreas (prévia para planejar a magia).</p> : null}
+      {tool === 'area' ? <p className="mb-2 text-xs text-fg-muted">Arraste a partir de um canto de quadrado (círculo: comece no meio do quadrado para centrá-lo ali, como no do seu token). Só você vê as suas áreas (prévia para planejar a magia).</p> : null}
       <div ref={boardAreaRef} className={fullscreen ? 'relative bg-canvas p-2' : 'relative'}>
       <Button
         size="sm"

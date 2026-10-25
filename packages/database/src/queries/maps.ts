@@ -13,13 +13,20 @@ export type FogRect = [number, number, number, number];
 /** Parede: [x1, y1, x2, y2] em quadrados e o estilo (pedra, tijolo, ruína…). */
 export type Wall = [number, number, number, number, WallStyle];
 
-/** Uma imagem (camada) do mapa: posição e largura em quadrados; a altura segue a proporção. */
+/**
+ * Uma imagem (camada) do mapa: posição (canto de cima à esquerda da área ocupada, já girada) e
+ * largura da própria imagem em quadrados; a altura segue a proporção.
+ */
 export interface MapImage {
   path: string;
   x: number;
   y: number;
   width: number;
+  /** Giro em graus, no sentido horário (0, 90, 180 ou 270). Ausente = 0. */
+  rotation?: MapImageRotation;
 }
+
+export type MapImageRotation = 0 | 90 | 180 | 270;
 
 export interface SessionMap {
   id: string;
@@ -96,8 +103,9 @@ function mapImages(value: Json): MapImage[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((entry): MapImage[] => {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return [];
-    const { path, x, y, width } = entry as Record<string, unknown>;
-    return typeof path === 'string' && typeof x === 'number' && typeof y === 'number' && typeof width === 'number' ? [{ path, x, y, width }] : [];
+    const { path, x, y, width, rotation } = entry as Record<string, unknown>;
+    if (typeof path !== 'string' || typeof x !== 'number' || typeof y !== 'number' || typeof width !== 'number') return [];
+    return [rotation === 90 || rotation === 180 || rotation === 270 ? { path, x, y, width, rotation } : { path, x, y, width }];
   });
 }
 

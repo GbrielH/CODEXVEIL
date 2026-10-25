@@ -17,6 +17,7 @@ import {
   setActiveMap,
   updateMapToken,
   updateSessionMap,
+  type MapImageRotation,
   type MapToken,
   type SessionMap,
   type SessionMapPatch,
@@ -40,7 +41,7 @@ import {
   type WallStyle,
 } from '@codexveil/domain';
 import { IMAGE_EXTENSIONS } from '@codexveil/validation';
-import { CircleDot, Eraser, Expand, Shrink, EyeOff, ImageUp, Map as MapIcon, Minus, MousePointer2, Pencil, Plus, Radio, Ruler, Square, SquareDashed, StickyNote, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
+import { CircleDot, Eraser, Expand, Shrink, EyeOff, ImageUp, Map as MapIcon, Minus, MousePointer2, Pencil, Plus, Radio, RotateCw, Ruler, Square, SquareDashed, StickyNote, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -530,6 +531,20 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                         <Button
                           size="sm"
                           variant="ghost"
+                          icon={<RotateCw className="h-4 w-4" aria-hidden="true" />}
+                          onClick={() =>
+                            patchMap({
+                              images: map.images.map((layer, index) =>
+                                index === selectedLayer ? { ...layer, rotation: (((layer.rotation ?? 0) + 90) % 360) as MapImageRotation } : layer,
+                              ),
+                            })
+                          }
+                        >
+                          Girar 90°
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           disabled={selectedLayer === map.images.length - 1}
                           onClick={() => {
                             const layer = map.images[selectedLayer]!;
@@ -637,7 +652,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                 ))}
               </div>
               <p className="text-xs text-fg-muted">
-                Arraste a partir de um canto de quadrado: o tamanho segue de 1,5 em 1,5 m e os quadrados atingidos ficam destacados. Todos veem as áreas que você coloca.
+                Arraste a partir de um canto de quadrado (círculo: comece no meio do quadrado para centrá-lo nele): o tamanho segue de 1,5 em 1,5 m e os quadrados atingidos ficam destacados. Todos veem as áreas que você coloca.
               </p>
             </div>
           ) : null}

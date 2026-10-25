@@ -217,8 +217,13 @@ export function MapBoard({
     }
     if (tool === 'area') {
       event.currentTarget.setPointerCapture(event.pointerId);
-      // Círculo e cone partem de um canto de quadrado; a linha, do centro (pinta uma fileira só).
-      const origin = areaKind === 'line' ? center(point) : { x: Math.round(point.x), y: Math.round(point.y) };
+      // Cone parte de um canto de quadrado; a linha, do centro (pinta uma fileira só). O círculo
+      // parte do que estiver mais perto: clicar no meio de um quadrado (o do próprio token) centra ali.
+      const fx = point.x - Math.floor(point.x);
+      const fy = point.y - Math.floor(point.y);
+      const nearCenter = fx > 0.25 && fx < 0.75 && fy > 0.25 && fy < 0.75;
+      const origin =
+        areaKind === 'line' || (areaKind === 'circle' && nearCenter) ? center(point) : { x: Math.round(point.x), y: Math.round(point.y) };
       setAreaDraft({ origin, point: origin });
       return;
     }
@@ -362,16 +367,31 @@ export function MapBoard({
         const x = dragging ? layerDrag.x : layer.x;
         const y = dragging ? layerDrag.y : layer.y;
         const height = layer.width * (aspects[layer.path] ?? 1);
+        // Girada de lado (90°/270°), a área ocupada troca largura e altura; gira em torno do centro dela.
+        const rotation = layer.rotation ?? 0;
+        const sideways = rotation === 90 || rotation === 270;
+        const boxWidth = sideways ? height : layer.width;
+        const boxHeight = sideways ? layer.width : height;
+        const centerX = x + boxWidth / 2;
+        const centerY = y + boxHeight / 2;
         const active = isGm && tool === 'image';
         return (
           <g key={`${layer.path}-${index}`}>
-            <image href={url} x={x} y={y} width={layer.width} height={height} preserveAspectRatio="none" />
+            <image
+              href={url}
+              x={centerX - layer.width / 2}
+              y={centerY - height / 2}
+              width={layer.width}
+              height={height}
+              preserveAspectRatio="none"
+              transform={rotation ? `rotate(${rotation} ${centerX} ${centerY})` : undefined}
+            />
             {active ? (
               <rect
                 x={x}
                 y={y}
-                width={layer.width}
-                height={height}
+                width={boxWidth}
+                height={boxHeight}
                 fill="transparent"
                 stroke={selectedLayer === index ? '#f3e2b3' : 'rgba(243,226,179,0.35)'}
                 strokeWidth={0.06}
