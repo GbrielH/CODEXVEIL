@@ -1,20 +1,19 @@
 import {
   ABILITY_SCORE_METHODS,
-  DND5E_SOURCEBOOKS,
-  SOURCEBOOK_CATEGORIES,
   abilityScoreMethodLabels,
   dnd5eOfficialLinks,
   findSourcebook,
-  sourcebookCategoryLabels,
-  sourcebookUrl,
   type Dnd5eCampaignRules,
 } from '@codexveil/rpg-systems/dnd5e';
-import { useState } from 'react';
+import { listMyBookPacks, type BookPackSummary } from '@codexveil/database';
+import { useEffect, useState } from 'react';
 import { Chip, ChipRow } from '@/components/ui/controls';
 import { ExternalLink, Minus, Plus } from 'lucide-react-native';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { IconButton } from '@/components/ui/button';
 import { AppText } from '@/components/ui/primitives';
+import { useUserId } from '@/lib/session';
+import { getSupabase } from '@/lib/supabase';
 import { colors, fonts, radii, spacing } from '@/lib/theme';
 
 interface Props {
@@ -114,7 +113,10 @@ export function Dnd5eRulesEditor({ value, onChange, error }: Props) {
   );
 }
 
-/** Sistema base (só o SRD) ou com livros oficiais escolhidos por categoria (mesa ou ficha pessoal). */
+/**
+ * Sistema base (só o SRD) ou com os livros importados em "Meus livros", numa lista só: cada livro
+ * traz junto tudo o que tem (espécies, classes, magias, monstros, itens). Mesa ou ficha pessoal.
+ */
 export function SourcebookChips({
   selected,
   onChange,
@@ -125,8 +127,29 @@ export function SourcebookChips({
   audience: 'campaign' | 'character';
 }) {
   const [expanded, setExpanded] = useState(selected.length > 0);
+  const userId = useUserId();
+  const [books, setBooks] = useState<BookPackSummary[] | null>(null);
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    listMyBookPacks(getSupabase(), userId)
+      .then((packs) => {
+        if (active) setBooks(packs.filter((pack) => pack.isReady && pack.systemId === 'dnd5e'));
+      })
+      .catch(() => {
+        if (active) setBooks([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+  const imported = new Set((books ?? []).map((book) => book.bookKey));
+  // Livros marcados antes desta tela mostrar só os importados: desmarcáveis, para nada ficar escondido.
+  const legacy = books ? selected.filter((id) => !imported.has(id)) : [];
   const toggle = (id: string) =>
     onChange(selected.includes(id) ? selected.filter((entry) => entry !== id) : [...selected, id]);
+  const ids = (books ?? []).map((book) => book.bookKey);
+  const all = ids.length > 0 && ids.every((id) => selected.includes(id));
   return (
     <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
       <AppText style={{ fontFamily: fonts.sansMedium }}>Conteúdo do sistema</AppText>
@@ -139,15 +162,11 @@ export function SourcebookChips({
             onChange([]);
           }}
         />
-        <Chip
-          label="Base + livros oficiais"
-          selected={expanded}
-          onPress={() => setExpanded(true)}
-        />
+        <Chip label="Base + livros" selected={expanded} onPress={() => setExpanded(true)} />
       </ChipRow>
       <AppText variant="small">
         {expanded
-          ? `Marque os livros que ${audience === 'campaign' ? 'a mesa usa' : 'este personagem usa'}. São livros pagos, vendidos pela Wizards na página oficial: o conteúdo deles não vem no Codexveil e entra à mão.`
+          ? `Marque os livros que ${audience === 'campaign' ? 'a mesa usa' : 'este personagem usa'}. Cada livro importado em "Meus livros" (no site) traz tudo o que tem.`
           : 'Só o SRD 5.2.1, gratuito e já pronto. Sem nada para escolher.'}
       </AppText>
       <AppText variant="small">Gratuitos:</AppText>
@@ -156,54 +175,60 @@ export function SourcebookChips({
         .map((link) => (
           <OfficialLink key={link.url} label={link.label} url={link.url} />
         ))}
-      {expanded
-        ? SOURCEBOOK_CATEGORIES.map((category) => {
-            const ids = DND5E_SOURCEBOOKS.filter((book) => book.category === category).map(
-              (book) => book.id,
-            );
-            const all = ids.every((id) => selected.includes(id));
-            return (
-              <View key={category} style={{ gap: 6 }}>
-                <AppText variant="eyebrow">{sourcebookCategoryLabels[category].name}</AppText>
-                <ChipRow>
-                  {ids.length > 1 ? (
-                    <Chip
-                      label={all ? 'Desmarcar todos' : 'Selecionar todos'}
-                      selected={all}
-                      onPress={() =>
-                        onChange(
-                          all
-                            ? selected.filter((id) => !ids.includes(id))
-                            : [...new Set([...selected, ...ids])],
-                        )
-                      }
-                    />
-                  ) : null}
-                  {DND5E_SOURCEBOOKS.filter((book) => book.category === category).map((book) => (
-                    <Chip
-                      key={book.id}
-                      label={book.name}
-                      selected={selected.includes(book.id)}
-                      onPress={() => toggle(book.id)}
-                    />
-                  ))}
-                </ChipRow>
-              </View>
-            );
-          })
-        : null}
-      {expanded && selected.length > 0 ? (
-        <View style={{ gap: 2 }}>
-          <AppText variant="small">Livros marcados (pagos), na página oficial:</AppText>
-          {selected.map((id) => (
-            <OfficialLink key={id} label={findSourcebook(id)?.name ?? id} url={sourcebookUrl(id)} />
-          ))}
+      {expanded ? (
+        books === null ? (
+          <AppText variant="small">Carregando seus livros…</AppText>
+        ) : books.length === 0 ? (
+          <AppText variant="small">
+            Nenhum livro importado ainda. Importe o conteúdo dos seus livros em “Meus livros”, no
+            site.
+          </AppText>
+        ) : (
+          <ChipRow>
+            {books.length > 1 ? (
+              <Chip
+                label={all ? 'Desmarcar todos' : 'Selecionar todos'}
+                selected={all}
+                onPress={() =>
+                  onChange(
+                    all
+                      ? selected.filter((id) => !ids.includes(id))
+                      : [...new Set([...selected, ...ids])],
+                  )
+                }
+              />
+            ) : null}
+            {books.map((book) => (
+              <Chip
+                key={book.bookKey}
+                label={book.name}
+                selected={selected.includes(book.bookKey)}
+                onPress={() => toggle(book.bookKey)}
+              />
+            ))}
+          </ChipRow>
+        )
+      ) : null}
+      {expanded && legacy.length > 0 ? (
+        <View style={{ gap: 6 }}>
+          <AppText variant="small">
+            Marcados antes, sem conteúdo no Codexveil (toque para tirar):
+          </AppText>
+          <ChipRow>
+            {legacy.map((id) => (
+              <Chip
+                key={id}
+                label={findSourcebook(id)?.name ?? id}
+                selected
+                onPress={() => toggle(id)}
+              />
+            ))}
+          </ChipRow>
         </View>
       ) : null}
     </View>
   );
 }
-
 /** Link que abre a página oficial no navegador. */
 function OfficialLink({ label, url }: { label: string; url: string }) {
   return (

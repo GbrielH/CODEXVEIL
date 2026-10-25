@@ -2,12 +2,9 @@
 
 import {
   DND5E_SOURCEBOOKS,
-  SOURCEBOOK_CATEGORIES,
   dnd5eOfficialLinks,
-  sourcebookCategoryLabels,
   sourcebookUrl,
 } from '@codexveil/rpg-systems/dnd5e';
-import { ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { useId, useState } from 'react';
 import { CheckboxField } from '@/components/ui/field';
@@ -38,8 +35,8 @@ interface SourcebookPickerProps {
 }
 
 /**
- * Sistema base (só o SRD) ou com livros oficiais escolhidos por categoria. Os livros são pagos:
- * cada um leva à página oficial, e as fontes gratuitas ficam com o link direto.
+ * Sistema base (só o SRD) ou com os livros importados em "Meus livros", numa lista só: cada livro
+ * traz junto tudo o que tem (espécies, classes, magias, monstros, itens).
  */
 export function SourcebookPicker({
   selected,
@@ -50,6 +47,8 @@ export function SourcebookPicker({
   books = [],
 }: SourcebookPickerProps) {
   const imported = new Set(books.map((book) => book.bookKey));
+  // Livros marcados antes desta tela mostrar só os importados.
+  const legacy = selected.filter((bookId) => !imported.has(bookId));
   const id = useId();
   const [mode, setMode] = useState<'base' | 'expanded'>(selected.length > 0 ? 'expanded' : 'base');
   const toggle = (bookId: string, checked: boolean) =>
@@ -104,7 +103,7 @@ export function SourcebookPicker({
             <span className="text-xs text-fg-muted">
               {option === 'base'
                 ? 'Só o SRD 5.2.1, gratuito e já pronto no Codexveil. Sem nada para escolher.'
-                : `Escolha os livros que ${who}. Os importados em "Meus livros" trazem espécies, classes, antecedentes, magias, monstros e itens para o Codexveil; os demais só ficam registrados.`}
+                : `Escolha os livros que ${who}. Cada livro importado em "Meus livros" traz tudo o que tem: espécies, classes, antecedentes, magias, monstros e itens.`}
             </span>
           </label>
         ))}
@@ -128,42 +127,32 @@ export function SourcebookPicker({
           ))}
       </p>
       {mode === 'expanded' ? (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {books.length > 0 ? (
-            <div className="flex flex-col gap-3 rounded-md border border-parchment-300/40 bg-parchment-200/5 p-3">
-              <p className="text-sm font-medium text-fg">Livros importados (com conteúdo)</p>
-              {SOURCEBOOK_CATEGORIES.filter((category) =>
-                books.some((book) => book.category === category),
-              ).map((category) => (
-                <div key={category} className="flex flex-col gap-2">
-                  <p className="eyebrow">{sourcebookCategoryLabels[category].name}</p>
-                  {selectAll(
-                    `own-${category}`,
-                    books.filter((book) => book.category === category).map((book) => book.bookKey),
-                  )}
-                  <div className="grid gap-2 sm:grid-cols-2 @3xl:grid-cols-3">
-                    {books
-                      .filter((book) => book.category === category)
-                      .map((book) => (
-                        <CheckboxField
-                          key={book.bookKey}
-                          id={`${id}-own-${book.bookKey}`}
-                          {...(fieldName ? { name: fieldName } : {})}
-                          value={book.bookKey}
-                          label={book.name}
-                          description={[
-                            describeBookCounts(book.entryCounts),
-                            book.edition === '2024' ? 'regras de 2024' : '',
-                          ]
-                            .filter(Boolean)
-                            .join(' · ')}
-                          checked={selected.includes(book.bookKey)}
-                          onChange={(event) => toggle(book.bookKey, event.target.checked)}
-                        />
-                      ))}
-                  </div>
-                </div>
-              ))}
+            <div className="flex flex-col gap-2 rounded-md border border-parchment-300/40 bg-parchment-200/5 p-3">
+              {selectAll(
+                'own',
+                books.map((book) => book.bookKey),
+              )}
+              <div className="grid gap-2 sm:grid-cols-2 @3xl:grid-cols-3">
+                {books.map((book) => (
+                  <CheckboxField
+                    key={book.bookKey}
+                    id={`${id}-own-${book.bookKey}`}
+                    {...(fieldName ? { name: fieldName } : {})}
+                    value={book.bookKey}
+                    label={book.name}
+                    description={[
+                      describeBookCounts(book.entryCounts),
+                      book.edition === '2024' ? 'regras de 2024' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                    checked={selected.includes(book.bookKey)}
+                    onChange={(event) => toggle(book.bookKey, event.target.checked)}
+                  />
+                ))}
+              </div>
             </div>
           ) : (
             <p className="rounded-md border border-line p-3 text-sm text-fg-muted">
@@ -178,67 +167,27 @@ export function SourcebookPicker({
               na biblioteca.
             </p>
           )}
-          <p className="text-xs text-fg-muted">
-            Outros livros oficiais (sem conteúdo no Codexveil, só registram o que vale na mesa):
-          </p>
-          {SOURCEBOOK_CATEGORIES.map((category) => (
-            <details
-              key={category}
-              className="rounded-md border border-line px-3 py-2"
-              open={books.length === 0 && (category === 'core' || category === 'player')}
-            >
-              <summary className="cursor-pointer text-sm font-medium text-fg">
-                {sourcebookCategoryLabels[category].name}
-                <span className="ml-2 text-xs text-fg-muted">
-                  {DND5E_SOURCEBOOKS.filter(
-                    (book) => book.category === category && selected.includes(book.id),
-                  ).length || ''}
-                </span>
-              </summary>
-              <p className="mt-1 text-xs text-fg-muted">
-                {sourcebookCategoryLabels[category].description}
+          {/* Escolhas antigas de livros sem conteúdo: continuam valendo até serem desmarcadas. */}
+          {legacy.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-fg-muted">
+                Marcados antes, sem conteúdo no Codexveil (desmarque para tirar):
               </p>
-              <div className="mt-2">
-                {selectAll(
-                  category,
-                  DND5E_SOURCEBOOKS.filter(
-                    (book) => book.category === category && !imported.has(book.id),
-                  ).map((book) => book.id),
-                )}
-              </div>
-              <div className="mt-2 grid gap-2 sm:grid-cols-2 @3xl:grid-cols-3">
-                {DND5E_SOURCEBOOKS.filter(
-                  (book) => book.category === category && !imported.has(book.id),
-                ).map((book) => (
+              <div className="grid gap-2 sm:grid-cols-2 @3xl:grid-cols-3">
+                {legacy.map((bookId) => (
                   <CheckboxField
-                    key={book.id}
-                    id={`${id}-book-${book.id}`}
+                    key={bookId}
+                    id={`${id}-book-${bookId}`}
                     {...(fieldName ? { name: fieldName } : {})}
-                    value={book.id}
-                    label={book.name}
-                    description={
-                      <>
-                        {book.year}
-                        {book.edition === '2024' ? ' · regras de 2024' : ''} · Pago ·{' '}
-                        <a
-                          href={sourcebookUrl(book.id)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-0.5 text-fg-brand underline-offset-2 hover:underline"
-                        >
-                          página oficial
-                          <ExternalLink className="h-3 w-3" aria-hidden="true" />
-                          <span className="sr-only">(abre em outra aba)</span>
-                        </a>
-                      </>
-                    }
-                    checked={selected.includes(book.id)}
-                    onChange={(event) => toggle(book.id, event.target.checked)}
+                    value={bookId}
+                    label={DND5E_SOURCEBOOKS.find((book) => book.id === bookId)?.name ?? bookId}
+                    checked
+                    onChange={(event) => toggle(bookId, event.target.checked)}
                   />
                 ))}
               </div>
-            </details>
-          ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

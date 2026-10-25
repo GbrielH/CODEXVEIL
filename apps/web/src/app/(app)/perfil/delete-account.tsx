@@ -2,6 +2,7 @@
 
 import { deleteMyAccount } from '@codexveil/database';
 import { Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useId, useState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ const CONFIRM_WORD = 'EXCLUIR';
  */
 export function DeleteAccount() {
   const id = useId();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
@@ -35,7 +37,8 @@ export function DeleteAccount() {
     const result = await deleteMyAccount(client);
     if (result.deleted) {
       await client.auth.signOut().catch(() => undefined);
-      window.location.assign('/');
+      router.replace('/');
+      router.refresh();
       return;
     }
     setProblem({ error: result.error, campaigns: result.campaigns });
