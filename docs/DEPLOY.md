@@ -200,6 +200,15 @@ modelo do FinFlow.
 eas build --platform android --profile preview
 ```
 
+**Não gere o APK pelo Windows.** O build falha na fase "Configure expo-updates" com "Runtime
+version calculated on local machine not equal to runtime version calculated during build": o
+fingerprint inclui os caminhos de `node_modules/.pnpm`, e no Windows o pnpm encurta esses nomes
+(limite de caminho), então o cálculo local nunca bate com o do servidor (visto em 2026-10-26;
+`EAS_SKIP_AUTO_FINGERPRINT` e `.fingerprintignore` não resolvem). Use o workflow **APK**
+(`.github/workflows/apk.yml`, GitHub → Actions → APK → Run workflow, ou
+`gh workflow run apk.yml`): ele roda no Linux, com o mesmo cálculo das atualizações OTA, e usa o
+segredo `EXPO_TOKEN`. Um build que falha nessa fase não consome a cota.
+
 No fim, a página do build no expo.dev mostra um link e um QR code para baixar o APK no
 aparelho (permita a instalação de fontes desconhecidas). APKs gerados antes do
 `expo-updates` (versionCode 1 e o primeiro build do versionCode 2) **não** recebem

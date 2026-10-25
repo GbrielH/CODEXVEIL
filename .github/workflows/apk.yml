@@ -1,0 +1,35 @@
+# Gera um APK novo (EAS Build, perfil preview) a partir do Linux do GitHub.
+#
+# Por que daqui e não do computador: o runtime do app é calculado por fingerprint, que inclui os
+# caminhos de node_modules/.pnpm. No Windows o pnpm encurta esses nomes e o fingerprint nunca bate
+# com o do servidor do EAS ("Runtime version ... not equal"). Aqui o cálculo é o mesmo das
+# atualizações OTA do ci.yml. Gasta 1 build da cota mensal do EAS. Veja docs/DEPLOY.md.
+name: APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: EAS Build (Android, preview)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
+      - name: Enviar ao EAS
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx --yes eas-cli@latest build --platform android --profile preview --non-interactive --no-wait
