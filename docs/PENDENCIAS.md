@@ -208,8 +208,7 @@ Esta seção lista só o que falta ou está parcial. O que já foi atendido est�
   são aplicados no banco.
 - **Feito (2026-10-26): limpeza de arquivos órfãos.** `list_orphan_media` acha o que nenhuma
   linha usa (24 h de folga) e a Edge Function `cleanup-orphans` apaga, toda segunda-feira, pelo
-  workflow `cleanup-orphans.yml`. Falta publicar a migração, as funções e os segredos (veja
-  [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md#continuidade-parada-em-2026-10-26-retomar-daqui)).
+  workflow `cleanup-orphans.yml`. Publicado em 2026-10-26 (migração, funções e segredos).
 
 ### §16 Testes
 

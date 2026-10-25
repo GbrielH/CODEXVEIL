@@ -38,13 +38,12 @@ de combate, paredes e quadrados ocupados bloqueando o movimento, áreas de magia
 anotações arrastáveis, bônus temporários e botão "Usar" nas magias, características por tipo,
 livros só os importados, paginação, exclusão de conta e limpeza de arquivos órfãos.
 
-### A. Falta publicar no Supabase (Claude, com autorização do responsável)
+### A. Publicação no Supabase — concluída em 2026-10-26
 
-1. Migração `20261026110000_orphan_media.sql` (`supabase db push`; a `20261026100000` já foi).
-2. Edge Functions `delete-account` e `cleanup-orphans` (comandos em
-   [DEPLOY §8](DEPLOY.md#exclusão-de-conta-e-limpeza-de-arquivos-2026-10-26)).
-3. Segredo `CLEANUP_SECRET` na função e no GitHub, mais `SUPABASE_PROJECT_REF` no GitHub; depois,
-   rodar o workflow "Limpeza de arquivos órfãos" uma vez com **Só contar** para conferir.
+Migração `20261026110000_orphan_media.sql` aplicada, Edge Functions `delete-account` e
+`cleanup-orphans` publicadas, segredo `CLEANUP_SECRET` gravado no Supabase e no GitHub (com
+`SUPABASE_PROJECT_REF`). O workflow "Limpeza de arquivos órfãos" rodou à mão com **Só contar**:
+`{"dry":true,"found":1,"removed":0}`. A primeira limpeza de verdade roda na segunda-feira seguinte.
 
 ### B. Verificações do responsável
 
