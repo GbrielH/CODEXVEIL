@@ -159,13 +159,16 @@ export function RollButton({
   );
 }
 
-/** Rolagem livre: dados rápidos, expressão, vantagem e rolagem secreta. */
+/** Rolagem livre: perícias da ficha, dados rápidos, expressão, vantagem e rolagem secreta. */
 export function DicePanel({
   isGm,
   characterName,
+  skills = [],
 }: {
   isGm: boolean;
   characterName?: string | null;
+  /** Perícias com o bônus somado: tocar numa monta `1d20+bônus` sozinho. */
+  skills?: { label: string; bonus: number }[];
 }) {
   const dice = useDice();
   const [expression, setExpression] = useState('1d20');
@@ -210,6 +213,28 @@ export function DicePanel({
         error={valid ? undefined : 'Use dados como 1d20+5 (até 100 dados).'}
         hint="Ex.: 1d20+5, 2d6+1d4+3, d100."
       />
+      {skills.length ? (
+        <View style={{ gap: spacing[1] }}>
+          <AppText variant="small">Perícia (toque para rolar com o bônus da ficha)</AppText>
+          <ChipRow>
+            {skills.map((skill) => (
+              <Chip
+                key={skill.label}
+                label={`${skill.label} ${skill.bonus >= 0 ? '+' : ''}${skill.bonus}`}
+                selected={label === skill.label}
+                onPress={() => {
+                  if (label === skill.label) {
+                    setLabel('');
+                    return;
+                  }
+                  setLabel(skill.label);
+                  setExpression(`1d20${skill.bonus >= 0 ? '+' : ''}${skill.bonus}`);
+                }}
+              />
+            ))}
+          </ChipRow>
+        </View>
+      ) : null}
       <Field
         label="Para quê (opcional)"
         value={label}

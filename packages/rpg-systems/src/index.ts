@@ -25,3 +25,4 @@ export {
   type SystemId,
 } from './registry';
 export { characterSpeedMeters, speedTextMeters } from './speed';
+export { characterSkillBonuses } from './skill-bonuses';

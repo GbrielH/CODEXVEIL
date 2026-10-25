@@ -1,4 +1,5 @@
 import { getCampaign, getSessionState, listCampaignCharacters } from '@codexveil/database';
+import { characterSkillBonuses } from '@codexveil/rpg-systems';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { DiceColorCard } from '@/components/dice/dice-color';
 import { DicePanel, DiceProvider } from '@/components/dice/dice';
@@ -6,7 +7,7 @@ import { RollFeed } from '@/components/dice/roll-feed';
 import { AppText, Card } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states';
-import { useAsyncData } from '@/lib/hooks';
+import { useAsyncData, useRealtimeRefresh } from '@/lib/hooks';
 import { useUserId } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
@@ -29,6 +30,8 @@ export default function CampaignDiceScreen() {
       own: party.find((character) => character.ownerId === userId) ?? null,
     };
   }, `${id}:${userId}`);
+  // O mestre inicia ou encerra a sessão: a tela libera (ou trava) as rolagens sozinha.
+  useRealtimeRefresh(`dados-sessao:${id}`, [{ table: 'sessions', filter: `campaign_id=eq.${id}` }], reload);
 
   if (loading) return <LoadingState />;
   if (error && !data) return <ErrorState message={error} onRetry={reload} />;
@@ -66,13 +69,17 @@ export default function CampaignDiceScreen() {
             <>
               {campaign.status === 'active' ? <DiceColorCard campaignId={campaign.id} /> : null}
               <DiceProvider campaignId={campaign.id} characterId={ownCharacter?.id ?? null}>
-                <DicePanel isGm={isGm} characterName={ownCharacter?.name ?? null} />
+                <DicePanel
+                  isGm={isGm}
+                  characterName={ownCharacter?.name ?? null}
+                  skills={ownCharacter ? characterSkillBonuses(campaign.systemId, ownCharacter.sheet) : []}
+                />
               </DiceProvider>
             </>
           ) : (
             <AppText style={{ color: colors.warning }}>
               A sessão ainda não começou. As rolagens da mesa ficam liberadas quando o mestre
-              iniciar; puxe a tela para atualizar. Para testar, role na ficha: lá os dados são
+              iniciar (a tela atualiza sozinha). Para testar, role na ficha: lá os dados são
               locais.
             </AppText>
           )}

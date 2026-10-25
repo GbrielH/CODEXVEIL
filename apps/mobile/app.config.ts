@@ -32,11 +32,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   backgroundColor: charcoal,
   android: {
     package: process.env.ANDROID_PACKAGE ?? 'app.codexveil.mobile',
-    versionCode: 2,
+    versionCode: 3,
+    // Ícone do Tomo (arte de 2026-10-26): fundo no tom do quadro da arte.
     adaptiveIcon: {
-      backgroundColor: charcoal,
+      backgroundColor: '#03041e',
       foregroundImage: './assets/images/adaptive-icon-foreground.png',
-      monochromeImage: './assets/images/adaptive-icon-monochrome.png',
     },
     predictiveBackGestureEnabled: false,
     ...(googleServicesFile ? { googleServicesFile } : {}),
@@ -69,7 +69,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         backgroundColor: charcoal,
         image: './assets/images/splash-icon.png',
-        imageWidth: 160,
+        imageWidth: 200,
       },
     ],
   ],

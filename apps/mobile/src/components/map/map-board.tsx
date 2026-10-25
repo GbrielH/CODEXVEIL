@@ -41,6 +41,8 @@ export function MapBoard({
   myCharacterId,
   zoom,
   selected,
+  namedTokenId = null,
+  freeMovement = false,
   colorOfCharacter,
   onTapCell,
 }: {
@@ -49,13 +51,17 @@ export function MapBoard({
   imageUrl: string | null;
   tokenImages: Record<string, string>;
   /** Imagens do mapa (camadas) com URL e proporção. */
-  layers: { path: string; x: number; y: number; width: number; url: string; aspect: number }[];
+  layers: { path: string; x: number; y: number; width: number; rotation?: number; url: string; aspect: number }[];
   /** Sistema da campanha (regra de distância na diagonal). */
   systemId: string;
   myCharacterId: string | null;
   zoom: number;
   /** Token do jogador selecionado para mover. */
   selected: boolean;
+  /** Token tocado: mostra o nome por cima dele. */
+  namedTokenId?: string | null;
+  /** Fora de combate: os movimentos não deixam rastro com metros. */
+  freeMovement?: boolean;
   colorOfCharacter: (characterId: string | null) => string | null;
   onTapCell: (x: number, y: number) => void;
 }) {
@@ -72,7 +78,7 @@ export function MapBoard({
       return [{ id: token.id, label: token.label, fx: old.x, fy: old.y, tx: token.x, ty: token.y, half: tokenSizeSquares[token.size] / 2, meters: gridDistance(old, token, systemId).meters }];
     });
     setLastTokens(tokens);
-    if (moved.length) setTrails((current) => [...current.filter((trail) => !moved.some((entry) => entry.id === trail.id)), ...moved]);
+    if (moved.length && !freeMovement) setTrails((current) => [...current.filter((trail) => !moved.some((entry) => entry.id === trail.id)), ...moved]);
   }
   useEffect(() => {
     if (trails.length === 0) return;
@@ -126,7 +132,26 @@ export function MapBoard({
             </Defs>
             {layers.length
               ? layers.map((layer, index) => (
-                  <SvgImage key={`${layer.path}-${index}`} href={{ uri: layer.url }} x={layer.x} y={layer.y} width={layer.width} height={layer.width * layer.aspect} preserveAspectRatio="none" />
+                  (() => {
+                    // Girada de lado (90°/270°), a área ocupada troca largura e altura; gira no centro dela (como no site).
+                    const height = layer.width * layer.aspect;
+                    const rotation = layer.rotation ?? 0;
+                    const sideways = rotation === 90 || rotation === 270;
+                    const cx = layer.x + (sideways ? height : layer.width) / 2;
+                    const cy = layer.y + (sideways ? layer.width : height) / 2;
+                    return (
+                      <SvgImage
+                        key={`${layer.path}-${index}`}
+                        href={{ uri: layer.url }}
+                        x={cx - layer.width / 2}
+                        y={cy - height / 2}
+                        width={layer.width}
+                        height={height}
+                        preserveAspectRatio="none"
+                        {...(rotation ? { transform: `rotate(${rotation} ${cx} ${cy})` } : {})}
+                      />
+                    );
+                  })()
                 ))
               : imageUrl
                 ? (
@@ -244,7 +269,7 @@ export function MapBoard({
                 </SvgText>
               );
             })}
-            {trails
+            {(freeMovement ? [] : trails)
               .filter((trail) => visible.some((token) => token.id === trail.id))
               .map((trail) => {
                 const text = `${trail.label ? `${trail.label}: ` : ''}${formatMeters(trail.meters)}`;
@@ -259,6 +284,20 @@ export function MapBoard({
                   </G>
                 );
               })}
+            {(() => {
+              const token = namedTokenId ? visible.find((entry) => entry.id === namedTokenId) : null;
+              if (!token?.label) return null;
+              const half = tokenSizeSquares[token.size] / 2;
+              const width = Math.max(1.2, token.label.length * 0.2 + 0.3);
+              return (
+                <G>
+                  <Rect x={token.x + half - width / 2} y={token.y - 0.65} width={width} height={0.42} rx={0.12} fill="rgba(20,16,12,0.9)" stroke="#f3e2b3" strokeWidth={0.03} />
+                  <SvgText x={token.x + half} y={token.y - 0.35} textAnchor="middle" fontSize={0.26} fontWeight="700" fill="#f3e2b3">
+                    {token.label}
+                  </SvgText>
+                </G>
+              );
+            })()}
             {unrevealed ? <Path d={unrevealed} fill="#050505" /> : null}
             {sight ? <Rect x="0" y="0" width={map.cols} height={map.rows} fill="#050505" opacity={0.92} mask="url(#visao)" /> : null}
             {myToken && selected ? (

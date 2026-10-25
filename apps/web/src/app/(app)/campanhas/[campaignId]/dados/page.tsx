@@ -1,11 +1,5 @@
 import { getSessionState, listCampaignCharacters, listDiceRolls } from '@codexveil/database';
-import {
-  SKILLS,
-  computeDnd5eDerived,
-  parseDnd5eSheet,
-  skillDefinitions,
-} from '@codexveil/rpg-systems/dnd5e';
-import { computeT20Derived, parseT20Sheet } from '@codexveil/rpg-systems/tormenta20';
+import { characterSkillBonuses } from '@codexveil/rpg-systems';
 import { Dices, ScrollText } from 'lucide-react';
 import type { Metadata } from 'next';
 import { DicePanel, DiceProvider } from '@/components/dice/dice-roller';
@@ -18,26 +12,6 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Dados' };
 
-function skillBonuses(systemId: string, sheet: unknown): { label: string; bonus: number }[] {
-  try {
-    if (systemId === 'dnd5e') {
-      const derived = computeDnd5eDerived(parseDnd5eSheet(sheet));
-      return SKILLS.map((skill) => ({
-        label: skillDefinitions[skill].label,
-        bonus: derived.skills[skill].bonus,
-      }));
-    }
-    if (systemId === 'tormenta20') {
-      const derived = computeT20Derived(parseT20Sheet(sheet));
-      return Object.values(derived.skills)
-        .filter((value) => value.usable)
-        .map((value) => ({ label: value.label, bonus: value.total }));
-    }
-  } catch {
-    return [];
-  }
-  return [];
-}
 
 /** Rolagens da campanha: o dado é rolado no servidor e aparece no mural de todos (e do mestre). */
 export default async function DicePage({ params }: PageProps<'/campanhas/[campaignId]/dados'>) {
@@ -55,7 +29,7 @@ export default async function DicePage({ params }: PageProps<'/campanhas/[campai
     : (party.find((character) => character.ownerId === user.id) ?? null);
   const canRoll = campaign.status === 'active';
   // Perícias da ficha do jogador, com o bônus já somado (o seletor de "Rolar dados" usa).
-  const skills = ownCharacter ? skillBonuses(campaign.systemId, ownCharacter.sheet) : [];
+  const skills = ownCharacter ? characterSkillBonuses(campaign.systemId, ownCharacter.sheet) : [];
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,26rem)_1fr]">
