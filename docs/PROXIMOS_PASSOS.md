@@ -560,6 +560,8 @@ de segurança).
 - [x] "Rolar dados": "Para quê" virou "Selecionar perícia" (bônus da ficha somado: D&D e T20).
 - [x] Altura obrigatória na criação (D&D e T20, site e app; `details.height`/`height`).
 - [x] Aba Sessão: aviso "Novo" quando o mestre libera um trecho e o jogador está em outra aba.
+      Corrigido no mesmo dia: o aviso aparecia com qualquer sinal do tempo real; agora só quando
+      surge um trecho liberado que o jogador ainda não viu (vistos guardados ao abrir a aba).
 - [x] Ficha D&D, Combate: números nas notas da CA; proficiência, PV máximos e dados de vida,
       Percepção passiva (Intuição/Investigação) e CD/ataque de magia. (Os cálculos conferidos no
       anexo estavam certos; se algum número ainda parecer errado, o responsável aponta qual.)
