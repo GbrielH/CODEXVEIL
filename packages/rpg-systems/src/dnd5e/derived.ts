@@ -57,6 +57,25 @@ export interface Dnd5eDerived {
   };
 }
 
+/**
+ * Bônus temporários ligados durante o jogo (magias, poções, efeitos do mestre): somam por cima
+ * do calculado e somem ao serem zerados. Atributos mudam também modificadores, perícias e ataques.
+ */
+export interface Dnd5eTemporaryBonuses {
+  abilities?: Partial<Record<Ability, number>>;
+  armorClass?: number;
+  initiative?: number;
+  /** Na unidade da ficha (m ou ft). */
+  speed?: number;
+  passivePerception?: number;
+}
+
+export function hasTemporaryBonuses(temporary: Dnd5eTemporaryBonuses | undefined): boolean {
+  if (!temporary) return false;
+  const { abilities = {}, ...rest } = temporary;
+  return [...Object.values(abilities), ...Object.values(rest)].some((value) => Boolean(value));
+}
+
 function mapAbilities<T>(fn: (ability: Ability) => T): Record<Ability, T> {
   return Object.fromEntries(ABILITIES.map((ability) => [ability, fn(ability)])) as Record<
     Ability,
@@ -71,11 +90,15 @@ function mapAbilities<T>(fn: (ability: Ability) => T): Record<Ability, T> {
 export function computeDnd5eDerived(
   sheet: Dnd5eSheet,
   gear?: { items: readonly GearItem[]; features?: readonly string[] },
+  temporary: Dnd5eTemporaryBonuses = {},
 ): Dnd5eDerived {
   const level = totalLevel(sheet);
   const proficiencyBonus = proficiencyBonusForLevel(level);
   const combat = gear ? computeDnd5eCombat(sheet, gear.items, gear.features ?? []) : null;
-  const scores = combat?.abilities ?? sheet.abilities;
+  const baseScores = combat?.abilities ?? sheet.abilities;
+  const scores = mapAbilities((ability) =>
+    Math.max(1, baseScores[ability] + (temporary.abilities?.[ability] ?? 0)),
+  );
   const abilityModifiers = mapAbilities((ability) => abilityModifier(scores[ability]));
   const plainName = (text: string) =>
     text
@@ -149,15 +172,26 @@ export function computeDnd5eDerived(
       (alert && sheet.combat.initiativeProficiency === 'none'
         ? proficiencyBonus
         : checkProficiency(sheet.combat.initiativeProficiency)) +
-      sheet.combat.initiativeBonus,
-    armorClass: combat?.armorClass ?? sheet.combat.armorClass,
-    armorClassBreakdown: combat?.armorClassBreakdown ?? [],
-    speed: combat?.speed ?? sheet.combat.speed,
-    speedNotes: combat?.speedNotes ?? [],
+      sheet.combat.initiativeBonus +
+      (temporary.initiative ?? 0),
+    armorClass: (combat?.armorClass ?? sheet.combat.armorClass) + (temporary.armorClass ?? 0),
+    armorClassBreakdown: [
+      ...(combat?.armorClassBreakdown ?? []),
+      ...(temporary.armorClass
+        ? [`Temporário ${temporary.armorClass > 0 ? '+' : ''}${temporary.armorClass}`]
+        : []),
+    ],
+    speed: Math.max(0, (combat?.speed ?? sheet.combat.speed) + (temporary.speed ?? 0)),
+    speedNotes: [
+      ...(combat?.speedNotes ?? []),
+      ...(temporary.speed
+        ? [`Temporário ${temporary.speed > 0 ? '+' : ''}${temporary.speed}`]
+        : []),
+    ],
     abilities: scores,
     abilityNotes: combat?.abilityNotes ?? [],
     combatWarnings: combat?.warnings ?? [],
-    passivePerception: 10 + skills.perception.bonus,
+    passivePerception: 10 + skills.perception.bonus + (temporary.passivePerception ?? 0),
     passiveInsight: 10 + skills.insight.bonus,
     passiveInvestigation: 10 + skills.investigation.bonus,
     spellcasting,

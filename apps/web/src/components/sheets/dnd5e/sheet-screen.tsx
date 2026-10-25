@@ -15,6 +15,7 @@ import { applyTrackOperation, type TrackOperation } from '@codexveil/domain';
 import {
   buildDnd5eBookContent,
   computeDnd5eDerived,
+  hasTemporaryBonuses,
   speciesSpeedFeet,
   dnd5eConditionEffects,
   dnd5eSheetSchema,
@@ -126,7 +127,8 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
         .map((entry) => entry.name),
     [abilities],
   );
-  const derived = useMemo(
+  // Sem os bônus temporários: é o que se grava na ficha (CA e deslocamento base).
+  const baseDerived = useMemo(
     () => computeDnd5eDerived(draft.sheet, { items, features: featureNames }),
     [draft.sheet, items, featureNames],
   );
@@ -151,14 +153,23 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
       // Sem armazenamento: vale só nesta página.
     }
   };
+  // O que a tela mostra: o cálculo com os bônus temporários por cima.
+  const derived = useMemo(
+    () =>
+      hasTemporaryBonuses(activeEffects.temporary)
+        ? computeDnd5eDerived(draft.sheet, { items, features: featureNames }, activeEffects.temporary)
+        : baseDerived,
+    [baseDerived, activeEffects.temporary, draft.sheet, items, featureNames],
+  );
   // Grava na ficha a CA e o deslocamento calculados, para o mestre, o grupo, os turnos e o mapa
   // verem os mesmos números (o deslocamento só quando a espécie é conhecida, para não acumular).
+  // Usa o cálculo base: os temporários ficam neste navegador e não "grudam" na ficha.
   const knownSpecies = speciesSpeedFeet(draft.sheet.identity.species) !== null;
   useEffect(() => {
     if (!permissions.canEditSheet) return;
     const combat = draft.sheet.combat;
-    const acChanged = derived.armorClass !== combat.armorClass;
-    const speedChanged = knownSpecies && derived.speed !== combat.speed;
+    const acChanged = baseDerived.armorClass !== combat.armorClass;
+    const speedChanged = knownSpecies && baseDerived.speed !== combat.speed;
     if (!acChanged && !speedChanged) return;
     update((current) => ({
       ...current,
@@ -166,14 +177,14 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
         ...current.sheet,
         combat: {
           ...current.sheet.combat,
-          armorClass: derived.armorClass,
-          ...(speedChanged ? { speed: derived.speed } : {}),
+          armorClass: baseDerived.armorClass,
+          ...(speedChanged ? { speed: baseDerived.speed } : {}),
         },
       },
     }));
   }, [
-    derived.armorClass,
-    derived.speed,
+    baseDerived.armorClass,
+    baseDerived.speed,
     knownSpecies,
     permissions.canEditSheet,
     draft.sheet.combat,

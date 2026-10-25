@@ -5,7 +5,7 @@
  * (bônus e dano extra) continuam somando, para efeitos que o sistema não conhece.
  */
 import { abilityModifier, type Ability } from './abilities';
-import type { Dnd5eDerived } from './derived';
+import type { Dnd5eDerived, Dnd5eTemporaryBonuses } from './derived';
 import type { Dnd5eAttackData } from './entries';
 import { magicBonus, type GearItem } from './equipment-effects';
 import type { Dnd5eSheet } from './sheet';
@@ -14,6 +14,8 @@ import { findSrdWeaponByName, sheetHasWeaponProficiency } from './weapon-attacks
 /** Efeitos que a pessoa liga e desliga durante o jogo. */
 export interface Dnd5eActiveEffects {
   rage: boolean;
+  /** Bônus temporários (ver `computeDnd5eDerived`). */
+  temporary?: Dnd5eTemporaryBonuses;
 }
 
 export interface Dnd5eAttackContext {

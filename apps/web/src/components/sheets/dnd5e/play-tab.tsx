@@ -24,6 +24,7 @@ import { useSheet } from './context';
 import { ConditionsPanel } from './conditions-panel';
 import { HpTracker } from './hp-tracker';
 import { ResourceTracks } from './resource-tracks';
+import { TemporaryBonuses } from './temporary-bonuses';
 import { TurnPlay } from './turn-play';
 
 interface StatRoll {
@@ -103,6 +104,7 @@ export function PlayTab() {
   const penalty = effects.d20Penalty;
   const penaltySource = `Exaustão ${effects.exhaustionLevel}`;
   const passive = passiveWithConditions(derived.passivePerception, effects);
+  const temporary = activeEffects.temporary ?? {};
   const incapacitated =
     effects.incapacitated.length > 0
       ? effects.conditions.find((condition) => condition.key === 'incapacitated')
@@ -135,12 +137,13 @@ export function PlayTab() {
             icon={<Shield className="h-5 w-5" aria-hidden="true" />}
             label="Classe de armadura"
             value={String(derived.armorClass)}
+            changed={Boolean(temporary.armorClass)}
           />
           <Stat
             icon={<Zap className="h-5 w-5" aria-hidden="true" />}
             label="Iniciativa"
             value={formatModifier(derived.initiative - penalty)}
-            changed={penalty > 0}
+            changed={penalty > 0 || Boolean(temporary.initiative)}
             roll={{
               expression: d20Expression(derived.initiative - penalty),
               label: 'Iniciativa',
@@ -158,13 +161,13 @@ export function PlayTab() {
             label="Deslocamento"
             value={speed}
             hint={speedHint}
-            changed={speedValue !== derived.speed}
+            changed={speedValue !== derived.speed || Boolean(temporary.speed)}
           />
           <Stat
             icon={<Crosshair className="h-5 w-5" aria-hidden="true" />}
             label="Percepção passiva"
             value={String(passive)}
-            changed={passive !== derived.passivePerception}
+            changed={passive !== derived.passivePerception || Boolean(temporary.passivePerception)}
             hint={
               passive !== derived.passivePerception
                 ? `Base ${derived.passivePerception}`
@@ -172,6 +175,7 @@ export function PlayTab() {
             }
           />
         </div>
+        <TemporaryBonuses />
         {derived.spellcasting ? (
           <div className="grid grid-cols-2 gap-3">
             <Stat

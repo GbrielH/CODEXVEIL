@@ -128,6 +128,17 @@ export function MapBoard({
   const [ruler, setRuler] = useState<{ start: Point; end: Point; active: boolean } | null>(null);
   const [areaDraft, setAreaDraft] = useState<{ origin: Point; point: Point } | null>(null);
   const [stroke, setStroke] = useState<[number, number][] | null>(null);
+  // Token clicado: mostra o nome por cima dele por alguns segundos.
+  const [namedToken, setNamedToken] = useState<string | null>(null);
+  const nameTimer = useRef<number | null>(null);
+  const showName = (tokenId: string | null) => {
+    if (nameTimer.current) window.clearTimeout(nameTimer.current);
+    setNamedToken(tokenId);
+    if (tokenId) nameTimer.current = window.setTimeout(() => setNamedToken(null), 4000);
+  };
+  useEffect(() => () => {
+    if (nameTimer.current) window.clearTimeout(nameTimer.current);
+  }, []);
   const [layerDrag, setLayerDrag] = useState<{ index: number; offsetX: number; offsetY: number; x: number; y: number } | null>(null);
   // Proporção (altura/largura) de cada imagem, para o contorno e a área de arrastar.
   const [aspects, setAspects] = useState<Record<string, number>>({});
@@ -208,6 +219,7 @@ export function MapBoard({
   const center = (point: Point): Point => ({ x: Math.floor(point.x) + 0.5, y: Math.floor(point.y) + 0.5 });
 
   const onBoardDown = (event: ReactPointerEvent<SVGSVGElement>) => {
+    showName(null);
     const point = toGrid(event);
     if (tool === 'ruler') {
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -490,6 +502,7 @@ export function MapBoard({
               if (tool !== 'move') return;
               event.stopPropagation();
               onSelectToken?.(token.id);
+              showName(token.id);
               if (!canDrag(token)) return;
               svgRef.current?.setPointerCapture(event.pointerId);
               const point = toGrid(event);
@@ -529,6 +542,20 @@ export function MapBoard({
           </g>
         );
       })}
+
+      {/* Nome do token clicado, por cima dele por alguns segundos. */}
+      {namedToken && !drag
+        ? (() => {
+            const token = tokens.find((entry) => entry.id === namedToken && visibleToMe(entry));
+            if (!token?.label) return null;
+            const side = tokenSizeSquares[token.size];
+            return (
+              <g style={{ pointerEvents: 'none' }}>
+                <DistanceTag x={token.x + side / 2} y={token.y - 0.15} text={token.label} />
+              </g>
+            );
+          })()
+        : null}
 
       {/* Rastros dos últimos movimentos (linha tracejada e distância). */}
       {trails.filter((trail) => tokens.some((token) => token.id === trail.id && visibleToMe(token))).map((trail) => {
