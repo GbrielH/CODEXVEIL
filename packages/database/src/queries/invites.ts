@@ -27,13 +27,15 @@ const INVITE_COLUMNS =
 export async function listCampaignInvites(
   client: CodexveilClient,
   campaignId: string,
+  { offset = 0, limit = 50 }: { offset?: number; limit?: number } = {},
 ): Promise<CampaignInvite[]> {
   const { data, error } = await client
     .from('campaign_invites')
     .select(INVITE_COLUMNS)
     .eq('campaign_id', campaignId)
     .order('created_at', { ascending: false })
-    .limit(50);
+    .order('id', { ascending: false })
+    .range(offset, offset + limit - 1);
   if (error) throw toAppError(error);
   const now = new Date();
   return data.map((row) => ({

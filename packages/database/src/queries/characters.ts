@@ -939,14 +939,15 @@ export async function deleteCharacterAbility(
 export async function listCharacterEvents(
   client: CodexveilClient,
   characterId: string,
-  limit = 50,
+  { offset = 0, limit = 50 }: { offset?: number; limit?: number } = {},
 ): Promise<CharacterEvent[]> {
   const { data, error } = await client
     .from('character_events')
     .select('id, kind, summary, occurred_at, actor:profiles(display_name)')
     .eq('character_id', characterId)
     .order('occurred_at', { ascending: false })
-    .limit(limit);
+    .order('id', { ascending: false })
+    .range(offset, offset + limit - 1);
   if (error) throw toAppError(error);
   return data.map((row) => ({
     id: row.id,
@@ -974,13 +975,15 @@ export async function addCharacterEvent(
 export async function listCharacterSnapshots(
   client: CodexveilClient,
   characterId: string,
+  { offset = 0, limit = 30 }: { offset?: number; limit?: number } = {},
 ): Promise<CharacterSnapshot[]> {
   const { data, error } = await client
     .from('character_snapshots')
     .select('id, name, version, created_at, sheet')
     .eq('character_id', characterId)
     .order('created_at', { ascending: false })
-    .limit(30);
+    .order('id', { ascending: false })
+    .range(offset, offset + limit - 1);
   if (error) throw toAppError(error);
   return data.map((row) => ({
     id: row.id,

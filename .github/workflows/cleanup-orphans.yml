@@ -1,0 +1,37 @@
+# Limpeza semanal dos arquivos órfãos do Storage (Edge Function `cleanup-orphans`).
+# Segredos do repositório: SUPABASE_PROJECT_REF e CLEANUP_SECRET (o mesmo valor do segredo da
+# função no Supabase). Veja docs/DEPLOY.md.
+name: Limpeza de arquivos órfãos
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # segundas, 03:00 em Brasília
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: 'Só contar (não apagar)'
+        type: boolean
+        default: false
+
+permissions: {}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Chamar a função
+        env:
+          PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          CLEANUP_SECRET: ${{ secrets.CLEANUP_SECRET }}
+          DRY: ${{ inputs.dry && '1' || '0' }}
+        run: |
+          if [ -z "$PROJECT_REF" ] || [ -z "$CLEANUP_SECRET" ]; then
+            echo "::warning::Segredos SUPABASE_PROJECT_REF/CLEANUP_SECRET ausentes; limpeza não executada."
+            exit 0
+          fi
+          status=$(curl -sS -o resposta.json -w '%{http_code}' -X POST \
+            -H "x-cleanup-secret: $CLEANUP_SECRET" \
+            "https://$PROJECT_REF.supabase.co/functions/v1/cleanup-orphans?dry=$DRY")
+          cat resposta.json; echo
+          test "$status" = "200"

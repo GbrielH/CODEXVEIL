@@ -44,6 +44,28 @@ export interface NotifySessionResult {
   skipped?: string;
 }
 
+export type DeleteAccountResult =
+  | { deleted: true }
+  | { deleted: false; error: string; /** Campanhas a transferir antes de excluir. */ campaigns: string[] };
+
+/**
+ * Exclui a conta do usuário logado (Edge Function `delete-account`). Recusa enquanto ele for o
+ * mestre responsável por campanhas com outros participantes, que são devolvidas em `campaigns`.
+ */
+export async function deleteMyAccount(client: CodexveilClient): Promise<DeleteAccountResult> {
+  const response = await client.functions.invoke<{ deleted?: boolean }>('delete-account', { body: { confirm: 'EXCLUIR' } });
+  if (!response.error && response.data?.deleted) return { deleted: true };
+  // Respostas de erro da função trazem o motivo no corpo (FunctionsHttpError.context = Response).
+  let body: { error?: unknown; campaigns?: unknown } = {};
+  const context = (response.error as { context?: unknown } | null)?.context;
+  if (context instanceof Response) body = (await context.json().catch(() => ({}))) as typeof body;
+  return {
+    deleted: false,
+    error: typeof body.error === 'string' ? body.error : 'Não foi possível excluir a conta agora. Tente de novo.',
+    campaigns: Array.isArray(body.campaigns) ? body.campaigns.filter((name): name is string => typeof name === 'string') : [],
+  };
+}
+
 /**
  * Pede ao servidor o aviso de sessão agendada para os participantes da campanha. Não falha a
  * operação do mestre: devolve `null` se o serviço de notificações estiver indisponível.

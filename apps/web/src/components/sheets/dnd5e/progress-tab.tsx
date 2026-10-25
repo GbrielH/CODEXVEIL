@@ -11,7 +11,7 @@ import {
 } from '@codexveil/database';
 import { parseDnd5eSheet, totalLevel } from '@codexveil/rpg-systems/dnd5e';
 import { History, RotateCcw, ScrollText } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -101,21 +101,37 @@ function ExperienceCard() {
   );
 }
 
+const EVENTS_PAGE = 30;
+const SNAPSHOTS_PAGE = 15;
+
+function MoreButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+  return (
+    <div className="flex justify-center pt-3">
+      <Button size="sm" variant="ghost" onClick={onClick}>
+        {children}
+      </Button>
+    </div>
+  );
+}
+
 function EventsCard() {
   const { character, permissions, run } = useSheet();
   const id = useId();
   const [kind, setKind] = useState<CharacterEventKind>('milestone');
   const [summary, setSummary] = useState('');
   const [busy, setBusy] = useState(false);
+  const [pages, setPages] = useState(1);
   const {
-    data: events,
+    data: eventRows,
     error,
     reload: load,
   } = useAsyncData(
-    () => listCharacterEvents(getSupabaseBrowserClient(), character.id),
+    () => listCharacterEvents(getSupabaseBrowserClient(), character.id, { limit: pages * EVENTS_PAGE + 1 }),
     'Não foi possível carregar o histórico.',
-    character.id,
+    `${character.id}:${pages}`,
   );
+  const events = eventRows?.slice(0, pages * EVENTS_PAGE) ?? null;
+  const moreEvents = (eventRows?.length ?? 0) > pages * EVENTS_PAGE;
 
   const add = async () => {
     const text = summary.trim();
@@ -204,6 +220,7 @@ function EventsCard() {
           ))}
         </ol>
       )}
+      {moreEvents ? <MoreButton onClick={() => setPages((value) => value + 1)}>Ver registros mais antigos</MoreButton> : null}
     </Card>
   );
 }
@@ -211,15 +228,18 @@ function EventsCard() {
 function SnapshotsCard() {
   const { character, name, sheet, updateSheet, setName } = useSheet();
   const { toast } = useToast();
+  const [pages, setPages] = useState(1);
   const {
-    data: snapshots,
+    data: snapshotRows,
     error,
     reload: load,
   } = useAsyncData(
-    () => listCharacterSnapshots(getSupabaseBrowserClient(), character.id),
+    () => listCharacterSnapshots(getSupabaseBrowserClient(), character.id, { limit: pages * SNAPSHOTS_PAGE + 1 }),
     'Não foi possível carregar as cópias.',
-    character.id,
+    `${character.id}:${pages}`,
   );
+  const snapshots = snapshotRows?.slice(0, pages * SNAPSHOTS_PAGE) ?? null;
+  const moreSnapshots = (snapshotRows?.length ?? 0) > pages * SNAPSHOTS_PAGE;
 
   const restore = (snapshot: CharacterSnapshot) => {
     let restored;
@@ -245,7 +265,7 @@ function SnapshotsCard() {
       <CardHeader
         icon={<History className="h-5 w-5" aria-hidden="true" />}
         title="Cópias de segurança"
-        description="Guardadas automaticamente antes de cada rajada de edições (até 30)."
+        description="Guardadas automaticamente antes de cada rajada de edições (as mais recentes primeiro)."
       />
       {error ? (
         <ErrorState
@@ -302,6 +322,7 @@ function SnapshotsCard() {
           })}
         </ul>
       )}
+      {moreSnapshots ? <MoreButton onClick={() => setPages((value) => value + 1)}>Ver cópias mais antigas</MoreButton> : null}
       <p className="mt-3 text-xs text-fg-muted">
         Ficha atual:{' '}
         {sheet.identity.classes

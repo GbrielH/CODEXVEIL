@@ -25,9 +25,11 @@ export interface CampaignNote {
 const NOTE_COLUMNS =
   'id, campaign_id, author_id, title, body, visibility, is_pinned, version, updated_at, image_path, author:profiles(display_name)' as const;
 
+/** Anotações por página: fixadas primeiro, depois na ordem de criação. */
 export async function listCampaignNotes(
   client: CodexveilClient,
   campaignId: string,
+  { offset = 0, limit = 200 }: { offset?: number; limit?: number } = {},
 ): Promise<CampaignNote[]> {
   const { data, error } = await client
     .from('campaign_notes')
@@ -36,7 +38,8 @@ export async function listCampaignNotes(
     .order('is_pinned', { ascending: false })
     // As demais seguem a ordem em que foram criadas.
     .order('created_at', { ascending: true })
-    .limit(200);
+    .order('id', { ascending: true })
+    .range(offset, offset + limit - 1);
   if (error) throw toAppError(error);
   return data.map((row) => ({
     id: row.id,

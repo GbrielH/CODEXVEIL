@@ -1,6 +1,6 @@
 import { getProfile, listMyCampaigns } from '@codexveil/database';
 import { campaignRoleLabels } from '@codexveil/domain';
-import { ScrollText, ShieldCheck, UserRound } from 'lucide-react';
+import { ScrollText, ShieldCheck, Trash2, UserRound } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import { requireSessionUser } from '@/lib/auth';
 import { formatDate } from '@/lib/format';
 import { routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { DeleteAccount } from './delete-account';
 import { PasswordReset } from './password-reset';
 import { ProfileForm } from './profile-form';
 
@@ -46,6 +47,11 @@ export default async function ProfilePage() {
               <dd>{formatDate(profile.createdAt)}</dd>
             </dl>
             <PasswordReset />
+          </Card>
+
+          <Card>
+            <CardHeader icon={<Trash2 className="h-5 w-5" aria-hidden="true" />} title="Excluir conta" />
+            <DeleteAccount />
           </Card>
 
           <Card>

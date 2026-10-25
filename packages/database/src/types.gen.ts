@@ -2091,6 +2091,13 @@ export type Database = {
         };
         Returns: undefined;
       };
+      list_orphan_media: {
+        Args: {
+          p_min_age_hours?: number;
+          p_limit?: number;
+        };
+        Returns: string[];
+      };
       move_my_token: {
         Args: {
           p_token_id: string;

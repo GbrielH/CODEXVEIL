@@ -3,6 +3,7 @@ import { History, UserPlus } from 'lucide-react';
 import type { Metadata } from 'next';
 import { Alert } from '@/components/ui/alert';
 import { Card, CardHeader } from '@/components/ui/card';
+import { LoadMoreLink, pageWindow, takePage } from '@/components/ui/load-more';
 import { ForbiddenState } from '@/components/ui/states';
 import { loadCampaignOrNotFound } from '@/lib/campaigns';
 import { siteUrl } from '@/lib/env';
@@ -12,7 +13,9 @@ import { InviteList } from './invite-list';
 
 export const metadata: Metadata = { title: 'Convites' };
 
-export default async function CampaignInvitesPage({ params }: PageProps<'/campanhas/[campaignId]/convites'>) {
+const PAGE_SIZE = 25;
+
+export default async function CampaignInvitesPage({ params, searchParams }: PageProps<'/campanhas/[campaignId]/convites'>) {
   const { campaignId } = await params;
   const { campaign } = await loadCampaignOrNotFound(campaignId);
 
@@ -21,7 +24,8 @@ export default async function CampaignInvitesPage({ params }: PageProps<'/campan
   }
 
   const supabase = await createSupabaseServerClient();
-  const invites = await listCampaignInvites(supabase, campaign.id);
+  const paging = pageWindow((await searchParams).pagina, PAGE_SIZE);
+  const { items: invites, hasMore } = takePage(await listCampaignInvites(supabase, campaign.id, { limit: paging.limit }), paging.size);
   const isActive = campaign.status === 'active';
 
   return (
@@ -45,6 +49,7 @@ export default async function CampaignInvitesPage({ params }: PageProps<'/campan
           description="Códigos expirados, esgotados ou revogados não funcionam mais."
         />
         <InviteList campaignId={campaign.id} invites={invites} siteUrl={siteUrl()} canManage={isActive} />
+        {hasMore ? <LoadMoreLink href={`/campanhas/${campaign.id}/convites`} page={paging.page} label="Carregar convites mais antigos" /> : null}
       </Card>
     </div>
   );
