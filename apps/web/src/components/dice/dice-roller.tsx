@@ -314,18 +314,18 @@ export function DicePanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Dados rápidos">
+      <div className="grid grid-cols-7 gap-1.5" role="group" aria-label="Dados rápidos">
         {COMMON_DICE.map((sides) => (
-          <Button
+          <button
             key={sides}
-            variant="secondary"
-            size="sm"
+            type="button"
             disabled={busy}
             onClick={() => void go(`1d${sides}`)}
-            className="min-w-14"
+            title={`Rolar 1d${sides}`}
+            className="tabular flex h-11 items-center justify-center rounded-lg border border-line bg-raised font-display text-sm text-fg transition-colors hover:border-parchment-300/60 hover:bg-hover hover:text-fg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-parchment-300 disabled:opacity-60"
           >
             d{sides}
-          </Button>
+          </button>
         ))}
       </div>
       <form
@@ -335,7 +335,7 @@ export function DicePanel({
           if (valid) void go(expression);
         }}
       >
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
             <label htmlFor={`${id}-expression`} className="text-sm font-medium">
               Expressão
@@ -357,30 +357,74 @@ export function DicePanel({
             </p>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${id}-label`} className="text-sm font-medium">
-              {skills.length ? 'Selecionar perícia' : 'Para quê'}{' '}
-              <span className="font-normal text-fg-muted">(opcional)</span>
-            </label>
             {skills.length ? (
-              <select
+              <span
                 id={`${id}-label`}
-                value={skills.some((skill) => skill.label === label) ? label : ''}
-                onChange={(event) => {
-                  const skill = skills.find((entry) => entry.label === event.target.value);
-                  setLabel(skill?.label ?? '');
-                  // A perícia já soma o bônus da ficha: 1d20 + atributo + treino/proficiência.
-                  if (skill) setExpression(`1d20${skill.bonus >= 0 ? '+' : ''}${skill.bonus}`);
-                }}
-                className={controlClasses(false, 'h-11 text-sm')}
+                className="flex items-baseline justify-between text-sm font-medium"
               >
-                <option value="">Nenhuma (rolagem livre)</option>
-                {skills.map((skill) => (
-                  <option key={skill.label} value={skill.label}>
-                    {skill.label} ({skill.bonus >= 0 ? '+' : ''}
-                    {skill.bonus})
-                  </option>
-                ))}
-              </select>
+                <span>
+                  Perícia <span className="font-normal text-fg-muted">(opcional)</span>
+                </span>
+                {skills.some((skill) => skill.label === label) ? (
+                  <button
+                    type="button"
+                    onClick={() => setLabel('')}
+                    className="text-xs font-normal text-fg-muted underline-offset-2 hover:text-fg hover:underline"
+                  >
+                    Limpar
+                  </button>
+                ) : null}
+              </span>
+            ) : (
+              <label htmlFor={`${id}-label`} className="text-sm font-medium">
+                Para quê <span className="font-normal text-fg-muted">(opcional)</span>
+              </label>
+            )}
+            {skills.length ? (
+              <div
+                role="radiogroup"
+                aria-labelledby={`${id}-label`}
+                className="grid max-h-60 grid-cols-2 gap-1 overflow-y-auto rounded-lg border border-line p-1"
+              >
+                {skills.map((skill) => {
+                  const selected = skill.label === label;
+                  return (
+                    <button
+                      key={skill.label}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => {
+                        if (selected) {
+                          setLabel('');
+                          return;
+                        }
+                        setLabel(skill.label);
+                        // A perícia já soma o bônus da ficha: 1d20 + atributo + treino/proficiência.
+                        setExpression(`1d20${skill.bonus >= 0 ? '+' : ''}${skill.bonus}`);
+                      }}
+                      className={cx(
+                        'flex min-w-0 items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors',
+                        selected
+                          ? 'bg-parchment-200/10 text-fg-accent ring-1 ring-parchment-300/60'
+                          : 'text-fg-secondary hover:bg-hover hover:text-fg',
+                      )}
+                    >
+                      <span className="truncate">{skill.label}</span>
+                      <span
+                        className={cx(
+                          'tabular shrink-0 font-mono text-xs',
+                          skill.bonus > 0 ? 'text-fg' : 'text-fg-muted',
+                          selected && 'text-fg-accent',
+                        )}
+                      >
+                        {skill.bonus >= 0 ? '+' : ''}
+                        {skill.bonus}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             ) : (
               <input
                 id={`${id}-label`}
@@ -393,7 +437,11 @@ export function DicePanel({
             )}
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Vantagem">
+        <div
+          className="grid grid-cols-3 gap-1 rounded-lg border border-line bg-raised p-1"
+          role="radiogroup"
+          aria-label="Vantagem"
+        >
           {DICE_ROLL_MODES.map((option) => (
             <button
               key={option}
@@ -402,17 +450,19 @@ export function DicePanel({
               aria-checked={mode === option}
               onClick={() => setMode(option)}
               className={cx(
-                'h-9 rounded-full border px-3 text-sm transition-colors',
+                'h-9 truncate rounded-md px-2 text-sm transition-colors',
                 mode === option
-                  ? 'border-parchment-300/70 bg-parchment-200/10 text-fg-accent'
-                  : 'border-line text-fg-secondary hover:bg-hover',
+                  ? 'bg-parchment-200/15 text-fg-accent ring-1 ring-parchment-300/60'
+                  : 'text-fg-secondary hover:bg-hover hover:text-fg',
               )}
             >
               {diceRollModeLabels[option]}
             </button>
           ))}
+        </div>
+        <div className="flex flex-col gap-3">
           {inCampaign ? (
-            <label className="ml-auto flex items-center gap-2 text-sm text-fg-secondary">
+            <label className="flex items-center gap-2 text-sm text-fg-secondary">
               <input
                 type="checkbox"
                 checked={secret}
@@ -423,12 +473,11 @@ export function DicePanel({
               {isGm ? 'Secreta (só mestres)' : 'Só para o mestre'}
             </label>
           ) : null}
-        </div>
-        <div>
           <Button
             type="submit"
             loading={busy}
             disabled={!valid}
+            className="w-full"
             icon={<Dices className="h-4 w-4" aria-hidden="true" />}
           >
             Rolar{characterName ? ` como ${characterName}` : ''}
