@@ -27,23 +27,27 @@ as consultas reais dos apps passou em 10 de 10 contra o Supabase real (Auth, Pos
 e Realtime) e revelou um defeito no Realtime, já corrigido. Em 2026-10-17 passou em 11 de 11, e
 um percurso logado no navegador achou e corrigiu outra falha do Realtime (veja a seção 5).
 
-**A lacuna agora é o uso real das telas.** Ninguém usou ainda o site no navegador nem o app
-no aparelho com duas contas, e os e-mails em português dependem do SMTP próprio (adiado). Pela
+**Atualização de 2026-10-26:** o responsável usou o site com mestre e jogador e confirmou que ele
+funciona, e que os e-mails do SMTP próprio chegam. **A lacuna agora é o app**, ainda não usado a
+fundo no aparelho.
+
+**Situação anterior (2026-10-17):** ninguém tinha usado ainda o site no navegador nem o app
+no aparelho com duas contas, e os e-mails em português dependiam do SMTP próprio. Pela
 regra da seção 22 ("não marque um item como concluído apenas porque existe uma tela para
 ele"), os critérios "Validado na API" e "Falta validar ao vivo" só contam como concluídos
 depois desse uso.
 
 ## 1. O que depende de você (configuração externa)
 
-| Item                                          | Situação (2026-10-16)                                                                                             | Onde está documentado                              |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Projeto Supabase exclusivo                    | **Feito:** `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`), com as migrações aplicadas                                       | [DEPLOY](DEPLOY.md#1-supabase-projeto-e-migrações) |
-| Site URL e URLs de redirecionamento           | **Feito:** `deploy/supabase/config.toml`                                                                          | [DEPLOY](DEPLOY.md#2-autenticação)                 |
-| SMTP próprio (Brevo) e templates em português | **Parcial (2026-10-18):** SMTP salvo no painel e templates enviados; falta confirmar a entrega e o fluxo pelo app | [DEPLOY](DEPLOY.md#2-autenticação)                 |
-| Hospedagem da web                             | **Feito:** <https://codexveil.vercel.app>, publicado sozinho a cada push em `main` (conferido em 2026-10-18)      | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
-| Conta Expo e projeto EAS                      | **Feito:** `@gabriel.xxtth/codexveil`; o workflow roda a cada push (OTA; APK novo só com mudança nativa)          | [DEPLOY](DEPLOY.md#5-app-android-apk-e-aab)        |
-| Firebase (notificações de sessão)             | **Pendente:** projeto Firebase e chave FCM V1 no Expo (passo 0c de PROXIMOS_PASSOS)                               | [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md)              |
-| Domínio próprio                               | Opcional                                                                                                          | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
+| Item                                          | Situação (2026-10-16)                                                                                        | Onde está documentado                              |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| Projeto Supabase exclusivo                    | **Feito:** `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`), com as migrações aplicadas                                  | [DEPLOY](DEPLOY.md#1-supabase-projeto-e-migrações) |
+| Site URL e URLs de redirecionamento           | **Feito:** `deploy/supabase/config.toml`                                                                     | [DEPLOY](DEPLOY.md#2-autenticação)                 |
+| SMTP próprio (Brevo) e templates em português | **Feito:** SMTP ligado em 2026-10-18; entrega confirmada pelo responsável em 2026-10-26                      | [DEPLOY](DEPLOY.md#2-autenticação)                 |
+| Hospedagem da web                             | **Feito:** <https://codexveil.vercel.app>, publicado sozinho a cada push em `main` (conferido em 2026-10-18) | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
+| Conta Expo e projeto EAS                      | **Feito:** `@gabriel.xxtth/codexveil`; o workflow roda a cada push (OTA; APK novo só com mudança nativa)     | [DEPLOY](DEPLOY.md#5-app-android-apk-e-aab)        |
+| Firebase (notificações de sessão)             | **Pendente:** projeto Firebase e chave FCM V1 no Expo (passo 0c de PROXIMOS_PASSOS)                          | [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md)              |
+| Domínio próprio                               | Opcional                                                                                                     | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
 
 ## 2. Critérios de aceitação do MVP (seção 22)
 
@@ -149,8 +153,9 @@ Esta seção lista só o que falta ou está parcial. O que já foi atendido est�
   existir no produto em 2026-10-16.)
   O link de recuperação abre no site. O esquema `codexveil://` já está em
   `additional_redirect_urls`, então dá para tratar o link dentro do app depois.
-- **Recomendado (não exigido pelo prompt):** permitir que o usuário exclua a própria conta,
-  pensando na LGPD.
+- **Feito (2026-10-26): excluir a própria conta** (Perfil, no site), pela Edge Function
+  `delete-account`. Recusa enquanto a pessoa for dona de campanhas com outros participantes.
+  Falta no app.
 
 ### §6 Campanhas
 
@@ -192,19 +197,19 @@ Esta seção lista só o que falta ou está parcial. O que já foi atendido est�
 
 ### §13 Experiência de uso
 
-- **Parcial: paginação.** As listas usam limites fixos (anotações: 200, convites: 50, histórico
-  da ficha: 50, cópias de segurança: 30), sem botão "carregar mais". Isso basta para o MVP, mas campanhas grandes vão precisar de
-  paginação.
+- **Feito (2026-10-26): paginação** no site, com **Carregar mais**: anotações (60 por página),
+  convites (25), histórico da ficha (30) e cópias de segurança (15). As páginas do servidor usam
+  `?pagina=N`. O app continua com os limites antigos.
 
 ### §15 Armazenamento
 
 - **Pendente: limite de armazenamento por plano.** A coluna `plans.max_storage_mb` existe, mas
   nenhuma policy ou gatilho a aplica. Os limites de campanhas, personagens e participantes já
   são aplicados no banco.
-- **Pendente: limpeza de arquivos órfãos.** A exclusão de uma campanha remove a mídia dela.
-  Imagens de blocos removidos, de NPCs excluídos e de personagens excluídos continuam no bucket.
-  Elas continuam privadas, mas ocupam espaço. Falta uma rotina agendada (Edge Function com
-  cron).
+- **Feito (2026-10-26): limpeza de arquivos órfãos.** `list_orphan_media` acha o que nenhuma
+  linha usa (24 h de folga) e a Edge Function `cleanup-orphans` apaga, toda segunda-feira, pelo
+  workflow `cleanup-orphans.yml`. Falta publicar a migração, as funções e os segredos (veja
+  [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md#continuidade-parada-em-2026-10-26-retomar-daqui)).
 
 ### §16 Testes
 
@@ -287,8 +292,8 @@ implementados, conforme o prompt. Nenhuma tela promete essas funções.
 9. **Testes ponta a ponta** (Playwright) dos critérios 1 a 12, rodando contra o Supabase local
    na CI.
 10. **Auditoria de acessibilidade e desempenho** e cabeçalho CSP.
-11. **Rotinas de backend:** limite de armazenamento, limpeza de órfãos e e-mail de convite
-    (Edge Functions).
+11. **Rotinas de backend:** limite de armazenamento e e-mail de convite (Edge Functions). A
+    limpeza de órfãos foi feita em 2026-10-26.
 12. **Mobile:** retrato do personagem (com a mesma redução de imagem da web), redefinição de
     senha no app e, se fizer sentido, a mesa do mestre em modo consulta.
 
@@ -604,3 +609,28 @@ recebe por atualização OTA). Não verificado no celular.
   divindades, poderes, magias, equipamento, itens mágicos, ameaças) com busca e uma tela própria
   para cada tipo (`t20-entry-view.tsx`); jogadores leem o conteúdo de personagem, o mestre lê tudo.
 - `pnpm check` passou; não aberto no navegador.
+
+### 2026-10-25 e 2026-10-26 — mesa, mapa e manutenção
+
+Pedidos do responsável nesta rodada, todos publicados em `main`. Verificações: typecheck, lint e
+testes dos pacotes afetados a cada entrega (banco no PGlite, com as migrações novas); o
+responsável usou o site com mestre e jogador. Telas desta rodada ainda não vistas no app.
+
+| Pedido                                                           | Situação                                                                                                                                                                   |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Painel "Rolar dados" mais organizado                             | Feito: perícias em grade com bônus, dados em grade, vantagem como seletor, botão em largura total                                                                          |
+| "Rolando…" infinito e dados sumindo com várias rolagens          | Corrigido: limite de 6 s para os dados pararem, todas as rolagens novas entram na fila, as atrasadas mostram o resultado sem animação                                      |
+| Aba Mapa separada da Sessão, antes dela, com a caixinha de dados | Feito (`/campanhas/[id]/mapa`)                                                                                                                                             |
+| Tela cheia do mapa e zoom pela roda do mouse                     | Feito (centralizado, ajusta à tela)                                                                                                                                        |
+| Imagem do mapa não aparecia para os jogadores                    | Corrigido (faltavam as URLs das camadas na tela do jogador)                                                                                                                |
+| Girar a imagem do mapa (mestre)                                  | Feito (90° por clique)                                                                                                                                                     |
+| Círculo de área no quadrado do personagem                        | Feito (começar no meio do quadrado centra a área)                                                                                                                          |
+| Áreas de magia dos jogadores visíveis para todos                 | Feito; migração `20261026100000_player_map_areas.sql` aplicada em produção                                                                                                 |
+| Movimentação livre fora de combate                               | Feito (sem linha, metros nem rastros sem combate ativo)                                                                                                                    |
+| Não atravessar paredes; dois tokens no mesmo quadrado            | Feito (paredes só para jogadores; ocupação para todos)                                                                                                                     |
+| Nome ao clicar no token; mover anotações                         | Feito                                                                                                                                                                      |
+| Bônus temporários na ficha                                       | Feito (atributos, CA, iniciativa, deslocamento, percepção; ficam no navegador, como a Fúria, e não alteram a ficha salva)                                                  |
+| Características separadas por tipo e recolhíveis                 | Feito                                                                                                                                                                      |
+| Botão "Usar" nas magias                                          | Feito: gasta o espaço (com escolha de círculo maior) e rola ataque, dano ou cura pelo texto do SRD, com aumento por círculo e evolução de truques; avisa CD e concentração |
+| Livros: só os livros, sem separar                                | Feito: só os importados em "Meus livros", numa lista única (site e app); escolhas antigas sem conteúdo continuam visíveis para desmarcar                                   |
+| Paginação, limpeza de órfãos e excluir conta                     | Feito; falta publicar a migração `20261026110000`, as funções `delete-account` e `cleanup-orphans` e os segredos (veja PROXIMOS_PASSOS)                                    |

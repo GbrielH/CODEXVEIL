@@ -1,6 +1,6 @@
 # Próximos passos
 
-> Relatório atualizado em **2026-10-24** (veja [Continuidade](#continuidade-parada-em-2026-10-24-retomar-daqui)). Mantenha este arquivo em dia a cada etapa concluída
+> Relatório atualizado em **2026-10-26** (veja [Continuidade](#continuidade-parada-em-2026-10-26-retomar-daqui)). Mantenha este arquivo em dia a cada etapa concluída
 > (veja [Como manter a documentação](#como-manter-a-documentação)). O inventário completo do
 > que falta em relação ao escopo inicial está em [`PENDENCIAS.md`](PENDENCIAS.md), e os
 > procedimentos de publicação em [`DEPLOY.md`](DEPLOY.md).
@@ -13,7 +13,7 @@
 | Backend     | **No ar:** Supabase `CODEXVEIL` (`ityfhobhpjzhlkgvjhfb`, us-east-2), com as **15 migrações aplicadas** (a `20261018140000_book_packs.sql` em 2026-10-18), Site URL e Redirect URLs (`deploy/supabase/config.toml`).                                                                                                                                                                                                                                                                                                                                                                       |
 | App Android | **APK atual:** [download](https://expo.dev/artifacts/eas/m0Px-_WnwK0q8a6BOSANOEa1oIJUvajr8DDOeJ279Sk.apk) ([build `e02e7079`](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds/e02e7079-2f5c-4da6-b225-2e78522d084a), 2026-10-17, com notificações e imagens). Cada push publica uma **atualização OTA** pelo GitHub Actions (`.github/workflows/ci.yml`, desde 2026-10-19; exige o segredo `EXPO_TOKEN`); APKs anteriores (`420f6c37`, `de6ceb5c`) não recebem mais atualizações. Todos os builds: <https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/builds>. |
 | Validação   | Teste ao vivo da API contra o banco real: **11/11 em 2026-10-18** (também 10/10 em 2026-10-16 e 11/11 em 2026-10-17). `pnpm check` 20/20 e `pnpm build` 2/2 em 2026-10-18. **Ninguém usou ainda as telas com duas contas**, e as telas de 2026-10-18 (capa, multiclasse, talentos, livros, dados por sessão) não foram abertas no navegador nem no celular.                                                                                                                                                                                                                               |
-| E-mail      | **SMTP próprio ligado em 2026-10-18:** Brevo, remetente `codexveil@gmail.com`, templates em português enviados. Um e-mail de recuperação de senha foi aceito pelo Supabase; falta confirmar a chegada na caixa de entrada e testar o cadastro com uma conta de fora da organização e a recuperação pelo app.                                                                                                                                                                                                                                                                              |
+| E-mail      | **Funcionando (confirmado pelo responsável em 2026-10-26).** **SMTP próprio ligado em 2026-10-18:** Brevo, remetente `codexveil@gmail.com`, templates em português enviados. Um e-mail de recuperação de senha foi aceito pelo Supabase; falta confirmar a chegada na caixa de entrada e testar o cadastro com uma conta de fora da organização e a recuperação pelo app.                                                                                                                                                                                                                 |
 
 ### Limitações do período sem SMTP próprio (até 2026-10-18; confirmar se sumiram)
 
@@ -24,7 +24,37 @@
   navegador** em que o pedido foi feito.
 - A **recuperação de senha pedida pelo app não funciona**.
 
-## Continuidade: parada em 2026-10-24 (retomar daqui)
+## Continuidade: parada em 2026-10-26 (retomar daqui)
+
+**Confirmado pelo responsável em 2026-10-26:** os e-mails do SMTP próprio (Brevo) chegam, e o
+site foi usado de verdade com mestre e jogador e está funcionando. O app ainda não foi usado a
+fundo.
+
+Feito nesta rodada (2026-10-25 e 2026-10-26) e publicado em `main`; detalhes em
+[`PENDENCIAS.md`](PENDENCIAS.md#2026-10-25-e-2026-10-26--mesa-mapa-e-manutenção) e
+[`GRID.md`](GRID.md#adições-de-2026-10-25-e-2026-10-26): painel de dados, mesa de dados estável
+com várias rolagens, aba Mapa com tela cheia e zoom, camadas giráveis, movimentação livre fora
+de combate, paredes e quadrados ocupados bloqueando o movimento, áreas de magia compartilhadas,
+anotações arrastáveis, bônus temporários e botão "Usar" nas magias, características por tipo,
+livros só os importados, paginação, exclusão de conta e limpeza de arquivos órfãos.
+
+### A. Falta publicar no Supabase (Claude, com autorização do responsável)
+
+1. Migração `20261026110000_orphan_media.sql` (`supabase db push`; a `20261026100000` já foi).
+2. Edge Functions `delete-account` e `cleanup-orphans` (comandos em
+   [DEPLOY §8](DEPLOY.md#exclusão-de-conta-e-limpeza-de-arquivos-2026-10-26)).
+3. Segredo `CLEANUP_SECRET` na função e no GitHub, mais `SUPABASE_PROJECT_REF` no GitHub; depois,
+   rodar o workflow "Limpeza de arquivos órfãos" uma vez com **Só contar** para conferir.
+
+### B. Verificações do responsável
+
+1. **App:** usar a fundo com duas contas, pelo roteiro de
+   [2. Usar o site e o app com duas contas](#2-usar-o-site-e-o-app-com-duas-contas--você).
+2. **Excluir conta:** testar com uma conta descartável, inclusive o bloqueio quando ela é dona de
+   campanha com outro jogador.
+3. **Notificações de sessão agendada:** Firebase (passo [0c](#0c-notificações-de-sessão-agendada--você-e-claude)).
+
+## Continuidade: parada em 2026-10-24
 
 Fim do dia 2026-10-24. Tudo o que foi pedido até aqui está implementado e publicado. Na próxima
 conversa, retomar por esta lista:

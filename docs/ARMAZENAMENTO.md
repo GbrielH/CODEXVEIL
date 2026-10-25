@@ -39,8 +39,9 @@ banco comportam dezenas de milhares de fichas. **O primeiro limite a apertar é 
 1. **Continuar no gratuito (recomendado agora).** O uso é pequeno e as proteções acima já
    seguram o crescimento. Monitorar uma vez por mês com os comandos do topo.
 2. **Apertar as imagens.** Já reduzimos para WebP (768 px no retrato, 1024 px nas criaturas,
-   1600 px no roteiro). Dá para baixar mais (ex.: 512 px nos retratos) e apagar arquivos órfãos
-   (imagens trocadas cujo envio falhou no meio) com uma rotina agendada.
+   1600 px no roteiro). Dá para baixar mais (ex.: 512 px nos retratos). Os arquivos órfãos
+   (imagens trocadas, de registros e contas excluídos, envios interrompidos) **já são apagados**
+   toda semana pela Edge Function `cleanup-orphans` (2026-10-26; veja DEPLOY, seção 8).
 3. **Limite por campanha/conta no Storage.** Contar os bytes por campanha e recusar envios
    acima de, por exemplo, 50 MB. Ainda não implementado.
 4. **Imagens fora do Supabase.** Cloudflare R2 (10 GB grátis e sem custo de egress) ou

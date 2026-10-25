@@ -309,6 +309,29 @@ ityfhobhpjzhlkgvjhfb --no-verify-jwt --use-api` (o JWT é conferido dentro da fu
   de serviço (FCM V1) é enviada pelo expo.dev → Credentials.
 - Sem a variável, o APK funciona sem notificações.
 
+### Exclusão de conta e limpeza de arquivos (2026-10-26)
+
+Duas funções novas, publicadas do mesmo jeito (o acesso é conferido dentro delas):
+
+````bash
+pnpm exec supabase functions deploy delete-account --project-ref ityfhobhpjzhlkgvjhfb --no-verify-jwt --use-api
+pnpm exec supabase functions deploy cleanup-orphans --project-ref ityfhobhpjzhlkgvjhfb --no-verify-jwt --use-api
+```n
+- `delete-account`: o botão **Excluir minha conta** do Perfil chama com o token da pessoa e a
+  palavra `EXCLUIR`. Recusa (409, com a lista) enquanto ela for dona de campanhas com outros
+  participantes. Sem a função publicada, o botão só mostra o aviso de erro.
+- `cleanup-orphans`: precisa da migração `20261026110000_orphan_media.sql` e de um segredo
+  compartilhado com o GitHub. Gere um valor aleatório e grave nos dois lugares:
+
+  ```bash
+  pnpm exec supabase secrets set CLEANUP_SECRET=<valor> --project-ref ityfhobhpjzhlkgvjhfb
+  gh secret set CLEANUP_SECRET --body <valor>
+  gh secret set SUPABASE_PROJECT_REF --body ityfhobhpjzhlkgvjhfb
+  ```n
+  O workflow `.github/workflows/cleanup-orphans.yml` roda toda segunda às 03:00 (Brasília) e
+  pode ser disparado à mão em Actions, com a opção **Só contar** (`?dry=1`) para ver quantos
+  arquivos seriam apagados. Sem os segredos, o workflow só avisa e não faz nada.
+
 ## Login com Google
 
 Código pronto em 2026-10-21 (site: `components/auth/google-button.tsx`; app:
@@ -332,3 +355,4 @@ Código pronto em 2026-10-21 (site: `components/auth/google-button.tsx`; app:
 Contas criadas pelo Google recebem o nome do Google no perfil (migração
 `20261021120000_google_signin_profile.sql`). Uma conta de e-mail e a do Google com o mesmo
 endereço são unidas pelo Supabase quando o e-mail é confirmado.
+````

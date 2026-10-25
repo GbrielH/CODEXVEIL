@@ -99,3 +99,28 @@ responsável e o plano técnico, para a implementação seguir sem novas pergunt
 - Régua (todos), áreas de magia (círculo, cone, linha; as do mestre gravadas, as do jogador só
   prévia), névoa que se revela sozinha (opção do mapa; calculada na tela do mestre), desenho
   livre e anotações do mestre (com opção "só eu vejo", em tabela separada).
+
+## Adições de 2026-10-25 e 2026-10-26
+
+- **Aba Mapa própria** (`/campanhas/[id]/mapa`), antes da aba Sessão: o mestre tem o editor
+  sempre à mão; o jogador vê o mapa ativo da sessão em andamento. A caixinha de dados da mesa
+  também aparece nela.
+- **Tela cheia e zoom** (`use-board-viewport.ts`): o tabuleiro fica centralizado, a tela cheia
+  ajusta o zoom para o mapa inteiro caber (e volta ao anterior ao sair) e a roda do mouse (ou a
+  pinça do touchpad) aproxima e afasta mantendo o ponto sob o cursor.
+- **Camadas de imagem**: o jogador recebe as URLs das camadas (antes só via a imagem antiga de
+  fundo); o mestre gira cada camada em 90° (`MapImage.rotation`, 0/90/180/270, sem migração).
+- **Movimentação livre fora de combate**: sem turno de combate ativo (`campaign_turns` com
+  `mode = 'combat'` e `status = 'active'`), arrastar mostra só o quadrado de destino, sem linha,
+  metros, limite de deslocamento nem rastro. Muda em tempo real quando o combate começa ou acaba.
+- **Bloqueios ao mover**: dois tokens não ocupam o mesmo quadrado (vale para todos; tokens ocultos
+  não contam para o jogador) e o jogador não atravessa paredes (`movementCrossesWall`, em linha
+  reta entre os centros; contornar pela ponta é permitido; a parede invisível não bloqueia
+  passagem). O destino proibido fica vermelho com o motivo e o token volta ao soltar.
+- **Nome do token** aparece por 4 s ao clicar nele.
+- **Áreas de magia**: o círculo pode partir do meio de um quadrado (centrado no token) além da
+  quina. As áreas do jogador vão para o mapa de todos (`add_my_map_area`, marcadas com `by`) e
+  "Limpar minhas áreas" tira só as dele (`clear_my_map_areas`); até 10 por jogador por mapa.
+  Sem a função no banco, a área fica só na tela do jogador.
+- **Anotações arrastáveis**: com a ferramenta Mover, o mestre arrasta as anotações (inclusive as
+  secretas).

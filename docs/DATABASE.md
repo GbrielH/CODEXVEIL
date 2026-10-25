@@ -26,6 +26,8 @@ em [`SECURITY.md`](SECURITY.md).
 | `20261025110000_book_tables_class_options.sql` | Tipos de entrada `class_option` (Tasha; jogadores leem) e `table` (tabelas de tesouro do T20; só o mestre) |
 | `20261025120000_note_images.sql` | `campaign_notes.image_path` e imagens das anotações no `campaign-media` (só o autor envia; leitura pela visibilidade) |
 | `20261025130000_session_covers.sql` | `sessions.cover_path`: capa da sessão (jogadores veem nas publicadas) |
+| `20261026100000_player_map_areas.sql` | `add_my_map_area` / `clear_my_map_areas`: o jogador põe e tira as próprias áreas de magia no mapa ativo (marcadas com `by`; até 10 por mapa) |
+| `20261026110000_orphan_media.sql` | `list_orphan_media`: arquivos do `campaign-media` que nenhuma linha usa (só `service_role`; usada pela Edge Function `cleanup-orphans`) |
 
 | Arquivo                                       | Conteúdo                                                                                                                                                                                                                    |
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -102,6 +104,8 @@ campanha.
 | `adjust_character_resource` / `take_character_rest` / `adjust_item_quantity`                          | Dano, cura, gasto e descanso, de forma atômica.                                                                                                                        |
 | `adjust_session_entity_hp`                                                                            | Dano e cura de instâncias da cena.                                                                                                                                     |
 | `tick_character_conditions(id, rodadas)` / `tick_session_entity_conditions(id, rodadas)`              | Passam rodadas nas condições de um personagem ou de uma instância da cena (fim do turno), removem as que terminam e devolvem as chaves delas.                          |
+| `add_my_map_area(map, area)` / `clear_my_map_areas(map)`                                              | Jogador põe (validada no banco) ou tira as próprias áreas de magia do mapa ativo. `SECURITY DEFINER`, confere a participação.                                          |
+| `list_orphan_media(horas, limite)`                                                                    | Arquivos órfãos com mais de N horas. Só a chave secreta executa.                                                                                                       |
 | `duplicate_session` / `reorder_session_blocks`                                                        | Duplicar um roteiro e renumerar os blocos.                                                                                                                             |
 
 As funções de personagem, cena e roteiro são `SECURITY INVOKER`, então as policies continuam
@@ -118,7 +122,14 @@ valendo. As de convite e participantes são `SECURITY DEFINER` e verificam o pap
   (`on delete set null`). A mídia da campanha é removida do Storage pela aplicação.
 - **Remover um participante** (ou sair da campanha) desvincula os personagens dele, que
   continuam pertencendo ao jogador.
-- **Excluir a conta** remove em cascata o perfil, as campanhas próprias e os personagens.
+- **Excluir a conta** (Edge Function `delete-account`, pelo Perfil) remove em cascata o perfil,
+  as campanhas próprias e os personagens. Por isso a função **recusa** enquanto a pessoa for dona de
+  campanhas com outros participantes (é preciso transferir antes). As imagens que sobram ficam
+  órfãs e saem na limpeza semanal.
+- **Arquivos órfãos**: a Edge Function `cleanup-orphans` apaga, pela API do Storage, o que
+  `list_orphan_media` lista (24 h de folga para envios em andamento), toda segunda-feira pelo
+  workflow `cleanup-orphans.yml`. Um novo lugar que guarde caminhos de arquivo precisa entrar na
+  lista de referências dessa função.
 
 ## Concorrência
 
