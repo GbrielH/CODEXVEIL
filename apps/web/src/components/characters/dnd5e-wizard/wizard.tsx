@@ -164,6 +164,28 @@ export function Dnd5eCreationWizard({
         abilityMethod: contextFor(campaign).abilityScoreMethods[0] ?? 'standard_array',
       }),
   );
+  // Livros importados do próprio usuário, para o seletor da ficha pessoal (com a contagem por tipo).
+  const personalBooks = useMemo(
+    () =>
+      personalPackIds.flatMap((packId) => {
+        const source = books[packId];
+        if (!source) return [];
+        const entryCounts: Record<string, number> = {};
+        for (const entry of source.entries)
+          entryCounts[entry.kind] = (entryCounts[entry.kind] ?? 0) + 1;
+        return [
+          {
+            systemId: 'dnd5e',
+            bookKey: source.book.id,
+            name: source.book.name,
+            category: '',
+            edition: '',
+            entryCounts,
+          },
+        ];
+      }),
+    [personalPackIds, books],
+  );
   // Livros: na campanha, os do mestre; na ficha pessoal, só os importados que estão marcados no
   // seletor de livros (um livro desmarcado não traz nada para a criação).
   const packIds = useMemo(
@@ -490,6 +512,7 @@ export function Dnd5eCreationWizard({
                 <div className="rounded-md border border-line bg-card/60 p-4">
                   <SourcebookPicker
                     audience="character"
+                    books={personalBooks}
                     selected={draft.sourcebooks}
                     onChange={(sourcebooks) => update({ sourcebooks })}
                   />
