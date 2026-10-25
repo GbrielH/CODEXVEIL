@@ -554,7 +554,8 @@ de segurança).
 
 ### 2026-10-25 (tarde) — dados, ficha, sessão, anotações e biblioteca
 
-- [x] Dados 3D: cada rolagem fica 12 s na mesa e some sozinha; a rolagem de outra pessoa não apaga
+- [x] Dados 3D: cada rolagem fica 10 s visível na mesa para todos (quem abre a aba Dados até 10 s
+      depois ainda vê os dados) e some sozinha; a rolagem de outra pessoa não apaga
       a sua (`dice-scene.ts`, `throwDice` com `add`); voltar à aba Dados não rola de novo as
       rolagens antigas; o "Crítico!" espera os dados da mesa grande pararem.
 - [x] "Rolar dados": "Para quê" virou "Selecionar perícia" (bônus da ficha somado: D&D e T20).

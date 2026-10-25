@@ -11,6 +11,8 @@ import { TABLE_SETTLED_EVENT, throwDice } from './dice-scene';
 import { diceNotation, textColorFor, type TrayRoll } from './dice-tray';
 
 const DEFAULT_COLOR = DICE_COLORS[0]!.hex;
+/** Quanto tempo uma rolagem fica visível na mesa para todos (inclusive quem chega depois). */
+const VISIBLE_MS = 10_000;
 
 /**
  * Mesa de dados grande da aba Dados: todos os participantes veem, ao vivo, os dados de cada
@@ -20,10 +22,9 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
   const containerId = `mesa-dados-${useId().replace(/:/g, '')}`;
   const colors = useCampaignColors();
   const boxRef = useRef<DiceBox | null>(null);
-  const queue = useRef<TrayRoll[]>([]);
+  const queue = useRef<(TrayRoll & { expiresAt: number })[]>([]);
   const running = useRef(false);
   const seen = useRef(new Set<string>());
-  const [mountedAt] = useState(() => ({ current: Date.now() }));
   const [current, setCurrent] = useState<TrayRoll | null>(null);
   const [last, setLast] = useState<TrayRoll | null>(null);
   const [unavailable, setUnavailable] = useState(false);
@@ -71,6 +72,9 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
     running.current = true;
     while (queue.current.length) {
       const next = queue.current.shift()!;
+      // Ao abrir a aba, a cena 3D ainda está carregando: espera até 3 s por ela.
+      for (let waited = 0; !boxRef.current && waited < 3000; waited += 200)
+        await new Promise((resolve) => window.setTimeout(resolve, 200));
       const box = boxRef.current;
       const text = diceNotation(next.roll);
       setCurrent(next);
@@ -87,7 +91,8 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
               material: 'plastic',
             },
           });
-          await throwDice(box, text);
+          // Fica na mesa até completar os 10 s desde a rolagem (mínimo de 4 s para dar para ver).
+          await throwDice(box, text, Math.max(4000, next.expiresAt - Date.now()));
         } catch (error) {
           console.error('[codexveil] falha ao rolar na mesa', error);
         }
@@ -110,20 +115,24 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
         )
         .eq('campaign_id', campaignId)
         .order('created_at', { ascending: false })
-        .limit(1)
+        .limit(5)
         .then(({ data }) => {
-          const row = data?.[0];
-          if (!row || row.visibility === 'gm' || seen.current.has(row.id)) return;
-          seen.current.add(row.id);
-          // Rolagem de antes de abrir a aba: não rola de novo (só as novas caem na mesa).
-          if (new Date(row.created_at).getTime() < mountedAt.current - 2000) return;
+          // Rolagens abertas dos últimos 10 s: quem abre a aba logo depois ainda vê os dados.
+          const now = Date.now();
+          const fresh = (data ?? [])
+            .filter((row) => row.visibility !== 'gm' && !seen.current.has(row.id))
+            .filter((row) => now - new Date(row.created_at).getTime() < VISIBLE_MS)
+            .reverse();
+          for (const row of data ?? []) seen.current.add(row.id);
+          if (fresh.length === 0) return;
           queue.current = [
             ...queue.current,
-            {
+            ...fresh.map((row) => ({
               key: row.id,
               userId: row.user_id,
               rollerName: row.roller_name,
               secret: false,
+              expiresAt: new Date(row.created_at).getTime() + VISIBLE_MS,
               roll: {
                 dice: row.dice as unknown as DiceRoll['dice'],
                 total: row.total,
@@ -132,8 +141,8 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
                 mode: row.mode as DiceRoll['mode'],
                 modifier: row.modifier,
               },
-            },
-          ].slice(-3);
+            })),
+          ].slice(-5);
           void play();
         });
     },
