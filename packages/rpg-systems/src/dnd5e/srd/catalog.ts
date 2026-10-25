@@ -760,6 +760,98 @@ export function summarizeSrdSpell(paragraphs: readonly string[]): SrdSpellSummar
   return lines;
 }
 
+/** O que rolar ao usar uma magia (botão "Usar" da ficha). */
+export interface SrdSpellCast {
+  attack: boolean;
+  save: Ability | null;
+  /** Dados de dano já com o círculo usado / nível do personagem (ex.: "10d6"). */
+  damage: { dice: string; type: string } | null;
+  /** Cura; `addModifier` = soma o modificador de conjuração. */
+  healing: { dice: string; addModifier: boolean } | null;
+}
+
+/** Soma dados extras à fórmula: "8d6" + 2×"1d6" = "10d6"; dados diferentes ficam somados ("8d6+2d8"). */
+function addDice(base: string, extra: string, times: number): string {
+  if (times <= 0) return base;
+  const plus = /^(\d+)d(\d+)$/.exec(extra);
+  if (!plus) return base;
+  const count = Number(plus[1]) * times;
+  const sides = plus[2];
+  const same = new RegExp(`^(\\d+)d${sides}\\b`).exec(base);
+  return same
+    ? base.replace(same[0], `${Number(same[1]) + count}d${sides}`)
+    : `${base}+${count}d${sides}`;
+}
+
+/**
+ * Lê o texto do SRD da magia e monta as rolagens de um uso: ataque, resistência, dano e cura,
+ * com o aumento por círculo acima do básico e a evolução dos truques nos níveis 5, 11 e 17.
+ */
+export function planSrdSpellCast(
+  paragraphs: readonly string[],
+  {
+    spellLevel,
+    slotLevel,
+    characterLevel,
+  }: { spellLevel: number; slotLevel: number; characterLevel: number },
+): SrdSpellCast {
+  const upgrade =
+    paragraphs.find((paragraph) =>
+      /^(Using a Higher-Level Spell Slot|Cantrip Upgrade)\./.test(paragraph),
+    ) ?? '';
+  const main = paragraphs.filter((paragraph) => paragraph !== upgrade).join(' ');
+  const clean = (dice: string) => dice.replace(/\s+/g, '');
+
+  const saveMatch =
+    /\b(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) saving throw/.exec(main);
+  const damageMatch = new RegExp(DAMAGE_PATTERN.source).exec(main);
+  const healingMatch =
+    /regains? (?:a number of )?Hit Points equal to (\d+d\d+(?: ?\+ ?\d+)?)( plus your spellcasting ability modifier)?/.exec(
+      main,
+    ) ?? /regains? (\d+d\d+(?: ?\+ ?\d+)?) Hit Points/.exec(main);
+
+  const above = Math.max(0, slotLevel - spellLevel);
+  const perSlot =
+    /The (damage|healing) increases by (\d+d\d+) for each spell slot level above/.exec(upgrade);
+  // Truque: "levels 5 (2d10), 11 (3d10), and 17 (4d10)".
+  const cantrip = /levels 5 \((\d+d\d+)\), 11 \((\d+d\d+)\), and 17 \((\d+d\d+)\)/.exec(upgrade);
+  const cantripDice =
+    cantrip && spellLevel === 0
+      ? characterLevel >= 17
+        ? cantrip[3]
+        : characterLevel >= 11
+          ? cantrip[2]
+          : characterLevel >= 5
+            ? cantrip[1]
+            : null
+      : null;
+
+  let damage: SrdSpellCast['damage'] = null;
+  if (damageMatch?.[1] && /d/.test(damageMatch[1])) {
+    let dice = cantripDice ?? clean(damageMatch[1]);
+    if (perSlot?.[1] === 'damage' && perSlot[2]) dice = addDice(dice, perSlot[2], above);
+    const type = (damageMatch[2] ?? '')
+      .split(/,? or |, /)
+      .map((word) => damageLabel(word.trim()) ?? word.trim())
+      .join(' ou ');
+    damage = { dice, type };
+  }
+
+  let healing: SrdSpellCast['healing'] = null;
+  if (healingMatch?.[1]) {
+    let dice = clean(healingMatch[1]);
+    if (perSlot?.[1] === 'healing' && perSlot[2]) dice = addDice(dice, perSlot[2], above);
+    healing = { dice, addModifier: Boolean(healingMatch[2]) };
+  }
+
+  return {
+    attack: /\b(melee|ranged) spell attack/i.test(main),
+    save: saveMatch ? (SAVE_ABILITIES[saveMatch[1] ?? ''] ?? null) : null,
+    damage,
+    healing,
+  };
+}
+
 // --------------------------------------------------------------------------- Cópia para a campanha
 
 const ITEM_CATEGORY_BY_SRD: Record<string, 'weapon' | 'armor' | 'gear' | 'consumable'> = {

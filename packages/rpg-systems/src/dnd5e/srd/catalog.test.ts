@@ -5,6 +5,7 @@ import {
   loadSrdMagicItems,
   loadSrdMonsters,
   loadSrdSpellTexts,
+  planSrdSpellCast,
   srdAttunementLabel,
   srdMonsterToStatBlock,
   srdRarityLabel,
@@ -123,6 +124,40 @@ describe('catálogo do SRD 5.2.1', () => {
     const hold = summarizeSrdSpell(await spellText('Hold Person'));
     expect(hold).toContainEqual({ label: 'Condições', value: 'Paralisado' });
     expect(hold).toContainEqual({ label: 'Resistência', value: 'Sabedoria' });
+  });
+
+  it('monta as rolagens de uma magia usada (círculo maior e evolução de truque)', async () => {
+    expect(
+      planSrdSpellCast(await spellText('Fireball'), {
+        spellLevel: 3,
+        slotLevel: 5,
+        characterLevel: 9,
+      }),
+    ).toEqual({
+      attack: false,
+      save: 'dex',
+      damage: { dice: '10d6', type: 'Fogo' },
+      healing: null,
+    });
+    expect(
+      planSrdSpellCast(await spellText('Fire Bolt'), {
+        spellLevel: 0,
+        slotLevel: 0,
+        characterLevel: 11,
+      }),
+    ).toEqual({ attack: true, save: null, damage: { dice: '3d10', type: 'Fogo' }, healing: null });
+    expect(
+      planSrdSpellCast(await spellText('Cure Wounds'), {
+        spellLevel: 1,
+        slotLevel: 2,
+        characterLevel: 3,
+      }),
+    ).toEqual({
+      attack: false,
+      save: null,
+      damage: null,
+      healing: { dice: '4d8', addModifier: true },
+    });
   });
 
   it('descreve os itens mágicos em português', async () => {

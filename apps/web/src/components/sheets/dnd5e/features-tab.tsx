@@ -8,6 +8,7 @@ import {
   updateCharacterAbility,
   updateCharacterResource,
   type CharacterAbility,
+  type CharacterResource,
   type Json,
 } from '@codexveil/database';
 import {
@@ -19,6 +20,7 @@ import {
   dnd5eSpellDataSchema,
   featureTurnCost,
   formatModifier,
+  planSrdSpellCast,
   spellNamePt,
   spellSchoolLabels,
   spellSlotResources,
@@ -41,11 +43,12 @@ import { Card, CardHeader } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { CheckboxField, SelectField, TextareaField, TextField } from '@/components/ui/field';
 import { HoverCard } from '@/components/ui/hover-card';
-import { RollButton } from '@/components/dice/dice-roller';
+import { RollButton, useDice } from '@/components/dice/dice-roller';
 import { Modal } from '@/components/ui/modal';
 import { NumberInput } from '@/components/ui/number-input';
+import { useToast } from '@/components/ui/toast';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
-import { AttackDetails, FeatureDetails, SpellDetails } from './ability-details';
+import { AttackDetails, FeatureDetails, SpellDetails, useSrdSpellTexts } from './ability-details';
 import { useSheet } from './context';
 import { parseAttack } from './play-tab';
 
@@ -340,6 +343,7 @@ function SpellRow({ spell, onEdit }: { spell: CharacterAbility; onEdit: () => vo
             />
           </button>
         </HoverCard>
+        <CastSpell spell={spell} data={data} />
         {permissions.canEditSheet ? (
           <Button size="icon" variant="ghost" onClick={onEdit} aria-label={`Editar ${spell.name}`}>
             <Pencil className="h-4 w-4" aria-hidden="true" />
@@ -357,6 +361,123 @@ function SpellRow({ spell, onEdit }: { spell: CharacterAbility; onEdit: () => vo
         </div>
       ) : null}
     </li>
+  );
+}
+
+/** Espaços que servem para a magia: os de círculo ≥ ao dela com carga (e os de pacto). */
+function availableSlots(resources: CharacterResource[], circle: number) {
+  return resources
+    .flatMap((resource) => {
+      const slot = /^spell_slot_(\d)$/.exec(resource.key);
+      const level = slot
+        ? Number(slot[1])
+        : resource.key === 'pact_slots'
+          ? Number(/(\d)º/.exec(resource.label)?.[1] ?? 0)
+          : 0;
+      return level >= circle && resource.current > 0 ? [{ level, resource }] : [];
+    })
+    .sort((a, b) => a.level - b.level);
+}
+
+/**
+ * "Usar": gasta o espaço de magia e rola o que o SRD indica (ataque, dano ou cura, já com o
+ * círculo usado e a evolução dos truques); com teste de resistência, avisa a CD.
+ */
+function CastSpell({ spell, data }: { spell: CharacterAbility; data: Dnd5eSpellData }) {
+  const { resources, adjustResource, derived, permissions } = useSheet();
+  const dice = useDice();
+  const { toast } = useToast();
+  const texts = useSrdSpellTexts();
+  const slots = data.circle > 0 ? availableSlots(resources, data.circle) : [];
+  const [chosen, setChosen] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  if (!permissions.canEditPlay) return null;
+  const slot = slots.find((entry) => entry.level === chosen) ?? slots[0];
+  const name = spellNamePt(spell.name);
+
+  const cast = async () => {
+    if (data.circle > 0 && !slot) {
+      toast({
+        tone: 'warning',
+        title: 'Sem espaços de magia',
+        description: `Nenhum espaço de ${data.circle}º círculo ou maior disponível. Recupere com um descanso.`,
+      });
+      return;
+    }
+    setBusy(true);
+    if (slot) adjustResource(slot.resource, 'spend', 1);
+    const level = slot?.level ?? 0;
+    const casting = derived.spellcasting;
+    const modifier = casting ? derived.abilityModifiers[casting.ability] : 0;
+    const paragraphs = texts?.[spell.name] ?? texts?.[name] ?? null;
+    const plan = paragraphs
+      ? planSrdSpellCast(paragraphs, {
+          spellLevel: data.circle,
+          slotLevel: level,
+          characterLevel: derived.level,
+        })
+      : null;
+    const suffix = level > data.circle ? ` (${level}º círculo)` : '';
+    if (dice && plan) {
+      if (plan.attack && casting)
+        await dice.roll({
+          expression: d20Expression(casting.attackBonus),
+          label: `${name}${suffix}: ataque`,
+        });
+      if (plan.damage)
+        await dice.roll({
+          expression: plan.damage.dice,
+          label: `${name}${suffix}: dano ${plan.damage.type}`.trim(),
+        });
+      if (plan.healing)
+        await dice.roll({
+          expression: `${plan.healing.dice}${plan.healing.addModifier && modifier ? `${modifier > 0 ? '+' : ''}${modifier}` : ''}`,
+          label: `${name}${suffix}: cura`,
+        });
+    }
+    const notes = [
+      slot ? `Gastou 1 espaço de ${slot.level}º círculo.` : null,
+      plan?.save && casting
+        ? `Alvos fazem teste de ${abilityLabels[plan.save].name} contra CD ${casting.saveDc}.`
+        : null,
+      !plan ? 'Sem dados do SRD para esta magia: role manualmente, se precisar.' : null,
+      data.concentration ? 'Exige concentração.' : null,
+    ].filter(Boolean);
+    toast({ tone: 'info', title: `${name} conjurada`, description: notes.join(' ') });
+    setBusy(false);
+  };
+
+  return (
+    <span className="flex items-center gap-1">
+      {slots.length > 1 ? (
+        <select
+          aria-label={`Círculo para ${name}`}
+          value={slot?.level ?? ''}
+          onChange={(event) => setChosen(Number(event.target.value))}
+          className="h-8 rounded-md border border-line bg-canvas px-1 text-xs text-fg"
+        >
+          {slots.map((entry) => (
+            <option key={entry.resource.id} value={entry.level}>
+              {entry.level}º ({entry.resource.current})
+            </option>
+          ))}
+        </select>
+      ) : null}
+      <Button
+        size="sm"
+        variant="secondary"
+        loading={busy}
+        disabled={data.circle > 0 && slots.length === 0}
+        title={
+          data.circle > 0 && slots.length === 0
+            ? 'Sem espaços de magia disponíveis'
+            : `Conjurar ${name}`
+        }
+        onClick={() => void cast()}
+      >
+        Usar
+      </Button>
+    </span>
   );
 }
 
