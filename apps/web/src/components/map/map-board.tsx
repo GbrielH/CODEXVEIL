@@ -42,6 +42,11 @@ interface MapBoardProps {
   imageUrl: string | null;
   /** Deslocamento de cada token em metros: a etiqueta do arrasto fica vermelha ao passar. */
   tokenSpeeds?: Record<string, number>;
+  /**
+   * Movimentação livre (fora de combate): arrastar não mostra linha, metros nem limite de
+   * deslocamento, e os movimentos não deixam rastro.
+   */
+  freeMovement?: boolean;
   /** URL de cada imagem (camada) do mapa (caminho → URL). */
   layerUrls?: Record<string, string>;
   /** Camada selecionada (ferramenta "imagem" do mestre). */
@@ -94,6 +99,7 @@ export function MapBoard({
   tokenImages = {},
   layerUrls = {},
   tokenSpeeds = {},
+  freeMovement = false,
   selectedLayer = null,
   onSelectLayer,
   onMoveLayer,
@@ -169,7 +175,7 @@ export function MapBoard({
       return [{ id: token.id, label: token.label, from: { x: old.x, y: old.y }, to: { x: token.x, y: token.y }, side: tokenSizeSquares[token.size], meters }];
     });
     setLastTokens(tokens);
-    if (moved.length) setTrails((current) => [...current.filter((trail) => !moved.some((entry) => entry.id === trail.id)), ...moved]);
+    if (moved.length && !freeMovement) setTrails((current) => [...current.filter((trail) => !moved.some((entry) => entry.id === trail.id)), ...moved]);
   }
   useEffect(() => {
     if (trails.length === 0) return;
@@ -558,7 +564,7 @@ export function MapBoard({
         : null}
 
       {/* Rastros dos últimos movimentos (linha tracejada e distância). */}
-      {trails.filter((trail) => tokens.some((token) => token.id === trail.id && visibleToMe(token))).map((trail) => {
+      {(freeMovement ? [] : trails).filter((trail) => tokens.some((token) => token.id === trail.id && visibleToMe(token))).map((trail) => {
         const half = trail.side / 2;
         return (
           <g key={`rastro-${trail.id}`} style={{ pointerEvents: 'none' }}>
@@ -574,6 +580,11 @@ export function MapBoard({
             if (!token) return null;
             const side = tokenSizeSquares[token.size];
             const target = { x: Math.max(0, Math.min(map.cols - side, Math.round(drag.x))), y: Math.max(0, Math.min(map.rows - side, Math.round(drag.y))) };
+            // Movimentação livre: só o quadrado de destino, sem linha nem metros.
+            if (freeMovement)
+              return (
+                <rect x={target.x} y={target.y} width={side} height={side} fill="rgba(243,226,179,0.12)" stroke="#f3e2b3" strokeWidth={0.04} strokeDasharray="0.15 0.1" style={{ pointerEvents: 'none' }} />
+              );
             const { squares, meters } = gridDistance(token, target, systemId);
             const limit = tokenSpeeds[token.id];
             // Passou do deslocamento: fica vermelho, mas não impede o movimento.

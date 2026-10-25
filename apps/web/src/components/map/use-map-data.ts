@@ -1,6 +1,6 @@
 'use client';
 
-import { getActiveMap, getSessionMap, listMapTokens, signedMediaUrls, tokenImagePaths, tokenSpeedSources, type MapToken, type SessionMap } from '@codexveil/database';
+import { getActiveMap, getCampaignTurn, getSessionMap, listMapTokens, signedMediaUrls, tokenImagePaths, tokenSpeedSources, type MapToken, type SessionMap } from '@codexveil/database';
 import { characterSpeedMeters, speedTextMeters } from '@codexveil/rpg-systems';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
@@ -19,14 +19,17 @@ export interface MapData {
   layerUrls: Record<string, string>;
   /** Deslocamento de cada token em metros (régua vermelha ao passar). */
   tokenSpeeds: Record<string, number>;
+  /** Combate em andamento: só nele aparecem o limite de deslocamento e os rastros em metros. */
+  inCombat: boolean;
 }
 
 async function load(campaignId: string, mapId: MapSelector): Promise<MapData> {
   const client = getSupabaseBrowserClient();
-  if (!mapId) return { map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {}, tokenSpeeds: {} };
+  if (!mapId) return { map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {}, tokenSpeeds: {}, inCombat: false };
   const map = mapId === 'active' ? await getActiveMap(client, campaignId) : await getSessionMap(client, mapId.id);
-  if (!map) return { map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {}, tokenSpeeds: {} };
-  const tokens = await listMapTokens(client, map.id);
+  if (!map) return { map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {}, tokenSpeeds: {}, inCombat: false };
+  const [tokens, turn] = await Promise.all([listMapTokens(client, map.id), getCampaignTurn(client, campaignId).catch(() => null)]);
+  const inCombat = turn?.mode === 'combat' && turn.status === 'active';
   const paths = await tokenImagePaths(client, tokens).catch((): Record<string, string> => ({}));
   const urls = await signedMediaUrls(client, [map.imagePath, ...map.images.map((layer) => layer.path), ...Object.values(paths)]);
   const tokenImages = Object.fromEntries(Object.entries(paths).flatMap(([id, path]) => (urls[path] ? [[id, urls[path]]] : [])));
@@ -44,7 +47,7 @@ async function load(campaignId: string, mapId: MapSelector): Promise<MapData> {
         : null;
     if (speed) tokenSpeeds[token.id] = speed;
   }
-  return { map, tokens, imageUrl: map.imagePath ? (urls[map.imagePath] ?? null) : null, tokenImages, layerUrls, tokenSpeeds };
+  return { map, tokens, imageUrl: map.imagePath ? (urls[map.imagePath] ?? null) : null, tokenImages, layerUrls, tokenSpeeds, inCombat };
 }
 
 /**
@@ -52,7 +55,7 @@ async function load(campaignId: string, mapId: MapSelector): Promise<MapData> {
  * recarregado em tempo real quando o mestre ou outro jogador muda algo.
  */
 export function useMapData(campaignId: string, mapId: MapSelector) {
-  const [data, setData] = useState<MapData>({ map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {}, tokenSpeeds: {} });
+  const [data, setData] = useState<MapData>({ map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {}, tokenSpeeds: {}, inCombat: false });
   const [loaded, setLoaded] = useState(false);
 
   // Só a resposta mais recente vale (respostas antigas chegando depois desfaziam mudanças), e
@@ -115,6 +118,8 @@ export function useMapData(campaignId: string, mapId: MapSelector) {
     [
       { table: 'session_maps', filter: `campaign_id=eq.${campaignId}` },
       { table: 'map_tokens', filter: `campaign_id=eq.${campaignId}` },
+      // Combate começa/termina: liga ou desliga a movimentação livre.
+      { table: 'campaign_turns', filter: `campaign_id=eq.${campaignId}` },
     ],
     reload,
   );

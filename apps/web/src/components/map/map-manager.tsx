@@ -139,7 +139,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   const sizeLabels = tokenSizeLabels(systemId);
   const selectedKey = useMemo(() => (selectedId ? { id: selectedId } : null), [selectedId]);
 
-  const { map, tokens, imageUrl, tokenImages, tokenSpeeds, layerUrls, live, reload, setData, track } = useMapData(campaignId, selectedKey);
+  const { map, tokens, imageUrl, tokenImages, tokenSpeeds, inCombat, layerUrls, live, reload, setData, track } = useMapData(campaignId, selectedKey);
   const { zoom, setZoom, fullscreen, toggleFullscreen } = useBoardViewport({ boardAreaRef, scrollRef, cols: map?.cols ?? 0, rows: map?.rows ?? 0, min: 0.3, max: 3 });
   const [newSessionId, setNewSessionId] = useState(sessionId);
   const [selectedLayer, setSelectedLayer] = useState<number | null>(null);
@@ -712,6 +712,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                 imageUrl={imageUrl}
                 tokenImages={tokenImages}
                 tokenSpeeds={tokenSpeeds}
+                freeMovement={!inCombat}
                 layerUrls={layerUrls}
                 selectedLayer={selectedLayer}
                 onSelectLayer={setSelectedLayer}
