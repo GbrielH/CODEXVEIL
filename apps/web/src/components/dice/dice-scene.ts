@@ -3,6 +3,12 @@ import type DiceBox from '@3d-dice/dice-box-threejs';
 /** Quanto tempo os dados de uma rolagem ficam na mesa antes de sumir. */
 export const DICE_LIFETIME_MS = 12_000;
 
+/**
+ * Limite para esperar os dados pararem: um dado apoiado na borda ou a aba em segundo plano
+ * (animação pausada) deixariam a rolagem presa em "Rolando…" para sempre.
+ */
+const SETTLE_TIMEOUT_MS = 6_000;
+
 /** Partes internas da biblioteca usadas para tirar só os dados de uma rolagem. */
 interface DiceBoxInternals {
   diceList: { body?: unknown }[];
@@ -23,7 +29,13 @@ export async function throwDice(
 ): Promise<void> {
   const internals = box as unknown as DiceBoxInternals;
   const before = new Set(internals.diceList ?? []);
-  await (box as unknown as { add(text: string): Promise<unknown> }).add(notation);
+  let timer = 0;
+  await Promise.race([
+    (box as unknown as { add(text: string): Promise<unknown> }).add(notation),
+    new Promise((resolve) => {
+      timer = window.setTimeout(resolve, SETTLE_TIMEOUT_MS);
+    }),
+  ]).finally(() => window.clearTimeout(timer));
   const mine = (internals.diceList ?? []).filter((die) => !before.has(die));
   window.setTimeout(() => {
     for (const die of mine) {

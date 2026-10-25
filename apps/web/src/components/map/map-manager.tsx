@@ -55,6 +55,7 @@ import { prepareImage } from '@/lib/images';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
 import { MapBoard, type MapTool } from './map-board';
+import { useBoardViewport } from './use-board-viewport';
 import { useMapData } from './use-map-data';
 
 export interface MapCharacter {
@@ -117,7 +118,6 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   const [newName, setNewName] = useState('');
   const [busy, setBusy] = useState(false);
   const [tool, setTool] = useState<MapTool>('move');
-  const [zoom, setZoom] = useState(1);
   const [selectedToken, setSelectedToken] = useState<string | null>(null);
   const [markerLabel, setMarkerLabel] = useState('');
   const [wallStyle, setWallStyle] = useState<WallStyle>('stone');
@@ -127,8 +127,8 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   const [secrets, setSecrets] = useState<MapDrawing[]>([]);
   const [noteAt, setNoteAt] = useState<{ x: number; y: number } | null>(null);
   const [noteText, setNoteText] = useState('');
-  const [fullscreen, setFullscreen] = useState(false);
   const boardAreaRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   /** Novos tokens entram ocultos? (por padrão sim enquanto o mapa não está sendo mostrado). */
   const [addHiddenChoice, setAddHiddenChoice] = useState<boolean | null>(null);
   const [followsTurn, setFollowsTurn] = useState(true);
@@ -139,6 +139,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   const selectedKey = useMemo(() => (selectedId ? { id: selectedId } : null), [selectedId]);
 
   const { map, tokens, imageUrl, tokenImages, tokenSpeeds, layerUrls, live, reload, setData, track } = useMapData(campaignId, selectedKey);
+  const { zoom, setZoom, fullscreen, toggleFullscreen } = useBoardViewport({ boardAreaRef, scrollRef, cols: map?.cols ?? 0, rows: map?.rows ?? 0, min: 0.3, max: 3 });
   const [newSessionId, setNewSessionId] = useState(sessionId);
   const [selectedLayer, setSelectedLayer] = useState<number | null>(null);
   const sessionLabel = (id: string) => {
@@ -393,16 +394,6 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   const token = tokens.find((entry) => entry.id === selectedToken) ?? null;
   const addHidden = addHiddenChoice ?? !map?.isActive;
 
-  // Tela cheia do tabuleiro (botão e tecla Esc do navegador).
-  useEffect(() => {
-    const sync = () => setFullscreen(document.fullscreenElement === boardAreaRef.current && boardAreaRef.current !== null);
-    document.addEventListener('fullscreenchange', sync);
-    return () => document.removeEventListener('fullscreenchange', sync);
-  }, []);
-  const toggleFullscreen = () => {
-    if (document.fullscreenElement) void document.exitFullscreen();
-    else void boardAreaRef.current?.requestFullscreen();
-  };
 
   // Em combate, o mapa mostrado segue o personagem da vez (opção da campanha).
   useEffect(() => {
@@ -697,7 +688,8 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
             >
               {fullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
             </Button>
-            <div className={cx('overflow-auto rounded-md border border-line', fullscreen ? 'h-[calc(100vh-1rem)]' : 'h-[calc(100vh-14rem)] min-h-[28rem]')}>
+            <div ref={scrollRef} className={cx('flex overflow-auto rounded-md border border-line', fullscreen ? 'h-[calc(100vh-1rem)]' : 'h-[calc(100vh-14rem)] min-h-[28rem]')}>
+              <div className="m-auto">
               <MapBoard
                 systemId={systemId}
                 map={map}
@@ -733,6 +725,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                   secret ? saveSecrets(secrets.filter((_, position) => position !== index)) : patchMap({ drawings: map.drawings.filter((_, position) => position !== index) })
                 }
               />
+              </div>
             </div>
             </div>
 

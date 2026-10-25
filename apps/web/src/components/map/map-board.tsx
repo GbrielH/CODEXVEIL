@@ -26,7 +26,7 @@ import { WallPatterns, WallShape } from './wall-art';
 /** Ferramenta do mestre no tabuleiro. */
 export type MapTool = 'move' | 'image' | 'ruler' | 'area' | 'reveal' | 'hide' | 'wall' | 'erase-wall' | 'draw' | 'note' | 'erase-drawing';
 
-const CELL = 40;
+export const CELL = 40;
 const CREATURE_COLOR = '#571F2B';
 const MARKER_COLOR = '#b58a2a';
 

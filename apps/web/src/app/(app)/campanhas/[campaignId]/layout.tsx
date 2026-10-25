@@ -37,6 +37,7 @@ export default async function CampaignLayout({
       label: 'Sessão',
       ...(isGm ? {} : { sessionAlertCampaignId: campaign.id }),
     },
+    { href: `${base}/mapa` as Route, label: 'Mapa' },
     { href: `${base}/sessoes` as Route, label: isGm ? 'Sessões' : 'Roteiros' },
     { href: `${base}/dados` as Route, label: 'Dados' },
     { href: `${base}/biblioteca` as Route, label: 'Biblioteca' },

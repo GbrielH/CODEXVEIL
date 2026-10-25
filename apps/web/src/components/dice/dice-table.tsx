@@ -77,8 +77,11 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
         await new Promise((resolve) => window.setTimeout(resolve, 200));
       const box = boxRef.current;
       const text = diceNotation(next.roll);
-      setCurrent(next);
-      if (box && text) {
+      // Fila atrasada (muita gente rolando junto): a que já passou do tempo na mesa vai direto
+      // para o resultado, sem animação, para as seguintes não ficarem cada vez mais para trás.
+      const late = Date.now() > next.expiresAt;
+      setCurrent(late ? null : next);
+      if (box && text && !late) {
         const color = colors?.colorOfUser(next.userId) ?? DEFAULT_COLOR;
         try {
           await box.updateConfig({
@@ -115,7 +118,7 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
         )
         .eq('campaign_id', campaignId)
         .order('created_at', { ascending: false })
-        .limit(5)
+        .limit(10)
         .then(({ data }) => {
           // Rolagens abertas dos últimos 10 s: quem abre a aba logo depois ainda vê os dados.
           const now = Date.now();
@@ -142,7 +145,7 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
                 modifier: row.modifier,
               },
             })),
-          ].slice(-5);
+          ].slice(-8);
           void play();
         });
     },

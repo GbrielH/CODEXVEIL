@@ -13,7 +13,10 @@ import { DICE_COLORS, DiceColorPalette, DieIcon, useCampaignColors } from './cam
 import { TABLE_SETTLED_EVENT, throwDice } from './dice-scene';
 import type { ShownRoll } from './dice-roller';
 
-/** Espera a mesa grande avisar que os dados desta rolagem pararam (até 10 s). */
+/**
+ * Espera a mesa grande avisar que os dados desta rolagem pararam (até 8 s: a mesa desiste de
+ * esperar os dados em 6 s, então além disso ela perdeu esta rolagem e não adianta segurar a fila).
+ */
 function tableSettled(key: string): Promise<void> {
   return new Promise((resolve) => {
     const done = (event: Event) => {
@@ -25,7 +28,7 @@ function tableSettled(key: string): Promise<void> {
     const timer = window.setTimeout(() => {
       document.removeEventListener(TABLE_SETTLED_EVENT, done);
       resolve();
-    }, 10_000);
+    }, 8_000);
     document.addEventListener(TABLE_SETTLED_EVENT, done);
   });
 }
@@ -198,7 +201,7 @@ export function DiceTray({
       if (seen.current.has(roll.key)) return;
       seen.current.add(roll.key);
       // Fila curta: se chegarem muitas rolagens juntas, as mais antigas só aparecem no texto.
-      queue.current = [...queue.current, roll].slice(-3);
+      queue.current = [...queue.current, roll].slice(-6);
       void play();
     },
     [play],
@@ -221,26 +224,30 @@ export function DiceTray({
         )
         .eq('campaign_id', campaignId)
         .order('created_at', { ascending: false })
-        .limit(1)
+        .limit(10)
         .then(({ data }) => {
-          const row = data?.[0];
-          if (!row || row.user_id === userId) return;
-          // Rolagem de antes de abrir a página: não rola de novo.
-          if (new Date(row.created_at).getTime() < mountedAt - 2000) return;
-          enqueue({
-            key: row.id,
-            userId: row.user_id,
-            rollerName: row.roller_name,
-            secret: row.visibility === 'gm',
-            roll: {
-              dice: row.dice as unknown as DiceRoll['dice'],
-              total: row.total,
-              label: row.label,
-              expression: row.expression,
-              mode: row.mode as DiceRoll['mode'],
-              modifier: row.modifier,
-            },
-          });
+          // Várias rolagens quase juntas: os avisos chegam colados e cada busca pode já trazer
+          // mais de uma nova, então pega todas as que ainda não passaram (da mais antiga à mais nova).
+          const fresh = (data ?? [])
+            .filter((row) => row.user_id !== userId && !seen.current.has(row.id))
+            // Rolagem de antes de abrir a página: não rola de novo.
+            .filter((row) => new Date(row.created_at).getTime() >= mountedAt - 2000)
+            .reverse();
+          for (const row of fresh)
+            enqueue({
+              key: row.id,
+              userId: row.user_id,
+              rollerName: row.roller_name,
+              secret: row.visibility === 'gm',
+              roll: {
+                dice: row.dice as unknown as DiceRoll['dice'],
+                total: row.total,
+                label: row.label,
+                expression: row.expression,
+                mode: row.mode as DiceRoll['mode'],
+                modifier: row.modifier,
+              },
+            });
         });
     },
     Boolean(campaignId),

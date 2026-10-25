@@ -1,8 +1,6 @@
-import { listCampaignCharacters, listCreatures, listSessionBlocks, listSessions, resolveBlockReferences, signedMediaUrls, type StoredSessionBlock } from '@codexveil/database';
+import { listSessionBlocks, listSessions, resolveBlockReferences, signedMediaUrls, type StoredSessionBlock } from '@codexveil/database';
 import type { Metadata, Route } from 'next';
 import { RevealPanel } from '@/components/gm/reveal-panel';
-import { MapManager } from '@/components/map/map-manager';
-import { MapView } from '@/components/map/map-view';
 import { BlockRenderer } from '@/components/sessions/block-renderer';
 import { ButtonLink } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,14 +17,14 @@ export const metadata: Metadata = { title: 'Sessão' };
 /**
  * Aba Sessão.
  *   * Só a sessão **iniciada** (em andamento) aparece; sem sessão aberta, não há conteúdo.
- *     Mestre: lista para liberar trechos e o mapa. Jogadores: os trechos liberados e o mapa ativo.
+ *     Mestre: lista para liberar trechos. Jogadores: os trechos liberados.
  *   * "Sessões anteriores": o que foi liberado em cada sessão passada, para consulta. Se o mestre
  *     ocultar um trecho depois, ele some (os jogadores só recebem blocos liberados — RLS).
- *   * O mestre mantém o editor de mapas sempre à mão, para preparar cenários antes da sessão.
+ *   * O mapa (grade de combate) fica na aba Mapa.
  */
 export default async function SessionTabPage({ params }: PageProps<'/campanhas/[campaignId]/sessao'>) {
   const { campaignId } = await params;
-  const { user, campaign } = await loadCampaignOrNotFound(campaignId);
+  const { campaign } = await loadCampaignOrNotFound(campaignId);
   const supabase = await createSupabaseServerClient();
   const isGm = campaign.role === 'gm';
   const all = await listSessions(supabase, campaign.id);
@@ -35,11 +33,9 @@ export default async function SessionTabPage({ params }: PageProps<'/campanhas/[
   const current = sessions.find((session) => session.status === 'in_progress') ?? null;
   const past = sessions.filter((session) => session.id !== current?.id && session.status === 'completed').sort((a, b) => b.number - a.number);
 
-  const [currentBlocks, pastBlocks, party, creatures] = await Promise.all([
+  const [currentBlocks, pastBlocks] = await Promise.all([
     current ? listSessionBlocks(supabase, current.id) : Promise.resolve([] as StoredSessionBlock[]),
     Promise.all(past.map((session) => listSessionBlocks(supabase, session.id))),
-    listCampaignCharacters(supabase, campaign.id),
-    isGm ? listCreatures(supabase, campaign.id) : Promise.resolve([]),
   ]);
   const released = (blocks: StoredSessionBlock[]) => blocks.filter((block) => block.visibility === 'members');
   const shownCurrent = released(currentBlocks);
@@ -53,9 +49,6 @@ export default async function SessionTabPage({ params }: PageProps<'/campanhas/[
     ),
     isGm && current ? loadRevealBlocks(supabase, currentBlocks) : Promise.resolve([]),
   ]);
-  const ownCharacter = isGm ? null : (party.find((character) => character.ownerId === user.id) ?? null);
-  // Sessão de referência do editor de mapas do mestre (a iniciada, senão a mais recente).
-  const mapSession = current ?? [...all].sort((a, b) => b.number - a.number)[0] ?? null;
 
   return (
     <article className={`mx-auto flex w-full flex-col gap-5 ${isGm ? 'max-w-none' : 'max-w-6xl'}`}>
@@ -74,18 +67,6 @@ export default async function SessionTabPage({ params }: PageProps<'/campanhas/[
         <RevealPanel sessionId={current.id} isPublished={current.isPublished} isActive={campaign.status === 'active'} blocks={reveal} />
       ) : null}
 
-      {isGm && mapSession ? (
-        <MapManager
-          campaignId={campaign.id}
-          sessions={all.map((entry) => ({ id: entry.id, number: entry.number, title: entry.title }))}
-          sessionId={mapSession.id}
-          systemId={campaign.systemId}
-          characters={party.map((character) => ({ id: character.id, name: character.name }))}
-          creatures={creatures.map((creature) => ({ id: creature.id, name: creature.name, size: creature.size }))}
-          canManage={campaign.status === 'active'}
-        />
-      ) : null}
-      {!isGm && current ? <MapView campaignId={campaign.id} systemId={campaign.systemId} myCharacterId={ownCharacter?.id ?? null} /> : null}
 
       {current ? (
         <>
@@ -104,7 +85,7 @@ export default async function SessionTabPage({ params }: PageProps<'/campanhas/[
           title="Nenhuma sessão em andamento"
           description={
             isGm
-              ? 'Inicie uma sessão em Sessões para liberar trechos aos jogadores. Os mapas podem ser preparados acima.'
+              ? 'Inicie uma sessão em Sessões para liberar trechos aos jogadores. Os mapas podem ser preparados na aba Mapa.'
               : 'Quando o mestre iniciar a sessão, o que ele liberar aparece aqui.'
           }
           action={isGm ? <ButtonLink href={campaignPath(campaign.id, '/sessoes') as Route}>Ir para as sessões</ButtonLink> : undefined}
