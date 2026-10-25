@@ -11,6 +11,7 @@ import {
   pointInPolygon,
   snapMeters,
   tokenSizeSquares,
+  movementCrossesWall,
   visibilityPolygon,
   wallBlocksSight,
   type GridRect,
@@ -194,6 +195,23 @@ export function MapBoard({
   };
   const toCell = (point: Point): Point => ({ x: Math.floor(point.x), y: Math.floor(point.y) });
 
+  /**
+   * Por que o token não pode ir para `target` (ou `null` se pode): outro token já ocupa algum
+   * dos quadrados, ou (jogadores) o caminho em linha reta atravessa uma parede.
+   */
+  const blockedReason = (token: MapToken, target: Point): string | null => {
+    const side = tokenSizeSquares[token.size];
+    const occupied = tokens.some((other) => {
+      if (other.id === token.id || !visibleToMe(other)) return false;
+      const otherSide = tokenSizeSquares[other.size];
+      return target.x < other.x + otherSide && other.x < target.x + side && target.y < other.y + otherSide && other.y < target.y + side;
+    });
+    if (occupied) return 'quadrado ocupado';
+    if (!isGm && movementCrossesWall(map.walls, { x: token.x + side / 2, y: token.y + side / 2 }, { x: target.x + side / 2, y: target.y + side / 2 }))
+      return 'parede no caminho';
+    return null;
+  };
+
   const canDrag = (token: MapToken) => tool === 'move' && (isGm || (token.kind === 'character' && token.characterId !== null && token.characterId === myCharacterId));
 
   const unrevealedPath = useMemo(() => {
@@ -327,7 +345,7 @@ export function MapBoard({
         const side = tokenSizeSquares[token.size];
         const x = Math.max(0, Math.min(map.cols - side, Math.round(drag.x)));
         const y = Math.max(0, Math.min(map.rows - side, Math.round(drag.y)));
-        if (x !== token.x || y !== token.y) onMoveToken?.(token, x, y);
+        if ((x !== token.x || y !== token.y) && !blockedReason(token, { x, y })) onMoveToken?.(token, x, y);
       }
       setDrag(null);
     }
@@ -580,6 +598,16 @@ export function MapBoard({
             if (!token) return null;
             const side = tokenSizeSquares[token.size];
             const target = { x: Math.max(0, Math.min(map.cols - side, Math.round(drag.x))), y: Math.max(0, Math.min(map.rows - side, Math.round(drag.y))) };
+            const moved = target.x !== token.x || target.y !== token.y;
+            const blocked = moved ? blockedReason(token, target) : null;
+            // Destino proibido (ocupado ou atrás de parede): vermelho com o motivo; ao soltar, volta.
+            if (blocked)
+              return (
+                <g style={{ pointerEvents: 'none' }}>
+                  <rect x={target.x} y={target.y} width={side} height={side} fill="rgba(239,68,68,0.22)" stroke="#ef4444" strokeWidth={0.05} strokeDasharray="0.15 0.1" />
+                  <DistanceTag x={target.x + side / 2} y={target.y - 0.15} color="#ef4444" text={`Não dá: ${blocked}`} />
+                </g>
+              );
             // Movimentação livre: só o quadrado de destino, sem linha nem metros.
             if (freeMovement)
               return (
