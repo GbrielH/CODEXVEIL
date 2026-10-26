@@ -37,6 +37,16 @@ const requestSchema = z.object({
     .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().min(1).max(8000) }))
     .min(1)
     .max(20),
+  /** Imagens anexadas à última pergunta (reduzidas no navegador; não são gravadas). */
+  images: z
+    .array(
+      z.object({
+        mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp']),
+        data: z.string().max(1_400_000).regex(/^[A-Za-z0-9+/=]+$/),
+      }),
+    )
+    .max(3)
+    .optional(),
 });
 
 function clip(text: string, max: number): string {
@@ -80,7 +90,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const parsed = requestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return text('Pergunta inválida.', 400);
-  const { pathname, messages } = parsed.data;
+  const { pathname, messages, images = [] } = parsed.data;
   const last = messages.at(-1);
   if (last?.role !== 'user') return text('Pergunta inválida.', 400);
   if (last.content.length > MAX_QUESTION) return text(`A pergunta pode ter até ${MAX_QUESTION} caracteres.`, 400);
@@ -89,7 +99,14 @@ export async function POST(request: Request): Promise<Response> {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   const contents = messages.map((message, index) => ({
     role: message.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: index === messages.length - 1 ? `<contexto>\n${context}\n</contexto>\n\n${message.content}` : message.content }],
+    parts:
+      index === messages.length - 1
+        ? [
+            // Imagens anexadas vão junto da última pergunta (o modelo lê imagens).
+            ...images.map((image) => ({ inlineData: { mimeType: image.mimeType, data: image.data } })),
+            { text: `<contexto>\n${context}\n</contexto>\n\n${message.content}` },
+          ]
+        : [{ text: message.content }],
   }));
   const abort = new AbortController();
 

@@ -166,6 +166,9 @@ mapa e notas lado a lado).
 - [x] Ditado por voz no chat do Tomo (site): botão de microfone usa o reconhecimento do navegador
       (pt-BR; Chrome, Edge e Safari; some no Firefox). O texto entra na caixa e a pessoa confere
       antes de enviar. `Permissions-Policy` passou a permitir o microfone só para o próprio site.
+- [x] Anexar imagens no chat do Tomo (site): clipe ou colar (Ctrl+V), até 3 por pergunta, reduzidas a
+      1600 px no navegador e enviadas com a pergunta ao Gemini (que lê imagens no plano gratuito,
+      testado). Não são gravadas: ficam só na memória da aba, como a conversa.
 - [ ] Geração de imagem: os modelos de imagem do Gemini têm cota 0 no plano gratuito (testado).
       Opções levadas ao responsável: faturamento no Google, Pollinations.ai ou Cloudflare Workers AI.
 

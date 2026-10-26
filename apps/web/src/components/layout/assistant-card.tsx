@@ -2,7 +2,8 @@
 
 import { AssistantMarkdown } from './assistant-markdown';
 import { VoiceInputButton } from './voice-input';
-import { Copy, Send, X } from 'lucide-react';
+import { Copy, Paperclip, Send, X } from 'lucide-react';
+import { prepareImageForUpload } from '@/lib/images';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
@@ -17,6 +18,29 @@ import { createPortal } from 'react-dom';
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  /** Miniaturas das imagens anexadas (só na memória desta aba). */
+  images?: string[];
+}
+
+interface Attachment {
+  mimeType: 'image/jpeg' | 'image/png' | 'image/webp';
+  /** Base64 sem o prefixo `data:`. */
+  data: string;
+  preview: string;
+}
+
+/** Reduz a imagem no navegador (até 1600 px) e devolve o base64 para a pergunta. */
+async function toAttachment(file: File): Promise<Attachment | null> {
+  if (!/^image\/(png|jpe?g|webp)$/.test(file.type)) return null;
+  const prepared = await prepareImageForUpload(file, 'scene');
+  const preview = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+    reader.onerror = () => reject(new Error('leitura'));
+    reader.readAsDataURL(prepared.file);
+  });
+  const mimeType = (prepared.file.type || 'image/webp') as Attachment['mimeType'];
+  return { mimeType, data: preview.slice(preview.indexOf(',') + 1), preview };
 }
 
 /** Mascote: Tomo, o grimório encapuzado que mestra (arte do responsável, em `public/mestre`). */
@@ -113,6 +137,14 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
     }));
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const addFiles = async (files: Iterable<File>) => {
+    const added = (await Promise.all([...files].slice(0, 3).map((file) => toAttachment(file).catch(() => null)))).filter(
+      (item): item is Attachment => item !== null,
+    );
+    setAttachments((current) => [...current, ...added].slice(0, 3));
+  };
   const listRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   // Posição escolhida ao arrastar pelo cabeçalho (sem ela, o painel fica no canto padrão).
@@ -145,11 +177,13 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
 
   async function ask(event: FormEvent) {
     event.preventDefault();
-    const question = draft.trim();
+    const question = draft.trim() || (attachments.length ? 'O que você vê nesta imagem?' : '');
     if (!question || busy) return;
-    const next: ChatMessage[] = [...messages, { role: 'user', content: question }];
+    const sending = attachments;
+    const next: ChatMessage[] = [...messages, { role: 'user', content: question, ...(sending.length ? { images: sending.map((item) => item.preview) } : {}) }];
     setMessages([...next, { role: 'assistant', content: '' }]);
     setDraft('');
+    setAttachments([]);
     setBusy(true);
     scrollDown();
     const write = (content: string) =>
@@ -158,7 +192,11 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
       const response = await fetch('/api/assistente', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ pathname, messages: next.slice(-20) }),
+        body: JSON.stringify({
+          pathname,
+          messages: next.slice(-20).map(({ role, content }) => ({ role, content })),
+          images: sending.map(({ mimeType, data }) => ({ mimeType, data })),
+        }),
       });
       if (!response.ok || !response.body) {
         write(await response.text());
@@ -238,6 +276,14 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
                   : 'group relative self-start rounded-lg border border-line bg-card px-3 py-2 text-sm text-fg'
               }
             >
+              {message.images?.length ? (
+                <span className="mb-1 flex flex-wrap gap-1">
+                  {message.images.map((src, imageIndex) => (
+                    // eslint-disable-next-line @next/next/no-img-element -- miniatura local (data: URL) da imagem anexada
+                    <img key={imageIndex} src={src} alt="Imagem anexada" className="h-16 w-16 rounded object-cover" />
+                  ))}
+                </span>
+              ) : null}
               {(message.content && message.role === 'assistant' ? (
                 <AssistantMarkdown text={message.content} />
               ) : (
@@ -271,11 +317,57 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
           ))
         )}
       </div>
+      {attachments.length ? (
+        <div className="flex gap-2 border-t border-line px-3 pt-2">
+          {attachments.map((item, index) => (
+            <span key={index} className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element -- miniatura local (data: URL) */}
+              <img src={item.preview} alt="Imagem anexada" className="h-14 w-14 rounded-md border border-line object-cover" />
+              <button
+                type="button"
+                onClick={() => setAttachments((current) => current.filter((_, position) => position !== index))}
+                aria-label="Remover imagem"
+                className="absolute -top-1.5 -right-1.5 rounded-full border border-line bg-raised p-0.5 text-fg-muted hover:text-fg"
+              >
+                <X className="h-3 w-3" aria-hidden="true" />
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : null}
       <form
         onSubmit={(event) => void ask(event)}
         className="relative flex items-end gap-2 border-t border-line p-3"
       >
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          multiple
+          hidden
+          onChange={(event) => {
+            if (event.target.files) void addFiles(event.target.files);
+            event.target.value = '';
+          }}
+        />
+        <button
+          type="button"
+          disabled={busy || attachments.length >= 3}
+          onClick={() => fileInput.current?.click()}
+          aria-label="Anexar imagem"
+          title="Anexar imagem (até 3; também dá para colar)"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line text-fg-muted hover:bg-hover hover:text-fg disabled:opacity-50"
+        >
+          <Paperclip className="h-4 w-4" aria-hidden="true" />
+        </button>
         <textarea
+          onPaste={(event) => {
+            const files = [...event.clipboardData.files].filter((file) => file.type.startsWith('image/'));
+            if (files.length) {
+              event.preventDefault();
+              void addFiles(files);
+            }
+          }}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
@@ -290,7 +382,7 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
         <VoiceInputButton value={draft} onChange={setDraft} disabled={busy} />
         <button
           type="submit"
-          disabled={busy || !draft.trim()}
+          disabled={busy || (!draft.trim() && attachments.length === 0)}
           aria-label="Enviar"
           className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-fg hover:bg-primary-hover disabled:opacity-50"
         >
