@@ -1,7 +1,9 @@
 'use client';
 
 import { AssistantMarkdown } from './assistant-markdown';
+import { TomoActionCard, type TomoActionDone } from './tomo-action-card';
 import { VoiceInputButton } from './voice-input';
+import { extractTomoActions } from '@/lib/tomo-actions';
 import { Copy, Paperclip, Send, X } from 'lucide-react';
 import { prepareImageForUpload } from '@/lib/images';
 import Image from 'next/image';
@@ -20,6 +22,10 @@ interface ChatMessage {
   content: string;
   /** Miniaturas das imagens anexadas (só na memória desta aba). */
   images?: string[];
+  /** Campanha aberta quando o Tomo respondeu (as ações propostas valem para ela). */
+  campaignId?: string;
+  /** Ações já gravadas, por posição na resposta. */
+  done?: Record<number, TomoActionDone>;
 }
 
 interface Attachment {
@@ -78,7 +84,7 @@ function readState(): AssistantState {
 function setState(update: (current: AssistantState) => AssistantState) {
   state = update(readState());
   try {
-    const messages = state.messages.slice(-40).map(({ role, content }) => ({ role, content }));
+    const messages = state.messages.slice(-40).map(({ role, content, campaignId, done }) => ({ role, content, campaignId, done }));
     window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ open: state.open, messages }));
   } catch {
     // Sem armazenamento (ou cheio): vale só nesta página.
@@ -200,7 +206,8 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
     if (!question || busy) return;
     const sending = attachments;
     const next: ChatMessage[] = [...messages, { role: 'user', content: question, ...(sending.length ? { images: sending.map((item) => item.preview) } : {}) }];
-    setMessages([...next, { role: 'assistant', content: '' }]);
+    const campaignId = /^\/campanhas\/([0-9a-f-]{36})/.exec(pathname)?.[1];
+    setMessages([...next, { role: 'assistant', content: '', ...(campaignId ? { campaignId } : {}) }]);
     setDraft('');
     setAttachments([]);
     setBusy(true);
@@ -304,7 +311,7 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
                 </span>
               ) : null}
               {(message.content && message.role === 'assistant' ? (
-                <AssistantMarkdown text={message.content} />
+                <AssistantMarkdown text={extractTomoActions(message.content).text} />
               ) : (
                 message.content
               )) ||
@@ -322,10 +329,27 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
                 ) : (
                   ''
                 ))}
+              {message.role === 'assistant' && message.campaignId && !(busy && index === messages.length - 1)
+                ? extractTomoActions(message.content).actions.map((action, actionIndex) => (
+                    <TomoActionCard
+                      key={actionIndex}
+                      campaignId={message.campaignId!}
+                      action={action}
+                      done={message.done?.[actionIndex]}
+                      onDone={(result) =>
+                        setMessages((current) =>
+                          current.map((entry, position) =>
+                            position === index ? { ...entry, done: { ...entry.done, [actionIndex]: result } } : entry,
+                          ),
+                        )
+                      }
+                    />
+                  ))
+                : null}
               {message.role === 'assistant' && message.content ? (
                 <button
                   type="button"
-                  onClick={() => void navigator.clipboard.writeText(message.content)}
+                  onClick={() => void navigator.clipboard.writeText(extractTomoActions(message.content).text)}
                   aria-label="Copiar resposta"
                   className="absolute -top-2 -right-2 hidden rounded border border-line bg-raised p-1 text-fg-muted group-hover:block hover:text-fg"
                 >

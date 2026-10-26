@@ -237,3 +237,10 @@ obrigatoriedade fica no banco (verificação adiada no fim da transação), vale
 altera e apaga (RLS, com teste). Jogadores e quem é de fora não leem nada. As imagens ficam em
 `campaigns/<id>/boards/`, com envio permitido só a quem gerencia a campanha; o editor só aceita
 caminhos dessa pasta. As colunas que o cliente grava são limitadas por `grant`.
+
+## Ações do Tomo (2026-10-27)
+
+O modelo só **propõe** ações (texto); quem grava é a Server Action `runTomoAction`, chamada quando o
+mestre confirma no cartão. Ela valida o conteúdo com zod, exige papel de mestre numa campanha ativa e
+grava com o cliente da própria pessoa (RLS). As instruções das ações só entram no contexto do mestre.
+Jogadores não recebem cartões e, mesmo forjando a chamada, o servidor recusa.

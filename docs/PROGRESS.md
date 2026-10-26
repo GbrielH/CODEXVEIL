@@ -306,6 +306,10 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27 (tarde):** quadros só do mestre, com imagens e Ctrl+Z; Tomo com ações do mestre
+  (prévia + confirmar). `pnpm check` e build passando. Não testado no navegador (exige login e
+  a chave do Gemini). Próximo: o responsável testa as ações do Tomo numa campanha em que é mestre.
+
 - **2026-10-27:** quadros livres (aba Quadros; migração `20261027100000`). Teste de RLS novo e
   testes do formato dos blocos (web 14). Não testado no navegador (exige login). Próximo: Tomo
   com ações do mestre.

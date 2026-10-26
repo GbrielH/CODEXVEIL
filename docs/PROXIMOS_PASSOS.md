@@ -184,8 +184,13 @@ mapa e notas lado a lado).
 
 ### B0d. Pedidos novos (2026-10-26, a planejar)
 
-- [ ] Tomo com ações (só para o mestre): criar NPC/monstro, escrever anotação, sugerir melhorias na
-      sessão, sempre com confirmação antes de gravar.
+- [x] Tomo com ações (2026-10-27, só para o mestre da campanha aberta): o Tomo propõe e um cartão
+      no chat mostra a prévia; nada é gravado até o mestre clicar em **Confirmar**. Ações: criar
+      NPC/monstro na biblioteca (oculto dos jogadores, segredos só do mestre), criar anotação (só o
+      mestre ou o grupo) e nota privada do mestre no fim do roteiro de uma sessão. O servidor valida
+      de novo e confere se a pessoa é mestre (`runTomoAction`); o RLS confere outra vez.
+- [ ] Tomo, próximas ações: ficha de estatísticas da criatura, encontro no mapa, itens da
+      biblioteca, editar blocos existentes do roteiro.
 - [x] Quadro livre (estilo Miro), feito em 2026-10-27, solução própria sem biblioteca paga: aba
       **Quadros**, só do mestre (os jogadores continuam vendo o que ele libera nas outras abas, em
       lista e na ordem de liberação). Vários quadros, notas coloridas, textos, imagens (botão ou
