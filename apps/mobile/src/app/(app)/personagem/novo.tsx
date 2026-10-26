@@ -812,6 +812,12 @@ function Wizard({
             onChangeText={(text) => update({ details: { ...draft.details, height: text } })}
             maxLength={40}
           />
+          <Field
+            label="Idade (ex.: 27 anos)"
+            value={draft.details.age}
+            onChangeText={(text) => update({ details: { ...draft.details, age: text } })}
+            maxLength={40}
+          />
           {(
             [
               ['appearance', 'Aparência', 4000],

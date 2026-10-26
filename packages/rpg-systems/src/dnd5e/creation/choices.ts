@@ -2066,6 +2066,7 @@ const FIELD_STEPS: Record<string, Dnd5eStep> = {
   baseScores: 'abilities',
   alignment: 'details',
   height: 'details',
+  age: 'details',
   name: 'start',
 };
 
@@ -2289,6 +2290,7 @@ export function validateDnd5eDraft(draft: Dnd5eDraft, context: Dnd5eCreationCont
       add('alignment', 'O mestre não liberou alinhamentos malignos nesta campanha.');
   } else add('alignment', 'Escolha um alinhamento.');
   if (!draft.details.height.trim()) add('height', 'Informe a altura do personagem.');
+  if (!draft.details.age.trim()) add('age', 'Informe a idade do personagem.');
 
   return issues;
 }

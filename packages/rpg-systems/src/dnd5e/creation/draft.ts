@@ -104,6 +104,8 @@ export const dnd5eDraftSchema = z.object({
     .object({
       /** Altura do personagem (ex.: "1,75 m"); pedida na criação. */
       height: text(40),
+      /** Idade do personagem (ex.: "27 anos"); pedida na criação. */
+      age: text(40),
       appearance: text(4000),
       personality: text(4000),
       ideals: text(2000),

@@ -129,6 +129,8 @@ export interface T20Draft {
   money: number | null;
   /** Altura do personagem (ex.: "1,75 m"); pedida na criação. */
   height: string;
+  /** Idade do personagem (ex.: "27 anos"); pedida na criação. */
+  age: string;
   appearance: string;
   personality: string;
   history: string;
@@ -178,6 +180,7 @@ export function createT20Draft(level = 1, method: T20AttributeMethodChoice = 'po
     equipment: { simple: '', martial: '', armor: '', shield: false },
     money: null,
     height: '',
+    age: '',
     appearance: '',
     personality: '',
     history: '',
@@ -669,6 +672,7 @@ export function t20DraftIssues(
 
   if (!draft.name.trim()) add('inicio', 'name', 'Dê um nome ao personagem.');
   if (!draft.height.trim()) add('detalhes', 'height', 'Informe a altura do personagem.');
+  if (!draft.age.trim()) add('detalhes', 'age', 'Informe a idade do personagem.');
   if (context.allowedMethods && !context.allowedMethods.includes(draft.attributeMethod))
     add('atributos', 'attributeMethod', 'O mestre não liberou este método de atributos.');
 
@@ -1082,6 +1086,7 @@ export function buildT20Character(
       size: race?.size ?? 'medio',
       speed: Math.max(0, (race?.speed ?? 9) - (heavy ? 3 : 0)),
       height: draft.height,
+      age: draft.age,
       appearance: draft.appearance,
       personality: draft.personality,
       history: draft.history,
@@ -1379,6 +1384,7 @@ const t20DraftSchema = z.object({
     .catch({ simple: '', martial: '', armor: '', shield: false }),
   money: z.number().int().min(4).max(24).nullable().catch(null),
   height: shortText(40),
+  age: shortText(40),
   appearance: shortText(4000),
   personality: shortText(4000),
   history: shortText(20000),

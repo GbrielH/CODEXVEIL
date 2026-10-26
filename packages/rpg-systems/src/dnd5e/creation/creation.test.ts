@@ -28,7 +28,7 @@ function complete(input: Dnd5eDraftInput, fixed: Dnd5eDraftInput['selections'] =
   let draft = createDnd5eDraft({
     name: 'Teste',
     alignment: 'neutral_good',
-    details: { height: '1,70 m' },
+    details: { height: '1,70 m', age: '27 anos' },
     abilityMethod: 'standard_array',
     baseScores: classDef?.standardArray ?? { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 },
     ...input,

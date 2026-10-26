@@ -7,6 +7,8 @@ export interface CharacterImageInput {
   level?: number | null;
   background?: string;
   alignment?: string;
+  /** Idade (ex.: "27 anos"). */
+  age?: string;
   /** Atributos mais altos, em ordem (ex.: ["Força", "Constituição"]). */
   strengths?: readonly string[];
   /** Itens equipados ou marcantes (armas, armadura, foco). */
@@ -41,6 +43,7 @@ export function characterImagePrompt(input: CharacterImageInput): string {
     `Retrato de personagem de RPG de fantasia (${input.system})${input.name ? `: ${clip(input.name, 80)}` : ''}${who ? `, ${who}` : ''}.`,
     input.background ? `Antecedente/origem: ${clip(input.background, 80)}.` : '',
     input.alignment ? `Tendência: ${clip(input.alignment, 40)}.` : '',
+    input.age ? `Idade: ${clip(input.age, 40)}.` : '',
     looks.length ? `Aparência física: ${looks.join(', ')}.` : '',
     input.appearance ? `Descrição: ${clip(input.appearance, 500)}.` : '',
     input.equipment?.length ? `Equipamento visível: ${input.equipment.slice(0, 6).join(', ')}.` : '',

@@ -888,6 +888,12 @@ export function T20MobileWizard({
             maxLength={40}
           />
           <Field
+            label="Idade (ex.: 27 anos)"
+            value={draft.age}
+            onChangeText={(age) => update({ age })}
+            maxLength={40}
+          />
+          <Field
             label="Aparência"
             multiline
             value={draft.appearance}

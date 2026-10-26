@@ -306,6 +306,11 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27:** **idade** do personagem, obrigatória na criação como a altura (D&D e T20, site e
+  app; `details.age` / `identity.age`). Altura e idade passaram a aparecer e ser editáveis na ficha
+  do site (D&D: Crônica; T20: aba Personagem) e entram no prompt do retrato. Não verificado no
+  navegador nem no aparelho.
+
 - **2026-10-27:** ficha (D&D e T20): prompt do retrato abaixo do retrato e prompt do token abaixo da
   imagem do grid.
 

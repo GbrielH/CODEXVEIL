@@ -241,6 +241,31 @@ function DetailsCard() {
         Registro de quem o personagem é. Tudo é salvo automaticamente.
       </p>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
+        {(
+          [
+            { key: 'height', label: 'Altura' },
+            { key: 'age', label: 'Idade' },
+          ] as const
+        ).map((field) => (
+          <div key={field.key}>
+            <label htmlFor={`${id}-${field.key}`} className="mb-1 block font-display text-sm font-semibold tracking-wide text-ink">
+              {field.label}
+            </label>
+            <input
+              id={`${id}-${field.key}`}
+              maxLength={40}
+              readOnly={!permissions.canEditSheet}
+              value={sheet.details[field.key]}
+              onChange={(event) =>
+                updateSheet((current) => ({
+                  ...current,
+                  details: { ...current.details, [field.key]: event.target.value },
+                }))
+              }
+              className="w-full rounded-md border border-parchment-500/60 bg-parchment-50/80 px-3 py-2 font-serif text-base text-ink shadow-[inset_0_1px_2px_rgb(43_36_32/0.12)] focus-visible:border-wine-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wine-400/40 read-only:bg-parchment-100/60"
+            />
+          </div>
+        ))}
         {fields.map((field) => (
           <div key={field.key} className={field.rows >= 6 ? 'md:col-span-2' : undefined}>
             <label

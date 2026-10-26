@@ -837,6 +837,15 @@ export function T20CreationWizard({ campaign, sources, remoteDraft = null }: T20
                 error={errorFor('height')}
                 onChange={(event) => update({ height: event.target.value })}
               />
+              <TextField
+                id="t20-age"
+                label="Idade"
+                hint="Obrigatória. Ex.: 27 anos."
+                maxLength={40}
+                value={draft.age}
+                error={errorFor('age')}
+                onChange={(event) => update({ age: event.target.value })}
+              />
               <TextareaField
                 id="t20-appearance"
                 label="Aparência"

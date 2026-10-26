@@ -45,7 +45,7 @@ import { T20AttacksCard } from './attacks-card';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
-import { TextareaField } from '@/components/ui/field';
+import { TextareaField, TextField } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
 import { Tabs } from '@/components/ui/tabs';
 import { DiceProvider, useDice } from '@/components/dice/dice-roller';
@@ -263,6 +263,7 @@ function T20SheetBody(props: T20SheetScreenProps) {
     className: sheet.identity.classes.map((entry) => entry.name).join(' / '),
     level: sheet.identity.classes.reduce((total, entry) => total + entry.level, 0),
     background: [sheet.identity.origin, sheet.identity.deity ? `devoto de ${sheet.identity.deity}` : ''].filter(Boolean).join(', '),
+    age: sheet.identity.age,
     appearance: sheet.identity.appearance,
     personality: sheet.identity.personality,
     backstory: sheet.identity.history,
@@ -1056,6 +1057,8 @@ function StoryCard({
   onSave: (identity: Partial<T20Sheet['identity']>) => Promise<void>;
 }) {
   const [form, setForm] = useState({
+    height: sheet.identity.height,
+    age: sheet.identity.age,
     appearance: sheet.identity.appearance,
     personality: sheet.identity.personality,
     history: sheet.identity.history,
@@ -1070,6 +1073,24 @@ function StoryCard({
       />
       {!canEdit ? <Alert tone="info">Somente leitura.</Alert> : null}
       <div className="flex flex-col gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextField
+            id="t20-sheet-height"
+            label="Altura"
+            maxLength={40}
+            value={form.height}
+            disabled={!canEdit}
+            onChange={(event) => setForm({ ...form, height: event.target.value })}
+          />
+          <TextField
+            id="t20-sheet-age"
+            label="Idade"
+            maxLength={40}
+            value={form.age}
+            disabled={!canEdit}
+            onChange={(event) => setForm({ ...form, age: event.target.value })}
+          />
+        </div>
         <TextareaField
           id="t20-appearance"
           label="Aparência"

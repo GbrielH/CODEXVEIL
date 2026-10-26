@@ -541,6 +541,14 @@ export function DetailsFields({
         value={draft.details.height}
         onChange={(event) => onChange({ ...draft.details, height: event.target.value })}
       />
+      <TextField
+        id={`${id}-age`}
+        label="Idade"
+        hint="Obrigatória. Ex.: 27 anos."
+        maxLength={40}
+        value={draft.details.age}
+        onChange={(event) => onChange({ ...draft.details, age: event.target.value })}
+      />
       {DETAIL_FIELDS.map((field) => (
         <TextareaField
           key={field.key}

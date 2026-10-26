@@ -113,6 +113,7 @@ export const dnd5eSheetSchema = z.object({
   details: z
     .object({
       height: text(40),
+      age: text(40),
       appearance: text(4000),
       personality: text(4000),
       ideals: text(2000),

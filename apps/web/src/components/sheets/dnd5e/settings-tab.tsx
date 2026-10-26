@@ -78,6 +78,7 @@ function DndImagePrompt({ variant }: { variant: 'portrait' | 'token' }) {
     level: sheet.identity.classes.reduce((total, entry) => total + entry.level, 0),
     background: sheet.identity.background,
     alignment: sheet.identity.alignment,
+    age: sheet.details.age,
   };
   return (
     <ImagePromptCard
