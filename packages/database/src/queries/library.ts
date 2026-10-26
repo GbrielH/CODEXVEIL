@@ -22,6 +22,8 @@ export interface CreatureSummary {
   visibility: SharedVisibility;
   /** Porte: tamanho do token na grade da sessão. */
   size: TokenSize;
+  /** Partes da ficha (chaves do bloco de estatísticas) que o mestre liberou aos jogadores. */
+  revealedStats: string[];
   updatedAt: string;
 }
 
@@ -38,7 +40,7 @@ export interface CreatureDetail extends CreatureSummary {
 }
 
 const CREATURE_COLUMNS =
-  'id, campaign_id, kind, name, subtitle, description, image_path, visibility, size, updated_at' as const;
+  'id, campaign_id, kind, name, subtitle, description, image_path, visibility, size, revealed_stats, updated_at' as const;
 
 type CreatureRow = Pick<
   Tables<'creatures'>,
@@ -51,6 +53,7 @@ type CreatureRow = Pick<
   | 'image_path'
   | 'visibility'
   | 'size'
+  | 'revealed_stats'
   | 'updated_at'
 >;
 
@@ -65,6 +68,7 @@ function toCreatureSummary(row: CreatureRow): CreatureSummary {
     imagePath: row.image_path,
     visibility: row.visibility === 'members' ? 'members' : 'gm',
     size: isTokenSize(row.size) ? row.size : 'medium',
+    revealedStats: row.revealed_stats,
     updatedAt: row.updated_at,
   };
 }
@@ -217,33 +221,20 @@ export function creatureImagePath(campaignId: string, fileName: string): string 
   return `campaigns/${campaignId}/creatures/${fileName}`;
 }
 
-/**
- * Copia um registro (NPC ou monstro) de outra campanha para `targetCampaignId`: perfil, dados do
- * mestre (estatísticas, notas e segredos) e a imagem (duplicada no Storage, na pasta da campanha
- * de destino). O RLS garante que só quem é mestre das duas campanhas consegue.
- */
-export async function copyCreatureToCampaign(
-  client: CodexveilClient,
-  sourceCreatureId: string,
-  targetCampaignId: string,
-): Promise<string> {
-  const source = await getCreature(client, sourceCreatureId, true);
-  if (!source) throw new AppError('not_found');
-  const creatureId = await createCreature(client, targetCampaignId, {
-    kind: source.kind,
-    name: source.name,
-    subtitle: source.subtitle,
-    description: source.description,
-    visibility: 'gm',
-    size: source.size,
-  });
-  if (source.gm) await updateCreatureGmData(client, creatureId, source.gm);
-  if (source.imagePath) {
-    const extension = source.imagePath.split('.').pop() ?? 'webp';
-    const path = creatureImagePath(targetCampaignId, `${creatureId}-${Date.now()}.${extension}`);
-    const { error } = await client.storage.from('campaign-media').copy(source.imagePath, path);
-    // Sem a imagem a cópia continua valendo; o mestre pode enviar outra.
-    if (!error) await setCreatureImage(client, creatureId, path);
-  }
-  return creatureId;
+/** O mestre escolhe quais partes da ficha da criatura os jogadores veem. */
+export async function setCreatureRevealedStats(client: CodexveilClient, creatureId: string, keys: readonly string[]): Promise<void> {
+  const { data, error } = await client
+    .from('creatures')
+    .update({ revealed_stats: [...new Set(keys)].slice(0, 40) })
+    .eq('id', creatureId)
+    .select('id');
+  if (error) throw toAppError(error);
+  if (data.length === 0) throw new AppError('forbidden');
+}
+
+/** Só as partes liberadas da ficha (para jogadores); vazio se nada foi liberado. */
+export async function getCreatureRevealedStats(client: CodexveilClient, creatureId: string): Promise<Record<string, Json>> {
+  const { data, error } = await client.rpc('creature_revealed_stats', { p_creature_id: creatureId });
+  if (error) throw toAppError(error);
+  return data && typeof data === 'object' && !Array.isArray(data) ? (data as Record<string, Json>) : {};
 }

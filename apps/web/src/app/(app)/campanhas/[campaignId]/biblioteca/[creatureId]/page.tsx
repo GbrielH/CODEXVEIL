@@ -1,4 +1,5 @@
-import { getCreature, signedMediaUrls } from '@codexveil/database';
+import { getCreature, getCreatureRevealedStats, signedMediaUrls } from '@codexveil/database';
+import { RevealPanel } from '@/components/library/reveal-panel';
 import { parseDnd5eStatBlock } from '@codexveil/rpg-systems/dnd5e';
 import { buildT20Content, parseT20StatBlock } from '@codexveil/rpg-systems/tormenta20';
 import { T20ThreatEditor, T20ThreatView } from '@/components/library/t20-threat';
@@ -53,6 +54,10 @@ export default async function CreaturePage({ params }: Props) {
           ),
         ).tables
       : [];
+
+  // Jogadores: só as partes da ficha que o mestre liberou (o banco filtra).
+  const revealed = !isGm && creature.revealedStats.length > 0 ? await getCreatureRevealedStats(supabase, creature.id) : {};
+  const revealedKeys = new Set(Object.keys(revealed));
 
   let statBlock = null;
   let statBlockInvalid = false;
@@ -111,6 +116,23 @@ export default async function CreaturePage({ params }: Props) {
           As estatísticas deste registro não seguem o formato esperado. Salve-as novamente pelo
           editor.
         </Alert>
+      ) : null}
+
+      {canManage ? (
+        <RevealPanel
+          creatureId={creature.id}
+          systemId={campaign.systemId}
+          revealed={creature.revealedStats}
+          creatureVisible={creature.visibility === 'members'}
+        />
+      ) : null}
+
+      {!isGm && revealedKeys.size > 0 ? (
+        campaign.systemId === 'tormenta20' ? (
+          <T20ThreatView name={creature.name} stats={parseT20StatBlock(revealed)} only={revealedKeys} />
+        ) : (
+          <StatBlockView name={creature.name} statBlock={parseDnd5eStatBlock(revealed)} only={revealedKeys} />
+        )
       ) : null}
 
       {isGm && creature.gm ? (

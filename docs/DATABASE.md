@@ -187,6 +187,10 @@ Migração `20261018120000_gameplay_turns.sql`:
 Migração `20261023100000_session_attendance.sql`: tabela `session_attendance` (presença: `yes`/`no`
 por pessoa e sessão; membros leem; cada um responde só por si, em sessão agendada não iniciada).
 
+Migração `20261026130000_creature_revealed_stats.sql`: `creatures.revealed_stats` (chaves do bloco
+de estatísticas liberadas aos jogadores; só o mestre altera) e `creature_revealed_stats(id)`
+(SECURITY DEFINER: devolve aos membros só essas chaves, de registros revelados ao grupo).
+
 Migração `20261026120000_t20_attribute_rolls.sql`: tabela `t20_attribute_rolls` (rolagem de
 atributos do Tormenta20 pendente por pessoa; só leitura da própria) e as funções
 `t20_attribute_dice()` (sorteia no banco pela regra do livro, guarda e devolve sempre o mesmo

@@ -195,13 +195,11 @@ Esta seção lista só o que falta ou está parcial. O que já foi atendido est�
 
 - **Pendente: "referências a sessões".** A página de um NPC ou monstro não lista as sessões
   em que ele aparece, seja em blocos `npc_ref`/`monster_ref` ou na cena.
-- **Feito (2026-10-26): biblioteca reaproveitável.** "Trazer de outra campanha" na biblioteca do
-  mestre copia NPCs e monstros (perfil, estatísticas, segredos e imagem) das outras campanhas do
-  mesmo sistema em que ele é mestre (`copyCreatureToCampaign`). Antes, não era possível reaproveitar registros entre
-  campanhas do mesmo mestre.
-
-### §13 Experiência de uso
-
+- **Feito (2026-10-26): ficha da criatura liberada por partes.** A biblioteca é da campanha (não
+  da sessão) e os jogadores só veem o que o mestre revela. Além disso, o mestre escolhe quais partes
+  da ficha da criatura o grupo vê (CA, PV, atributos, ações…) e libera ou oculta quando quiser
+  (`creatures.revealed_stats` e `creature_revealed_stats()`, migração `20261026130000`). A cópia de
+  registros entre campanhas foi desfeita a pedido do responsável.
 - **Feito (2026-10-26): paginação** no site, com **Carregar mais**: anotações (60 por página),
   convites (25), histórico da ficha (30) e cópias de segurança (15). As páginas do servidor usam
   `?pagina=N`. O app continua com os limites antigos.

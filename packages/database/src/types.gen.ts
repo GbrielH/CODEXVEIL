@@ -982,6 +982,7 @@ export type Database = {
           image_path: string | null;
           kind: Database['public']['Enums']['creature_kind'];
           name: string;
+          revealed_stats: string[];
           size: string;
           subtitle: string;
           updated_at: string;
@@ -996,6 +997,7 @@ export type Database = {
           image_path?: string | null;
           kind: Database['public']['Enums']['creature_kind'];
           name: string;
+          revealed_stats?: string[];
           size?: string;
           subtitle?: string;
           updated_at?: string;
@@ -1010,6 +1012,7 @@ export type Database = {
           image_path?: string | null;
           kind?: Database['public']['Enums']['creature_kind'];
           name?: string;
+          revealed_stats?: string[];
           size?: string;
           subtitle?: string;
           updated_at?: string;
@@ -2072,6 +2075,12 @@ export type Database = {
           p_abilities?: Json;
         };
         Returns: string;
+      };
+      creature_revealed_stats: {
+        Args: {
+          p_creature_id: string;
+        };
+        Returns: Json;
       };
       decline_campaign_invite: {
         Args: {

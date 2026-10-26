@@ -17,27 +17,29 @@ import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
-/** Ficha de ameaça do Tormenta20 (leitura). */
-export function T20ThreatView({ name, stats }: { name: string; stats: T20StatBlock }) {
-  const rows: [string, string][] = [
-    ['Iniciativa e sentidos', stats.senses],
-    ['Defesa', `${stats.defense}${stats.defenseNotes ? ` · ${stats.defenseNotes}` : ''}`],
+/** Ficha de ameaça do Tormenta20 (leitura). Com `only`, só as partes que o mestre liberou. */
+export function T20ThreatView({ name, stats, only }: { name: string; stats: T20StatBlock; only?: ReadonlySet<string> }) {
+  const show = (key: string) => !only || only.has(key);
+  const rows = (
     [
-      'Pontos de vida',
-      `${stats.hitPoints}${stats.manaPoints !== null ? ` · PM ${stats.manaPoints}` : ''}`,
-    ],
-    ['Deslocamento', stats.speed],
-    ['Corpo a corpo', stats.melee],
-    ['À distância', stats.ranged],
-    ['Perícias', stats.skills],
-    ['Equipamento', stats.equipment],
-    ['Tesouro', stats.treasure],
-  ];
+      ['Iniciativa e sentidos', stats.senses, 'senses'],
+      ['Defesa', `${stats.defense}${stats.defenseNotes ? ` · ${stats.defenseNotes}` : ''}`, 'defense'],
+      ['Pontos de vida', `${stats.hitPoints}${stats.manaPoints !== null ? ` · PM ${stats.manaPoints}` : ''}`, 'hitPoints'],
+      ['Deslocamento', stats.speed, 'speed'],
+      ['Corpo a corpo', stats.melee, 'melee'],
+      ['À distância', stats.ranged, 'ranged'],
+      ['Perícias', stats.skills, 'skills'],
+      ['Equipamento', stats.equipment, 'equipment'],
+      ['Tesouro', stats.treasure, 'treasure'],
+    ] as const
+  )
+    .filter(([, , key]) => show(key))
+    .map(([label, value]) => [label, value] as [string, string]);
   return (
     <Card ornate>
       <CardHeader
         title={name}
-        description={[stats.type, stats.challenge ? `ND ${stats.challenge}` : '']
+        description={[show('type') ? stats.type : '', show('challenge') && stats.challenge ? `ND ${stats.challenge}` : '']
           .filter(Boolean)
           .join(' · ')}
       />
@@ -51,6 +53,7 @@ export function T20ThreatView({ name, stats }: { name: string; stats: T20StatBlo
             </div>
           ))}
       </dl>
+      {show('attributes') ? (
       <div className="my-3 grid grid-cols-6 gap-1 text-center">
         {T20_ATTRIBUTES.map((key) => (
           <div key={key} className="rounded border border-line py-1">
@@ -63,12 +66,13 @@ export function T20ThreatView({ name, stats }: { name: string; stats: T20StatBlo
           </div>
         ))}
       </div>
-      {stats.abilities.map((ability) => (
+      ) : null}
+      {(show('abilities') ? stats.abilities : []).map((ability) => (
         <p key={ability.name} className="mt-2 text-sm text-fg-secondary">
           <strong className="text-fg">{ability.name}.</strong> {ability.text}
         </p>
       ))}
-      {stats.description ? (
+      {stats.description && show('description') ? (
         <p className="mt-3 text-sm whitespace-pre-line text-fg-muted">{stats.description}</p>
       ) : null}
     </Card>
