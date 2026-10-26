@@ -7,6 +7,7 @@ import {
 import {
   T20_ATTRIBUTES,
   T20_POINT_BUY_BUDGET,
+  T20_POINT_BUY_COST,
   T20_POINT_BUY_MAX,
   T20_POINT_BUY_MIN,
   T20_SKILLS,
@@ -1183,7 +1184,8 @@ function AttributesStep({
             <strong className={cx(spent > T20_POINT_BUY_BUDGET ? 'text-danger' : 'text-fg')}>
               {spent}
             </strong>{' '}
-            de {T20_POINT_BUY_BUDGET}. Valores de –1 (devolve 1 ponto) a 4.
+            de {T20_POINT_BUY_BUDGET}. Valores de –1 (devolve 1 ponto) a 4.{' '}
+            <PointCostHelp />
           </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {T20_ATTRIBUTES.map((key) => (
@@ -1545,5 +1547,49 @@ function EquipmentStep({
         </div>
       ) : null}
     </div>
+  );
+}
+
+/** Tabela de custo da compra por pontos, aberta pelo “?” ao lado do total gasto. */
+function PointCostHelp() {
+  const values = [-1, 0, 1, 2, 3, 4];
+  return (
+    <details className="relative inline-block align-middle">
+      <summary
+        aria-label="Como funciona o custo dos pontos"
+        title="Como funciona o custo dos pontos"
+        className="inline-flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-line text-xs font-semibold text-fg-secondary hover:border-fg-brand hover:text-fg [&::-webkit-details-marker]:hidden"
+      >
+        ?
+      </summary>
+      <div className="absolute top-7 left-0 z-30 w-72 rounded-lg border border-line bg-raised p-3 text-xs text-fg-secondary shadow-card">
+        <p className="mb-2">
+          O custo sobe com o valor (regra do Tormenta20): subir de +2 para +3 custa 2 pontos, e de +3 para +4
+          custa 3.
+        </p>
+        <table className="w-full text-left tabular-nums">
+          <thead>
+            <tr className="text-fg-muted">
+              <th className="py-0.5 font-medium">Valor</th>
+              <th className="py-0.5 font-medium">Custo total</th>
+              <th className="py-0.5 font-medium">Para subir até ele</th>
+            </tr>
+          </thead>
+          <tbody>
+            {values.map((value) => {
+              const total = T20_POINT_BUY_COST[value] ?? 0;
+              const step = value > 0 ? total - (T20_POINT_BUY_COST[value - 1] ?? 0) : null;
+              return (
+                <tr key={value} className="border-t border-line">
+                  <td className="py-0.5 text-fg">{value > 0 ? `+${value}` : value === 0 ? '0' : '–1'}</td>
+                  <td className="py-0.5">{total < 0 ? 'devolve 1' : total}</td>
+                  <td className="py-0.5">{step ?? '—'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </details>
   );
 }

@@ -306,6 +306,9 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27:** criação T20 (site): botão "?" ao lado dos pontos gastos abre a tabela de custo da
+  compra por pontos (subir para +3 custa 2, para +4 custa 3). Não verificado no navegador.
+
 - **2026-10-27 (tarde):** quadros só do mestre, com imagens e Ctrl+Z; Tomo com ações do mestre
   (prévia + confirmar). `pnpm check` e build passando. Não testado no navegador (exige login e
   a chave do Gemini). Próximo: o responsável testa as ações do Tomo numa campanha em que é mestre.
