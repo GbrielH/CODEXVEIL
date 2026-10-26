@@ -1,5 +1,6 @@
 import {
   getMyPendingInvites,
+  listFriends,
   getProfile,
   listMyCampaigns,
   listMyCharacters,
@@ -17,6 +18,7 @@ import { CampaignCard } from '@/components/campaigns/campaign-card';
 import { CampaignCover } from '@/components/campaigns/campaign-cover';
 import { ArcaneSigil } from '@/components/brand/arcane-sigil';
 import { CharacterCard } from '@/components/characters/character-card';
+import { FriendRequestsCard } from '@/components/friends/friend-requests-card';
 import { AttendanceFrame } from '@/components/sessions/attendance-frame';
 import { ButtonLink } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -32,14 +34,16 @@ export const metadata: Metadata = { title: 'Painel' };
 export default async function DashboardPage({ searchParams }: PageProps<'/painel'>) {
   const user = await requireSessionUser(routes.dashboard);
   const supabase = await createSupabaseServerClient();
-  const [profile, campaigns, invites, sessions, characters, params] = await Promise.all([
+  const [profile, campaigns, invites, sessions, characters, params, friends] = await Promise.all([
     getProfile(supabase, user.id),
     listMyCampaigns(supabase, user.id),
     getMyPendingInvites(supabase),
     listUpcomingSessions(supabase),
     listMyCharacters(supabase, user.id),
     searchParams,
+    listFriends(supabase, user.id),
   ]);
+  const friendRequests = friends.filter((friend) => friend.status === 'incoming');
   const recentCharacters = characters.slice(0, 4);
   // Presença: só nas campanhas em que o usuário joga (o mestre vê as respostas na aba Sessões).
   const playerCampaignIds = new Set(
@@ -156,6 +160,7 @@ export default async function DashboardPage({ searchParams }: PageProps<'/painel
 
         <Notice value={params.aviso} />
 
+        <FriendRequestsCard requests={friendRequests} />
         {invites.length > 0 ? (
           <section aria-labelledby="convites-pendentes">
             <Card ornate>

@@ -306,6 +306,9 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27:** Painel mostra os **pedidos de amizade recebidos** (aceitar/recusar ali mesmo), acima
+  dos convites pendentes. Não verificado no navegador.
+
 - **2026-10-27:** ficha T20 (site) ganhou o envio do **retrato** (antes só o D&D tinha), na aba
   Personagem, ao lado da imagem do grid e de um prompt para gerar o retrato numa IA (D&D também
   ganhou o prompt). Cartão de retrato agora é comum aos dois sistemas. Não verificado no navegador.
