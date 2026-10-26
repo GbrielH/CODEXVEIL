@@ -171,8 +171,9 @@ mapa e notas lado a lado).
 - [x] Anexar imagens no chat do Tomo (site): clipe ou colar (Ctrl+V), até 3 por pergunta, reduzidas a
       1600 px no navegador e enviadas com a pergunta ao Gemini (que lê imagens no plano gratuito,
       testado). Não são gravadas: ficam só na memória da aba, como a conversa.
-- [ ] Geração de imagem: os modelos de imagem do Gemini têm cota 0 no plano gratuito (testado).
-      Opções levadas ao responsável: faturamento no Google, Pollinations.ai ou Cloudflare Workers AI.
+- [x] Geração de imagem: **decidido em 2026-10-27 não gerar** (cota 0 no plano gratuito). O Tomo
+      entrega um prompt pronto (em inglês, num bloco para copiar) para a pessoa usar no gerador
+      que quiser.
 
 ### B0c. Perguntas do mestre (2026-10-26)
 
