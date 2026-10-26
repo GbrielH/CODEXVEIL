@@ -231,8 +231,7 @@ function DetailsCard() {
     { key: 'notes', label: 'Anotações', rows: 6, max: 20000 },
   ] as const;
   return (
-    // Superfície de pergaminho (registro escrito): fundo claro e tinta escura. Não usa <Card>,
-    // cujo fundo escuro anularia o do pergaminho e deixaria os rótulos ilegíveis.
+    // Superfície de registro (`.parchment`): cartão escuro com brilho arcano, no tom da página.
     <section aria-labelledby={`${id}-cronica`} className="parchment rounded-lg p-5 sm:p-6">
       <h2 id={`${id}-cronica`} className="font-display text-xl text-ink">
         Crônica do personagem
@@ -262,7 +261,7 @@ function DetailsCard() {
                   details: { ...current.details, [field.key]: event.target.value },
                 }))
               }
-              className="w-full rounded-md border border-parchment-500/60 bg-parchment-50/80 px-3 py-2 font-serif text-base text-ink shadow-[inset_0_1px_2px_rgb(43_36_32/0.12)] focus-visible:border-wine-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wine-400/40 read-only:bg-parchment-100/60"
+              className="w-full rounded-md border border-line bg-sunken px-3 py-2 font-serif text-base text-fg placeholder:text-fg-muted focus-visible:border-wine-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wine-400/40 read-only:opacity-80"
             />
           </div>
         ))}
@@ -286,7 +285,7 @@ function DetailsCard() {
                   details: { ...current.details, [field.key]: event.target.value },
                 }))
               }
-              className="w-full rounded-md border border-parchment-500/60 bg-parchment-50/80 px-3 py-2 font-serif text-base leading-relaxed text-ink shadow-[inset_0_1px_2px_rgb(43_36_32/0.12)] placeholder:text-ink-muted focus-visible:border-wine-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wine-400/40 read-only:bg-parchment-100/60"
+              className="w-full rounded-md border border-line bg-sunken px-3 py-2 font-serif text-base leading-relaxed text-fg placeholder:text-fg-muted focus-visible:border-wine-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wine-400/40 read-only:opacity-80"
             />
           </div>
         ))}

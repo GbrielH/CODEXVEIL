@@ -306,6 +306,10 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27:** a superfície `.parchment` (crônica da ficha, anotações, resumo da sessão, convite,
+  item do SRD) deixou de ser pergaminho claro: agora é cartão escuro com brilho violeta, no tom da
+  página (as cores de tinta viram as claras do tema só nesse escopo). Não verificado no navegador.
+
 - **2026-10-27:** Tomo com ações para todos (9 ações, conforme o papel e a página; sempre com
   confirmação). Testes web 19. Não testado com o Gemini no navegador.
 
