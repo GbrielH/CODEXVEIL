@@ -161,6 +161,14 @@ Os quatro números saíram do bloco da aba Jogo do D&D, que mantém os bônus te
 verificado no navegador (exige login). **Falta:** a ficha do app e a tela de sessão (iniciativa,
 mapa e notas lado a lado).
 
+### B0b. Tomo: voz e imagem (2026-10-26)
+
+- [x] Ditado por voz no chat do Tomo (site): botão de microfone usa o reconhecimento do navegador
+      (pt-BR; Chrome, Edge e Safari; some no Firefox). O texto entra na caixa e a pessoa confere
+      antes de enviar. `Permissions-Policy` passou a permitir o microfone só para o próprio site.
+- [ ] Geração de imagem: os modelos de imagem do Gemini têm cota 0 no plano gratuito (testado).
+      Opções levadas ao responsável: faturamento no Google, Pollinations.ai ou Cloudflare Workers AI.
+
 ### B1. Behind the Magic — iniciado em 2026-10-26
 
 Regras do manual em código (`packages/rpg-systems/src/btm/`, 5 testes) e resumo em

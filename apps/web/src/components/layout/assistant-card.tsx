@@ -1,6 +1,7 @@
 'use client';
 
 import { AssistantMarkdown } from './assistant-markdown';
+import { VoiceInputButton } from './voice-input';
 import { Copy, Send, X } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -272,7 +273,7 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
       </div>
       <form
         onSubmit={(event) => void ask(event)}
-        className="flex items-end gap-2 border-t border-line p-3"
+        className="relative flex items-end gap-2 border-t border-line p-3"
       >
         <textarea
           value={draft}
@@ -285,6 +286,8 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
           placeholder="Sua pergunta…"
           className="min-h-0 flex-1 resize-none rounded-md border border-line bg-canvas px-3 py-2 text-sm text-fg outline-none focus:border-line-strong"
         />
+        {/* Ditado por voz: o texto entra na caixa e a pessoa confere antes de enviar. */}
+        <VoiceInputButton value={draft} onChange={setDraft} disabled={busy} />
         <button
           type="submit"
           disabled={busy || !draft.trim()}

@@ -130,7 +130,7 @@ apaga (`private.owns_book_pack`). Testado em `packages/database/test/rls/books.t
 ## Cabeçalhos HTTP (web)
 
 `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
-`Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` restritiva e
+`Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` restritiva (microfone só para o próprio site, desde 2026-10-26, para o ditado por voz no chat do Tomo) e
 `Cross-Origin-Opener-Policy: same-origin` (`apps/web/next.config.ts`).
 
 ## Testes de segurança
