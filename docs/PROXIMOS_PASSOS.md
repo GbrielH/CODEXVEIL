@@ -680,8 +680,8 @@ de segurança).
       ameaça da biblioteca da campanha (mestre). Armas e armaduras mágicas indicam a tabela do
       livro (8-8/8-10). Migração `20261025110000_book_tables_class_options.sql` (aplicada).
 - [x] Tasha e Tormenta20 reimportados na conta do responsável.
-- [ ] Depois: opcionais de classe na subida de nível do app; regra da campanha para o mestre
-      desligar as opções do Tasha sem tirar o livro; tesouro também na mesa (encontro).
+- [ ] Depois: opcionais de classe na subida de nível do app; (a regra para o mestre desligar o
+      Tasha foi descartada pelo responsável em 2026-10-26); tesouro também na mesa (encontro).
 
 ### 2026-10-25 — rascunho de personagem, chat do Tomo e cartão de iniciativa
 

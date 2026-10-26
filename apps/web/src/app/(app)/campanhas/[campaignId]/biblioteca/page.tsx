@@ -1,4 +1,5 @@
-import { listCreatures, signedMediaUrls, type CreatureSummary } from '@codexveil/database';
+import { listCreatures, listMyCampaigns, signedMediaUrls, type CreatureSummary } from '@codexveil/database';
+import { CopyFromCampaign } from '@/components/library/copy-from-campaign';
 import { ZoomableImage } from '@/components/ui/zoomable-image';
 import { creatureKindLabels } from '@codexveil/validation';
 import { BookOpen, EyeOff, Skull, UserRound } from 'lucide-react';
@@ -81,7 +82,7 @@ export default async function LibraryPage({
   searchParams,
 }: PageProps<'/campanhas/[campaignId]/biblioteca'>) {
   const [{ campaignId }, query] = await Promise.all([params, searchParams]);
-  const { campaign } = await loadCampaignOrNotFound(campaignId);
+  const { user, campaign } = await loadCampaignOrNotFound(campaignId);
   const kind = query.tipo === 'monstros' ? 'monster' : query.tipo === 'npcs' ? 'npc' : undefined;
   const supabase = await createSupabaseServerClient();
   const creatures = await listCreatures(supabase, campaign.id, kind);
@@ -91,6 +92,25 @@ export default async function LibraryPage({
   );
   const isGm = campaign.role === 'gm';
   const canManage = isGm && campaign.status === 'active';
+  // Biblioteca reaproveitável: registros das outras campanhas (mesmo sistema) em que a pessoa é mestre.
+  const otherLibraries = canManage
+    ? (
+        await Promise.all(
+          (await listMyCampaigns(supabase, user.id))
+            .filter((other) => other.id !== campaign.id && other.role === 'gm' && other.systemId === campaign.systemId)
+            .map(async (other) => ({
+              id: other.id,
+              name: other.name,
+              creatures: (await listCreatures(supabase, other.id)).map((creature) => ({
+                id: creature.id,
+                name: creature.name,
+                subtitle: creature.subtitle,
+                kind: creature.kind,
+              })),
+            })),
+        )
+      ).filter((other) => other.creatures.length > 0)
+    : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -146,6 +166,10 @@ export default async function LibraryPage({
                 systemId={campaign.systemId}
                 defaultKind={kind ?? 'npc'}
               />
+            </Card>
+            <Card className="mt-6">
+              <CardHeader title="Trazer de outra campanha" description="Reaproveite NPCs e monstros que você já criou em outras mesas." />
+              <CopyFromCampaign campaignId={campaign.id} campaigns={otherLibraries} />
             </Card>
           </aside>
         ) : null}

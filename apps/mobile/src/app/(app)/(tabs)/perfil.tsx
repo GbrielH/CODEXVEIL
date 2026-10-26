@@ -9,6 +9,7 @@ import {
 import { LogOut } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
+import { NewPasswordForm } from '@/components/change-password';
 import { Avatar } from '@/components/ui/avatar';
 import { AVATAR_SVGS } from '@/components/ui/avatar-svgs.gen';
 import { Button } from '@/components/ui/button';
@@ -178,8 +179,11 @@ export default function ProfileScreen() {
       ) : null}
       <PushCard />
       <Card>
+        <AppText variant="heading">Alterar senha</AppText>
+        <NewPasswordForm />
+      </Card>
+      <Card>
         <AppText variant="heading">Conta</AppText>
-        <AppText variant="muted">Para trocar a senha, use o site do Codexveil.</AppText>
         <Button
           label="Sair da conta"
           variant="danger"

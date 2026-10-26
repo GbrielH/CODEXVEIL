@@ -149,7 +149,10 @@ Esta seção lista só o que falta ou está parcial. O que já foi atendido est�
 
 ### §5 Usuários, autenticação e permissões
 
-- **Parcial no mobile:** não é possível redefinir a senha dentro do app. (O avatar deixou de
+- **Feito (2026-10-26): senha no app.** "Alterar senha" no Perfil; "Recuperar senha" manda um código
+  de 6 números no e-mail e a senha nova é definida no próprio app. O código depende do modelo de
+  e-mail novo (`deploy/supabase/templates/recovery.html`), ainda **não enviado** à produção: o
+  `config push` também ligaria o login com Google sem credenciais. (O avatar deixou de
   existir no produto em 2026-10-16.)
   O link de recuperação abre no site. O esquema `codexveil://` já está em
   `additional_redirect_urls`, então dá para tratar o link dentro do app depois.
@@ -192,7 +195,9 @@ Esta seção lista só o que falta ou está parcial. O que já foi atendido est�
 
 - **Pendente: "referências a sessões".** A página de um NPC ou monstro não lista as sessões
   em que ele aparece, seja em blocos `npc_ref`/`monster_ref` ou na cena.
-- **Futuro:** a biblioteca é por campanha. Ainda não é possível reaproveitar registros entre
+- **Feito (2026-10-26): biblioteca reaproveitável.** "Trazer de outra campanha" na biblioteca do
+  mestre copia NPCs e monstros (perfil, estatísticas, segredos e imagem) das outras campanhas do
+  mesmo sistema em que ele é mestre (`copyCreatureToCampaign`). Antes, não era possível reaproveitar registros entre
   campanhas do mesmo mestre.
 
 ### §13 Experiência de uso

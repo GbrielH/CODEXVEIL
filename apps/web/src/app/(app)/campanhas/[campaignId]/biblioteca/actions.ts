@@ -1,6 +1,7 @@
 'use server';
 
 import {
+  copyCreatureToCampaign,
   createCampaignItem,
   createCreature,
   deleteCampaignItem,
@@ -65,6 +66,22 @@ export async function deleteCreatureAction(campaignId: string, creatureId: strin
   }
   revalidatePath(campaignPath(campaignId, '/biblioteca'));
   redirect(`${campaignPath(campaignId, '/biblioteca')}?aviso=registro-excluido` as Route);
+}
+
+/** Biblioteca reaproveitável: copia um registro de outra campanha em que a pessoa também é mestre. */
+export async function copyCreatureFromCampaignAction(campaignId: string, sourceCreatureId: string): Promise<ActionResult> {
+  if (!uuidSchema.safeParse(campaignId).success || !uuidSchema.safeParse(sourceCreatureId).success) {
+    return { ok: false, message: 'Requisição inválida.' };
+  }
+  let creatureId: string;
+  try {
+    const supabase = await createSupabaseServerClient();
+    creatureId = await copyCreatureToCampaign(supabase, sourceCreatureId, campaignId);
+  } catch (error) {
+    return { ok: false, message: failureMessage(error) };
+  }
+  revalidatePath(campaignPath(campaignId, '/biblioteca'));
+  redirect(campaignPath(campaignId, `/biblioteca/${creatureId}`) as Route);
 }
 
 /** Copia um monstro do SRD para a biblioteca (oculto dos jogadores), com o bloco de estatísticas. */

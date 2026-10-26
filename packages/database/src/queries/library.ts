@@ -216,3 +216,34 @@ export async function deleteCreature(client: CodexveilClient, creatureId: string
 export function creatureImagePath(campaignId: string, fileName: string): string {
   return `campaigns/${campaignId}/creatures/${fileName}`;
 }
+
+/**
+ * Copia um registro (NPC ou monstro) de outra campanha para `targetCampaignId`: perfil, dados do
+ * mestre (estatísticas, notas e segredos) e a imagem (duplicada no Storage, na pasta da campanha
+ * de destino). O RLS garante que só quem é mestre das duas campanhas consegue.
+ */
+export async function copyCreatureToCampaign(
+  client: CodexveilClient,
+  sourceCreatureId: string,
+  targetCampaignId: string,
+): Promise<string> {
+  const source = await getCreature(client, sourceCreatureId, true);
+  if (!source) throw new AppError('not_found');
+  const creatureId = await createCreature(client, targetCampaignId, {
+    kind: source.kind,
+    name: source.name,
+    subtitle: source.subtitle,
+    description: source.description,
+    visibility: 'gm',
+    size: source.size,
+  });
+  if (source.gm) await updateCreatureGmData(client, creatureId, source.gm);
+  if (source.imagePath) {
+    const extension = source.imagePath.split('.').pop() ?? 'webp';
+    const path = creatureImagePath(targetCampaignId, `${creatureId}-${Date.now()}.${extension}`);
+    const { error } = await client.storage.from('campaign-media').copy(source.imagePath, path);
+    // Sem a imagem a cópia continua valendo; o mestre pode enviar outra.
+    if (!error) await setCreatureImage(client, creatureId, path);
+  }
+  return creatureId;
+}
