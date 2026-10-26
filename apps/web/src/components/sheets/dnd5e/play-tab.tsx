@@ -6,13 +6,11 @@ import {
   critRangeLabel,
   rageDamageBonus,
   dnd5eAttackDataSchema,
-  effectiveSpeed,
   formatModifier,
-  passiveWithConditions,
   type Dnd5eAttackData,
   isAttackAvailable,
 } from '@codexveil/rpg-systems/dnd5e';
-import { Crosshair, Footprints, Shield, Swords, Zap } from 'lucide-react';
+import { Crosshair, Swords, Zap } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -93,18 +91,8 @@ export function PlayTab() {
   const attacks = abilities.filter(
     (entry) => entry.kind === 'attack' && isAttackAvailable(entry.name, items),
   );
-  const speedValue = effectiveSpeed(derived.speed, sheet.combat.speedUnit, effects);
-  const speed = `${speedValue.toLocaleString('pt-BR')} ${sheet.combat.speedUnit}`;
-  const speedHint =
-    effects.speedZero.length > 0
-      ? effects.speedZero.join(', ')
-      : effects.speedReductionFeet > 0
-        ? `Exaustão ${effects.exhaustionLevel}`
-        : undefined;
   const penalty = effects.d20Penalty;
   const penaltySource = `Exaustão ${effects.exhaustionLevel}`;
-  const passive = passiveWithConditions(derived.passivePerception, effects);
-  const temporary = activeEffects.temporary ?? {};
   const incapacitated =
     effects.incapacitated.length > 0
       ? effects.conditions.find((condition) => condition.key === 'incapacitated')
@@ -132,49 +120,7 @@ export function PlayTab() {
           </Alert>
         ) : null}
         <HpTracker />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Stat
-            icon={<Shield className="h-5 w-5" aria-hidden="true" />}
-            label="Classe de armadura"
-            value={String(derived.armorClass)}
-            changed={Boolean(temporary.armorClass)}
-          />
-          <Stat
-            icon={<Zap className="h-5 w-5" aria-hidden="true" />}
-            label="Iniciativa"
-            value={formatModifier(derived.initiative - penalty)}
-            changed={penalty > 0 || Boolean(temporary.initiative)}
-            roll={{
-              expression: d20Expression(derived.initiative - penalty),
-              label: 'Iniciativa',
-              mode: rollModeFrom(effects.initiative),
-            }}
-            badge={
-              <>
-                <RollEffectBadge sources={effects.initiative} />
-                <PenaltyBadge penalty={penalty} source={penaltySource} />
-              </>
-            }
-          />
-          <Stat
-            icon={<Footprints className="h-5 w-5" aria-hidden="true" />}
-            label="Deslocamento"
-            value={speed}
-            hint={speedHint}
-            changed={speedValue !== derived.speed || Boolean(temporary.speed)}
-          />
-          <Stat
-            icon={<Crosshair className="h-5 w-5" aria-hidden="true" />}
-            label="Percepção passiva"
-            value={String(passive)}
-            changed={passive !== derived.passivePerception || Boolean(temporary.passivePerception)}
-            hint={
-              passive !== derived.passivePerception
-                ? `Base ${derived.passivePerception}`
-                : undefined
-            }
-          />
-        </div>
+        {/* CA, Iniciativa, Deslocamento e Percepção passiva ficam no topo da ficha (com as condições). */}
         <TemporaryBonuses />
         {derived.spellcasting ? (
           <div className="grid grid-cols-2 gap-3">

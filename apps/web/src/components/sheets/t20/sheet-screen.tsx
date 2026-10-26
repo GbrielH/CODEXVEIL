@@ -37,6 +37,7 @@ import {
 } from '@codexveil/rpg-systems/tormenta20';
 import { Heart, Minus, Moon, Plus, Shield, Sparkles, X, Zap } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { ArcaneScene } from '@/components/brand/arcane-scene';
 import { TokenImageCard } from '@/components/characters/token-image-card';
 import { T20AttacksCard } from './attacks-card';
 import { Alert } from '@/components/ui/alert';
@@ -260,19 +261,22 @@ function T20SheetBody(props: T20SheetScreenProps) {
         updates={pendingUpdates}
         onCreated={(created) => setAbilities((current) => [...current, ...created])}
       />
-      <Card ornate>
+      {/* Cabeçalho (redesign "Grimório Arcano"): paisagem do personagem, retrato, PV/PM e atributos. */}
+      <header className="relative isolate overflow-hidden rounded-2xl border border-line p-5 shadow-[0_24px_60px_-36px_rgb(107_59_198/0.9)] sm:p-6">
+        <ArcaneScene seed={character.name || character.id} className="absolute inset-0 -z-10 opacity-60" options={{ noMoon: true }} />
+        <span className="absolute inset-0 -z-10 bg-gradient-to-r from-charcoal-950 via-charcoal-950/85 to-charcoal-950/60" aria-hidden="true" />
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           {character.portraitUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- URL assinada e temporária do Storage
             <img
               src={character.portraitUrl}
               alt=""
-              className="h-24 w-24 rounded-lg border border-line object-cover"
+              className="h-28 w-28 rounded-t-[999px] rounded-b-md object-cover ring-2 ring-wine-400/60 ring-offset-2 ring-offset-charcoal-950"
             />
           ) : null}
           <div className="flex flex-1 flex-col gap-1">
-            <p className="eyebrow">Tormenta20 · {t20TierLabels[derived.tier]}</p>
-            <h1 className="text-3xl leading-tight">{character.name}</h1>
+            <p className="eyebrow text-wine-300">Tormenta20 · Nível {derived.level} · {t20TierLabels[derived.tier]}</p>
+            <h1 className="text-3xl leading-tight [text-shadow:0_2px_16px_rgb(0_0_0/0.8)] sm:text-4xl">{character.name}</h1>
             <p className="text-fg-secondary">
               {[
                 sheet.identity.race,
@@ -308,7 +312,48 @@ function T20SheetBody(props: T20SheetScreenProps) {
           />
           <Stat label="Limite de PM" value={String(derived.manaLimit)} />
         </div>
-      </Card>
+        {/* PV e PM em barras */}
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {[
+            { label: 'Pontos de vida', track: hp, color: 'bg-emerald-400', low: 'bg-red-500' },
+            { label: 'Pontos de mana', track: pm, color: 'bg-sky-400', low: 'bg-sky-700' },
+          ].map(({ label, track, color, low }) => {
+            const max = track?.max ?? 0;
+            const percent = max > 0 ? Math.max(0, Math.min(100, Math.round(((track?.current ?? 0) / max) * 100))) : 0;
+            return (
+              <div key={label} className="flex flex-col gap-1.5 rounded-xl border border-line bg-charcoal-950/60 px-4 py-2.5 backdrop-blur">
+                <span className="flex justify-between text-[10px] tracking-wider text-fg-muted uppercase">
+                  {label}
+                  {track?.temp ? <span className="text-sky-300">+{track.temp} temporários</span> : null}
+                </span>
+                <span className="tabular font-display text-2xl leading-none text-fg-accent">
+                  {track?.current ?? '—'}
+                  <span className="text-base text-fg-muted"> / {max || '—'}</span>
+                </span>
+                <span className="h-1.5 overflow-hidden rounded-full bg-charcoal-700" aria-hidden="true">
+                  <span className={`block h-full rounded-full ${percent > 25 ? color : low}`} style={{ width: `${percent}%` }} />
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        {/* Atributos: clicar rola o teste */}
+        <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6" aria-label="Atributos">
+          {T20_ATTRIBUTES.map((key) => (
+            <li key={key}>
+              <button
+                type="button"
+                onClick={() => roll(t20AttributeLabels[key].name, derived.attributes[key])}
+                title={`Rolar ${t20AttributeLabels[key].name}`}
+                className="flex w-full flex-col items-center rounded-xl border border-wine-400/25 bg-wine-950/70 px-2 py-2 backdrop-blur transition-colors hover:border-wine-400/60"
+              >
+                <span className="text-[10px] tracking-[0.2em] text-wine-300 uppercase">{t20AttributeLabels[key].abbreviation}</span>
+                <span className="tabular font-display text-2xl leading-tight text-fg-accent">{formatT20Bonus(derived.attributes[key])}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </header>
 
       <Tabs
         label="Seções da ficha"
@@ -675,24 +720,24 @@ function Stat({
 }) {
   const content = (
     <>
-      <span className="flex items-center gap-1 text-[11px] tracking-wider text-fg-subtle uppercase">
-        {icon}
+      <span className="flex items-center gap-1 text-[10px] tracking-wider text-fg-muted uppercase">
+        <span className="text-wine-300">{icon}</span>
         {label}
       </span>
-      <span className="font-display text-xl text-fg">{value}</span>
+      <span className="tabular font-display text-2xl leading-none text-fg-accent">{value}</span>
     </>
   );
   return onClick ? (
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-col items-center gap-0.5 rounded-md border border-line py-2 hover:bg-hover"
+      className="flex flex-col items-center gap-0.5 rounded-xl border border-line bg-charcoal-950/60 py-2.5 backdrop-blur hover:border-wine-400/50"
       title="Rolar"
     >
       {content}
     </button>
   ) : (
-    <div className="flex flex-col items-center gap-0.5 rounded-md border border-line py-2">
+    <div className="flex flex-col items-center gap-0.5 rounded-xl border border-line bg-charcoal-950/60 py-2.5 backdrop-blur">
       {content}
     </div>
   );

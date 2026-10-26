@@ -147,6 +147,20 @@ conversa, retomar por esta lista:
    (T20). Cada atualização futura que mexer em dados de personagem entra em
    `listDnd5ePendingUpdates`/`listT20PendingUpdates`.
 
+### B0. Redesign da ficha (site) — feito em 2026-10-26
+
+Topo da ficha D&D e Tormenta20 no estilo "Grimório Arcano":
+
+- paisagem do personagem ao fundo e retrato com aro violeta;
+- PV (e PM no T20) em barras; CA ou Defesa, Iniciativa (rola), Deslocamento e Percepção passiva
+  em blocos, já com as condições;
+- os seis atributos numa faixa que rola o teste ao clicar, visível em todas as abas;
+- abas em pílulas, com a ativa em violeta (vale para todas as abas do site).
+
+Os quatro números saíram do bloco da aba Jogo do D&D, que mantém os bônus temporários. Não
+verificado no navegador (exige login). **Falta:** a ficha do app e a tela de sessão (iniciativa,
+mapa e notas lado a lado).
+
 ### B1. Behind the Magic — iniciado em 2026-10-26
 
 Regras do manual em código (`packages/rpg-systems/src/btm/`, 5 testes) e resumo em

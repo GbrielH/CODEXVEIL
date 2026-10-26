@@ -31,15 +31,15 @@ export function Tabs({ items, value, onValueChange, label, className }: TabsProp
       className={cx('flex flex-col gap-5', className)}
     >
       <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <RadixTabs.List aria-label={label} className="flex min-w-max gap-1 border-b border-line">
+        <RadixTabs.List aria-label={label} className="flex min-w-max gap-1 rounded-xl border border-line bg-raised/70 p-1">
           {items.map((item) => (
             <RadixTabs.Trigger
               key={item.value}
               value={item.value}
               className={cx(
-                '-mb-px flex h-11 items-center gap-2 border-b-2 border-transparent px-3 text-sm font-medium text-fg-muted transition-colors sm:px-4',
-                'hover:border-line-strong hover:text-fg',
-                'data-[state=active]:border-parchment-300 data-[state=active]:text-fg-accent',
+                'flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-fg-muted transition-colors sm:px-4',
+                'hover:bg-hover hover:text-fg',
+                'data-[state=active]:bg-gradient-to-r data-[state=active]:from-wine-700 data-[state=active]:to-wine-800 data-[state=active]:text-parchment-50 data-[state=active]:shadow-[0_0_18px_-6px_rgb(107_59_198/0.9)]',
               )}
             >
               {item.icon}
