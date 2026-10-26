@@ -187,11 +187,11 @@ mapa e notas lado a lado).
 - [ ] Tomo com ações (só para o mestre): criar NPC/monstro, escrever anotação, sugerir melhorias na
       sessão, sempre com confirmação antes de gravar.
 - [x] Quadro livre (estilo Miro), feito em 2026-10-27, solução própria sem biblioteca paga: aba
-      **Quadros** da campanha, com vários quadros, notas coloridas, textos (3 tamanhos), molduras (levam
-      junto o que está dentro), setas entre blocos, arrastar, redimensionar, mover a visão, zoom e
-      "ver tudo". Salva sozinho e avisa se outra aba salvou antes. O mestre escolhe se o grupo vê
-      (somente leitura).
-- [ ] Quadro, próximos: imagens nos blocos, desfazer (Ctrl+Z), ver no app, tempo real para o grupo.
+      **Quadros**, só do mestre (os jogadores continuam vendo o que ele libera nas outras abas, em
+      lista e na ordem de liberação). Vários quadros, notas coloridas, textos, imagens (botão ou
+      Ctrl+V), molduras (levam junto o que está dentro), setas, arrastar, redimensionar, zoom, "ver
+      tudo", desfazer/refazer (Ctrl+Z, Ctrl+Shift+Z). Salva sozinho e avisa conflito entre abas.
+- [ ] Quadro, próximos: atalhos de copiar/colar blocos, seleção de vários blocos.
 
 ### B1. Behind the Magic — iniciado em 2026-10-26
 

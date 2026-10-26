@@ -43,11 +43,11 @@ export default async function CampaignLayout({
     { href: `${base}/biblioteca` as Route, label: 'Biblioteca' },
     { href: `${base}/livros` as Route, label: 'Livros' },
     { href: `${base}/anotacoes` as Route, label: 'Anotações' },
-    { href: `${base}/quadros` as Route, label: 'Quadros' },
     { href: `${base}/links` as Route, label: 'Links' },
   );
   if (isGm) {
     tabs.push(
+      { href: `${base}/quadros` as Route, label: 'Quadros' },
       { href: `${base}/convites` as Route, label: 'Convites' },
       { href: `${base}/configuracoes` as Route, label: 'Configurações' },
     );

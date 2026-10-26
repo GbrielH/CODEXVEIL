@@ -35,13 +35,18 @@ export interface FrameItem extends BoxBase {
   color: BoardColor;
   title: string;
 }
+export interface ImageItem extends BoxBase {
+  type: 'image';
+  /** Caminho no bucket `campaign-media` (`campaigns/<campanha>/boards/<arquivo>`). */
+  path: string;
+}
 export interface ArrowItem {
   id: string;
   type: 'arrow';
   from: string;
   to: string;
 }
-export type BoxItem = NoteItem | TextItem | FrameItem;
+export type BoxItem = NoteItem | TextItem | FrameItem | ImageItem;
 export type BoardItem = BoxItem | ArrowItem;
 
 export const MIN_SIZE = 60;
@@ -72,6 +77,8 @@ export function parseBoardItems(raw: unknown): BoardItem[] {
     else if (value.type === 'text')
       items.push({ ...box, type: 'text', text: str(value.text), size: value.size === 'sm' || value.size === 'lg' ? value.size : 'md' });
     else if (value.type === 'frame') items.push({ ...box, type: 'frame', color: color(value.color), title: str(value.title, 120) });
+    else if (value.type === 'image' && typeof value.path === 'string' && /^campaigns\/[0-9a-f-]{36}\/boards\/[\w.-]+$/.test(value.path))
+      items.push({ ...box, type: 'image', path: value.path });
     else if (value.type === 'arrow' && typeof value.from === 'string' && typeof value.to === 'string')
       items.push({ id, type: 'arrow', from: value.from, to: value.to });
   }

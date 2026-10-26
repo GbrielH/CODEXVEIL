@@ -10,9 +10,17 @@ describe('quadro livre', () => {
       { id: 'd', type: 'arrow', from: 'a', to: 'sumiu' },
       { id: 'e', type: 'video' },
       'lixo',
+      { id: 'f', type: 'image', path: '../segredo.png' },
     ]);
     expect(items.map((item) => item.id)).toEqual(['a', 'b', 'c']);
     expect(items[0]).toMatchObject({ w: 60, h: 60, color: 'amber' });
+  });
+
+  it('aceita imagens só da pasta de quadros', () => {
+    const path = 'campaigns/00000000-0000-4000-8000-000000000000/boards/abc.webp';
+    expect(parseBoardItems([{ id: 'i', type: 'image', path, x: 0, y: 0, w: 300, h: 200 }])).toEqual([
+      { id: 'i', type: 'image', path, x: 0, y: 0, w: 300, h: 200 },
+    ]);
   });
 
   it('a seta encosta na borda do bloco', () => {

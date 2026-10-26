@@ -1,9 +1,11 @@
 'use client';
 
-import { saveBoardItems } from '@codexveil/database';
-import { ArrowUpRight, Frame, Maximize, Minus, Plus, StickyNote, Trash2, Type } from 'lucide-react';
+import { CAMPAIGN_MEDIA_BUCKET, saveBoardItems, signedMediaUrls } from '@codexveil/database';
+import { IMAGE_EXTENSIONS, validateImageFile } from '@codexveil/validation';
+import { ArrowUpRight, Frame, ImagePlus, Maximize, Minus, Plus, Redo2, StickyNote, Trash2, Type, Undo2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { failureMessage } from '@/lib/client-errors';
+import { prepareImageForUpload } from '@/lib/images';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import {
   BOARD_COLORS,
@@ -30,19 +32,42 @@ type Gesture =
 const TEXT_SIZES = { sm: 'text-sm', md: 'text-lg', lg: 'text-3xl font-display' } as const;
 const clampZoom = (zoom: number) => Math.min(2.5, Math.max(0.2, zoom));
 
+/** Largura e altura naturais da imagem (para o bloco nascer com a proporção certa). */
+function imageSize(file: File): Promise<{ w: number; h: number }> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      resolve({ w: image.naturalWidth || 400, h: image.naturalHeight || 300 });
+      URL.revokeObjectURL(url);
+    };
+    image.onerror = () => {
+      resolve({ w: 400, h: 300 });
+      URL.revokeObjectURL(url);
+    };
+    image.src = url;
+  });
+}
+
 /**
  * Quadro livre (estilo Miro): notas, textos, molduras e setas que o mestre arrasta à vontade.
  * Arrastar o fundo move a visão; a roda do mouse aproxima. Salva sozinho, um instante depois de
- * cada mudança. Para os jogadores (`readOnly`), só dá para mover a visão e aproximar.
+ * cada mudança. Ctrl+Z desfaz e Ctrl+Shift+Z (ou Ctrl+Y) refaz. Imagens entram pelo botão ou
+ * colando (Ctrl+V). `readOnly` (campanha arquivada) só deixa mover a visão e aproximar.
  */
 export function BoardCanvas({
+  campaignId,
   boardId,
   initialItems,
+  initialImageUrls,
   initialVersion,
   readOnly,
 }: {
+  campaignId: string;
   boardId: string;
   initialItems: BoardItem[];
+  /** Endereços assinados das imagens já no quadro, por caminho. */
+  initialImageUrls: Record<string, string>;
   initialVersion: number;
   readOnly: boolean;
 }) {
@@ -58,6 +83,16 @@ export function BoardCanvas({
   const version = useRef(initialVersion);
   const dirty = useRef(false);
   const blocked = useRef(false);
+  const [imageUrls, setImageUrls] = useState(initialImageUrls);
+  const [uploading, setUploading] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+  // Desfazer/refazer: fotos da lista antes de cada mudança (até 100).
+  const past = useRef<BoardItem[][]>([]);
+  const future = useRef<BoardItem[][]>([]);
+  const itemsRef = useRef(items);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   // Salvamento automático (espera parar de mexer).
   useEffect(() => {
@@ -90,9 +125,37 @@ export function BoardCanvas({
     return () => window.removeEventListener('beforeunload', warn);
   }, []);
 
-  const change = useCallback((update: (current: BoardItem[]) => BoardItem[]) => {
+  /** Guarda a lista atual no histórico (antes de uma mudança ou do início de um gesto). */
+  const snapshot = useCallback(() => {
+    past.current = [...past.current.slice(-99), itemsRef.current];
+    future.current = [];
+  }, []);
+
+  /** `record: false` nas mudanças contínuas de um gesto (a foto foi tirada no início dele). */
+  const change = useCallback(
+    (update: (current: BoardItem[]) => BoardItem[], record = true) => {
+      if (record) snapshot();
+      dirty.current = true;
+      setItems(update);
+    },
+    [snapshot],
+  );
+
+  const undo = useCallback(() => {
+    const previous = past.current.pop();
+    if (!previous) return;
+    future.current.push(itemsRef.current);
     dirty.current = true;
-    setItems(update);
+    setItems(previous);
+    setSelected(null);
+  }, []);
+  const redo = useCallback(() => {
+    const next = future.current.pop();
+    if (!next) return;
+    past.current.push(itemsRef.current);
+    dirty.current = true;
+    setItems(next);
+    setSelected(null);
   }, []);
 
   const toWorld = (clientX: number, clientY: number) => {
@@ -110,6 +173,18 @@ export function BoardCanvas({
     if (readOnly) return;
     const onKey = (event: KeyboardEvent) => {
       if (editing || (event.target as HTMLElement | null)?.closest('input, textarea')) return;
+      const mod = event.ctrlKey || event.metaKey;
+      if (mod && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        if (event.shiftKey) redo();
+        else undo();
+        return;
+      }
+      if (mod && event.key.toLowerCase() === 'y') {
+        event.preventDefault();
+        redo();
+        return;
+      }
       if (event.key === 'Delete' || event.key === 'Backspace') removeSelected();
       if (event.key === 'Escape') {
         setSelected(null);
@@ -118,7 +193,7 @@ export function BoardCanvas({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [readOnly, editing, removeSelected]);
+  }, [readOnly, editing, removeSelected, undo, redo]);
 
   // ---- Gestos ----
   const onPointerMove = (event: ReactPointerEvent) => {
@@ -136,6 +211,7 @@ export function BoardCanvas({
             ? { ...item, x: Math.round(origin.x + dx / view.zoom), y: Math.round(origin.y + dy / view.zoom) }
             : item;
         }),
+        false,
       );
     } else {
       change((list) =>
@@ -144,6 +220,7 @@ export function BoardCanvas({
             ? { ...item, w: Math.max(MIN_SIZE, Math.round(current.w + dx / view.zoom)), h: Math.max(MIN_SIZE, Math.round(current.h + dy / view.zoom)) }
             : item,
         ),
+        false,
       );
     }
   };
@@ -184,12 +261,14 @@ export function BoardCanvas({
         }
       }
     }
+    snapshot();
     gesture.current = { kind: 'move', startX: event.clientX, startY: event.clientY, origins };
     surface.current?.setPointerCapture(event.pointerId);
   };
 
   const startResize = (event: ReactPointerEvent, item: BoxItem) => {
     event.stopPropagation();
+    snapshot();
     gesture.current = { kind: 'resize', id: item.id, startX: event.clientX, startY: event.clientY, w: item.w, h: item.h };
     surface.current?.setPointerCapture(event.pointerId);
   };
@@ -240,13 +319,75 @@ export function BoardCanvas({
     if (type !== 'frame') setEditing(id);
   };
 
-  const patch = (id: string, values: Partial<BoxItem>) =>
-    change((list) => list.map((item) => (item.id === id && item.type !== 'arrow' ? ({ ...item, ...values } as BoxItem) : item)));
+  const patch = (id: string, values: Partial<BoxItem>, record = true) =>
+    change((list) => list.map((item) => (item.id === id && item.type !== 'arrow' ? ({ ...item, ...values } as BoxItem) : item)), record);
+
+  /** Abre a edição do texto (uma foto no histórico para a edição inteira). */
+  const startEditing = (id: string) => {
+    snapshot();
+    setEditing(id);
+  };
+
+  // ---- Imagens ----
+  const addImages = async (files: Iterable<File>) => {
+    const list = [...files].filter((file) => file.type.startsWith('image/')).slice(0, 5);
+    if (!list.length || readOnly) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const client = getSupabaseBrowserClient();
+      const rect = surface.current?.getBoundingClientRect();
+      const center = toWorld((rect?.left ?? 0) + (rect?.width ?? 800) / 2, (rect?.top ?? 0) + (rect?.height ?? 600) / 2);
+      const added: BoxItem[] = [];
+      const urls: Record<string, string> = {};
+      for (const [index, original] of list.entries()) {
+        const { file } = await prepareImageForUpload(original, 'scene');
+        const check = validateImageFile(file, 'media');
+        if (!check.ok) throw new Error(check.message);
+        const path = `campaigns/${campaignId}/boards/${newId()}.${IMAGE_EXTENSIONS[check.mimeType]}`;
+        const { error: uploadError } = await client.storage
+          .from(CAMPAIGN_MEDIA_BUCKET)
+          .upload(path, file, { contentType: check.mimeType, upsert: false });
+        if (uploadError) throw uploadError;
+        Object.assign(urls, await signedMediaUrls(client, [path]));
+        const size = await imageSize(file);
+        const scale = Math.min(1, 400 / Math.max(size.w, size.h));
+        const w = Math.max(MIN_SIZE, Math.round(size.w * scale));
+        const h = Math.max(MIN_SIZE, Math.round(size.h * scale));
+        added.push({ id: newId(), type: 'image', path, x: center.x - w / 2 + index * 24, y: center.y - h / 2 + index * 24, w, h });
+      }
+      setImageUrls((current) => ({ ...current, ...urls }));
+      change((current) => [...current, ...added]);
+      setSelected(added.at(-1)?.id ?? null);
+    } catch (cause) {
+      setError(failureMessage(cause, 'Não foi possível enviar a imagem.'));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Colar imagem (Ctrl+V) em qualquer lugar da página, fora de campos de texto.
+  const pasteHandler = useRef<(event: ClipboardEvent) => void>(() => undefined);
+  useEffect(() => {
+    pasteHandler.current = (event: ClipboardEvent) => {
+      if (readOnly || (event.target as HTMLElement | null)?.closest('input, textarea')) return;
+      const files = [...(event.clipboardData?.files ?? [])].filter((file) => file.type.startsWith('image/'));
+      if (files.length) {
+        event.preventDefault();
+        void addImages(files);
+      }
+    };
+  });
+  useEffect(() => {
+    const onPaste = (event: ClipboardEvent) => pasteHandler.current(event);
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  }, []);
 
   const selectedItem = items.find((item) => item.id === selected);
   const boxes = new Map(items.filter((item): item is BoxItem => item.type !== 'arrow').map((item) => [item.id, item]));
   const frames = items.filter((item) => item.type === 'frame');
-  const others = items.filter((item): item is BoxItem => item.type === 'note' || item.type === 'text');
+  const others = items.filter((item): item is BoxItem => item.type === 'note' || item.type === 'text' || item.type === 'image');
   const arrows = items.filter((item) => item.type === 'arrow');
 
   const toolButton =
@@ -265,7 +406,7 @@ export function BoardCanvas({
         onPointerDown={(event) => startMove(event, item)}
         onDoubleClick={(event) => {
           event.stopPropagation();
-          if (!readOnly) setEditing(item.id);
+          if (!readOnly && item.type !== 'image') startEditing(item.id);
         }}
       >
         {item.type === 'frame' ? (
@@ -275,7 +416,7 @@ export function BoardCanvas({
                 autoFocus
                 value={item.title}
                 maxLength={120}
-                onChange={(event) => patch(item.id, { title: event.target.value })}
+                onChange={(event) => patch(item.id, { title: event.target.value }, false)}
                 onBlur={() => setEditing(null)}
                 onKeyDown={(event) => event.key === 'Enter' && setEditing(null)}
                 onPointerDown={(event) => event.stopPropagation()}
@@ -283,6 +424,15 @@ export function BoardCanvas({
               />
             ) : (
               <p className="px-3 py-2 font-display text-sm text-fg-secondary">{item.title}</p>
+            )}
+          </div>
+        ) : item.type === 'image' ? (
+          <div className={`h-full w-full overflow-hidden rounded-md bg-raised shadow-lg ${ring}`}>
+            {imageUrls[item.path] ? (
+              // eslint-disable-next-line @next/next/no-img-element -- endereço assinado do Storage, temporário
+              <img src={imageUrls[item.path]} alt="" draggable={false} className="pointer-events-none h-full w-full object-contain" />
+            ) : (
+              <p className="p-3 text-xs text-fg-muted">Imagem indisponível</p>
             )}
           </div>
         ) : (
@@ -296,7 +446,7 @@ export function BoardCanvas({
                 autoFocus
                 value={item.text}
                 maxLength={5000}
-                onChange={(event) => patch(item.id, { text: event.target.value })}
+                onChange={(event) => patch(item.id, { text: event.target.value }, false)}
                 onBlur={() => setEditing(null)}
                 onPointerDown={(event) => event.stopPropagation()}
                 placeholder="Escreva…"
@@ -333,6 +483,20 @@ export function BoardCanvas({
           <button type="button" className={toolButton} onClick={() => add('frame')}>
             <Frame className="h-4 w-4" aria-hidden="true" /> Moldura
           </button>
+          <button type="button" className={toolButton} disabled={uploading} onClick={() => fileInput.current?.click()}>
+            <ImagePlus className="h-4 w-4" aria-hidden="true" /> {uploading ? 'Enviando…' : 'Imagem'}
+          </button>
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            multiple
+            hidden
+            onChange={(event) => {
+              if (event.target.files) void addImages(event.target.files);
+              event.target.value = '';
+            }}
+          />
           <button
             type="button"
             className={toolButton}
@@ -368,6 +532,12 @@ export function BoardCanvas({
               <option value="lg">Título</option>
             </select>
           ) : null}
+          <button type="button" className={toolButton} onClick={undo} aria-label="Desfazer" title="Desfazer (Ctrl+Z)">
+            <Undo2 className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <button type="button" className={toolButton} onClick={redo} aria-label="Refazer" title="Refazer (Ctrl+Shift+Z)">
+            <Redo2 className="h-4 w-4" aria-hidden="true" />
+          </button>
           <button type="button" className={toolButton} disabled={!selected} onClick={removeSelected}>
             <Trash2 className="h-4 w-4" aria-hidden="true" /> Apagar
           </button>
@@ -463,7 +633,7 @@ export function BoardCanvas({
         </div>
         {items.length === 0 ? (
           <p className="pointer-events-none absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-fg-muted">
-            {readOnly ? 'O quadro está vazio.' : 'Quadro vazio. Use Nota, Texto ou Moldura acima; arraste o fundo para mover a visão.'}
+            {readOnly ? 'O quadro está vazio.' : 'Quadro vazio. Use Nota, Texto, Moldura ou Imagem acima (ou cole uma imagem); arraste o fundo para mover a visão.'}
           </p>
         ) : null}
       </div>

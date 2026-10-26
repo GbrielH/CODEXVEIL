@@ -167,7 +167,6 @@ export type Database = {
           title: string;
           updated_at: string;
           version: number;
-          visible: boolean;
         };
         Insert: {
           campaign_id: string;
@@ -177,7 +176,6 @@ export type Database = {
           title: string;
           updated_at?: string;
           version?: number;
-          visible?: boolean;
         };
         Update: {
           campaign_id?: string;
@@ -187,7 +185,6 @@ export type Database = {
           title?: string;
           updated_at?: string;
           version?: number;
-          visible?: boolean;
         };
         Relationships: [
           {

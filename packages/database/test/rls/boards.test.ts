@@ -11,7 +11,7 @@ afterAll(async () => {
 });
 
 describe('quadros livres da campanha', () => {
-  it('só o mestre edita; o grupo vê só os visíveis; quem é de fora não vê', async () => {
+  it('só o mestre vê e edita; jogadores e quem é de fora não veem', async () => {
     const gm = await db.createUser('mestre-quadro@example.com');
     const player = await db.createUser('jogador-quadro@example.com');
     const outsider = await db.createUser('fora-quadro@example.com');
@@ -26,10 +26,16 @@ describe('quadros livres da campanha', () => {
     );
     const read = (who: typeof player) => db.as(who, (s) => s.query(`select id from public.campaign_boards where id = $1`, [board.id]));
 
+    expect(await read(gm)).toHaveLength(1);
     expect(await read(player)).toEqual([]);
-    await db.as(gm, (s) => s.query(`update public.campaign_boards set visible = true where id = $1`, [board.id]));
-    expect(await read(player)).toHaveLength(1);
     expect(await read(outsider)).toEqual([]);
+
+    // Imagens do quadro: o mestre envia na pasta `boards`; o jogador não.
+    const path = `campaigns/${campaign.id}/boards/a.png`;
+    const canWrite = (who: typeof player) =>
+      db.as(who, (s) => s.one<{ ok: boolean }>(`select private.can_write_campaign_media($1) as ok`, [path]));
+    expect((await canWrite(gm)).ok).toBe(true);
+    expect((await canWrite(player)).ok).toBe(false);
 
     // Jogador não altera nem cria.
     const changed = await db.as(player, (s) => s.query(`update public.campaign_boards set title = 'x' where id = $1 returning id`, [board.id]));

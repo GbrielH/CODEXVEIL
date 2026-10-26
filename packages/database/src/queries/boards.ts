@@ -1,6 +1,6 @@
 /**
  * Quadros livres da campanha (canvas do mestre com blocos arrastáveis). O conteúdo é uma lista
- * JSON validada no editor; o banco limita o tamanho e garante que só o mestre altera.
+ * JSON validada no editor; o banco limita o tamanho e garante que só o mestre lê e altera.
  */
 import { AppError } from '@codexveil/domain';
 import type { CodexveilClient } from '../client';
@@ -10,7 +10,6 @@ import type { Json } from '../types.gen';
 export interface BoardSummary {
   id: string;
   title: string;
-  visible: boolean;
   updatedAt: string;
 }
 
@@ -23,17 +22,17 @@ export interface Board extends BoardSummary {
 export async function listBoards(client: CodexveilClient, campaignId: string): Promise<BoardSummary[]> {
   const { data, error } = await client
     .from('campaign_boards')
-    .select('id, title, visible, updated_at')
+    .select('id, title, updated_at')
     .eq('campaign_id', campaignId)
     .order('created_at');
   if (error) throw toAppError(error);
-  return data.map((row) => ({ id: row.id, title: row.title, visible: row.visible, updatedAt: row.updated_at }));
+  return data.map((row) => ({ id: row.id, title: row.title, updatedAt: row.updated_at }));
 }
 
 export async function getBoard(client: CodexveilClient, boardId: string): Promise<Board | null> {
   const { data, error } = await client
     .from('campaign_boards')
-    .select('id, campaign_id, title, items, visible, version, updated_at')
+    .select('id, campaign_id, title, items, version, updated_at')
     .eq('id', boardId)
     .maybeSingle();
   if (error) throw toAppError(error);
@@ -43,7 +42,6 @@ export async function getBoard(client: CodexveilClient, boardId: string): Promis
     campaignId: data.campaign_id,
     title: data.title,
     items: Array.isArray(data.items) ? data.items : [],
-    visible: data.visible,
     version: data.version,
     updatedAt: data.updated_at,
   };
@@ -80,7 +78,7 @@ export async function saveBoardItems(
 export async function updateBoard(
   client: CodexveilClient,
   boardId: string,
-  changes: { title?: string; visible?: boolean },
+  changes: { title: string },
 ): Promise<void> {
   const { error } = await client.from('campaign_boards').update(changes).eq('id', boardId);
   if (error) throw toAppError(error);

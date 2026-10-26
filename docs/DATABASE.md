@@ -187,6 +187,10 @@ Migração `20261018120000_gameplay_turns.sql`:
 Migração `20261023100000_session_attendance.sql`: tabela `session_attendance` (presença: `yes`/`no`
 por pessoa e sessão; membros leem; cada um responde só por si, em sessão agendada não iniciada).
 
+Migração `20261027110000_boards_gm_only_images.sql`: quadros passam a ser só do mestre (sai
+`visible`; jogadores não leem); imagens dos quadros em `campaigns/<id>/boards/<arquivo>` (envio por
+quem gerencia a campanha); `list_orphan_media` considera as imagens dos quadros.
+
 Migração `20261027100000_campaign_boards.sql`: tabela `campaign_boards` (quadros livres do
 mestre; `items` é a lista JSON de blocos, até 500 e 512 KB; `visible` mostra ao grupo, só leitura;
 `version` impede que duas abas sobrescrevam uma à outra). Só o mestre cria, altera e apaga.

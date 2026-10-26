@@ -233,6 +233,7 @@ obrigatoriedade fica no banco (verificação adiada no fim da transação), vale
 
 ## Quadros livres (2026-10-27)
 
-`campaign_boards`: só quem gerencia a campanha cria, altera e apaga; os membros leem apenas os
-quadros marcados como visíveis, e quem é de fora não lê nada (RLS, com teste). As colunas que o
-cliente pode gravar são limitadas por `grant` (título, blocos, visibilidade e versão).
+`campaign_boards` é só do mestre: só quem é mestre da campanha lê, e só quem a gerencia cria,
+altera e apaga (RLS, com teste). Jogadores e quem é de fora não leem nada. As imagens ficam em
+`campaigns/<id>/boards/`, com envio permitido só a quem gerencia a campanha; o editor só aceita
+caminhos dessa pasta. As colunas que o cliente grava são limitadas por `grant`.

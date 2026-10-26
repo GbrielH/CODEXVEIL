@@ -1,7 +1,7 @@
 'use client';
 
 import { createBoard, deleteBoard, updateBoard, type BoardSummary } from '@codexveil/database';
-import { Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -12,7 +12,7 @@ import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
-/** Lista de quadros da campanha: o mestre cria, renomeia, mostra ao grupo e apaga. */
+/** Lista de quadros da campanha: o mestre cria, renomeia e apaga (só ele vê). */
 export function BoardManager({
   campaignId,
   boards,
@@ -53,7 +53,6 @@ export function BoardManager({
             className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1 text-sm text-fg-secondary hover:bg-hover aria-[current=page]:border-fg-brand aria-[current=page]:text-fg"
           >
             {board.title}
-            {canManage && board.visible ? <Eye className="h-3.5 w-3.5" aria-label="Visível ao grupo" /> : null}
           </Link>
         ))}
         {canManage ? (
@@ -87,15 +86,6 @@ export function BoardManager({
             }}
             className="h-9 min-w-48 rounded-md border border-line bg-surface px-3 text-sm text-fg"
           />
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={busy}
-            icon={active.visible ? <Eye className="h-4 w-4" aria-hidden="true" /> : <EyeOff className="h-4 w-4" aria-hidden="true" />}
-            onClick={() => void run(() => updateBoard(getSupabaseBrowserClient(), active.id, { visible: !active.visible }))}
-          >
-            {active.visible ? 'Visível ao grupo' : 'Só o mestre vê'}
-          </Button>
           <ConfirmDialog
             trigger={(open) => (
               <Button size="sm" variant="ghost" disabled={busy} onClick={open} icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}>

@@ -195,9 +195,9 @@ Esta seção lista só o que falta ou está parcial. O que já foi atendido est�
 
 - **Pendente: "referências a sessões".** A página de um NPC ou monstro não lista as sessões
   em que ele aparece, seja em blocos `npc_ref`/`monster_ref` ou na cena.
-- **Feito (2026-10-27): quadros livres da campanha** (estilo Miro) para o mestre planejar
-  sessões, com notas, textos, molduras e setas arrastáveis. O grupo vê só os quadros liberados.
-  Migração `20261027100000`.
+- **Feito (2026-10-27): quadros livres da campanha** (estilo Miro), só do mestre, para planejar
+  sessões: notas, textos, imagens, molduras e setas arrastáveis, com Ctrl+Z. Migrações
+  `20261027100000` e `20261027110000`.
 - **Feito (2026-10-26): perguntas do mestre na criação de personagem.** Na criação e nas
   configurações da campanha o mestre escreve perguntas (até 20). Todas são obrigatórias para criar
   ou vincular um personagem na campanha (site e app), conferidas no banco. As respostas aparecem na
