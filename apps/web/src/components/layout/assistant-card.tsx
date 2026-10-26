@@ -22,8 +22,9 @@ interface ChatMessage {
   content: string;
   /** Miniaturas das imagens anexadas (só na memória desta aba). */
   images?: string[];
-  /** Campanha aberta quando o Tomo respondeu (as ações propostas valem para ela). */
+  /** Campanha e personagem abertos quando o Tomo respondeu (as ações propostas valem para eles). */
   campaignId?: string;
+  characterId?: string;
   /** Ações já gravadas, por posição na resposta. */
   done?: Record<number, TomoActionDone>;
 }
@@ -84,7 +85,7 @@ function readState(): AssistantState {
 function setState(update: (current: AssistantState) => AssistantState) {
   state = update(readState());
   try {
-    const messages = state.messages.slice(-40).map(({ role, content, campaignId, done }) => ({ role, content, campaignId, done }));
+    const messages = state.messages.slice(-40).map(({ role, content, campaignId, characterId, done }) => ({ role, content, campaignId, characterId, done }));
     window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ open: state.open, messages }));
   } catch {
     // Sem armazenamento (ou cheio): vale só nesta página.
@@ -207,7 +208,8 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
     const sending = attachments;
     const next: ChatMessage[] = [...messages, { role: 'user', content: question, ...(sending.length ? { images: sending.map((item) => item.preview) } : {}) }];
     const campaignId = /^\/campanhas\/([0-9a-f-]{36})/.exec(pathname)?.[1];
-    setMessages([...next, { role: 'assistant', content: '', ...(campaignId ? { campaignId } : {}) }]);
+    const characterId = /^\/personagens\/([0-9a-f-]{36})/.exec(pathname)?.[1];
+    setMessages([...next, { role: 'assistant', content: '', ...(campaignId ? { campaignId } : {}), ...(characterId ? { characterId } : {}) }]);
     setDraft('');
     setAttachments([]);
     setBusy(true);
@@ -329,11 +331,11 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
                 ) : (
                   ''
                 ))}
-              {message.role === 'assistant' && message.campaignId && !(busy && index === messages.length - 1)
+              {message.role === 'assistant' && !(busy && index === messages.length - 1)
                 ? extractTomoActions(message.content).actions.map((action, actionIndex) => (
                     <TomoActionCard
                       key={actionIndex}
-                      campaignId={message.campaignId!}
+                      scope={{ campaignId: message.campaignId, characterId: message.characterId }}
                       action={action}
                       done={message.done?.[actionIndex]}
                       onDone={(result) =>

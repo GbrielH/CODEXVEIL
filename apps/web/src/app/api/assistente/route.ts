@@ -1,11 +1,12 @@
 import { GoogleGenAI } from '@google/genai';
-import { getCampaign, getCharacter, listSessions } from '@codexveil/database';
+import { characterAccessInput, getCampaign, getCharacter, listSessions } from '@codexveil/database';
+import { canEditCharacterPlayState } from '@codexveil/domain';
 import { uuidSchema } from '@codexveil/validation';
 import { z } from 'zod';
 import { getSessionUser } from '@/lib/auth';
 import { assistantEnabled } from '@/lib/env';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { TOMO_GM_ACTIONS_PROMPT } from '@/lib/tomo-actions';
+import { tomoActionsPrompt } from '@/lib/tomo-actions';
 
 /**
  * Assistente de IA (consultivo), com o Google Gemini (plano gratuito). Só no servidor: a chave fica
@@ -28,7 +29,7 @@ const SYSTEM_PROMPT = `Você é Tomo, o Mestre do Codexveil: um grimório encant
 
 Personalidade: fale como um mestre na mesa, com calor e um toque de narração ("Ah, aventureiro…", "Role os dados e veremos…"), mas sem enrolar. A primeira frase já responde; o tom de mestre é tempero, não recheio. Respostas curtas e práticas, em poucas linhas ou uma lista breve; só se alongue se pedirem detalhes. Trate a pessoa pelo personagem dela quando a ficha estiver no contexto.
 
-O que você faz: explica regras, tira dúvidas sobre a ficha e a campanha, sugere ideias, ajuda a montar cenas, encontros, NPCs e personagens. Você não altera nada por conta própria (não rola dados, não muda fichas); se pedirem, diga onde a pessoa faz isso. A única exceção são as ações que o contexto disser que você pode propor ao mestre, sempre com a confirmação dele.
+O que você faz: explica regras, tira dúvidas sobre a ficha e a campanha, sugere ideias, ajuda a montar cenas, encontros, NPCs e personagens. Você não altera nada por conta própria (não rola dados, não muda fichas); se pedirem, diga onde a pessoa faz isso. A exceção são as ações que o contexto disser que você pode propor, sempre com a confirmação da pessoa.
 
 Regras do ofício: use o contexto fornecido (tela atual, ficha, campanha) e o que sabe das regras; se faltar informação, diga o que falta. Cite a regra (livro e seção) quando souber e deixe claro quando algo é sugestão sua, não regra. O contexto já vem filtrado pelo que a pessoa pode ver: não especule sobre segredos do mestre da mesa. Para jogadores, nada de spoilers da história; para quem mestra a campanha, pode sugerir ganchos, NPCs e desafios. Como bom mestre, lembre que a palavra final na mesa é de quem mestra a campanha.
 
@@ -57,12 +58,14 @@ function clip(text: string, max: number): string {
 }
 
 /**
- * Contexto da tela atual: campanha e/ou personagem pela rota, lidos com o RLS da pessoa. Para o
- * mestre de uma campanha ativa, inclui as sessões e as instruções das ações que ele pode confirmar.
+ * Contexto da tela atual: campanha e/ou personagem pela rota, lidos com o RLS da pessoa, e as
+ * ações que o Tomo pode propor a ela ali (para o mestre, também a lista de sessões).
  */
 async function buildContext(pathname: string, userId: string): Promise<string> {
   const supabase = await createSupabaseServerClient();
   const lines = [`Página atual: ${pathname}`];
+  let campaignRole: 'gm' | 'player' | null = null;
+  let characterEditable = false;
   const campaignId = /^\/campanhas\/([^/]+)/.exec(pathname)?.[1];
   if (campaignId && uuidSchema.safeParse(campaignId).success) {
     const campaign = await getCampaign(supabase, campaignId, userId);
@@ -71,11 +74,11 @@ async function buildContext(pathname: string, userId: string): Promise<string> {
         `Campanha: ${campaign.name} (sistema ${campaign.systemId}, status ${campaign.status}). Papel da pessoa: ${campaign.role === 'gm' ? 'mestre' : 'jogador'}.`,
       );
       if (campaign.description) lines.push(`Descrição da campanha: ${clip(campaign.description, 1500)}`);
-      if (campaign.role === 'gm' && campaign.status === 'active') {
+      if (campaign.status === 'active') campaignRole = campaign.role === 'gm' ? 'gm' : 'player';
+      if (campaignRole === 'gm') {
         const sessions = await listSessions(supabase, campaign.id);
         lines.push(
           `Sessões: ${sessions.length ? sessions.slice(0, 30).map((session) => `${session.number}. ${session.title} (${session.status})`).join('; ') : 'nenhuma ainda'}.`,
-          TOMO_GM_ACTIONS_PROMPT,
         );
       }
     }
@@ -88,9 +91,11 @@ async function buildContext(pathname: string, userId: string): Promise<string> {
         `Personagem aberto: ${character.name} (sistema ${character.systemId}${character.viewer.isOwner ? ', da própria pessoa' : ''}).`,
         `Ficha (JSON): ${clip(JSON.stringify(character.sheet), 8000)}`,
       );
+      characterEditable = canEditCharacterPlayState(characterAccessInput(character));
     }
   }
-  return clip(lines.join('\n'), MAX_CONTEXT);
+  // As instruções das ações vão por último e nunca são cortadas.
+  return `${clip(lines.join('\n'), MAX_CONTEXT)}\n${tomoActionsPrompt({ campaignRole, characterEditable })}`;
 }
 
 const text = (body: string, status: number) =>

@@ -14,14 +14,14 @@ export interface TomoActionDone {
   href: string;
 }
 
-/** Prévia de uma ação proposta pelo Tomo: nada é gravado até o mestre confirmar. */
+/** Prévia de uma ação proposta pelo Tomo: nada é gravado até a pessoa confirmar. */
 export function TomoActionCard({
-  campaignId,
+  scope,
   action,
   done,
   onDone,
 }: {
-  campaignId: string;
+  scope: { campaignId?: string | undefined; characterId?: string | undefined };
   action: TomoAction;
   done?: TomoActionDone | undefined;
   onDone: (result: TomoActionDone) => void;
@@ -36,7 +36,7 @@ export function TomoActionCard({
   const confirm = async () => {
     setBusy(true);
     setError(null);
-    const result = await runTomoAction(campaignId, action).catch(() => ({ ok: false as const, message: 'Não foi possível gravar. Tente de novo.' }));
+    const result = await runTomoAction(scope, action).catch(() => ({ ok: false as const, message: 'Não foi possível gravar. Tente de novo.' }));
     setBusy(false);
     if (!result.ok) return setError(result.message);
     onDone({ message: result.message, href: result.href });

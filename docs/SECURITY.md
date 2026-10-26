@@ -240,10 +240,11 @@ caminhos dessa pasta. As colunas que o cliente grava são limitadas por `grant`.
 
 ## Ações do Tomo (2026-10-27)
 
-O modelo só **propõe** ações (texto); quem grava é a Server Action `runTomoAction`, chamada quando o
-mestre confirma no cartão. Ela valida o conteúdo com zod, exige papel de mestre numa campanha ativa e
-grava com o cliente da própria pessoa (RLS). As instruções das ações só entram no contexto do mestre.
-Jogadores não recebem cartões e, mesmo forjando a chamada, o servidor recusa.
+O modelo só **propõe** ações (texto); quem grava é a Server Action `runTomoAction`, chamada quando a
+pessoa confirma no cartão. Ela valida o conteúdo com zod, confere o papel (ações de mestre exigem ser
+mestre de uma campanha ativa; inventário exige poder editar o personagem) e grava com o cliente da
+própria pessoa, então o RLS decide no fim. O modelo só recebe as instruções das ações que a pessoa
+pode usar na página aberta.
 
 ## Amigos e fichas compartilhadas (2026-10-27)
 

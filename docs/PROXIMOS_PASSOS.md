@@ -200,8 +200,12 @@ mapa e notas lado a lado).
       NPC/monstro na biblioteca (oculto dos jogadores, segredos só do mestre), criar anotação (só o
       mestre ou o grupo) e nota privada do mestre no fim do roteiro de uma sessão. O servidor valida
       de novo e confere se a pessoa é mestre (`runTomoAction`); o RLS confere outra vez.
-- [ ] Tomo, próximas ações: ficha de estatísticas da criatura, encontro no mapa, itens da
-      biblioteca, editar blocos existentes do roteiro.
+- [x] Tomo para todos (2026-10-27): qualquer pessoa usa as ações, com as permissões dela. Todos:
+      criar campanha e começar personagem (rascunho preenchido no assistente). Membros: anotação
+      (só eu / mestre / grupo). Mestre: NPC/monstro, item da biblioteca, sessão, nota na sessão e
+      quadro com notas. Na ficha editável: item no inventário. Sempre com cartão de confirmação.
+- [ ] Tomo, próximas ações: ficha de estatísticas da criatura, encontro no mapa, editar blocos
+      existentes do roteiro, mapas.
 - [x] Quadro livre (estilo Miro), feito em 2026-10-27, solução própria sem biblioteca paga: aba
       **Quadros**, só do mestre (os jogadores continuam vendo o que ele libera nas outras abas, em
       lista e na ordem de liberação). Vários quadros, notas coloridas, textos, imagens (botão ou

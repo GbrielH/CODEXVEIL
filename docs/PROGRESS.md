@@ -306,6 +306,9 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27:** Tomo com ações para todos (9 ações, conforme o papel e a página; sempre com
+  confirmação). Testes web 19. Não testado com o Gemini no navegador.
+
 - **2026-10-27:** **idade** do personagem, obrigatória na criação como a altura (D&D e T20, site e
   app; `details.age` / `identity.age`). Altura e idade passaram a aparecer e ser editáveis na ficha
   do site (D&D: Crônica; T20: aba Personagem) e entram no prompt do retrato. Não verificado no
