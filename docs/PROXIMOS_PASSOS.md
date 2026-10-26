@@ -183,6 +183,15 @@ mapa e notas lado a lado).
 - [x] Respostas na ficha (site), visíveis só para o jogador e o mestre.
 - [ ] Ver e corrigir as respostas na ficha do app; editar as respostas depois de criado.
 
+### B0f. App em paridade com o site (2026-10-27, próximo)
+
+Tabela completa em [PENDENCIAS.md](PENDENCIAS.md#0-app-em-paridade-com-o-site-levantado-em-2026-10-27).
+
+- [ ] Amigos e "Compartilhados comigo" no app.
+- [ ] Ficha do app: altura, idade, respostas das perguntas, prompts de retrato/token, compartilhar.
+- [ ] "?" do custo de pontos na criação T20 do app.
+- [ ] Tomo no app (chat e ditado).
+
 ### B0e. Amigos e fichas compartilhadas (2026-10-27)
 
 - [x] Página **Amigos** (site): código de amigo, adicionar por código ou com um clique a partir de

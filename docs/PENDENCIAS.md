@@ -37,6 +37,42 @@ regra da seção 22 ("não marque um item como concluído apenas porque existe u
 ele"), os critérios "Validado na API" e "Falta validar ao vivo" só contam como concluídos
 depois desse uso.
 
+## 0. App em paridade com o site (levantado em 2026-10-27)
+
+Conferido no código em 2026-10-27. Tudo abaixo pode ir por atualização OTA (sem mudança nativa, sem
+gastar build). Quadros, ações do mestre e perguntas na campanha ficam só no site (o app é só para
+jogar).
+
+| Funcionalidade                                         | Site  | App                          |
+| ------------------------------------------------------ | ----- | ---------------------------- |
+| Responder às perguntas do mestre na criação            | feito | feito                        |
+| Idade na criação                                       | feito | feito                        |
+| Convites pendentes (inclusive convite direto de amigo) | feito | feito                        |
+| Ver as respostas das perguntas na ficha                | feito | **falta**                    |
+| Altura e idade na ficha                                | feito | **falta**                    |
+| Amigos (código, pedidos, lista)                        | feito | **falta**                    |
+| Fichas compartilhadas comigo                           | feito | **falta**                    |
+| Compartilhar minha ficha com amigos                    | feito | **falta**                    |
+| Tomo (chat, voz, imagens, ações)                       | feito | **falta** (o app nunca teve) |
+| Prompts de retrato e de token na ficha                 | feito | **falta**                    |
+| "?" do custo de pontos na criação T20                  | feito | **falta**                    |
+
+Ordem proposta: (1) amigos e "Compartilhados comigo"; (2) ficha: altura, idade, respostas, prompts,
+compartilhar; (3) "?" dos pontos do T20; (4) Tomo no app (chat e ditado).
+
+### Outras pendências abertas (2026-10-27)
+
+- Perguntas do mestre: editar as respostas depois de criado o personagem.
+- Quadros: copiar/colar blocos, seleção múltipla.
+- Tomo: ficha de estatísticas da criatura, encontro no mapa, mapas, editar blocos do roteiro;
+  personagem completo (hoje cria rascunho para terminar no assistente).
+- Recuperação de senha por código no app: aguardando decisão (criar credenciais do Google ou
+  desligar o login com Google na configuração de produção).
+- APK novo: ícones, splash e dados 3D no app (gasta build da cota EAS).
+- Redesign da ficha do app e da tela de sessão.
+- Behind the Magic: aguardando as respostas do Will.
+- Nada desta rodada foi verificado no navegador ou no aparelho (exige login).
+
 ## 1. O que depende de você (configuração externa)
 
 | Item                                          | Situação (2026-10-16)                                                                                        | Onde está documentado                              |
