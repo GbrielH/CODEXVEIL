@@ -47,23 +47,42 @@ async function toAttachment(file: File): Promise<Attachment | null> {
 const MASCOT_NAME = 'Tomo';
 
 /*
- * Estado do chat fora dos componentes (só na memória): mudar de aba ou de página não fecha o
- * painel nem apaga a conversa; recarregar ou fechar a página começa do zero (nada fica salvo).
+ * Estado do chat fora dos componentes: mudar de aba ou de página não fecha o painel nem apaga a
+ * conversa. O texto fica também no sessionStorage desta aba, então recarregar a página (ex.: ao
+ * criar uma campanha) não apaga; fechar a aba apaga. Nada vai para o servidor. As imagens
+ * anexadas não são guardadas (só o texto).
  */
 interface AssistantState {
   open: boolean;
   messages: ChatMessage[];
 }
 const EMPTY: AssistantState = { open: false, messages: [] };
+const STORAGE_KEY = 'codexveil:tomo-chat';
 let state: AssistantState = EMPTY;
+let restored = false;
 const listeners = new Set<() => void>();
 
 function readState(): AssistantState {
+  if (!restored && typeof window !== 'undefined') {
+    restored = true;
+    try {
+      const saved = window.sessionStorage.getItem(STORAGE_KEY);
+      if (saved) state = { ...EMPTY, ...(JSON.parse(saved) as Partial<AssistantState>) };
+    } catch {
+      // Sem armazenamento: começa do zero.
+    }
+  }
   return state;
 }
 
 function setState(update: (current: AssistantState) => AssistantState) {
-  state = update(state);
+  state = update(readState());
+  try {
+    const messages = state.messages.slice(-40).map(({ role, content }) => ({ role, content }));
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ open: state.open, messages }));
+  } catch {
+    // Sem armazenamento (ou cheio): vale só nesta página.
+  }
   for (const listener of listeners) listener();
 }
 
