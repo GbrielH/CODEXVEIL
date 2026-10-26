@@ -79,9 +79,12 @@ conversa, retomar por esta lista:
 
 ### B. Próximas tarefas (Claude)
 
-1. **Livros:** Domínio da Ordem sem as magias dos níveis 7 e 9 (tabela partida no PDF); Círculo
-   da Terra sem as magias por terreno (escolha do terreno na criação e na subida); texto
-   corrido do Livro do Jogador 2014 (só 7 seções importadas).
+1. **[Feito em 2026-10-26] Livros:** pacotes gerados de novo com os scripts atuais (os de
+   `Downloads/LIVROS/LIVROS` eram de 19/10): Domínio da Ordem com as magias dos níveis 7 e 9;
+   Círculo da Terra com os 8 terrenos (magias que não casaram com o compêndio saem com inicial
+   maiúscula); Livro do Jogador 2014 com 1.317 seções de texto (eram 7); Golpe Pessoal (T20)
+   completo com a continuação da página seguinte e os 17 efeitos. **Falta o responsável
+   reimportar** `phb-2014`, `xgte`, `tcoe` e `t20-jda` em Meus livros.
 2. **[Feito em 2026-10-26] Ficha D&D:** Robusto escolhido antes soma +2 PV a cada nível novo
    (a subida recebe os nomes das características da ficha; site e app).
 3. **[Feito em 2026-10-26] Tormenta20:** rolagem de atributos sorteada no banco e guardada por

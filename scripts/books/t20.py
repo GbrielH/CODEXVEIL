@@ -682,10 +682,32 @@ def magic_items(book):
     return out
 
 
+
+def finish_personal_strike(book, classes_):
+    """Golpe Pessoal (Guerreiro): o texto continua na página seguinte, depois da Tabela 1-13, numa
+    coluna própria, e a lista "Efeitos do Golpe Pessoal" fica num quadro ao lado."""
+    fighter = next((c for c in classes_ if plain(c['name']) == 'guerreiro'), None)
+    power = next((x for x in (fighter or {}).get('powers', []) if plain(x['name']) == 'golpe pessoal'), None)
+    if power is None or power['text'].rstrip().endswith('.'):
+        return
+    start = next((i for i, r in enumerate(book.rows) if book.texts[i].startswith('Golpe Pessoal só pode ser usado')), None)
+    if start is None:
+        return
+    page = book.rows[start]['p']
+    rows = [i for i, r in enumerate(book.rows) if r['p'] == page and book.texts[i] and r['y'] <= 735]
+    text_col = [book.texts[i] for i in rows if book.rows[i]['c'] == book.rows[start]['c'] and abs(book.rows[i]['s'] - 9.5) < 0.3]
+    box = [book.texts[i] for i in rows if book.rows[i]['c'] != book.rows[start]['c'] and abs(book.rows[i]['s'] - 9.0) < 0.3]
+    effects = join_lines(box)
+    # Um efeito por linha: "Amplo (+3 PM).", "Conjurador (Custo da Magia + 1 PM).", "Lento (–2 PM)."
+    effects = re.sub(r'(?<=[.)])\s+(?=[A-ZÁÉÍÓÚ][\wÀ-ú ]{2,30} \((?:[+–-]\d+ PM|Custo[^)]*)\)\.)', '\n• ', effects)
+    power['text'] = f"{power['text'].rstrip()} {join_lines(text_col)}\n\nEfeitos do Golpe Pessoal:\n• {effects.strip()}"
+
 def main():
     rows = [json.loads(line) for line in open(sys.argv[1], encoding='utf-8')]
     book = Book(rows)
-    data = {'races': races(book), 'classes': classes(book), 'origins': origins(book), 'deities': deities(book),
+    classes_ = classes(book)
+    finish_personal_strike(book, classes_)
+    data = {'races': races(book), 'classes': classes_, 'origins': origins(book), 'deities': deities(book),
             'skills': skills(book), 'powers': general_powers(book), 'spells': spells(book),
             'weapons': weapons(book), 'armors': armors(book),
             'items': general_items(book), 'improvements': improvements(book),

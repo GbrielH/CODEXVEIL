@@ -463,6 +463,10 @@ def fix_prepared_names(entries, known):
 _TERRAINS = ['ártico', 'costa', 'deserto', 'floresta', 'montanha', 'pântano', 'planície', 'subterrâneo']
 
 
+def _capital(name):
+    return name[:1].upper() + name[1:] if name else name
+
+
 def add_land_terrains(rows, entries, known, pages=(73, 76)):
     land = next((e for e in entries if e['kind'] == 'subclass' and 'terra' in _plain(e['name']) and e['data']['classId'] == 'druid'), None)
     if land is None:
@@ -485,7 +489,8 @@ def add_land_terrains(rows, entries, known, pages=(73, 76)):
                 break
         if len(cells) == 4:
             options.append({'name': name.capitalize(), 'spells': [
-                {'level': level, 'spells': [_match_spell(part, known) for part in cell.split(',') if part.strip()]}
+                # Nome que não casou com o compêndio volta como veio do PDF: só a inicial maiúscula.
+                {'level': level, 'spells': [_capital(_match_spell(part, known) or part.strip()) for part in cell.split(',') if part.strip()]}
                 for level, cell in zip([3, 5, 7, 9], cells)]})
     land['data']['landOptions'] = options
     return len(options)
