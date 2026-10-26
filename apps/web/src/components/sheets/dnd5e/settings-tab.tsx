@@ -3,19 +3,18 @@
 import { CreationAnswersFields, answersComplete, answersFor } from '@/components/characters/creation-answers';
 import {
   CAMPAIGN_MEDIA_BUCKET,
-  characterPortraitPath,
   deleteCharacter,
   setCharacterCampaign,
   setCharacterCampaignWithAnswers,
-  setCharacterPortrait,
 } from '@codexveil/database';
+import { characterImagePrompt } from '@codexveil/domain';
 import { dnd5eCampaignIssues, parseDnd5eCampaignRules } from '@codexveil/rpg-systems/dnd5e';
-import { IMAGE_EXTENSIONS } from '@codexveil/validation';
-import { ImageUp, Link2, Trash2, Unlink } from 'lucide-react';
+import { Link2, Trash2, Unlink } from 'lucide-react';
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
-import { useId, useRef, useState } from 'react';
-import { Portrait } from '@/components/characters/portrait';
+import { useId, useState } from 'react';
+import { ImagePromptCard } from '@/components/characters/image-prompt-card';
+import { PortraitCard } from '@/components/characters/portrait-card';
 import { TokenImageCard } from '@/components/characters/token-image-card';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -24,7 +23,6 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SelectField } from '@/components/ui/field';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
-import { prepareImage } from '@/lib/images';
 import { routes } from '@/lib/routes';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useSheet } from './context';
@@ -37,123 +35,44 @@ export function SettingsTab({
   const { permissions, character } = useSheet();
   return (
     <div className="grid gap-5 lg:grid-cols-2">
-      {permissions.canEditSheet ? <PortraitCard /> : null}
+      {permissions.canEditSheet ? <DndPortraitCard /> : null}
       {permissions.canEditSheet ? <TokenImageCard characterId={character.id} portraitUrl={character.portraitUrl} /> : null}
+      {permissions.canEditSheet ? <DndImagePrompt /> : null}
       {permissions.isOwner ? <CampaignCard campaigns={campaigns} /> : null}
       {permissions.isOwner ? <DangerCard /> : null}
     </div>
   );
 }
 
-function PortraitCard() {
+function DndPortraitCard() {
   const { character, name, adoptVersion } = useSheet();
-  const router = useRouter();
-  const { toast } = useToast();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const inputId = useId();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const upload = async (original: File) => {
-    setError(null);
-    setBusy(true);
-    const client = getSupabaseBrowserClient();
-    try {
-      const prepared = await prepareImage(original, 'portrait');
-      if (!prepared.ok) {
-        setError(prepared.message);
-        return;
-      }
-      const path = characterPortraitPath(
-        character.id,
-        `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`,
-      );
-      const { error: uploadError } = await client.storage
-        .from(CAMPAIGN_MEDIA_BUCKET)
-        .upload(path, prepared.file, { contentType: prepared.mimeType, upsert: false });
-      if (uploadError) throw uploadError;
-      try {
-        adoptVersion(await setCharacterPortrait(client, character.id, path));
-      } catch (cause) {
-        await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([path]);
-        throw cause;
-      }
-      if (character.portraitPath)
-        await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([character.portraitPath]);
-      toast({ tone: 'success', title: 'Retrato atualizado.' });
-      router.refresh();
-    } catch (cause) {
-      setError(failureMessage(cause, 'Não foi possível enviar a imagem.'));
-    } finally {
-      setBusy(false);
-      if (inputRef.current) inputRef.current.value = '';
-    }
-  };
-
-  const remove = async () => {
-    if (!character.portraitPath) return;
-    setBusy(true);
-    const client = getSupabaseBrowserClient();
-    try {
-      adoptVersion(await setCharacterPortrait(client, character.id, null));
-      await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([character.portraitPath]);
-      toast({ tone: 'success', title: 'Retrato removido.' });
-      router.refresh();
-    } catch (cause) {
-      setError(failureMessage(cause, 'Não foi possível remover o retrato.'));
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
-    <Card>
-      <CardHeader
-        title="Retrato"
-        description="Visível para quem pode ver a ficha. PNG, JPEG ou WebP, até 5 MB."
-      />
-      <div className="flex items-center gap-4">
-        <Portrait name={name} url={character.portraitUrl} size="lg" />
-        <div className="flex flex-col gap-2">
-          <input
-            ref={inputRef}
-            id={inputId}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            className="sr-only"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void upload(file);
-            }}
-          />
-          <Button
-            size="sm"
-            variant="secondary"
-            loading={busy}
-            onClick={() => inputRef.current?.click()}
-            icon={<ImageUp className="h-4 w-4" aria-hidden="true" />}
-          >
-            {character.portraitPath ? 'Trocar retrato' : 'Enviar retrato'}
-          </Button>
-          {character.portraitPath ? (
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={busy}
-              onClick={() => void remove()}
-              icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
-            >
-              Remover
-            </Button>
-          ) : null}
-          {error ? (
-            <p className="text-xs font-medium text-danger" role="alert">
-              {error}
-            </p>
-          ) : null}
-        </div>
-      </div>
-    </Card>
+    <PortraitCard
+      characterId={character.id}
+      name={name}
+      portraitPath={character.portraitPath}
+      portraitUrl={character.portraitUrl}
+      onVersion={adoptVersion}
+    />
+  );
+}
+
+/** Prompt para gerar o retrato numa IA de imagens, com o que está na ficha. */
+function DndImagePrompt() {
+  const { name, sheet } = useSheet();
+  const main = sheet.identity.classes[0];
+  return (
+    <ImagePromptCard
+      prompt={characterImagePrompt({
+        system: 'D&D 5e',
+        name,
+        species: sheet.identity.species,
+        className: main?.name ? `${main.name}${main.subclass ? ` (${main.subclass})` : ''}` : '',
+        level: sheet.identity.classes.reduce((total, entry) => total + entry.level, 0),
+        background: sheet.identity.background,
+        alignment: sheet.identity.alignment,
+      })}
+    />
   );
 }
 

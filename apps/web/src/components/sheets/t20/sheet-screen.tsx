@@ -14,7 +14,7 @@ import {
   type CharacterItem,
   type CharacterResource,
 } from '@codexveil/database';
-import { rollDiceLocally, type DiceRollMode, type TrackOperation } from '@codexveil/domain';
+import { characterImagePrompt, rollDiceLocally, type DiceRollMode, type TrackOperation } from '@codexveil/domain';
 import {
   T20_ATTRIBUTES,
   T20_RESOURCE_KEYS,
@@ -38,6 +38,8 @@ import {
 import { Heart, Minus, Moon, Plus, Shield, Sparkles, X, Zap } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ArcaneScene } from '@/components/brand/arcane-scene';
+import { ImagePromptCard } from '@/components/characters/image-prompt-card';
+import { PortraitCard } from '@/components/characters/portrait-card';
 import { TokenImageCard } from '@/components/characters/token-image-card';
 import { T20AttacksCard } from './attacks-card';
 import { Alert } from '@/components/ui/alert';
@@ -671,7 +673,29 @@ function T20SheetBody(props: T20SheetScreenProps) {
       ) : null}
 
       {tab === 'personagem' && permissions.canEditSheet ? (
-        <TokenImageCard characterId={character.id} portraitUrl={character.portraitUrl} />
+        <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
+          <PortraitCard
+            characterId={character.id}
+            name={character.name}
+            portraitPath={character.portraitPath}
+            portraitUrl={character.portraitUrl}
+            onVersion={setVersion}
+          />
+          <TokenImageCard characterId={character.id} portraitUrl={character.portraitUrl} />
+          <ImagePromptCard
+            prompt={characterImagePrompt({
+              system: 'Tormenta20',
+              name: character.name,
+              species: [sheet.identity.race, sheet.identity.raceVariant].filter(Boolean).join(' '),
+              className: sheet.identity.classes.map((entry) => entry.name).join(' / '),
+              level: sheet.identity.classes.reduce((total, entry) => total + entry.level, 0),
+              background: [sheet.identity.origin, sheet.identity.deity ? `devoto de ${sheet.identity.deity}` : ''].filter(Boolean).join(', '),
+              appearance: sheet.identity.appearance,
+              personality: sheet.identity.personality,
+              backstory: sheet.identity.history,
+            })}
+          />
+        </div>
       ) : null}
 
       {tab === 'personagem' && permissions.isOwner ? (
