@@ -62,7 +62,7 @@ interface Dnd5eSheetScreenProps {
   abilities: CharacterAbility[];
   permissions: SheetPermissions;
   /** Campanhas ativas do dono com o mesmo sistema (para vincular o personagem). */
-  campaigns: { id: string; name: string; characterRules?: unknown }[];
+  campaigns: { id: string; name: string; characterRules?: unknown; creationQuestions?: string[] }[];
   /** `campaign`: só o que se usa na mesa (jogo, atributos, inventário, habilidades e magias). */
   variant?: 'full' | 'campaign';
   /** Livros liberados na campanha do personagem (ou os do dono, em fichas pessoais), para a subida de nível. */

@@ -47,6 +47,7 @@ export default async function CampaignSettingsPage({ params }: PageProps<'/campa
             partySheetsVisible: campaign.settings.partySheetsVisible,
             playersCanEditSheets: campaign.settings.playersCanEditSheets,
             characterRules: campaign.characterRules,
+            creationQuestions: campaign.creationQuestions,
           }}
         />
       </Card>

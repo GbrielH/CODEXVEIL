@@ -279,6 +279,8 @@ export interface CharacterCreateParams {
   name: string;
   systemId: string;
   campaignId: string | null;
+  /** Respostas às perguntas do mestre da campanha (obrigatórias quando ele definiu perguntas). */
+  answers?: readonly { question: string; answer: string }[];
   /** Ficha já validada pelo módulo do sistema (objeto serializável em JSON). */
   sheet: unknown;
   resources: readonly {
@@ -329,6 +331,7 @@ export async function createCharacter(
     p_resources: params.resources as unknown as Json,
     ...(params.items?.length ? { p_items: params.items as unknown as Json } : {}),
     ...(params.abilities?.length ? { p_abilities: params.abilities as unknown as Json } : {}),
+    ...(params.answers?.length ? { p_answers: params.answers as unknown as Json } : {}),
   });
   if (error) throw toAppError(error);
   return data;
@@ -488,6 +491,53 @@ export async function setCharacterCampaign(
     // A função aceita NULL para desvincular; o gerador de tipos não expressa isso.
     p_campaign_id: campaignId as string,
   });
+  if (error) throw toAppError(error);
+}
+
+/** Vincula a uma campanha que tem perguntas do mestre, gravando as respostas junto. */
+export async function setCharacterCampaignWithAnswers(
+  client: CodexveilClient,
+  characterId: string,
+  campaignId: string,
+  answers: readonly { question: string; answer: string }[],
+): Promise<void> {
+  const { error } = await client.rpc('set_character_campaign_with_answers', {
+    p_character_id: characterId,
+    p_campaign_id: campaignId,
+    p_answers: answers as unknown as Json,
+  });
+  if (error) throw toAppError(error);
+}
+
+export interface CreationAnswer {
+  question: string;
+  answer: string;
+}
+
+/** Respostas às perguntas do mestre (só o dono do personagem e o mestre recebem). */
+export async function getCharacterAnswers(client: CodexveilClient, characterId: string): Promise<CreationAnswer[] | null> {
+  const { data, error } = await client.from('character_answers').select('answers').eq('character_id', characterId).maybeSingle();
+  if (error) throw toAppError(error);
+  if (!data) return null;
+  return Array.isArray(data.answers)
+    ? data.answers.flatMap((entry) =>
+        entry && typeof entry === 'object' && !Array.isArray(entry) && typeof entry.question === 'string' && typeof entry.answer === 'string'
+          ? [{ question: entry.question, answer: entry.answer }]
+          : [],
+      )
+    : [];
+}
+
+/** O dono grava (ou corrige) as respostas do personagem na campanha. */
+export async function saveCharacterAnswers(
+  client: CodexveilClient,
+  characterId: string,
+  campaignId: string,
+  answers: readonly CreationAnswer[],
+): Promise<void> {
+  const { error } = await client
+    .from('character_answers')
+    .upsert({ character_id: characterId, campaign_id: campaignId, answers: answers as unknown as Json }, { onConflict: 'character_id' });
   if (error) throw toAppError(error);
 }
 

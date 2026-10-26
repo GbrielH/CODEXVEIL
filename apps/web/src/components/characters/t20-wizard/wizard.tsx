@@ -76,6 +76,7 @@ import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 import { Dice3DOverlay } from '@/components/dice/dice-3d-overlay';
 import { useMemo, useRef, useState, useTransition, type ReactNode } from 'react';
+import { CreationAnswersFields, answersComplete, answersFor } from '@/components/characters/creation-answers';
 import { createT20CharacterAction, rollT20AttributesAction } from '@/app/(app)/personagens/actions-t20';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -90,6 +91,8 @@ export interface T20WizardCampaign {
   id: string;
   name: string;
   rules: T20CampaignRules;
+  /** Perguntas do mestre (todas obrigatórias). */
+  questions: string[];
 }
 
 interface T20WizardProps {
@@ -123,6 +126,9 @@ function d6(): number {
 /** Assistente de criação de personagem do Tormenta20, com as regras de `@codexveil/rpg-systems/tormenta20`. */
 export function T20CreationWizard({ campaign, sources, remoteDraft = null }: T20WizardProps) {
   const router = useRouter();
+  const questions = campaign?.questions ?? [];
+  const [answerValues, setAnswerValues] = useState<Record<number, string>>({});
+  const answersOk = answersComplete(questions, answerValues);
   const rules = campaign?.rules;
   const allowedMethods = useMemo(
     () => rules?.attributeMethods ?? (['pontos', 'rolagem'] as const),
@@ -196,7 +202,7 @@ export function T20CreationWizard({ campaign, sources, remoteDraft = null }: T20
   const submit = () => {
     setSubmitError(null);
     startTransition(async () => {
-      const result = await createT20CharacterAction({ campaignId: campaign?.id ?? null, draft });
+      const result = await createT20CharacterAction({ campaignId: campaign?.id ?? null, draft, answers: answersFor(questions, answerValues) });
       if (result.ok) {
         await discardDraftAfterCreate(draftId);
         router.push(`${characterPath(result.characterId)}?aviso=personagem-criado` as Route);
@@ -859,6 +865,7 @@ export function T20CreationWizard({ campaign, sources, remoteDraft = null }: T20
 
           {step === 'revisao' ? (
             <div className="flex flex-col gap-3">
+              <CreationAnswersFields questions={questions} values={answerValues} onChange={setAnswerValues} showErrors />
               {issues.length === 0 ? (
                 <Alert tone="success">Tudo certo! Crie o personagem.</Alert>
               ) : (
@@ -936,7 +943,7 @@ export function T20CreationWizard({ campaign, sources, remoteDraft = null }: T20
                 icon={<Sparkles className="h-4 w-4" aria-hidden="true" />}
                 onClick={submit}
                 loading={pending}
-                disabled={issues.length > 0}
+                disabled={issues.length > 0 || !answersOk}
               >
                 Criar personagem
               </Button>

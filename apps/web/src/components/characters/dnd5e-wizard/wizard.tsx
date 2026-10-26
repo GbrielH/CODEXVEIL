@@ -28,6 +28,7 @@ import { AlertTriangle, Check, ChevronLeft, ChevronRight, RotateCcw, Sparkles } 
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from 'react';
+import { CreationAnswersFields, answersComplete, answersFor } from '@/components/characters/creation-answers';
 import { createDnd5eCharacterAction } from '@/app/(app)/personagens/actions';
 import { SourcebookLinks, SourcebookPicker } from '@/components/campaigns/sourcebook-picker';
 import {
@@ -61,6 +62,8 @@ export interface WizardCampaign {
   rules: Dnd5eCampaignRules;
   /** Livros liberados pelo mestre (ids em `books`). */
   packIds: string[];
+  /** Perguntas do mestre (todas obrigatórias). */
+  questions: string[];
 }
 
 interface WizardProps {
@@ -155,6 +158,9 @@ export function Dnd5eCreationWizard({
   const [campaignId, setCampaignId] = useState(defaultCampaignId);
   const campaign = campaigns.find((entry) => entry.id === campaignId);
   const context = useMemo(() => contextFor(campaign), [campaign]);
+  const questions = campaign?.questions ?? [];
+  const [answerValues, setAnswerValues] = useState<Record<number, string>>({});
+  const answersOk = answersComplete(questions, answerValues);
   const [draftId, setDraftId] = useState<string | null>(remoteDraft?.id ?? null);
   const [draft, setDraft] = useState<Dnd5eDraft>(
     () =>
@@ -326,7 +332,7 @@ export function Dnd5eCreationWizard({
   const submit = () => {
     setSubmitError(null);
     startTransition(async () => {
-      const result = await createDnd5eCharacterAction({ campaignId: campaignId || null, draft });
+      const result = await createDnd5eCharacterAction({ campaignId: campaignId || null, draft, answers: answersFor(questions, answerValues) });
       if (result.ok) {
         setDirty(false);
         writeStorage(storageKey, null);
@@ -657,6 +663,7 @@ export function Dnd5eCreationWizard({
           {step === 'review' ? (
             <div className="flex flex-col gap-5">
               <IssueList issues={issues} onGo={goTo} />
+              <CreationAnswersFields questions={questions} values={answerValues} onChange={setAnswerValues} showErrors />
               <CharacterReview draft={draft} />
             </div>
           ) : null}
@@ -690,7 +697,7 @@ export function Dnd5eCreationWizard({
                 icon={<Sparkles className="h-4 w-4" aria-hidden="true" />}
                 onClick={submit}
                 loading={pending}
-                disabled={issues.length > 0}
+                disabled={issues.length > 0 || !answersOk}
               >
                 Criar personagem
               </Button>

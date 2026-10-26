@@ -1,4 +1,5 @@
 import {
+  getCharacterAnswers,
   getCampaign,
   characterAccessInput,
   listCharacterAbilities,
@@ -15,6 +16,8 @@ import { parseT20Sheet } from '@codexveil/rpg-systems/tormenta20';
 import { Dnd5eSheetScreen } from '@/components/sheets/dnd5e/sheet-screen';
 import { T20SheetScreen } from '@/components/sheets/t20/sheet-screen';
 import { ErrorState } from '@/components/ui/states';
+import { Card } from '@/components/ui/card';
+import { CreationAnswersView } from '@/components/characters/creation-answers';
 import { ItemCatalogProvider } from '@/components/sheets/item-catalog';
 import { campaignBookPacks, loadBookSources, loadT20Sources, ownReadyBookPacks, packsOfSystem } from '@/lib/books';
 import { loadCharacterOrNotFound } from '@/lib/characters';
@@ -126,6 +129,7 @@ export async function CharacterSheet({
             id: campaign.id,
             name: campaign.name,
             characterRules: campaign.characterRules,
+            creationQuestions: campaign.creationQuestions,
           }))}
       />
     ) : (
@@ -190,5 +194,16 @@ export async function CharacterSheet({
     );
   }
 
-  return <ItemCatalogProvider value={catalogBooks}>{content}</ItemCatalogProvider>;
+  // Respostas às perguntas do mestre: o banco só entrega ao dono e ao mestre.
+  const answers = character.campaign ? await getCharacterAnswers(supabase, character.id).catch(() => null) : null;
+  return (
+    <ItemCatalogProvider value={catalogBooks}>
+      {content}
+      {answers?.length ? (
+        <Card className="mt-6">
+          <CreationAnswersView answers={answers} />
+        </Card>
+      ) : null}
+    </ItemCatalogProvider>
+  );
 }

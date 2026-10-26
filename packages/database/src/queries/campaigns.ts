@@ -30,6 +30,8 @@ export interface CampaignSummary {
   archivedAt: string | null;
   /** Regras de criação de personagens (JSON do módulo do sistema; leia com `parseCampaignRules`). */
   characterRules: unknown;
+  /** Perguntas do mestre que os jogadores respondem ao criar o personagem (todas obrigatórias). */
+  creationQuestions: string[];
   /** Dono (mestre principal); os livros liberados na campanha são os dele. */
   ownerId: string;
 }
@@ -70,7 +72,7 @@ export async function listMyCampaigns(
   const { data, error } = await client
     .from('campaigns')
     .select(
-      'id, name, description, system_id, status, cover_path, owner_id, updated_at, archived_at, character_rules, members:campaign_members(count), membership:campaign_members!inner(role, user_id)',
+      'id, name, description, system_id, status, cover_path, owner_id, updated_at, archived_at, character_rules, creation_questions, members:campaign_members(count), membership:campaign_members!inner(role, user_id)',
     )
     .eq('membership.user_id', userId)
     .order('status', { ascending: true })
@@ -90,6 +92,7 @@ export async function listMyCampaigns(
     updatedAt: row.updated_at,
     archivedAt: row.archived_at,
     characterRules: row.character_rules,
+    creationQuestions: row.creation_questions,
     ownerId: row.owner_id,
   }));
 }
@@ -103,7 +106,7 @@ export async function getCampaign(
   const { data, error } = await client
     .from('campaigns')
     .select(
-      'id, name, description, system_id, status, cover_path, owner_id, party_sheets_visible, players_can_edit_sheets, default_turn_mode, default_turn_order, players_see_turn_order, custom_actions, character_rules, created_at, updated_at, archived_at, owner:profiles!campaigns_owner_id_fkey(display_name), members:campaign_members(count), membership:campaign_members!inner(role, user_id)',
+      'id, name, description, system_id, status, cover_path, owner_id, party_sheets_visible, players_can_edit_sheets, default_turn_mode, default_turn_order, players_see_turn_order, custom_actions, character_rules, creation_questions, created_at, updated_at, archived_at, owner:profiles!campaigns_owner_id_fkey(display_name), members:campaign_members(count), membership:campaign_members!inner(role, user_id)',
     )
     .eq('id', campaignId)
     .eq('membership.user_id', userId)
@@ -124,6 +127,7 @@ export async function getCampaign(
     updatedAt: data.updated_at,
     archivedAt: data.archived_at,
     characterRules: data.character_rules,
+    creationQuestions: data.creation_questions,
     ownerId: data.owner_id,
     ownerName: data.owner?.display_name ?? 'Mestre',
     settings: {
@@ -180,6 +184,7 @@ export async function createCampaign(
       description: input.description,
       system_id: input.systemId,
       character_rules: input.characterRules as Json,
+      creation_questions: input.creationQuestions,
     })
     .select('id')
     .single();
@@ -200,6 +205,7 @@ export async function updateCampaign(
       party_sheets_visible: input.partySheetsVisible,
       players_can_edit_sheets: input.playersCanEditSheets,
       ...(input.characterRules ? { character_rules: input.characterRules as Json } : {}),
+      ...(input.creationQuestions ? { creation_questions: input.creationQuestions } : {}),
     })
     .eq('id', campaignId)
     .select('id');

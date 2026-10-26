@@ -41,6 +41,17 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 const ids = (...values: unknown[]) => values.every((value) => uuidSchema.safeParse(value).success);
 const invalidRequest: ActionResult = { ok: false, message: 'Requisição inválida.' };
 
+/** Perguntas do mestre (JSON de um campo escondido). Inválido vira `null`, e o esquema recusa. */
+function readQuestions(formData: FormData): unknown {
+  const raw = formData.get('creationQuestions');
+  if (typeof raw !== 'string') return undefined;
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return null;
+  }
+}
+
 function campaignPath(campaignId: string, section = ''): Route {
   return `/campanhas/${campaignId}${section}` as Route;
 }
@@ -53,7 +64,11 @@ export async function createCampaignAction(_previous: FormState, formData: FormD
     systemId: readText(formData, 'systemId'),
   };
   const rules = readCampaignRules(raw.systemId, formData);
-  const parsed = campaignCreateSchema.safeParse({ ...raw, characterRules: rules.ok ? rules.rules : {} });
+  const parsed = campaignCreateSchema.safeParse({
+    ...raw,
+    characterRules: rules.ok ? rules.rules : {},
+    creationQuestions: readQuestions(formData) ?? [],
+  });
   if (!parsed.success || !rules.ok) {
     return {
       status: 'error',
@@ -119,7 +134,11 @@ export async function updateCampaignAction(
   };
   // O sistema só escolhe o leitor dos campos; o banco guarda as regras como JSON opaco.
   const rules = readCampaignRules(readText(formData, 'systemId'), formData);
-  const parsed = campaignUpdateSchema.safeParse({ ...raw, ...(rules.ok ? { characterRules: rules.rules } : {}) });
+  const parsed = campaignUpdateSchema.safeParse({
+    ...raw,
+    ...(rules.ok ? { characterRules: rules.rules } : {}),
+    creationQuestions: readQuestions(formData),
+  });
   if (!parsed.success || !rules.ok) {
     return {
       status: 'error',

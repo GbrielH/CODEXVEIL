@@ -12,7 +12,7 @@ import {
   type Dnd5eBookContent,
   type Dnd5eCreationContext,
 } from '@codexveil/rpg-systems/dnd5e';
-import { characterCreateSchema, uuidSchema } from '@codexveil/validation';
+import { characterCreateSchema, creationAnswersSchema, uuidSchema } from '@codexveil/validation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { failureMessage } from '@/lib/actions';
@@ -28,6 +28,8 @@ export type CreateCharacterResult =
 const inputSchema = z.object({
   campaignId: uuidSchema.nullable(),
   draft: z.unknown(),
+  /** Respostas às perguntas do mestre da campanha. */
+  answers: creationAnswersSchema.default([]),
 });
 
 /**
@@ -41,6 +43,7 @@ export async function createDnd5eCharacterAction(input: unknown): Promise<Create
   const draft = dnd5eDraftSchema.safeParse(parsedInput.data.draft);
   if (!draft.success) return { ok: false, message: 'Os dados do personagem estão incompletos ou inválidos.' };
   const campaignId = parsedInput.data.campaignId;
+  const answers = parsedInput.data.answers;
 
   let supabase;
   let context: Dnd5eCreationContext = PERSONAL_SHEET_CONTEXT;
@@ -58,6 +61,10 @@ export async function createDnd5eCharacterAction(input: unknown): Promise<Create
         return { ok: false, message: 'Mestres não criam personagens na própria campanha: use os NPCs e monstros da biblioteca.' };
       }
       if (campaign.systemId !== 'dnd5e') return { ok: false, message: 'Esta campanha usa outro sistema de RPG.' };
+      const missing = campaign.creationQuestions.some(
+        (question) => !answers.find((entry) => entry.question === question && entry.answer.trim()),
+      );
+      if (missing) return { ok: false, message: 'Responda a todas as perguntas do mestre.' };
       const rules = parseDnd5eCampaignRules(campaign.characterRules);
       context = {
         lockedLevel: rules.startingLevel,
@@ -94,6 +101,7 @@ export async function createDnd5eCharacterAction(input: unknown): Promise<Create
       resources: built.resources,
       items: built.items,
       abilities: built.abilities,
+      ...(campaignId ? { answers } : {}),
     });
   } catch (error) {
     return { ok: false, message: failureMessage(error) };

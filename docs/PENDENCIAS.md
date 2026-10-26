@@ -195,6 +195,10 @@ Esta seção lista só o que falta ou está parcial. O que já foi atendido est�
 
 - **Pendente: "referências a sessões".** A página de um NPC ou monstro não lista as sessões
   em que ele aparece, seja em blocos `npc_ref`/`monster_ref` ou na cena.
+- **Feito (2026-10-26): perguntas do mestre na criação de personagem.** Na criação e nas
+  configurações da campanha o mestre escreve perguntas (até 20). Todas são obrigatórias para criar
+  ou vincular um personagem na campanha (site e app), conferidas no banco. As respostas aparecem na
+  ficha só para o jogador e o mestre. Migração `20261026140000`.
 - **Feito (2026-10-26): ficha da criatura liberada por partes.** A biblioteca é da campanha (não
   da sessão) e os jogadores só veem o que o mestre revela. Além disso, o mestre escolhe quais partes
   da ficha da criatura o grupo vê (CA, PV, atributos, ações…) e libera ou oculta quando quiser

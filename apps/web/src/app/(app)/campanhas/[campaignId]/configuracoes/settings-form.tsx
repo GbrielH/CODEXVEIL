@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { CampaignRulesFields, type CampaignBookOption } from '@/components/campaigns/campaign-rules-fields';
+import { QuestionsEditor } from '@/components/campaigns/questions-editor';
 import { Alert } from '@/components/ui/alert';
 import { CheckboxField, TextareaField, TextField } from '@/components/ui/field';
 import { SubmitButton } from '@/components/ui/submit-button';
@@ -19,6 +20,7 @@ interface SettingsFormProps {
     partySheetsVisible: boolean;
     playersCanEditSheets: boolean;
     characterRules: unknown;
+    creationQuestions: string[];
   };
 }
 
@@ -65,6 +67,7 @@ export function CampaignSettingsForm({ campaignId, systemId, disabled, books, in
           defaultChecked={initial.playersCanEditSheets}
         />
         <CampaignRulesFields systemId={systemId} initial={initial.characterRules} errors={state.fieldErrors} books={books} />
+        <QuestionsEditor bare initial={initial.creationQuestions} error={state.fieldErrors?.creationQuestions} />
         <div>
           <SubmitButton pendingLabel="Salvando…">Salvar alterações</SubmitButton>
         </div>

@@ -64,6 +64,7 @@ import { Button } from '@/components/ui/button';
 import { Segmented } from '@/components/ui/segmented';
 import { loadT20Sources } from '@/lib/books';
 import { parseT20CampaignRules, type T20ContentSource } from '@codexveil/rpg-systems/tormenta20';
+import { CreationAnswersCard, answersComplete, answersFor } from '@/components/characters/creation-answers';
 import { Field } from '@/components/ui/field';
 import { AppText, Badge, Card } from '@/components/ui/primitives';
 import { LoadingState, Notice } from '@/components/ui/states';
@@ -79,6 +80,8 @@ interface PlayableCampaign {
   rules: Dnd5eCampaignRules;
   /** Livros do mestre liberados nesta campanha (ids dos pacotes). */
   packIds: string[];
+  /** Perguntas do mestre (todas obrigatórias). */
+  questions: string[];
 }
 
 interface CreationData {
@@ -139,6 +142,7 @@ async function loadCreationData(userId: string): Promise<CreationData> {
       name: campaign.name,
       rules: parseDnd5eCampaignRules(campaign.characterRules),
       packIds: (perCampaign[index] ?? []).map((pack) => pack.id),
+      questions: campaign.creationQuestions,
     })),
     books,
     personalPackIds: own.map((pack) => pack.id),
@@ -267,6 +271,7 @@ export default function NewCharacterScreen() {
                 id: chosen.id,
                 name: chosen.name,
                 rules: parseT20CampaignRules(chosen.characterRules),
+                questions: chosen.creationQuestions,
               }
             : null
         }
@@ -314,6 +319,8 @@ function Wizard({
   const [campaignId, setCampaignId] = useState(defaultCampaignId);
   const campaign = campaigns.find((entry) => entry.id === campaignId);
   const context = useMemo(() => contextFor(campaign), [campaign]);
+  const questions = campaign?.questions ?? [];
+  const [answerValues, setAnswerValues] = useState<Record<number, string>>({});
   const [draft, setDraft] = useState<Dnd5eDraft>(() =>
     createDnd5eDraft({
       level: campaign?.rules.startingLevel ?? 1,
@@ -432,6 +439,7 @@ function Wizard({
         resources: built.resources,
         items: built.items,
         abilities: built.abilities,
+        ...(campaign ? { answers: answersFor(questions, answerValues) } : {}),
       });
       router.replace({ pathname: '/personagem/[id]', params: { id } });
     } catch (error) {
@@ -826,6 +834,9 @@ function Wizard({
         </View>
       ) : null}
 
+      {step === 'review' ? (
+        <CreationAnswersCard questions={questions} values={answerValues} onChange={setAnswerValues} />
+      ) : null}
       {step === 'review' ? <Review draft={draft} issues={issues} onGo={goTo} /> : null}
 
       {showErrors && step !== 'review' && stepIssues(step).length > 0 ? (
@@ -848,7 +859,7 @@ function Wizard({
             label="Criar personagem"
             onPress={() => void submit()}
             loading={busy}
-            disabled={issues.length > 0}
+            disabled={issues.length > 0 || !answersComplete(questions, answerValues)}
             style={{ flex: 2 }}
           />
         ) : (

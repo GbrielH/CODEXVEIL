@@ -58,6 +58,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { OptionCard } from '@/components/creation/choice-fields';
 import { Button } from '@/components/ui/button';
 import { CheckRow, Chip, ChipRow } from '@/components/ui/controls';
+import { CreationAnswersCard, answersComplete, answersFor } from '@/components/characters/creation-answers';
 import { Field } from '@/components/ui/field';
 import { PickerField } from '@/components/ui/picker';
 import { AppText, Badge, Card } from '@/components/ui/primitives';
@@ -72,6 +73,8 @@ export interface T20MobileCampaign {
   id: string;
   name: string;
   rules: T20CampaignRules;
+  /** Perguntas do mestre (todas obrigatórias). */
+  questions: string[];
 }
 
 const clip = (text: string, max = 200) =>
@@ -87,6 +90,8 @@ export function T20MobileWizard({
 }) {
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
+  const questions = campaign?.questions ?? [];
+  const [answerValues, setAnswerValues] = useState<Record<number, string>>({});
   const methods = useMemo(
     () => campaign?.rules.attributeMethods ?? (['pontos', 'rolagem'] as const),
     [campaign],
@@ -174,6 +179,7 @@ export function T20MobileWizard({
         resources: built.resources,
         items: built.items,
         abilities: built.abilities,
+        ...(campaign ? { answers: answersFor(questions, answerValues) } : {}),
       });
       // A rolagem foi usada: a próxima criação sorteia de novo.
       if (draft.attributeMethod === 'rolagem') await getSupabase().rpc('consume_t20_attribute_dice');
@@ -932,6 +938,9 @@ export function T20MobileWizard({
         </Card>
       ) : null}
       {step === 'revisao' ? (
+        <CreationAnswersCard questions={questions} values={answerValues} onChange={setAnswerValues} />
+      ) : null}
+      {step === 'revisao' ? (
         <ImagePromptCard
           prompt={characterImagePrompt({
             system: 'Tormenta20',
@@ -965,7 +974,12 @@ export function T20MobileWizard({
         />
         <View style={{ flex: 1 }} />
         {step === 'revisao' ? (
-          <Button label="Criar personagem" loading={busy} onPress={() => void submit()} />
+          <Button
+            label="Criar personagem"
+            loading={busy}
+            disabled={!answersComplete(questions, answerValues)}
+            onPress={() => void submit()}
+          />
         ) : (
           <Button label="Próximo" onPress={next} />
         )}

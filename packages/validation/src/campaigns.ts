@@ -17,11 +17,23 @@ export const systemIdSchema = z.enum(SYSTEM_IDS, { error: 'Escolha um sistema de
  */
 export const characterRulesSchema = z.record(z.string(), z.unknown());
 
+/** Perguntas do mestre para a criação de personagem (todas obrigatórias para os jogadores). */
+export const creationQuestionsSchema = z
+  .array(z.string().trim().min(1, 'Escreva a pergunta ou remova a linha.').max(300, 'Cada pergunta pode ter até 300 caracteres.'))
+  .max(20, 'No máximo 20 perguntas.');
+
+/** Respostas do jogador: a pergunta vai junto (continua legível se o mestre mudar a lista). */
+export const creationAnswersSchema = z
+  .array(z.object({ question: z.string().max(300), answer: z.string().trim().min(1, 'Responda a todas as perguntas.').max(2000) }))
+  .max(20);
+export type CreationAnswers = z.output<typeof creationAnswersSchema>;
+
 export const campaignCreateSchema = z.object({
   name: requiredText('o nome da campanha', 2, 80),
   description: optionalText(2000),
   systemId: systemIdSchema,
   characterRules: characterRulesSchema.default({}),
+  creationQuestions: creationQuestionsSchema.default([]),
 });
 export type CampaignCreateInput = z.input<typeof campaignCreateSchema>;
 export type CampaignCreate = z.output<typeof campaignCreateSchema>;
@@ -33,6 +45,8 @@ export const campaignUpdateSchema = z.object({
   playersCanEditSheets: z.boolean(),
   /** Ausente = mantém as regras atuais. */
   characterRules: characterRulesSchema.optional(),
+  /** Ausente = mantém as perguntas atuais. */
+  creationQuestions: creationQuestionsSchema.optional(),
 });
 export type CampaignUpdate = z.output<typeof campaignUpdateSchema>;
 

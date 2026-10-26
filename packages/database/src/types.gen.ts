@@ -446,6 +446,7 @@ export type Database = {
           character_rules: Json;
           cover_path: string | null;
           created_at: string;
+          creation_questions: string[];
           custom_actions: Json;
           default_turn_mode: string;
           default_turn_order: string;
@@ -466,6 +467,7 @@ export type Database = {
           character_rules?: Json;
           cover_path?: string | null;
           created_at?: string;
+          creation_questions?: string[];
           custom_actions?: Json;
           default_turn_mode?: string;
           default_turn_order?: string;
@@ -486,6 +488,7 @@ export type Database = {
           character_rules?: Json;
           cover_path?: string | null;
           created_at?: string;
+          creation_questions?: string[];
           custom_actions?: Json;
           default_turn_mode?: string;
           default_turn_order?: string;
@@ -572,6 +575,42 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'character_resources';
             referencedColumns: ['character_id', 'id'];
+          },
+        ];
+      };
+      character_answers: {
+        Row: {
+          answers: Json;
+          campaign_id: string;
+          character_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          answers?: Json;
+          campaign_id: string;
+          character_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          answers?: Json;
+          campaign_id?: string;
+          character_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'character_answers_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'character_answers_character_id_fkey';
+            columns: ['character_id'];
+            isOneToOne: true;
+            referencedRelation: 'characters';
+            referencedColumns: ['id'];
           },
         ];
       };
@@ -2073,6 +2112,7 @@ export type Database = {
           p_resources?: Json;
           p_items?: Json;
           p_abilities?: Json;
+          p_answers?: Json;
         };
         Returns: string;
       };
@@ -2220,6 +2260,14 @@ export type Database = {
         Args: {
           p_character_id: string;
           p_campaign_id: string;
+        };
+        Returns: undefined;
+      };
+      set_character_campaign_with_answers: {
+        Args: {
+          p_character_id: string;
+          p_campaign_id: string;
+          p_answers: Json;
         };
         Returns: undefined;
       };

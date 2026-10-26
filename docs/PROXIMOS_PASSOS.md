@@ -174,6 +174,20 @@ mapa e notas lado a lado).
 - [ ] Geração de imagem: os modelos de imagem do Gemini têm cota 0 no plano gratuito (testado).
       Opções levadas ao responsável: faturamento no Google, Pollinations.ai ou Cloudflare Workers AI.
 
+### B0c. Perguntas do mestre (2026-10-26)
+
+- [x] Campo "Perguntas para os jogadores" na criação e nas configurações da campanha.
+- [x] Respostas obrigatórias no passo de revisão dos assistentes (D&D e T20, site e app) e ao
+      vincular uma ficha existente (site). O banco recusa sem todas as respostas.
+- [x] Respostas na ficha (site), visíveis só para o jogador e o mestre.
+- [ ] Ver e corrigir as respostas na ficha do app; editar as respostas depois de criado.
+
+### B0d. Pedidos novos (2026-10-26, a planejar)
+
+- [ ] Tomo com ações (só para o mestre): criar NPC/monstro, escrever anotação, sugerir melhorias na
+      sessão, sempre com confirmação antes de gravar.
+- [ ] Quadro livre da sessão (estilo Miro): blocos de texto/imagem arrastáveis num canvas.
+
 ### B1. Behind the Magic — iniciado em 2026-10-26
 
 Regras do manual em código (`packages/rpg-systems/src/btm/`, 5 testes) e resumo em

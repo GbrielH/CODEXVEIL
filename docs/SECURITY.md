@@ -224,3 +224,9 @@ mesmo com a edição de fichas bloqueada pela campanha.
   a campanha ativa e os limites da grade.
 - **Névoa e linha de visão são recursos visuais:** a imagem inteira do mapa ativo chega ao
   jogador; o que é realmente secreto deve ficar em tokens ocultos.
+
+## Perguntas do mestre (2026-10-26)
+
+As respostas às perguntas de criação (`character_answers`) só são lidas pelo dono do personagem e
+pelos mestres da campanha (RLS). Só o dono grava, e só para a campanha em que o personagem está. A
+obrigatoriedade fica no banco (verificação adiada no fim da transação), valendo para o site e o app.

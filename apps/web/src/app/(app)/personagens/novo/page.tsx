@@ -98,6 +98,7 @@ export default async function NewCharacterPage({ searchParams }: PageProps<'/per
                     id: campaign.id,
                     name: campaign.name,
                     rules: parseT20CampaignRules(campaign.characterRules),
+                    questions: campaign.creationQuestions,
                   }
                 : null
             }
@@ -136,6 +137,7 @@ export default async function NewCharacterPage({ searchParams }: PageProps<'/per
             name: chosen.name,
             rules: parseDnd5eCampaignRules(chosen.characterRules),
             packIds: chosenPacks.map((pack) => pack.id),
+            questions: chosen.creationQuestions,
           },
         ]
       : [];

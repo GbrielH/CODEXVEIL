@@ -1,10 +1,12 @@
 'use client';
 
+import { CreationAnswersFields, answersComplete, answersFor } from '@/components/characters/creation-answers';
 import {
   CAMPAIGN_MEDIA_BUCKET,
   characterPortraitPath,
   deleteCharacter,
   setCharacterCampaign,
+  setCharacterCampaignWithAnswers,
   setCharacterPortrait,
 } from '@codexveil/database';
 import { dnd5eCampaignIssues, parseDnd5eCampaignRules } from '@codexveil/rpg-systems/dnd5e';
@@ -158,7 +160,7 @@ function PortraitCard() {
 function CampaignCard({
   campaigns,
 }: {
-  campaigns: { id: string; name: string; characterRules?: unknown }[];
+  campaigns: { id: string; name: string; characterRules?: unknown; creationQuestions?: string[] }[];
 }) {
   const { character, name, sheet } = useSheet();
   const router = useRouter();
@@ -166,6 +168,9 @@ function CampaignCard({
   const id = useId();
   const [selected, setSelected] = useState('');
   const chosen = campaigns.find((campaign) => campaign.id === selected);
+  const questions = chosen?.creationQuestions ?? [];
+  const [answerValues, setAnswerValues] = useState<Record<number, string>>({});
+  const answersOk = answersComplete(questions, answerValues);
   // O que impede a entrada na campanha escolhida, com o que mudar na ficha.
   const issues = chosen
     ? dnd5eCampaignIssues({ name, sheet }, parseDnd5eCampaignRules(chosen.characterRules))
@@ -173,7 +178,11 @@ function CampaignCard({
 
   const link = async (campaignId: string | null) => {
     try {
-      await setCharacterCampaign(getSupabaseBrowserClient(), character.id, campaignId);
+      if (campaignId && questions.length > 0) {
+        await setCharacterCampaignWithAnswers(getSupabaseBrowserClient(), character.id, campaignId, answersFor(questions, answerValues));
+      } else {
+        await setCharacterCampaign(getSupabaseBrowserClient(), character.id, campaignId);
+      }
     } catch (cause) {
       throw new Error(failureMessage(cause, 'Não foi possível alterar a campanha.'));
     }
@@ -218,7 +227,7 @@ function CampaignCard({
               trigger={(open) => (
                 <Button
                   variant="secondary"
-                  disabled={!selected || issues.length > 0}
+                  disabled={!selected || issues.length > 0 || !answersOk}
                   onClick={open}
                   icon={<Link2 className="h-4 w-4" aria-hidden="true" />}
                 >
@@ -235,6 +244,7 @@ function CampaignCard({
         ) : (
           <p className="text-sm text-fg-muted">Nenhuma outra campanha ativa com o mesmo sistema.</p>
         )}
+        {chosen ? <CreationAnswersFields questions={questions} values={answerValues} onChange={setAnswerValues} /> : null}
         {issues.length > 0 ? (
           <Alert tone="warning" title={`Antes de entrar em “${chosen?.name ?? ''}”, ajuste:`}>
             <ul className="list-disc pl-5">

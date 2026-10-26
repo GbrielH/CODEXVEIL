@@ -306,6 +306,11 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-26 (noite):** perguntas do mestre na criação de personagem (migração `20261026140000`).
+  `pnpm check` passando: banco 206 (11 ao vivo pulados), regras 223, domínio 87, ui 34,
+  validação 15, web 12. Não testado no navegador nem no aparelho. Próximo: Tomo com ações do
+  mestre e quadro livre da sessão (B0d em PROXIMOS_PASSOS).
+
 - **Retratos de perfil (manutenção):** o desenho fica em `apps/web/src/components/ui/avatar-icons.tsx`.
   Ao mudar, gere de novo `apps/mobile/src/components/ui/avatar-svgs.gen.ts` com um teste temporário
   no `apps/web` que renderiza cada `AvatarIconArt` com `renderToStaticMarkup` (sem `class` e

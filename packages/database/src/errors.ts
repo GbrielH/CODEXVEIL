@@ -74,8 +74,12 @@ export function toAppError(error: unknown): AppError {
           return new AppError('conflict', 'Você já tem uma anotação fixada nesta campanha.', { cause: error });
         }
         return new AppError('conflict', 'Já existe um registro com esses dados.', { cause: error });
-      case '23502':
       case '23514':
+        if (hint === 'CVQUE') {
+          return new AppError('validation', 'Responda a todas as perguntas do mestre para entrar na campanha.', { cause: error });
+        }
+        return new AppError('validation', undefined, { cause: error });
+      case '23502':
       case '22023':
       case '22P02':
       case '23503':

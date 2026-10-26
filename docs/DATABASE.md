@@ -187,6 +187,13 @@ Migração `20261018120000_gameplay_turns.sql`:
 Migração `20261023100000_session_attendance.sql`: tabela `session_attendance` (presença: `yes`/`no`
 por pessoa e sessão; membros leem; cada um responde só por si, em sessão agendada não iniciada).
 
+Migração `20261026140000_creation_questions.sql`: `campaigns.creation_questions` (até 20
+perguntas do mestre, cada uma com até 300 caracteres) e a tabela `character_answers` (respostas do
+jogador, com a pergunta junto; leem só o dono do personagem e o mestre). Uma verificação adiada em
+`characters` (`characters_require_creation_answers`, código 23514, dica `CVQUE`) recusa o personagem
+que entra numa campanha com perguntas sem responder todas. `create_character` ganhou `p_answers`, e
+`set_character_campaign_with_answers` vincula um personagem existente gravando as respostas.
+
 Migração `20261026130000_creature_revealed_stats.sql`: `creatures.revealed_stats` (chaves do bloco
 de estatísticas liberadas aos jogadores; só o mestre altera) e `creature_revealed_stats(id)`
 (SECURITY DEFINER: devolve aos membros só essas chaves, de registros revelados ao grupo).

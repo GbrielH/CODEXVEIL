@@ -2,7 +2,7 @@
 
 import { createCharacter, getCampaign } from '@codexveil/database';
 import { buildT20Character, buildT20Content, parseT20CampaignRules, parseT20Draft, t20DraftIssues, t20RollTotal } from '@codexveil/rpg-systems/tormenta20';
-import { characterCreateSchema, uuidSchema } from '@codexveil/validation';
+import { characterCreateSchema, creationAnswersSchema, uuidSchema } from '@codexveil/validation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { failureMessage } from '@/lib/actions';
@@ -13,7 +13,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export type CreateT20CharacterResult = { ok: true; characterId: string } | { ok: false; message: string };
 
-const inputSchema = z.object({ campaignId: uuidSchema.nullable(), draft: z.unknown() });
+const inputSchema = z.object({ campaignId: uuidSchema.nullable(), draft: z.unknown(), answers: creationAnswersSchema.default([]) });
 
 /**
  * Cria um personagem de Tormenta20. O servidor recarrega os livros (da campanha ou do próprio
@@ -41,6 +41,7 @@ export async function createT20CharacterAction(input: unknown): Promise<CreateT2
   if (!parsed.success) return { ok: false, message: 'Requisição inválida.' };
   const draft = parseT20Draft(parsed.data.draft);
   const campaignId = parsed.data.campaignId;
+  const answers = parsed.data.answers;
 
   let supabase;
   let content;
@@ -53,6 +54,10 @@ export async function createT20CharacterAction(input: unknown): Promise<CreateT2
       if (!campaign || campaign.status !== 'active') return { ok: false, message: 'Escolha uma campanha ativa da qual você participa.' };
       if (campaign.role !== 'player') return { ok: false, message: 'Mestres não criam personagens na própria campanha: use os NPCs e ameaças da biblioteca.' };
       if (campaign.systemId !== 'tormenta20') return { ok: false, message: 'Esta campanha usa outro sistema de RPG.' };
+      const missing = campaign.creationQuestions.some(
+        (question) => !answers.find((entry) => entry.question === question && entry.answer.trim()),
+      );
+      if (missing) return { ok: false, message: 'Responda a todas as perguntas do mestre.' };
       const rules = parseT20CampaignRules(campaign.characterRules);
       if (draft.level !== rules.startingLevel) return { ok: false, message: `O mestre definiu que os personagens começam no ${rules.startingLevel}º nível.` };
       allowedMethods = rules.attributeMethods;
@@ -96,6 +101,7 @@ export async function createT20CharacterAction(input: unknown): Promise<CreateT2
       resources: built.resources,
       items: built.items,
       abilities: built.abilities,
+      ...(campaignId ? { answers } : {}),
     });
   } catch (error) {
     return { ok: false, message: failureMessage(error) };

@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import { CampaignRulesFields, type CampaignBookOption } from '@/components/campaigns/campaign-rules-fields';
+import { QuestionsEditor } from '@/components/campaigns/questions-editor';
 import { CoverPicker } from '@/components/campaigns/cover-picker';
 import { Alert } from '@/components/ui/alert';
 import { ButtonLink } from '@/components/ui/button';
@@ -70,6 +71,7 @@ export function CreateCampaignForm({ systems, books }: { systems: SystemOption[]
         </div>
       </Card>
       <CampaignRulesFields systemId={systemId} errors={state.fieldErrors} books={books} />
+      <QuestionsEditor error={state.fieldErrors?.creationQuestions} />
       <div className="flex flex-col-reverse gap-2 border-t border-line pt-5 sm:flex-row sm:justify-end">
         <ButtonLink href={routes.campaigns} variant="ghost">
           Cancelar

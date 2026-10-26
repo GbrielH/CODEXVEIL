@@ -57,6 +57,7 @@ describe('campanhas e convites', () => {
       description: '',
       systemId: 'dnd5e',
       characterRules: {},
+      creationQuestions: [],
     });
     expect(campaignCreateSchema.safeParse({ name: 'X', systemId: 'dnd5e' }).success).toBe(false);
     expect(campaignCreateSchema.safeParse({ name: 'Mina', systemId: 'gurps' }).success).toBe(

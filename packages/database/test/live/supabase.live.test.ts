@@ -161,6 +161,7 @@ describe.skipIf(!live)('Supabase real (integração)', () => {
     campaignId = await createCampaign(gm.client, {
       name: `[TESTE] Campanha ${runId}`,
       description: '',
+      creationQuestions: [],
       systemId: 'dnd5e',
       characterRules: {
         startingLevel: 3,
