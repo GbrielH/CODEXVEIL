@@ -50,3 +50,18 @@ export function characterImagePrompt(input: CharacterImageInput): string {
   ];
   return parts.filter(Boolean).join('\n');
 }
+
+/**
+ * Prompt para gerar o token do grid numa IA de imagens. O jogador anexa a imagem do personagem
+ * (o retrato) junto com este texto; a IA usa a imagem como referência e devolve o token.
+ */
+export function characterTokenPrompt(input: CharacterImageInput): string {
+  const who = [input.species, input.className].filter(Boolean).join(' ');
+  return [
+    `Use a imagem anexada como referência fiel do personagem${input.name ? ` ${clip(input.name, 80)}` : ''}${who ? ` (${who}, ${input.system})` : ` (${input.system})`}: mesmo rosto, cabelo, roupas, cores e equipamento.`,
+    'Crie um token redondo para mapa de RPG de mesa virtual (VTT): o personagem centralizado, do peito para cima ou de corpo inteiro visto levemente de cima, olhando para a frente.',
+    'Moldura circular com borda metálica fina e discreta; fundo fora do círculo totalmente transparente (PNG) ou liso de uma cor só.',
+    'Imagem quadrada 512 × 512, contornos nítidos e alto contraste para ler bem em tamanho pequeno, sem texto, sem marca d’água, sem outros personagens.',
+    'Estilo: pintura digital de fantasia, a mesma paleta da imagem de referência.',
+  ].join('\n');
+}

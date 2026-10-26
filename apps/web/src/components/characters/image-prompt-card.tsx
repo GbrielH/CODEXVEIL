@@ -4,8 +4,8 @@ import { Check, Copy, ImageIcon, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
-/** Prompt opcional para gerar a imagem do personagem numa IA: copiar ou ignorar. */
-export function ImagePromptCard({ prompt }: { prompt: string }) {
+/** Prompt opcional para uma IA de imagens: copiar ou ignorar. `variant="token"` é o do token do grid. */
+export function ImagePromptCard({ prompt, variant = 'portrait' }: { prompt: string; variant?: 'portrait' | 'token' }) {
   const [hidden, setHidden] = useState(false);
   const [copied, setCopied] = useState(false);
   if (hidden) return null;
@@ -28,7 +28,7 @@ export function ImagePromptCard({ prompt }: { prompt: string }) {
       <div className="flex flex-wrap items-center gap-2">
         <ImageIcon className="h-4 w-4 text-fg-accent" aria-hidden="true" />
         <h3 id="prompt-imagem" className="eyebrow min-w-0 flex-1">
-          Prompt para a imagem do personagem (opcional)
+          {variant === 'token' ? 'Prompt para criar o token (opcional)' : 'Prompt para a imagem do personagem (opcional)'}
         </h3>
         <Button
           size="sm"
@@ -54,8 +54,9 @@ export function ImagePromptCard({ prompt }: { prompt: string }) {
         </Button>
       </div>
       <p className="text-xs text-fg-muted">
-        Cole numa IA de imagens (ChatGPT, Gemini, Midjourney…) e depois envie a imagem como retrato
-        na ficha.
+        {variant === 'token'
+          ? 'Numa IA de imagens (ChatGPT, Gemini…), anexe a imagem do personagem (o retrato) e cole este prompt. Depois envie o resultado como imagem do grid.'
+          : 'Cole numa IA de imagens (ChatGPT, Gemini, Midjourney…) e depois envie a imagem como retrato na ficha.'}
       </p>
       <textarea
         readOnly

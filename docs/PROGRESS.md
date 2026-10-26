@@ -306,6 +306,9 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27:** o prompt ao lado da imagem do grid (D&D e T20) passou a ser o **prompt do token**:
+  o jogador anexa o retrato do personagem na IA e cola o texto (`characterTokenPrompt`, com teste).
+
 - **2026-10-27:** Painel mostra os **pedidos de amizade recebidos** (aceitar/recusar ali mesmo), acima
   dos convites pendentes. Não verificado no navegador.
 

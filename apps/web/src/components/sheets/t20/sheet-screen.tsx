@@ -14,7 +14,7 @@ import {
   type CharacterItem,
   type CharacterResource,
 } from '@codexveil/database';
-import { characterImagePrompt, rollDiceLocally, type DiceRollMode, type TrackOperation } from '@codexveil/domain';
+import { characterTokenPrompt, rollDiceLocally, type DiceRollMode, type TrackOperation } from '@codexveil/domain';
 import {
   T20_ATTRIBUTES,
   T20_RESOURCE_KEYS,
@@ -683,7 +683,8 @@ function T20SheetBody(props: T20SheetScreenProps) {
           />
           <TokenImageCard characterId={character.id} portraitUrl={character.portraitUrl} />
           <ImagePromptCard
-            prompt={characterImagePrompt({
+            variant="token"
+            prompt={characterTokenPrompt({
               system: 'Tormenta20',
               name: character.name,
               species: [sheet.identity.race, sheet.identity.raceVariant].filter(Boolean).join(' '),

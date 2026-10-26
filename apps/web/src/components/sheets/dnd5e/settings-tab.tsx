@@ -7,7 +7,7 @@ import {
   setCharacterCampaign,
   setCharacterCampaignWithAnswers,
 } from '@codexveil/database';
-import { characterImagePrompt } from '@codexveil/domain';
+import { characterTokenPrompt } from '@codexveil/domain';
 import { dnd5eCampaignIssues, parseDnd5eCampaignRules } from '@codexveil/rpg-systems/dnd5e';
 import { Link2, Trash2, Unlink } from 'lucide-react';
 import type { Route } from 'next';
@@ -57,13 +57,14 @@ function DndPortraitCard() {
   );
 }
 
-/** Prompt para gerar o retrato numa IA de imagens, com o que está na ficha. */
+/** Prompt para gerar o token do grid numa IA, usando o retrato anexado como referência. */
 function DndImagePrompt() {
   const { name, sheet } = useSheet();
   const main = sheet.identity.classes[0];
   return (
     <ImagePromptCard
-      prompt={characterImagePrompt({
+      variant="token"
+      prompt={characterTokenPrompt({
         system: 'D&D 5e',
         name,
         species: sheet.identity.species,
