@@ -38,6 +38,53 @@ de combate, paredes e quadrados ocupados bloqueando o movimento, áreas de magia
 anotações arrastáveis, bônus temporários e botão "Usar" nas magias, características por tipo,
 livros só os importados, paginação, exclusão de conta e limpeza de arquivos órfãos.
 
+### 0. Aguardando o criador do Behind the Magic (Will Nascimento)
+
+Enviadas pelo responsável em 2026-10-26. Com as respostas, criar a ficha, a criação de personagem e
+registrar o BTM em "Sistemas da comunidade" (regras já em `packages/rpg-systems/src/btm/`; detalhes
+e páginas do manual em [`BTM.md`](BTM.md)).
+
+**Personagem e evolução**
+
+1. PV de cada classe no 1º nível e por nível; soma Constituição?
+2. Pontos de mana: quantos e como aumentam; um tipo de mana por personagem; quem escolhe o tipo.
+3. O que é o "mox" da mana Mágica; ossos, sacrifícios e pactos são gastos por runa? Quantos?
+4. Nível máximo, como se sobe de nível e o que se ganha a cada nível.
+5. Habilidades concretas de cada classe e subclasse (nome, nível, custo, efeito, dados); nível da
+   subclasse.
+6. Armas e armaduras que cada classe sabe usar.
+7. Atributo do teste de invocação de magia de cada classe.
+8. Pontos de sanidade: quantos, como recupera, quanto cada situação tira.
+9. NCM inicial, como aumenta e quanto os utensílios somam.
+10. Defesa Corporal sem armadura.
+11. Como passar de Treinado para Veterano e Expert.
+12. Raças: tamanho e velocidade de cada uma; quanto o "Ligeiro" aumenta; área e dano do Sopro;
+    sub-raças de Githyanki, Meio-orc e Humano.
+13. Magias de fogo, gelo, escuridão, destruição e marca dos níveis 3 e 5 das sub-raças; lista dos
+    "truques à escolha".
+
+**Equipamento**
+
+14. Tabela de armas (dano, tipo, crítico, alcance, peso, preço) e de armaduras.
+15. Moeda do mundo e dinheiro inicial.
+16. Carga por ponto de Força.
+17. Itens amaldiçoados na regra e lista.
+
+**Runas e combate**
+
+18. Lista completa de runas por mandamento (custo, duração, alcance, teste); quantas no início.
+19. "Mandamento" é o nível da runa? Quem usa cada mandamento?
+20. Resistir a magia: comparado com qual número?
+21. Dano do contra-ataque; a esquiva substitui a Defesa Corporal?
+22. Fraquezas e resistências entre elementos; "raio" e "ácido" dos Draconatos.
+23. Recuperação de PV, mana e sanidade no descanso curto e no longo.
+
+**Outros**
+
+24. Santuário (p. 76, em binário): segredo de propósito? Qual a regra?
+25. Benefícios de Infantaria, Marinha, Alquimia Real e Aeronáutica.
+26. Modelo oficial de ficha.
+
 ### A. Publicação no Supabase — concluída em 2026-10-26
 
 Migração `20261026110000_orphan_media.sql` aplicada, Edge Functions `delete-account` e
@@ -83,8 +130,8 @@ conversa, retomar por esta lista:
    `Downloads/LIVROS/LIVROS` eram de 19/10): Domínio da Ordem com as magias dos níveis 7 e 9;
    Círculo da Terra com os 8 terrenos (magias que não casaram com o compêndio saem com inicial
    maiúscula); Livro do Jogador 2014 com 1.317 seções de texto (eram 7); Golpe Pessoal (T20)
-   completo com a continuação da página seguinte e os 17 efeitos. **Falta o responsável
-   reimportar** `phb-2014`, `xgte`, `tcoe` e `t20-jda` em Meus livros.
+   completo com a continuação da página seguinte e os 17 efeitos. Reimportados na conta do
+   responsável em 2026-10-26 (`scripts/books/import_books.mjs`).
 2. **[Feito em 2026-10-26] Ficha D&D:** Robusto escolhido antes soma +2 PV a cada nível novo
    (a subida recebe os nomes das características da ficha; site e app).
 3. **[Feito em 2026-10-26] Tormenta20:** rolagem de atributos sorteada no banco e guardada por
