@@ -187,6 +187,10 @@ Migração `20261018120000_gameplay_turns.sql`:
 Migração `20261023100000_session_attendance.sql`: tabela `session_attendance` (presença: `yes`/`no`
 por pessoa e sessão; membros leem; cada um responde só por si, em sessão agendada não iniciada).
 
+Migração `20261027100000_campaign_boards.sql`: tabela `campaign_boards` (quadros livres do
+mestre; `items` é a lista JSON de blocos, até 500 e 512 KB; `visible` mostra ao grupo, só leitura;
+`version` impede que duas abas sobrescrevam uma à outra). Só o mestre cria, altera e apaga.
+
 Migração `20261026140000_creation_questions.sql`: `campaigns.creation_questions` (até 20
 perguntas do mestre, cada uma com até 300 caracteres) e a tabela `character_answers` (respostas do
 jogador, com a pergunta junto; leem só o dono do personagem e o mestre). Uma verificação adiada em

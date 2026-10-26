@@ -158,6 +158,47 @@ export type Database = {
           },
         ];
       };
+      campaign_boards: {
+        Row: {
+          campaign_id: string;
+          created_at: string;
+          id: string;
+          items: Json;
+          title: string;
+          updated_at: string;
+          version: number;
+          visible: boolean;
+        };
+        Insert: {
+          campaign_id: string;
+          created_at?: string;
+          id?: string;
+          items?: Json;
+          title: string;
+          updated_at?: string;
+          version?: number;
+          visible?: boolean;
+        };
+        Update: {
+          campaign_id?: string;
+          created_at?: string;
+          id?: string;
+          items?: Json;
+          title?: string;
+          updated_at?: string;
+          version?: number;
+          visible?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'campaign_boards_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       campaign_invites: {
         Row: {
           campaign_id: string;

@@ -230,3 +230,9 @@ mesmo com a edição de fichas bloqueada pela campanha.
 As respostas às perguntas de criação (`character_answers`) só são lidas pelo dono do personagem e
 pelos mestres da campanha (RLS). Só o dono grava, e só para a campanha em que o personagem está. A
 obrigatoriedade fica no banco (verificação adiada no fim da transação), valendo para o site e o app.
+
+## Quadros livres (2026-10-27)
+
+`campaign_boards`: só quem gerencia a campanha cria, altera e apaga; os membros leem apenas os
+quadros marcados como visíveis, e quem é de fora não lê nada (RLS, com teste). As colunas que o
+cliente pode gravar são limitadas por `grant` (título, blocos, visibilidade e versão).

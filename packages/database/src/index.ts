@@ -28,6 +28,7 @@ export * from './queries/characters';
 export * from './queries/sessions';
 export * from './queries/library';
 export * from './queries/scene';
+export * from './queries/boards';
 export * from './queries/notes';
 export * from './queries/items';
 export * from './queries/books';

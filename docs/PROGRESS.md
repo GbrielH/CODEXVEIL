@@ -306,6 +306,10 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27:** quadros livres (aba Quadros; migração `20261027100000`). Teste de RLS novo e
+  testes do formato dos blocos (web 14). Não testado no navegador (exige login). Próximo: Tomo
+  com ações do mestre.
+
 - **2026-10-26 (noite):** perguntas do mestre na criação de personagem (migração `20261026140000`).
   `pnpm check` passando: banco 206 (11 ao vivo pulados), regras 223, domínio 87, ui 34,
   validação 15, web 12. Não testado no navegador nem no aparelho. Próximo: Tomo com ações do
