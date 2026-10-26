@@ -1,8 +1,9 @@
-import { listMyCharacterDrafts, listMyCharacters, signedMediaUrls } from '@codexveil/database';
+import { listCharactersSharedWithMe, listMyCharacterDrafts, listMyCharacters, signedMediaUrls } from '@codexveil/database';
 import { findSystem, summarizeSheet } from '@codexveil/rpg-systems';
 import { findClassByName, parseDnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
-import { Plus, Swords } from 'lucide-react';
+import { Plus, Swords, Users } from 'lucide-react';
 import type { Metadata, Route } from 'next';
+import Link from 'next/link';
 import { CharacterCoverCard } from '@/components/characters/character-cover-card';
 import { DraftList } from '@/components/characters/draft-list';
 import { ButtonLink } from '@/components/ui/button';
@@ -28,10 +29,11 @@ function mainClassId(systemId: string, sheet: unknown): string | null {
 export default async function CharactersPage({ searchParams }: PageProps<'/personagens'>) {
   const user = await requireSessionUser(routes.characters);
   const supabase = await createSupabaseServerClient();
-  const [characters, drafts, params] = await Promise.all([
+  const [characters, drafts, params, shared] = await Promise.all([
     listMyCharacters(supabase, user.id),
     listMyCharacterDrafts(supabase, user.id),
     searchParams,
+    listCharactersSharedWithMe(supabase, user.id),
   ]);
   const portraits = await signedMediaUrls(
     supabase,
@@ -89,6 +91,28 @@ export default async function CharactersPage({ searchParams }: PageProps<'/perso
           })}
         </ul>
       )}
+      {shared.length ? (
+        <section className="flex flex-col gap-3" aria-labelledby="compartilhados">
+          <h2 id="compartilhados" className="flex items-center gap-2 font-display text-xl text-fg">
+            <Users className="h-5 w-5 text-fg-brand" aria-hidden="true" /> Compartilhados comigo
+          </h2>
+          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {shared.map((character) => (
+              <li key={character.id}>
+                <Link
+                  href={characterPath(character.id) as Route}
+                  className="flex flex-col rounded-lg border border-line bg-card p-4 hover:border-fg-brand"
+                >
+                  <span className="font-display text-lg text-fg">{character.name}</span>
+                  <span className="text-xs text-fg-muted">
+                    De {character.ownerName} · {findSystem(character.systemId)?.shortName ?? character.systemId} · só leitura
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </div>
   );
 }

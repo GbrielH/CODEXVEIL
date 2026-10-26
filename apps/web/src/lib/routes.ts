@@ -18,6 +18,7 @@ export const routes = {
   campaigns: '/campanhas',
   newCampaign: '/campanhas/nova',
   characters: '/personagens',
+  friends: '/amigos',
   newCharacter: '/personagens/novo',
   books: '/livros',
   licenses: '/licencas',

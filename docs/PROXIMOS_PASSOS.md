@@ -183,6 +183,16 @@ mapa e notas lado a lado).
 - [x] Respostas na ficha (site), visíveis só para o jogador e o mestre.
 - [ ] Ver e corrigir as respostas na ficha do app; editar as respostas depois de criado.
 
+### B0e. Amigos e fichas compartilhadas (2026-10-27)
+
+- [x] Página **Amigos** (site): código de amigo, adicionar por código ou com um clique a partir de
+      quem já joga com você, pedidos recebidos/enviados, desfazer amizade.
+- [x] Convite direto: em Convites da campanha, o mestre convida amigos; o convite aparece nos
+      convites pendentes do amigo (sem código e sem expor e-mail).
+- [x] Compartilhar personagem: na ficha, o dono marca amigos que podem ver (só leitura). Em
+      Personagens aparece "Compartilhados comigo".
+- [ ] App: lista de amigos e fichas compartilhadas no aplicativo.
+
 ### B0d. Pedidos novos (2026-10-26, a planejar)
 
 - [x] Tomo com ações (2026-10-27, só para o mestre da campanha aberta): o Tomo propõe e um cartão

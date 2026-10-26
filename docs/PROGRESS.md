@@ -306,6 +306,9 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27 (noite):** amigos, convite direto e fichas compartilhadas (migração `20261027120000`,
+  3 testes novos de RLS). Não testado no navegador. Próximo: o mesmo no app.
+
 - **2026-10-27:** criação T20 (site): botão "?" ao lado dos pontos gastos abre a tabela de custo da
   compra por pontos (subir para +3 custa 2, para +4 custa 3). Não verificado no navegador.
 

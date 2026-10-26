@@ -206,6 +206,7 @@ export type Database = {
           expires_at: string;
           id: string;
           invited_email: string | null;
+          invited_user_id: string | null;
           max_uses: number | null;
           revoked_at: string | null;
           role: Database['public']['Enums']['campaign_role'];
@@ -220,6 +221,7 @@ export type Database = {
           expires_at: string;
           id?: string;
           invited_email?: string | null;
+          invited_user_id?: string | null;
           max_uses?: number | null;
           revoked_at?: string | null;
           role?: Database['public']['Enums']['campaign_role'];
@@ -234,6 +236,7 @@ export type Database = {
           expires_at?: string;
           id?: string;
           invited_email?: string | null;
+          invited_user_id?: string | null;
           max_uses?: number | null;
           revoked_at?: string | null;
           role?: Database['public']['Enums']['campaign_role'];
@@ -250,6 +253,13 @@ export type Database = {
           {
             foreignKeyName: 'campaign_invites_created_by_fkey';
             columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'campaign_invites_invited_user_id_fkey';
+            columns: ['invited_user_id'];
             isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
@@ -899,6 +909,39 @@ export type Database = {
           },
         ];
       };
+      character_shares: {
+        Row: {
+          character_id: string;
+          created_at: string;
+          user_id: string;
+        };
+        Insert: {
+          character_id: string;
+          created_at?: string;
+          user_id: string;
+        };
+        Update: {
+          character_id?: string;
+          created_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'character_shares_character_id_fkey';
+            columns: ['character_id'];
+            isOneToOne: false;
+            referencedRelation: 'characters';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'character_shares_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       character_snapshots: {
         Row: {
           character_id: string;
@@ -1309,6 +1352,48 @@ export type Database = {
           },
         ];
       };
+      friendships: {
+        Row: {
+          accepted_at: string | null;
+          addressee_id: string;
+          created_at: string;
+          id: string;
+          requester_id: string;
+          status: Database['public']['Enums']['friendship_status'];
+        };
+        Insert: {
+          accepted_at?: string | null;
+          addressee_id: string;
+          created_at?: string;
+          id?: string;
+          requester_id: string;
+          status?: Database['public']['Enums']['friendship_status'];
+        };
+        Update: {
+          accepted_at?: string | null;
+          addressee_id?: string;
+          created_at?: string;
+          id?: string;
+          requester_id?: string;
+          status?: Database['public']['Enums']['friendship_status'];
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'friendships_addressee_id_fkey';
+            columns: ['addressee_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'friendships_requester_id_fkey';
+            columns: ['requester_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       map_tokens: {
         Row: {
           campaign_id: string;
@@ -1421,6 +1506,7 @@ export type Database = {
           bio: string;
           created_at: string;
           display_name: string;
+          friend_code: string;
           id: string;
           preferences: Json;
           updated_at: string;
@@ -1430,6 +1516,7 @@ export type Database = {
           bio?: string;
           created_at?: string;
           display_name: string;
+          friend_code?: string;
           id: string;
           preferences?: Json;
           updated_at?: string;
@@ -1439,6 +1526,7 @@ export type Database = {
           bio?: string;
           created_at?: string;
           display_name?: string;
+          friend_code?: string;
           id?: string;
           preferences?: Json;
           updated_at?: string;
@@ -2061,6 +2149,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      accept_friend: {
+        Args: {
+          p_friendship_id: string;
+        };
+        Returns: undefined;
+      };
       add_my_map_area: {
         Args: {
           p_map_id: string;
@@ -2202,6 +2296,13 @@ export type Database = {
         };
         Returns: number;
       };
+      invite_friend_to_campaign: {
+        Args: {
+          p_campaign_id: string;
+          p_friend_id: string;
+        };
+        Returns: undefined;
+      };
       leave_campaign: {
         Args: {
           p_campaign_id: string;
@@ -2262,6 +2363,13 @@ export type Database = {
           p_block_ids: string[];
         };
         Returns: undefined;
+      };
+      request_friend: {
+        Args: {
+          p_code?: string;
+          p_user_id?: string;
+        };
+        Returns: Json;
       };
       revoke_campaign_invite: {
         Args: {
@@ -2369,6 +2477,7 @@ export type Database = {
       content_visibility: 'members' | 'gm' | 'author';
       creature_kind: 'npc' | 'monster';
       encounter_status: 'preparing' | 'active' | 'ended';
+      friendship_status: 'pending' | 'accepted';
       item_category: 'weapon' | 'armor' | 'gear' | 'consumable' | 'tool' | 'treasure' | 'other';
       resource_recovery: 'manual' | 'short_rest' | 'long_rest';
       session_block_type: 'paragraph' | 'heading' | 'subheading' | 'callout' | 'gm_note' | 'image' | 'divider' | 'list' | 'checklist' | 'npc_ref' | 'monster_ref' | 'character_ref' | 'content_ref';
@@ -2398,6 +2507,7 @@ export const Constants = {
       content_visibility: ['members', 'gm', 'author'],
       creature_kind: ['npc', 'monster'],
       encounter_status: ['preparing', 'active', 'ended'],
+      friendship_status: ['pending', 'accepted'],
       item_category: ['weapon', 'armor', 'gear', 'consumable', 'tool', 'treasure', 'other'],
       resource_recovery: ['manual', 'short_rest', 'long_rest'],
       session_block_type: ['paragraph', 'heading', 'subheading', 'callout', 'gm_note', 'image', 'divider', 'list', 'checklist', 'npc_ref', 'monster_ref', 'character_ref', 'content_ref'],

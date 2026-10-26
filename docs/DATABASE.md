@@ -187,6 +187,15 @@ Migração `20261018120000_gameplay_turns.sql`:
 Migração `20261023100000_session_attendance.sql`: tabela `session_attendance` (presença: `yes`/`no`
 por pessoa e sessão; membros leem; cada um responde só por si, em sessão agendada não iniciada).
 
+Migração `20261027120000_friends_and_shares.sql`: `profiles.friend_code` (8 caracteres, único);
+tabela `friendships` (pedido `pending` ou `accepted`, um registro por par; as duas pessoas leem e
+qualquer uma desfaz) e as funções `request_friend(código | id de quem já joga junto)` e
+`accept_friend`. Amigos e pedidos veem o perfil público um do outro. `campaign_invites.invited_user_id`
+e `invite_friend_to_campaign` criam convite pessoal para um amigo sem expor o e-mail; os convites
+pendentes passam a incluir esses. Tabela `character_shares`: o dono deixa amigos verem a ficha
+(somente leitura; deixa de valer se a amizade for desfeita); `can_view_character` e a leitura de
+`characters` passam a considerar o compartilhamento.
+
 Migração `20261027110000_boards_gm_only_images.sql`: quadros passam a ser só do mestre (sai
 `visible`; jogadores não leem); imagens dos quadros em `campaigns/<id>/boards/<arquivo>` (envio por
 quem gerencia a campanha); `list_orphan_media` considera as imagens dos quadros.

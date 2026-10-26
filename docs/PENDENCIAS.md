@@ -195,6 +195,8 @@ Esta seção lista só o que falta ou está parcial. O que já foi atendido est�
 
 - **Pendente: "referências a sessões".** A página de um NPC ou monstro não lista as sessões
   em que ele aparece, seja em blocos `npc_ref`/`monster_ref` ou na cena.
+- **Feito (2026-10-27): amigos, convite direto e ficha compartilhada** (site). Migração
+  `20261027120000`.
 - **Feito (2026-10-27): Tomo com ações para o mestre** (criar NPC/monstro, anotação, nota na
   sessão), sempre com prévia e confirmação antes de gravar.
 - **Feito (2026-10-27): quadros livres da campanha** (estilo Miro), só do mestre, para planejar

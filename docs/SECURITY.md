@@ -244,3 +244,12 @@ O modelo só **propõe** ações (texto); quem grava é a Server Action `runTomo
 mestre confirma no cartão. Ela valida o conteúdo com zod, exige papel de mestre numa campanha ativa e
 grava com o cliente da própria pessoa (RLS). As instruções das ações só entram no contexto do mestre.
 Jogadores não recebem cartões e, mesmo forjando a chamada, o servidor recusa.
+
+## Amigos e fichas compartilhadas (2026-10-27)
+
+- O código de amigo só revela que a conta existe para quem o tem; pedir pelo id só funciona para
+  quem já divide uma campanha. Perfis ficam visíveis só entre quem tem pedido ou amizade.
+- Convite direto para amigo usa `invited_user_id`: o mestre não vê o e-mail do amigo, e só o amigo
+  convidado consegue aceitar (os outros recebem a mesma recusa de convite pessoal).
+- Ficha compartilhada é só leitura: as regras de edição não mudaram. O compartilhamento só pode ser
+  criado pelo dono, só para amigos, e para de valer quando a amizade é desfeita.

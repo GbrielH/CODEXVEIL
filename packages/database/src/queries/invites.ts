@@ -14,6 +14,8 @@ export interface CampaignInvite {
   id: string;
   code: string;
   invitedEmail: string | null;
+  /** Convite direto para um amigo (o e-mail dele não aparece). */
+  invitedFriendName: string | null;
   maxUses: number | null;
   usesCount: number;
   expiresAt: string;
@@ -22,7 +24,7 @@ export interface CampaignInvite {
 }
 
 const INVITE_COLUMNS =
-  'id, code, invited_email, max_uses, uses_count, expires_at, revoked_at, declined_at, created_at' as const;
+  'id, code, invited_email, invited:profiles!campaign_invites_invited_user_id_fkey(display_name), invited_user_id, max_uses, uses_count, expires_at, revoked_at, declined_at, created_at' as const;
 
 export async function listCampaignInvites(
   client: CodexveilClient,
@@ -42,6 +44,7 @@ export async function listCampaignInvites(
     id: row.id,
     code: row.code,
     invitedEmail: row.invited_email,
+    invitedFriendName: row.invited_user_id ? (row.invited?.display_name ?? 'Amigo') : null,
     maxUses: row.max_uses,
     usesCount: row.uses_count,
     expiresAt: row.expires_at,

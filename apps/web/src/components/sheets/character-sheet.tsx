@@ -18,6 +18,7 @@ import { T20SheetScreen } from '@/components/sheets/t20/sheet-screen';
 import { ErrorState } from '@/components/ui/states';
 import { Card } from '@/components/ui/card';
 import { CreationAnswersView } from '@/components/characters/creation-answers';
+import { ShareCharacterCard } from '@/components/friends/share-character-card';
 import { ItemCatalogProvider } from '@/components/sheets/item-catalog';
 import { campaignBookPacks, loadBookSources, loadT20Sources, ownReadyBookPacks, packsOfSystem } from '@/lib/books';
 import { loadCharacterOrNotFound } from '@/lib/characters';
@@ -203,6 +204,11 @@ export async function CharacterSheet({
         <Card className="mt-6">
           <CreationAnswersView answers={answers} />
         </Card>
+      ) : null}
+      {character.viewer.isOwner ? (
+        <div className="mt-6">
+          <ShareCharacterCard characterId={character.id} ownerId={character.ownerId} />
+        </div>
       ) : null}
     </ItemCatalogProvider>
   );

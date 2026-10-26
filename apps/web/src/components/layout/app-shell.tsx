@@ -1,5 +1,5 @@
 import type { AvatarIcon } from '@codexveil/validation';
-import { BookOpen, LayoutDashboard, LogOut, Puzzle, ScrollText, Swords } from 'lucide-react';
+import { BookOpen, LayoutDashboard, LogOut, Puzzle, ScrollText, Swords, Users } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
@@ -33,6 +33,11 @@ const navItems: NavItem[] = [
     href: routes.characters,
     label: 'Personagens',
     icon: <Swords className="h-5 w-5" aria-hidden="true" />,
+  },
+  {
+    href: routes.friends,
+    label: 'Amigos',
+    icon: <Users className="h-5 w-5" aria-hidden="true" />,
   },
   {
     href: routes.books,

@@ -48,6 +48,7 @@ export function InviteList({ campaignId, invites, siteUrl, canManage }: InviteLi
               </div>
               <p className="mt-1 text-xs text-fg-muted">
                 {invite.invitedEmail ? `Pessoal: ${invite.invitedEmail} · ` : ''}
+                {invite.invitedFriendName ? `Para o amigo ${invite.invitedFriendName} · ` : ''}
                 Usos: {invite.usesCount}
                 {invite.maxUses === null ? ' (ilimitado)' : ` de ${invite.maxUses}`} · Expira em{' '}
                 {formatDateTime(invite.expiresAt)}
