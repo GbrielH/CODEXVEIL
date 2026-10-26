@@ -100,6 +100,13 @@ conversa, retomar por esta lista:
    (T20). Cada atualização futura que mexer em dados de personagem entra em
    `listDnd5ePendingUpdates`/`listT20PendingUpdates`.
 
+### B1. Behind the Magic — iniciado em 2026-10-26
+
+Regras do manual em código (`packages/rpg-systems/src/btm/`, 5 testes) e resumo em
+[`BTM.md`](BTM.md). **Próximo:** o responsável envia ao criador as 26 perguntas de `BTM.md`;
+com as respostas, criar a ficha, a criação de personagem e registrar o sistema em "Sistemas da
+comunidade" (banco: linha em `rpg_systems`).
+
 ### B2. Revisão completa dos livros — 1ª rodada feita em 2026-10-25 (resultado abaixo)
 
 **Método:** cobertura página a página (`scratchpad/tools/coverage.py`, fora do repositório): para

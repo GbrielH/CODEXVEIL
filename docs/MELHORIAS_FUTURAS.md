@@ -59,7 +59,10 @@ de cada um na cor do dono). Precisa funcionar também no app.
   todos reinstalam uma vez).
 - O resultado continua vindo do servidor (`roll_dice`); a animação só precisa parar na face certa.
 
-## Sistema da comunidade "Behind the Magic" (Manual de Runas) — adiado em 2026-10-20
+## Sistema da comunidade "Behind the Magic" (Manual de Runas) — em implantação desde 2026-10-26
+
+**Andamento e perguntas para o criador:** [`BTM.md`](BTM.md). As regras do manual já estão em
+`packages/rpg-systems/src/btm/`; a ficha e a criação esperam as respostas do autor.
 
 - RPG original de um amigo do responsável, com uso autorizado de todo o conteúdo (regras e
   imagens). Vai direto no Codexveil, na aba **Sistemas da comunidade**, e só aparece depois que o
