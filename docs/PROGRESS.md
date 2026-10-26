@@ -306,6 +306,9 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27:** ficha (D&D e T20): prompt do retrato abaixo do retrato e prompt do token abaixo da
+  imagem do grid.
+
 - **2026-10-27:** o prompt ao lado da imagem do grid (D&D e T20) passou a ser o **prompt do token**:
   o jogador anexa o retrato do personagem na IA e cola o texto (`characterTokenPrompt`, com teste).
 

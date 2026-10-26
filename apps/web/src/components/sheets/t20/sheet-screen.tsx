@@ -14,7 +14,7 @@ import {
   type CharacterItem,
   type CharacterResource,
 } from '@codexveil/database';
-import { characterTokenPrompt, rollDiceLocally, type DiceRollMode, type TrackOperation } from '@codexveil/domain';
+import { characterImagePrompt, characterTokenPrompt, rollDiceLocally, type DiceRollMode, type TrackOperation } from '@codexveil/domain';
 import {
   T20_ATTRIBUTES,
   T20_RESOURCE_KEYS,
@@ -254,6 +254,19 @@ function T20SheetBody(props: T20SheetScreenProps) {
   const pm = resource(T20_RESOURCE_KEYS.manaPoints);
   const money = resource(T20_RESOURCE_KEYS.money);
   const klass = sheet.identity.classes.map((entry) => `${entry.name} ${entry.level}`).join(' / ');
+
+  // Dados da ficha para os prompts de imagem (retrato e token).
+  const imageInput = {
+    system: 'Tormenta20',
+    name: character.name,
+    species: [sheet.identity.race, sheet.identity.raceVariant].filter(Boolean).join(' '),
+    className: sheet.identity.classes.map((entry) => entry.name).join(' / '),
+    level: sheet.identity.classes.reduce((total, entry) => total + entry.level, 0),
+    background: [sheet.identity.origin, sheet.identity.deity ? `devoto de ${sheet.identity.deity}` : ''].filter(Boolean).join(', '),
+    appearance: sheet.identity.appearance,
+    personality: sheet.identity.personality,
+    backstory: sheet.identity.history,
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -673,29 +686,21 @@ function T20SheetBody(props: T20SheetScreenProps) {
       ) : null}
 
       {tab === 'personagem' && permissions.canEditSheet ? (
-        <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
-          <PortraitCard
-            characterId={character.id}
-            name={character.name}
-            portraitPath={character.portraitPath}
-            portraitUrl={character.portraitUrl}
-            onVersion={setVersion}
-          />
-          <TokenImageCard characterId={character.id} portraitUrl={character.portraitUrl} />
-          <ImagePromptCard
-            variant="token"
-            prompt={characterTokenPrompt({
-              system: 'Tormenta20',
-              name: character.name,
-              species: [sheet.identity.race, sheet.identity.raceVariant].filter(Boolean).join(' '),
-              className: sheet.identity.classes.map((entry) => entry.name).join(' / '),
-              level: sheet.identity.classes.reduce((total, entry) => total + entry.level, 0),
-              background: [sheet.identity.origin, sheet.identity.deity ? `devoto de ${sheet.identity.deity}` : ''].filter(Boolean).join(', '),
-              appearance: sheet.identity.appearance,
-              personality: sheet.identity.personality,
-              backstory: sheet.identity.history,
-            })}
-          />
+        <div className="grid gap-5 lg:grid-cols-2">
+          <div className="flex flex-col gap-3">
+            <PortraitCard
+              characterId={character.id}
+              name={character.name}
+              portraitPath={character.portraitPath}
+              portraitUrl={character.portraitUrl}
+              onVersion={setVersion}
+            />
+            <ImagePromptCard prompt={characterImagePrompt(imageInput)} />
+          </div>
+          <div className="flex flex-col gap-3">
+            <TokenImageCard characterId={character.id} portraitUrl={character.portraitUrl} />
+            <ImagePromptCard variant="token" prompt={characterTokenPrompt(imageInput)} />
+          </div>
         </div>
       ) : null}
 

@@ -1,11 +1,12 @@
 'use client';
 
 import { Check, Copy, ImageIcon, X } from 'lucide-react';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
 
 /** Prompt opcional para uma IA de imagens: copiar ou ignorar. `variant="token"` é o do token do grid. */
 export function ImagePromptCard({ prompt, variant = 'portrait' }: { prompt: string; variant?: 'portrait' | 'token' }) {
+  const headingId = useId();
   const [hidden, setHidden] = useState(false);
   const [copied, setCopied] = useState(false);
   if (hidden) return null;
@@ -23,11 +24,11 @@ export function ImagePromptCard({ prompt, variant = 'portrait' }: { prompt: stri
   return (
     <section
       className="flex flex-col gap-2 rounded-md border border-dashed border-line-strong p-4"
-      aria-labelledby="prompt-imagem"
+      aria-labelledby={headingId}
     >
       <div className="flex flex-wrap items-center gap-2">
         <ImageIcon className="h-4 w-4 text-fg-accent" aria-hidden="true" />
-        <h3 id="prompt-imagem" className="eyebrow min-w-0 flex-1">
+        <h3 id={headingId} className="eyebrow min-w-0 flex-1">
           {variant === 'token' ? 'Prompt para criar o token (opcional)' : 'Prompt para a imagem do personagem (opcional)'}
         </h3>
         <Button

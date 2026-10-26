@@ -7,7 +7,7 @@ import {
   setCharacterCampaign,
   setCharacterCampaignWithAnswers,
 } from '@codexveil/database';
-import { characterTokenPrompt } from '@codexveil/domain';
+import { characterImagePrompt, characterTokenPrompt } from '@codexveil/domain';
 import { dnd5eCampaignIssues, parseDnd5eCampaignRules } from '@codexveil/rpg-systems/dnd5e';
 import { Link2, Trash2, Unlink } from 'lucide-react';
 import type { Route } from 'next';
@@ -35,9 +35,18 @@ export function SettingsTab({
   const { permissions, character } = useSheet();
   return (
     <div className="grid gap-5 lg:grid-cols-2">
-      {permissions.canEditSheet ? <DndPortraitCard /> : null}
-      {permissions.canEditSheet ? <TokenImageCard characterId={character.id} portraitUrl={character.portraitUrl} /> : null}
-      {permissions.canEditSheet ? <DndImagePrompt /> : null}
+      {permissions.canEditSheet ? (
+        <div className="flex flex-col gap-3">
+          <DndPortraitCard />
+          <DndImagePrompt variant="portrait" />
+        </div>
+      ) : null}
+      {permissions.canEditSheet ? (
+        <div className="flex flex-col gap-3">
+          <TokenImageCard characterId={character.id} portraitUrl={character.portraitUrl} />
+          <DndImagePrompt variant="token" />
+        </div>
+      ) : null}
       {permissions.isOwner ? <CampaignCard campaigns={campaigns} /> : null}
       {permissions.isOwner ? <DangerCard /> : null}
     </div>
@@ -57,22 +66,23 @@ function DndPortraitCard() {
   );
 }
 
-/** Prompt para gerar o token do grid numa IA, usando o retrato anexado como referência. */
-function DndImagePrompt() {
+/** Prompts para IA de imagens: o do retrato (abaixo do retrato) e o do token (abaixo do grid). */
+function DndImagePrompt({ variant }: { variant: 'portrait' | 'token' }) {
   const { name, sheet } = useSheet();
   const main = sheet.identity.classes[0];
+  const input = {
+    system: 'D&D 5e',
+    name,
+    species: sheet.identity.species,
+    className: main?.name ? `${main.name}${main.subclass ? ` (${main.subclass})` : ''}` : '',
+    level: sheet.identity.classes.reduce((total, entry) => total + entry.level, 0),
+    background: sheet.identity.background,
+    alignment: sheet.identity.alignment,
+  };
   return (
     <ImagePromptCard
-      variant="token"
-      prompt={characterTokenPrompt({
-        system: 'D&D 5e',
-        name,
-        species: sheet.identity.species,
-        className: main?.name ? `${main.name}${main.subclass ? ` (${main.subclass})` : ''}` : '',
-        level: sheet.identity.classes.reduce((total, entry) => total + entry.level, 0),
-        background: sheet.identity.background,
-        alignment: sheet.identity.alignment,
-      })}
+      variant={variant}
+      prompt={variant === 'token' ? characterTokenPrompt(input) : characterImagePrompt(input)}
     />
   );
 }
