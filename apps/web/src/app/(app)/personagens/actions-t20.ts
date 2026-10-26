@@ -1,7 +1,7 @@
 'use server';
 
 import { createCharacter, getCampaign } from '@codexveil/database';
-import { buildT20Character, buildT20Content, parseT20CampaignRules, parseT20Draft, t20DraftIssues } from '@codexveil/rpg-systems/tormenta20';
+import { buildT20Character, buildT20Content, parseT20CampaignRules, parseT20Draft, t20DraftIssues, t20RollTotal } from '@codexveil/rpg-systems/tormenta20';
 import { characterCreateSchema, uuidSchema } from '@codexveil/validation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -19,6 +19,22 @@ const inputSchema = z.object({ campaignId: uuidSchema.nullable(), draft: z.unkno
  * Cria um personagem de Tormenta20. O servidor recarrega os livros (da campanha ou do próprio
  * usuário), repete toda a validação das regras e só então monta e grava a ficha.
  */
+/**
+ * Rolagem de atributos sorteada no servidor (uma vez só): devolve os 6 × 4d6 pendentes da pessoa,
+ * sorteando no banco se ainda não houver. Recarregar a página traz o mesmo resultado.
+ */
+export async function rollT20AttributesAction(): Promise<{ ok: true; dice: number[][] } | { ok: false; message: string }> {
+  await requireSessionUser(routes.newCharacter);
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.rpc('t20_attribute_dice');
+    if (error) throw error;
+    return { ok: true, dice: data as unknown as number[][] };
+  } catch (error) {
+    return { ok: false, message: failureMessage(error) };
+  }
+}
+
 export async function createT20CharacterAction(input: unknown): Promise<CreateT20CharacterResult> {
   const user = await requireSessionUser(routes.newCharacter);
   const parsed = inputSchema.safeParse(input);
@@ -54,6 +70,16 @@ export async function createT20CharacterAction(input: unknown): Promise<CreateT2
     return { ok: false, message: failureMessage(error) };
   }
 
+  // Rolagem: os valores da ficha precisam ser os sorteados pelo servidor para esta pessoa.
+  if (draft.attributeMethod === 'rolagem') {
+    const { data: rolled, error } = await supabase.rpc('t20_attribute_dice');
+    const serverTotals = error ? [] : (rolled as unknown as number[][]).map(t20RollTotal).sort((a, b) => a - b);
+    const draftTotals = [...draft.rolls].sort((a, b) => a - b);
+    if (error || serverTotals.join(',') !== draftTotals.join(',')) {
+      return { ok: false, message: 'A rolagem de atributos não confere com a sorteada pelo servidor. Volte ao passo de atributos e role de novo.' };
+    }
+  }
+
   const issues = t20DraftIssues(content, draft, allowedMethods ? { allowedMethods } : {});
   if (issues.length > 0) return { ok: false, message: `Ainda há pendências: ${issues[0]!.message}` };
   const base = characterCreateSchema.safeParse({ name: draft.name, systemId: 'tormenta20', campaignId });
@@ -74,6 +100,8 @@ export async function createT20CharacterAction(input: unknown): Promise<CreateT2
   } catch (error) {
     return { ok: false, message: failureMessage(error) };
   }
+  // A rolagem foi usada: a próxima criação sorteia de novo.
+  if (draft.attributeMethod === 'rolagem') await supabase.rpc('consume_t20_attribute_dice');
   revalidatePath(routes.characters);
   if (campaignId) revalidatePath(`/campanhas/${campaignId}`, 'layout');
   return { ok: true, characterId };

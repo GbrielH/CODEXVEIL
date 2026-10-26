@@ -1805,6 +1805,32 @@ export type Database = {
           },
         ];
       };
+      t20_attribute_rolls: {
+        Row: {
+          created_at: string;
+          dice: Json;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          dice: Json;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          dice?: Json;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 't20_attribute_rolls_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       turn_actions: {
         Row: {
           actor_name: string;
@@ -2031,6 +2057,10 @@ export type Database = {
         Args: never;
         Returns: number;
       };
+      consume_t20_attribute_dice: {
+        Args: never;
+        Returns: undefined;
+      };
       create_character: {
         Args: {
           p_name: string;
@@ -2197,6 +2227,10 @@ export type Database = {
           p_color: string;
         };
         Returns: undefined;
+      };
+      t20_attribute_dice: {
+        Args: never;
+        Returns: Json;
       };
       take_character_rest: {
         Args: {

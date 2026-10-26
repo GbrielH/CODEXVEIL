@@ -17,7 +17,7 @@ import {
   findT20Race,
   formatT20Bonus,
   plainT20,
-  rollT20Attributes,
+  t20RollTotal,
   t20AttributeFromRoll,
   t20AttributeLabels,
   t20AvailableSpells,
@@ -175,6 +175,8 @@ export function T20MobileWizard({
         items: built.items,
         abilities: built.abilities,
       });
+      // A rolagem foi usada: a próxima criação sorteia de novo.
+      if (draft.attributeMethod === 'rolagem') await getSupabase().rpc('consume_t20_attribute_dice');
       router.replace({ pathname: '/personagem/[id]', params: { id } });
     } catch (error) {
       setMessage(failureMessage(error));
@@ -390,18 +392,26 @@ export function T20MobileWizard({
             </>
           ) : (
             <>
-              <Button
-                label={draft.rolls.length ? 'Rolar de novo' : 'Rolar 4d6 seis vezes'}
-                variant="secondary"
-                onPress={() =>
-                  update({
-                    rolls: rollT20Attributes(),
-                    rollAssignment: Object.fromEntries(
-                      T20_ATTRIBUTES.map((key) => [key, null]),
-                    ) as T20Draft['rollAssignment'],
-                  })
-                }
-              />
+              {/* Sorteio no servidor, uma vez só (o mesmo resultado volta até o personagem ser criado). */}
+              {draft.rolls.length === 0 ? (
+                <Button
+                  label="Rolar 4d6 seis vezes (uma vez só)"
+                  variant="secondary"
+                  onPress={() => {
+                    void getSupabase()
+                      .rpc('t20_attribute_dice')
+                      .then(({ data, error }) => {
+                        if (error || !data) return;
+                        update({
+                          rolls: (data as unknown as number[][]).map(t20RollTotal),
+                          rollAssignment: Object.fromEntries(
+                            T20_ATTRIBUTES.map((key) => [key, null]),
+                          ) as T20Draft['rollAssignment'],
+                        });
+                      });
+                  }}
+                />
+              ) : null}
               {draft.rolls.length
                 ? T20_ATTRIBUTES.map((key) => (
                     <PickerField

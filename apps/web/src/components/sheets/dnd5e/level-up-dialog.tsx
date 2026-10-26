@@ -203,7 +203,7 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
     ...(landId ? { landId } : {}),
     optionalFeatures: optionalIds,
   };
-  const result = applyDnd5eLevelUp(sheet, plan, choices);
+  const result = applyDnd5eLevelUp(sheet, plan, choices, knownNames);
   const blockedOptions = multiclassOptions.filter((option) => option.blocked.length > 0);
   const chosenSubclass = plan.subclassOptions.find((option) => option.id === subclassId);
 

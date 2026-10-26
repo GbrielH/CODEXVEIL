@@ -615,6 +615,8 @@ export function applyDnd5eLevelUp(
   sheet: Dnd5eSheet,
   plan: Dnd5eLevelUpPlan,
   choices: Dnd5eLevelUpChoices,
+  /** Nomes das características e talentos que a ficha já tem (para o Robusto escolhido antes). */
+  knownFeatures: readonly string[] = [],
 ): Dnd5eLevelUpResult {
   const issues: string[] = [];
   const pick = (count: number, chosen: readonly string[], singular: string, plural: string) => {
@@ -722,6 +724,8 @@ export function applyDnd5eLevelUp(
   const toughNow = /\b(tough|robusto)\b/i.test(
     `${chosenFeatId} ${findFeat(chosenFeatId)?.name ?? ''}`,
   );
+  // Robusto escolhido num nível anterior: +2 PV neste nível novo também.
+  const toughBefore = !toughNow && knownFeatures.some((name) => /\b(tough|robusto)\b/i.test(name));
   const extraHp =
     (/an[aã]o|dwarf/i.test(sheet.identity.species) ? 1 : 0) +
     (sorcererDraconic
@@ -731,7 +735,8 @@ export function applyDnd5eLevelUp(
           ? 1
           : 0
       : 0) +
-    (toughNow ? 2 * plan.newTotalLevel : 0);
+    (toughNow ? 2 * plan.newTotalLevel : 0) +
+    (toughBefore ? 2 : 0);
   const hpGain = Math.max(
     1,
     hitPointsGained(die, abilityModifier(abilities.con)) +

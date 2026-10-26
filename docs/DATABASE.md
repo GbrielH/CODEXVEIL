@@ -187,6 +187,12 @@ Migração `20261018120000_gameplay_turns.sql`:
 Migração `20261023100000_session_attendance.sql`: tabela `session_attendance` (presença: `yes`/`no`
 por pessoa e sessão; membros leem; cada um responde só por si, em sessão agendada não iniciada).
 
+Migração `20261026120000_t20_attribute_rolls.sql`: tabela `t20_attribute_rolls` (rolagem de
+atributos do Tormenta20 pendente por pessoa; só leitura da própria) e as funções
+`t20_attribute_dice()` (sorteia no banco pela regra do livro, guarda e devolve sempre o mesmo
+resultado) e `consume_t20_attribute_dice()` (chamada ao criar o personagem). A criação no site
+confere se os valores da ficha batem com a rolagem do servidor.
+
 Migração `20261023120000_assistant_usage.sql`: tabela `assistant_usage` (perguntas por pessoa e
 dia, UTC; a pessoa só lê a própria linha) e a função `consume_assistant_question()` (SECURITY
 DEFINER, limite fixo de 30 por dia; devolve quantas restam ou -1). As conversas não são gravadas. **Sem uso desde 2026-10-23** (o responsável tirou o limite; a rota

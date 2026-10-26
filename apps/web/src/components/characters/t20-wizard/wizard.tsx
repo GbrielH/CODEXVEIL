@@ -22,7 +22,6 @@ import {
   findT20Race,
   formatT20Bonus,
   plainT20,
-  rollT20AttributeDice,
   t20PointBuyCost,
   t20RollTotal,
   t20AttributeFromRoll,
@@ -77,7 +76,7 @@ import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 import { Dice3DOverlay } from '@/components/dice/dice-3d-overlay';
 import { useMemo, useRef, useState, useTransition, type ReactNode } from 'react';
-import { createT20CharacterAction } from '@/app/(app)/personagens/actions-t20';
+import { createT20CharacterAction, rollT20AttributesAction } from '@/app/(app)/personagens/actions-t20';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -1146,6 +1145,7 @@ function AttributesStep({
 }) {
   const spent = t20PointsSpent(draft.points);
   const [throwing, setThrowing] = useState<number[][] | null>(null);
+  const [rollError, setRollError] = useState<string | null>(null);
   return (
     <div className="flex flex-col gap-5">
       {methods.length > 1 ? (
@@ -1228,11 +1228,18 @@ function AttributesStep({
                 variant="secondary"
                 icon={<Dices className="h-4 w-4" aria-hidden="true" />}
                 disabled={throwing !== null}
-                onClick={() => setThrowing(rollT20AttributeDice())}
+                onClick={() => {
+                  // Sorteio no servidor, guardado por pessoa: recarregar a página não rola de novo.
+                  void rollT20AttributesAction().then((result) => {
+                    if (result.ok) setThrowing(result.dice);
+                    else setRollError(result.message);
+                  });
+                }}
               >
                 Rolar 4d6 seis vezes (uma vez só)
               </Button>
             ) : null}
+            {rollError ? <p className="text-sm text-danger">{rollError}</p> : null}
             {throwing ? (
               <Dice3DOverlay
                 notation={`${throwing.map(() => '4d6').join('+')}@${throwing.flat().join(',')}`}

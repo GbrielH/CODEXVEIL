@@ -129,7 +129,7 @@ function LevelUpPanel({ onClose }: { onClose: () => void }) {
     featSkills: featSkills.filter((skill): skill is Skill => Boolean(skill)),
     magicInitiate: initiate,
   };
-  const result = applyDnd5eLevelUp(sheet, plan, choices);
+  const result = applyDnd5eLevelUp(sheet, plan, choices, knownNames);
 
   const chooseTarget = (value: string) => {
     setTarget(value);
