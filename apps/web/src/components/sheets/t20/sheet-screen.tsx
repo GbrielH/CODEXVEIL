@@ -212,7 +212,8 @@ function T20SheetBody(props: T20SheetScreenProps) {
 
   const adjust = async (key: string, operation: TrackOperation, amount: number) => {
     const track = resource(key);
-    if (!track || !permissions.canEditPlay || amount <= 0) return;
+    // `set_temp` aceita 0 (tira os temporários); as demais operações precisam de valor positivo.
+    if (!track || !permissions.canEditPlay || amount < 0 || (amount === 0 && operation !== 'set_temp')) return;
     const saved = await run(
       () => adjustCharacterResource(getSupabaseBrowserClient(), track.id, operation, amount),
       'Não foi possível atualizar',
@@ -472,6 +473,9 @@ function T20SheetBody(props: T20SheetScreenProps) {
             plus="Cura"
             onMinus={(n) => adjust(T20_RESOURCE_KEYS.hitPoints, 'damage', n)}
             onPlus={(n) => adjust(T20_RESOURCE_KEYS.hitPoints, 'heal', n)}
+            onSetTemp={(n) => adjust(T20_RESOURCE_KEYS.hitPoints, 'set_temp', n)}
+            barClass="bg-emerald-500"
+            lowBarClass="bg-red-500"
           />
           <TrackCard
             title="Pontos de Mana"
@@ -482,6 +486,7 @@ function T20SheetBody(props: T20SheetScreenProps) {
             plus="Recuperar"
             onMinus={(n) => adjust(T20_RESOURCE_KEYS.manaPoints, 'spend', n)}
             onPlus={(n) => adjust(T20_RESOURCE_KEYS.manaPoints, 'heal', n)}
+            barClass="bg-sky-500"
           />
           <RestCard
             level={derived.level}
@@ -547,16 +552,21 @@ function T20SheetBody(props: T20SheetScreenProps) {
                 setConditions((current) => current.filter((entry) => entry.id !== condition.id));
             }}
           />
-          {money ? (
-            <Card>
-              <CardHeader title="Tibares" description="Dinheiro do personagem." />
-              <p className="font-display text-2xl text-fg">T$ {money.current}</p>
-            </Card>
-          ) : null}
+          <TrackCard
+            title="Tibares"
+            track={money}
+            prefix="T$ "
+            showBar={false}
+            canEdit={permissions.canEditPlay}
+            minus="Gastar"
+            plus="Receber"
+            onMinus={(n) => adjust(T20_RESOURCE_KEYS.money, 'spend', n)}
+            onPlus={(n) => adjust(T20_RESOURCE_KEYS.money, 'set_current', (money?.current ?? 0) + n)}
+          />
         </div>
       ) : null}
 
-      {tab === 'pericias' || tab === 'jogo' ? (
+      {tab === 'pericias' ? (
         <div
           className="flex flex-wrap items-center gap-2"
           role="radiogroup"
@@ -859,17 +869,31 @@ function TrackCard({
   plus,
   onMinus,
   onPlus,
+  onSetTemp,
+  barClass = 'bg-wine-500',
+  lowBarClass,
+  showBar = true,
+  prefix = '',
 }: {
   title: string;
-  icon: ReactNode;
+  icon?: ReactNode;
   track: CharacterResource | undefined;
   canEdit: boolean;
   minus: string;
   plus: string;
   onMinus: (amount: number) => Promise<void>;
   onPlus: (amount: number) => Promise<void>;
+  /** PV temporários: define o valor (0 tira). */
+  onSetTemp?: (amount: number) => Promise<void>;
+  barClass?: string;
+  /** Cor da barra com 25% ou menos. */
+  lowBarClass?: string;
+  showBar?: boolean;
+  /** Antes do valor (ex.: `T$ `). */
+  prefix?: string;
 }) {
   const [amount, setAmount] = useState('1');
+  const [temp, setTemp] = useState('');
   if (!track) return null;
   const value = Math.max(1, Math.min(9999, Number(amount) || 1));
   const percent = track.max
@@ -879,15 +903,21 @@ function TrackCard({
     <Card>
       <CardHeader icon={icon} title={title} />
       <p className="font-display text-3xl text-fg">
+        {prefix}
         {track.current}
-        <span className="text-lg text-fg-muted"> / {track.max ?? '—'}</span>
+        {track.max !== null ? <span className="text-lg text-fg-muted"> / {track.max}</span> : null}
         {track.temp ? (
           <span className="ml-2 text-sm text-fg-accent">+{track.temp} temp.</span>
         ) : null}
       </p>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-sunken">
-        <div className="h-full bg-wine-500 transition-[width]" style={{ width: `${percent}%` }} />
-      </div>
+      {showBar ? (
+        <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-sunken ring-1 ring-line">
+          <div
+            className={cx('h-full transition-[width]', lowBarClass && percent <= 25 ? lowBarClass : barClass)}
+            style={{ width: `${percent}%` }}
+          />
+        </div>
+      ) : null}
       {canEdit ? (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <input
@@ -914,6 +944,24 @@ function TrackCard({
             onClick={() => void onPlus(value)}
           >
             {plus}
+          </Button>
+        </div>
+      ) : null}
+      {canEdit && onSetTemp ? (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-fg-muted">Temporários</span>
+          <input
+            type="number"
+            min={0}
+            max={999}
+            value={temp}
+            placeholder={String(track.temp ?? 0)}
+            onChange={(event) => setTemp(event.target.value)}
+            aria-label={`${title} temporários`}
+            className="h-8 w-20 rounded-md border border-line bg-sunken px-2 text-sm text-fg"
+          />
+          <Button size="sm" variant="ghost" onClick={() => { void onSetTemp(Math.max(0, Math.min(999, Number(temp) || 0))); setTemp(''); }}>
+            Definir
           </Button>
         </div>
       ) : null}
