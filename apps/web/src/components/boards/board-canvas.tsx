@@ -2,11 +2,30 @@
 
 import { CAMPAIGN_MEDIA_BUCKET, saveBoardItems, signedMediaUrls } from '@codexveil/database';
 import { IMAGE_EXTENSIONS, validateImageFile } from '@codexveil/validation';
-import { ArrowUpRight, Frame, ImagePlus, Maximize, Minus, Plus, Redo2, StickyNote, Trash2, Type, Undo2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+  ArrowUpRight,
+  Frame,
+  ImagePlus,
+  Maximize,
+  Minus,
+  Plus,
+  Redo2,
+  StickyNote,
+  Trash2,
+  Type,
+  Undo2,
+} from 'lucide-react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import { failureMessage } from '@/lib/client-errors';
 import { prepareImageForUpload } from '@/lib/images';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { Select } from '@/components/ui/select';
 import {
   BOARD_COLORS,
   COLOR_STYLES,
@@ -160,12 +179,21 @@ export function BoardCanvas({
 
   const toWorld = (clientX: number, clientY: number) => {
     const rect = surface.current?.getBoundingClientRect();
-    return { x: (clientX - (rect?.left ?? 0) - view.x) / view.zoom, y: (clientY - (rect?.top ?? 0) - view.y) / view.zoom };
+    return {
+      x: (clientX - (rect?.left ?? 0) - view.x) / view.zoom,
+      y: (clientY - (rect?.top ?? 0) - view.y) / view.zoom,
+    };
   };
 
   const removeSelected = useCallback(() => {
     if (!selected) return;
-    change((current) => current.filter((item) => item.id !== selected && !(item.type === 'arrow' && (item.from === selected || item.to === selected))));
+    change((current) =>
+      current.filter(
+        (item) =>
+          item.id !== selected &&
+          !(item.type === 'arrow' && (item.from === selected || item.to === selected)),
+      ),
+    );
     setSelected(null);
   }, [selected, change]);
 
@@ -204,22 +232,32 @@ export function BoardCanvas({
     if (current.kind === 'pan') {
       setView({ ...current.origin, x: current.origin.x + dx, y: current.origin.y + dy });
     } else if (current.kind === 'move') {
-      change((list) =>
-        list.map((item) => {
-          const origin = current.origins.get(item.id);
-          return origin && item.type !== 'arrow'
-            ? { ...item, x: Math.round(origin.x + dx / view.zoom), y: Math.round(origin.y + dy / view.zoom) }
-            : item;
-        }),
+      change(
+        (list) =>
+          list.map((item) => {
+            const origin = current.origins.get(item.id);
+            return origin && item.type !== 'arrow'
+              ? {
+                  ...item,
+                  x: Math.round(origin.x + dx / view.zoom),
+                  y: Math.round(origin.y + dy / view.zoom),
+                }
+              : item;
+          }),
         false,
       );
     } else {
-      change((list) =>
-        list.map((item) =>
-          item.id === current.id && item.type !== 'arrow'
-            ? { ...item, w: Math.max(MIN_SIZE, Math.round(current.w + dx / view.zoom)), h: Math.max(MIN_SIZE, Math.round(current.h + dy / view.zoom)) }
-            : item,
-        ),
+      change(
+        (list) =>
+          list.map((item) =>
+            item.id === current.id && item.type !== 'arrow'
+              ? {
+                  ...item,
+                  w: Math.max(MIN_SIZE, Math.round(current.w + dx / view.zoom)),
+                  h: Math.max(MIN_SIZE, Math.round(current.h + dy / view.zoom)),
+                }
+              : item,
+          ),
         false,
       );
     }
@@ -251,12 +289,19 @@ export function BoardCanvas({
     }
     setSelected(item.id);
     if (editing === item.id) return;
-    const origins = new Map<string, { x: number; y: number }>([[item.id, { x: item.x, y: item.y }]]);
+    const origins = new Map<string, { x: number; y: number }>([
+      [item.id, { x: item.x, y: item.y }],
+    ]);
     // Moldura leva junto o que está dentro dela.
     if (item.type === 'frame') {
       for (const other of items) {
         if (other.type === 'arrow' || other.id === item.id) continue;
-        if (other.x >= item.x && other.y >= item.y && other.x + other.w <= item.x + item.w && other.y + other.h <= item.y + item.h) {
+        if (
+          other.x >= item.x &&
+          other.y >= item.y &&
+          other.x + other.w <= item.x + item.w &&
+          other.y + other.h <= item.y + item.h
+        ) {
           origins.set(other.id, { x: other.x, y: other.y });
         }
       }
@@ -269,7 +314,14 @@ export function BoardCanvas({
   const startResize = (event: ReactPointerEvent, item: BoxItem) => {
     event.stopPropagation();
     snapshot();
-    gesture.current = { kind: 'resize', id: item.id, startX: event.clientX, startY: event.clientY, w: item.w, h: item.h };
+    gesture.current = {
+      kind: 'resize',
+      id: item.id,
+      startX: event.clientX,
+      startY: event.clientY,
+      w: item.w,
+      h: item.h,
+    };
     surface.current?.setPointerCapture(event.pointerId);
   };
 
@@ -279,7 +331,11 @@ export function BoardCanvas({
     const zoom = clampZoom(view.zoom * (event.deltaY < 0 ? 1.1 : 1 / 1.1));
     const px = event.clientX - rect.left;
     const py = event.clientY - rect.top;
-    setView({ zoom, x: px - ((px - view.x) / view.zoom) * zoom, y: py - ((py - view.y) / view.zoom) * zoom });
+    setView({
+      zoom,
+      x: px - ((px - view.x) / view.zoom) * zoom,
+      y: py - ((py - view.y) / view.zoom) * zoom,
+    });
   };
 
   const zoomBy = (factor: number) => {
@@ -287,7 +343,11 @@ export function BoardCanvas({
     const px = (rect?.width ?? 800) / 2;
     const py = (rect?.height ?? 600) / 2;
     const zoom = clampZoom(view.zoom * factor);
-    setView({ zoom, x: px - ((px - view.x) / view.zoom) * zoom, y: py - ((py - view.y) / view.zoom) * zoom });
+    setView({
+      zoom,
+      x: px - ((px - view.x) / view.zoom) * zoom,
+      y: py - ((py - view.y) / view.zoom) * zoom,
+    });
   };
 
   const fit = () => {
@@ -298,29 +358,53 @@ export function BoardCanvas({
     const minY = Math.min(...boxes.map((b) => b.y));
     const maxX = Math.max(...boxes.map((b) => b.x + b.w));
     const maxY = Math.max(...boxes.map((b) => b.y + b.h));
-    const zoom = clampZoom(Math.min((rect.width - 80) / (maxX - minX), (rect.height - 80) / (maxY - minY)));
-    setView({ zoom, x: 40 - minX * zoom + (rect.width - 80 - (maxX - minX) * zoom) / 2, y: 40 - minY * zoom });
+    const zoom = clampZoom(
+      Math.min((rect.width - 80) / (maxX - minX), (rect.height - 80) / (maxY - minY)),
+    );
+    setView({
+      zoom,
+      x: 40 - minX * zoom + (rect.width - 80 - (maxX - minX) * zoom) / 2,
+      y: 40 - minY * zoom,
+    });
   };
 
   // ---- Criação ----
   const [paint, setPaint] = useState<BoardColor>('amber');
   const add = (type: 'note' | 'text' | 'frame') => {
     const rect = surface.current?.getBoundingClientRect();
-    const center = toWorld((rect?.left ?? 0) + (rect?.width ?? 800) / 2, (rect?.top ?? 0) + (rect?.height ?? 600) / 2);
+    const center = toWorld(
+      (rect?.left ?? 0) + (rect?.width ?? 800) / 2,
+      (rect?.top ?? 0) + (rect?.height ?? 600) / 2,
+    );
     const id = newId();
     const item: BoxItem =
       type === 'note'
         ? { id, type, x: center.x - 100, y: center.y - 70, w: 200, h: 140, color: paint, text: '' }
         : type === 'text'
           ? { id, type, x: center.x - 120, y: center.y - 30, w: 240, h: 60, text: '', size: 'md' }
-          : { id, type, x: center.x - 250, y: center.y - 175, w: 500, h: 350, color: paint, title: 'Moldura' };
+          : {
+              id,
+              type,
+              x: center.x - 250,
+              y: center.y - 175,
+              w: 500,
+              h: 350,
+              color: paint,
+              title: 'Moldura',
+            };
     change((list) => (type === 'frame' ? [item, ...list] : [...list, item]));
     setSelected(id);
     if (type !== 'frame') setEditing(id);
   };
 
   const patch = (id: string, values: Partial<BoxItem>, record = true) =>
-    change((list) => list.map((item) => (item.id === id && item.type !== 'arrow' ? ({ ...item, ...values } as BoxItem) : item)), record);
+    change(
+      (list) =>
+        list.map((item) =>
+          item.id === id && item.type !== 'arrow' ? ({ ...item, ...values } as BoxItem) : item,
+        ),
+      record,
+    );
 
   /** Abre a edição do texto (uma foto no histórico para a edição inteira). */
   const startEditing = (id: string) => {
@@ -337,7 +421,10 @@ export function BoardCanvas({
     try {
       const client = getSupabaseBrowserClient();
       const rect = surface.current?.getBoundingClientRect();
-      const center = toWorld((rect?.left ?? 0) + (rect?.width ?? 800) / 2, (rect?.top ?? 0) + (rect?.height ?? 600) / 2);
+      const center = toWorld(
+        (rect?.left ?? 0) + (rect?.width ?? 800) / 2,
+        (rect?.top ?? 0) + (rect?.height ?? 600) / 2,
+      );
       const added: BoxItem[] = [];
       const urls: Record<string, string> = {};
       for (const [index, original] of list.entries()) {
@@ -354,7 +441,15 @@ export function BoardCanvas({
         const scale = Math.min(1, 400 / Math.max(size.w, size.h));
         const w = Math.max(MIN_SIZE, Math.round(size.w * scale));
         const h = Math.max(MIN_SIZE, Math.round(size.h * scale));
-        added.push({ id: newId(), type: 'image', path, x: center.x - w / 2 + index * 24, y: center.y - h / 2 + index * 24, w, h });
+        added.push({
+          id: newId(),
+          type: 'image',
+          path,
+          x: center.x - w / 2 + index * 24,
+          y: center.y - h / 2 + index * 24,
+          w,
+          h,
+        });
       }
       setImageUrls((current) => ({ ...current, ...urls }));
       change((current) => [...current, ...added]);
@@ -371,7 +466,9 @@ export function BoardCanvas({
   useEffect(() => {
     pasteHandler.current = (event: ClipboardEvent) => {
       if (readOnly || (event.target as HTMLElement | null)?.closest('input, textarea')) return;
-      const files = [...(event.clipboardData?.files ?? [])].filter((file) => file.type.startsWith('image/'));
+      const files = [...(event.clipboardData?.files ?? [])].filter((file) =>
+        file.type.startsWith('image/'),
+      );
       if (files.length) {
         event.preventDefault();
         void addImages(files);
@@ -385,9 +482,14 @@ export function BoardCanvas({
   }, []);
 
   const selectedItem = items.find((item) => item.id === selected);
-  const boxes = new Map(items.filter((item): item is BoxItem => item.type !== 'arrow').map((item) => [item.id, item]));
+  const boxes = new Map(
+    items.filter((item): item is BoxItem => item.type !== 'arrow').map((item) => [item.id, item]),
+  );
   const frames = items.filter((item) => item.type === 'frame');
-  const others = items.filter((item): item is BoxItem => item.type === 'note' || item.type === 'text' || item.type === 'image');
+  const others = items.filter(
+    (item): item is BoxItem =>
+      item.type === 'note' || item.type === 'text' || item.type === 'image',
+  );
   const arrows = items.filter((item) => item.type === 'arrow');
 
   const toolButton =
@@ -410,7 +512,9 @@ export function BoardCanvas({
         }}
       >
         {item.type === 'frame' ? (
-          <div className={`h-full w-full rounded-lg border-2 border-dashed ${COLOR_STYLES[item.color].frame} ${ring}`}>
+          <div
+            className={`h-full w-full rounded-lg border-2 border-dashed ${COLOR_STYLES[item.color].frame} ${ring}`}
+          >
             {isEditing ? (
               <input
                 autoFocus
@@ -430,7 +534,12 @@ export function BoardCanvas({
           <div className={`h-full w-full overflow-hidden rounded-md bg-raised shadow-lg ${ring}`}>
             {imageUrls[item.path] ? (
               // eslint-disable-next-line @next/next/no-img-element -- endereço assinado do Storage, temporário
-              <img src={imageUrls[item.path]} alt="" draggable={false} className="pointer-events-none h-full w-full object-contain" />
+              <img
+                src={imageUrls[item.path]}
+                alt=""
+                draggable={false}
+                className="pointer-events-none h-full w-full object-contain"
+              />
             ) : (
               <p className="p-3 text-xs text-fg-muted">Imagem indisponível</p>
             )}
@@ -438,7 +547,9 @@ export function BoardCanvas({
         ) : (
           <div
             className={`h-full w-full overflow-hidden rounded-md ${
-              item.type === 'note' ? `${COLOR_STYLES[item.color].note} p-3 shadow-lg` : 'p-1 text-fg'
+              item.type === 'note'
+                ? `${COLOR_STYLES[item.color].note} p-3 shadow-lg`
+                : 'p-1 text-fg'
             } ${ring}`}
           >
             {isEditing ? (
@@ -453,8 +564,15 @@ export function BoardCanvas({
                 className={`h-full w-full resize-none bg-transparent outline-none ${item.type === 'text' ? TEXT_SIZES[item.size] : 'text-sm'}`}
               />
             ) : (
-              <p className={`h-full whitespace-pre-wrap break-words select-none ${item.type === 'text' ? TEXT_SIZES[item.size] : 'text-sm'}`}>
-                {item.text || (readOnly ? '' : <span className="opacity-50">Clique duas vezes para escrever</span>)}
+              <p
+                className={`h-full whitespace-pre-wrap break-words select-none ${item.type === 'text' ? TEXT_SIZES[item.size] : 'text-sm'}`}
+              >
+                {item.text ||
+                  (readOnly ? (
+                    ''
+                  ) : (
+                    <span className="opacity-50">Clique duas vezes para escrever</span>
+                  ))}
               </p>
             )}
           </div>
@@ -473,7 +591,11 @@ export function BoardCanvas({
   return (
     <div className="flex flex-col gap-2">
       {readOnly ? null : (
-        <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Ferramentas do quadro">
+        <div
+          className="flex flex-wrap items-center gap-2"
+          role="toolbar"
+          aria-label="Ferramentas do quadro"
+        >
           <button type="button" className={toolButton} onClick={() => add('note')}>
             <StickyNote className="h-4 w-4" aria-hidden="true" /> Nota
           </button>
@@ -483,8 +605,14 @@ export function BoardCanvas({
           <button type="button" className={toolButton} onClick={() => add('frame')}>
             <Frame className="h-4 w-4" aria-hidden="true" /> Moldura
           </button>
-          <button type="button" className={toolButton} disabled={uploading} onClick={() => fileInput.current?.click()}>
-            <ImagePlus className="h-4 w-4" aria-hidden="true" /> {uploading ? 'Enviando…' : 'Imagem'}
+          <button
+            type="button"
+            className={toolButton}
+            disabled={uploading}
+            onClick={() => fileInput.current?.click()}
+          >
+            <ImagePlus className="h-4 w-4" aria-hidden="true" />{' '}
+            {uploading ? 'Enviando…' : 'Imagem'}
           </button>
           <input
             ref={fileInput}
@@ -514,31 +642,55 @@ export function BoardCanvas({
                 aria-pressed={paint === name}
                 onClick={() => {
                   setPaint(name);
-                  if (selectedItem && (selectedItem.type === 'note' || selectedItem.type === 'frame')) patch(selectedItem.id, { color: name });
+                  if (
+                    selectedItem &&
+                    (selectedItem.type === 'note' || selectedItem.type === 'frame')
+                  )
+                    patch(selectedItem.id, { color: name });
                 }}
                 className={`h-6 w-6 rounded-full border-2 ${COLOR_STYLES[name].swatch} ${paint === name ? 'border-fg' : 'border-transparent'}`}
               />
             ))}
           </span>
           {selectedItem?.type === 'text' ? (
-            <select
+            <Select
+              size="sm"
               aria-label="Tamanho do texto"
               value={selectedItem.size}
-              onChange={(event) => patch(selectedItem.id, { size: event.target.value as 'sm' | 'md' | 'lg' })}
-              className="h-9 rounded-md border border-line bg-surface px-2 text-sm text-fg"
+              onChange={(event) =>
+                patch(selectedItem.id, { size: event.target.value as 'sm' | 'md' | 'lg' })
+              }
+              className="min-w-40"
             >
               <option value="sm">Pequeno</option>
               <option value="md">Médio</option>
               <option value="lg">Título</option>
-            </select>
+            </Select>
           ) : null}
-          <button type="button" className={toolButton} onClick={undo} aria-label="Desfazer" title="Desfazer (Ctrl+Z)">
+          <button
+            type="button"
+            className={toolButton}
+            onClick={undo}
+            aria-label="Desfazer"
+            title="Desfazer (Ctrl+Z)"
+          >
             <Undo2 className="h-4 w-4" aria-hidden="true" />
           </button>
-          <button type="button" className={toolButton} onClick={redo} aria-label="Refazer" title="Refazer (Ctrl+Shift+Z)">
+          <button
+            type="button"
+            className={toolButton}
+            onClick={redo}
+            aria-label="Refazer"
+            title="Refazer (Ctrl+Shift+Z)"
+          >
             <Redo2 className="h-4 w-4" aria-hidden="true" />
           </button>
-          <button type="button" className={toolButton} disabled={!selected} onClick={removeSelected}>
+          <button
+            type="button"
+            className={toolButton}
+            disabled={!selected}
+            onClick={removeSelected}
+          >
             <Trash2 className="h-4 w-4" aria-hidden="true" /> Apagar
           </button>
           <span className="ml-auto text-xs text-fg-muted" role="status">
@@ -548,7 +700,9 @@ export function BoardCanvas({
       )}
       {connectFrom !== undefined ? (
         <p className="text-xs text-fg-muted">
-          {connectFrom === null ? 'Clique no bloco de origem da seta.' : 'Agora clique no bloco de destino. Esc cancela.'}
+          {connectFrom === null
+            ? 'Clique no bloco de origem da seta.'
+            : 'Agora clique no bloco de destino. Esc cancela.'}
         </p>
       ) : null}
       {error ? (
@@ -571,11 +725,27 @@ export function BoardCanvas({
           backgroundPosition: `${view.x}px ${view.y}px`,
         }}
       >
-        <div className="absolute top-0 left-0 origin-top-left" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})` }}>
+        <div
+          className="absolute top-0 left-0 origin-top-left"
+          style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})` }}
+        >
           {frames.map((item) => renderBox(item as BoxItem))}
-          <svg className="pointer-events-none absolute top-0 left-0 z-[5] overflow-visible" width="1" height="1" aria-hidden="true">
+          <svg
+            className="pointer-events-none absolute top-0 left-0 z-[5] overflow-visible"
+            width="1"
+            height="1"
+            aria-hidden="true"
+          >
             <defs>
-              <marker id={`seta-${boardId}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <marker
+                id={`seta-${boardId}`}
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
                 <path d="M0,0 L10,5 L0,10 z" fill="currentColor" className="text-fg-secondary" />
               </marker>
             </defs>
@@ -619,21 +789,44 @@ export function BoardCanvas({
           {others.map(renderBox)}
         </div>
 
-        <div className="absolute right-3 bottom-3 flex items-center gap-1 rounded-md border border-line bg-raised p-1 shadow" onPointerDown={(event) => event.stopPropagation()}>
-          <button type="button" aria-label="Afastar" className="rounded p-1.5 hover:bg-hover" onClick={() => zoomBy(1 / 1.2)}>
+        <div
+          className="absolute right-3 bottom-3 flex items-center gap-1 rounded-md border border-line bg-raised p-1 shadow"
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            aria-label="Afastar"
+            className="rounded p-1.5 hover:bg-hover"
+            onClick={() => zoomBy(1 / 1.2)}
+          >
             <Minus className="h-4 w-4" aria-hidden="true" />
           </button>
-          <span className="w-12 text-center text-xs text-fg-muted tabular-nums">{Math.round(view.zoom * 100)}%</span>
-          <button type="button" aria-label="Aproximar" className="rounded p-1.5 hover:bg-hover" onClick={() => zoomBy(1.2)}>
+          <span className="w-12 text-center text-xs text-fg-muted tabular-nums">
+            {Math.round(view.zoom * 100)}%
+          </span>
+          <button
+            type="button"
+            aria-label="Aproximar"
+            className="rounded p-1.5 hover:bg-hover"
+            onClick={() => zoomBy(1.2)}
+          >
             <Plus className="h-4 w-4" aria-hidden="true" />
           </button>
-          <button type="button" aria-label="Ver tudo" title="Ver tudo" className="rounded p-1.5 hover:bg-hover" onClick={fit}>
+          <button
+            type="button"
+            aria-label="Ver tudo"
+            title="Ver tudo"
+            className="rounded p-1.5 hover:bg-hover"
+            onClick={fit}
+          >
             <Maximize className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
         {items.length === 0 ? (
           <p className="pointer-events-none absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-fg-muted">
-            {readOnly ? 'O quadro está vazio.' : 'Quadro vazio. Use Nota, Texto, Moldura ou Imagem acima (ou cole uma imagem); arraste o fundo para mover a visão.'}
+            {readOnly
+              ? 'O quadro está vazio.'
+              : 'Quadro vazio. Use Nota, Texto, Moldura ou Imagem acima (ou cole uma imagem); arraste o fundo para mover a visão.'}
           </p>
         ) : null}
       </div>
