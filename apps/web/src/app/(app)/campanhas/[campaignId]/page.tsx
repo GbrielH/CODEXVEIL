@@ -36,13 +36,13 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
   const hasOwnCharacter = party.some((character) => character.ownerId === user.id);
   // O jogador usa a aba "Meu personagem"; aqui aparecem só os outros (se o mestre liberar as fichas).
   const others = isGm ? party : party.filter((character) => character.ownerId !== user.id);
-  // Jogador sem personagem aqui: as fichas dele que podem ser vinculadas (D&D 5e, sem campanha).
-  const linkable =
-    isActive && !isGm && !hasOwnCharacter && campaign.systemId === 'dnd5e'
-      ? (await listMyCharacters(supabase, user.id))
-          .filter((character) => character.systemId === campaign.systemId && !character.campaignId)
-          .map((character) => ({ id: character.id, name: character.name }))
-      : [];
+  // Jogador sem personagem aqui: as fichas dele do mesmo sistema (livres ou em outra campanha).
+  const showLink = isActive && !isGm && !hasOwnCharacter;
+  const linkable = showLink
+    ? (await listMyCharacters(supabase, user.id))
+        .filter((character) => character.systemId === campaign.systemId)
+        .map((character) => ({ id: character.id, name: character.name, campaignName: character.campaignId ? (character.campaignName ?? 'outra campanha') : null }))
+    : [];
   const creationRules = system ? system.describeCampaignRules(system.parseCampaignRules(campaign.characterRules)) : [];
 
   return (
@@ -75,7 +75,7 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
               ) : undefined
             }
           />
-          <LinkExistingCharacter campaignId={campaign.id} characters={linkable} />
+          {showLink ? <LinkExistingCharacter campaignId={campaign.id} characters={linkable} supported={campaign.systemId === 'dnd5e'} /> : null}
           {others.length === 0 && (isGm || campaign.settings.partySheetsVisible) ? (
             <p className="text-sm text-fg-muted">
               {isGm
