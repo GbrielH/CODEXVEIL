@@ -28,6 +28,7 @@ import {
   buildT20Content,
   listT20PendingUpdates,
   listT20Grants,
+  t20SituationalBonuses,
   listT20ItemGrants,
   computeT20Derived,
   t20DefenseFromItems,
@@ -211,13 +212,42 @@ function T20SheetBody(props: T20SheetScreenProps) {
       .catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- grava só quando o equipamento muda a Defesa.
   }, [defenseKey]);
+  // Bônus de situação ("no subterrâneo", "em fúria"…): o jogador liga quando valer; fica guardado
+  // neste navegador até desligar.
+  const situational = useMemo(() => t20SituationalBonuses(sheet), [sheet]);
+  const situationKey = `codexveil:t20-situacoes:${character.id}`;
+  const [activeSituations, setActiveSituations] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(situationKey) ?? '[]') as unknown;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lê o que ficou ligado neste navegador, só depois de montar.
+      if (Array.isArray(saved)) setActiveSituations(saved.filter((entry): entry is string => typeof entry === 'string'));
+    } catch {
+      // Sem armazenamento: começa tudo desligado.
+    }
+  }, [situationKey]);
+  const toggleSituation = (id: string) =>
+    setActiveSituations((current) => {
+      const next = current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id];
+      try {
+        window.localStorage.setItem(situationKey, JSON.stringify(next));
+      } catch {
+        // Sem armazenamento: vale só nesta visita.
+      }
+      return next;
+    });
+  const situationalEffects = useMemo(
+    () => situational.filter((bonus) => activeSituations.includes(bonus.id)).map((bonus) => bonus.effect),
+    [situational, activeSituations],
+  );
   const derived = useMemo(
     () =>
       computeT20Derived(
         effectiveSheet,
         conditions.map((condition) => condition.key),
+        situationalEffects,
       ),
-    [effectiveSheet, conditions],
+    [effectiveSheet, conditions, situationalEffects],
   );
   const resource = (key: string) => resources.find((entry) => entry.key === key);
 
@@ -747,6 +777,41 @@ function T20SheetBody(props: T20SheetScreenProps) {
                 <span className="text-fg-secondary">{describeBonus(bonus.effect)}</span>
               </li>
             ))}
+          </ul>
+        </Card>
+      ) : null}
+      {tab === 'pericias' && !editingSkills && situational.length ? (
+        <Card>
+          <CardHeader
+            title="Bônus de situação"
+            description="Ligue quando a situação valer: perícias, Defesa e deslocamento passam a somar o bônus. Os de ataque e dano aparecem como lembrete."
+          />
+          <ul className="flex flex-col divide-y divide-line">
+            {situational.map((bonus) => {
+              const on = activeSituations.includes(bonus.id);
+              const numbers = describeBonus(bonus.effect);
+              return (
+                <li key={bonus.id}>
+                  <label className="flex cursor-pointer items-start gap-3 py-2.5">
+                    <input
+                      type="checkbox"
+                      role="switch"
+                      aria-checked={on}
+                      checked={on}
+                      onChange={() => toggleSituation(bonus.id)}
+                      className="mt-1 h-4 w-4 shrink-0 accent-wine-500"
+                    />
+                    <span className="min-w-0 text-sm">
+                      <span className="font-medium text-fg">{bonus.source}</span>{' '}
+                      <span className="text-fg-muted">— {bonus.when}</span>
+                      <span className={`block ${on ? 'text-fg-accent' : 'text-fg-secondary'}`}>
+                        {[numbers, bonus.effect.note].filter(Boolean).join(' · ')}
+                      </span>
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
           </ul>
         </Card>
       ) : null}

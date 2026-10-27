@@ -3,7 +3,7 @@
  * PM e carga. Valor de perícia = metade do nível + atributo-chave + treinamento (+2/+4/+6) +
  * bônus; Defesa = 10 + Destreza + armadura + escudo + outros.
  */
-import { sumT20Bonuses, t20AutomaticBonuses, type T20AutomaticBonus } from './bonuses';
+import { sumT20Bonuses, t20AutomaticBonuses, type T20AutomaticBonus, type T20BonusEffect } from './bonuses';
 import { T20_ATTRIBUTES, type T20Attribute } from './attributes';
 import { t20ConditionEffects } from './conditions';
 import { t20ManaLimit, t20Tier, type T20Tier } from './progression';
@@ -47,7 +47,15 @@ export interface T20Derived {
 
 const PHYSICAL: readonly T20Attribute[] = ['for', 'des', 'con'];
 
-export function computeT20Derived(sheet: T20Sheet, conditions: readonly string[] = []): T20Derived {
+/**
+ * `situational`: bônus de situação ligados pelo jogador (somam como os automáticos; as notas de
+ * ataque e dano ficam só como lembrete).
+ */
+export function computeT20Derived(
+  sheet: T20Sheet,
+  conditions: readonly string[] = [],
+  situational: readonly T20BonusEffect[] = [],
+): T20Derived {
   const level = t20Level(sheet);
   const halfLevel = Math.floor(level / 2);
   const trainingBonus = t20TrainingBonus(level);
@@ -57,7 +65,7 @@ export function computeT20Derived(sheet: T20Sheet, conditions: readonly string[]
   ) as Record<T20Attribute, number>;
   const trained = new Set(sheet.skills.trained);
   const automaticBonuses = t20AutomaticBonuses(sheet, attributes);
-  const automatic = sumT20Bonuses(automaticBonuses);
+  const automatic = sumT20Bonuses([...automaticBonuses, ...situational.map((effect) => ({ source: '', effect }))]);
 
   const skills = Object.fromEntries(
     T20_SKILL_IDS.map((skill) => {

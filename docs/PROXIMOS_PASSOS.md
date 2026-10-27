@@ -189,8 +189,8 @@ mapa e notas lado a lado).
 
 - [x] Etapa 1: bônus fixos sempre ativos (perícias, Defesa, deslocamento, PV/PM) entram na ficha
       sozinhos, com a origem no cartão "Bônus automáticos" (`tormenta20/bonuses.ts`).
-- [ ] Etapa 2: bônus condicionais ("+2 em Furtividade à noite", "com escudo") como lembrete ao
-      lado da rolagem, ligado pelo jogador.
+- [x] Etapa 2: bônus de situação com interruptor na aba Atributos e perícias (somam quando
+      ligados; ataque e dano como lembrete).
 - [ ] Etapa 3: todas as escolhas restantes no cartão "Escolhas pendentes" (perícias, armas, "um
       poder à escolha"…).
 

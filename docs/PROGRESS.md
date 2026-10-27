@@ -306,6 +306,13 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27:** T20, **bônus de situação — etapa 2 de 3** (`t20SituationalBonuses`, 2 testes): cartão
+  "Bônus de situação" na aba Atributos e perícias com interruptores (guardados no navegador). Ligado,
+  soma em perícias, Defesa e deslocamento; ataque e dano aparecem como lembrete. Cobertos: 7 de raça
+  (Anão x2, Dahllan, Goblin, Lefou, Trog, Sereia/Tritão), 5 de classe (Fúria, Inspiração, Baluarte,
+  Duelo, Ataque Especial) e 22 poderes (Combate Defensivo, Estilo de Uma Arma, Lobo Solitário,
+  Torcida, Escaramuça, En Garde, Ataque Poderoso, Foco em Arma…). Próximo: etapa 3 (escolhas).
+
 - **2026-10-27:** T20, **bônus automáticos — etapa 1 de 3** (`tormenta20/bonuses.ts`, 3 testes): tabela
   curada lendo as 175 habilidades do livro básico com número. As que valem sempre (ou com condição
   que a ficha conhece, como armadura pesada) já entram nas perícias, na Defesa, no deslocamento e,

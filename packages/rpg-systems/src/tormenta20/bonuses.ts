@@ -180,3 +180,112 @@ export function sumT20Bonuses(bonuses: readonly T20AutomaticBonus[]): Required<T
   }
   return total;
 }
+
+// ---------------------------------------------------------------------------
+// Bônus de situação (etapa 2): valem só em certas situações; o jogador liga na hora
+// ---------------------------------------------------------------------------
+
+export interface T20SituationalEffect extends T20BonusEffect {
+  /** Lembrete para o que a ficha não soma sozinha (ataque, dano, margem de ameaça…). */
+  note?: string;
+}
+
+export interface T20SituationalBonus {
+  id: string;
+  source: string;
+  /** Quando vale (ex.: "no subterrâneo", "em fúria (2 PM)"). */
+  when: string;
+  effect: T20SituationalEffect;
+}
+
+const RESISTANCES: readonly T20Skill[] = ['fortitude', 'reflexos', 'vontade'];
+const CHARISMA_SKILLS: readonly T20Skill[] = ['adestramento', 'atuacao', 'diplomacia', 'enganacao', 'intimidacao', 'jogatina'];
+const ALL_SKILLS: readonly T20Skill[] = [
+  'acrobacia', 'adestramento', 'atletismo', 'atuacao', 'cavalgar', 'conhecimento', 'cura', 'diplomacia', 'enganacao', 'fortitude', 'furtividade',
+  'guerra', 'iniciativa', 'intimidacao', 'intuicao', 'investigacao', 'jogatina', 'ladinagem', 'luta', 'misticismo', 'nobreza', 'oficio',
+  'percepcao', 'pilotagem', 'pontaria', 'reflexos', 'religiao', 'sobrevivencia', 'vontade',
+];
+
+type Situation = Omit<T20SituationalBonus, 'id' | 'source'>;
+
+const RACE_SITUATIONAL: Record<string, { ability: string; rule: () => Situation }[]> = {
+  anao: [
+    { ability: 'Conhecimento das Rochas', rule: () => ({ when: 'no subterrâneo', effect: { skills: all(['percepcao', 'sobrevivencia'], 2) } }) },
+    { ability: 'Tradição de Heredrimm', rule: () => ({ when: 'com machados, martelos, marretas e picaretas', effect: { note: '+2 nos testes de ataque' } }) },
+  ],
+  dahllan: [{ ability: 'Armadura de Allihanna', rule: () => ({ when: 'ativada (movimento e 1 PM), até o fim da cena', effect: { defense: 2 } }) }],
+  goblin: [{ ability: 'Engenhoso', rule: () => ({ when: 'usando a ferramenta necessária', effect: { note: '+2 no teste de perícia' } }) }],
+  lefou: [{ ability: 'Cria da Tormenta', rule: () => ({ when: 'contra efeitos de lefeu e da Tormenta', effect: { skills: all(RESISTANCES, 5) } }) }],
+  trog: [{ ability: 'Reptiliano', rule: () => ({ when: 'sem armadura ou roupas pesadas', effect: { skills: { furtividade: 5 } } }) }],
+  'sereia/tritao': [{ ability: 'Mestre do Tridente', rule: () => ({ when: 'com azagaias, lanças e tridentes', effect: { note: '+2 nas rolagens de dano' } }) }],
+};
+
+const CLASS_SITUATIONAL: Record<string, { ability: string; from: number; rule: (classLevel: number) => Situation }[]> = {
+  barbaro: [
+    {
+      ability: 'Fúria',
+      from: 1,
+      rule: (level) => {
+        const bonus = 2 + Math.floor(level / 5);
+        return { when: `em fúria (2 PM; +1 PM para cada +1, até +${bonus})`, effect: { note: `+2 (até +${bonus}) em ataque e dano corpo a corpo` } };
+      },
+    },
+  ],
+  bardo: [
+    {
+      ability: 'Inspiração',
+      from: 1,
+      rule: (level) => ({ when: 'inspirado (padrão e 2 PM)', effect: { skills: all(ALL_SKILLS, 1), note: `até +${1 + Math.floor(level / 4)} gastando mais PM` } }),
+    },
+  ],
+  cavaleiro: [
+    { ability: 'Baluarte', from: 1, rule: () => ({ when: 'ao sofrer um ataque ou teste de resistência (1 PM)', effect: { defense: 2, skills: all(RESISTANCES, 2) } }) },
+    { ability: 'Duelo', from: 2, rule: () => ({ when: 'contra o oponente do duelo (2 PM)', effect: { note: '+2 em ataque e dano' } }) },
+  ],
+  guerreiro: [{ ability: 'Ataque Especial', from: 1, rule: () => ({ when: 'ao atacar (1 PM)', effect: { note: '+4 no ataque ou no dano' } }) }],
+};
+
+const POWER_SITUATIONAL: Record<string, () => Situation> = {
+  'combate defensivo': () => ({ when: 'ao agredir, até o próximo turno', effect: { defense: 5, note: '–2 em todos os testes de ataque' } }),
+  'estilo de uma arma': () => ({ when: 'com uma arma corpo a corpo em uma mão e nada na outra', effect: { defense: 2, note: '+2 no ataque com essa arma' } }),
+  'lobo solitario': () => ({ when: 'sem aliados em alcance curto', effect: { defense: 1, skills: all(ALL_SKILLS, 1) } }),
+  torcida: () => ({ when: 'com a torcida a seu favor', effect: { defense: 2, skills: all(ALL_SKILLS, 2) } }),
+  'afinidade com a tormenta': () => ({ when: 'contra a Tormenta, suas criaturas e devotos de Aharadak', effect: { skills: all(RESISTANCES, 10) } }),
+  atraente: () => ({ when: 'com quem possa se sentir atraído por você', effect: { skills: all(CHARISMA_SKILLS, 2) } }),
+  foliao: () => ({ when: 'em festas, tavernas e bailes', effect: { skills: all(CHARISMA_SKILLS, 2) } }),
+  'dom da verdade': () => ({ when: 'ativado (2 PM), até o fim da cena', effect: { skills: { intuicao: 5 }, note: '+5 em Percepção contra Enganação e Furtividade' } }),
+  escaramuca: () => ({ when: 'depois de se mover 6m ou mais, até o próximo turno', effect: { defense: 2, skills: { reflexos: 2 }, note: '+1d8 no dano em alcance curto' } }),
+  'escaramuca superior': () => ({ when: 'junto com Escaramuça (os bônus sobem para +5)', effect: { defense: 3, skills: { reflexos: 3 }, note: 'dano extra vira +1d12' } }),
+  'en garde': () => ({ when: 'em postura de luta (movimento e 1 PM), com arma leve ou ágil', effect: { defense: 2, note: '+2 na margem de ameaça' } }),
+  'fuga formidavel': () => ({ when: 'depois de analisar o lugar (completa e 1 PM)', effect: { speed: 3, skills: all(['acrobacia', 'atletismo'], 5) } }),
+  'desejo de liberdade': () => ({ when: 'contra agarrar e efeitos de movimento', effect: { note: '+5 nos testes' } }),
+  escapista: () => ({ when: 'para escapar, passar por espaço apertado ou por inimigo', effect: { skills: { acrobacia: 5 } } }),
+  'saqueador de tumbas': () => ({ when: 'para encontrar armadilhas', effect: { skills: { investigacao: 5 }, note: '+5 nas resistências contra armadilhas' } }),
+  'furia divina': () => ({ when: 'em fúria divina (2 PM)', effect: { note: '+2 em ataque e dano corpo a corpo' } }),
+  'ataque poderoso': () => ({ when: 'ao atacar corpo a corpo, se quiser', effect: { note: '–2 no ataque e +5 no dano' } }),
+  'estilo de duas maos': () => ({ when: 'com arma corpo a corpo de duas mãos', effect: { note: '+5 no dano' } }),
+  'foco em arma': () => ({ when: 'com a arma escolhida', effect: { note: '+2 no ataque' } }),
+  'nome na arena': () => ({ when: 'depois de impressionar o público (Luta CD 10)', effect: { skills: all(ALL_SKILLS, 2) } }),
+  'mira apurada': () => ({ when: 'depois de mirar, até o fim do turno', effect: { note: '+2 no ataque e na margem de ameaça à distância' } }),
+  valentao: () => ({ when: 'contra caídos, desprevenidos, flanqueados ou indefesos', effect: { note: '+2 em ataque e dano' } }),
+};
+
+/** Bônus de situação que este personagem tem (o jogador liga quando valer). */
+export function t20SituationalBonuses(sheet: T20Sheet): T20SituationalBonus[] {
+  const classLevels: Record<string, number> = {};
+  for (const entry of sheet.identity.classes) classLevels[plainT20(entry.name)] = (classLevels[plainT20(entry.name)] ?? 0) + entry.level;
+  const out: T20SituationalBonus[] = [];
+  const race = plainT20(sheet.identity.race);
+  for (const { ability, rule } of RACE_SITUATIONAL[race] ?? []) out.push({ id: `raca:${plainT20(ability)}`, source: `${sheet.identity.race}: ${ability}`, ...rule() });
+  for (const [klass, entries] of Object.entries(CLASS_SITUATIONAL)) {
+    const classLevel = classLevels[klass] ?? 0;
+    for (const entry of entries)
+      if (classLevel >= entry.from) out.push({ id: `classe:${plainT20(entry.ability)}`, source: entry.ability, ...entry.rule(classLevel) });
+  }
+  for (const power of sheet.powers) {
+    const name = baseName(power.name);
+    const rule = POWER_SITUATIONAL[name];
+    if (rule && !out.some((entry) => entry.id === `poder:${name}`)) out.push({ id: `poder:${name}`, source: power.name, ...rule() });
+  }
+  return out;
+}

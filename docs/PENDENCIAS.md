@@ -66,8 +66,8 @@ compartilhar; (3) "?" dos pontos do T20; (4) Tomo no app (chat e ditado).
   todas as habilidades com bônus, escolha, magia ou proficiência e automatizar em três etapas).
   Detalhe em PROXIMOS_PASSOS, seção B0g.
 
-- T20, automação das habilidades: etapa 1 (bônus fixos) feita; faltam a etapa 2 (bônus
-  condicionais como lembrete na rolagem) e a etapa 3 (todas as escolhas: perícias, armas, "um poder à
+- T20, automação das habilidades: etapas 1 (bônus fixos) e 2 (bônus de situação) feitas;
+  falta a etapa 3 (todas as escolhas: perícias, armas, "um poder à
   escolha", Etiqueta, Lefou Deformidade, Kliren Vanguardista…). PV de raça por nível (Anão) na
   subida de nível ainda não entra.
 
