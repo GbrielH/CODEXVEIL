@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildT20Content } from './content';
-import { applyT20Grant, applyT20ItemGrant, listT20Grants, listT20ItemGrants } from './grants';
+import { applyT20Grant, applyT20ItemGrant, applyT20LabelGrant, listT20Grants, listT20ItemGrants, listT20LabelGrants } from './grants';
 import { parseT20Sheet } from './sheet';
 
 const spell = (key: string, name: string, circle: number, type = 'arcana') => ({
@@ -83,5 +83,36 @@ describe('escolhas concedidas (T20)', () => {
     const [superior] = listT20ItemGrants(content, ['Protótipo (Item superior)'], []);
     const made = applyT20ItemGrant(superior!, { baseId: superior!.options[0]!.id, upgradeId: superior!.upgrades[0]!.id });
     expect('items' in made && made.items[0]?.name).toBe('Espada longa superior (Certeira)');
+  });
+
+  it('escolhas marcadas no nome: Foco em Arma, Deformidade (+2) e Híbrido (treina)', () => {
+    const sheet = parseT20Sheet({
+      attributes: { int: 2 },
+      skills: { trained: ['luta'] },
+      powers: [{ key: 'foco', name: 'Foco em Arma', source: 'Poder geral' }],
+    });
+    const abilities = [
+      { id: 'a1', name: 'Foco em Arma' },
+      { id: 'a2', name: 'Deformidade' },
+      { id: 'a3', name: 'Híbrido' },
+      { id: 'a4', name: 'Foco em Arma (Espada longa)' },
+      { id: 'a5', name: 'Inimigo de (Criatura)' },
+    ];
+    const grants = listT20LabelGrants(content, sheet, abilities);
+    expect(grants.map((grant) => grant.abilityId)).toEqual(['a1', 'a2', 'a3', 'a5']);
+
+    const weapon = applyT20LabelGrant(sheet, grants[0]!, ['Espada longa'], 'Foco em Arma');
+    expect('name' in weapon && weapon.name).toBe('Foco em Arma (Espada longa)');
+    expect('sheet' in weapon && weapon.sheet.powers[0]?.name).toBe('Foco em Arma (Espada longa)');
+
+    const bonus = applyT20LabelGrant(sheet, grants[1]!, ['furtividade', 'percepcao'], 'Deformidade');
+    expect('sheet' in bonus && bonus.sheet.skills.bonuses).toMatchObject({ furtividade: 2, percepcao: 2 });
+
+    expect(grants[2]!.options.map((option) => option.id)).not.toContain('luta');
+    const trained = applyT20LabelGrant(sheet, grants[2]!, ['misticismo'], 'Híbrido');
+    expect('sheet' in trained && trained.sheet.skills.trained).toEqual(['luta', 'misticismo']);
+
+    expect(grants[3]!.abilityName).toBe('Inimigo de');
+    expect(applyT20LabelGrant(sheet, grants[1]!, ['furtividade'], 'Deformidade')).toEqual({ error: 'Escolha 2.' });
   });
 });

@@ -47,6 +47,7 @@ const RACE_RULES: Record<string, Rule> = {
   'suraggel|luz sagrada': () => ({ skills: all(['diplomacia', 'intuicao'], 2) }),
   'suraggel|sombras profanas': () => ({ skills: all(['enganacao', 'furtividade'], 2) }),
   'trog|reptiliano': () => ({ defense: 1 }),
+  'kliren|vanguardista': () => ({ skills: { oficio: 2 } }),
 };
 
 /** Habilidades de raça de cada raça (para saber quais valem; Suraggel depende da variante). */
@@ -58,6 +59,7 @@ const RACE_ABILITIES: Record<string, (variant: string) => string[]> = {
   hynne: () => ['Pequeno e Rechonchudo'],
   suraggel: (variant) => (variant === 'sulfure' ? ['Sombras Profanas'] : variant === 'aggelus' ? ['Luz Sagrada'] : []),
   trog: () => ['Reptiliano'],
+  kliren: () => ['Vanguardista'],
 };
 
 /** Habilidades de classe: `classe|habilidade` com o nível de classe em que começa. */

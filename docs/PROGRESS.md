@@ -306,6 +306,14 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27:** T20, **escolhas — etapa 3 de 3** (`listT20LabelGrants`/`applyT20LabelGrant`, teste novo):
+  o cartão "Escolhas pendentes" pede as escolhas que ficam no nome da habilidade, e as de perícia
+  já valem na ficha. Treinam: Híbrido (Kliren), Memória Póstuma (Osteon), Conhecimento
+  Enciclopédico, Educação Privilegiada. +2: Deformidade (Lefou), Amigo Especial. Só nome: Foco em
+  Arma, Mestre em Arma, Foco em Perícia, Maestria em Perícia, Foco em Magia, Mestre em Escola,
+  Proficiência, Resistência Elemental (Qareen), Fonte Elemental (Golem), Inimigo de (Criatura),
+  Parceiro, Autômato. Vanguardista (Kliren) virou +2 fixo em Ofício. Não verificado no navegador.
+
 - **2026-10-27:** T20, **bônus de situação — etapa 2 de 3** (`t20SituationalBonuses`, 2 testes): cartão
   "Bônus de situação" na aba Atributos e perícias com interruptores (guardados no navegador). Ligado,
   soma em perícias, Defesa e deslocamento; ataque e dano aparecem como lembrete. Cobertos: 7 de raça

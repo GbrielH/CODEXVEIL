@@ -191,8 +191,10 @@ mapa e notas lado a lado).
       sozinhos, com a origem no cartão "Bônus automáticos" (`tormenta20/bonuses.ts`).
 - [x] Etapa 2: bônus de situação com interruptor na aba Atributos e perícias (somam quando
       ligados; ataque e dano como lembrete).
-- [ ] Etapa 3: todas as escolhas restantes no cartão "Escolhas pendentes" (perícias, armas, "um
-      poder à escolha"…).
+- [x] Etapa 3: escolhas no cartão "Escolhas pendentes" (magias e poderes concedidos, itens do
+      Protótipo, perícias treinadas ou +2, arma/perícia/magia/escola/tipo marcados no nome).
+- [ ] Restos: Osteon trocar a perícia por um poder; Totem Espiritual (animal e magia); lembretes de
+      ataque (Foco em Arma, Fúria) na tela de ataque; ficha do app com os mesmos cartões.
 
 **D&D 5e** (melhoria futura, pedida em 2026-10-27): fazer a mesma verificação do livro inteiro
 (SRD 5.2.1 e livros importados: classes, subclasses, espécies, antecedentes e talentos) e as mesmas

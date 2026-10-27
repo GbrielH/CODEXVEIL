@@ -4,15 +4,18 @@ import {
   createCharacterAbility,
   createCharacterItem,
   saveCharacterSheet,
+  updateCharacterAbility,
   type CharacterAbility,
   type CharacterItem,
 } from '@codexveil/database';
 import {
   applyT20Grant,
   applyT20ItemGrant,
+  applyT20LabelGrant,
   t20PriceValue,
   type T20Grant,
   type T20ItemGrant,
+  type T20LabelGrant,
   type T20Sheet,
 } from '@codexveil/rpg-systems/tormenta20';
 import { Sparkles } from 'lucide-react';
@@ -29,6 +32,10 @@ interface Props {
   version: number;
   grants: T20Grant[];
   itemGrants: T20ItemGrant[];
+  labelGrants: T20LabelGrant[];
+  /** Linhas da lista de habilidades (para renomear a que recebe a escolha). */
+  abilities: CharacterAbility[];
+  onAbilityUpdated: (updated: CharacterAbility) => void;
   onSheet: (sheet: T20Sheet, version: number) => void;
   onAbilities: (created: CharacterAbility[]) => void;
   onItems: (created: CharacterItem[]) => void;
@@ -39,7 +46,7 @@ interface Props {
  * magia de 1º círculo", "um poder geral", os itens do Protótipo…): o seletor aparece aqui, no topo.
  */
 export function T20GrantsCard(props: Props) {
-  if (props.grants.length === 0 && props.itemGrants.length === 0) return null;
+  if (props.grants.length === 0 && props.itemGrants.length === 0 && props.labelGrants.length === 0) return null;
   return (
     <Card ornate>
       <CardHeader
@@ -53,6 +60,9 @@ export function T20GrantsCard(props: Props) {
         ))}
         {props.itemGrants.map((grant) => (
           <ItemGrant key={grant.source} grant={grant} {...props} />
+        ))}
+        {props.labelGrants.map((grant) => (
+          <LabelGrant key={grant.abilityId} grant={grant} {...props} />
         ))}
       </div>
     </Card>
@@ -218,6 +228,88 @@ function ItemGrant({ grant, characterId, onItems }: Props & { grant: T20ItemGran
             {count} de 10 itens · T$ {price} de T$ {grant.budget}
           </span>
         ) : null}
+      </div>
+    </section>
+  );
+}
+
+function LabelGrant({ grant, characterId, sheet, version, abilities, onSheet, onAbilityUpdated }: Props & { grant: T20LabelGrant }) {
+  const { toast } = useToast();
+  const [picked, setPicked] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const toggle = (id: string) =>
+    setPicked((current) =>
+      current.includes(id) ? current.filter((entry) => entry !== id) : grant.count === 1 ? [id] : current.length < grant.count ? [...current, id] : current,
+    );
+
+  const confirm = async () => {
+    const ability = abilities.find((entry) => entry.id === grant.abilityId);
+    if (!ability) return;
+    const result = applyT20LabelGrant(sheet, grant, picked, ability.name);
+    if ('error' in result) return toast({ tone: 'danger', title: result.error });
+    setBusy(true);
+    try {
+      const client = getSupabaseBrowserClient();
+      const updated = await updateCharacterAbility(client, ability.id, {
+        name: result.name,
+        source: ability.source,
+        description: ability.description,
+        data: ability.data,
+        resourceId: ability.resourceId,
+      });
+      onAbilityUpdated(updated);
+      if (JSON.stringify(result.sheet) !== JSON.stringify(sheet)) {
+        const saved = await saveCharacterSheet(client, characterId, version, { sheet: result.sheet });
+        onSheet(result.sheet, saved.version);
+      }
+      toast({ tone: 'success', title: 'Escolha gravada na ficha.' });
+    } catch (cause) {
+      toast({ tone: 'danger', title: failureMessage(cause, 'A escolha não foi salva.') });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const many = grant.options.length > 12;
+  return (
+    <section className="flex flex-col gap-2 rounded-md border border-line p-3">
+      <h3 className="text-sm font-semibold text-fg">{grant.title}</h3>
+      {grant.effect ? (
+        <p className="text-xs text-fg-muted">{grant.effect === 'train' ? 'As perícias escolhidas ficam treinadas.' : 'As perícias escolhidas recebem +2.'}</p>
+      ) : null}
+      {many && grant.count === 1 ? (
+        <select
+          aria-label={grant.title}
+          value={picked[0] ?? ''}
+          onChange={(event) => setPicked(event.target.value ? [event.target.value] : [])}
+          className="h-9 rounded-md border border-line bg-sunken px-2 text-sm text-fg"
+        >
+          <option value="">Escolha…</option>
+          {grant.options.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.name}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <ul className="grid max-h-64 gap-1 overflow-y-auto sm:grid-cols-3">
+          {grant.options.map((option) => (
+            <li key={option.id}>
+              <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm text-fg hover:bg-hover">
+                <input type={grant.count === 1 ? 'radio' : 'checkbox'} checked={picked.includes(option.id)} onChange={() => toggle(option.id)} />
+                {option.name}
+              </label>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex items-center gap-3">
+        <Button size="sm" loading={busy} disabled={picked.length !== grant.count} onClick={() => void confirm()}>
+          Confirmar
+        </Button>
+        <span className="text-xs text-fg-muted">
+          {picked.length} de {grant.count}
+        </span>
       </div>
     </section>
   );

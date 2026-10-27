@@ -30,6 +30,7 @@ import {
   listT20Grants,
   t20SituationalBonuses,
   listT20ItemGrants,
+  listT20LabelGrants,
   computeT20Derived,
   t20DefenseFromItems,
   findT20Condition,
@@ -180,6 +181,10 @@ function T20SheetBody(props: T20SheetScreenProps) {
 
   // Escolhas concedidas pela raça, por poderes e pelo Protótipo que a ficha ainda não tem.
   const grants = useMemo(() => (content.spells.length || content.powers.length ? listT20Grants(content, sheet) : []), [content, sheet]);
+  const labelGrants = useMemo(
+    () => (content.classes.length ? listT20LabelGrants(content, sheet, abilities) : []),
+    [content, sheet, abilities],
+  );
   const itemGrants = useMemo(
     () =>
       listT20ItemGrants(
@@ -420,6 +425,9 @@ function T20SheetBody(props: T20SheetScreenProps) {
           version={version}
           grants={grants}
           itemGrants={itemGrants}
+          labelGrants={labelGrants}
+          abilities={abilities}
+          onAbilityUpdated={(updated) => setAbilities((current) => current.map((entry) => (entry.id === updated.id ? updated : entry)))}
           onSheet={(next, nextVersion) => {
             setSheet(next);
             setVersion(nextVersion);

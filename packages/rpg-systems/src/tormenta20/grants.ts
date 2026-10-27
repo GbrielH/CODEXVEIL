@@ -10,6 +10,7 @@ import { plainT20, findT20Class, type T20Content, type T20Item } from './content
 import { t20MaxCircle } from './creation';
 import { t20PriceValue } from './origin-items';
 import type { T20Sheet } from './sheet';
+import { T20_SKILLS, type T20Skill } from './skills';
 
 type SpellType = 'arcana' | 'divina' | 'universal';
 
@@ -325,4 +326,158 @@ export function applyT20ItemGrant(
       notes: grant.source,
     })),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Escolhas marcadas no nome (etapa 3): "Foco em Arma" vira "Foco em Arma (Espada longa)"; as de
+// perícia também treinam ou dão +2 na ficha.
+// ---------------------------------------------------------------------------
+
+type LabelSource = 'skill' | 'intSkill' | 'nobleSkill' | 'trainedSkill' | 'weapon' | 'knownSpell' | 'school' | 'list';
+
+interface LabelRule {
+  title: string;
+  source: LabelSource;
+  /** Quantas escolher (número fixo ou calculado pela ficha). */
+  count: number | ((sheet: T20Sheet) => number);
+  /** O que a escolha faz na ficha além do nome. */
+  effect?: 'train' | 'bonus2';
+  list?: readonly string[];
+  exclude?: readonly T20Skill[];
+}
+
+const PARTNER_TYPES = ['Ajudante', 'Assassino', 'Atirador', 'Combatente', 'Fortão', 'Guardião', 'Magivocador', 'Médico', 'Montaria', 'Perseguidor', 'Vigilante'];
+
+/** Pelo nome simplificado da habilidade ou do poder. */
+const LABEL_RULES: Record<string, LabelRule> = {
+  hibrido: { title: 'Híbrido: perícia treinada', source: 'skill', count: 1, effect: 'train' },
+  'memoria postuma': { title: 'Memória Póstuma: perícia treinada', source: 'skill', count: 1, effect: 'train' },
+  'conhecimento enciclopedico': { title: 'Conhecimento Enciclopédico: duas perícias de Inteligência', source: 'intSkill', count: 2, effect: 'train' },
+  'educacao privilegiada': { title: 'Educação Privilegiada: duas perícias de nobre', source: 'nobleSkill', count: 2, effect: 'train' },
+  deformidade: { title: 'Deformidade: +2 em duas perícias', source: 'skill', count: 2, effect: 'bonus2' },
+  'amigo especial': { title: 'Amigo Especial: +2 numa perícia (o animal ajuda)', source: 'skill', count: 1, effect: 'bonus2', exclude: ['luta', 'pontaria'] },
+  'foco em arma': { title: 'Foco em Arma: escolha a arma', source: 'weapon', count: 1 },
+  'mestre em arma': { title: 'Mestre em Arma: escolha a arma', source: 'weapon', count: 1 },
+  'foco em pericia': { title: 'Foco em Perícia: escolha a perícia', source: 'skill', count: 1 },
+  'maestria em pericia': {
+    title: 'Maestria em Perícia: perícias treinadas (igual à Inteligência)',
+    source: 'trainedSkill',
+    count: (sheet) => Math.max(1, sheet.attributes.int),
+  },
+  'foco em magia': { title: 'Foco em Magia: escolha a magia', source: 'knownSpell', count: 1 },
+  'mestre em escola': { title: 'Mestre em Escola: escolha a escola', source: 'school', count: 1 },
+  proficiencia: { title: 'Proficiência: escolha qual', source: 'list', count: 1, list: ['Armas marciais', 'Armas de fogo', 'Armaduras pesadas', 'Escudos', 'Armas exóticas'] },
+  'resistencia elemental': {
+    title: 'Resistência Elemental: redução 10 a um tipo de dano',
+    source: 'list',
+    count: 1,
+    list: ['Frio (água)', 'Eletricidade (ar)', 'Fogo (fogo)', 'Ácido (terra)', 'Luz (luz)', 'Trevas (trevas)'],
+  },
+  'fonte elemental': { title: 'Fonte Elemental: escolha o elemento', source: 'list', count: 1, list: ['Água (frio)', 'Ar (eletricidade)', 'Fogo (fogo)', 'Terra (ácido)'] },
+  'inimigo de': {
+    title: 'Inimigo de (Criatura): escolha o tipo',
+    source: 'list',
+    count: 1,
+    list: ['Animal', 'Construto', 'Espírito', 'Monstro', 'Morto-vivo', 'Duas raças humanoides'],
+  },
+  parceiro: { title: 'Parceiro: escolha o tipo', source: 'list', count: 1, list: PARTNER_TYPES },
+  automato: { title: 'Autômato: escolha o tipo', source: 'list', count: 1, list: ['Ajudante', 'Assassino', 'Atirador', 'Combatente', 'Guardião', 'Montaria', 'Vigilante'] },
+};
+
+export interface T20LabelGrant {
+  kind: 'label';
+  /** Linha da lista de habilidades da ficha que recebe a escolha no nome. */
+  abilityId: string;
+  abilityName: string;
+  title: string;
+  count: number;
+  effect: 'train' | 'bonus2' | null;
+  options: { id: string; name: string }[];
+}
+
+/** A habilidade ainda sem a escolha no nome ("Inimigo de (Criatura)" conta como sem escolha). */
+function labelKey(name: string): string | null {
+  const plain = plainT20(name);
+  if (plain === 'inimigo de (criatura)') return 'inimigo de';
+  if (name.includes('(')) return null;
+  return LABEL_RULES[plain] ? plain : null;
+}
+
+export function listT20LabelGrants(
+  content: T20Content,
+  sheet: T20Sheet,
+  abilities: readonly { id: string; name: string }[],
+): T20LabelGrant[] {
+  const skillOptions = (filter: (skill: T20Skill) => boolean) =>
+    (Object.keys(T20_SKILLS) as T20Skill[]).filter(filter).map((skill) => ({ id: skill, name: T20_SKILLS[skill].label }));
+  const noble = content.classes.find((klass) => plainT20(klass.name) === 'nobre')?.skillsChoice.options ?? [];
+  const out: T20LabelGrant[] = [];
+  for (const ability of abilities) {
+    const key = labelKey(ability.name);
+    if (!key) continue;
+    const rule = LABEL_RULES[key]!;
+    let options: { id: string; name: string }[];
+    switch (rule.source) {
+      case 'skill':
+        options = skillOptions((skill) => !(rule.exclude ?? []).includes(skill) && (rule.effect !== 'train' || !sheet.skills.trained.includes(skill)));
+        break;
+      case 'intSkill':
+        options = skillOptions((skill) => T20_SKILLS[skill].attribute === 'int' && !sheet.skills.trained.includes(skill));
+        break;
+      case 'nobleSkill':
+        options = skillOptions((skill) => (noble as readonly string[]).includes(skill) && !sheet.skills.trained.includes(skill));
+        break;
+      case 'trainedSkill':
+        options = skillOptions((skill) => sheet.skills.trained.includes(skill));
+        break;
+      case 'weapon':
+        options = content.equipment.filter((item) => item.group === 'arma').map((item) => ({ id: item.name, name: item.name }));
+        break;
+      case 'knownSpell':
+        options = sheet.spells.known.map((spell) => ({ id: spell.name, name: spell.name }));
+        break;
+      case 'school':
+        options = [...new Set(content.spells.map((spell) => spell.school).filter(Boolean))].sort().map((school) => ({ id: school, name: school }));
+        break;
+      default:
+        options = (rule.list ?? []).map((name) => ({ id: name, name }));
+    }
+    const count = Math.min(typeof rule.count === 'function' ? rule.count(sheet) : rule.count, Math.max(1, options.length));
+    const base = key === 'inimigo de' ? 'Inimigo de' : ability.name;
+    out.push({ kind: 'label', abilityId: ability.id, abilityName: base, title: rule.title, count, effect: rule.effect ?? null, options });
+  }
+  return out;
+}
+
+/** Aplica a escolha: o novo nome da habilidade e a ficha (perícias treinadas ou +2; nome do poder). */
+export function applyT20LabelGrant(
+  sheet: T20Sheet,
+  grant: T20LabelGrant,
+  pickedIds: readonly string[],
+  originalName: string,
+): { sheet: T20Sheet; name: string } | { error: string } {
+  const picked = [...new Set(pickedIds)].map((id) => grant.options.find((option) => option.id === id));
+  if (picked.length !== grant.count || picked.some((option) => !option)) return { error: `Escolha ${grant.count}.` };
+  const chosen = picked as { id: string; name: string }[];
+  const name = `${grant.abilityName} (${chosen.map((option) => option.name).join(', ')})`.slice(0, 120);
+  let next: T20Sheet = {
+    ...sheet,
+    // O poder gravado na ficha recebe o mesmo nome (o primeiro ainda sem escolha).
+    powers: (() => {
+      let renamed = false;
+      return sheet.powers.map((power) => {
+        if (renamed || power.name !== originalName) return power;
+        renamed = true;
+        return { ...power, name };
+      });
+    })(),
+  };
+  const skills = chosen.map((option) => option.id as T20Skill);
+  if (grant.effect === 'train') next = { ...next, skills: { ...next.skills, trained: [...new Set([...next.skills.trained, ...skills])] } };
+  if (grant.effect === 'bonus2') {
+    const bonuses = { ...next.skills.bonuses };
+    for (const skill of skills) bonuses[skill] = (bonuses[skill] ?? 0) + 2;
+    next = { ...next, skills: { ...next.skills, bonuses } };
+  }
+  return { sheet: next, name };
 }
