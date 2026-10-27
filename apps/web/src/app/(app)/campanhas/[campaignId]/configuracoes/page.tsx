@@ -29,7 +29,8 @@ export default async function CampaignSettingsPage({ params }: PageProps<'/campa
   const books = packs.map((pack) => ({ systemId: pack.systemId, bookKey: pack.bookKey, name: pack.name, category: pack.category, edition: pack.edition, entryCounts: pack.entryCounts }));
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    // Telas largas: regras da mesa à esquerda (formulário longo) e o resto numa coluna ao lado.
+    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]">
       <Card ornate>
         <CardHeader
           icon={<Settings className="h-5 w-5" aria-hidden="true" />}
@@ -52,6 +53,7 @@ export default async function CampaignSettingsPage({ params }: PageProps<'/campa
         />
       </Card>
 
+      <div className="flex flex-col gap-6">
       <CampaignCoverCard
         campaignId={campaign.id}
         name={campaign.name}
@@ -87,6 +89,7 @@ export default async function CampaignSettingsPage({ params }: PageProps<'/campa
           <DangerZone campaignId={campaign.id} campaignName={campaign.name} archived={archived} />
         </Card>
       ) : null}
+      </div>
     </div>
   );
 }
