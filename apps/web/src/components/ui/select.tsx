@@ -141,7 +141,8 @@ export function Select({
   const [query, setQuery] = useState('');
   const [activeValue, setActiveValue] = useState<string | null>(null);
   const [placement, setPlacement] = useState<Placement | null>(null);
-  // Dentro de um <dialog> modal, a lista precisa ficar no próprio diálogo (camada superior).
+  // Dentro de um <dialog> modal nativo, a lista fica no próprio diálogo (camada superior). Fora dele,
+  // a camada 110 fica acima dos formulários (Modal, 90) e do Tomo (100).
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const searchable = options.length > searchThreshold;
 
@@ -292,7 +293,7 @@ export function Select({
       ? createPortal(
           <div
             ref={popoverRef}
-            className="fixed z-[70] flex flex-col overflow-hidden rounded-md border border-line-strong bg-raised shadow-[0_18px_40px_-12px_rgb(0_0_0/0.85)]"
+            className="fixed z-[110] flex flex-col overflow-hidden rounded-md border border-line-strong bg-raised shadow-[0_18px_40px_-12px_rgb(0_0_0/0.85)]"
             style={{
               left: placement.left,
               width: placement.width,

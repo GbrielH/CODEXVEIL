@@ -84,7 +84,7 @@ export function HoverCard({ content, children, className }: HoverCardProps) {
               onPointerEnter={clear}
               onPointerLeave={hide}
               style={{ ...placement, width: CARD_WIDTH, maxWidth: 'calc(100vw - 16px)' }}
-              className="fixed z-[60] max-h-[70vh] overflow-y-auto rounded-lg border border-line-strong bg-raised p-3 text-left text-sm shadow-[0_18px_40px_-12px_rgb(0_0_0/0.85)]"
+              className="fixed z-[110] max-h-[70vh] overflow-y-auto rounded-lg border border-line-strong bg-raised p-3 text-left text-sm shadow-[0_18px_40px_-12px_rgb(0_0_0/0.85)]"
             >
               {content()}
             </div>,
