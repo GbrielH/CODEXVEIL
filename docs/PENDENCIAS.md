@@ -78,8 +78,8 @@ compartilhar; (3) "?" dos pontos do T20; (4) Tomo no app (chat e ditado).
 - Quadros: copiar/colar blocos, seleção múltipla.
 - Tomo: ficha de estatísticas da criatura, encontro no mapa, mapas, editar blocos do roteiro;
   personagem completo (hoje cria rascunho para terminar no assistente).
-- Recuperação de senha por código no app: aguardando decisão (criar credenciais do Google ou
-  desligar o login com Google na configuração de produção).
+- Login com Google (2026-10-27): Supabase configurado e modelo de recuperação por código enviado;
+  falta publicar o app no Google e ligar os botões (Vercel e EAS).
 - APK novo: ícones, splash e dados 3D no app (gasta build da cota EAS).
 - Redesign da ficha do app e da tela de sessão.
 - Behind the Magic: aguardando as respostas do Will.

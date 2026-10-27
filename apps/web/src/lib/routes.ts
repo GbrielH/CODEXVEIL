@@ -22,6 +22,8 @@ export const routes = {
   newCharacter: '/personagens/novo',
   books: '/livros',
   licenses: '/licencas',
+  privacy: '/privacidade',
+  terms: '/termos',
 } as const;
 
 export function campaignPath(campaignId: string, section = ''): string {

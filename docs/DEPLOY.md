@@ -361,6 +361,13 @@ Código pronto em 2026-10-21 (site: `components/auth/google-button.tsx`; app:
    mostra o botão. No app, o login abre o navegador e volta por `codexveil://google` (já liberado
    em `additional_redirect_urls`), sem biblioteca nativa nova.
 
+**Estado em 2026-10-27:** cliente OAuth criado no Google Cloud (projeto `CODEXVEIL`); `config push`
+feito com as credenciais (Google ligado no Supabase; modelo de recuperação com código de 6 dígitos
+enviado junto). Páginas públicas exigidas pelo Google: `/privacidade` e `/termos`. Faltam: publicar
+o app no Google (Branding com página inicial, privacidade e termos) e ligar as variáveis da Vercel e
+do EAS. Recomendado depois: gerar nova chave secreta (a atual apareceu num print) e rodar o
+`config push` de novo.
+
 Contas criadas pelo Google recebem o nome do Google no perfil (migração
 `20261021120000_google_signin_profile.sql`). Uma conta de e-mail e a do Google com o mesmo
 endereço são unidas pelo Supabase quando o e-mail é confirmado.
