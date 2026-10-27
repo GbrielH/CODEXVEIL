@@ -604,6 +604,9 @@ function T20SheetBody(props: T20SheetScreenProps) {
           content={content}
           mode={rollMode}
           canAct={permissions.canEditPlay}
+          reminders={situational
+            .filter((bonus) => activeSituations.includes(bonus.id) && bonus.effect.note)
+            .map((bonus) => `${bonus.source}: ${bonus.effect.note}`)}
         />
       ) : null}
 

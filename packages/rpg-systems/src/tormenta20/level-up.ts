@@ -53,6 +53,18 @@ function classFor(content: T20Content, sheet: T20Sheet, index: number) {
   );
 }
 
+/** PV por nível de habilidades de raça ("+3 pontos de vida no 1º nível e +1 por nível seguinte"). */
+function raceHitPointsPerLevel(content: T20Content, sheet: T20Sheet): number {
+  const race =
+    content.races.find((entry) => entry.id === sheet.identity.raceKey) ??
+    content.races.find((entry) => plainT20(entry.name) === plainT20(sheet.identity.race));
+  for (const ability of race?.abilities ?? []) {
+    const match = /\+\d+ pontos de vida no 1º nível e \+(\d+) por nível/i.exec(ability.text);
+    if (match) return Number(match[1]);
+  }
+  return 0;
+}
+
 function spellsKnownAt(klass: T20Item<'class'>, level: number): number {
   if (!klass.spellcasting) return 0;
   let total = klass.spellcasting.initial;
@@ -148,7 +160,7 @@ export function planT20LevelUp(
     classDef: klass,
     newClassLevel,
     newTotalLevel,
-    hitPointsGained: klass ? Math.max(1, klass.pvPerLevel + con) : Math.max(1, 3 + con),
+    hitPointsGained: (klass ? Math.max(1, klass.pvPerLevel + con) : Math.max(1, 3 + con)) + raceHitPointsPerLevel(content, sheet),
     manaPointsGained: klass?.pmPerLevel ?? 0,
     abilities: levelAbilities,
     powerChoice,

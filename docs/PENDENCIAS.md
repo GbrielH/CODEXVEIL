@@ -67,9 +67,8 @@ compartilhar; (3) "?" dos pontos do T20; (4) Tomo no app (chat e ditado).
   Detalhe em PROXIMOS_PASSOS, seção B0g.
 
 - T20, automação das habilidades: etapas 1, 2 e 3 feitas (bônus fixos, de situação e
-  escolhas); restam detalhes: Osteon trocar a perícia por um poder, Totem Espiritual, Etiqueta
-  (Diplomacia ou Nobreza), lembretes de ataque na tela de ataque, os mesmos cartões na ficha do app
-  e PV de raça por nível (Anão) na subida de nível.
+  escolhas) e os restos (Osteon, Totem, Familiar, Etiqueta, lembretes nos ataques, Anão, app),
+  em 2026-10-27. Falta conferir no navegador e no aparelho.
 
 - T20, escolhas concedidas que ainda faltam: Osteon (Memória Póstuma: perícia ou poder), Foco em
   Magia (marcar a magia), escolas do Bardo/Druida nas magias concedidas; conferir no livro o preço

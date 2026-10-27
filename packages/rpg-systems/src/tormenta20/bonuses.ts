@@ -116,6 +116,13 @@ const POWER_RULES: Record<string, Rule> = {
   'esse cheiro...': () => ({ skills: { fortitude: 2 } }),
   'coracao heroico': (context) => ({ manaPoints: 3 * (1 + [5, 11, 17].filter((level) => context.level >= level).length) }),
   sarado: (context) => ({ hitPoints: context.attributes.for, skills: { fortitude: context.attributes.for } }),
+  'totem espiritual': (context) => ({ manaPoints: context.attributes.sab }),
+};
+
+/** Familiar do arcanista: efeito pelo animal escolhido (o que a ficha consegue somar). */
+const FAMILIAR_RULES: Record<string, Rule> = {
+  gato: () => ({ skills: { furtividade: 2 } }),
+  sapo: (context) => ({ hitPoints: Math.max(context.attributes.int, context.attributes.sab, context.attributes.car) }),
 };
 
 const TORMENTA_POWERS = new Set(
@@ -165,6 +172,11 @@ export function t20AutomaticBonuses(sheet: T20Sheet, attributes: Record<T20Attri
   for (const name of new Set(powers)) {
     const rule = POWER_RULES[name];
     if (rule) push(sheet.powers.find((power) => baseName(power.name) === name)?.name ?? name, rule(context));
+  }
+  for (const power of sheet.powers) {
+    const animal = /^familiar \((.+)\)$/.exec(plainT20(power.name))?.[1];
+    const rule = animal ? FAMILIAR_RULES[animal] : undefined;
+    if (rule) push(power.name, rule(context));
   }
   return out;
 }

@@ -38,6 +38,10 @@ export interface T20AttackEffects {
   rage: number;
   /** A outra mão está ocupada (outra arma ou escudo equipado): sem Estilo de Uma Arma. */
   offHandBusy?: boolean;
+  /** Nome do item (para Foco em Arma, armas anãs, tridente…). */
+  weaponName?: string;
+  /** Lembretes dos bônus de situação ligados (ataque e dano que a ficha não soma sozinha). */
+  reminders?: readonly string[];
 }
 
 export interface ResolvedT20Attack {
@@ -215,6 +219,40 @@ export function resolveT20Attack(
       notes.push('Estilo de Uma Arma +2 no ataque');
     }
   }
+  // Poderes e habilidades que valem com uma arma específica (o nome da arma está no item).
+  const weapon = plain(effects.weaponName ?? '');
+  const chosen = (power: string) =>
+    sheet.powers.some((entry) => {
+      const match = /^(.*?)\s*\((.+)\)$/.exec(entry.name);
+      return Boolean(match && plain(match[1]!) === plain(power) && weapon && weapon.startsWith(plain(match[2]!)));
+    });
+  if (chosen('Foco em Arma')) {
+    toHit += 2;
+    notes.push('Foco em Arma +2 no ataque');
+  }
+  if (chosen('Mestre em Arma')) notes.push('Mestre em Arma: dano um passo acima; 2 PM para rolar de novo o ataque');
+  const racePlain = plain(sheet.identity.race);
+  if (racePlain === 'anao' && /machado|martelo|marreta|picareta/.test(weapon)) {
+    toHit += 2;
+    notes.push('Tradição de Heredrimm +2 no ataque');
+  }
+  const tridentFamily = /azagaia|lanca|tridente/.test(weapon);
+  if (tridentFamily && racePlain === 'sereia/tritao') {
+    bonus += 2;
+    notes.push('Mestre do Tridente +2 no dano');
+  }
+  if (tridentFamily && hasPower(sheet, 'Arsenal das profundezas')) {
+    bonus += 2;
+    notes.push('Arsenal das Profundezas +2 no dano e +1 no multiplicador');
+  }
+  const extraMultiplier = tridentFamily && hasPower(sheet, 'Arsenal das profundezas') ? 1 : 0;
+  let extraMargin = 0;
+  if (hasPower(sheet, 'Armas da ambição')) {
+    toHit += 1;
+    extraMargin += 1;
+    notes.push('Armas da Ambição +1 no ataque e na margem de ameaça');
+  }
+  for (const reminder of effects.reminders ?? []) notes.push(reminder);
   if (effects.rage && melee) {
     toHit += effects.rage;
     bonus += effects.rage;
@@ -231,9 +269,9 @@ export function resolveT20Attack(
     skill,
     toHit,
     damage: withBonus(stats.damage, bonus),
-    critical: withBonus(multiplyDice(stats.damage, stats.critMultiplier), bonus),
-    critMargin: stats.critMargin,
-    critMultiplier: stats.critMultiplier,
+    critical: withBonus(multiplyDice(stats.damage, stats.critMultiplier + extraMultiplier), bonus),
+    critMargin: stats.critMargin - extraMargin,
+    critMultiplier: stats.critMultiplier + extraMultiplier,
     notes,
   };
 }

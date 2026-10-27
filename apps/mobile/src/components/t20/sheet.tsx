@@ -36,6 +36,10 @@ import {
   type T20Skill,
   type T20LevelUpChoices,
   computeT20Derived,
+  listT20Grants,
+  listT20ItemGrants,
+  listT20LabelGrants,
+  t20SituationalBonuses,
   t20DefenseFromItems,
   findT20Condition,
   formatT20Bonus,
@@ -60,6 +64,7 @@ import { Notice } from '@/components/ui/states';
 import { DiceProvider, useDice } from '@/components/dice/dice';
 import { DeleteCharacterCard } from '@/components/sheet/delete-character';
 import { T20Attacks } from './attacks';
+import { T20AutomaticBonusesCard, T20GrantsCard, T20SituationalCard } from './automation';
 import { LevelGate, type LevelGateInfo } from '@/components/sheet/level-gate';
 import { T20NewItem } from './new-item';
 import { T20TurnCard, logT20TurnUse } from './turn-card';
@@ -177,14 +182,68 @@ function T20SheetBody(props: Props) {
       .catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- grava só quando o equipamento muda a Defesa.
   }, [defenseKey]);
+  // Escolhas concedidas (magias, poderes, Protótipo, perícias e marcações no nome).
+  const grants = useMemo(() => (content.spells.length || content.powers.length ? listT20Grants(content, sheet) : []), [content, sheet]);
+  const labelGrants = useMemo(() => (content.classes.length ? listT20LabelGrants(content, sheet, abilities) : []), [content, sheet, abilities]);
+  const itemGrants = useMemo(
+    () =>
+      listT20ItemGrants(
+        content,
+        abilities.map((ability) => ability.name),
+        items.map((item) => item.notes),
+      ),
+    [content, abilities, items],
+  );
+  // Bônus de situação: o jogador liga quando valer (vale enquanto a ficha estiver aberta).
+  const situational = useMemo(() => t20SituationalBonuses(sheet), [sheet]);
+  const [activeSituations, setActiveSituations] = useState<string[]>([]);
+  const situationalEffects = useMemo(
+    () => situational.filter((bonus) => activeSituations.includes(bonus.id)).map((bonus) => bonus.effect),
+    [situational, activeSituations],
+  );
   const derived = useMemo(
     () =>
       computeT20Derived(
         effectiveSheet,
         conditions.map((entry) => entry.key),
+        situationalEffects,
       ),
-    [effectiveSheet, conditions],
+    [effectiveSheet, conditions, situationalEffects],
   );
+  // PV e PM de habilidades (Vitalidade, Vontade de Ferro…): a trilha recebe a diferença uma vez.
+  const abilityPoolsKey = `${derived.abilityHitPoints}|${derived.abilityManaPoints}`;
+  useEffect(() => {
+    if (!props.canEditSheet) return;
+    const deltas = [
+      [T20_RESOURCE_KEYS.hitPoints, derived.abilityHitPoints - sheet.hitPoints.fromAbilities],
+      [T20_RESOURCE_KEYS.manaPoints, derived.abilityManaPoints - sheet.manaPoints.fromAbilities],
+    ] as const;
+    if (deltas.every(([, delta]) => delta === 0)) return;
+    const next = {
+      ...sheet,
+      hitPoints: { ...sheet.hitPoints, fromAbilities: derived.abilityHitPoints },
+      manaPoints: { ...sheet.manaPoints, fromAbilities: derived.abilityManaPoints },
+    };
+    void (async () => {
+      try {
+        const client = getSupabase();
+        const updated: CharacterResource[] = [];
+        for (const [key, delta] of deltas) {
+          const entry = resources.find((resource) => resource.key === key);
+          if (!entry || delta === 0) continue;
+          await adjustCharacterResource(client, entry.id, 'set_max', Math.max(0, (entry.max ?? 0) + delta));
+          updated.push(await adjustCharacterResource(client, entry.id, delta > 0 ? 'heal' : 'damage', Math.abs(delta)));
+        }
+        const saved = await saveCharacterSheet(client, props.character.id, version, { sheet: next });
+        setSheet(next);
+        setVersion(saved.version);
+        if (updated.length) setResources((current) => current.map((entry) => updated.find((item) => item.id === entry.id) ?? entry));
+      } catch {
+        // Tenta de novo na próxima abertura da ficha.
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- acerta só quando o total das habilidades muda.
+  }, [abilityPoolsKey]);
   const track = (key: string) => resources.find((entry) => entry.key === key);
   const value = Math.max(1, Number(amount) || 1);
 
@@ -232,6 +291,24 @@ function T20SheetBody(props: Props) {
         updates={pendingUpdates}
         onCreated={(created) => setAbilities((current) => [...current, ...created])}
       />
+      {props.canEditSheet ? (
+        <T20GrantsCard
+          characterId={props.character.id}
+          sheet={sheet}
+          version={version}
+          grants={grants}
+          itemGrants={itemGrants}
+          labelGrants={labelGrants}
+          abilities={abilities}
+          onSheet={(next, nextVersion) => {
+            setSheet(next);
+            setVersion(nextVersion);
+          }}
+          onAbilities={(created) => setAbilities((current) => [...current, ...created])}
+          onAbilityUpdated={(updated) => setAbilities((current) => current.map((entry) => (entry.id === updated.id ? updated : entry)))}
+          onItems={(created) => setItems((current) => [...current, ...created])}
+        />
+      ) : null}
       <Card ornate>
         <AppText variant="eyebrow">Tormenta20 · nível {derived.level}</AppText>
         <AppText variant="title">{props.character.name}</AppText>
@@ -324,6 +401,9 @@ function T20SheetBody(props: Props) {
           content={content}
           mode={rollMode}
           canAct={props.canEditPlay}
+          reminders={situational
+            .filter((bonus) => activeSituations.includes(bonus.id) && bonus.effect.note)
+            .map((bonus) => `${bonus.source}: ${bonus.effect.note}`)}
         />
       ) : null}
       {tab === 'jogo' ? (
@@ -527,6 +607,16 @@ function T20SheetBody(props: Props) {
         />
       ) : null}
 
+      {tab === 'pericias' ? <T20AutomaticBonusesCard bonuses={derived.automaticBonuses} /> : null}
+      {tab === 'pericias' ? (
+        <T20SituationalCard
+          list={situational}
+          active={activeSituations}
+          onToggle={(id) =>
+            setActiveSituations((current) => (current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id]))
+          }
+        />
+      ) : null}
       {tab === 'pericias' ? (
         <Card>
           <View style={styles.stats}>

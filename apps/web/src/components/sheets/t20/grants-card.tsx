@@ -233,7 +233,7 @@ function ItemGrant({ grant, characterId, onItems }: Props & { grant: T20ItemGran
   );
 }
 
-function LabelGrant({ grant, characterId, sheet, version, abilities, onSheet, onAbilityUpdated }: Props & { grant: T20LabelGrant }) {
+function LabelGrant({ grant, characterId, sheet, version, abilities, onSheet, onAbilities, onAbilityUpdated }: Props & { grant: T20LabelGrant }) {
   const { toast } = useToast();
   const [picked, setPicked] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -258,6 +258,20 @@ function LabelGrant({ grant, characterId, sheet, version, abilities, onSheet, on
         resourceId: ability.resourceId,
       });
       onAbilityUpdated(updated);
+      // Osteon que trocou a perícia por um poder: o poder entra na lista de habilidades.
+      const created: CharacterAbility[] = [];
+      for (const entry of result.abilities)
+        created.push(
+          await createCharacterAbility(client, characterId, {
+            kind: entry.kind,
+            name: entry.name,
+            source: entry.source,
+            description: entry.description,
+            data: entry.data as CharacterAbility['data'],
+            resourceId: null,
+          }),
+        );
+      if (created.length) onAbilities(created);
       if (JSON.stringify(result.sheet) !== JSON.stringify(sheet)) {
         const saved = await saveCharacterSheet(client, characterId, version, { sheet: result.sheet });
         onSheet(result.sheet, saved.version);

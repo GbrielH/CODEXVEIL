@@ -51,6 +51,7 @@ export function T20AttacksCard({
   content,
   mode,
   canAct,
+  reminders = [],
 }: {
   characterId: string;
   sheet: T20Sheet;
@@ -59,6 +60,8 @@ export function T20AttacksCard({
   content: T20Content | null;
   mode: DiceRollMode;
   canAct: boolean;
+  /** Lembretes dos bônus de situação ligados (ataque e dano). */
+  reminders?: readonly string[];
 }) {
   const [rage, setRage] = useStoredRage(characterId);
   const rageMax = t20RageMaxBonus(sheet);
@@ -130,6 +133,8 @@ export function T20AttacksCard({
             const attack = resolveT20Attack(stats, sheet, derived, {
               rage: activeRage,
               offHandBusy: shieldEquipped || weapons.length > 1,
+              weaponName: item.name,
+              reminders,
             });
             const critLabel = `${attack.critMargin < 20 ? `${attack.critMargin}` : '20'}/x${attack.critMultiplier}`;
             return (

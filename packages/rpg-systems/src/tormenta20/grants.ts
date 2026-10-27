@@ -99,10 +99,29 @@ function spellOptions(content: T20Content, sheet: T20Sheet, rule: SpellRule): T2
     .sort((a, b) => a.circle - b.circle || a.name.localeCompare(b.name, 'pt-BR'));
 }
 
+/** Magia de cada animal do Totem Espiritual (quadro do bárbaro). */
+const TOTEM_SPELLS: Record<string, string> = {
+  coruja: 'Orientação',
+  corvo: 'Visão Mística',
+  falcao: 'Detectar Ameaças',
+  grifo: 'Primor Atlético',
+  lobo: 'Concentração de Combate',
+  raposa: 'Imagem Espelhada',
+  tartaruga: 'Armadura Arcana',
+  urso: 'Vitalidade Fantasma',
+};
+
 /** O que a raça e os poderes da ficha concedem e ainda não foi escolhido. */
 export function listT20Grants(content: T20Content, sheet: T20Sheet): T20Grant[] {
   const grants: T20Grant[] = [];
   const spellsFrom = (source: string) => sheet.spells.known.filter((spell) => spell.source === source).length;
+
+  const totem = sheet.powers.map((power) => /^totem espiritual \((.+)\)$/.exec(plainT20(power.name))?.[1]).find(Boolean);
+  const totemSpell = totem ? TOTEM_SPELLS[totem] : undefined;
+  if (totemSpell && spellsFrom('Totem Espiritual') === 0) {
+    const options = spellOptions(content, sheet, { count: 1, circle: 5, types: ['arcana', 'divina', 'universal'], names: [totemSpell] });
+    if (options.length) grants.push({ kind: 'spell', source: 'Totem Espiritual', title: `Totem Espiritual: aprenda ${totemSpell}`, missing: 1, options });
+  }
 
   // Poderes repetíveis contam uma vez por cópia na ficha.
   const powerCounts = new Map<string, { name: string; copies: number }>();
@@ -333,7 +352,7 @@ export function applyT20ItemGrant(
 // perícia também treinam ou dão +2 na ficha.
 // ---------------------------------------------------------------------------
 
-type LabelSource = 'skill' | 'intSkill' | 'nobleSkill' | 'trainedSkill' | 'weapon' | 'knownSpell' | 'school' | 'list';
+type LabelSource = 'skill' | 'intSkill' | 'nobleSkill' | 'trainedSkill' | 'weapon' | 'knownSpell' | 'school' | 'list' | 'skillList' | 'skillOrPower';
 
 interface LabelRule {
   title: string;
@@ -351,7 +370,20 @@ const PARTNER_TYPES = ['Ajudante', 'Assassino', 'Atirador', 'Combatente', 'Fort�
 /** Pelo nome simplificado da habilidade ou do poder. */
 const LABEL_RULES: Record<string, LabelRule> = {
   hibrido: { title: 'Híbrido: perícia treinada', source: 'skill', count: 1, effect: 'train' },
-  'memoria postuma': { title: 'Memória Póstuma: perícia treinada', source: 'skill', count: 1, effect: 'train' },
+  'memoria postuma': { title: 'Memória Póstuma: uma perícia treinada ou um poder geral', source: 'skillOrPower', count: 1, effect: 'train' },
+  etiqueta: { title: 'Etiqueta: +2 em Diplomacia ou Nobreza', source: 'skillList', count: 1, effect: 'bonus2', list: ['diplomacia', 'nobreza'] },
+  'totem espiritual': {
+    title: 'Totem Espiritual: escolha o animal totêmico',
+    source: 'list',
+    count: 1,
+    list: ['Coruja', 'Corvo', 'Falcão', 'Grifo', 'Lobo', 'Raposa', 'Tartaruga', 'Urso'],
+  },
+  familiar: {
+    title: 'Familiar: escolha o animal',
+    source: 'list',
+    count: 1,
+    list: ['Borboleta', 'Cobra', 'Coruja', 'Corvo', 'Falcão', 'Gato', 'Lagarto', 'Morcego', 'Rato', 'Sapo'],
+  },
   'conhecimento enciclopedico': { title: 'Conhecimento Enciclopédico: duas perícias de Inteligência', source: 'intSkill', count: 2, effect: 'train' },
   'educacao privilegiada': { title: 'Educação Privilegiada: duas perícias de nobre', source: 'nobleSkill', count: 2, effect: 'train' },
   deformidade: { title: 'Deformidade: +2 em duas perícias', source: 'skill', count: 2, effect: 'bonus2' },
@@ -392,7 +424,7 @@ export interface T20LabelGrant {
   title: string;
   count: number;
   effect: 'train' | 'bonus2' | null;
-  options: { id: string; name: string }[];
+  options: { id: string; name: string; text?: string }[];
 }
 
 /** A habilidade ainda sem a escolha no nome ("Inimigo de (Criatura)" conta como sem escolha). */
@@ -416,7 +448,7 @@ export function listT20LabelGrants(
     const key = labelKey(ability.name);
     if (!key) continue;
     const rule = LABEL_RULES[key]!;
-    let options: { id: string; name: string }[];
+    let options: { id: string; name: string; text?: string }[];
     switch (rule.source) {
       case 'skill':
         options = skillOptions((skill) => !(rule.exclude ?? []).includes(skill) && (rule.effect !== 'train' || !sheet.skills.trained.includes(skill)));
@@ -427,6 +459,20 @@ export function listT20LabelGrants(
       case 'nobleSkill':
         options = skillOptions((skill) => (noble as readonly string[]).includes(skill) && !sheet.skills.trained.includes(skill));
         break;
+      case 'skillList':
+        options = (rule.list ?? []).map((skill) => ({ id: skill, name: T20_SKILLS[skill as T20Skill].label }));
+        break;
+      case 'skillOrPower': {
+        const owned = new Set(sheet.powers.map((power) => plainT20(power.name.replace(/\s*\(.*\)$/, ''))));
+        options = [
+          ...skillOptions((skill) => !sheet.skills.trained.includes(skill)),
+          ...content.powers
+            .filter((power) => GENERAL_POWER_GROUPS.includes(power.group) && !owned.has(plainT20(power.name)))
+            .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+            .map((power) => ({ id: `poder:${power.id}`, name: `Poder: ${power.name}`, text: power.text })),
+        ];
+        break;
+      }
       case 'trainedSkill':
         options = skillOptions((skill) => sheet.skills.trained.includes(skill));
         break;
@@ -455,10 +501,21 @@ export function applyT20LabelGrant(
   grant: T20LabelGrant,
   pickedIds: readonly string[],
   originalName: string,
-): { sheet: T20Sheet; name: string } | { error: string } {
+): { sheet: T20Sheet; name: string; abilities: AbilityEntryTemplate[] } | { error: string } {
   const picked = [...new Set(pickedIds)].map((id) => grant.options.find((option) => option.id === id));
   if (picked.length !== grant.count || picked.some((option) => !option)) return { error: `Escolha ${grant.count}.` };
-  const chosen = picked as { id: string; name: string }[];
+  const chosen = picked as { id: string; name: string; text?: string }[];
+  // Osteon pode trocar a perícia por um poder geral: o poder entra na ficha e na lista.
+  const power = chosen.find((option) => option.id.startsWith('poder:'));
+  if (power) {
+    const powerName = power.name.replace(/^Poder: /, '');
+    const level = Math.max(1, sheet.identity.classes.reduce((total, entry) => total + entry.level, 0));
+    return {
+      name: `${grant.abilityName} (${powerName})`.slice(0, 120),
+      sheet: { ...sheet, powers: [...sheet.powers, { key: power.id.slice(6), name: powerName, source: grant.abilityName, level }] },
+      abilities: [{ kind: 'feat', name: powerName, source: grant.abilityName, description: power.text ?? '', data: {}, sortOrder: 0 }],
+    };
+  }
   const name = `${grant.abilityName} (${chosen.map((option) => option.name).join(', ')})`.slice(0, 120);
   let next: T20Sheet = {
     ...sheet,
@@ -479,5 +536,5 @@ export function applyT20LabelGrant(
     for (const skill of skills) bonuses[skill] = (bonuses[skill] ?? 0) + 2;
     next = { ...next, skills: { ...next.skills, bonuses } };
   }
-  return { sheet: next, name };
+  return { sheet: next, name, abilities: [] };
 }

@@ -306,6 +306,15 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27:** T20, restos da automação (4 testes novos em `pending-extras.test.ts`): Etiqueta (+2
+  Diplomacia ou Nobreza), Osteon pode trocar a perícia por um poder geral, Totem Espiritual (animal →
+  magia; Sabedoria nos PM), Familiar (animal; Gato +2 Furtividade, Sapo atributo-chave nos PV),
+  Anão +1 PV por nível na subida; ataques somam Foco em Arma, Tradição de Heredrimm, Armas da
+  Ambição, Mestre do Tridente e Arsenal das Profundezas pela arma, e mostram os lembretes dos bônus
+  de situação ligados. **App**: ficha T20 com os cartões Escolhas pendentes, Bônus automáticos e
+  Bônus de situação, acerto de PV/PM e lembretes nos ataques (OTA, sem build). Não verificado no
+  navegador nem no aparelho.
+
 - **2026-10-27:** T20, **escolhas — etapa 3 de 3** (`listT20LabelGrants`/`applyT20LabelGrant`, teste novo):
   o cartão "Escolhas pendentes" pede as escolhas que ficam no nome da habilidade, e as de perícia
   já valem na ficha. Treinam: Híbrido (Kliren), Memória Póstuma (Osteon), Conhecimento

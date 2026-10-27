@@ -193,8 +193,9 @@ mapa e notas lado a lado).
       ligados; ataque e dano como lembrete).
 - [x] Etapa 3: escolhas no cartão "Escolhas pendentes" (magias e poderes concedidos, itens do
       Protótipo, perícias treinadas ou +2, arma/perícia/magia/escola/tipo marcados no nome).
-- [ ] Restos: Osteon trocar a perícia por um poder; Totem Espiritual (animal e magia); lembretes de
-      ataque (Foco em Arma, Fúria) na tela de ataque; ficha do app com os mesmos cartões.
+- [x] Restos (2026-10-27): Osteon (perícia ou poder), Totem Espiritual, Familiar, Etiqueta,
+      armas no ataque (Foco em Arma, Heredrimm, Tridente…), lembretes nos ataques, Anão PV por nível,
+      ficha do app com os mesmos cartões.
 
 **D&D 5e** (melhoria futura, pedida em 2026-10-27): fazer a mesma verificação do livro inteiro
 (SRD 5.2.1 e livros importados: classes, subclasses, espécies, antecedentes e talentos) e as mesmas
