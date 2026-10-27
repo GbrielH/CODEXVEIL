@@ -38,6 +38,7 @@ import {
   t20CreationFeatureChoices,
   t20ExpertiseRule,
   t20OriginBenefitOptions,
+  t20OriginItemSlots,
   t20PowerSkillPick,
   T20_SKILL_IDS,
   t20GenericPowerGroups,
@@ -83,6 +84,7 @@ import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckboxField, SelectField, TextField, TextareaField } from '@/components/ui/field';
+import { OriginItemsPicker } from './origin-items';
 import { CharacterIcon } from '@/components/characters/character-icon';
 import { ImagePromptCard } from '@/components/characters/image-prompt-card';
 import { cx } from '@/lib/cx';
@@ -522,15 +524,18 @@ export function T20CreationWizard({ campaign, sources, remoteDraft = null }: T20
                   text: entry.summary,
                 }))}
                 onSelect={(originId) =>
-                  update({ originId, originBenefits: [], originPowerChoices: {} })
+                  update({ originId, originBenefits: [], originPowerChoices: {}, originItems: {} })
                 }
               />
               {errorFor('originId') ? <Alert tone="danger">{errorFor('originId')}</Alert> : null}
               {origin ? (
                 <>
-                  {origin.items ? (
-                    <p className="text-sm text-fg-secondary">Itens: {origin.items}</p>
-                  ) : null}
+                  <OriginItemsPicker
+                    slots={t20OriginItemSlots(content, origin)}
+                    value={draft.originItems}
+                    onChange={(originItems) => update({ originItems })}
+                    error={errorFor('originItems')}
+                  />
                   <MultiPick
                     label="Benefícios da origem (escolha 2)"
                     count={2}

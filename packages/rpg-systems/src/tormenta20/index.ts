@@ -81,5 +81,6 @@ export { tormenta20License } from './license';
 export { t20OfficialLinks } from './links';
 export * from './content';
 export * from './creation';
+export * from './origin-items';
 export * from './level-up';
 export * from './equipment-defense';

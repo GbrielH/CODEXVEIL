@@ -35,6 +35,7 @@ import {
   type T20Content,
   type T20Item,
 } from './content';
+import { t20MissingOriginItems, t20OriginItemSlots } from './origin-items';
 import { t20HitPointsFor, t20ManaPointsFor } from './derived';
 import { T20_STARTING_MONEY, t20Tier } from './progression';
 import { t20DefaultResources } from './resources';
@@ -123,6 +124,8 @@ export interface T20Draft {
   levelPowerSkills: Record<string, T20Skill[]>;
   /** `<nível>:<habilidade>` → id da opção (ex.: "5:Bênção da Justiça" → Égide Sagrada). */
   featureChoices: Record<string, string>;
+  /** Itens da origem escolhidos (vaga → id do equipamento, `texto:…` ou texto livre). */
+  originItems: Record<string, string>;
   spellIds: string[];
   equipment: { simple: string; martial: string; armor: string; shield: boolean };
   /** Dinheiro inicial (4d6 rolado no 1º nível). */
@@ -176,6 +179,7 @@ export function createT20Draft(level = 1, method: T20AttributeMethodChoice = 'po
     levelPowerAttributes: {},
     levelPowerSkills: {},
     featureChoices: {},
+    originItems: {},
     spellIds: [],
     equipment: { simple: '', martial: '', armor: '', shield: false },
     money: null,
@@ -816,6 +820,10 @@ export function t20DraftIssues(
     draft.originBenefits.length !== 2
   )
     add('origem', 'originBenefits', 'Escolha dois benefícios da origem.');
+  if (origin) {
+    const missing = t20MissingOriginItems(t20OriginItemSlots(content, origin), draft.originItems);
+    if (missing.length) add('origem', 'originItems', `Escolha os itens da origem: ${missing.join('; ')}.`);
+  }
   for (const benefit of draft.originBenefits) {
     const name = benefit.startsWith('power:') ? benefit.slice(6) : '';
     if (name && t20GenericPowerGroups(name) && !originBenefitPower(content, draft, name))
@@ -1179,7 +1187,33 @@ export function buildT20Character(
       true,
       spacesOf(shield),
     );
-  if (origin?.items) addItem(`Itens da origem (${origin.name})`, 'gear', origin.items);
+  // Itens da origem, um a um: fixos com os dados do catálogo; os escolhidos no passo da origem.
+  const fromCatalog = (item: T20Item<'equipment'>, note = '', quantity = 1, name = item.name) => {
+    const category: ItemTemplate['category'] = item.group === 'arma' ? 'weapon' : item.group === 'armadura' ? 'armor' : 'gear';
+    const description = [item.group === 'arma' ? weaponText(item) : item.text ?? '', note].filter(Boolean).join(' · ');
+    addItem(name.replace('<ofício>', 'ofício'), category, description, false, spacesOf(item));
+    items[items.length - 1]!.quantity = quantity;
+  };
+  for (const slot of t20OriginItemSlots(content, origin)) {
+    const source = `Origem: ${origin!.name}`;
+    if (slot.kind === 'fixed') {
+      if (slot.equipment) fromCatalog(slot.equipment, slot.note || source, slot.quantity, slot.name);
+      else {
+        addItem(slot.name, 'gear', [slot.note, source].filter(Boolean).join(' · '));
+        items[items.length - 1]!.quantity = slot.quantity;
+      }
+      continue;
+    }
+    const pick = (draft.originItems[slot.key] ?? '').trim();
+    if (!pick) continue;
+    if (slot.kind === 'free') {
+      addItem(slot.template.replace('{}', pick), 'gear', source);
+      continue;
+    }
+    const equipment = content.equipment.find((item) => item.id === pick);
+    if (equipment) fromCatalog(equipment, source);
+    else addItem(pick.startsWith('texto:') ? pick.slice(6) : pick, 'gear', source);
+  }
 
   // Habilidades: raça, classe até o nível, poderes e magias.
   const abilities: AbilityEntryTemplate[] = [];
@@ -1373,6 +1407,7 @@ const t20DraftSchema = z.object({
     .record(z.string().max(4), z.array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]])).max(3))
     .catch({}),
   featureChoices: z.record(z.string().max(220), z.string().trim().max(160)).catch({}),
+  originItems: z.record(z.string().max(40), z.string().trim().max(160)).catch({}),
   spellIds: idList(60),
   equipment: z
     .object({

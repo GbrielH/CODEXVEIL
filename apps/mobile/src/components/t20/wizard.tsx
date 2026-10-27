@@ -30,6 +30,7 @@ import {
   t20CreationFeatureChoices,
   t20ExpertiseRule,
   t20OriginBenefitOptions,
+  t20OriginItemSlots,
   t20PowerSkillPick,
   T20_SKILL_IDS,
   t20GenericPowerGroups,
@@ -58,7 +59,11 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { OptionCard } from '@/components/creation/choice-fields';
 import { Button } from '@/components/ui/button';
 import { CheckRow, Chip, ChipRow } from '@/components/ui/controls';
-import { CreationAnswersCard, answersComplete, answersFor } from '@/components/characters/creation-answers';
+import {
+  CreationAnswersCard,
+  answersComplete,
+  answersFor,
+} from '@/components/characters/creation-answers';
 import { Field } from '@/components/ui/field';
 import { PickerField } from '@/components/ui/picker';
 import { AppText, Badge, Card } from '@/components/ui/primitives';
@@ -182,7 +187,8 @@ export function T20MobileWizard({
         ...(campaign ? { answers: answersFor(questions, answerValues) } : {}),
       });
       // A rolagem foi usada: a próxima criação sorteia de novo.
-      if (draft.attributeMethod === 'rolagem') await getSupabase().rpc('consume_t20_attribute_dice');
+      if (draft.attributeMethod === 'rolagem')
+        await getSupabase().rpc('consume_t20_attribute_dice');
       router.replace({ pathname: '/personagem/[id]', params: { id } });
     } catch (error) {
       setMessage(failureMessage(error));
@@ -552,10 +558,55 @@ export function T20MobileWizard({
               title={entry.name}
               description={clip(entry.benefitsText || entry.summary)}
               onPress={() =>
-                update({ originId: entry.id, originBenefits: [], originPowerChoices: {} })
+                update({
+                  originId: entry.id,
+                  originBenefits: [],
+                  originPowerChoices: {},
+                  originItems: {},
+                })
               }
             />
           ))}
+          {origin ? (
+            <View style={{ gap: spacing[2] }}>
+              <AppText style={{ fontFamily: fonts.sansMedium }}>Itens da origem</AppText>
+              {t20OriginItemSlots(content, origin).map((slot) => {
+                if (slot.kind === 'fixed')
+                  return (
+                    <AppText key={slot.key} variant="small">
+                      • {slot.quantity > 1 ? `${slot.quantity}× ` : ''}
+                      {slot.name}
+                      {slot.note ? ` (${slot.note})` : ''}
+                    </AppText>
+                  );
+                const pick = draft.originItems[slot.key] ?? '';
+                const setPick = (value: string) =>
+                  update({ originItems: { ...draft.originItems, [slot.key]: value } });
+                if (slot.kind === 'free')
+                  return (
+                    <Field
+                      key={slot.key}
+                      label={slot.label}
+                      value={pick}
+                      onChangeText={setPick}
+                      maxLength={120}
+                    />
+                  );
+                return (
+                  <PickerField
+                    key={slot.key}
+                    label={slot.label}
+                    value={slot.options.some((option) => option.id === pick) ? pick : ''}
+                    onChange={setPick}
+                    options={slot.options.map((option) => ({
+                      value: option.id,
+                      label: option.name,
+                    }))}
+                  />
+                );
+              })}
+            </View>
+          ) : null}
           {origin
             ? multi(
                 'Benefícios da origem',
@@ -944,7 +995,11 @@ export function T20MobileWizard({
         </Card>
       ) : null}
       {step === 'revisao' ? (
-        <CreationAnswersCard questions={questions} values={answerValues} onChange={setAnswerValues} />
+        <CreationAnswersCard
+          questions={questions}
+          values={answerValues}
+          onChange={setAnswerValues}
+        />
       ) : null}
       {step === 'revisao' ? (
         <ImagePromptCard
