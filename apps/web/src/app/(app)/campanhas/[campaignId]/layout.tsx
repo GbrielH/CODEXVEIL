@@ -57,17 +57,28 @@ export default async function CampaignLayout({
     <CampaignColorsProvider campaignId={campaign.id}>
       <div className="flex flex-col gap-6">
         {/* Banner da campanha: capa (ou a paisagem arcana dela) com o título por cima. */}
-        <header className="relative isolate overflow-hidden rounded-xl border border-line shadow-[0_24px_60px_-34px_rgb(107_59_198/0.9)]">
-          <CampaignCover
-            url={coverUrl}
-            name={campaign.name}
-            className="absolute inset-0 -z-10 h-full w-full"
-          />
+        {/* Com capa enviada, a altura segue a proporção da imagem (até 28rem); capa e texto
+            dividem a mesma célula da grade, então vale o maior dos dois. */}
+        <header className="relative isolate grid overflow-hidden rounded-xl border border-line shadow-[0_24px_60px_-34px_rgb(107_59_198/0.9)]">
+          {coverUrl ? (
+            <CampaignCover
+              url={coverUrl}
+              name={campaign.name}
+              natural
+              className="-z-10 max-h-[28rem] w-full [grid-area:1/1]"
+            />
+          ) : (
+            <CampaignCover
+              url={null}
+              name={campaign.name}
+              className="absolute inset-0 -z-10 h-full w-full"
+            />
+          )}
           <span
             className="absolute inset-0 -z-10 bg-gradient-to-t from-charcoal-950 via-charcoal-950/70 to-charcoal-950/10"
             aria-hidden="true"
           />
-          <div className="flex min-h-48 flex-col justify-between gap-6 p-5 sm:min-h-56 sm:p-7">
+          <div className="flex min-h-48 flex-col justify-between gap-6 p-5 [grid-area:1/1] sm:min-h-56 sm:p-7">
             <Link
               href={routes.campaigns}
               className="inline-flex w-fit items-center gap-1 rounded-full border border-line bg-charcoal-950/60 px-3 py-1 text-xs text-fg-secondary backdrop-blur hover:text-fg"
