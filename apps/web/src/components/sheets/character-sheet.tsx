@@ -118,6 +118,7 @@ export async function CharacterSheet({
         permissions={permissions}
         variant={variant}
         books={books}
+        shareCard={character.viewer.isOwner ? <ShareCharacterCard characterId={character.id} ownerId={character.ownerId} /> : null}
         campaigns={campaigns
           // Só campanhas em que o dono é jogador: mestres não vinculam personagens às próprias mesas.
           .filter(
@@ -154,6 +155,7 @@ export async function CharacterSheet({
     }
     content = sheet ? (
       <T20SheetScreen
+        shareCard={character.viewer.isOwner ? <ShareCharacterCard characterId={character.id} ownerId={character.ownerId} /> : null}
         character={{
           id: character.id,
           name: character.name,
@@ -204,11 +206,6 @@ export async function CharacterSheet({
         <Card className="mt-6">
           <CreationAnswersView answers={answers} />
         </Card>
-      ) : null}
-      {character.viewer.isOwner ? (
-        <div className="mt-6">
-          <ShareCharacterCard characterId={character.id} ownerId={character.ownerId} />
-        </div>
       ) : null}
     </ItemCatalogProvider>
   );

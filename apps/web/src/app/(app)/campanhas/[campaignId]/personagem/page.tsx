@@ -1,6 +1,7 @@
-import { listCampaignCharacters } from '@codexveil/database';
+import { listCampaignCharacters, listMyCharacters } from '@codexveil/database';
 import { UserPlus } from 'lucide-react';
 import type { Metadata, Route } from 'next';
+import { LinkExistingCharacter } from '@/components/campaigns/link-existing-character';
 import { CharacterSheet } from '@/components/sheets/character-sheet';
 import { ButtonLink } from '@/components/ui/button';
 import { EmptyState, ForbiddenState } from '@/components/ui/states';
@@ -20,7 +21,13 @@ export default async function MyCharacterPage({ params }: PageProps<'/campanhas/
   const supabase = await createSupabaseServerClient();
   const own = (await listCampaignCharacters(supabase, campaign.id)).find((character) => character.ownerId === user.id);
   if (!own) {
+    // Fichas do jogador que podem entrar aqui (vínculo pela aba Ajustes da ficha, só D&D 5e por ora).
+    const linkable =
+      campaign.status === 'active' && campaign.systemId === 'dnd5e'
+        ? (await listMyCharacters(supabase, user.id)).filter((character) => character.systemId === campaign.systemId && !character.campaignId)
+        : [];
     return (
+      <div className="flex flex-col gap-6">
       <EmptyState
         icon={<UserPlus className="h-8 w-8" aria-hidden="true" />}
         title="Você ainda não tem personagem nesta campanha"
@@ -31,6 +38,8 @@ export default async function MyCharacterPage({ params }: PageProps<'/campanhas/
           ) : undefined
         }
       />
+      <LinkExistingCharacter campaignId={campaign.id} characters={linkable.map((character) => ({ id: character.id, name: character.name }))} />
+      </div>
     );
   }
   return <CharacterSheet characterId={own.id} variant="campaign" />;

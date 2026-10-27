@@ -61,6 +61,8 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { T20LevelUpButton } from './level-up';
 
 interface T20SheetScreenProps {
+  /** Compartilhar com amigos: só na aba Personagem (o dono). */
+  shareCard?: ReactNode;
   character: {
     id: string;
     name: string;
@@ -738,6 +740,8 @@ function T20SheetBody(props: T20SheetScreenProps) {
           </div>
         </div>
       ) : null}
+
+      {tab === 'personagem' ? props.shareCard : null}
 
       {tab === 'personagem' && permissions.isOwner ? (
         <DeleteCharacterCard

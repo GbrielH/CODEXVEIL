@@ -1,7 +1,8 @@
-import { getCampaignTurn, listCampaignCharacters, listCampaignMembers, signedMediaUrls } from '@codexveil/database';
+import { getCampaignTurn, listCampaignCharacters, listCampaignMembers, listMyCharacters, signedMediaUrls } from '@codexveil/database';
 import { findSystem } from '@codexveil/rpg-systems';
 import { Eye, EyeOff, Lock, PenLine, ScrollText, Swords, Users } from 'lucide-react';
 import type { Metadata, Route } from 'next';
+import { LinkExistingCharacter } from '@/components/campaigns/link-existing-character';
 import { MemberList } from '@/components/campaigns/member-list';
 import { TurnStatus } from '@/components/campaigns/turn-status';
 import { PartyList } from '@/components/campaigns/party-list';
@@ -35,6 +36,13 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
   const hasOwnCharacter = party.some((character) => character.ownerId === user.id);
   // O jogador usa a aba "Meu personagem"; aqui aparecem só os outros (se o mestre liberar as fichas).
   const others = isGm ? party : party.filter((character) => character.ownerId !== user.id);
+  // Jogador sem personagem aqui: as fichas dele que podem ser vinculadas (D&D 5e, sem campanha).
+  const linkable =
+    isActive && !isGm && !hasOwnCharacter && campaign.systemId === 'dnd5e'
+      ? (await listMyCharacters(supabase, user.id))
+          .filter((character) => character.systemId === campaign.systemId && !character.campaignId)
+          .map((character) => ({ id: character.id, name: character.name }))
+      : [];
   const creationRules = system ? system.describeCampaignRules(system.parseCampaignRules(campaign.characterRules)) : [];
 
   return (
@@ -67,6 +75,7 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
               ) : undefined
             }
           />
+          <LinkExistingCharacter campaignId={campaign.id} characters={linkable} />
           {others.length === 0 && (isGm || campaign.settings.partySheetsVisible) ? (
             <p className="text-sm text-fg-muted">
               {isGm

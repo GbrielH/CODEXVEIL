@@ -29,8 +29,11 @@ import { useSheet } from './context';
 
 export function SettingsTab({
   campaigns,
+  initialCampaignId = null,
 }: {
   campaigns: { id: string; name: string; characterRules?: unknown }[];
+  /** Campanha já escolhida ao chegar pelo "Vincular" da campanha. */
+  initialCampaignId?: string | null;
 }) {
   const { permissions, character } = useSheet();
   return (
@@ -47,7 +50,7 @@ export function SettingsTab({
           <DndImagePrompt variant="token" />
         </div>
       ) : null}
-      {permissions.isOwner ? <CampaignCard campaigns={campaigns} /> : null}
+      {permissions.isOwner ? <CampaignCard campaigns={campaigns} initialCampaignId={initialCampaignId} /> : null}
       {permissions.isOwner ? <DangerCard /> : null}
     </div>
   );
@@ -90,14 +93,18 @@ function DndImagePrompt({ variant }: { variant: 'portrait' | 'token' }) {
 
 function CampaignCard({
   campaigns,
+  initialCampaignId,
 }: {
   campaigns: { id: string; name: string; characterRules?: unknown; creationQuestions?: string[] }[];
+  initialCampaignId: string | null;
 }) {
   const { character, name, sheet } = useSheet();
   const router = useRouter();
   const { toast } = useToast();
   const id = useId();
-  const [selected, setSelected] = useState('');
+  const [selected, setSelected] = useState(
+    initialCampaignId && campaigns.some((campaign) => campaign.id === initialCampaignId) ? initialCampaignId : '',
+  );
   const chosen = campaigns.find((campaign) => campaign.id === selected);
   const questions = chosen?.creationQuestions ?? [];
   const [answerValues, setAnswerValues] = useState<Record<number, string>>({});

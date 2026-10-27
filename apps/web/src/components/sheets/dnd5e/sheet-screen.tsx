@@ -27,7 +27,8 @@ import {
   type Dnd5eActiveEffects,
 } from '@codexveil/rpg-systems/dnd5e';
 import { BookOpen, Backpack, Feather, Hourglass, Settings, Sparkles, Swords } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
@@ -54,6 +55,8 @@ import { SheetHeader } from './sheet-header';
 import { StoryTab } from './story-tab';
 
 interface Dnd5eSheetScreenProps {
+  /** Compartilhar com amigos: só na aba Personagem (o dono). */
+  shareCard?: ReactNode;
   character: SheetCharacter;
   sheet: Dnd5eSheet;
   resources: CharacterResource[];
@@ -92,7 +95,9 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
   // A subida de nível consulta o SRD e os livros liberados (subclasses, talentos e magias).
   setActiveDnd5eBookContent(bookContent);
   const { toast } = useToast();
-  const [tab, setTab] = useState('jogo');
+  // Vindo do "Vincular" da campanha (?vincular=…): abre direto em Ajustes, com a campanha escolhida.
+  const linkTo = useSearchParams().get('vincular');
+  const [tab, setTab] = useState(linkTo && props.variant !== 'campaign' ? 'ajustes' : 'jogo');
   const [resources, setResources] = useState(props.resources);
   const [conditions, setConditions] = useState(props.conditions);
   const [items, setItems] = useState(props.items);
@@ -468,7 +473,12 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
                       value: 'historia',
                       label: 'Personagem',
                       icon: <Feather className="h-4 w-4" aria-hidden="true" />,
-                      content: <StoryTab />,
+                      content: (
+                        <div className="flex flex-col gap-6">
+                          <StoryTab />
+                          {props.shareCard}
+                        </div>
+                      ),
                     },
                     {
                       value: 'evolucao',
@@ -482,7 +492,7 @@ export function Dnd5eSheetScreen(props: Dnd5eSheetScreenProps) {
                             value: 'ajustes',
                             label: 'Ajustes',
                             icon: <Settings className="h-4 w-4" aria-hidden="true" />,
-                            content: <SettingsTab campaigns={props.campaigns} />,
+                            content: <SettingsTab campaigns={props.campaigns} initialCampaignId={linkTo} />,
                           },
                         ]
                       : []),
