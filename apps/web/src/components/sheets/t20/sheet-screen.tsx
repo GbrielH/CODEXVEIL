@@ -55,6 +55,7 @@ import { Card, CardHeader } from '@/components/ui/card';
 import { TextareaField, TextField } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
 import { Tabs } from '@/components/ui/tabs';
+import { ZoomableImage } from '@/components/ui/zoomable-image';
 import { DiceProvider, useDice } from '@/components/dice/dice-roller';
 import { DeleteCharacterCard } from '@/components/characters/delete-character';
 import { T20Inventory } from './inventory';
@@ -329,10 +330,10 @@ function T20SheetBody(props: T20SheetScreenProps) {
         <span className="absolute inset-0 -z-10 bg-gradient-to-r from-charcoal-950 via-charcoal-950/85 to-charcoal-950/60" aria-hidden="true" />
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           {character.portraitUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- URL assinada e temporária do Storage
-            <img
+            // Clicar abre o retrato em tela cheia.
+            <ZoomableImage
               src={character.portraitUrl}
-              alt=""
+              alt={`Retrato de ${character.name}`}
               className="h-28 w-28 rounded-t-[999px] rounded-b-md object-cover ring-2 ring-wine-400/60 ring-offset-2 ring-offset-charcoal-950"
             />
           ) : null}

@@ -64,7 +64,7 @@ export function SheetHeader({ saveStatus, liveStatus }: { saveStatus: AutosaveSt
             title="Abrir a carta do personagem"
             className="self-start rounded-t-[999px] rounded-b-md ring-2 ring-wine-400/60 ring-offset-2 ring-offset-charcoal-950 transition-transform hover:scale-[1.03] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-parchment-300"
           >
-            <Portrait name={name} url={character.portraitUrl} size="lg" />
+            <Portrait name={name} url={character.portraitUrl} size="lg" zoomable />
           </button>
           <CharacterCardModal open={cardOpen} onClose={() => setCardOpen(false)} />
           <div className="min-w-0 flex-1">
