@@ -74,7 +74,7 @@ export function T20AttacksCard({
       <CardHeader icon={<Swords className="h-5 w-5" aria-hidden="true" />} title="Ataques" />
       {rageMax > 0 ? (
         <div
-          className={`mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border px-4 py-3 ${activeRage ? 'ability-rage border-red-400/60 bg-red-500/15' : 'border-line bg-raised'}`}
+          className={`mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border px-4 py-3 ${activeRage ? 'ability-rage border-ember-400/60 bg-ember-400/15' : 'border-line bg-raised'}`}
         >
           <span>
             <span className="block font-display text-lg text-fg">

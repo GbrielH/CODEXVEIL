@@ -309,7 +309,7 @@ export function DiceTray({
               'font-display text-6xl tracking-wider uppercase sm:text-8xl',
               natural === 20
                 ? 'animate-crit-banner text-amber-300 [text-shadow:0_0_24px_rgb(251_191_36/0.9),0_0_60px_rgb(251_191_36/0.6)]'
-                : 'animate-fumble-banner text-red-400 [text-shadow:0_0_24px_rgb(239_68_68/0.8)]',
+                : 'animate-fumble-banner text-ember-400 [text-shadow:0_0_24px_rgb(239_68_68/0.8)]',
             )}
           >
             {natural === 20 ? 'Crítico!' : 'Falha crítica'}
@@ -324,9 +324,9 @@ export function DiceTray({
               className={cx(
                 'animate-pop rounded-lg border bg-raised/95 px-3 py-2 shadow-xl backdrop-blur',
                 natural === 20
-                  ? 'border-emerald-400/60'
+                  ? 'border-verdigris-400/60'
                   : natural === 1
-                    ? 'border-red-400/60'
+                    ? 'border-ember-400/60'
                     : 'border-line-strong',
               )}
             >

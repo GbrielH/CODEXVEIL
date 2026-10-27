@@ -377,8 +377,8 @@ function T20SheetBody(props: T20SheetScreenProps) {
         {/* PV e PM em barras */}
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           {[
-            { label: 'Pontos de vida', track: hp, color: 'bg-emerald-400', low: 'bg-red-500' },
-            { label: 'Pontos de mana', track: pm, color: 'bg-sky-400', low: 'bg-sky-700' },
+            { label: 'Pontos de vida', track: hp, color: 'bg-verdigris-400', low: 'bg-ember-400' },
+            { label: 'Pontos de mana', track: pm, color: 'bg-arcane-400', low: 'bg-arcane-400' },
           ].map(({ label, track, color, low }) => {
             const max = track?.max ?? 0;
             const percent = max > 0 ? Math.max(0, Math.min(100, Math.round(((track?.current ?? 0) / max) * 100))) : 0;
@@ -386,7 +386,7 @@ function T20SheetBody(props: T20SheetScreenProps) {
               <div key={label} className="flex flex-col gap-1.5 rounded-xl border border-line bg-charcoal-950/60 px-4 py-2.5 backdrop-blur">
                 <span className="flex justify-between text-[10px] tracking-wider text-fg-muted uppercase">
                   {label}
-                  {track?.temp ? <span className="text-sky-300">+{track.temp} temporários</span> : null}
+                  {track?.temp ? <span className="text-arcane-300">+{track.temp} temporários</span> : null}
                 </span>
                 <span className="tabular font-display text-2xl leading-none text-fg-accent">
                   {track?.current ?? '—'}
@@ -474,8 +474,8 @@ function T20SheetBody(props: T20SheetScreenProps) {
             onMinus={(n) => adjust(T20_RESOURCE_KEYS.hitPoints, 'damage', n)}
             onPlus={(n) => adjust(T20_RESOURCE_KEYS.hitPoints, 'heal', n)}
             onSetTemp={(n) => adjust(T20_RESOURCE_KEYS.hitPoints, 'set_temp', n)}
-            barClass="bg-emerald-500"
-            lowBarClass="bg-red-500"
+            barClass="bg-verdigris-400"
+            lowBarClass="bg-ember-400"
           />
           <TrackCard
             title="Pontos de Mana"
@@ -486,7 +486,7 @@ function T20SheetBody(props: T20SheetScreenProps) {
             plus="Recuperar"
             onMinus={(n) => adjust(T20_RESOURCE_KEYS.manaPoints, 'spend', n)}
             onPlus={(n) => adjust(T20_RESOURCE_KEYS.manaPoints, 'heal', n)}
-            barClass="bg-sky-500"
+            barClass="bg-arcane-400"
           />
           <RestCard
             level={derived.level}

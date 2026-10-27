@@ -124,7 +124,7 @@ function AbilityScores() {
           />
           {derived.abilities[ability] !== sheet.abilities[ability] ? (
             <span
-              className="text-center text-[11px] text-emerald-300"
+              className="text-center text-[11px] text-verdigris-300"
               title={derived.abilityNotes.join('; ')}
             >
               Com itens: {derived.abilities[ability]}

@@ -132,13 +132,13 @@ export function AppShell({
             <span className="relative shrink-0">
               <Avatar name={displayName} size="sm" icon={avatarIcon} />
               <span
-                className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-emerald-400"
+                className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-verdigris-400"
                 aria-hidden="true"
               />
             </span>
             <span className="min-w-0 flex-1 group-data-[collapsed=true]/shell:hidden">
               <span className="block truncate text-sm font-medium text-fg">{displayName}</span>
-              <span className="block text-[11px] text-emerald-300/90">Online</span>
+              <span className="block text-[11px] text-verdigris-300/90">Online</span>
             </span>
           </Link>
           {/* Só o ícone de sair: o nome cabe inteiro no rodapé. */}

@@ -149,7 +149,7 @@ export function PlayTab() {
             disabled={!permissions.canEditPlay}
             aria-pressed={activeEffects.rage}
             onClick={() => setActiveEffects({ ...activeEffects, rage: !activeEffects.rage })}
-            className={`flex items-center justify-between gap-3 rounded-md border px-4 py-3 text-left ${activeEffects.rage ? 'ability-rage border-red-400/60 bg-red-500/15 text-red-200' : 'border-line bg-raised text-fg hover:bg-hover'}`}
+            className={`flex items-center justify-between gap-3 rounded-md border px-4 py-3 text-left ${activeEffects.rage ? 'ability-rage border-ember-400/60 bg-ember-400/15 text-ember-300' : 'border-line bg-raised text-fg hover:bg-hover'}`}
           >
             <span>
               <span className="block font-display text-lg">{activeEffects.rage ? 'Em Fúria!' : 'Entrar em Fúria'}</span>
@@ -158,7 +158,7 @@ export function PlayTab() {
                 corpo a corpo, vantagem em testes e salvaguardas de Força, resistência a dano contundente, cortante e perfurante.
               </span>
             </span>
-            <span className={`rounded-full px-2 py-0.5 text-xs ${activeEffects.rage ? 'bg-red-500/30' : 'bg-hover'}`}>{activeEffects.rage ? 'Ligada' : 'Desligada'}</span>
+            <span className={`rounded-full px-2 py-0.5 text-xs ${activeEffects.rage ? 'bg-ember-400/30' : 'bg-hover'}`}>{activeEffects.rage ? 'Ligada' : 'Desligada'}</span>
           </button>
         ) : null}
         <Card>

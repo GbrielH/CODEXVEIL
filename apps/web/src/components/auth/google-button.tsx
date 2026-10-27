@@ -45,7 +45,7 @@ export function GoogleButton({ next, label = 'Entrar com Google' }: { next?: str
         {label}
       </Button>
       {error ? (
-        <p role="alert" className="text-sm text-red-300">
+        <p role="alert" className="text-sm text-ember-300">
           {error}
         </p>
       ) : null}

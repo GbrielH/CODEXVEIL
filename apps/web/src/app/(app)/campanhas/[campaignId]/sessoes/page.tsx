@@ -91,8 +91,8 @@ export default async function SessionsPage({ params, searchParams }: PageProps<'
                           const named = (status: 'yes' | 'no' | null) =>
                             players.filter((player) => (answers[player.userId] ?? null) === status).map((player) => player.displayName);
                           const groups = [
-                            { label: 'Confirmados', names: named('yes'), tone: 'text-emerald-300' },
-                            { label: 'Não vão', names: named('no'), tone: 'text-red-300' },
+                            { label: 'Confirmados', names: named('yes'), tone: 'text-verdigris-300' },
+                            { label: 'Não vão', names: named('no'), tone: 'text-ember-300' },
                             { label: 'Sem resposta', names: named(null), tone: 'text-fg-muted' },
                           ];
                           return groups.map((group) => (

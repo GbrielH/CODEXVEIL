@@ -51,7 +51,7 @@ export function AttendanceButtons({
   if (!editing && status) {
     return (
       <p className="flex items-center gap-2 text-xs">
-        <span className={status === 'yes' ? 'text-emerald-300' : 'text-red-300'}>
+        <span className={status === 'yes' ? 'text-verdigris-300' : 'text-ember-300'}>
           {status === 'yes' ? 'Você confirmou presença.' : 'Você avisou que não vai.'}
         </span>
         <button

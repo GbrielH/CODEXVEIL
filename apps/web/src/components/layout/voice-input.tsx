@@ -87,7 +87,7 @@ export function VoiceInputButton({ value, onChange, disabled }: { value: string;
         aria-label={listening ? 'Parar de ouvir' : 'Falar a pergunta'}
         title={listening ? 'Parar de ouvir' : 'Falar a pergunta (o texto aparece na caixa)'}
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md border transition-colors disabled:opacity-50 ${
-          listening ? 'animate-pulse border-red-400/70 bg-red-500/20 text-red-200' : 'border-line text-fg-muted hover:bg-hover hover:text-fg'
+          listening ? 'animate-pulse border-ember-400/70 bg-ember-400/20 text-ember-300' : 'border-line text-fg-muted hover:bg-hover hover:text-fg'
         }`}
       >
         {listening ? <Square className="h-4 w-4" aria-hidden="true" /> : <Mic className="h-4 w-4" aria-hidden="true" />}

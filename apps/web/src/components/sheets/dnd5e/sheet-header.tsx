@@ -48,7 +48,7 @@ export function SheetHeader({ saveStatus, liveStatus }: { saveStatus: AutosaveSt
   const hp = resources.find((resource) => resource.key === DND5E_RESOURCE_KEYS.hitPoints);
   const hpMax = hp?.max ?? 0;
   const hpPercent = hpMax > 0 ? Math.max(0, Math.min(100, Math.round(((hp?.current ?? 0) / hpMax) * 100))) : 0;
-  const hpColor = hpPercent > 50 ? 'bg-emerald-400' : hpPercent > 25 ? 'bg-amber-400' : 'bg-red-500';
+  const hpColor = hpPercent > 50 ? 'bg-verdigris-400' : hpPercent > 25 ? 'bg-amber-400' : 'bg-ember-400';
 
   return (
     <header className="relative isolate overflow-hidden rounded-2xl border border-line shadow-[0_24px_60px_-36px_rgb(107_59_198/0.9)]">
@@ -107,10 +107,10 @@ export function SheetHeader({ saveStatus, liveStatus }: { saveStatus: AutosaveSt
           <div className="col-span-2 flex flex-col justify-center gap-1.5 rounded-xl border border-line bg-charcoal-950/60 px-4 py-2.5 backdrop-blur sm:col-span-3 lg:col-span-2">
             <span className="flex items-center justify-between text-[10px] tracking-wider text-fg-muted uppercase">
               <span className="flex items-center gap-1">
-                <Heart className="h-3.5 w-3.5 text-red-400" aria-hidden="true" />
+                <Heart className="h-3.5 w-3.5 text-ember-400" aria-hidden="true" />
                 Pontos de vida
               </span>
-              {hp?.temp ? <span className="text-sky-300">+{hp.temp} temporários</span> : null}
+              {hp?.temp ? <span className="text-arcane-300">+{hp.temp} temporários</span> : null}
             </span>
             <span className="tabular font-display text-2xl leading-none text-fg-accent">
               {hp?.current ?? '—'}
