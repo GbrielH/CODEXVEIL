@@ -39,7 +39,7 @@ import {
   t20CampaignIssues,
   parseT20CampaignRules,
 } from '@codexveil/rpg-systems/tormenta20';
-import { Heart, Minus, Moon, Plus, Shield, Sparkles, X, Zap } from 'lucide-react';
+import { Heart, Minus, Moon, Pencil, Plus, Shield, Sparkles, X, Zap } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ArcaneScene } from '@/components/brand/arcane-scene';
@@ -47,6 +47,7 @@ import { CampaignLinkCard, type LinkCampaignOption } from '@/components/characte
 import { ImagePromptCard } from '@/components/characters/image-prompt-card';
 import { PortraitCard } from '@/components/characters/portrait-card';
 import { TokenImageCard } from '@/components/characters/token-image-card';
+import { T20AbilityEditor, type T20AbilityEditing } from './ability-editor';
 import { T20AttacksCard } from './attacks-card';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -150,6 +151,8 @@ function T20SheetBody(props: T20SheetScreenProps) {
   const [conditions, setConditions] = useState(props.conditions);
   const [items, setItems] = useState(props.items);
   const [abilities, setAbilities] = useState(props.abilities);
+  // Cadastro manual de habilidades, poderes e magias (aba Poderes e magias).
+  const [editing, setEditing] = useState<T20AbilityEditing>(null);
   const content = useMemo(() => buildT20Content(props.sources ?? []), [props.sources]);
   // Habilidades do nível que faltam na ficha (livro corrigido depois da criação…).
   const pendingUpdates = useMemo(
@@ -655,6 +658,20 @@ function T20SheetBody(props: T20SheetScreenProps) {
 
       {tab === 'poderes' ? (
         <div className="flex flex-col gap-6">
+          {permissions.canEditSheet ? (
+            <div className="flex justify-end">
+              <Button size="sm" variant="secondary" icon={<Plus className="h-4 w-4" aria-hidden="true" />} onClick={() => setEditing({ entry: null, kind: 'feat' })}>
+                Adicionar habilidade, poder ou magia
+              </Button>
+            </div>
+          ) : null}
+          <T20AbilityEditor
+            characterId={character.id}
+            state={editing}
+            onClose={() => setEditing(null)}
+            onSaved={(saved, isNew) => setAbilities((current) => (isNew ? [...current, saved] : current.map((entry) => (entry.id === saved.id ? saved : entry))))}
+            onDeleted={(abilityId) => setAbilities((current) => current.filter((entry) => entry.id !== abilityId))}
+          />
           {ABILITY_GROUPS.map((group) => {
             const list = abilities.filter((ability) => ability.kind === group.kind);
             return list.length ? (
@@ -664,6 +681,7 @@ function T20SheetBody(props: T20SheetScreenProps) {
                 abilities={list}
                 useLabel="Usar"
                 onUse={permissions.canEditPlay ? activateAbility : undefined}
+                onEdit={permissions.canEditSheet ? (ability) => setEditing({ entry: ability, kind: ability.kind }) : undefined}
                 choicesFor={group.kind === 'class_feature' ? pendingChoices : undefined}
                 onChoose={permissions.canEditSheet ? chooseOption : undefined}
               />
@@ -673,6 +691,7 @@ function T20SheetBody(props: T20SheetScreenProps) {
             <AbilityList
               title={`Magias${derived.spellDc === null ? '' : ` (CD ${derived.spellDc})`}`}
               abilities={abilities.filter((ability) => ability.kind === 'spell')}
+              onEdit={permissions.canEditSheet ? (ability) => setEditing({ entry: ability, kind: 'spell' }) : undefined}
               extra={(ability) => {
                 const data = ability.data as { circle?: number; cost?: number };
                 return data.circle ? `${data.circle}º círculo · ${data.cost ?? 1} PM` : '';
@@ -1063,6 +1082,7 @@ function AbilityList({
   useLabel = 'Usar',
   choicesFor,
   onChoose,
+  onEdit,
 }: {
   title: string;
   abilities: CharacterAbility[];
@@ -1072,6 +1092,8 @@ function AbilityList({
   /** Opções de uma habilidade com escolha ainda não feita (vazio = nada a escolher). */
   choicesFor?: (ability: CharacterAbility) => string[];
   onChoose?: (ability: CharacterAbility, option: string) => void;
+  /** Abre o cadastro manual da habilidade (editar ou excluir). */
+  onEdit?: (ability: CharacterAbility) => void;
 }) {
   return (
     <Card>
@@ -1104,6 +1126,11 @@ function AbilityList({
                 </div>
               );
             })()}
+            {onEdit ? (
+              <Button size="icon" variant="ghost" className="mt-1 shrink-0" aria-label={`Editar ${ability.name}`} onClick={() => onEdit(ability)}>
+                <Pencil className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            ) : null}
             {onUse ? (
               <Button
                 size="sm"
