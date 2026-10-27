@@ -363,9 +363,9 @@ Código pronto em 2026-10-21 (site: `components/auth/google-button.tsx`; app:
 
 **Estado em 2026-10-27:** cliente OAuth criado no Google Cloud (projeto `CODEXVEIL`); `config push`
 feito com as credenciais (Google ligado no Supabase; modelo de recuperação com código de 6 dígitos
-enviado junto). Páginas públicas exigidas pelo Google: `/privacidade` e `/termos`. Faltam: publicar
-o app no Google (Branding com página inicial, privacidade e termos) e ligar as variáveis da Vercel e
-do EAS. Recomendado depois: gerar nova chave secreta (a atual apareceu num print) e rodar o
+enviado junto). Páginas públicas exigidas pelo Google: `/privacidade` e `/termos`. App publicado no
+Google (Branding com página inicial, privacidade e termos) e variáveis ligadas na mesma data:
+`NEXT_PUBLIC_AUTH_GOOGLE=on` (Vercel, produção) e `EXPO_PUBLIC_AUTH_GOOGLE=on` (EAS, `preview`). Recomendado depois: gerar nova chave secreta (a atual apareceu num print) e rodar o
 `config push` de novo.
 
 Contas criadas pelo Google recebem o nome do Google no perfil (migração
