@@ -50,6 +50,7 @@ import { PortraitCard } from '@/components/characters/portrait-card';
 import { TokenImageCard } from '@/components/characters/token-image-card';
 import { T20AbilityEditor, type T20AbilityEditing } from './ability-editor';
 import { T20AttacksCard } from './attacks-card';
+import { T20StatsEditor } from './stats-editor';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -155,6 +156,7 @@ function T20SheetBody(props: T20SheetScreenProps) {
   const [abilities, setAbilities] = useState(props.abilities);
   // Cadastro manual de habilidades, poderes e magias (aba Poderes e magias).
   const [editing, setEditing] = useState<T20AbilityEditing>(null);
+  const [statsOpen, setStatsOpen] = useState(false);
   const content = useMemo(() => buildT20Content(props.sources ?? []), [props.sources]);
   // Habilidades do nível que faltam na ficha (livro corrigido depois da criação…).
   const pendingUpdates = useMemo(
@@ -357,7 +359,38 @@ function T20SheetBody(props: T20SheetScreenProps) {
               {character.campaign ? ` · Campanha: ${character.campaign.name}` : ' · Ficha pessoal'}
             </p>
           </div>
+          {permissions.canEditSheet ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="self-start sm:ml-auto"
+              icon={<Pencil className="h-4 w-4" aria-hidden="true" />}
+              onClick={() => setStatsOpen(true)}
+            >
+              Ajustar números
+            </Button>
+          ) : null}
         </div>
+        <T20StatsEditor
+          open={statsOpen}
+          sheet={sheet}
+          hitPointsMax={hp?.max ?? sheet.hitPoints.max}
+          manaPointsMax={pm?.max ?? sheet.manaPoints.max}
+          onClose={() => setStatsOpen(false)}
+          onSave={async (change) => {
+            const saved = await run(
+              () => saveCharacterSheet(getSupabaseBrowserClient(), character.id, version, { sheet: change.sheet }),
+              'Não foi possível salvar',
+            );
+            if (!saved) throw new Error('não salvo');
+            setSheet(change.sheet);
+            setVersion(saved.version);
+            // As trilhas de PV/PM guardam o máximo usado na tela e nos combates.
+            if (hp && change.hitPointsMax !== hp.max) await adjust(T20_RESOURCE_KEYS.hitPoints, 'set_max', change.hitPointsMax);
+            if (pm && change.manaPointsMax !== pm.max) await adjust(T20_RESOURCE_KEYS.manaPoints, 'set_max', change.manaPointsMax);
+            toast({ tone: 'success', title: 'Números da ficha salvos.' });
+          }}
+        />
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">
           <Stat
             icon={<Shield className="h-4 w-4" aria-hidden="true" />}
