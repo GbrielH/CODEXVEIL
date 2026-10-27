@@ -62,6 +62,10 @@ compartilhar; (3) "?" dos pontos do T20; (4) Tomo no app (chat e ditado).
 
 ### Outras pendências abertas (2026-10-27)
 
+- T20, escolhas concedidas que ainda faltam: Osteon (Memória Póstuma: perícia ou poder), Foco em
+  Magia (marcar a magia), escolas do Bardo/Druida nas magias concedidas; conferir no livro o preço
+  total do Protótipo (usado T$ 500 para os alquímicos).
+
 - Perguntas do mestre: editar as respostas depois de criado o personagem.
 - Quadros: copiar/colar blocos, seleção múltipla.
 - Tomo: ficha de estatísticas da criatura, encontro no mapa, mapas, editar blocos do roteiro;

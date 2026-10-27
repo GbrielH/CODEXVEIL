@@ -1,6 +1,7 @@
 'use client';
 
 import { PendingUpdatesModal } from '../pending-updates-modal';
+import { T20GrantsCard } from './grants-card';
 import {
   adjustCharacterResource,
   applyCharacterCondition,
@@ -23,6 +24,8 @@ import {
   T20_REST_QUALITY,
   buildT20Content,
   listT20PendingUpdates,
+  listT20Grants,
+  listT20ItemGrants,
   computeT20Derived,
   t20DefenseFromItems,
   findT20Condition,
@@ -169,6 +172,18 @@ function T20SheetBody(props: T20SheetScreenProps) {
         abilities.map((ability) => ability.name),
       ),
     [content, sheet, abilities],
+  );
+
+  // Escolhas concedidas pela raça, por poderes e pelo Protótipo que a ficha ainda não tem.
+  const grants = useMemo(() => (content.spells.length || content.powers.length ? listT20Grants(content, sheet) : []), [content, sheet]);
+  const itemGrants = useMemo(
+    () =>
+      listT20ItemGrants(
+        content,
+        abilities.map((ability) => ability.name),
+        items.map((item) => item.notes),
+      ),
+    [content, abilities, items],
   );
 
   // Defesa automática: armadura e escudo equipados no inventário (grava na ficha ao mudar).
@@ -329,6 +344,21 @@ function T20SheetBody(props: T20SheetScreenProps) {
         updates={pendingUpdates}
         onCreated={(created) => setAbilities((current) => [...current, ...created])}
       />
+      {permissions.canEditSheet ? (
+        <T20GrantsCard
+          characterId={character.id}
+          sheet={sheet}
+          version={version}
+          grants={grants}
+          itemGrants={itemGrants}
+          onSheet={(next, nextVersion) => {
+            setSheet(next);
+            setVersion(nextVersion);
+          }}
+          onAbilities={(created) => setAbilities((current) => [...current, ...created])}
+          onItems={(created) => setItems((current) => [...current, ...created])}
+        />
+      ) : null}
       {/* Cabeçalho (redesign "Grimório Arcano"): paisagem do personagem, retrato, PV/PM e atributos. */}
       <header className="relative isolate overflow-hidden rounded-2xl border border-line p-5 shadow-[0_24px_60px_-36px_rgb(107_59_198/0.9)] sm:p-6">
         <ArcaneScene seed={character.name || character.id} className="absolute inset-0 -z-10 opacity-60" options={{ noMoon: true }} />

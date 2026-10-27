@@ -83,4 +83,5 @@ export * from './content';
 export * from './creation';
 export * from './origin-items';
 export * from './level-up';
+export * from './grants';
 export * from './equipment-defense';

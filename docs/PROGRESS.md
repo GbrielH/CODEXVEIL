@@ -306,6 +306,14 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27:** T20, **escolhas concedidas** (`tormenta20/grants.ts`, 4 testes): a ficha mostra no
+  topo o cartão "Escolhas pendentes" com o seletor do que a raça, os poderes e habilidades concedem
+  e ainda não foi escolhido. Magias: Centelha Mágica, Truque Mágico, Conhecimento Mágico, Aumentar
+  Repertório, Segredos da Natureza, Qareen (Tatuagem Mística), Sílfide (Magia das Fadas), Suraggel
+  (Luz/Escuridão). Poder: Golem (Propósito de Criação). Itens: Protótipo do Inventor (item superior
+  - melhoria, ou 10 alquímicos até T$ 500 — o texto extraído do livro corta o valor; **conferir a
+    regra**). Vale para criação, subida de nível e fichas antigas. Sem verificação no navegador.
+
 - **2026-10-27:** a superfície `.parchment` (crônica da ficha, anotações, resumo da sessão, convite,
   item do SRD) deixou de ser pergaminho claro: agora é cartão escuro com brilho violeta, no tom da
   página (as cores de tinta viram as claras do tema só nesse escopo). Não verificado no navegador.
