@@ -4,6 +4,7 @@ import { PendingUpdatesModal } from '../pending-updates-modal';
 import {
   adjustCharacterResource,
   applyCharacterCondition,
+  listCharacterConditions,
   removeCharacterCondition,
   tickCharacterConditions,
   getCampaignTurn,
@@ -514,15 +515,14 @@ function T20SheetBody(props: T20SheetScreenProps) {
                   ),
                 'Não foi possível aplicar a condição',
               );
-              if (ok !== null)
-                setConditions((current) =>
-                  current.some((entry) => entry.key === key)
-                    ? current
-                    : [
-                        ...current,
-                        { id: `local-${key}`, key, level: null, note: '', roundsRemaining: rounds },
-                      ],
+              // Recarrega do banco: a condição precisa do id real para poder ser removida depois.
+              if (ok !== null) {
+                const fresh = await run(
+                  () => listCharacterConditions(getSupabaseBrowserClient(), character.id),
+                  'Não foi possível atualizar as condições',
                 );
+                if (fresh) setConditions(fresh);
+              }
             }}
             onTick={async () => {
               const ended = await run(
