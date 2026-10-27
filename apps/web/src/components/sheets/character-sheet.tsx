@@ -156,6 +156,9 @@ export async function CharacterSheet({
     content = sheet ? (
       <T20SheetScreen
         shareCard={character.viewer.isOwner ? <ShareCharacterCard characterId={character.id} ownerId={character.ownerId} /> : null}
+        campaigns={campaigns
+          .filter((campaign) => campaign.status === 'active' && campaign.role === 'player' && campaign.systemId === character.systemId)
+          .map((campaign) => ({ id: campaign.id, name: campaign.name, characterRules: campaign.characterRules, creationQuestions: campaign.creationQuestions }))}
         character={{
           id: character.id,
           name: character.name,

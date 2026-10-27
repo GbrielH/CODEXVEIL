@@ -31,6 +31,46 @@ export function parseT20CampaignRules(data: unknown): T20CampaignRules {
   return parsed.success ? parsed.data : defaultT20CampaignRules();
 }
 
+/**
+ * O que impede um personagem pronto de entrar numa campanha de Tormenta20 (lista vazia = pode
+ * entrar), com o que mudar na ficha: nome, raça, classe, nível inicial e livros liberados.
+ */
+export function t20CampaignIssues(
+  character: {
+    name: string;
+    sheet: {
+      identity: { race: string; classes: { level: number }[]; sourcebooks?: readonly string[] };
+    };
+  },
+  rules: T20CampaignRules,
+  bookNames: Readonly<Record<string, string>> = {},
+): string[] {
+  const issues: string[] = [];
+  const identity = character.sheet.identity;
+  if (!character.name.trim()) issues.push('Dê um nome ao personagem.');
+  if (!identity.race.trim()) issues.push('A ficha não tem raça.');
+  if (identity.classes.length === 0) issues.push('A ficha não tem classe.');
+  const level = identity.classes.reduce((total, entry) => total + entry.level, 0);
+  if (identity.classes.length > 0 && level > rules.startingLevel) {
+    issues.push(
+      `O personagem está no ${level}º nível e a campanha começa no ${rules.startingLevel}º: peça ao mestre para mudar a regra.`,
+    );
+  } else if (identity.classes.length > 0 && level < rules.startingLevel) {
+    issues.push(
+      `A campanha começa no ${rules.startingLevel}º nível: suba o personagem do ${level}º para o ${rules.startingLevel}º antes de entrar.`,
+    );
+  }
+  const extraBooks = (identity.sourcebooks ?? []).filter(
+    (book) => !rules.sourcebooks.includes(book),
+  );
+  if (extraBooks.length > 0) {
+    issues.push(
+      `A ficha usa livros que o mestre não liberou: ${extraBooks.map((book) => bookNames[book] ?? book).join(', ')}. Peça ao mestre para liberá-los.`,
+    );
+  }
+  return issues;
+}
+
 export function describeT20CampaignRules(
   rules: T20CampaignRules,
   bookNames: Readonly<Record<string, string>> = {},

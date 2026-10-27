@@ -75,7 +75,7 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
               ) : undefined
             }
           />
-          {showLink ? <LinkExistingCharacter campaignId={campaign.id} characters={linkable} supported={campaign.systemId === 'dnd5e'} /> : null}
+          {showLink ? <LinkExistingCharacter campaignId={campaign.id} characters={linkable} /> : null}
           {others.length === 0 && (isGm || campaign.settings.partySheetsVisible) ? (
             <p className="text-sm text-fg-muted">
               {isGm

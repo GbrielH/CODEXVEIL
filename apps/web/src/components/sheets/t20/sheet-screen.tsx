@@ -36,10 +36,14 @@ import {
   type T20Sheet,
   t20AbilityCost,
   t20AbilityChoiceNames,
+  t20CampaignIssues,
+  parseT20CampaignRules,
 } from '@codexveil/rpg-systems/tormenta20';
 import { Heart, Minus, Moon, Plus, Shield, Sparkles, X, Zap } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ArcaneScene } from '@/components/brand/arcane-scene';
+import { CampaignLinkCard, type LinkCampaignOption } from '@/components/characters/campaign-link-card';
 import { ImagePromptCard } from '@/components/characters/image-prompt-card';
 import { PortraitCard } from '@/components/characters/portrait-card';
 import { TokenImageCard } from '@/components/characters/token-image-card';
@@ -63,6 +67,8 @@ import { T20LevelUpButton } from './level-up';
 interface T20SheetScreenProps {
   /** Compartilhar com amigos: só na aba Personagem (o dono). */
   shareCard?: ReactNode;
+  /** Campanhas de Tormenta20 em que o dono joga (vincular na aba Personagem). */
+  campaigns?: LinkCampaignOption[];
   character: {
     id: string;
     name: string;
@@ -133,7 +139,9 @@ function T20SheetBody(props: T20SheetScreenProps) {
   const diceRoller = dice;
   const { character, permissions } = props;
   const { toast } = useToast();
-  const [tab, setTab] = useState('jogo');
+  // Vindo do "Vincular" da campanha (?vincular=…): abre na aba Personagem, com a campanha escolhida.
+  const linkTo = useSearchParams().get('vincular');
+  const [tab, setTab] = useState(linkTo ? 'personagem' : 'jogo');
   // Seletor de três estados para as rolagens de d20: desvantagem, normal ou vantagem.
   const [rollMode, setRollMode] = useState<DiceRollMode>('normal');
   const [sheet, setSheet] = useState(props.sheet);
@@ -743,6 +751,17 @@ function T20SheetBody(props: T20SheetScreenProps) {
 
       {tab === 'personagem' ? props.shareCard : null}
 
+      {tab === 'personagem' && permissions.isOwner && props.campaigns ? (
+        <CampaignLinkCard
+          characterId={character.id}
+          currentCampaign={character.campaign}
+          campaigns={props.campaigns}
+          initialCampaignId={linkTo}
+          issuesFor={(campaign) =>
+            t20CampaignIssues({ name: character.name, sheet }, parseT20CampaignRules(campaign.characterRules))
+          }
+        />
+      ) : null}
       {tab === 'personagem' && permissions.isOwner ? (
         <DeleteCharacterCard
           characterId={character.id}

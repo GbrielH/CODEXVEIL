@@ -21,7 +21,7 @@ export default async function MyCharacterPage({ params }: PageProps<'/campanhas/
   const supabase = await createSupabaseServerClient();
   const own = (await listCampaignCharacters(supabase, campaign.id)).find((character) => character.ownerId === user.id);
   if (!own) {
-    // Fichas do jogador deste sistema (vínculo pela aba Ajustes da ficha; só D&D 5e por ora).
+    // Fichas do jogador deste sistema (vínculo pela aba Ajustes da ficha).
     const linkable =
       campaign.status === 'active'
         ? (await listMyCharacters(supabase, user.id)).filter((character) => character.systemId === campaign.systemId)
@@ -41,7 +41,7 @@ export default async function MyCharacterPage({ params }: PageProps<'/campanhas/
       {campaign.status === 'active' ? (
         <LinkExistingCharacter
           campaignId={campaign.id}
-          supported={campaign.systemId === 'dnd5e'}
+         
           characters={linkable.map((character) => ({ id: character.id, name: character.name, campaignName: character.campaignId ? (character.campaignName ?? 'outra campanha') : null }))}
         />
       ) : null}
