@@ -334,6 +334,7 @@ function T20SheetBody(props: T20SheetScreenProps) {
             <ZoomableImage
               src={character.portraitUrl}
               alt={`Retrato de ${character.name}`}
+              wrapperClassName="inline-block shrink-0 self-start"
               className="h-28 w-28 rounded-t-[999px] rounded-b-md object-cover ring-2 ring-wine-400/60 ring-offset-2 ring-offset-charcoal-950"
             />
           ) : null}

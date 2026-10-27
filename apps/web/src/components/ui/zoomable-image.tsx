@@ -12,10 +12,13 @@ export function ZoomableImage({
   src,
   alt,
   className,
+  wrapperClassName = 'block h-full w-full',
 }: {
   src: string;
   alt: string;
   className?: string;
+  /** Área clicável (padrão: ocupa o contêiner, como numa moldura de retrato). */
+  wrapperClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -45,7 +48,7 @@ export function ZoomableImage({
             setOpen(true);
           }
         }}
-        className="block h-full w-full cursor-zoom-in"
+        className={`${wrapperClassName} cursor-zoom-in`}
       >
         {/* URL assinada e temporária do Storage privado. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
