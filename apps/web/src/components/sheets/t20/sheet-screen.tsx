@@ -50,6 +50,7 @@ import { PortraitCard } from '@/components/characters/portrait-card';
 import { TokenImageCard } from '@/components/characters/token-image-card';
 import { T20AbilityEditor, type T20AbilityEditing } from './ability-editor';
 import { T20AttacksCard } from './attacks-card';
+import { T20SkillsEditor } from './skills-editor';
 import { T20StatsEditor } from './stats-editor';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -157,6 +158,7 @@ function T20SheetBody(props: T20SheetScreenProps) {
   // Cadastro manual de habilidades, poderes e magias (aba Poderes e magias).
   const [editing, setEditing] = useState<T20AbilityEditing>(null);
   const [statsOpen, setStatsOpen] = useState(false);
+  const [editingSkills, setEditingSkills] = useState(false);
   const content = useMemo(() => buildT20Content(props.sources ?? []), [props.sources]);
   // Habilidades do nível que faltam na ficha (livro corrigido depois da criação…).
   const pendingUpdates = useMemo(
@@ -637,10 +639,33 @@ function T20SheetBody(props: T20SheetScreenProps) {
           <span className="text-xs text-fg-subtle">
             Rola 2d20 e fica com o maior (vantagem) ou o menor (desvantagem).
           </span>
+          {permissions.canEditSheet && !editingSkills ? (
+            <Button size="sm" variant="secondary" className="ml-auto" icon={<Pencil className="h-4 w-4" aria-hidden="true" />} onClick={() => setEditingSkills(true)}>
+              Editar atributos e perícias
+            </Button>
+          ) : null}
         </div>
       ) : null}
 
-      {tab === 'pericias' ? (
+      {tab === 'pericias' && editingSkills ? (
+        <T20SkillsEditor
+          sheet={sheet}
+          onCancel={() => setEditingSkills(false)}
+          onSave={async (next) => {
+            const saved = await run(
+              () => saveCharacterSheet(getSupabaseBrowserClient(), character.id, version, { sheet: next }),
+              'Não foi possível salvar',
+            );
+            if (!saved) throw new Error('não salvo');
+            setSheet(next);
+            setVersion(saved.version);
+            setEditingSkills(false);
+            toast({ tone: 'success', title: 'Atributos e perícias salvos.' });
+          }}
+        />
+      ) : null}
+
+      {tab === 'pericias' && !editingSkills ? (
         <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
           <Card>
             <CardHeader title="Atributos" />
