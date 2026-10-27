@@ -306,6 +306,9 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27:** T20, carga com mochila (`tormenta20/carry.ts`, 3 testes): mochila vestida soma +2
+  espaços (Mochila de carga +10) e não ocupa espaço; vale a maior. Site e app.
+
 - **2026-10-27:** **porte para o app** do que foi feito só no site em 2026-10-26 à noite. Ficha T20 do
   app: editar atributos, perícias treinadas e bônus (aba Perícias); ajustar Defesa, Iniciativa,
   deslocamento, tamanho e PV/PM máximos (aba Evolução); PV temporários; Tibares (gastar/receber);

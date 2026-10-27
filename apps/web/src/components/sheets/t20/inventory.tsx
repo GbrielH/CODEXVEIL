@@ -1,5 +1,6 @@
 'use client';
 
+import { t20Carry } from '@codexveil/rpg-systems/tormenta20';
 import {
   adjustCharacterItemQuantity,
   createCharacterItem,
@@ -42,20 +43,19 @@ interface Props {
   money?: number | null;
 }
 
-/** Espaços ocupados: o campo "peso" guarda os espaços de cada item no Tormenta20. */
-function usedSpaces(items: readonly CharacterItem[]): number {
-  return items.reduce((sum, item) => sum + (item.weight ?? 0) * item.quantity, 0);
-}
 
 /**
  * Inventário do Tormenta20 no mesmo formato do D&D: itens por categoria, equipar, quantidade,
  * adicionar, editar e excluir, e a carga em espaços.
  */
-export function T20Inventory({ characterId, items, setItems, canEdit, capacity, money = null }: Props) {
+export function T20Inventory({ characterId, items, setItems, canEdit, capacity: baseCapacity, money = null }: Props) {
   const { toast } = useToast();
   const [editing, setEditing] = useState<CharacterItem | 'new' | null>(null);
   const groups = groupByCategory(items);
-  const used = usedSpaces(items);
+  // Espaços ocupados (o campo "peso" guarda os espaços) e mochila vestida (+2, ou +10 a de carga).
+  const carry = t20Carry(items, baseCapacity);
+  const used = carry.used;
+  const capacity = carry.capacity;
 
   const run = async <T,>(action: () => Promise<T>, failure: string): Promise<T | null> => {
     try {
@@ -122,6 +122,7 @@ export function T20Inventory({ characterId, items, setItems, canEdit, capacity, 
         <p className={cx('mt-2 text-sm', used > capacity ? 'text-ember-300' : 'text-fg-secondary')}>
           {used.toLocaleString('pt-BR')} de {capacity} espaços
           {used > capacity ? ' (sobrecarregado)' : ''}
+          {carry.bonuses.map((entry) => ` · ${entry.name} vestida: +${entry.bonus} espaços`).join('')}
         </p>
       </Card>
 

@@ -86,3 +86,4 @@ export * from './origin-items';
 export * from './level-up';
 export * from './grants';
 export * from './equipment-defense';
+export * from './carry';

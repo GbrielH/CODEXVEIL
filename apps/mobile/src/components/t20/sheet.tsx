@@ -39,6 +39,7 @@ import {
   type T20Skill,
   type T20LevelUpChoices,
   computeT20Derived,
+  t20Carry,
   t20AbilityChoiceNames,
   listT20Grants,
   listT20ItemGrants,
@@ -143,7 +144,6 @@ function T20SheetBody(props: Props) {
       toast({ tone: 'danger', title: failureMessage(error) });
     }
   };
-  const usedSpaces = items.reduce((sum, item) => sum + (item.weight ?? 0) * item.quantity, 0);
   const changeQuantity = async (item: CharacterItem, delta: number) => {
     try {
       const saved = await adjustCharacterItemQuantity(getSupabase(), item.id, delta);
@@ -259,6 +259,8 @@ function T20SheetBody(props: Props) {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- acerta só quando o total das habilidades muda.
   }, [abilityPoolsKey]);
+  // Espaços ocupados e mochila vestida (+2, ou +10 a de carga), como no site.
+  const carry = t20Carry(items, derived.carryCapacity);
   const track = (key: string) => resources.find((entry) => entry.key === key);
   const value = Math.max(1, Number(amount) || 1);
 
@@ -862,11 +864,11 @@ function T20SheetBody(props: Props) {
             <AppText
               variant="small"
               style={{
-                color: usedSpaces > derived.carryCapacity ? palette.ember[300] : colors.fgSecondary,
+                color: carry.used > carry.capacity ? palette.ember[300] : colors.fgSecondary,
               }}
             >
-              {usedSpaces.toLocaleString('pt-BR')} de {derived.carryCapacity} espaços
-              {usedSpaces > derived.carryCapacity ? ' (sobrecarregado)' : ''}
+              {carry.used.toLocaleString('pt-BR')} de {carry.capacity} espaços
+              {carry.used > carry.capacity ? ' (sobrecarregado)' : ''}
             </AppText>
           </Card>
           {editingItem ? (
