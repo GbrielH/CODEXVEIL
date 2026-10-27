@@ -9,6 +9,9 @@ import {
   setCharacterItemEquipped,
   tickCharacterConditions,
   saveCharacterSheet,
+  setCharacterPortrait,
+  characterPortraitPath,
+  updateCharacterAbility,
   type CharacterAbility,
   type CharacterCondition,
   type CharacterItem,
@@ -36,6 +39,7 @@ import {
   type T20Skill,
   type T20LevelUpChoices,
   computeT20Derived,
+  t20AbilityChoiceNames,
   listT20Grants,
   listT20ItemGrants,
   listT20LabelGrants,
@@ -53,7 +57,7 @@ import {
   type T20Sheet,
 } from '@codexveil/rpg-systems/tormenta20';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Image, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { CheckRow } from '@/components/ui/controls';
 import { HealthBar } from '@/components/ui/health-bar';
@@ -64,6 +68,8 @@ import { Notice } from '@/components/ui/states';
 import { DiceProvider, useDice } from '@/components/dice/dice';
 import { DeleteCharacterCard } from '@/components/sheet/delete-character';
 import { T20Attacks } from './attacks';
+import { T20AbilityForm, T20MoneyCard, T20SkillsEditor, T20StatsEditor, T20TempHitPoints } from './editors';
+import { ImageUploadButtons } from '@/components/ui/image-upload';
 import { T20AutomaticBonusesCard, T20GrantsCard, T20SituationalCard } from './automation';
 import { LevelGate, type LevelGateInfo } from '@/components/sheet/level-gate';
 import { T20NewItem } from './new-item';
@@ -90,6 +96,10 @@ interface Props {
   /** Campanha do personagem (turno e registro de uso), ou `null`. */
   campaignId: string | null;
   portraitPath: string | null;
+  /** Retrato (endereço assinado), para o cabeçalho e a tela cheia. */
+  portraitUrl: string | null;
+  /** Recarrega a ficha (depois de trocar o retrato). */
+  onReload: () => void;
 }
 
 /** Ficha do Tormenta20 no app: vida, mana, condições, testes, poderes, magias, itens e subida de nível. */
@@ -119,6 +129,11 @@ function T20SheetBody(props: Props) {
   const [items, setItems] = useState(props.items);
   const [addingItem, setAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<CharacterItem | null>(null);
+  // Edições à mão (como no site): atributos e perícias, números da ficha e habilidades.
+  const [editingSkills, setEditingSkills] = useState(false);
+  const [editingStats, setEditingStats] = useState(false);
+  const [editingAbility, setEditingAbility] = useState<CharacterAbility | 'new' | null>(null);
+  const [portraitOpen, setPortraitOpen] = useState(false);
   const removeItem = async (item: CharacterItem) => {
     try {
       await deleteCharacterItem(getSupabase(), item.id);
@@ -249,7 +264,8 @@ function T20SheetBody(props: Props) {
 
   const adjust = async (key: string, operation: TrackOperation, quantity: number) => {
     const target = track(key);
-    if (!target || quantity <= 0) return;
+    // `set_temp` aceita 0 (tira os temporários); as demais operações precisam de valor positivo.
+    if (!target || quantity < 0 || (quantity === 0 && operation !== 'set_temp')) return;
     try {
       const saved = await adjustCharacterResource(getSupabase(), target.id, operation, quantity);
       setResources((current) => current.map((entry) => (entry.id === saved.id ? saved : entry)));
@@ -279,6 +295,47 @@ function T20SheetBody(props: Props) {
   const hp = track(T20_RESOURCE_KEYS.hitPoints);
   const pm = track(T20_RESOURCE_KEYS.manaPoints);
   const money = track(T20_RESOURCE_KEYS.money);
+
+
+  /** Grava a ficha inteira (edições à mão). */
+  const saveSheet = async (next: typeof sheet) => {
+    try {
+      const saved = await saveCharacterSheet(getSupabase(), props.character.id, version, { sheet: next });
+      setSheet(next);
+      setVersion(saved.version);
+      toast({ tone: 'success', title: 'Ficha salva.' });
+    } catch (error) {
+      toast({ tone: 'danger', title: failureMessage(error) });
+      throw error;
+    }
+  };
+
+  // Habilidade com escolha que entrou sem ela (ex.: Protótipo do Inventor): as opções do livro
+  // aparecem na própria habilidade; escolher grava "Protótipo (Item superior)".
+  const plainName = (text: string) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+  const pendingChoices = (ability: CharacterAbility): string[] => {
+    if (ability.kind !== 'class_feature' || ability.name.includes('(')) return [];
+    for (const klass of content.classes) {
+      const source = klass.abilities.find((entry) => plainName(entry.name) === plainName(ability.name));
+      const options = source ? t20AbilityChoiceNames(source) : [];
+      if (options.length > 1) return options.map((option) => option.charAt(0).toUpperCase() + option.slice(1));
+    }
+    return [];
+  };
+  const chooseOption = async (ability: CharacterAbility, option: string) => {
+    try {
+      const saved = await updateCharacterAbility(getSupabase(), ability.id, {
+        name: `${ability.name} (${option})`.slice(0, 120),
+        source: ability.source,
+        description: ability.description,
+        data: ability.data,
+        resourceId: ability.resourceId,
+      });
+      setAbilities((current) => current.map((entry) => (entry.id === saved.id ? saved : entry)));
+    } catch (error) {
+      toast({ tone: 'danger', title: failureMessage(error) });
+    }
+  };
 
   return (
     <ScrollView
@@ -310,6 +367,37 @@ function T20SheetBody(props: Props) {
         />
       ) : null}
       <Card ornate>
+        {props.portraitUrl || props.canEditSheet ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            {props.portraitUrl ? (
+              <Pressable onPress={() => setPortraitOpen(true)} accessibilityRole="imagebutton" accessibilityLabel={`Retrato de ${props.character.name} (tela cheia)`}>
+                <Image source={{ uri: props.portraitUrl }} style={{ width: 72, height: 72, borderRadius: 36 }} />
+              </Pressable>
+            ) : null}
+            {props.canEditSheet ? (
+              <View style={{ flex: 1 }}>
+                <ImageUploadButtons
+                  preset="portrait"
+                  label="Enviar retrato"
+                  currentPath={props.portraitPath}
+                  pathFor={(fileName) => characterPortraitPath(props.character.id, fileName)}
+                  apply={async (path) => {
+                    setVersion(await setCharacterPortrait(getSupabase(), props.character.id, path));
+                  }}
+                  onDone={() => {
+                    toast({ tone: 'success', title: 'Retrato atualizado.' });
+                    props.onReload();
+                  }}
+                />
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+        <Modal visible={portraitOpen} transparent animationType="fade" onRequestClose={() => setPortraitOpen(false)}>
+          <Pressable style={styles.fullscreen} onPress={() => setPortraitOpen(false)} accessibilityLabel="Fechar o retrato">
+            {props.portraitUrl ? <Image source={{ uri: props.portraitUrl }} style={{ width: '100%', height: '100%' }} resizeMode="contain" /> : null}
+          </Pressable>
+        </Modal>
         <AppText variant="eyebrow">Tormenta20 · nível {derived.level}</AppText>
         <AppText variant="title">{props.character.name}</AppText>
         <AppText variant="small">
@@ -365,6 +453,23 @@ function T20SheetBody(props: Props) {
             onLevelUp={() => setLevelUp(true)}
           />
         </Card>
+      ) : null}
+      {tab === 'evolucao' && props.canEditSheet && !editingStats ? (
+        <Button variant="secondary" label="Ajustar números da ficha" onPress={() => setEditingStats(true)} />
+      ) : null}
+      {tab === 'evolucao' && editingStats ? (
+        <T20StatsEditor
+          sheet={sheet}
+          hitPointsMax={hp?.max ?? sheet.hitPoints.max}
+          manaPointsMax={pm?.max ?? sheet.manaPoints.max}
+          onCancel={() => setEditingStats(false)}
+          onSave={async (change) => {
+            await saveSheet(change.sheet);
+            if (hp && change.hitPointsMax !== hp.max) await adjust(T20_RESOURCE_KEYS.hitPoints, 'set_max', change.hitPointsMax);
+            if (pm && change.manaPointsMax !== pm.max) await adjust(T20_RESOURCE_KEYS.manaPoints, 'set_max', change.manaPointsMax);
+            setEditingStats(false);
+          }}
+        />
       ) : null}
       {tab === 'evolucao' && props.gate.isOwner ? (
         <DeleteCharacterCard
@@ -456,6 +561,9 @@ function T20SheetBody(props: Props) {
                       onPress={() => void adjust(entry.key, 'heal', value)}
                     />
                   </View>
+                ) : null}
+                {props.canEditPlay && entry.key === T20_RESOURCE_KEYS.hitPoints ? (
+                  <T20TempHitPoints current={entry.data.temp ?? 0} onSet={(n) => adjust(T20_RESOURCE_KEYS.hitPoints, 'set_temp', n)} />
                 ) : null}
               </Card>
             ) : null,
@@ -590,7 +698,14 @@ function T20SheetBody(props: Props) {
               />
             ) : null}
           </Card>
-          {money ? <Badge label={`T$ ${money.current}`} tone="parchment" /> : null}
+          {money ? (
+            <T20MoneyCard
+              amount={money.current}
+              canEdit={props.canEditPlay}
+              onSpend={(n) => adjust(T20_RESOURCE_KEYS.money, 'spend', n)}
+              onReceive={(n) => adjust(T20_RESOURCE_KEYS.money, 'set_current', money.current + n)}
+            />
+          ) : null}
         </>
       ) : null}
 
@@ -607,6 +722,19 @@ function T20SheetBody(props: Props) {
         />
       ) : null}
 
+      {tab === 'pericias' && props.canEditSheet && !editingSkills ? (
+        <Button variant="secondary" label="Editar atributos e perícias" onPress={() => setEditingSkills(true)} />
+      ) : null}
+      {tab === 'pericias' && editingSkills ? (
+        <T20SkillsEditor
+          sheet={sheet}
+          onCancel={() => setEditingSkills(false)}
+          onSave={async (next) => {
+            await saveSheet(next);
+            setEditingSkills(false);
+          }}
+        />
+      ) : null}
       {tab === 'pericias' ? <T20AutomaticBonusesCard bonuses={derived.automaticBonuses} /> : null}
       {tab === 'pericias' ? (
         <T20SituationalCard
@@ -649,12 +777,45 @@ function T20SheetBody(props: Props) {
         </Card>
       ) : null}
 
+      {tab === 'poderes' && props.canEditSheet && editingAbility === null ? (
+        <Button variant="secondary" label="Adicionar habilidade, poder ou magia" onPress={() => setEditingAbility('new')} />
+      ) : null}
+      {tab === 'poderes' && editingAbility !== null ? (
+        <T20AbilityForm
+          characterId={props.character.id}
+          entry={editingAbility === 'new' ? null : editingAbility}
+          onCancel={() => setEditingAbility(null)}
+          onSaved={(saved, isNew) => {
+            setAbilities((current) => (isNew ? [...current, saved] : current.map((entry) => (entry.id === saved.id ? saved : entry))));
+            setEditingAbility(null);
+          }}
+          onDeleted={(abilityId) => {
+            setAbilities((current) => current.filter((entry) => entry.id !== abilityId));
+            setEditingAbility(null);
+          }}
+        />
+      ) : null}
       {tab === 'poderes' ? (
         <>
           {abilities.map((ability) => (
             <Card key={ability.id}>
               <AppText style={{ fontFamily: fonts.sansMedium }}>{ability.name}</AppText>
               <AppText variant="small">{ability.source}</AppText>
+              {props.canEditSheet && pendingChoices(ability).length ? (
+                <View style={{ gap: 6 }}>
+                  <AppText variant="small" style={{ color: colors.fgAccent }}>
+                    Escolha uma opção:
+                  </AppText>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                    {pendingChoices(ability).map((option) => (
+                      <Button key={option} compact variant="secondary" label={option} onPress={() => void chooseOption(ability, option)} />
+                    ))}
+                  </View>
+                </View>
+              ) : null}
+              {props.canEditSheet ? (
+                <Button compact variant="ghost" label="Editar" onPress={() => setEditingAbility(ability)} />
+              ) : null}
               <AppText variant="serif" numberOfLines={8}>
                 {ability.description}
               </AppText>
@@ -1056,6 +1217,7 @@ function LevelUpModal({
 }
 
 const styles = StyleSheet.create({
+  fullscreen: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.92)', alignItems: 'center', justifyContent: 'center', padding: 12 },
   content: { padding: spacing[4], gap: spacing[4], paddingBottom: spacing[8] },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginVertical: spacing[2] },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },

@@ -14,10 +14,7 @@ import { campaignRoleLabels } from '@codexveil/domain';
 import { conditionLabel, findSystem, summarizeSheet } from '@codexveil/rpg-systems';
 import {
   campaignSourcebooks,
-  dnd5eCampaignIssues,
   dnd5eCampaignLinks,
-  parseDnd5eCampaignRules,
-  parseDnd5eSheet,
 } from '@codexveil/rpg-systems/dnd5e';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import {
@@ -32,6 +29,7 @@ import {
   Users,
 } from 'lucide-react-native';
 import { Image, Linking, StyleSheet, View } from 'react-native';
+import { LinkExistingCharacter, campaignRuleIssues } from '@/components/campaign/link-existing-character';
 import { TurnStatus } from '@/components/campaign/turn-status';
 import { DiceColorCard } from '@/components/dice/dice-color';
 import { CharacterAvatar } from '@/components/character-avatar';
@@ -104,10 +102,7 @@ export default function CampaignScreen() {
     : [];
   // O app é a ficha de jogo: as regras de criação só aparecem enquanto o personagem do jogador
   // não existe ou ainda não cumpre as regras do mestre (o mestre as vê no site).
-  const ownIssues =
-    ownCharacter && campaign.systemId === 'dnd5e'
-      ? characterRuleIssues(ownCharacter.name, ownCharacter.sheet, campaign.characterRules)
-      : [];
+  const ownIssues = ownCharacter ? campaignRuleIssues(campaign.systemId, ownCharacter.name, ownCharacter.sheet, campaign.characterRules) : [];
   const campaignLinks =
     campaign.systemId === 'dnd5e'
       ? dnd5eCampaignLinks(
@@ -256,7 +251,7 @@ export default function CampaignScreen() {
         <HeroCard>
           <AppText variant="heading">Você ainda não tem personagem aqui</AppText>
           <AppText variant="muted">
-            Crie um seguindo as regras da mesa ou vincule um existente pela ficha.
+            Crie um seguindo as regras da mesa ou traga um que você já tem.
           </AppText>
           <Button
             label="Criar personagem"
@@ -266,6 +261,18 @@ export default function CampaignScreen() {
             }
           />
         </HeroCard>
+      ) : null}
+      {isActive && !isGm && !ownCharacter && userId ? (
+        <LinkExistingCharacter
+          userId={userId}
+          campaign={{
+            id: campaign.id,
+            systemId: campaign.systemId,
+            characterRules: campaign.characterRules,
+            creationQuestions: campaign.creationQuestions,
+          }}
+          onLinked={reload}
+        />
       ) : null}
 
       <TurnStatus
@@ -461,14 +468,3 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
   },
 });
-
-function characterRuleIssues(name: string, sheet: unknown, rules: unknown): string[] {
-  try {
-    return dnd5eCampaignIssues(
-      { name, sheet: parseDnd5eSheet(sheet) },
-      parseDnd5eCampaignRules(rules),
-    );
-  } catch {
-    return ['A ficha não pôde ser lida.'];
-  }
-}

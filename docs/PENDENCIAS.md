@@ -62,6 +62,9 @@ compartilhar; (3) "?" dos pontos do T20; (4) Tomo no app (chat e ditado).
 
 ### Outras pendências abertas (2026-10-27)
 
+- Lição de 2026-10-27: mudanças de ficha feitas só no site não chegam ao app (telas próprias).
+  Toda mudança de ficha/campanha para jogadores deve ser feita nos dois (`apps/web` e `apps/mobile`).
+
 - D&D 5e, automação das habilidades (melhoria futura): repetir a verificação feita no T20 (levantar
   todas as habilidades com bônus, escolha, magia ou proficiência e automatizar em três etapas).
   Detalhe em PROXIMOS_PASSOS, seção B0g.

@@ -95,6 +95,8 @@ export default function CharacterScreen() {
           }}
           campaignId={data.character.campaign?.id ?? null}
           portraitPath={data.character.portraitPath}
+          portraitUrl={data.portraitUrl}
+          onReload={reload}
           gate={{
             inCampaign: Boolean(data.character.campaign),
             isGm: data.character.viewer.membership?.role === 'gm',

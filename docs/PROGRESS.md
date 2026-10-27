@@ -306,6 +306,14 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27:** **porte para o app** do que foi feito só no site em 2026-10-26 à noite. Ficha T20 do
+  app: editar atributos, perícias treinadas e bônus (aba Perícias); ajustar Defesa, Iniciativa,
+  deslocamento, tamanho e PV/PM máximos (aba Evolução); PV temporários; Tibares (gastar/receber);
+  adicionar, editar e excluir habilidades, poderes e magias; escolha "com X, ou com Y" (Protótipo)
+  na própria habilidade; retrato no cabeçalho, com envio e tela cheia. Campanha no app: "Trazer
+  personagem existente" (D&D e T20) com as regras e as perguntas do mestre; pendências de regra do
+  T20 também. Tudo por OTA. Não verificado no aparelho.
+
 - **2026-10-27:** app, Perfil mostra a atualização em uso (data da OTA ou "versão do APK") e tem o
   botão "Procurar atualização" (baixa e reinicia na hora). Atualizações OTA conferidas: todas no
   runtime `17f596b2`, o mesmo do APK `ba2a5e0d` de 2026-10-25.
