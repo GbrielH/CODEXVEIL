@@ -149,11 +149,19 @@ export function t20AbilityChoiceNames(ability: {
   if (ability.options?.length) return ability.options.map((option) => option.name);
   // "escolha entre X e Y" ou "escolha um tipo de terreno entre A, B ou C".
   const match = /escolha (?:[^.;:]{0,40}? )?entre ([^.;:]+?)(?:\.|;|:|$)/i.exec(ability.text);
-  if (!match?.[1]) return [];
-  return match[1]
-    .split(/,\s*|\s+e\s+|\s+ou\s+/)
-    .map((name) => name.trim())
-    .filter(Boolean);
+  if (match?.[1]) {
+    return match[1]
+      .split(/,\s*|\s+e\s+|\s+ou\s+/)
+      .map((name) => name.trim())
+      .filter(Boolean);
+  }
+  // "começa o jogo com um item superior, ou com 10 itens alquímicos" (Protótipo do Inventor):
+  // duas alternativas "com X, ou com Y" viram as opções (sem o artigo inicial).
+  const either = /\bcom (.+?),? ou com (.+?)(?:,|\.|;|$)/i.exec(ability.text);
+  if (either?.[1] && either[2]) {
+    return [either[1], either[2]].map((name) => name.trim().replace(/^(?:um|uma)\s+/i, ''));
+  }
+  return [];
 }
 
 /** Poderes que só se ganham por uma habilidade com escolha (não entram na lista de poderes do nível). */

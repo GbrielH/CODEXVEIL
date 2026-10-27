@@ -9,6 +9,7 @@ import {
   getCampaignTurn,
   performTurnAction,
   saveCharacterSheet,
+  updateCharacterAbility,
   type CharacterAbility,
   type CharacterCondition,
   type CharacterItem,
@@ -34,6 +35,7 @@ import {
   type T20RestQuality,
   type T20Sheet,
   t20AbilityCost,
+  t20AbilityChoiceNames,
 } from '@codexveil/rpg-systems/tormenta20';
 import { Heart, Minus, Moon, Plus, Shield, Sparkles, X, Zap } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -230,6 +232,36 @@ function T20SheetBody(props: T20SheetScreenProps) {
   };
 
   /** Usar um poder ou lançar uma magia na jogada: gasta os PM (se houver custo) e avisa a mesa. */
+  // Habilidade de classe com escolha que entrou sem ela (fichas antigas, ex.: Protótipo do
+  // Inventor): as opções do livro aparecem na ficha; escolher grava "Protótipo (item superior)".
+  const plain = (text: string) =>
+    text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+  const pendingChoices = (ability: CharacterAbility): string[] => {
+    if (ability.name.includes('(')) return [];
+    for (const klass of content.classes) {
+      const source = klass.abilities.find((entry) => plain(entry.name) === plain(ability.name));
+      const options = source ? t20AbilityChoiceNames(source) : [];
+      if (options.length > 1) return options.map((option) => option.charAt(0).toUpperCase() + option.slice(1));
+    }
+    return [];
+  };
+  const chooseOption = (ability: CharacterAbility, option: string) => {
+    void (async () => {
+      const saved = await run(
+        () =>
+          updateCharacterAbility(getSupabaseBrowserClient(), ability.id, {
+            name: `${ability.name} (${option})`.slice(0, 120),
+            source: ability.source,
+            description: ability.description,
+            data: ability.data,
+            resourceId: ability.resourceId,
+          }),
+        'A escolha não foi salva',
+      );
+      if (saved) setAbilities((current) => current.map((entry) => (entry.id === saved.id ? saved : entry)));
+    })();
+  };
+
   const activateAbility = (ability: CharacterAbility) => {
     const cost = t20AbilityCost(ability);
     const pmTrack = resource(T20_RESOURCE_KEYS.manaPoints);
@@ -622,6 +654,8 @@ function T20SheetBody(props: T20SheetScreenProps) {
                 abilities={list}
                 useLabel="Usar"
                 onUse={permissions.canEditPlay ? activateAbility : undefined}
+                choicesFor={group.kind === 'class_feature' ? pendingChoices : undefined}
+                onChoose={permissions.canEditSheet ? chooseOption : undefined}
               />
             ) : null;
           })}
@@ -1004,12 +1038,17 @@ function AbilityList({
   extra,
   onUse,
   useLabel = 'Usar',
+  choicesFor,
+  onChoose,
 }: {
   title: string;
   abilities: CharacterAbility[];
   extra?: (ability: CharacterAbility) => string;
   onUse?: (ability: CharacterAbility) => void;
   useLabel?: string;
+  /** Opções de uma habilidade com escolha ainda não feita (vazio = nada a escolher). */
+  choicesFor?: (ability: CharacterAbility) => string[];
+  onChoose?: (ability: CharacterAbility, option: string) => void;
 }) {
   return (
     <Card>
@@ -1028,6 +1067,20 @@ function AbilityList({
                 {ability.description}
               </p>
             </details>
+            {(() => {
+              const options = choicesFor?.(ability) ?? [];
+              if (!options.length) return null;
+              return (
+                <div className="mt-1 flex shrink-0 flex-wrap items-center gap-1" role="group" aria-label={`Escolha de ${ability.name}`}>
+                  <span className="text-xs text-amber-300">Escolha:</span>
+                  {options.map((option) => (
+                    <Button key={option} size="sm" variant="secondary" disabled={!onChoose} onClick={() => onChoose?.(ability, option)}>
+                      {option}
+                    </Button>
+                  ))}
+                </div>
+              );
+            })()}
             {onUse ? (
               <Button
                 size="sm"

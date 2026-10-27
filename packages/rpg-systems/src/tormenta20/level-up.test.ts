@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildT20Content } from './content';
+import { buildT20Content, t20AbilityChoiceNames } from './content';
 import { createT20Draft, t20CreationFeatureChoices, t20FinalAttributes } from './creation';
 import { applyT20LevelUp, planT20LevelUp } from './level-up';
 import { createDefaultT20Sheet, parseT20Sheet } from './sheet';
@@ -164,6 +164,16 @@ describe('Tormenta20 — subida de nível', () => {
     expect(t20FinalAttributes(content, draft).car).toBe(
       t20FinalAttributes(content, { ...draft, levelPowerAttributes: {} }).car + 1,
     );
+  });
+
+  it('habilidade "com X, ou com Y" (Protótipo do Inventor) vira escolha já na criação', () => {
+    expect(
+      t20AbilityChoiceNames({
+        text: 'Você começa o jogo com um item superior, ou com 10 itens alquímicos, com preço total',
+      }),
+    ).toEqual(['item superior', '10 itens alquímicos']);
+    // Texto sem alternativas não vira escolha.
+    expect(t20AbilityChoiceNames({ text: 'Você recebe +2 na Defesa com escudo.' })).toEqual([]);
   });
 
   it('Treinamento em Perícia pede a perícia e a torna treinada (pode repetir)', () => {
