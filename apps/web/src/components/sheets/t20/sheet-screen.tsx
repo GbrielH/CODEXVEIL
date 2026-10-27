@@ -20,6 +20,9 @@ import {
 import { characterImagePrompt, characterTokenPrompt, rollDiceLocally, type DiceRollMode, type TrackOperation } from '@codexveil/domain';
 import {
   T20_ATTRIBUTES,
+  T20_SKILLS,
+  type T20BonusEffect,
+  type T20Skill,
   T20_RESOURCE_KEYS,
   T20_REST_QUALITY,
   buildT20Content,
@@ -217,6 +220,42 @@ function T20SheetBody(props: T20SheetScreenProps) {
     [effectiveSheet, conditions],
   );
   const resource = (key: string) => resources.find((entry) => entry.key === key);
+
+  // PV e PM de habilidades (Vitalidade, Vontade de Ferro…): a trilha recebe a diferença entre o
+  // que as habilidades dão agora e o que já foi somado (gravado na ficha), uma vez por mudança.
+  const abilityPoolsKey = `${derived.abilityHitPoints}|${derived.abilityManaPoints}`;
+  useEffect(() => {
+    if (!permissions.canEditSheet) return;
+    const deltas = [
+      [T20_RESOURCE_KEYS.hitPoints, derived.abilityHitPoints - sheet.hitPoints.fromAbilities],
+      [T20_RESOURCE_KEYS.manaPoints, derived.abilityManaPoints - sheet.manaPoints.fromAbilities],
+    ] as const;
+    if (deltas.every(([, delta]) => delta === 0)) return;
+    const next = {
+      ...sheet,
+      hitPoints: { ...sheet.hitPoints, fromAbilities: derived.abilityHitPoints },
+      manaPoints: { ...sheet.manaPoints, fromAbilities: derived.abilityManaPoints },
+    };
+    void (async () => {
+      try {
+        const client = getSupabaseBrowserClient();
+        const updated: CharacterResource[] = [];
+        for (const [key, delta] of deltas) {
+          const track = resources.find((entry) => entry.key === key);
+          if (!track || delta === 0) continue;
+          await adjustCharacterResource(client, track.id, 'set_max', Math.max(0, (track.max ?? 0) + delta));
+          updated.push(await adjustCharacterResource(client, track.id, delta > 0 ? 'heal' : 'damage', Math.abs(delta)));
+        }
+        const saved = await saveCharacterSheet(client, character.id, version, { sheet: next });
+        setSheet(next);
+        setVersion(saved.version);
+        if (updated.length) setResources((current) => current.map((entry) => updated.find((item) => item.id === entry.id) ?? entry));
+      } catch {
+        // Tenta de novo na próxima abertura da ficha.
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- acerta só quando o total das habilidades muda.
+  }, [abilityPoolsKey]);
 
   const run = async <T,>(action: () => Promise<T>, failure: string): Promise<T | null> => {
     try {
@@ -695,6 +734,22 @@ function T20SheetBody(props: T20SheetScreenProps) {
         />
       ) : null}
 
+      {tab === 'pericias' && !editingSkills && derived.automaticBonuses.length ? (
+        <Card>
+          <CardHeader
+            title="Bônus automáticos"
+            description="Habilidades de raça, classe e poderes que valem sempre. Já estão somados aos números da ficha. Bônus que dependem da situação você aplica na hora."
+          />
+          <ul className="flex flex-col gap-1.5 text-sm">
+            {derived.automaticBonuses.map((bonus) => (
+              <li key={bonus.source} className="flex flex-wrap gap-x-2">
+                <span className="font-medium text-fg">{bonus.source}</span>
+                <span className="text-fg-secondary">{describeBonus(bonus.effect)}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
       {tab === 'pericias' && !editingSkills ? (
         <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
           <Card>
@@ -1385,4 +1440,18 @@ function StoryCard({
       </div>
     </Card>
   );
+}
+
+/** "+2 em Percepção, +1 na Defesa, +3m de deslocamento, +6 PV". */
+function describeBonus(effect: T20BonusEffect): string {
+  const parts = [
+    ...Object.entries(effect.skills ?? {})
+      .filter(([, value]) => value)
+      .map(([skill, value]) => `${value > 0 ? '+' : ''}${value} em ${T20_SKILLS[skill as T20Skill].label}`),
+    effect.defense ? `+${effect.defense} na Defesa` : '',
+    effect.speed ? `+${effect.speed}m de deslocamento` : '',
+    effect.hitPoints ? `+${effect.hitPoints} PV` : '',
+    effect.manaPoints ? `+${effect.manaPoints} PM` : '',
+  ];
+  return parts.filter(Boolean).join(', ');
 }

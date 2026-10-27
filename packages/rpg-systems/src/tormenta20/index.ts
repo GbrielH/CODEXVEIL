@@ -73,6 +73,7 @@ export * from './conditions';
 export * from './treasure';
 export * from './sheet';
 export * from './derived';
+export * from './bonuses';
 export * from './resources';
 export * from './stat-block';
 export * from './campaign-rules';

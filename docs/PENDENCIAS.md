@@ -62,6 +62,15 @@ compartilhar; (3) "?" dos pontos do T20; (4) Tomo no app (chat e ditado).
 
 ### Outras pendências abertas (2026-10-27)
 
+- D&D 5e, automação das habilidades (melhoria futura): repetir a verificação feita no T20 (levantar
+  todas as habilidades com bônus, escolha, magia ou proficiência e automatizar em três etapas).
+  Detalhe em PROXIMOS_PASSOS, seção B0g.
+
+- T20, automação das habilidades: etapa 1 (bônus fixos) feita; faltam a etapa 2 (bônus
+  condicionais como lembrete na rolagem) e a etapa 3 (todas as escolhas: perícias, armas, "um poder à
+  escolha", Etiqueta, Lefou Deformidade, Kliren Vanguardista…). PV de raça por nível (Anão) na
+  subida de nível ainda não entra.
+
 - T20, escolhas concedidas que ainda faltam: Osteon (Memória Póstuma: perícia ou poder), Foco em
   Magia (marcar a magia), escolas do Bardo/Druida nas magias concedidas; conferir no livro o preço
   total do Protótipo (usado T$ 500 para os alquímicos).

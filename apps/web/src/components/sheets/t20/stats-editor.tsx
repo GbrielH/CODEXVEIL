@@ -79,8 +79,8 @@ export function T20StatsEditor({
         ...sheet.skills,
         bonuses: { ...sheet.skills.bonuses, iniciativa: form.initiativeBonus },
       },
-      hitPoints: { max: form.hitPointsMax },
-      manaPoints: { max: form.manaPointsMax },
+      hitPoints: { ...sheet.hitPoints, max: form.hitPointsMax },
+      manaPoints: { ...sheet.manaPoints, max: form.manaPointsMax },
     };
     try {
       await onSave({

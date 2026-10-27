@@ -94,8 +94,20 @@ export const t20SheetSchema = z.object({
       crafts: z.array(z.string().trim().min(1).max(60)).max(10).default([]),
     })
     .prefault({}),
-  hitPoints: z.object({ max: z.number().int().min(1).max(9999).default(1) }).prefault({}),
-  manaPoints: z.object({ max: z.number().int().min(0).max(9999).default(0) }).prefault({}),
+  hitPoints: z
+    .object({
+      max: z.number().int().min(1).max(9999).default(1),
+      /** PV a mais de habilidades (Vitalidade…) já somados à trilha de PV; a ficha acerta a diferença. */
+      fromAbilities: z.number().int().min(-999).max(9999).default(0),
+    })
+    .prefault({}),
+  manaPoints: z
+    .object({
+      max: z.number().int().min(0).max(9999).default(0),
+      /** PM a mais de habilidades (Vontade de Ferro, Poder Mágico…) já somados à trilha de PM. */
+      fromAbilities: z.number().int().min(-999).max(9999).default(0),
+    })
+    .prefault({}),
   defense: z
     .object({
       /** Bônus de armadura e escudo equipados (vêm do inventário quando possível). */

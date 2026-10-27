@@ -183,6 +183,29 @@ mapa e notas lado a lado).
 - [x] Respostas na ficha (site), visíveis só para o jogador e o mestre.
 - [ ] Ver e corrigir as respostas na ficha do app; editar as respostas depois de criado.
 
+### B0g. Habilidades automáticas (2026-10-27)
+
+**Tormenta20** (em andamento):
+
+- [x] Etapa 1: bônus fixos sempre ativos (perícias, Defesa, deslocamento, PV/PM) entram na ficha
+      sozinhos, com a origem no cartão "Bônus automáticos" (`tormenta20/bonuses.ts`).
+- [ ] Etapa 2: bônus condicionais ("+2 em Furtividade à noite", "com escudo") como lembrete ao
+      lado da rolagem, ligado pelo jogador.
+- [ ] Etapa 3: todas as escolhas restantes no cartão "Escolhas pendentes" (perícias, armas, "um
+      poder à escolha"…).
+
+**D&D 5e** (melhoria futura, pedida em 2026-10-27): fazer a mesma verificação do livro inteiro
+(SRD 5.2.1 e livros importados: classes, subclasses, espécies, antecedentes e talentos) e as mesmas
+três etapas:
+
+- [ ] Levantamento: contar as habilidades com bônus numérico (CA, perícias, salvaguardas, PV,
+      deslocamento, atributos), com escolha, que concedem magia e que tornam proficiente.
+- [ ] Etapa 1: bônus fixos sempre ativos na ficha, com a origem (ex.: Robusto, Alerta, Defesa do
+      Estilo de Luta, Movimento Rápido, Defesa sem Armadura).
+- [ ] Etapa 2: bônus condicionais como lembrete na rolagem.
+- [ ] Etapa 3: todas as escolhas pendentes com seletor (magias de talentos e espécies, perícias,
+      ferramentas, idiomas, "um talento à escolha").
+
 ### B0f. App em paridade com o site (2026-10-27, próximo)
 
 Tabela completa em [PENDENCIAS.md](PENDENCIAS.md#0-app-em-paridade-com-o-site-levantado-em-2026-10-27).

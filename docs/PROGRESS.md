@@ -306,6 +306,16 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27:** T20, **bônus automáticos — etapa 1 de 3** (`tormenta20/bonuses.ts`, 3 testes): tabela
+  curada lendo as 175 habilidades do livro básico com número. As que valem sempre (ou com condição
+  que a ficha conhece, como armadura pesada) já entram nas perícias, na Defesa, no deslocamento e,
+  no site, nas trilhas de PV/PM (`hitPoints/manaPoints.fromAbilities` guarda o que já foi somado).
+  Cobertas: 8 de raça (Elfo, Goblin, Minotauro, Golem, Hynne, Suraggel x2, Trog), 4 de classe
+  (Instinto Selvagem, Esquiva Sagaz, Rastreador, Casca Grossa) e 35 poderes (Esquiva, Vitalidade,
+  Vontade de Ferro, Poder Mágico, poderes da Tormenta com escala…). Cartão "Bônus automáticos" na
+  aba Atributos e perícias mostra a origem de cada um. Próximo: etapa 2 (bônus condicionais como
+  lembrete) e etapa 3 (todas as escolhas). Não verificado no navegador.
+
 - **2026-10-27:** T20, **escolhas concedidas** (`tormenta20/grants.ts`, 4 testes): a ficha mostra no
   topo o cartão "Escolhas pendentes" com o seletor do que a raça, os poderes e habilidades concedem
   e ainda não foi escolhido. Magias: Centelha Mágica, Truque Mágico, Conhecimento Mágico, Aumentar

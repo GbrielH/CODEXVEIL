@@ -250,8 +250,8 @@ export function applyT20LevelUp(
       skillPick?.trains && pickedSkills.length
         ? { ...sheet.skills, trained: [...new Set([...sheet.skills.trained, ...pickedSkills])] }
         : sheet.skills,
-    hitPoints: { max: sheet.hitPoints.max + plan.hitPointsGained + conBonus },
-    manaPoints: { max: sheet.manaPoints.max + plan.manaPointsGained },
+    hitPoints: { ...sheet.hitPoints, max: sheet.hitPoints.max + plan.hitPointsGained + conBonus },
+    manaPoints: { ...sheet.manaPoints, max: sheet.manaPoints.max + plan.manaPointsGained },
     powers: [
       ...sheet.powers,
       ...(power

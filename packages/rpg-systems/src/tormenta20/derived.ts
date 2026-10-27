@@ -3,6 +3,7 @@
  * PM e carga. Valor de perícia = metade do nível + atributo-chave + treinamento (+2/+4/+6) +
  * bônus; Defesa = 10 + Destreza + armadura + escudo + outros.
  */
+import { sumT20Bonuses, t20AutomaticBonuses, type T20AutomaticBonus } from './bonuses';
 import { T20_ATTRIBUTES, type T20Attribute } from './attributes';
 import { t20ConditionEffects } from './conditions';
 import { t20ManaLimit, t20Tier, type T20Tier } from './progression';
@@ -37,6 +38,11 @@ export interface T20Derived {
   carryCapacity: number;
   /** Deslocamento em metros, já com as condições. */
   speed: number;
+  /** Bônus que valem sempre (raça, classe, poderes), já somados acima; com a origem de cada um. */
+  automaticBonuses: T20AutomaticBonus[];
+  /** PV e PM máximos a mais dados por habilidades (a ficha soma às trilhas de PV/PM). */
+  abilityHitPoints: number;
+  abilityManaPoints: number;
 }
 
 const PHYSICAL: readonly T20Attribute[] = ['for', 'des', 'con'];
@@ -50,6 +56,8 @@ export function computeT20Derived(sheet: T20Sheet, conditions: readonly string[]
     T20_ATTRIBUTES.map((key) => [key, sheet.attributes[key]]),
   ) as Record<T20Attribute, number>;
   const trained = new Set(sheet.skills.trained);
+  const automaticBonuses = t20AutomaticBonuses(sheet, attributes);
+  const automatic = sumT20Bonuses(automaticBonuses);
 
   const skills = Object.fromEntries(
     T20_SKILL_IDS.map((skill) => {
@@ -59,7 +67,8 @@ export function computeT20Derived(sheet: T20Sheet, conditions: readonly string[]
         halfLevel +
         attributes[definition.attribute] +
         (isTrained ? trainingBonus : 0) +
-        (sheet.skills.bonuses[skill] ?? 0);
+        (sheet.skills.bonuses[skill] ?? 0) +
+        (automatic.skills[skill] ?? 0);
       if (definition.armorPenalty) total += sheet.defense.armorPenalty + effects.armorPenalty;
       total +=
         effects.skills +
@@ -89,6 +98,7 @@ export function computeT20Derived(sheet: T20Sheet, conditions: readonly string[]
     sheet.defense.armor +
     sheet.defense.shield +
     sheet.defense.other +
+    automatic.defense +
     effects.defense;
   const spellAttribute = sheet.spells.attribute;
   const speed =
@@ -96,7 +106,7 @@ export function computeT20Derived(sheet: T20Sheet, conditions: readonly string[]
       ? 0
       : effects.speed === 'half'
         ? Math.floor(sheet.identity.speed / 2 / 1.5) * 1.5
-        : sheet.identity.speed;
+        : sheet.identity.speed + automatic.speed;
 
   return {
     level,
@@ -113,6 +123,9 @@ export function computeT20Derived(sheet: T20Sheet, conditions: readonly string[]
     spellDc: spellAttribute ? 10 + halfLevel + attributes[spellAttribute] : null,
     carryCapacity: Math.max(1, 10 + (attributes.for >= 0 ? 2 * attributes.for : attributes.for)),
     speed,
+    automaticBonuses,
+    abilityHitPoints: automatic.hitPoints,
+    abilityManaPoints: automatic.manaPoints,
   };
 }
 
