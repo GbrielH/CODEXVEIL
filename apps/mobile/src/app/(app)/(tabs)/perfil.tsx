@@ -9,6 +9,7 @@ import {
 import { LogOut } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
+import { AppVersion } from '@/components/app-version';
 import { NewPasswordForm } from '@/components/change-password';
 import { Avatar } from '@/components/ui/avatar';
 import { AVATAR_SVGS } from '@/components/ui/avatar-svgs.gen';
@@ -200,9 +201,7 @@ export default function ProfileScreen() {
           }
         />
       </Card>
-      <AppText variant="small" style={{ color: colors.fgSubtle, textAlign: 'center' }}>
-        Codexveil 0.1.0
-      </AppText>
+      <AppVersion />
     </Screen>
   );
 }

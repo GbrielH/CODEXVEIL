@@ -306,6 +306,10 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-27:** app, Perfil mostra a atualização em uso (data da OTA ou "versão do APK") e tem o
+  botão "Procurar atualização" (baixa e reinicia na hora). Atualizações OTA conferidas: todas no
+  runtime `17f596b2`, o mesmo do APK `ba2a5e0d` de 2026-10-25.
+
 - **2026-10-27:** T20, restos da automação (4 testes novos em `pending-extras.test.ts`): Etiqueta (+2
   Diplomacia ou Nobreza), Osteon pode trocar a perícia por um poder geral, Totem Espiritual (animal →
   magia; Sabedoria nos PM), Familiar (animal; Gato +2 Furtividade, Sapo atributo-chave nos PV),
