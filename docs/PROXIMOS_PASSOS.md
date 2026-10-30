@@ -210,7 +210,7 @@ mapa e notas lado a lado).
 - [x] Assimilação RPG, etapa 0 (2026-10-30): núcleo de regras e testes (`docs/ASSIMILACAO.md`).
 - [ ] Assimilação RPG, etapas 1 e 2: registro do sistema, migração, criação e ficha no site e no app.
 - [ ] Assimilação RPG, etapa 3: rolador de dados especiais (Rolagem Assimilada, dados mantidos).
-- [ ] Conferir as faces 11 e 12 do d12 do Assimilação com o dado físico ou o app oficial.
+- [x] Faces 11 e 12 do d12 do Assimilação conferidas na tabela do livro (2026-10-30).
 - [x] Retratos de perfil novos (2026-10-30): 15 ícones em imagem, guardados no código (o banco só
       guarda a chave). Mantidos "Iniciais" e "Foto do Google".
 - [x] Taverna: troca de grupo instantânea e sugestões de menção ao digitar "@" (Tomo e jogadores),

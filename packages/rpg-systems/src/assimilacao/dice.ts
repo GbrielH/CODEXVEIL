@@ -38,7 +38,6 @@ export const ASSIMILACAO_FACES: Record<AssimilacaoDie, readonly FaceCount[]> = {
     face(1, 1, 1),
     face(2, 0, 1),
   ],
-  // As faces 11 e 12 do d12 vêm de uma leitura da tabela do livro: conferir com o dado físico.
   d12: [
     BLANK,
     BLANK,
@@ -50,8 +49,8 @@ export const ASSIMILACAO_FACES: Record<AssimilacaoDie, readonly FaceCount[]> = {
     face(1, 1, 0),
     face(1, 1, 1),
     face(2, 0, 1),
-    face(1, 2, 0),
-    face(0, 0, 3),
+    face(1, 2, 1),
+    face(0, 0, 2),
   ],
 };
 

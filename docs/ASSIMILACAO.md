@@ -17,9 +17,8 @@ mesmo modelo dos livros do Tormenta20 (Meus livros).
 - **Dados** (`dice.ts`): d6, d10 e d12 com faces de Sucesso, Adaptação e Pressão, conforme a
   Tabela de Conversão de Dados. Rolagem da pilha, soma das faces, sugestão de dados a manter e
   rolagem de dano (cada símbolo vale 1).
-  - **A conferir:** as faces 11 e 12 do d12 (Sucesso + 2 Adaptações e 3 Pressões) vieram de uma
-    leitura da tabela do PDF. Os totais batem com o livro (8 Sucessos, 5 Adaptações e 8 Pressões),
-    mas é bom comparar com o dado físico ou o app oficial.
+  - As faces foram conferidas pelas coordenadas dos símbolos na tabela (página 43): a face 11 do
+    d12 é Sucesso + 2 Adaptações + Pressão, e a 12 é 2 Pressões.
 - **Ficha** (`sheet.ts`): Geração, Origens (Evento Marcante e Ocupação, com uso por sessão),
   Propósitos (2 pessoais e 2 coletivos, com marca de Inerte), 6 Instintos (1 a 5), 6
   Conhecimentos e 6 Práticas (0 a 5), Cabo de Guerra, dano de Saúde, Experiência,

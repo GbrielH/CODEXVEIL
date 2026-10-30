@@ -143,5 +143,5 @@ describe('Humano variante na criação (livro importado)', () => {
         cha: 9,
       });
     });
-  });
+  }, 30_000); // importa o conteúdo do D&D na hora: com a suíte toda em paralelo, passa dos 5 s.
 });
