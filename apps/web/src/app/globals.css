@@ -426,51 +426,6 @@
   animation: codex-fumble-banner 1.8s ease-out both;
 }
 
-/*
- * Falha crítica: o dragão (WebP que toca uma vez, `public/dados/falha-critica.webp`) sopra fogo e,
- * quando as chamas cobrem a tela (~2,3 s), "FALHA CRÍTICA" surge no meio do fogo. Some depois de ~4,6 s.
- */
-@keyframes codex-dragon-scene {
-  0% {
-    opacity: 0;
-  }
-  6%,
-  88% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes codex-dragon-word {
-  0% {
-    opacity: 0;
-    transform: scale(2.4);
-    filter: blur(8px);
-  }
-  35% {
-    opacity: 1;
-    transform: scale(0.94);
-    filter: blur(0);
-  }
-  45% {
-    transform: scale(1.04);
-  }
-  55%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@utility animate-dragon-scene {
-  animation: codex-dragon-scene 4.6s ease-out both;
-}
-
-@utility animate-dragon-word {
-  animation: codex-dragon-word 1.2s var(--ease-codex) 2.3s both;
-}
-
 @utility animate-pop {
   animation: codex-pop 360ms var(--ease-codex) both;
 }
@@ -486,8 +441,7 @@
   /* Movimento reduzido: sem explosão de crítico (o balão do resultado já avisa). */
   .animate-crit-flash,
   .animate-crit-banner,
-  .animate-fumble-banner,
-  .animate-dragon-scene {
+  .animate-fumble-banner {
     display: none;
   }
 }
