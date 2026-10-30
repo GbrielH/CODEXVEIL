@@ -40,7 +40,9 @@ export function ExpandTextButton({
             className="min-h-[60dvh] w-full flex-1 resize-none rounded-md border border-line bg-sunken p-4 font-serif text-lg leading-relaxed text-fg"
           />
         ) : (
-          <p className="font-serif text-lg leading-relaxed whitespace-pre-wrap text-fg">{value || '—'}</p>
+          <p className="font-serif text-lg leading-relaxed whitespace-pre-wrap text-fg">
+            {value || '—'}
+          </p>
         )}
       </Modal>
     </>

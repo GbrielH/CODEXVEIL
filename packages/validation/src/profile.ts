@@ -5,22 +5,42 @@ import { optionalText } from './common';
 export const DENSITIES = ['comfortable', 'compact'] as const;
 export const MOTION_PREFERENCES = ['system', 'reduce'] as const;
 
-/** Retratos de perfil por classe (desenhados no código; o banco guarda só a escolha). */
+/** Retratos de perfil (imagens no código, em `public/retratos` e `assets/retratos`; o banco guarda só a chave). */
 export const AVATAR_ICONS = [
-  'encapuzado',
+  'guerreiro',
+  'patrulheiro',
+  'grimorio',
+  'clerigo',
+  'ladino',
   'barbaro',
   'bardo',
-  'bruxo',
-  'clerigo',
   'druida',
-  'feiticeiro',
-  'guerreiro',
-  'ladino',
-  'mago',
+  'guardiao',
   'monge',
   'paladino',
-  'patrulheiro',
+  'fera',
+  'feiticeiro',
+  'bruxo',
+  'mago',
 ] as const;
+
+export const AVATAR_LABELS: Record<(typeof AVATAR_ICONS)[number], string> = {
+  guerreiro: 'Guerreiro',
+  patrulheiro: 'Patrulheiro',
+  grimorio: 'Grimório',
+  clerigo: 'Clérigo',
+  ladino: 'Ladino',
+  barbaro: 'Bárbaro',
+  bardo: 'Bardo',
+  druida: 'Druida',
+  guardiao: 'Guardião',
+  monge: 'Monge',
+  paladino: 'Paladino',
+  fera: 'Fera',
+  feiticeiro: 'Feiticeiro',
+  bruxo: 'Bruxo',
+  mago: 'Mago',
+};
 export type AvatarPreset = (typeof AVATAR_ICONS)[number];
 
 /** Foto da conta Google (opcional): só endereços do googleusercontent, nada de links arbitrários. */
@@ -40,7 +60,8 @@ export function googlePhotoFrom(
     : null;
 }
 const avatarSchema = z.union([
-  z.enum(AVATAR_ICONS),
+  // 'encapuzado' (retrato antigo que saiu) vira o Ladino, o mais parecido.
+  z.preprocess((value) => (value === 'encapuzado' ? 'ladino' : value), z.enum(AVATAR_ICONS)),
   z
     .string()
     .max(600)

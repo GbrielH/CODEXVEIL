@@ -1,6 +1,7 @@
 import { getProfile, updateProfile } from '@codexveil/database';
 import {
   AVATAR_ICONS,
+  AVATAR_LABELS,
   fieldErrorsFrom,
   profileUpdateSchema,
   type AvatarIcon,
@@ -13,7 +14,6 @@ import { Platform, Pressable, View } from 'react-native';
 import { AppVersion } from '@/components/app-version';
 import { NewPasswordForm } from '@/components/change-password';
 import { Avatar } from '@/components/ui/avatar';
-import { AVATAR_SVGS } from '@/components/ui/avatar-svgs.gen';
 import { Button } from '@/components/ui/button';
 import { CheckRow } from '@/components/ui/controls';
 import { useConfirm } from '@/components/ui/dialog';
@@ -95,7 +95,7 @@ function ProfileForm({ profile, onSaved }: { profile: Profile; onSaved: () => vo
             accessibilityRole="radio"
             accessibilityState={{ checked: avatar === icon }}
             accessibilityLabel={
-              isAvatarPhoto(icon) ? 'Foto do Google' : icon ? AVATAR_SVGS[icon].label : 'Iniciais'
+              isAvatarPhoto(icon) ? 'Foto do Google' : icon ? AVATAR_LABELS[icon] : 'Iniciais'
             }
             style={{
               padding: 4,

@@ -207,6 +207,8 @@ mapa e notas lado a lado).
       `lh*.googleusercontent.com`; o site só aceita a foto da própria conta). Sem migração, sem upload.
 - [x] Taverna: imagens (clipe ou Ctrl+V no site; galeria no app), em `tavern/` no bucket; só quem lê
       a mensagem vê; somem com a mensagem (migração `20261030130000`).
+- [x] Retratos de perfil novos (2026-10-30): 15 ícones em imagem, guardados no código (o banco só
+      guarda a chave). Mantidos "Iniciais" e "Foto do Google".
 - [x] Taverna: troca de grupo instantânea e sugestões de menção ao digitar "@" (Tomo e jogadores),
       site e app (2026-10-30). A menção ainda não gera aviso para a pessoa mencionada.
 - [x] Taverna: cenas de fundo nos chats vazios (Tomo, campanhas e amigos, uma imagem cada) e Tomo

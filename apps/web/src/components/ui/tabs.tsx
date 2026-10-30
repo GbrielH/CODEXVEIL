@@ -31,7 +31,10 @@ export function Tabs({ items, value, onValueChange, label, className }: TabsProp
       className={cx('flex flex-col gap-5', className)}
     >
       <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <RadixTabs.List aria-label={label} className="flex min-w-max gap-1 rounded-xl border border-line bg-raised/70 p-1">
+        <RadixTabs.List
+          aria-label={label}
+          className="flex min-w-max gap-1 rounded-xl border border-line bg-raised/70 p-1"
+        >
           {items.map((item) => (
             <RadixTabs.Trigger
               key={item.value}

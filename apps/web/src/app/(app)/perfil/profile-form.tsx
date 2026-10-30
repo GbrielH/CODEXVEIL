@@ -1,8 +1,13 @@
 'use client';
 
-import { AVATAR_ICONS, type AvatarPhoto, type Preferences } from '@codexveil/validation';
+import {
+  AVATAR_ICONS,
+  AVATAR_LABELS,
+  type AvatarPhoto,
+  type Preferences,
+} from '@codexveil/validation';
 import { Avatar } from '@/components/ui/avatar';
-import { AVATAR_ICON_ART, AvatarIconArt } from '@/components/ui/avatar-icons';
+import { AvatarIconArt } from '@/components/ui/avatar-icons';
 import { useActionState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { TextareaField, TextField } from '@/components/ui/field';
@@ -86,7 +91,7 @@ export function ProfileForm({ initial, googlePhoto }: ProfileFormProps) {
                 className="sr-only"
               />
               <AvatarIconArt icon={icon} className="h-16 w-16" />
-              {AVATAR_ICON_ART[icon].label}
+              {AVATAR_LABELS[icon]}
             </label>
           ))}
         </div>

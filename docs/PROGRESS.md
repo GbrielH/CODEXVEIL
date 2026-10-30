@@ -154,6 +154,10 @@ Os detalhes estão em [`DATABASE.md`](DATABASE.md) e [`SECURITY.md`](SECURITY.md
   não espera mais o tempo real) e menções com "@" (Tomo e pessoas do grupo; no chat de amigo, o
   amigo), no site e no app. `pnpm check` passou; não conferido no navegador nem no aparelho.
 
+- 2026-10-30: novos retratos de perfil (15 imagens recortadas da arte do responsável, no código:
+  `apps/web/public/retratos` e `apps/mobile/assets/retratos`); os desenhos SVG antigos saíram.
+  Quem tinha "encapuzado" passa a ver o Ladino. `pnpm check` passou; visual não conferido.
+
 ## Testes e verificações executados
 
 Execução em 2026-10-17, Windows 11, Node 24.20 e pnpm 12.14:

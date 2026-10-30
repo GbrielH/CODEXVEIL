@@ -1,8 +1,7 @@
-import { isAvatarPhoto, type AvatarIcon } from '@codexveil/validation';
+import { AVATAR_LABELS, isAvatarPhoto, type AvatarIcon } from '@codexveil/validation';
 import { Image, View } from 'react-native';
-import { SvgXml } from 'react-native-svg';
 import { colors, fonts } from '@/lib/theme';
-import { AVATAR_SVGS } from './avatar-svgs.gen';
+import { AVATAR_IMAGES } from './avatar-images';
 import { AppText } from './primitives';
 
 function initialsOf(name: string): string {
@@ -32,11 +31,10 @@ export function Avatar({
     );
   if (icon)
     return (
-      <SvgXml
-        xml={AVATAR_SVGS[icon].svg}
-        width={size}
-        height={size}
-        accessibilityLabel={AVATAR_SVGS[icon].label}
+      <Image
+        source={AVATAR_IMAGES[icon]}
+        style={{ width: size, height: size, borderRadius: size / 2 }}
+        accessibilityLabel={AVATAR_LABELS[icon]}
       />
     );
   return (
