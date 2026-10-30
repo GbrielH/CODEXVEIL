@@ -13,14 +13,23 @@ import { canEditCharacterPlayState, canEditCharacterSheet } from '@codexveil/dom
 import { findSystem } from '@codexveil/rpg-systems';
 import { parseDnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
 import { parseT20Sheet } from '@codexveil/rpg-systems/tormenta20';
+import { parseAssimilacaoSheet } from '@codexveil/rpg-systems/assimilacao';
 import { Dnd5eSheetScreen } from '@/components/sheets/dnd5e/sheet-screen';
 import { T20SheetScreen } from '@/components/sheets/t20/sheet-screen';
+import { AssimilacaoSheetScreen } from '@/components/sheets/assimilacao/sheet-screen';
 import { ErrorState } from '@/components/ui/states';
 import { Card } from '@/components/ui/card';
 import { CreationAnswersView } from '@/components/characters/creation-answers';
 import { ShareCharacterCard } from '@/components/friends/share-character-card';
 import { ItemCatalogProvider } from '@/components/sheets/item-catalog';
-import { campaignBookPacks, loadBookSources, loadT20Sources, ownReadyBookPacks, packsOfSystem } from '@/lib/books';
+import {
+  campaignBookPacks,
+  loadAssimilacaoSources,
+  loadBookSources,
+  loadT20Sources,
+  ownReadyBookPacks,
+  packsOfSystem,
+} from '@/lib/books';
 import { loadCharacterOrNotFound } from '@/lib/characters';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -76,7 +85,10 @@ export async function CharacterSheet({
         : [];
   const catalogBooks = {
     systemId: character.systemId,
-    packs: packsOfSystem(activePacks, character.systemId).map((pack) => ({ id: pack.id, name: pack.name })),
+    packs: packsOfSystem(activePacks, character.systemId).map((pack) => ({
+      id: pack.id,
+      name: pack.name,
+    })),
   };
   let books: Awaited<ReturnType<typeof loadBookSources>> = [];
   if (permissions.canEditSheet && character.systemId === 'dnd5e') {
@@ -118,7 +130,11 @@ export async function CharacterSheet({
         permissions={permissions}
         variant={variant}
         books={books}
-        shareCard={character.viewer.isOwner ? <ShareCharacterCard characterId={character.id} ownerId={character.ownerId} /> : null}
+        shareCard={
+          character.viewer.isOwner ? (
+            <ShareCharacterCard characterId={character.id} ownerId={character.ownerId} />
+          ) : null
+        }
         campaigns={campaigns
           // Só campanhas em que o dono é jogador: mestres não vinculam personagens às próprias mesas.
           .filter(
@@ -155,10 +171,24 @@ export async function CharacterSheet({
     }
     content = sheet ? (
       <T20SheetScreen
-        shareCard={character.viewer.isOwner ? <ShareCharacterCard characterId={character.id} ownerId={character.ownerId} /> : null}
+        shareCard={
+          character.viewer.isOwner ? (
+            <ShareCharacterCard characterId={character.id} ownerId={character.ownerId} />
+          ) : null
+        }
         campaigns={campaigns
-          .filter((campaign) => campaign.status === 'active' && campaign.role === 'player' && campaign.systemId === character.systemId)
-          .map((campaign) => ({ id: campaign.id, name: campaign.name, characterRules: campaign.characterRules, creationQuestions: campaign.creationQuestions }))}
+          .filter(
+            (campaign) =>
+              campaign.status === 'active' &&
+              campaign.role === 'player' &&
+              campaign.systemId === character.systemId,
+          )
+          .map((campaign) => ({
+            id: campaign.id,
+            name: campaign.name,
+            characterRules: campaign.characterRules,
+            creationQuestions: campaign.creationQuestions,
+          }))}
         character={{
           id: character.id,
           name: character.name,
@@ -191,6 +221,64 @@ export async function CharacterSheet({
         description="Os dados desta ficha não seguem o formato do Tormenta20. Nada foi alterado."
       />
     );
+  } else if (system?.id === 'assimilacao') {
+    const assimSources =
+      permissions.canEditSheet || permissions.canEditPlay
+        ? await loadAssimilacaoSources(supabase, activePacks)
+        : [];
+    let sheet;
+    try {
+      sheet = parseAssimilacaoSheet(character.sheet);
+    } catch (error) {
+      console.error('[codexveil] ficha Assimilação inválida', character.id, error);
+    }
+    content = sheet ? (
+      <AssimilacaoSheetScreen
+        shareCard={
+          character.viewer.isOwner ? (
+            <ShareCharacterCard characterId={character.id} ownerId={character.ownerId} />
+          ) : null
+        }
+        campaigns={campaigns
+          .filter(
+            (campaign) =>
+              campaign.status === 'active' &&
+              campaign.role === 'player' &&
+              campaign.systemId === character.systemId,
+          )
+          .map((campaign) => ({
+            id: campaign.id,
+            name: campaign.name,
+            characterRules: campaign.characterRules,
+            creationQuestions: campaign.creationQuestions,
+          }))}
+        character={{
+          id: character.id,
+          name: character.name,
+          version: character.version,
+          portraitUrl: character.portraitPath ? (portraits[character.portraitPath] ?? null) : null,
+          portraitPath: character.portraitPath,
+          campaign: character.campaign
+            ? { id: character.campaign.id, name: character.campaign.name }
+            : null,
+        }}
+        sheet={sheet}
+        resources={resources}
+        permissions={{
+          canEditSheet: permissions.canEditSheet,
+          canEditPlay: permissions.canEditPlay,
+          isGm: permissions.isGm,
+          isOwner: permissions.isOwner,
+        }}
+        sources={assimSources}
+        variant={variant}
+      />
+    ) : (
+      <ErrorState
+        title="Não foi possível abrir a ficha"
+        description="Os dados desta ficha não seguem o formato do Assimilação RPG. Nada foi alterado."
+      />
+    );
   } else {
     content = (
       <ErrorState
@@ -201,7 +289,9 @@ export async function CharacterSheet({
   }
 
   // Respostas às perguntas do mestre: o banco só entrega ao dono e ao mestre.
-  const answers = character.campaign ? await getCharacterAnswers(supabase, character.id).catch(() => null) : null;
+  const answers = character.campaign
+    ? await getCharacterAnswers(supabase, character.id).catch(() => null)
+    : null;
   return (
     <ItemCatalogProvider value={catalogBooks}>
       {content}

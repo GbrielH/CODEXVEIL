@@ -300,3 +300,9 @@ Migração `20261018130000_physical_dice.sql`: coluna `sessions.physical_dice` (
 RPC `campaign_session_state` (`{ playing, physicalDice }`, só membros) e `perform_turn_action`
 recriada com `p_manual_total` (em sessão presencial não chama `roll_dice` e grava o total anotado
 com `roll_detail = 'Dado físico'`).
+
+## Assimilação RPG (`20261030140000_assimilacao.sql`)
+
+Registra `assimilacao` em `rpg_systems`, acrescenta os tipos de entrada de livro `characteristic`,
+`assimilation`, `artifact` e `event`, e deixa os jogadores das campanhas lerem Características,
+cartas de Assimilação e Artefatos dos livros liberados (Eventos só para o mestre).

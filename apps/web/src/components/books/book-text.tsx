@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
+import { withAssimSymbols } from '@/components/assimilacao/symbols';
 
 /**
  * Texto dos livros em Markdown simples: títulos (#), parágrafos, listas ("- "), tabelas ("|"),
@@ -149,6 +150,7 @@ function inline(text: string): ReactNode {
         </code>
       );
     }
-    return <Fragment key={index}>{part}</Fragment>;
+    // Ícones do Assimilação RPG ({A}, {d}, {6}…); nos outros sistemas o texto passa direto.
+    return <Fragment key={index}>{withAssimSymbols(part)}</Fragment>;
   });
 }

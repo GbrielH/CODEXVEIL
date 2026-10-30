@@ -7,6 +7,8 @@ import {
   INSTINCTS,
   KNOWLEDGES,
   PRACTICES,
+  aptitudeLabels,
+  type Aptitude,
   type AssimilacaoSheet,
   type Instinct,
   type Knowledge,
@@ -33,7 +35,7 @@ export interface TestPlan {
   keep: number;
 }
 
-function aptitudeValue(sheet: AssimilacaoSheet, key: Knowledge | Practice | Instinct): number {
+export function aptitudeValue(sheet: AssimilacaoSheet, key: Aptitude): number {
   if ((INSTINCTS as readonly string[]).includes(key)) return sheet.instincts[key as Instinct];
   if ((KNOWLEDGES as readonly string[]).includes(key)) return sheet.knowledges[key as Knowledge];
   return sheet.practices[key as Practice];
@@ -58,44 +60,43 @@ export function planTest(sheet: AssimilacaoSheet, options: TestOptions): TestPla
 export interface TugOfWar {
   determinationLevel: number;
   assimilationLevel: number;
-  determinationPoints: number;
-  assimilationPoints: number;
-  /** Sem pontos de Determinação: não pode gastá-los, e qualquer perda derruba um Nível. */
-  susceptible: boolean;
 }
 
 export function tugOfWar(sheet: AssimilacaoSheet): TugOfWar {
-  const { determinationLevel, determinationPoints, assimilationPoints } = sheet.tugOfWar;
-  const assimilationLevel = 10 - determinationLevel;
-  return {
-    determinationLevel,
-    assimilationLevel,
-    determinationPoints: Math.min(determinationPoints, determinationLevel),
-    assimilationPoints: Math.min(assimilationPoints, assimilationLevel),
-    susceptible: determinationPoints <= 0,
-  };
+  const { determinationLevel } = sheet.tugOfWar;
+  return { determinationLevel, assimilationLevel: 10 - determinationLevel };
+}
+
+/** Resultado de uma perda de Determinação: pontos, Nível e o ponto de Assimilação ganho. */
+export interface DeterminationLoss {
+  determinationLevel: number;
+  determinationPoints: number;
+  /** Níveis perdidos (cada um sobe a Assimilação e dá 1 ponto de Assimilação). */
+  levelsLost: number;
 }
 
 /**
- * Perda de Determinação: gasta os pontos; com a reserva zerada, cada perda derruba um Nível
- * (a Assimilação sobe um Nível e ganha um ponto que já pode ser usado). O novo Nível começa
- * cheio, mas fica bloqueado até a Assimilação se completar — a ficha guarda os pontos em zero
- * até lá, e quem destrava é o mestre.
+ * Perda de Determinação: gasta os pontos; com a reserva zerada (Estado Suscetível), cada perda
+ * derruba um Nível. O novo Nível começa cheio, mas bloqueado até a Assimilação se completar.
  */
 export function loseDetermination(
-  sheet: AssimilacaoSheet,
+  level: number,
+  points: number,
   amount: number,
-): AssimilacaoSheet['tugOfWar'] {
-  let { determinationLevel, determinationPoints, assimilationPoints } = sheet.tugOfWar;
+): DeterminationLoss {
+  let determinationLevel = level;
+  let determinationPoints = points;
+  let levelsLost = 0;
   for (let index = 0; index < amount; index += 1) {
     if (determinationPoints > 0) {
       determinationPoints -= 1;
     } else if (determinationLevel > 0) {
       determinationLevel -= 1;
-      assimilationPoints = Math.min(10 - determinationLevel, assimilationPoints + 1);
+      levelsLost += 1;
+      determinationPoints = determinationLevel;
     }
   }
-  return { determinationLevel, determinationPoints, assimilationPoints };
+  return { determinationLevel, determinationPoints, levelsLost };
 }
 
 /** Pontos de Saúde por Nível: 1 + Potência + Resolução. */
@@ -118,10 +119,11 @@ export interface HealthState {
   recovery: 'repouso' | 'semanal' | 'tratamento' | 'nenhuma';
 }
 
-export function healthState(sheet: AssimilacaoSheet): HealthState {
+/** Estado de Saúde a partir dos pontos restantes (trilha `saude`). */
+export function healthState(sheet: AssimilacaoSheet, remainingPoints: number): HealthState {
   const perLevel = healthPerLevel(sheet);
   const total = perLevel * 6;
-  const remaining = Math.max(0, total - sheet.healthDamage);
+  const remaining = Math.max(0, Math.min(total, remainingPoints));
   const level = Math.ceil(remaining / perLevel);
   const pointsInLevel = level === 0 ? 0 : remaining - (level - 1) * perLevel;
   const penalty = level >= 5 ? 0 : level >= 3 ? 1 : level >= 1 ? 2 : 0;
@@ -162,7 +164,10 @@ export const CREATION = {
 } as const;
 
 /** Problemas de uma ficha recém-criada em relação às regras de criação (lista vazia = ok). */
-export function creationIssues(sheet: AssimilacaoSheet): string[] {
+export function creationIssues(
+  sheet: AssimilacaoSheet,
+  experience: number = CREATION.experience,
+): string[] {
   const issues: string[] = [];
   const instincts = INSTINCTS.map((key) => sheet.instincts[key]);
   const spentInstincts = instincts.reduce((sum, value) => sum + value - 1, 0);
@@ -186,13 +191,13 @@ export function creationIssues(sheet: AssimilacaoSheet): string[] {
     );
   const spentXp =
     sheet.characteristics.reduce((sum, entry) => sum + entry.cost, 0) + learnedXp(sheet);
-  if (spentXp > CREATION.experience)
-    issues.push(`Experiência: ${spentXp} pontos usados (máximo ${CREATION.experience}).`);
+  if (spentXp > experience)
+    issues.push(`Experiência: ${spentXp} pontos usados (máximo ${experience}).`);
   return issues;
 }
 
 /** Experiência gasta para levar Conhecimentos/Práticas acima de 2 (cada nível custa o dobro). */
-function learnedXp(sheet: AssimilacaoSheet): number {
+export function learnedXp(sheet: AssimilacaoSheet): number {
   const values = [
     ...KNOWLEDGES.map((key) => sheet.knowledges[key]),
     ...PRACTICES.map((key) => sheet.practices[key]),
@@ -203,4 +208,33 @@ function learnedXp(sheet: AssimilacaoSheet): number {
       total += aptitudeUpgradeCost(level);
   }
   return total;
+}
+
+function plainName(text: string): string {
+  return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+}
+
+const APTITUDE_BY_NAME: Record<string, Aptitude> = Object.fromEntries(
+  (Object.keys(aptitudeLabels) as Aptitude[]).map((key) => [plainName(aptitudeLabels[key]), key]),
+);
+
+/**
+ * Confere um requisito do livro ("Potência 2+ e Resolução 2+", "Geografia ou Sobrevivência 2+",
+ * "Assimilação 2+"). Partes que não reconhece não bloqueiam (o mestre arbitra).
+ */
+export function requirementMet(sheet: AssimilacaoSheet, requirement: string): boolean {
+  const text = requirement.trim();
+  if (!text) return true;
+  return text.split(/\s+e\s+/i).every((clause) => {
+    const match = /^(.*?)\s*(\d+)\+?$/.exec(clause.trim());
+    if (!match) return true;
+    const minimum = Number(match[2]);
+    const options = match[1]!.split(/\s+ou\s+/i).map(plainName);
+    return options.some((name) => {
+      if (name === 'assimilacao') return tugOfWar(sheet).assimilationLevel >= minimum;
+      if (name === 'determinacao') return sheet.tugOfWar.determinationLevel >= minimum;
+      const key = APTITUDE_BY_NAME[name];
+      return key ? aptitudeValue(sheet, key) >= minimum : true;
+    });
+  });
 }

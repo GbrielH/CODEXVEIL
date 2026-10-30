@@ -34,16 +34,70 @@ mesmo modelo dos livros do Tormenta20 (Meus livros).
     de Experiência (subir Conhecimento ou Prática custa o dobro do nível).
 - Testes em `rules.test.ts`.
 
+## Livro completo (pacote do exemplar)
+
+`scripts/books/assimilacao.py` lê o PDF (texto selecionável, duas colunas) e `assimilacao_pack.py`
+gera `codexveil.assimilacao.book` (fora do Git), importado em **Meus livros**:
+
+```bash
+W=C:/Users/JULIO/Documents/Codexveil/livros-trabalho
+$W/venv/Scripts/python -X utf8 -I scripts/books/assimilacao.py "<livro.pdf>" $W/out/assimilacao.json
+$W/venv/Scripts/python -X utf8 -I scripts/books/assimilacao_pack.py $W/out/assimilacao.json $W/out/assimilacao-rpg.book.json
+```
+
+Resultado em 2026-10-30: 417 entradas, todas válidas no `parseAssimilacaoBookPack`:
+
+- 246 seções de texto (livro inteiro, com créditos, tabelas em Markdown e capítulos);
+- 49 Características (custo 1 a 5 e requisito);
+- 52 cartas de Assimilação (39 com 6 níveis e 13 Singulares com 3);
+- 18 Artefatos;
+- 52 cartas de Eventos.
+
+Os ícones viram marcadores (`{A}` Sucesso, `{B}` Adaptação, `{C}` Pressão, `{d}`/`{e}`/`{s}` pontos,
+`{D}`/`{E}`/`{S}` níveis, `{6}`/`{1}`/`{2}` dados, `{F}`–`{I}` naipes Copas/Ouros/Espadas/Paus,
+`{P}` penalidade), desenhados como selos no site.
+
+**Revisão da extração (o que foi conferido e corrigido):**
+
+- Palavras do PDF × texto extraído: 97,3% das palavras batem direto. A diferença restante é de
+  pedaços de palavras hifenizadas que foram juntadas ("presenta" → "representa"); a única página
+  com texto ausente era a de créditos, que agora entra como seção.
+- Corrigidos: hifenização no fim da linha e dentro de tabelas; ligaduras (fi, fl); custos das
+  Características de 4 e 5 pontos (lado a lado na página); títulos de nível quebrados em duas
+  linhas; níveis cuja linha usa a fonte de símbolos; requisito vazio ("Pulso Sombrio:"); marcador de
+  lista confundido com o símbolo de Sucesso; aviso grudado no título de uma carta; última carta de
+  Eventos absorvendo a seção seguinte; caixas de atributos de Regiões com rótulos colados.
+- Não conferido à mão linha a linha: o texto corrido das 246 seções (só as verificações automáticas).
+
+## Integração no Codexveil (site)
+
+- Sistema registrado (`registry.ts`) e migração `20261030140000_assimilacao.sql`: linha em
+  `rpg_systems`, tipos de entrada `characteristic`, `assimilation`, `artifact`, `event` e leitura
+  para jogadores (Eventos só para o mestre).
+- Campanha: regras de criação (Cabo de Guerra inicial, Experiência, teto de Escassez, livros).
+- Meus livros: importação, selo, contagem e leitor com páginas próprias para cada tipo.
+- Criação guiada em 5 passos (Concepção, Origens e Propósitos, Aptidões, Características com
+  requisitos do livro, Revisão), validada de novo no servidor.
+- Ficha: Cabo de Guerra (perda de Determinação derruba Nível, Clareza de Propósito, bloqueio até a
+  Assimilação), Saúde em 6 Níveis com penalidades, teste com dados especiais rolados pelo servidor
+  (histórico da mesa) e escolha dos dados mantidos, Empenho, Rolagem Assimilada, Origens por
+  sessão, Aptidões, Características, Assimilações com os níveis da carta, história e retrato.
+- Trilhas `saude`, `determinacao` e `assimilacao` (painel do mestre e combate as mostram).
+
 ## Próximas etapas
 
-1. **Registro do sistema:** `RpgSystem` completo (resumo, trilhas de Determinação, Assimilação e
+1. ~~**Registro do sistema**~~ e ~~**ficha no site**~~ (feitos em 2026-10-30).
+2. **App:** criação, ficha e teste com dados especiais no celular.
+3. **Ameaças de Conflito** na biblioteca do mestre (o esquema já existe: pilha, neutralização,
+   ativações).
+4. **Registro do sistema (antigo):** `RpgSystem` completo (resumo, trilhas de Determinação, Assimilação e
    Saúde, condições, links oficiais, ficha de ameaça), entrada em `registry.ts` e migração em
    `rpg_systems`. Só entra junto com a etapa 2, para ninguém criar campanha sem ficha.
-2. **Ficha no site e no app:** criação guiada (Concepção, Origens, Geração, Propósitos, Aptidões,
+5. **Ficha no site e no app:** criação guiada (Concepção, Origens, Geração, Propósitos, Aptidões,
    Cabo de Guerra, Saúde, Características) e ficha com Cabo de Guerra, trilha de Saúde e
    Origens/Propósitos.
-3. **Rolador de dados especiais:** montar a pilha (Instinto + Aptidão), Rolagem Assimilada,
+6. **Rolador de dados especiais:** montar a pilha (Instinto + Aptidão), Rolagem Assimilada,
    escolher os dados mantidos e registrar no histórico de rolagens; mostrar os símbolos nos dados
    3D.
-4. **Conflitos:** objetivos com contadores de Sucessos, Ameaças e o turno do Assimilador.
-5. **Baralhos (Assimilação e Eventos)** e Refúgio, se o grupo quiser usar.
+7. **Conflitos:** objetivos com contadores de Sucessos, Ameaças e o turno do Assimilador.
+8. **Baralhos (Assimilação e Eventos)** e Refúgio, se o grupo quiser usar.

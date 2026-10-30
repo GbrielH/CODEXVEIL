@@ -119,3 +119,27 @@ export function damageFromDice(dice: readonly RolledDie[]): number {
     0,
   );
 }
+
+/** Expressão para o rolador numérico ("2d6+1d10"): o servidor sorteia e grava no histórico. */
+export function poolExpression(pool: DicePool): string {
+  return (['d6', 'd10', 'd12'] as const)
+    .filter((die) => pool[die] > 0)
+    .map((die) => `${pool[die]}${die}`)
+    .join('+');
+}
+
+/** Converte a rolagem numérica (grupos de lados e valores) nos dados com símbolos. */
+export function diceFromGroups(
+  groups: readonly { sides: number; values: readonly number[] }[],
+): RolledDie[] {
+  const dieOf: Record<number, AssimilacaoDie | undefined> = { 6: 'd6', 10: 'd10', 12: 'd12' };
+  return groups.flatMap((group) => {
+    const die = dieOf[group.sides];
+    if (!die) return [];
+    return group.values.map((value) => ({
+      die,
+      value,
+      result: ASSIMILACAO_FACES[die][value - 1] ?? BLANK,
+    }));
+  });
+}

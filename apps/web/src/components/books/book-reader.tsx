@@ -28,6 +28,7 @@ import { bookPath } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { BookCopy } from './book-copy';
 import { BookEntryView } from './book-entry-view';
+import { AssimilacaoEntryView } from './assimilacao-entry-view';
 import { T20BookEntryView } from './t20-entry-view';
 
 function normalize(text: string): string {
@@ -302,7 +303,9 @@ export async function BookEntryScreen({
       </header>
       <div className={cx('grid gap-6', copyKind && 'lg:grid-cols-[1fr_22rem]')}>
         <article className="min-w-0 max-w-3xl">
-          {reader.pack.systemId === 'tormenta20' ? (
+          {reader.pack.systemId === 'assimilacao' ? (
+            <AssimilacaoEntryView kind={kind} data={entry.data} />
+          ) : reader.pack.systemId === 'tormenta20' ? (
             <T20BookEntryView kind={kind} data={entry.data} />
           ) : (
             <BookEntryView kind={kind as BookEntryKind} name={entry.name} data={entry.data} />

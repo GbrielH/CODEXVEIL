@@ -13,7 +13,10 @@ function rawRules(systemId: string, formData: FormData): Record<string, unknown>
         startingLevel: Number(formData.get('rules.startingLevel') ?? 1),
         abilityScoreMethods: formData.getAll('rules.abilityScoreMethods').map(String),
         allowEvilAlignments: formData.get('rules.allowEvilAlignments') === 'on',
-        sourcebooks: formData.get('rules.sourcebookMode') === 'expanded' ? formData.getAll('rules.sourcebooks').map(String) : [],
+        sourcebooks:
+          formData.get('rules.sourcebookMode') === 'expanded'
+            ? formData.getAll('rules.sourcebooks').map(String)
+            : [],
       };
     case 'tormenta20':
       return {
@@ -21,12 +24,20 @@ function rawRules(systemId: string, formData: FormData): Record<string, unknown>
         attributeMethods: formData.getAll('rules.attributeMethods').map(String),
         sourcebooks: formData.getAll('rules.sourcebooks').map(String),
       };
+    case 'assimilacao':
+      return {
+        startingDetermination: Number(formData.get('rules.startingDetermination') ?? 9),
+        startingExperience: Number(formData.get('rules.startingExperience') ?? 7),
+        scarcityCap: Number(formData.get('rules.scarcityCap') ?? 2),
+        sourcebooks: formData.getAll('rules.sourcebooks').map(String),
+      };
     default:
       return {};
   }
 }
 
-export type RulesResult = { ok: true; rules: Record<string, unknown> } | { ok: false; fieldErrors: FieldErrors };
+export type RulesResult =
+  { ok: true; rules: Record<string, unknown> } | { ok: false; fieldErrors: FieldErrors };
 
 export function readCampaignRules(systemId: string, formData: FormData): RulesResult {
   const system = findSystem(systemId);

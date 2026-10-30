@@ -21,6 +21,11 @@ import {
   t20BookEntryKindLabels,
 } from '@codexveil/rpg-systems/tormenta20';
 import { bookEntryKindLabels } from '@codexveil/rpg-systems/dnd5e';
+import {
+  ASSIMILACAO_BOOK_ENTRY_KINDS,
+  ASSIMILACAO_PLAYER_BOOK_KINDS,
+  assimilacaoBookEntryKindLabels,
+} from '@codexveil/rpg-systems/assimilacao';
 import { uuidSchema } from '@codexveil/validation';
 
 /** Livros liberados na campanha (os do dono que ele marcou nas regras de criação). */
@@ -87,6 +92,10 @@ export const BOOK_KIND_SLUGS: Record<string, string> = {
   equipment: 'equipamento',
   class_option: 'opcoes-de-classe',
   table: 'tabelas',
+  characteristic: 'caracteristicas',
+  assimilation: 'assimilacoes',
+  artifact: 'artefatos',
+  event: 'eventos',
 };
 
 export function bookKindFromSlug(slug: string): string | undefined {
@@ -100,7 +109,11 @@ export function bookKindLabel(
   form: 'one' | 'many' = 'many',
 ): string {
   const labels: Record<string, { one: string; many: string }> =
-    systemId === 'tormenta20' ? t20BookEntryKindLabels : bookEntryKindLabels;
+    systemId === 'tormenta20'
+      ? t20BookEntryKindLabels
+      : systemId === 'assimilacao'
+        ? assimilacaoBookEntryKindLabels
+        : bookEntryKindLabels;
   return labels[kind]?.[form] ?? kind;
 }
 
@@ -141,7 +154,12 @@ export async function loadBookReader(
     return pack.ownerId === viewer.userId
       ? {
           pack,
-          kinds: pack.systemId === 'tormenta20' ? [...T20_BOOK_ENTRY_KINDS] : [...BOOK_ENTRY_KINDS],
+          kinds:
+            pack.systemId === 'tormenta20'
+              ? [...T20_BOOK_ENTRY_KINDS]
+              : pack.systemId === 'assimilacao'
+                ? [...ASSIMILACAO_BOOK_ENTRY_KINDS]
+                : [...BOOK_ENTRY_KINDS],
           canCopy: false,
         }
       : null;
@@ -161,9 +179,19 @@ export async function loadBookReader(
         ...T20_CHARACTER_BOOK_KINDS,
         ...(['core', 'player', 'setting'].includes(pack.category) ? ['section'] : []),
       ];
+  // Assimilação: jogadores leem Características, cartas de Assimilação, Artefatos e o texto; os
+  // Eventos ficam com o mestre.
+  const assimKinds = readAll
+    ? [...ASSIMILACAO_BOOK_ENTRY_KINDS]
+    : ['section', ...ASSIMILACAO_PLAYER_BOOK_KINDS];
   return {
     pack,
-    kinds: pack.systemId === 'tormenta20' ? t20Kinds : visibleBookKinds(pack.category, readAll),
+    kinds:
+      pack.systemId === 'tormenta20'
+        ? t20Kinds
+        : pack.systemId === 'assimilacao'
+          ? assimKinds
+          : visibleBookKinds(pack.category, readAll),
     campaignId: campaign.id,
     canCopy: isGm && campaign.status === 'active',
   };
@@ -183,6 +211,19 @@ export async function loadT20Sources(client: CodexveilClient, packs: readonly Bo
     client,
     packsOfSystem(packs, 'tormenta20'),
     T20_CHARACTER_BOOK_KINDS,
+  );
+  return sources.map(({ book, entries }) => ({ book, entries }));
+}
+
+/** Conteúdo do Assimilação usado na ficha: Características, cartas de Assimilação e Artefatos. */
+export async function loadAssimilacaoSources(
+  client: CodexveilClient,
+  packs: readonly BookPackSummary[],
+) {
+  const sources = await loadBookSources(
+    client,
+    packsOfSystem(packs, 'assimilacao'),
+    ASSIMILACAO_PLAYER_BOOK_KINDS,
   );
   return sources.map(({ book, entries }) => ({ book, entries }));
 }

@@ -11,6 +11,11 @@ import {
   parseT20BookPack,
   t20BookEntryKindLabels,
 } from '@codexveil/rpg-systems/tormenta20';
+import {
+  ASSIMILACAO_BOOK_PACK_FORMAT,
+  assimilacaoBookEntryKindLabels,
+  parseAssimilacaoBookPack,
+} from '@codexveil/rpg-systems/assimilacao';
 import { FileUp, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
@@ -40,12 +45,27 @@ function counts(pack: AnyPack): [string, number][] {
 
 function kindLabel(systemId: string, kind: string): string {
   const labels: Record<string, { many: string }> =
-    systemId === 'tormenta20' ? t20BookEntryKindLabels : bookEntryKindLabels;
+    systemId === 'tormenta20'
+      ? t20BookEntryKindLabels
+      : systemId === 'assimilacao'
+        ? assimilacaoBookEntryKindLabels
+        : bookEntryKindLabels;
   return labels[kind]?.many ?? kind;
 }
 
-/** Lê o pacote conforme o formato: D&D 5e (`codexveil.dnd5e.book`) ou Tormenta20. */
+/** Lê o pacote conforme o formato: D&D 5e (`codexveil.dnd5e.book`), Tormenta20 ou Assimilação RPG. */
 function readPack(input: unknown): { pack: AnyPack; issues: BookPackIssue[] } {
+  if (
+    input &&
+    typeof input === 'object' &&
+    (input as { format?: unknown }).format === ASSIMILACAO_BOOK_PACK_FORMAT
+  ) {
+    const parsed = parseAssimilacaoBookPack(input);
+    return {
+      pack: { systemId: 'assimilacao', book: parsed.pack.book, entries: parsed.pack.entries },
+      issues: parsed.issues,
+    };
+  }
   if (
     input &&
     typeof input === 'object' &&

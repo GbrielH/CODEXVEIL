@@ -2,11 +2,12 @@
  * Registro dos sistemas de RPG disponíveis. Os identificadores precisam coincidir com a
  * tabela `rpg_systems` do banco (a chave estrangeira impede sistemas desconhecidos).
  */
+import { assimilacaoSystem } from './assimilacao';
 import { dnd5eSystem } from './dnd5e';
 import { tormenta20System } from './tormenta20';
 import type { CharacterSummary, RpgSystem } from './types';
 
-export const SYSTEM_IDS = ['dnd5e', 'tormenta20'] as const;
+export const SYSTEM_IDS = ['dnd5e', 'tormenta20', 'assimilacao'] as const;
 export type SystemId = (typeof SYSTEM_IDS)[number];
 
 export const DEFAULT_SYSTEM_ID: SystemId = 'dnd5e';
@@ -14,6 +15,7 @@ export const DEFAULT_SYSTEM_ID: SystemId = 'dnd5e';
 const systems: Record<SystemId, RpgSystem> = {
   dnd5e: dnd5eSystem,
   tormenta20: tormenta20System,
+  assimilacao: assimilacaoSystem,
 };
 
 export function isSystemId(value: string): value is SystemId {

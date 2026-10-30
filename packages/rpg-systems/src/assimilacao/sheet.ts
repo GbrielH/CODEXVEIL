@@ -138,16 +138,17 @@ export const assimilacaoSheetSchema = z.object({
   instincts: scores(INSTINCTS, 1, 5, 1),
   knowledges: scores(KNOWLEDGES, 0, 5, 0),
   practices: scores(PRACTICES, 0, 5, 0),
-  /** Cabo de Guerra: Nível de Determinação (o de Assimilação é 10 menos ele) e os pontos na reserva. */
+  /**
+   * Cabo de Guerra: Nível de Determinação (o de Assimilação é 10 menos ele). Os pontos gastos
+   * ficam nas trilhas `determinacao` e `assimilacao`; os de Saúde, na trilha `saude`.
+   */
   tugOfWar: z
     .object({
       determinationLevel: z.number().int().min(0).max(10).default(9),
-      determinationPoints: z.number().int().min(0).max(10).default(9),
-      assimilationPoints: z.number().int().min(0).max(10).default(1),
+      /** Determinação bloqueada até a Assimilação se completar (depois de cair um Nível). */
+      locked: z.boolean().default(false),
     })
     .prefault({}),
-  /** Pontos de Saúde perdidos no total (a ficha distribui pelos seis Níveis). */
-  healthDamage: z.number().int().min(0).max(200).default(0),
   experience: z
     .object({
       total: z.number().int().min(0).max(999).default(7),

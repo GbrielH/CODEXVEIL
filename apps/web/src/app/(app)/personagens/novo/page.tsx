@@ -2,17 +2,20 @@ import { getCharacterDraft, listMyCampaigns, type CampaignSummary } from '@codex
 import { findSystem } from '@codexveil/rpg-systems';
 import { parseDnd5eCampaignRules } from '@codexveil/rpg-systems/dnd5e';
 import { parseT20CampaignRules } from '@codexveil/rpg-systems/tormenta20';
+import { parseAssimilacaoCampaignRules } from '@codexveil/rpg-systems/assimilacao';
 import { ScrollText, UserRound } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { Dnd5eCreationWizard } from '@/components/characters/dnd5e-wizard/wizard';
 import { T20CreationWizard } from '@/components/characters/t20-wizard/wizard';
+import { AssimilacaoCreationWizard } from '@/components/characters/assimilacao-wizard/wizard';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { requireSessionUser } from '@/lib/auth';
 import {
   campaignBookPacks,
+  loadAssimilacaoSources,
   loadBookSources,
   loadT20Sources,
   ownReadyBookPacks,
@@ -23,7 +26,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Novo personagem' };
 
-const SYSTEMS_WITH_WIZARD = ['dnd5e', 'tormenta20'] as const;
+const SYSTEMS_WITH_WIZARD = ['dnd5e', 'tormenta20', 'assimilacao'] as const;
 type WizardSystem = (typeof SYSTEMS_WITH_WIZARD)[number];
 const isWizardSystem = (value: string): value is WizardSystem =>
   (SYSTEMS_WITH_WIZARD as readonly string[]).includes(value);
@@ -90,7 +93,21 @@ export default async function NewCharacterPage({ searchParams }: PageProps<'/per
         }
       />
       <Card ornate>
-        {systemId === 'tormenta20' ? (
+        {systemId === 'assimilacao' ? (
+          <AssimilacaoCreationWizard
+            campaign={
+              campaign
+                ? {
+                    id: campaign.id,
+                    name: campaign.name,
+                    rules: parseAssimilacaoCampaignRules(campaign.characterRules),
+                    questions: campaign.creationQuestions,
+                  }
+                : null
+            }
+            sources={await loadAssimilacaoSources(supabase, packs)}
+          />
+        ) : systemId === 'tormenta20' ? (
           <T20CreationWizard
             campaign={
               campaign

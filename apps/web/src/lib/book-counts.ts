@@ -22,8 +22,22 @@ const T20_COUNT_LABELS: [string, string, string][] = [
   ['monster', 'ameaça', 'ameaças'],
 ];
 
+const ASSIMILACAO_COUNT_LABELS: [string, string, string][] = [
+  ['section', 'seção', 'seções'],
+  ['characteristic', 'característica', 'características'],
+  ['assimilation', 'carta de Assimilação', 'cartas de Assimilação'],
+  ['artifact', 'artefato', 'artefatos'],
+  ['event', 'carta de Evento', 'cartas de Evento'],
+];
+
 export function describeBookCounts(counts: Record<string, number>, systemId = 'dnd5e'): string {
-  return (systemId === 'tormenta20' ? T20_COUNT_LABELS : COUNT_LABELS)
+  const labels =
+    systemId === 'tormenta20'
+      ? T20_COUNT_LABELS
+      : systemId === 'assimilacao'
+        ? ASSIMILACAO_COUNT_LABELS
+        : COUNT_LABELS;
+  return labels
     .filter(([kind]) => (counts[kind] ?? 0) > 0)
     .map(([kind, one, many]) => `${counts[kind]} ${counts[kind] === 1 ? one : many}`)
     .join(' · ');

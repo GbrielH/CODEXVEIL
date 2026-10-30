@@ -47,21 +47,22 @@ describe('regras do Infectado', () => {
 
   it('Cabo de Guerra: perda com a reserva zerada derruba um Nível', () => {
     const sheet = createDefaultAssimilacaoSheet();
-    expect(tugOfWar(sheet)).toMatchObject({
-      determinationLevel: 9,
-      assimilationLevel: 1,
-      susceptible: false,
+    expect(tugOfWar(sheet)).toEqual({ determinationLevel: 9, assimilationLevel: 1 });
+    expect(loseDetermination(9, 9, 10)).toEqual({
+      determinationLevel: 8,
+      determinationPoints: 8,
+      levelsLost: 1,
     });
-    const after = loseDetermination(sheet, 10);
-    expect(after).toEqual({ determinationLevel: 8, determinationPoints: 0, assimilationPoints: 2 });
+    expect(loseDetermination(9, 2, 1)).toEqual({
+      determinationLevel: 9,
+      determinationPoints: 1,
+      levelsLost: 0,
+    });
   });
 
   it('Saúde: 1 + Potência + Resolução por Nível e penalidades', () => {
-    const sheet = parseAssimilacaoSheet({
-      instincts: { potencia: 2, resolucao: 3 },
-      healthDamage: 13,
-    });
-    const health = healthState(sheet);
+    const sheet = parseAssimilacaoSheet({ instincts: { potencia: 2, resolucao: 3 } });
+    const health = healthState(sheet, 36 - 13);
     expect(health.perLevel).toBe(6);
     expect(health.level).toBe(4);
     expect(health.penalty).toBe(1);
@@ -76,5 +77,32 @@ describe('regras do Infectado', () => {
       practices: { armas: 2, atletismo: 2 },
     });
     expect(creationIssues(over)).toHaveLength(3);
+  });
+});
+
+describe('rolagem pelo servidor', () => {
+  it('monta a expressão e converte os valores em símbolos', async () => {
+    const { poolExpression, diceFromGroups } = await import('./dice');
+    expect(poolExpression({ d6: 2, d10: 1, d12: 0 })).toBe('2d6+1d10');
+    const dice = diceFromGroups([{ sides: 12, values: [11, 12] }]);
+    expect(dice.map((die) => die.result)).toEqual([
+      { sucesso: 1, adaptacao: 2, pressao: 1 },
+      { sucesso: 0, adaptacao: 0, pressao: 2 },
+    ]);
+  });
+});
+
+describe('requisitos de Características', () => {
+  it('confere "e", "ou" e Assimilação', async () => {
+    const { requirementMet } = await import('./rules');
+    const sheet = parseAssimilacaoSheet({
+      instincts: { potencia: 2, resolucao: 1 },
+      practices: { sobrevivencia: 2 },
+    });
+    expect(requirementMet(sheet, 'Potência 2+')).toBe(true);
+    expect(requirementMet(sheet, 'Potência 2+ e Resolução 2+')).toBe(false);
+    expect(requirementMet(sheet, 'Geografia ou Sobrevivência 2+')).toBe(true);
+    expect(requirementMet(sheet, 'Assimilação 2+')).toBe(false);
+    expect(requirementMet(sheet, '')).toBe(true);
   });
 });

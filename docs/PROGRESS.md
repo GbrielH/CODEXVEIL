@@ -163,6 +163,11 @@ Os detalhes estão em [`DATABASE.md`](DATABASE.md) e [`SECURITY.md`](SECURITY.md
   fora do registro de sistemas. Plano e decisão sobre direitos em `docs/ASSIMILACAO.md`. Próximo passo
   exato: `RpgSystem` + migração `rpg_systems` + criação e ficha no site e no app.
 
+- 2026-10-30: Assimilação RPG integrado no site (detalhes em `docs/ASSIMILACAO.md`). `pnpm check`
+  passou: domain 88, rpg-systems 257, ui 34, validation 15, web 19, database 215 (+11 pulados). Não
+  testado no navegador. A migração `20261030140000` ainda não foi aplicada em produção; o código
+  depende dela e não foi publicado.
+
 ## Testes e verificações executados
 
 Execução em 2026-10-17, Windows 11, Node 24.20 e pnpm 12.14:

@@ -208,8 +208,13 @@ mapa e notas lado a lado).
 - [x] Taverna: imagens (clipe ou Ctrl+V no site; galeria no app), em `tavern/` no bucket; só quem lê
       a mensagem vê; somem com a mensagem (migração `20261030130000`).
 - [x] Assimilação RPG, etapa 0 (2026-10-30): núcleo de regras e testes (`docs/ASSIMILACAO.md`).
-- [ ] Assimilação RPG, etapas 1 e 2: registro do sistema, migração, criação e ficha no site e no app.
-- [ ] Assimilação RPG, etapa 3: rolador de dados especiais (Rolagem Assimilada, dados mantidos).
+- [x] Assimilação RPG no site (2026-10-30): registro, migração `20261030140000`, livro completo como
+      pacote (417 entradas), leitor, regras da campanha, criação guiada e ficha com dados especiais.
+- [ ] Aplicar a migração `20261030140000_assimilacao.sql` em produção (bloqueada pelo controle de
+      permissões nesta sessão) e só então publicar.
+- [ ] Assimilação RPG no app: criação, ficha e teste com dados especiais.
+- [ ] Assimilação RPG: Ameaças de Conflito na biblioteca do mestre.
+- [x] Assimilação RPG: teste com dados especiais na ficha do site (Rolagem Assimilada, dados mantidos).
 - [x] Faces 11 e 12 do d12 do Assimilação conferidas na tabela do livro (2026-10-30).
 - [x] Retratos de perfil novos (2026-10-30): 15 ícones em imagem, guardados no código (o banco só
       guarda a chave). Mantidos "Iniciais" e "Foto do Google".

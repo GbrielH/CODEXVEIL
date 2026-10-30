@@ -12,6 +12,7 @@ import {
   t20AttributeMethodLabels,
   type T20AttributeMethod,
 } from '@codexveil/rpg-systems/tormenta20';
+import { parseAssimilacaoCampaignRules } from '@codexveil/rpg-systems/assimilacao';
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
 import type { FieldErrors } from '@codexveil/validation';
@@ -37,6 +38,14 @@ export function CampaignRulesFields({
   errors,
   books = [],
 }: CampaignRulesFieldsProps) {
+  if (systemId === 'assimilacao')
+    return (
+      <AssimilacaoRulesFields
+        initial={initial}
+        errors={errors}
+        books={books.filter((book) => book.systemId === 'assimilacao')}
+      />
+    );
   if (systemId === 'tormenta20')
     return (
       <T20RulesFields
@@ -254,6 +263,115 @@ function Dnd5eRulesFields({
           fieldName="rules.sourcebooks"
           modeFieldName="rules.sourcebookMode"
         />
+      </div>
+    </fieldset>
+  );
+}
+
+/** Assimilação RPG: Cabo de Guerra inicial, Experiência da criação, teto de Escassez e livros. */
+function AssimilacaoRulesFields({
+  initial,
+  errors,
+  books,
+}: {
+  initial: unknown;
+  errors?: FieldErrors | undefined;
+  books: CampaignBookOption[];
+}) {
+  const id = useId();
+  const [rules, setRules] = useState(() => parseAssimilacaoCampaignRules(initial));
+  return (
+    <fieldset className="flex flex-col gap-5 rounded-md border border-line p-4 sm:p-5">
+      <legend className="eyebrow px-1">Criação de Infectados</legend>
+      <p className="-mt-1 text-sm text-fg-muted">
+        Os jogadores criam os Infectados num passo a passo com as regras do Assimilação RPG e as
+        Características dos livros liberados abaixo.
+      </p>
+      <div className="grid gap-5 sm:grid-cols-3">
+        <SelectField
+          id={`${id}-det`}
+          name="rules.startingDetermination"
+          label="Cabo de Guerra inicial"
+          value={String(rules.startingDetermination)}
+          onChange={(event) =>
+            setRules((current) => ({
+              ...current,
+              startingDetermination: Number(event.target.value),
+            }))
+          }
+          error={errors?.['rules.startingDetermination']}
+        >
+          {[9, 8, 7, 6, 5].map((level) => (
+            <option key={level} value={level}>
+              Determinação {level} · Assimilação {10 - level}
+              {level === 9 ? ' (recomendado)' : ''}
+            </option>
+          ))}
+        </SelectField>
+        <SelectField
+          id={`${id}-xp`}
+          name="rules.startingExperience"
+          label="Experiência na criação"
+          value={String(rules.startingExperience)}
+          onChange={(event) =>
+            setRules((current) => ({ ...current, startingExperience: Number(event.target.value) }))
+          }
+          error={errors?.['rules.startingExperience']}
+        >
+          {[7, 10, 15, 20, 30, 40].map((value) => (
+            <option key={value} value={value}>
+              {value} pontos{value === 7 ? ' (padrão do livro)' : ''}
+            </option>
+          ))}
+        </SelectField>
+        <SelectField
+          id={`${id}-scarcity`}
+          name="rules.scarcityCap"
+          label="Teto de Escassez inicial"
+          value={String(rules.scarcityCap)}
+          onChange={(event) =>
+            setRules((current) => ({ ...current, scarcityCap: Number(event.target.value) }))
+          }
+          error={errors?.['rules.scarcityCap']}
+        >
+          {Array.from({ length: 7 }, (_, value) => (
+            <option key={value} value={value}>
+              Escassez {value}
+            </option>
+          ))}
+        </SelectField>
+      </div>
+      <div className="flex flex-col gap-3 border-t border-line pt-4">
+        <p className="text-sm font-medium text-fg">Livros liberados</p>
+        {books.length === 0 ? (
+          <p className="text-sm text-fg-muted">
+            Nenhum livro do Assimilação importado. Importe o pacote do livro em{' '}
+            <Link href={routes.books} className="text-fg-brand underline-offset-2 hover:underline">
+              Meus livros
+            </Link>{' '}
+            para liberar o texto das regras, as Características, as cartas e os Artefatos.
+          </p>
+        ) : (
+          books.map((book) => (
+            <CheckboxField
+              key={book.bookKey}
+              id={`${id}-book-${book.bookKey}`}
+              name="rules.sourcebooks"
+              value={book.bookKey}
+              label={book.name}
+              description={book.edition}
+              checked={rules.sourcebooks.includes(book.bookKey)}
+              onChange={(event) =>
+                setRules((current) => ({
+                  ...current,
+                  sourcebooks: event.target.checked
+                    ? [...new Set([...current.sourcebooks, book.bookKey])]
+                    : current.sourcebooks.filter((entry) => entry !== book.bookKey),
+                }))
+              }
+            />
+          ))
+        )}
       </div>
     </fieldset>
   );
