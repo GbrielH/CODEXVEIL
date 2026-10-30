@@ -70,11 +70,80 @@ const avatarSchema = z.union([
 ]);
 
 /** Preferências de interface guardadas em `profiles.preferences`. */
+/**
+ * Texturas dos dados 3D (catálogo da biblioteca `@3d-dice/dice-box-threejs`, arquivos em
+ * `apps/web/public/dice/textures`). A chave é o nome que a biblioteca aceita.
+ */
+export const DICE_TEXTURES = [
+  'marble',
+  'wood',
+  'metal',
+  'bronze01',
+  'paper',
+  'cloudy_2',
+  'speckles',
+  'glitter',
+  'stars',
+  'astral',
+  'stainedglass',
+  'fire',
+  'ice',
+  'water',
+  'dragon',
+  'lizard',
+  'bird',
+  'skulls',
+  'leopard',
+  'tiger',
+  'cheetah',
+] as const;
+export type DiceTexture = (typeof DICE_TEXTURES)[number];
+
+export const diceTextureLabels: Record<DiceTexture, { name: string; file: string }> = {
+  marble: { name: 'Mármore', file: 'marble.webp' },
+  wood: { name: 'Madeira', file: 'wood.webp' },
+  metal: { name: 'Aço', file: 'metal.webp' },
+  bronze01: { name: 'Bronze', file: 'bronze01.webp' },
+  paper: { name: 'Papel', file: 'paper.webp' },
+  cloudy_2: { name: 'Nuvens', file: 'cloudy.alt.webp' },
+  speckles: { name: 'Salpicado', file: 'speckles.webp' },
+  glitter: { name: 'Purpurina', file: 'glitter.webp' },
+  stars: { name: 'Estrelas', file: 'stars.webp' },
+  astral: { name: 'Mar astral', file: 'astral.webp' },
+  stainedglass: { name: 'Vitral', file: 'stainedglass.webp' },
+  fire: { name: 'Fogo', file: 'fire.webp' },
+  ice: { name: 'Gelo', file: 'ice.webp' },
+  water: { name: 'Água', file: 'water.webp' },
+  dragon: { name: 'Escamas de dragão', file: 'dragon.webp' },
+  lizard: { name: 'Lagarto', file: 'lizard.webp' },
+  bird: { name: 'Penas', file: 'feather.webp' },
+  skulls: { name: 'Caveiras', file: 'skulls.webp' },
+  leopard: { name: 'Leopardo', file: 'leopard.webp' },
+  tiger: { name: 'Tigre', file: 'tiger.webp' },
+  cheetah: { name: 'Guepardo', file: 'cheetah.webp' },
+};
+
+/** Aparência dos próprios dados 3D ("Meus dados" no Perfil): textura e cor dos números. */
+export const diceLookSchema = z
+  .object({
+    texture: z.enum(DICE_TEXTURES).nullable().default(null).catch(null),
+    /** Cor dos números (#rrggbb); vazio = automática (contraste com a cor do dado). */
+    numberColor: z
+      .string()
+      .regex(/^#[0-9a-f]{6}$/i)
+      .nullable()
+      .default(null)
+      .catch(null),
+  })
+  .prefault({});
+export type DiceLook = z.output<typeof diceLookSchema>;
+
 export const preferencesSchema = z
   .object({
     density: z.enum(DENSITIES).default('comfortable'),
     motion: z.enum(MOTION_PREFERENCES).default('system'),
     avatar: avatarSchema.nullable().default(null).catch(null),
+    dice: diceLookSchema,
   })
   .prefault({});
 export type Preferences = z.output<typeof preferencesSchema>;

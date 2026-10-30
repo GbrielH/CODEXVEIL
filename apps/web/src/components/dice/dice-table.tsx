@@ -48,6 +48,8 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
         if (cancelled) return;
         const box = new Box(`#${containerId}`, {
           sounds: false,
+          // Texturas dos dados ("Meus dados" do Perfil) servidas em public/dice/textures.
+          assetPath: '/dice/',
           shadows: true,
           theme_material: 'plastic',
           gravity_multiplier: 400,
@@ -83,14 +85,16 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
       setCurrent(late ? null : next);
       if (box && text && !late) {
         const color = colors?.colorOfUser(next.userId) ?? DEFAULT_COLOR;
+        const look = colors?.lookOfUser(next.userId) ?? null;
         try {
           await box.updateConfig({
             theme_customColorset: {
-              name: `mesa-${color.slice(1)}`,
+              // A biblioteca guarda o conjunto pelo nome: cor, textura e números entram nele.
+              name: `mesa-${color.slice(1)}-${look?.texture ?? 'lisa'}-${(look?.numberColor ?? 'auto').replace('#', '')}`,
               background: color,
-              foreground: textColorFor(color),
+              foreground: look?.numberColor ?? textColorFor(color),
               outline: '#000000',
-              texture: 'none',
+              texture: look?.texture ?? 'none',
               material: 'plastic',
             },
           });

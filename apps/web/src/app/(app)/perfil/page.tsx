@@ -1,6 +1,6 @@
 import { getProfile, listMyCampaigns } from '@codexveil/database';
 import { campaignRoleLabels } from '@codexveil/domain';
-import { ScrollText, ShieldCheck, Trash2, UserRound } from 'lucide-react';
+import { ScrollText, ShieldCheck, Trash2, UserRound, Dices } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import { formatDate } from '@/lib/format';
 import { routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { DeleteAccount } from './delete-account';
+import { DiceLookForm } from './dice-look';
 import { PasswordReset } from './password-reset';
 import { googlePhotoFrom } from '@codexveil/validation';
 import { ProfileForm } from './profile-form';
@@ -68,6 +69,15 @@ export default async function ProfilePage() {
               <dd>{formatDate(profile.createdAt)}</dd>
             </dl>
             <PasswordReset />
+          </Card>
+
+          <Card>
+            <CardHeader
+              icon={<Dices className="h-5 w-5" aria-hidden="true" />}
+              title="Meus dados"
+              description="Textura e cor dos números dos seus dados 3D, em todas as campanhas."
+            />
+            <DiceLookForm initial={profile.preferences.dice} />
           </Card>
 
           <Card>

@@ -3,7 +3,13 @@
  * enviam a expressão e leem o resultado. Rolagens secretas (`gm`) só aparecem para quem rolou
  * e para os mestres (RLS), inclusive no Realtime.
  */
-import { AppError, type DiceRollMode, type RolledDiceGroup, type SharedVisibility } from '@codexveil/domain';
+import {
+  AppError,
+  type DiceRollMode,
+  type RolledDiceGroup,
+  type SharedVisibility,
+} from '@codexveil/domain';
+import { preferencesSchema, type DiceLook } from '@codexveil/validation';
 import type { CodexveilClient } from '../client';
 import { toAppError } from '../errors';
 import type { Tables } from '../types.gen';
@@ -59,7 +65,8 @@ function parseGroups(value: unknown): RolledDiceGroup[] {
   return value.flatMap((entry): RolledDiceGroup[] => {
     if (!entry || typeof entry !== 'object') return [];
     const group = entry as Record<string, unknown>;
-    const numbers = (list: unknown) => (Array.isArray(list) ? list.filter((item): item is number => typeof item === 'number') : []);
+    const numbers = (list: unknown) =>
+      Array.isArray(list) ? list.filter((item): item is number => typeof item === 'number') : [];
     return [
       {
         sign: group.sign === -1 ? -1 : 1,
@@ -91,7 +98,10 @@ function toRoll(row: RollRow): DiceRoll {
 }
 
 /** Rola no servidor e devolve o resultado gravado. */
-export async function rollDice(client: CodexveilClient, request: DiceRollRequest): Promise<DiceRoll> {
+export async function rollDice(
+  client: CodexveilClient,
+  request: DiceRollRequest,
+): Promise<DiceRoll> {
   const { data, error } = await client.rpc('roll_dice', {
     p_campaign_id: request.campaignId,
     p_expression: request.expression,
@@ -106,7 +116,11 @@ export async function rollDice(client: CodexveilClient, request: DiceRollRequest
 }
 
 /** Rolagens mais recentes da campanha que o usuário pode ver (as mais novas primeiro). */
-export async function listDiceRolls(client: CodexveilClient, campaignId: string, limit = 50): Promise<DiceRoll[]> {
+export async function listDiceRolls(
+  client: CodexveilClient,
+  campaignId: string,
+  limit = 50,
+): Promise<DiceRoll[]> {
   const { data, error } = await client
     .from('dice_rolls')
     .select(ROLL_COLUMNS)
@@ -125,34 +139,80 @@ export async function clearDiceRolls(client: CodexveilClient, campaignId: string
 }
 
 /** Cor dos dados 3D de cada participante da campanha (id do usuário → #rrggbb). */
-export async function listCampaignDiceColors(client: CodexveilClient, campaignId: string): Promise<Record<string, string>> {
-  const { data, error } = await client.from('campaign_members').select('user_id, dice_color').eq('campaign_id', campaignId);
+export async function listCampaignDiceColors(
+  client: CodexveilClient,
+  campaignId: string,
+): Promise<Record<string, string>> {
+  const { data, error } = await client
+    .from('campaign_members')
+    .select('user_id, dice_color')
+    .eq('campaign_id', campaignId);
   if (error) throw toAppError(error);
-  return Object.fromEntries((data ?? []).filter((row) => row.dice_color).map((row) => [row.user_id, row.dice_color as string]));
+  return Object.fromEntries(
+    (data ?? [])
+      .filter((row) => row.dice_color)
+      .map((row) => [row.user_id, row.dice_color as string]),
+  );
 }
 
 export interface DicePalette {
   members: { userId: string; role: 'gm' | 'player'; color: string | null }[];
   /** Personagem da campanha → dono (para pintar o nome com a cor do dono). */
   characterOwners: Record<string, string>;
+  /** Aparência dos dados 3D de cada participante ("Meus dados" do Perfil). */
+  looks: Record<string, DiceLook>;
 }
 
 /** Cores de todos os participantes e os donos dos personagens da campanha. */
-export async function getCampaignDicePalette(client: CodexveilClient, campaignId: string): Promise<DicePalette> {
+export async function getCampaignDicePalette(
+  client: CodexveilClient,
+  campaignId: string,
+): Promise<DicePalette> {
   const [members, characters] = await Promise.all([
-    client.from('campaign_members').select('user_id, role, dice_color').eq('campaign_id', campaignId),
+    client
+      .from('campaign_members')
+      .select('user_id, role, dice_color')
+      .eq('campaign_id', campaignId),
     client.from('characters').select('id, owner_id').eq('campaign_id', campaignId),
   ]);
   if (members.error) throw toAppError(members.error);
   if (characters.error) throw toAppError(characters.error);
+  // Textura e cor dos números de cada um (perfis dos colegas de campanha são legíveis).
+  const ids = (members.data ?? []).map((row) => row.user_id);
+  const profiles = ids.length
+    ? await client.from('profiles').select('id, preferences').in('id', ids)
+    : { data: [] };
+  const looks = Object.fromEntries(
+    (profiles.data ?? []).map((row) => [
+      row.id,
+      preferencesSchema.safeParse(row.preferences).data?.dice ?? {
+        texture: null,
+        numberColor: null,
+      },
+    ]),
+  );
   return {
-    members: (members.data ?? []).map((row) => ({ userId: row.user_id, role: row.role === 'gm' ? 'gm' : 'player', color: row.dice_color })),
-    characterOwners: Object.fromEntries((characters.data ?? []).map((row) => [row.id, row.owner_id])),
+    looks,
+    members: (members.data ?? []).map((row) => ({
+      userId: row.user_id,
+      role: row.role === 'gm' ? 'gm' : 'player',
+      color: row.dice_color,
+    })),
+    characterOwners: Object.fromEntries(
+      (characters.data ?? []).map((row) => [row.id, row.owner_id]),
+    ),
   };
 }
 
 /** Escolhe a cor dos próprios dados nesta campanha. */
-export async function setMyDiceColor(client: CodexveilClient, campaignId: string, color: string): Promise<void> {
-  const { error } = await client.rpc('set_my_dice_color', { p_campaign_id: campaignId, p_color: color });
+export async function setMyDiceColor(
+  client: CodexveilClient,
+  campaignId: string,
+  color: string,
+): Promise<void> {
+  const { error } = await client.rpc('set_my_dice_color', {
+    p_campaign_id: campaignId,
+    p_color: color,
+  });
   if (error) throw toAppError(error);
 }

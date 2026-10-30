@@ -1,10 +1,11 @@
 'use server';
 
-import { authErrorMessage, updateProfile } from '@codexveil/database';
+import { authErrorMessage, getProfile, updateProfile } from '@codexveil/database';
 import {
   fieldErrorsFrom,
   googlePhotoFrom,
   isAvatarPhoto,
+  diceLookSchema,
   profileUpdateSchema,
 } from '@codexveil/validation';
 import { revalidatePath } from 'next/cache';
@@ -45,7 +46,13 @@ export async function updateProfileAction(
   }
   try {
     const supabase = await createSupabaseServerClient();
-    await updateProfile(supabase, user.id, parsed.data);
+    // O formulário não tem os dados 3D (aba Meus dados): mantém a escolha que já estava salva.
+    const current = await getProfile(supabase, user.id);
+    const preferences = {
+      ...parsed.data.preferences,
+      dice: current?.preferences.dice ?? parsed.data.preferences.dice,
+    };
+    await updateProfile(supabase, user.id, { ...parsed.data, preferences });
   } catch (error) {
     return { status: 'error', message: failureMessage(error) };
   }
@@ -67,4 +74,27 @@ export async function sendPasswordResetAction(): Promise<ActionResult> {
     return { ok: false, message: failureMessage(error) };
   }
   return { ok: true, message: `Enviamos um link para ${user.email}. Ele vale por uma hora.` };
+}
+
+/** "Meus dados": textura e cor dos números dos próprios dados 3D (o resto do perfil não muda). */
+export async function updateDiceLookAction(input: {
+  texture: string | null;
+  numberColor: string | null;
+}): Promise<ActionResult> {
+  const user = await requireSessionUser(routes.profile);
+  const look = diceLookSchema.parse(input);
+  try {
+    const supabase = await createSupabaseServerClient();
+    const profile = await getProfile(supabase, user.id);
+    if (!profile) return { ok: false, message: 'Perfil não encontrado.' };
+    await updateProfile(supabase, user.id, {
+      displayName: profile.displayName,
+      bio: profile.bio,
+      preferences: { ...profile.preferences, dice: look },
+    });
+  } catch (error) {
+    return { ok: false, message: failureMessage(error) };
+  }
+  revalidatePath('/', 'layout');
+  return { ok: true, message: 'Seus dados foram salvos.' };
 }

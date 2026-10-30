@@ -9,6 +9,8 @@ declare module '@3d-dice/dice-box-threejs' {
   }
 
   interface DiceBoxConfig {
+    /** Pasta das texturas e sons (padrão `./`, relativa à página). */
+    assetPath?: string;
     framerate?: number;
     sounds?: boolean;
     shadows?: boolean;
