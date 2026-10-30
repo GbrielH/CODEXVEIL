@@ -201,6 +201,10 @@ mapa e notas lado a lado).
 - [~] Falha crítica com o dragão do GIF: feita e **retirada a pedido em 2026-10-30**; voltou o aviso
   "Falha crítica" de antes.
 - [ ] Aba "Dados" no perfil: textura própria dos dados e cor do número (pedido de 2026-10-25).
+- [x] Taverna: capa da campanha no selo da lista (inicial colorida quando não há capa).
+- [ ] Foto do Google como foto de perfil, opcional (quem entra com Google escolhe usar).
+- [ ] Taverna: enviar imagens.
+- [ ] Taverna: chamar o Tomo com "@tomo" para ele responder no chat.
 - [x] **Taverna** (migração `20261030120000`): chat livre em tempo real. Site: janela flutuante e
       arrastável acima do Tomo (botão de caneca; bolinha quando chega mensagem). App: botão flutuante
       em todas as telas que abre o chat. Grupos = campanhas ativas e amigos (conversa direta).

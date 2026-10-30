@@ -5,6 +5,7 @@ import {
   listFriends,
   listMyCampaigns,
   listTavernMessages,
+  signedMediaUrls,
   sendTavernMessage,
   subscribeToChanges,
   type TavernChannel,
@@ -26,6 +27,8 @@ interface ChannelOption {
   channel: TavernChannel;
   /** Retrato do amigo (campanhas usam o selo com a inicial). */
   icon?: AvatarIcon | null;
+  /** Capa da campanha (endereço assinado), quando há. */
+  cover?: string | null;
 }
 
 /** Cores dos selos das campanhas (escolhida pelo nome, sempre a mesma para a mesma campanha). */
@@ -108,10 +111,17 @@ function TavernPanel({ onClose }: { onClose: () => void }) {
       if (!id) return;
       setUserId(id);
       const [campaigns, friends] = await Promise.all([listMyCampaigns(client, id), listFriends(client, id)]);
+      const covers = await signedMediaUrls(client, campaigns.map((campaign) => campaign.coverPath));
       const options: ChannelOption[] = [
         ...campaigns
           .filter((campaign) => campaign.status === 'active')
-          .map((campaign): ChannelOption => ({ id: `c:${campaign.id}`, label: campaign.name, group: 'Campanhas', channel: { kind: 'campaign', campaignId: campaign.id } })),
+          .map((campaign): ChannelOption => ({
+            id: `c:${campaign.id}`,
+            label: campaign.name,
+            group: 'Campanhas',
+            channel: { kind: 'campaign', campaignId: campaign.id },
+            cover: campaign.coverPath ? (covers[campaign.coverPath] ?? null) : null,
+          })),
         ...friends
           .filter((friend) => friend.status === 'accepted')
           .map((friend): ChannelOption => ({
@@ -226,7 +236,10 @@ function TavernPanel({ onClose }: { onClose: () => void }) {
                               : 'text-fg-secondary hover:bg-hover hover:text-fg',
                           )}
                         >
-                          {option.group === 'Campanhas' ? (
+                          {option.group === 'Campanhas' && option.cover ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- capa da campanha (endereço assinado do Storage)
+                            <img src={option.cover} alt="" className="h-7 w-7 shrink-0 rounded-md object-cover ring-1 ring-white/10" />
+                          ) : option.group === 'Campanhas' ? (
                             <span
                               aria-hidden="true"
                               className={cx(
