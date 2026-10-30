@@ -113,5 +113,4 @@ Os ícones viram marcadores (`{A}` Sucesso, `{B}` Adaptação, `{C}` Pressão, `
 
 ## Próximas etapas
 
-1. Aplicar as migrações `20261030140000` e `20261030150000` em produção e publicar.
-2. Testar tudo no navegador e no celular com o livro importado (nada foi visto em tela ainda).
+1. Testar tudo no navegador e no celular com o livro importado (nada foi visto em tela ainda).
