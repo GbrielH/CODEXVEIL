@@ -10,7 +10,8 @@ import {
   type TavernChannel,
   type TavernMessage,
 } from '@codexveil/database';
-import { Beer, Send, Trash2, X } from 'lucide-react';
+import { Beer, ScrollText, Send, Trash2, Users, X } from 'lucide-react';
+import type { AvatarIcon } from '@codexveil/validation';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { Avatar } from '@/components/ui/avatar';
@@ -23,7 +24,13 @@ interface ChannelOption {
   label: string;
   group: 'Campanhas' | 'Amigos';
   channel: TavernChannel;
+  /** Retrato do amigo (campanhas usam o selo com a inicial). */
+  icon?: AvatarIcon | null;
 }
+
+/** Cores dos selos das campanhas (escolhida pelo nome, sempre a mesma para a mesma campanha). */
+const SEAL_COLORS = ['from-wine-600 to-wine-800', 'from-arcane-400 to-wine-700', 'from-ember-400 to-wine-700', 'from-verdigris-400 to-charcoal-800', 'from-amber-400 to-ember-900'];
+const sealColor = (text: string) => SEAL_COLORS[[...text].reduce((sum, char) => sum + char.charCodeAt(0), 0) % SEAL_COLORS.length]!;
 
 const subscribeNothing = () => () => undefined;
 const time = (value: string) => new Date(value).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -107,7 +114,13 @@ function TavernPanel({ onClose }: { onClose: () => void }) {
           .map((campaign): ChannelOption => ({ id: `c:${campaign.id}`, label: campaign.name, group: 'Campanhas', channel: { kind: 'campaign', campaignId: campaign.id } })),
         ...friends
           .filter((friend) => friend.status === 'accepted')
-          .map((friend): ChannelOption => ({ id: `f:${friend.userId}`, label: friend.displayName, group: 'Amigos', channel: { kind: 'direct', friendId: friend.userId } })),
+          .map((friend): ChannelOption => ({
+            id: `f:${friend.userId}`,
+            label: friend.displayName,
+            group: 'Amigos',
+            channel: { kind: 'direct', friendId: friend.userId },
+            icon: friend.avatarIcon,
+          })),
       ];
       setChannels(options);
       setCurrent((existing) => existing || options[0]?.id || '');
@@ -187,25 +200,52 @@ function TavernPanel({ onClose }: { onClose: () => void }) {
         </button>
       </header>
       <div className="flex min-h-0 flex-1">
-        <nav aria-label="Grupos" className="hidden w-40 shrink-0 overflow-y-auto border-r border-line p-2 sm:block">
+        <nav aria-label="Grupos" className="hidden w-48 shrink-0 overflow-y-auto border-r border-line bg-sunken/40 p-2 sm:block">
           {groups.map(({ group, items }) =>
             items.length ? (
-              <div key={group} className="mb-3">
-                <p className="mb-1 px-1 text-[0.65rem] tracking-wider text-fg-muted uppercase">{group}</p>
-                {items.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => setCurrent(option.id)}
-                    className={cx(
-                      'block w-full truncate rounded px-2 py-1 text-left text-sm',
-                      option.id === current ? 'bg-hover text-fg' : 'text-fg-secondary hover:bg-hover',
-                    )}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
+              <section key={group} className="mb-4">
+                <h3 className="mb-1.5 flex items-center gap-1.5 px-1 font-display text-xs tracking-wider text-fg-accent">
+                  {group === 'Campanhas' ? <ScrollText className="h-3.5 w-3.5" aria-hidden="true" /> : <Users className="h-3.5 w-3.5" aria-hidden="true" />}
+                  {group}
+                  <span className="ml-auto rounded-full bg-hover px-1.5 text-[0.6rem] text-fg-muted">{items.length}</span>
+                </h3>
+                <ul className="flex flex-col gap-0.5">
+                  {items.map((option) => {
+                    const active = option.id === current;
+                    return (
+                      <li key={option.id}>
+                        <button
+                          type="button"
+                          title={option.label}
+                          onClick={() => setCurrent(option.id)}
+                          aria-current={active ? 'true' : undefined}
+                          className={cx(
+                            'relative flex w-full items-center gap-2 rounded-md py-1.5 pr-2 pl-2.5 text-left text-sm transition-colors',
+                            active
+                              ? 'bg-gradient-to-r from-wine-800/70 to-transparent text-fg before:absolute before:top-1 before:bottom-1 before:left-0 before:w-0.5 before:rounded-full before:bg-wine-400'
+                              : 'text-fg-secondary hover:bg-hover hover:text-fg',
+                          )}
+                        >
+                          {option.group === 'Campanhas' ? (
+                            <span
+                              aria-hidden="true"
+                              className={cx(
+                                'flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gradient-to-br font-display text-xs text-parchment-50 ring-1 ring-white/10',
+                                sealColor(option.label),
+                              )}
+                            >
+                              {option.label.trim().charAt(0).toUpperCase()}
+                            </span>
+                          ) : (
+                            <Avatar name={option.label} icon={option.icon ?? null} size="sm" className="!h-7 !w-7" />
+                          )}
+                          <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
             ) : null,
           )}
         </nav>
