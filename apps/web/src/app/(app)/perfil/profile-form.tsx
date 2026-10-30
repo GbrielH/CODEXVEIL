@@ -1,6 +1,6 @@
 'use client';
 
-import { AVATAR_ICONS, type Preferences } from '@codexveil/validation';
+import { AVATAR_ICONS, type AvatarPhoto, type Preferences } from '@codexveil/validation';
 import { Avatar } from '@/components/ui/avatar';
 import { AVATAR_ICON_ART, AvatarIconArt } from '@/components/ui/avatar-icons';
 import { useActionState } from 'react';
@@ -12,9 +12,11 @@ import { updateProfileAction } from './actions';
 
 interface ProfileFormProps {
   initial: { displayName: string; bio: string; preferences: Preferences };
+  /** Foto da conta Google, quando a pessoa entrou com o Google. */
+  googlePhoto: AvatarPhoto | null;
 }
 
-export function ProfileForm({ initial }: ProfileFormProps) {
+export function ProfileForm({ initial, googlePhoto }: ProfileFormProps) {
   const [state, action] = useActionState(updateProfileAction, idleFormState);
   return (
     <form action={action} noValidate className="flex flex-col gap-5">
@@ -58,6 +60,19 @@ export function ProfileForm({ initial }: ProfileFormProps) {
             <Avatar name={initial.displayName} size="lg" />
             Iniciais
           </label>
+          {googlePhoto ? (
+            <label className="flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-line p-2 text-[11px] text-fg-muted has-[:checked]:border-wine-400 has-[:checked]:bg-wine-900/40 has-[:checked]:text-fg">
+              <input
+                type="radio"
+                name="avatar"
+                value={googlePhoto}
+                defaultChecked={initial.preferences.avatar === googlePhoto}
+                className="sr-only"
+              />
+              <Avatar name={initial.displayName} icon={googlePhoto} size="lg" />
+              Foto do Google
+            </label>
+          ) : null}
           {AVATAR_ICONS.map((icon) => (
             <label
               key={icon}

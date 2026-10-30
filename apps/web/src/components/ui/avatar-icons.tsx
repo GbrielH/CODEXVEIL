@@ -1,4 +1,4 @@
-import type { AvatarIcon } from '@codexveil/validation';
+import type { AvatarPreset } from '@codexveil/validation';
 import type { ReactNode } from 'react';
 
 /*
@@ -39,7 +39,7 @@ const spark = (x: number, y: number, s = 2.2) => (
   />
 );
 
-export const AVATAR_ICON_ART: Record<AvatarIcon, { label: string; art: ReactNode }> = {
+export const AVATAR_ICON_ART: Record<AvatarPreset, { label: string; art: ReactNode }> = {
   barbaro: {
     label: 'Bárbaro',
     art: (
@@ -209,7 +209,7 @@ export const AVATAR_ICON_ART: Record<AvatarIcon, { label: string; art: ReactNode
 };
 
 /** Retrato no círculo vinho com moldura e brilhos. */
-export function AvatarIconArt({ icon, className }: { icon: AvatarIcon; className?: string }) {
+export function AvatarIconArt({ icon, className }: { icon: AvatarPreset; className?: string }) {
   const entry = AVATAR_ICON_ART[icon];
   return (
     <svg viewBox="0 0 64 64" className={className} role="img" aria-label={entry.label}>

@@ -1,8 +1,8 @@
 // Gerado a partir de apps/web/src/components/ui/avatar-icons.tsx (mesmo desenho do site).
 // Para atualizar, veja "Retratos de perfil" em docs/PROGRESS.md.
-import type { AvatarIcon } from '@codexveil/validation';
+import type { AvatarPreset } from '@codexveil/validation';
 
-export const AVATAR_SVGS: Record<AvatarIcon, { label: string; svg: string }> = {
+export const AVATAR_SVGS: Record<AvatarPreset, { label: string; svg: string }> = {
   encapuzado: {
     label: 'Encapuzado',
     svg: '<svg viewBox="0 0 64 64" aria-label="Encapuzado"><defs><radialGradient id="av-bg-encapuzado" cx="50%" cy="40%" r="65%"><stop offset="0%" stop-color="#3a1018"></stop><stop offset="100%" stop-color="#0b0b0f"></stop></radialGradient><clipPath id="av-clip-encapuzado"><circle cx="32" cy="32" r="29"></circle></clipPath></defs><circle cx="32" cy="32" r="31" fill="#0b0b0f" stroke="#7a1f2b" stroke-width="1.5"></circle><circle cx="32" cy="32" r="29" fill="url(#av-bg-encapuzado)"></circle><circle cx="32" cy="27" r="16" fill="none" stroke="#d9c3a5" stroke-opacity="0.25" stroke-width="0.6"></circle><g clip-path="url(#av-clip-encapuzado)"><path d="M18 60c0-14 5-24 14-24s14 10 14 24z" fill="#07070a"></path><path d="M32 12c-9 0-15 8-15 18 0 6 2 10 5 13h20c3-3 5-7 5-13 0-10-6-18-15-18z" fill="#07070a" stroke="#d9c3a5" stroke-width="0.8"></path><path d="M32 21c-5 0-8 5-8 11 0 4 2 7 4 9h8c2-2 4-5 4-9 0-6-3-11-8-11z" fill="#000"></path><path d="M32 26.8L32.8 29.2L35.2 30L32.8 30.8L32 33.2L31.2 30.8L28.8 30L31.2 29.2z" fill="#d9c3a5"></path></g><circle cx="32" cy="32" r="29" fill="none" stroke="#d9c3a5" stroke-opacity="0.5" stroke-width="0.5"></circle></svg>',

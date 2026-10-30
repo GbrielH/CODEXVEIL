@@ -1,5 +1,5 @@
-import type { AvatarIcon } from '@codexveil/validation';
-import { View } from 'react-native';
+import { isAvatarPhoto, type AvatarIcon } from '@codexveil/validation';
+import { Image, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { colors, fonts } from '@/lib/theme';
 import { AVATAR_SVGS } from './avatar-svgs.gen';
@@ -22,6 +22,14 @@ export function Avatar({
   icon?: AvatarIcon | null;
   size?: number;
 }) {
+  if (isAvatarPhoto(icon))
+    return (
+      <Image
+        source={{ uri: icon }}
+        style={{ width: size, height: size, borderRadius: size / 2 }}
+        accessibilityLabel={name}
+      />
+    );
   if (icon)
     return (
       <SvgXml

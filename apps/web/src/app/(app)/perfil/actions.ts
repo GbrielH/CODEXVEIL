@@ -1,7 +1,12 @@
 'use server';
 
 import { authErrorMessage, updateProfile } from '@codexveil/database';
-import { fieldErrorsFrom, profileUpdateSchema } from '@codexveil/validation';
+import {
+  fieldErrorsFrom,
+  googlePhotoFrom,
+  isAvatarPhoto,
+  profileUpdateSchema,
+} from '@codexveil/validation';
 import { revalidatePath } from 'next/cache';
 import { failureMessage, readText, type ActionResult, type FormState } from '@/lib/actions';
 import { requireSessionUser } from '@/lib/auth';
@@ -9,7 +14,10 @@ import { siteUrl } from '@/lib/env';
 import { routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-export async function updateProfileAction(_previous: FormState, formData: FormData): Promise<FormState> {
+export async function updateProfileAction(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
   const user = await requireSessionUser(routes.profile);
   const raw = {
     displayName: readText(formData, 'displayName'),
@@ -27,6 +35,13 @@ export async function updateProfileAction(_previous: FormState, formData: FormDa
       fieldErrors: fieldErrorsFrom(parsed.error),
       values: { displayName: raw.displayName, bio: raw.bio },
     };
+  }
+  // Foto: só a da própria conta Google.
+  if (
+    isAvatarPhoto(parsed.data.preferences.avatar) &&
+    parsed.data.preferences.avatar !== googlePhotoFrom(user.user_metadata)
+  ) {
+    return { status: 'error', message: 'Essa foto não é a da sua conta Google.' };
   }
   try {
     const supabase = await createSupabaseServerClient();

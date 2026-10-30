@@ -265,3 +265,10 @@ restrição `campaign_notes_individual` impede criar anotação compartilhada.
 `tavern_messages`: mensagens de campanha só para os participantes; diretas só entre amigos
 (`are_friends`) e lidas só pelas duas pessoas. O autor pode apagar a própria. Nada com mais de 24
 horas é lido, e as vencidas são apagadas a cada mensagem nova. O Realtime aplica o mesmo RLS.
+
+## Foto da conta Google no retrato
+
+`preferences.avatar` aceita, além dos retratos desenhados, só endereços
+`https://lhN.googleusercontent.com/...` (validação em `@codexveil/validation`). O site recusa salvar
+uma foto diferente da que está nos metadados da conta. As imagens carregam com
+`referrerPolicy="no-referrer"`.

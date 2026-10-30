@@ -202,7 +202,9 @@ mapa e notas lado a lado).
   "Falha crítica" de antes.
 - [ ] Aba "Dados" no perfil: textura própria dos dados e cor do número (pedido de 2026-10-25).
 - [x] Taverna: capa da campanha no selo da lista (inicial colorida quando não há capa).
-- [ ] Foto do Google como foto de perfil, opcional (quem entra com Google escolhe usar).
+- [x] Foto do Google como retrato opcional (2026-10-30): no Perfil (site e app) aparece "Foto do
+      Google" para quem entrou com o Google. Fica em `preferences.avatar` (só endereços
+      `lh*.googleusercontent.com`; o site só aceita a foto da própria conta). Sem migração, sem upload.
 - [x] Taverna: imagens (clipe ou Ctrl+V no site; galeria no app), em `tavern/` no bucket; só quem lê
       a mensagem vê; somem com a mensagem (migração `20261030130000`).
 - [x] Taverna no lugar do card do Tomo (2026-10-30): o card do menu lateral (e o ícone do cabeçalho

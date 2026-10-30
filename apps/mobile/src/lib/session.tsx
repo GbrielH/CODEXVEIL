@@ -3,6 +3,7 @@
  * próprio de senhas). Quando a sessão expira sem o usuário ter saído, o app volta ao
  * login explicando o motivo.
  */
+import { googlePhotoFrom, type AvatarPhoto } from '@codexveil/validation';
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { unregisterFromPush } from './notifications';
@@ -12,6 +13,8 @@ interface SessionState {
   status: 'loading' | 'signed-in' | 'signed-out';
   userId: string | null;
   email: string | null;
+  /** Foto da conta Google, se a pessoa entrou com o Google. */
+  googlePhoto: AvatarPhoto | null;
   /** A sessão terminou sem o usuário pedir (token expirado ou revogado). */
   expired: boolean;
   signOut: () => Promise<void>;
@@ -20,7 +23,11 @@ interface SessionState {
 const SessionContext = createContext<SessionState | null>(null);
 
 function fromSession(session: Session | null) {
-  return { userId: session?.user.id ?? null, email: session?.user.email ?? null };
+  return {
+    userId: session?.user.id ?? null,
+    email: session?.user.email ?? null,
+    googlePhoto: googlePhotoFrom(session?.user.user_metadata),
+  };
 }
 
 export function SessionProvider({ children }: { children: ReactNode }) {
@@ -28,6 +35,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     status: supabaseConfig.ok ? 'loading' : 'signed-out',
     userId: null,
     email: null,
+    googlePhoto: null,
     expired: false,
   });
   const signingOut = useRef(false);
@@ -46,7 +54,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           expired: false,
         });
       })
-      .catch(() => setState({ status: 'signed-out', userId: null, email: null, expired: false }));
+      .catch(() =>
+        setState({
+          status: 'signed-out',
+          userId: null,
+          email: null,
+          googlePhoto: null,
+          expired: false,
+        }),
+      );
 
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       setState((previous) => ({

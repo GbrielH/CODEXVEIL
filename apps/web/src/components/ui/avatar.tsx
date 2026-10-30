@@ -1,4 +1,4 @@
-import type { AvatarIcon } from '@codexveil/validation';
+import { isAvatarPhoto, type AvatarIcon } from '@codexveil/validation';
 import { cx } from '@/lib/cx';
 import { AvatarIconArt } from './avatar-icons';
 
@@ -23,13 +23,26 @@ interface AvatarProps {
   icon?: AvatarIcon | null | undefined;
 }
 
-/** Iniciais do usuário sobre o vinho da identidade (o Codexveil não usa foto de perfil). */
+/** Retrato, foto da conta Google (opcional) ou as iniciais sobre o vinho da identidade. */
 export function Avatar({ name, size = 'md', className, icon }: AvatarProps) {
   const classes = cx(
     'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-line-strong',
     sizes[size],
     className,
   );
+  if (isAvatarPhoto(icon)) {
+    return (
+      <span className={cx(classes, 'border-transparent')} title={name}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- foto da conta Google */}
+        <img
+          src={icon}
+          alt=""
+          referrerPolicy="no-referrer"
+          className="h-full w-full object-cover"
+        />
+      </span>
+    );
+  }
   if (icon) {
     return (
       <span className={cx(classes, 'border-transparent')} title={name}>

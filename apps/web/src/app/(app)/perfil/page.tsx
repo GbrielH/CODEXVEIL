@@ -13,6 +13,7 @@ import { routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { DeleteAccount } from './delete-account';
 import { PasswordReset } from './password-reset';
+import { googlePhotoFrom } from '@codexveil/validation';
 import { ProfileForm } from './profile-form';
 
 export const metadata: Metadata = { title: 'Perfil' };
@@ -20,26 +21,46 @@ export const metadata: Metadata = { title: 'Perfil' };
 export default async function ProfilePage() {
   const user = await requireSessionUser(routes.profile);
   const supabase = await createSupabaseServerClient();
-  const [profile, campaigns] = await Promise.all([getProfile(supabase, user.id), listMyCampaigns(supabase, user.id)]);
+  const [profile, campaigns] = await Promise.all([
+    getProfile(supabase, user.id),
+    listMyCampaigns(supabase, user.id),
+  ]);
 
   if (!profile) {
-    return <ErrorState description="Não encontramos o seu perfil. Saia e entre novamente; se persistir, contate o suporte." />;
+    return (
+      <ErrorState description="Não encontramos o seu perfil. Saia e entre novamente; se persistir, contate o suporte." />
+    );
   }
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader eyebrow="Conta" title="Perfil" description="Como você aparece para os outros participantes." />
+      <PageHeader
+        eyebrow="Conta"
+        title="Perfil"
+        description="Como você aparece para os outros participantes."
+      />
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <Card ornate>
-          <CardHeader icon={<UserRound className="h-5 w-5" aria-hidden="true" />} title="Dados públicos" />
+          <CardHeader
+            icon={<UserRound className="h-5 w-5" aria-hidden="true" />}
+            title="Dados públicos"
+          />
           <ProfileForm
-            initial={{ displayName: profile.displayName, bio: profile.bio, preferences: profile.preferences }}
+            initial={{
+              displayName: profile.displayName,
+              bio: profile.bio,
+              preferences: profile.preferences,
+            }}
+            googlePhoto={googlePhotoFrom(user.user_metadata)}
           />
         </Card>
 
         <div className="flex flex-col gap-6">
           <Card>
-            <CardHeader icon={<ShieldCheck className="h-5 w-5" aria-hidden="true" />} title="Acesso" />
+            <CardHeader
+              icon={<ShieldCheck className="h-5 w-5" aria-hidden="true" />}
+              title="Acesso"
+            />
             <dl className="mb-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
               <dt className="text-fg-muted">E-mail</dt>
               <dd className="break-all">{user.email ?? '—'}</dd>
@@ -50,12 +71,18 @@ export default async function ProfilePage() {
           </Card>
 
           <Card>
-            <CardHeader icon={<Trash2 className="h-5 w-5" aria-hidden="true" />} title="Excluir conta" />
+            <CardHeader
+              icon={<Trash2 className="h-5 w-5" aria-hidden="true" />}
+              title="Excluir conta"
+            />
             <DeleteAccount />
           </Card>
 
           <Card>
-            <CardHeader icon={<ScrollText className="h-5 w-5" aria-hidden="true" />} title="Minhas campanhas" />
+            <CardHeader
+              icon={<ScrollText className="h-5 w-5" aria-hidden="true" />}
+              title="Minhas campanhas"
+            />
             {campaigns.length === 0 ? (
               <p className="text-sm text-fg-muted">Você ainda não participa de nenhuma campanha.</p>
             ) : (

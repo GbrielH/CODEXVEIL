@@ -4,6 +4,7 @@ import {
   fieldErrorsFrom,
   profileUpdateSchema,
   type AvatarIcon,
+  isAvatarPhoto,
   type FieldErrors,
 } from '@codexveil/validation';
 import { LogOut } from 'lucide-react-native';
@@ -35,6 +36,8 @@ function ProfileForm({ profile, onSaved }: { profile: Profile; onSaved: () => vo
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [bio, setBio] = useState(profile.bio);
   const [avatar, setAvatar] = useState<AvatarIcon | null>(profile.preferences.avatar);
+  // Foto da conta Google (quem entrou com o Google pode usar como retrato).
+  const { googlePhoto } = useSession();
   const [errors, setErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
 
@@ -85,13 +88,15 @@ function ProfileForm({ profile, onSaved }: { profile: Profile; onSaved: () => vo
       />
       <AppText variant="small">Retrato (aparece na mesa; sem retrato, ficam as iniciais)</AppText>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {[null, ...AVATAR_ICONS].map((icon) => (
+        {[null, ...(googlePhoto ? [googlePhoto] : []), ...AVATAR_ICONS].map((icon) => (
           <Pressable
             key={icon ?? 'iniciais'}
             onPress={() => setAvatar(icon)}
             accessibilityRole="radio"
             accessibilityState={{ checked: avatar === icon }}
-            accessibilityLabel={icon ? AVATAR_SVGS[icon].label : 'Iniciais'}
+            accessibilityLabel={
+              isAvatarPhoto(icon) ? 'Foto do Google' : icon ? AVATAR_SVGS[icon].label : 'Iniciais'
+            }
             style={{
               padding: 4,
               borderRadius: 10,
