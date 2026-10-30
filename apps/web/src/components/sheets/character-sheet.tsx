@@ -261,6 +261,7 @@ export async function CharacterSheet({
         character={{
           id: character.id,
           name: character.name,
+          ownerName: character.ownerName,
           version: character.version,
           portraitUrl: character.portraitPath ? (portraits[character.portraitPath] ?? null) : null,
           portraitPath: character.portraitPath,

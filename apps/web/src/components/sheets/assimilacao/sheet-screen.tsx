@@ -58,6 +58,8 @@ import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
 import { cx } from '@/lib/cx';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { ArcaneScene } from '@/components/brand/arcane-scene';
+import { ZoomableImage } from '@/components/ui/zoomable-image';
 
 export interface AssimilacaoBookSource {
   book: { id: string; name: string };
@@ -68,6 +70,7 @@ interface AssimilacaoSheetScreenProps {
   character: {
     id: string;
     name: string;
+    ownerName?: string;
     version: number;
     portraitUrl: string | null;
     portraitPath: string | null;
@@ -1149,6 +1152,91 @@ function SheetBody({
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Cabeçalho (como o do Tormenta20): retrato, nome, origens e os números do jogo. */}
+      <header className="relative isolate overflow-hidden rounded-2xl border border-line p-5 sm:p-6">
+        <ArcaneScene
+          seed={character.name || character.id}
+          className="absolute inset-0 -z-10 opacity-60"
+          options={{ noMoon: true }}
+        />
+        <span
+          className="absolute inset-0 -z-10 bg-gradient-to-r from-charcoal-950 via-charcoal-950/85 to-charcoal-950/60"
+          aria-hidden="true"
+        />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          {character.portraitUrl ? (
+            <ZoomableImage
+              src={character.portraitUrl}
+              alt={`Retrato de ${character.name}`}
+              wrapperClassName="inline-block shrink-0 self-start"
+              className="h-28 w-28 rounded-t-[999px] rounded-b-md object-cover ring-2 ring-wine-400/60 ring-offset-2 ring-offset-charcoal-950"
+            />
+          ) : null}
+          <div className="flex min-w-0 flex-col gap-1">
+            <p className="eyebrow text-wine-300">
+              Assimilação RPG
+              {sheet.identity.generation ? ` · ${generationLabels[sheet.identity.generation]}` : ''}
+            </p>
+            <h1 className="text-3xl leading-tight [text-shadow:0_2px_16px_rgb(0_0_0/0.8)] sm:text-4xl">
+              {character.name}
+            </h1>
+            <p className="text-fg-secondary">
+              {[sheet.origins.occupation, sheet.origins.event].filter(Boolean).join(' · ') ||
+                'Infectado(a)'}
+            </p>
+            <p className="text-xs text-fg-muted">
+              {character.ownerName ? `Jogador: ${character.ownerName} · ` : ''}
+              {character.campaign ? `Campanha: ${character.campaign.name}` : 'Ficha pessoal'}
+            </p>
+          </div>
+        </div>
+        <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {[
+            {
+              label: 'Determinação',
+              value: `${determination?.current ?? 0} / ${tug.determinationLevel}`,
+              hint: `Nível ${tug.determinationLevel}`,
+            },
+            {
+              label: 'Assimilação',
+              value: `${assimilation?.current ?? 0} / ${tug.assimilationLevel}`,
+              hint: `Nível ${tug.assimilationLevel}`,
+            },
+            {
+              label: 'Saúde',
+              value: HEALTH_LEVEL_TITLES[6 - state.level] ?? 'Morte',
+              hint: `${state.remaining} / ${state.total} pontos`,
+            },
+            {
+              label: 'Experiência',
+              value: `${sheet.experience.total - sheet.experience.spent}`,
+              hint: `de ${sheet.experience.total}`,
+            },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-md border border-line bg-charcoal-950/60 px-3 py-2 text-center"
+            >
+              <dt className="text-[11px] tracking-wider text-fg-muted uppercase">{stat.label}</dt>
+              <dd className="font-display text-xl text-fg">{stat.value}</dd>
+              <dd className="text-[11px] text-fg-subtle">{stat.hint}</dd>
+            </div>
+          ))}
+        </dl>
+        <dl className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
+          {INSTINCTS.map((instinct) => (
+            <div
+              key={instinct}
+              className="rounded-md border border-wine-400/30 bg-wine-950/60 px-2 py-2 text-center"
+            >
+              <dt className="text-[11px] tracking-wider text-fg-muted uppercase">
+                {aptitudeLabels[instinct]}
+              </dt>
+              <dd className="font-display text-xl text-fg">{sheet.instincts[instinct]}</dd>
+            </div>
+          ))}
+        </dl>
+      </header>
       <Tabs
         label="Ficha do Infectado"
         value={tab}
