@@ -1,3 +1,4 @@
+import { ConflictObjectivesCard } from '@/components/assimilacao/conflict';
 import {
   campaignCoverPath,
   getCampaign,
@@ -12,10 +13,7 @@ import {
 import { Avatar } from '@/components/ui/avatar';
 import { campaignRoleLabels } from '@codexveil/domain';
 import { conditionLabel, findSystem, summarizeSheet } from '@codexveil/rpg-systems';
-import {
-  campaignSourcebooks,
-  dnd5eCampaignLinks,
-} from '@codexveil/rpg-systems/dnd5e';
+import { campaignSourcebooks, dnd5eCampaignLinks } from '@codexveil/rpg-systems/dnd5e';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   BookOpen,
@@ -29,7 +27,10 @@ import {
   Users,
 } from 'lucide-react-native';
 import { Image, Linking, StyleSheet, View } from 'react-native';
-import { LinkExistingCharacter, campaignRuleIssues } from '@/components/campaign/link-existing-character';
+import {
+  LinkExistingCharacter,
+  campaignRuleIssues,
+} from '@/components/campaign/link-existing-character';
 import { TurnStatus } from '@/components/campaign/turn-status';
 import { DiceColorCard } from '@/components/dice/dice-color';
 import { CharacterAvatar } from '@/components/character-avatar';
@@ -102,7 +103,14 @@ export default function CampaignScreen() {
     : [];
   // O app é a ficha de jogo: as regras de criação só aparecem enquanto o personagem do jogador
   // não existe ou ainda não cumpre as regras do mestre (o mestre as vê no site).
-  const ownIssues = ownCharacter ? campaignRuleIssues(campaign.systemId, ownCharacter.name, ownCharacter.sheet, campaign.characterRules) : [];
+  const ownIssues = ownCharacter
+    ? campaignRuleIssues(
+        campaign.systemId,
+        ownCharacter.name,
+        ownCharacter.sheet,
+        campaign.characterRules,
+      )
+    : [];
   const campaignLinks =
     campaign.systemId === 'dnd5e'
       ? dnd5eCampaignLinks(
@@ -148,6 +156,9 @@ export default function CampaignScreen() {
         />
       ) : null}
       {isActive ? <DiceColorCard campaignId={campaign.id} /> : null}
+      {campaign.systemId === 'assimilacao' && isActive ? (
+        <ConflictObjectivesCard campaignId={campaign.id} />
+      ) : null}
       {/* Só o mestre troca a capa (o Storage confere); ela aparece no painel de todos. */}
       {isGm && isActive ? (
         <Card>

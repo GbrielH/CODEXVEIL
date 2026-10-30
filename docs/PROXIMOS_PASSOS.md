@@ -215,6 +215,9 @@ mapa e notas lado a lado).
 - [x] Assimilação RPG no app (2026-10-30): criação, ficha e teste com dados especiais (OTA).
 - [x] Assimilação RPG (2026-10-30): Ameaças de Conflito na biblioteca, neutralização no rastreador e
       baralhos de Assimilação e Eventos na mesa do mestre.
+- [x] Assimilação RPG (2026-10-30): Objetivos do Conflito ao vivo, baralhos no banco com "Mostrar ao
+      grupo" e símbolos nas rolagens (migração `20261030150000`).
+- [ ] Aplicar `20261030140000` e `20261030150000` em produção e publicar os commits locais.
 - [ ] Assimilação RPG: testar no navegador e no celular com o livro importado.
 - [x] Assimilação RPG: teste com dados especiais na ficha do site (Rolagem Assimilada, dados mantidos).
 - [x] Faces 11 e 12 do d12 do Assimilação conferidas na tabela do livro (2026-10-30).

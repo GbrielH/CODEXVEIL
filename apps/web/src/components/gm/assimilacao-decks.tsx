@@ -7,7 +7,12 @@ import {
   safeAssimilacaoBookEntryData,
 } from '@codexveil/rpg-systems/assimilacao';
 import { Layers, Shuffle } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { listCardDecks, saveCardDeck, type CardDeck, type ShownCard } from '@codexveil/database';
+import { useCallback, useMemo, useState } from 'react';
+import { useToast } from '@/components/ui/toast';
+import { failureMessage } from '@/lib/client-errors';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { useRealtimeRefresh } from '@/lib/use-realtime';
 import { AssimSymbol, withAssimSymbols } from '@/components/assimilacao/symbols';
 import { BookText } from '@/components/books/book-text';
 import { Button } from '@/components/ui/button';
@@ -25,6 +30,8 @@ interface DeckState {
   /** Cartas que faltam sair (código "rank:suit"), na ordem embaralhada. */
   pile: string[];
   drawn: string[];
+  /** Carta mostrada ao grupo, com nome e texto (os jogadores não leem o monte). */
+  shown: ShownCard | null;
 }
 
 const ALL_CARDS = CARD_SUITS.flatMap((suit) => CARD_RANKS.map((rank) => `${rank}:${suit}`));
@@ -35,42 +42,56 @@ function shuffled(): DeckState {
     const other = Math.floor(Math.random() * (index + 1));
     [pile[index], pile[other]] = [pile[other]!, pile[index]!];
   }
-  return { pile, drawn: [] };
+  return { pile, drawn: [], shown: null };
 }
 
 /**
  * Baralhos do Assimilador: cartas de Assimilação (mutações nos Testes de Assimilação) e de
- * Eventos (gerador de aventuras). O texto vem do livro liberado na campanha; o estado do
- * baralho fica neste navegador.
+ * Eventos (gerador de aventuras). O texto vem do livro liberado na campanha; o monte fica no
+ * banco (`card_decks`), igual em todos os aparelhos do mestre, e a carta mostrada aparece ao grupo.
  */
 export function AssimilacaoDecks({
   campaignId,
   entries,
+  initial,
 }: {
   campaignId: string;
   entries: readonly DeckEntry[];
+  initial: readonly CardDeck[];
 }) {
-  const storageKey = `codexveil:asrpg-baralhos:${campaignId}`;
-  const [decks, setDecks] = useState<Record<DeckId, DeckState>>(() => ({
-    assimilation: shuffled(),
-    event: shuffled(),
-  }));
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- retoma o baralho deste navegador depois de montar.
-      if (saved) setDecks(JSON.parse(saved) as Record<DeckId, DeckState>);
-    } catch {
-      // Sem armazenamento: começa embaralhado.
-    }
-  }, [storageKey]);
-  const update = (next: Record<DeckId, DeckState>) => {
+  const { toast } = useToast();
+  const fromServer = (list: readonly CardDeck[]) => {
+    const find = (id: DeckId) => list.find((entry) => entry.deck === id);
+    const pick = (id: DeckId): DeckState => {
+      const saved = find(id);
+      return saved && saved.pile.length + saved.drawn.length > 0
+        ? { pile: saved.pile, drawn: saved.drawn, shown: saved.shown }
+        : shuffled();
+    };
+    return { assimilation: pick('assimilation'), event: pick('event') };
+  };
+  const [decks, setDecks] = useState<Record<DeckId, DeckState>>(() => fromServer(initial));
+  const refresh = useCallback(() => {
+    void listCardDecks(getSupabaseBrowserClient(), campaignId)
+      .then((list) => setDecks(fromServer(list)))
+      .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fromServer só depende do embaralhamento.
+  }, [campaignId]);
+  useRealtimeRefresh(
+    `baralhos:${campaignId}`,
+    [{ table: 'card_decks', filter: `campaign_id=eq.${campaignId}` }],
+    refresh,
+  );
+  const update = (next: Record<DeckId, DeckState>, id: DeckId) => {
     setDecks(next);
-    try {
-      window.localStorage.setItem(storageKey, JSON.stringify(next));
-    } catch {
-      // Sem armazenamento: o baralho vale só até recarregar.
-    }
+    void saveCardDeck(getSupabaseBrowserClient(), campaignId, { deck: id, ...next[id] }).catch(
+      (error: unknown) =>
+        toast({
+          tone: 'danger',
+          title: 'O baralho não foi salvo',
+          description: failureMessage(error, 'Tente de novo.'),
+        }),
+    );
   };
 
   const byCard = useMemo(() => {
@@ -107,10 +128,17 @@ export function AssimilacaoDecks({
               size="sm"
               disabled={state.pile.length === 0}
               onClick={() =>
-                update({
-                  ...decks,
-                  [id]: { pile: state.pile.slice(1), drawn: [...state.drawn, state.pile[0]!] },
-                })
+                update(
+                  {
+                    ...decks,
+                    [id]: {
+                      pile: state.pile.slice(1),
+                      drawn: [...state.drawn, state.pile[0]!],
+                      shown: state.shown,
+                    },
+                  },
+                  id,
+                )
               }
             >
               <Layers className="h-4 w-4" aria-hidden="true" /> Comprar
@@ -118,7 +146,7 @@ export function AssimilacaoDecks({
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => update({ ...decks, [id]: shuffled() })}
+              onClick={() => update({ ...decks, [id]: shuffled() }, id)}
             >
               <Shuffle className="h-4 w-4" aria-hidden="true" /> Embaralhar
             </Button>
@@ -137,6 +165,33 @@ export function AssimilacaoDecks({
               {card && 'kind' in card ? (
                 <span className="text-xs text-fg-muted">{assimilationKindLabels[card.kind]}</span>
               ) : null}
+              <Button
+                size="sm"
+                variant={state.shown?.card === last ? 'secondary' : 'ghost'}
+                className="ml-auto"
+                onClick={() => {
+                  const levels =
+                    card && 'levels' in card
+                      ? card.levels
+                          .map(
+                            (level) =>
+                              `- **${level.name}**${level.requirement ? ` (${level.requirement})` : ''}: ${level.text}`,
+                          )
+                          .join('\n')
+                      : '';
+                  const shown: ShownCard | null =
+                    state.shown?.card === last || !last
+                      ? null
+                      : {
+                          card: last,
+                          name: entry?.name ?? last.replace(':', ' '),
+                          text: [card?.text ?? '', levels].filter(Boolean).join('\n\n'),
+                        };
+                  update({ ...decks, [id]: { ...state, shown } }, id);
+                }}
+              >
+                {state.shown?.card === last ? 'Mostrando ao grupo' : 'Mostrar ao grupo'}
+              </Button>
               {card && 'category' in card ? (
                 <span className="text-xs text-fg-muted">{card.category}</span>
               ) : null}
@@ -179,7 +234,7 @@ export function AssimilacaoDecks({
         title="Baralhos do Assimilador"
         description={
           entries.length
-            ? 'Cartas do livro liberado na campanha. O monte fica guardado neste navegador.'
+            ? 'Cartas do livro liberado na campanha. O monte vale em todos os seus aparelhos; “Mostrar ao grupo” exibe a carta na aba Sessão.'
             : 'Libere o livro do Assimilação nas regras da campanha para ver o texto das cartas.'
         }
       />

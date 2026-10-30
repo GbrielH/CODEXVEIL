@@ -1,8 +1,10 @@
 'use client';
 
+import { describeRoll, rollHeadline } from '@/lib/roll-display';
+
 import type { DiceRoll } from '@codexveil/database';
 import type DiceBox from '@3d-dice/dice-box-threejs';
-import { describeDiceRoll, naturalD20 } from '@codexveil/domain';
+import { naturalD20 } from '@codexveil/domain';
 import { ChevronDown, ChevronUp, Dices, Lock } from 'lucide-react';
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
@@ -331,14 +333,14 @@ export function DiceTray({
               )}
             >
               <p className="flex items-baseline gap-2">
-                <span className="font-display text-2xl text-fg">{last.roll.total}</span>
+                <span className="font-display text-2xl text-fg">{rollHeadline(last.roll)}</span>
                 <span className="min-w-0 flex-1 truncate text-sm text-fg-secondary">
                   {last.rollerName}
                   {last.roll.label ? ` · ${last.roll.label}` : ''}
                 </span>
               </p>
               <p className="truncate text-xs text-fg-muted">
-                {describeDiceRoll(last.roll)}
+                {describeRoll(last.roll)}
                 {natural === 20
                   ? naturalRoll === 20
                     ? ' · 20 natural!'
@@ -373,7 +375,7 @@ export function DiceTray({
                   {last.secret ? (
                     <Lock className="mr-1 inline h-3 w-3 text-amber-300" aria-label="Secreta" />
                   ) : null}
-                  <strong className="text-fg">{last.roll.total}</strong> · {last.rollerName}
+                  <strong className="text-fg">{rollHeadline(last.roll)}</strong> · {last.rollerName}
                   {last.roll.label ? ` · ${last.roll.label}` : ''}
                 </>
               ) : (

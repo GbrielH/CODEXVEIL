@@ -306,3 +306,11 @@ com `roll_detail = 'Dado físico'`).
 Registra `assimilacao` em `rpg_systems`, acrescenta os tipos de entrada de livro `characteristic`,
 `assimilation`, `artifact` e `event`, e deixa os jogadores das campanhas lerem Características,
 cartas de Assimilação e Artefatos dos livros liberados (Eventos só para o mestre).
+
+## Conflitos e baralhos do Assimilação (`20261030150000_conflict_objectives.sql`)
+
+- `conflict_objectives`: Objetivos do Conflito (nome, tipo, Sucessos necessários e acumulados,
+  visível). Mestres leem e escrevem; membros leem os visíveis. Publicada no Realtime.
+- `card_decks`: monte e cartas compradas dos baralhos (`assimilation`, `event`) e a carta mostrada
+  (`shown`, com nome e texto). Só mestres leem e escrevem; membros leem a carta mostrada por
+  `public.campaign_shown_cards(campanha)`.

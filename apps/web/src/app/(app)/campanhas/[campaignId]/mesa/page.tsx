@@ -3,6 +3,8 @@ import {
   listCampaignCharacters,
   listCampaignNotes,
   listCreatureStats,
+  listCardDecks,
+  listConflictObjectives,
   listCreatures,
   listDiceRolls,
   listSceneEntities,
@@ -16,6 +18,7 @@ import { CalendarPlus } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import { GmTable, type LibraryOption } from '@/components/gm/gm-table';
 import { AssimilacaoDecks } from '@/components/gm/assimilacao-decks';
+import { ConflictObjectivesCard } from '@/components/gm/conflict-objectives';
 import { campaignBookPacks, loadBookSources, packsOfSystem } from '@/lib/books';
 import { ButtonLink } from '@/components/ui/button';
 import { EmptyState, ForbiddenState } from '@/components/ui/states';
@@ -152,7 +155,18 @@ export default async function GmTablePage({ params }: PageProps<'/campanhas/[cam
         sessionPublished={session.isPublished}
       />
       {campaign.systemId === 'assimilacao' ? (
-        <AssimilacaoDecks campaignId={campaign.id} entries={deckEntries} />
+        <ConflictObjectivesCard
+          campaignId={campaign.id}
+          canManage={campaign.status === 'active'}
+          initial={await listConflictObjectives(supabase, campaign.id)}
+        />
+      ) : null}
+      {campaign.systemId === 'assimilacao' ? (
+        <AssimilacaoDecks
+          campaignId={campaign.id}
+          entries={deckEntries}
+          initial={await listCardDecks(supabase, campaign.id)}
+        />
       ) : null}
     </div>
   );

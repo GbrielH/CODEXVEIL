@@ -106,3 +106,17 @@ describe('requisitos de Características', () => {
     expect(requirementMet(sheet, '')).toBe(true);
   });
 });
+
+describe('histórico de rolagens', () => {
+  it('reconhece a rolagem e descreve as faces', async () => {
+    const { isAssimilacaoRoll, assimilacaoRollText } = await import('./dice');
+    expect(isAssimilacaoRoll('Assimilação · Percepção + Erudição · mantém 1')).toBe(true);
+    expect(isAssimilacaoRoll('Ataque')).toBe(false);
+    expect(
+      assimilacaoRollText([
+        { sides: 6, values: [6, 1] },
+        { sides: 10, values: [9] },
+      ]),
+    ).toBe('d6 ✦ · d6 — · d10 ✦⟳✖');
+  });
+});

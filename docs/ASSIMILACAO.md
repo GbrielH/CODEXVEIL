@@ -99,9 +99,19 @@ Os ícones viram marcadores (`{A}` Sucesso, `{B}` Adaptação, `{C}` Pressão, `
 - **Baralhos do Assimilador** (mesa do mestre): cartas de Assimilação e de Eventos com o texto do
   livro liberado, comprar e embaralhar; o monte fica no navegador do mestre.
 
+## Objetivos, baralho compartilhado e símbolos nas rolagens
+
+- **Objetivos do Conflito** (migração `20261030150000`, tabela `conflict_objectives`): o mestre cria
+  Objetivos Principais, Secundários e Ameaças a neutralizar na Mesa, com os Sucessos necessários, e
+  soma ou tira Sucessos; o grupo vê os visíveis ao vivo na aba Sessão (site) e na tela da campanha
+  (app).
+- **Baralhos no banco** (`card_decks`): o monte vale em todos os aparelhos do mestre. "Mostrar ao
+  grupo" grava a carta com nome e texto; os jogadores veem só as cartas mostradas (função
+  `campaign_shown_cards`), nunca a ordem do monte nem o texto das cartas de Eventos no livro.
+- **Rolagens:** testes do Assimilação (rótulo "Assimilação · …") aparecem com os símbolos de cada
+  dado no histórico, na caixinha de dados e no aviso do app, em vez do total numérico.
+
 ## Próximas etapas
 
-1. Testar tudo no navegador e no celular com o livro importado (nada disso foi visto em tela ainda).
-2. Contadores de Objetivos próprios no Conflito (hoje reaproveitam o rastreador de combate).
-3. Mostrar os símbolos também na caixinha de dados 3D e no histórico de rolagens (hoje aparecem os
-   números; os símbolos aparecem na ficha).
+1. Aplicar as migrações `20261030140000` e `20261030150000` em produção e publicar.
+2. Testar tudo no navegador e no celular com o livro importado (nada foi visto em tela ainda).

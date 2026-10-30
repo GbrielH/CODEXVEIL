@@ -143,3 +143,27 @@ export function diceFromGroups(
     }));
   });
 }
+
+/** Rótulo das rolagens de teste do Assimilação (a ficha usa; o histórico mostra os símbolos). */
+export const ASSIMILACAO_ROLL_PREFIX = 'Assimilação ·';
+
+export function isAssimilacaoRoll(label: string | null | undefined): boolean {
+  return Boolean(label?.startsWith(ASSIMILACAO_ROLL_PREFIX));
+}
+
+const GLYPHS = { sucesso: '✦', adaptacao: '⟳', pressao: '✖' } as const;
+
+/** Faces em texto, dado a dado ("d6 ✦ · d10 ✖✖ · d12 —"), para avisos e leitores de tela. */
+export function assimilacaoRollText(
+  groups: readonly { sides: number; values: readonly number[] }[],
+): string {
+  return diceFromGroups(groups)
+    .map((die) => {
+      const marks =
+        GLYPHS.sucesso.repeat(die.result.sucesso) +
+        GLYPHS.adaptacao.repeat(die.result.adaptacao) +
+        GLYPHS.pressao.repeat(die.result.pressao);
+      return `${die.die} ${marks || '—'}`;
+    })
+    .join(' · ');
+}

@@ -2,7 +2,6 @@ import { rollDice, type DiceRoll } from '@codexveil/database';
 import {
   COMMON_DICE,
   DICE_ROLL_MODES,
-  describeDiceRoll,
   diceRollModeLabels,
   naturalD20,
   parseDiceExpression,
@@ -23,6 +22,7 @@ import { failureMessage } from '@/lib/errors';
 import { getSupabase } from '@/lib/supabase';
 import { colors, radii, spacing } from '@/lib/theme';
 import { DiceThrow } from './dice-throw';
+import { describeRoll, rollHeadline } from '@/lib/roll-display';
 
 export interface RollRequest {
   expression: string;
@@ -99,8 +99,8 @@ export function DiceProvider({
       const natural = naturalD20(shown);
       toast({
         tone: natural === 20 ? 'success' : natural === 1 ? 'danger' : 'info',
-        title: `${shown.label ? `${shown.label}: ` : ''}${shown.total}${natural === 20 ? ' (20 natural!)' : natural === 1 ? ' (1 natural)' : ''}`,
-        description: `${describeDiceRoll(shown)}${shown.mode !== 'normal' ? ` · ${diceRollModeLabels[shown.mode]}` : ''}${shown.secret ? ' · secreta' : ''}`,
+        title: `${shown.label ? `${shown.label}: ` : ''}${rollHeadline(shown)}${natural === 20 ? ' (20 natural!)' : natural === 1 ? ' (1 natural)' : ''}`,
+        description: `${describeRoll(shown)}${shown.mode !== 'normal' ? ` · ${diceRollModeLabels[shown.mode]}` : ''}${shown.secret ? ' · secreta' : ''}`,
       });
       return shown;
     },
@@ -285,11 +285,11 @@ export function DicePanel({
             key={`${last.total}-${last.expression}-${last.dice.map((group) => group.values.join(',')).join('|')}`}
             entering={ZoomIn.springify().damping(12)}
           >
-            <AppText variant="display">{last.total}</AppText>
+            <AppText variant="display">{rollHeadline(last)}</AppText>
           </Animated.View>
           <View style={{ flex: 1, gap: 2 }}>
             <AppText style={{ color: colors.fg }}>{last.label || last.expression}</AppText>
-            <AppText variant="small">{describeDiceRoll(last)}</AppText>
+            <AppText variant="small">{describeRoll(last)}</AppText>
             <AppText variant="small" style={{ color: colors.fgMuted }}>
               {last.mode !== 'normal' ? `${diceRollModeLabels[last.mode]} · ` : ''}
               {natural === 20 ? '20 natural · ' : natural === 1 ? '1 natural · ' : ''}

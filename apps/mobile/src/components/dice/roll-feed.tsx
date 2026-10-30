@@ -1,5 +1,6 @@
 import { clearDiceRolls, listDiceRolls, type DiceRoll } from '@codexveil/database';
-import { describeDiceRoll, diceRollModeLabels, naturalD20 } from '@codexveil/domain';
+import { describeRoll, rollHeadline } from '@/lib/roll-display';
+import { diceRollModeLabels, naturalD20 } from '@codexveil/domain';
 import { Trash2 } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -120,7 +121,7 @@ export function RollFeed({
                         : colors.fgAccent,
                 }}
               >
-                {roll.total}
+                {rollHeadline(roll)}
               </AppText>
               <View style={{ flex: 1, gap: 2 }}>
                 <View
@@ -131,7 +132,7 @@ export function RollFeed({
                   {roll.visibility === 'gm' ? <Badge label="Secreta" tone="brand" /> : null}
                 </View>
                 <AppText variant="small" style={{ color: colors.fgMuted }}>
-                  {roll.expression} → {describeDiceRoll(roll)}
+                  {roll.expression} → {describeRoll(roll)}
                   {roll.mode !== 'normal' ? ` · ${diceRollModeLabels[roll.mode]}` : ''}
                 </AppText>
               </View>

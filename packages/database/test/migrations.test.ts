@@ -79,9 +79,11 @@ describe('migrações', () => {
     expect(published.map((row) => row.tablename)).toEqual([
       'campaign_members',
       'campaign_turns',
+      'card_decks',
       'character_conditions',
       'character_resources',
       'characters',
+      'conflict_objectives',
       'dice_rolls',
       'encounter_combatants',
       'encounters',

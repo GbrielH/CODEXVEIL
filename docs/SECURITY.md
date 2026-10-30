@@ -272,3 +272,8 @@ horas é lido, e as vencidas são apagadas a cada mensagem nova. O Realtime apli
 `https://lhN.googleusercontent.com/...` (validação em `@codexveil/validation`). O site recusa salvar
 uma foto diferente da que está nos metadados da conta. As imagens carregam com
 `referrerPolicy="no-referrer"`.
+
+## Baralhos do Assimilação
+
+O monte (`card_decks.pile`) revela as próximas cartas, então só o mestre o lê. Os jogadores recebem
+apenas a carta mostrada, por uma função `security definer` que confere a participação na campanha.

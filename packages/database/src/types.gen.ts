@@ -569,6 +569,41 @@ export type Database = {
           },
         ];
       };
+      card_decks: {
+        Row: {
+          campaign_id: string;
+          deck: string;
+          drawn: string[];
+          pile: string[];
+          shown: Json | null;
+          updated_at: string;
+        };
+        Insert: {
+          campaign_id: string;
+          deck: string;
+          drawn?: string[];
+          pile?: string[];
+          shown?: Json | null;
+          updated_at?: string;
+        };
+        Update: {
+          campaign_id?: string;
+          deck?: string;
+          drawn?: string[];
+          pile?: string[];
+          shown?: Json | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'card_decks_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       character_abilities: {
         Row: {
           character_id: string;
@@ -1101,6 +1136,53 @@ export type Database = {
             columns: ['system_id'];
             isOneToOne: false;
             referencedRelation: 'rpg_systems';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      conflict_objectives: {
+        Row: {
+          campaign_id: string;
+          created_at: string;
+          id: string;
+          kind: string;
+          name: string;
+          needed: number;
+          progress: number;
+          sort_order: number;
+          updated_at: string;
+          visible: boolean;
+        };
+        Insert: {
+          campaign_id: string;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          name: string;
+          needed?: number;
+          progress?: number;
+          sort_order?: number;
+          updated_at?: string;
+          visible?: boolean;
+        };
+        Update: {
+          campaign_id?: string;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          name?: string;
+          needed?: number;
+          progress?: number;
+          sort_order?: number;
+          updated_at?: string;
+          visible?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'conflict_objectives_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'campaigns';
             referencedColumns: ['id'];
           },
         ];
@@ -2323,6 +2405,12 @@ export type Database = {
           p_campaign_id: string;
         };
         Returns: Json;
+      };
+      campaign_shown_cards: {
+        Args: {
+          p_campaign_id: string;
+        };
+        Returns: unknown[];
       };
       clear_my_map_areas: {
         Args: {

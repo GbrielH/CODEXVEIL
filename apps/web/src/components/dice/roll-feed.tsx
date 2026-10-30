@@ -1,5 +1,7 @@
 'use client';
 
+import { describeRoll, rollHeadline } from '@/lib/roll-display';
+
 import {
   clearDiceRolls,
   listDiceRolls,
@@ -8,7 +10,6 @@ import {
   type TurnAction,
 } from '@codexveil/database';
 import {
-  describeDiceRoll,
   diceRollModeLabels,
   naturalD20,
   turnActionKindLabels,
@@ -159,7 +160,7 @@ export function RollFeed({
                     </span>
                     <span className="block text-xs text-fg-muted">
                       Rodada {action.round}
-                      {roll ? ` · ${roll.expression} → ${describeDiceRoll(roll)}` : ''}
+                      {roll ? ` · ${roll.expression} → ${describeRoll(roll)}` : ''}
                     </span>
                   </span>
                   <time dateTime={action.createdAt} className="shrink-0 text-xs text-fg-subtle">
@@ -190,7 +191,7 @@ export function RollFeed({
                         : 'text-fg-accent',
                   )}
                 >
-                  {roll.total}
+                  {rollHeadline(roll)}
                 </span>
                 <span className="min-w-0 flex-1 text-sm">
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -203,7 +204,7 @@ export function RollFeed({
                     ) : null}
                   </span>
                   <span className="block text-xs text-fg-muted">
-                    {roll.expression} → {describeDiceRoll(roll)}
+                    {roll.expression} → {describeRoll(roll)}
                     {roll.mode !== 'normal' ? ` · ${diceRollModeLabels[roll.mode]}` : ''}
                     {natural === 20 ? ' · 20 natural' : natural === 1 ? ' · 1 natural' : ''}
                   </span>

@@ -32,6 +32,7 @@ export * from './queries/boards';
 export * from './queries/friends';
 export * from './queries/notes';
 export * from './queries/tavern';
+export * from './queries/conflicts';
 export * from './queries/items';
 export * from './queries/books';
 export * from './queries/drafts';
