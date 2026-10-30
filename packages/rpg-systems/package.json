@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./dnd5e": "./src/dnd5e/index.ts",
-    "./tormenta20": "./src/tormenta20/index.ts"
+    "./tormenta20": "./src/tormenta20/index.ts",
+    "./assimilacao": "./src/assimilacao/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

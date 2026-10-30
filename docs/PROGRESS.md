@@ -158,6 +158,11 @@ Os detalhes estão em [`DATABASE.md`](DATABASE.md) e [`SECURITY.md`](SECURITY.md
   `apps/web/public/retratos` e `apps/mobile/assets/retratos`); os desenhos SVG antigos saíram.
   Quem tinha "encapuzado" passa a ver o Ladino. `pnpm check` passou; visual não conferido.
 
+- 2026-10-30: início do **Assimilação RPG**: núcleo de regras em `packages/rpg-systems/src/assimilacao`
+  (dados especiais, ficha, Cabo de Guerra, Saúde, limites da criação), com 6 testes passando. Ainda
+  fora do registro de sistemas. Plano e decisão sobre direitos em `docs/ASSIMILACAO.md`. Próximo passo
+  exato: `RpgSystem` + migração `rpg_systems` + criação e ficha no site e no app.
+
 ## Testes e verificações executados
 
 Execução em 2026-10-17, Windows 11, Node 24.20 e pnpm 12.14:

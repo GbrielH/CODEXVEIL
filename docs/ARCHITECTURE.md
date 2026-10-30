@@ -285,3 +285,8 @@ limites (`null` = ilimitado), e não há cobrança, preço nem assinatura simula
   `dnd5e/turns.ts`; o resumo dos jogadores é mantido no banco por gatilhos.
 - **Notificações:** app registra o token do Expo; o site e o app chamam a Edge Function depois
   de agendar/publicar uma sessão.
+
+## Assimilação RPG
+
+Terceiro sistema, em implantação por etapas (`docs/ASSIMILACAO.md`). O livro não tem licença
+aberta: o código guarda só mecânicas e números, e os textos do livro não são reproduzidos.
