@@ -150,6 +150,10 @@ Os detalhes estão em [`DATABASE.md`](DATABASE.md) e [`SECURITY.md`](SECURITY.md
   amigos); o Tomo sem o quadrado escuro (mix-blend lighten com máscara radial). `pnpm check` passou;
   visual não conferido no navegador.
 
+- 2026-10-30: Taverna sem atraso ao trocar de grupo (conversas guardadas e pré-carregadas; a busca
+  não espera mais o tempo real) e menções com "@" (Tomo e pessoas do grupo; no chat de amigo, o
+  amigo), no site e no app. `pnpm check` passou; não conferido no navegador nem no aparelho.
+
 ## Testes e verificações executados
 
 Execução em 2026-10-17, Windows 11, Node 24.20 e pnpm 12.14:

@@ -6,6 +6,7 @@ import {
   deleteTavernMessage,
   tavernImagePath,
   listFriends,
+  listCampaignMembers,
   listMyCampaigns,
   listTavernMessages,
   signedMediaUrls,
@@ -44,6 +45,8 @@ interface ChannelOption {
   icon?: AvatarIcon | null;
   /** Capa da campanha (endereço assinado), quando há. */
   cover?: string | null;
+  /** Dono da campanha (para listar as pessoas nas menções). */
+  ownerId?: string;
 }
 
 /** Cores dos selos das campanhas (escolhida pelo nome, sempre a mesma para a mesma campanha). */
@@ -262,6 +265,7 @@ function TavernPanel({
             label: campaign.name,
             group: 'Campanhas',
             channel: { kind: 'campaign', campaignId: campaign.id },
+            ownerId: campaign.ownerId,
             cover: campaign.coverPath ? (covers[campaign.coverPath] ?? null) : null,
           })),
         ...friends
@@ -280,10 +284,20 @@ function TavernPanel({
   }, []);
 
   const selected = channels?.find((option) => option.id === current) ?? null;
+  // Conversas já carregadas: trocar de grupo mostra na hora e atualiza por trás.
+  const cache = useRef(new Map<string, TavernMessage[]>());
+  const currentRef = useRef(current);
+  useEffect(() => {
+    currentRef.current = current;
+  }, [current]);
   const load = useCallback(async () => {
     if (!selected || !userId) return;
     try {
-      setMessages(await listTavernMessages(getSupabaseBrowserClient(), userId, selected.channel));
+      const list = await listTavernMessages(getSupabaseBrowserClient(), userId, selected.channel);
+      cache.current.set(selected.id, list);
+      // Resposta atrasada de outro grupo não sobrescreve a conversa aberta.
+      if (currentRef.current !== selected.id) return;
+      setMessages(list);
       onRead(selected.id);
       requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
     } catch (cause) {
@@ -307,6 +321,27 @@ function TavernPanel({
     );
   }, [selected, load]);
 
+  // Ao trocar de grupo: o que está guardado aparece já, e a busca começa sem esperar o tempo real.
+  useEffect(() => {
+    if (!selected) return;
+    setMessages(cache.current.get(selected.id) ?? []);
+    void load();
+  }, [selected, load]);
+
+  // Pré-carrega todas as conversas assim que a lista de grupos chega.
+  useEffect(() => {
+    if (!channels || !userId) return;
+    const client = getSupabaseBrowserClient();
+    for (const option of channels) {
+      if (cache.current.has(option.id)) continue;
+      void listTavernMessages(client, userId, option.channel)
+        .then((list) => {
+          if (!cache.current.has(option.id)) cache.current.set(option.id, list);
+        })
+        .catch(() => undefined);
+    }
+  }, [channels, userId]);
+
   // Imagens das mensagens: endereços assinados, renovados a cada recarga da conversa.
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   useEffect(() => {
@@ -322,6 +357,46 @@ function TavernPanel({
   const [image, setImage] = useState<File | null>(null);
   const [tomoThinking, setTomoThinking] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+
+  // "@" no fim do texto sugere o Tomo e as pessoas do grupo (no chat de amigo, o amigo).
+  const [members, setMembers] = useState<string[]>([]);
+  useEffect(() => {
+    if (!selected) return;
+    if (selected.channel.kind === 'direct') return;
+    let alive = true;
+    void listCampaignMembers(
+      getSupabaseBrowserClient(),
+      selected.channel.campaignId,
+      selected.ownerId ?? '',
+    )
+      .then((members) => {
+        if (alive)
+          setMembers(
+            members
+              .filter((member) => member.userId !== userId)
+              .map((member) => member.displayName),
+          );
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [selected, userId]);
+  const people = selected?.channel.kind === 'direct' ? [selected.label] : members;
+  const mention = /(^|\s)@(\w*)$/.exec(draft);
+  const partial = mention?.[2]?.toLowerCase() ?? null;
+  const suggestions =
+    partial === null
+      ? []
+      : ['Tomo', ...people]
+          .filter(
+            (name) => name.toLowerCase().startsWith(partial) && name.toLowerCase() !== partial,
+          )
+          .slice(0, 6);
+  const completeMention = (name: string) =>
+    setDraft(
+      `${draft.slice(0, draft.length - (partial?.length ?? 0) - 1)}@${name === 'Tomo' ? 'tomo' : name} `,
+    );
 
   const send = async (event?: FormEvent) => {
     event?.preventDefault();
@@ -672,6 +747,38 @@ function TavernPanel({
                   })
                 )}
               </div>
+              {suggestions.length ? (
+                <div className="flex flex-wrap gap-1.5 px-3 pt-1">
+                  {suggestions.map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => {
+                        completeMention(name);
+                        document.getElementById('taverna-texto')?.focus();
+                      }}
+                      className="flex items-center gap-1.5 rounded-lg border border-wine-400/50 bg-wine-950/80 px-2 py-1 text-sm text-fg shadow-lg hover:bg-wine-900"
+                    >
+                      {name === 'Tomo' ? (
+                        <Image
+                          src="/mestre/icone.webp"
+                          alt=""
+                          width={20}
+                          height={20}
+                          className="h-5 w-5 rounded"
+                        />
+                      ) : (
+                        <span className="text-fg-accent">@</span>
+                      )}
+                      {name}
+                      {name === 'Tomo' ? (
+                        <span className="text-xs text-fg-muted">assistente</span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               {tomoThinking ? (
                 <p className="px-3 text-xs text-fg-muted">O Tomo está consultando o grimório…</p>
               ) : null}
@@ -727,6 +834,7 @@ function TavernPanel({
                       setImage(file);
                     }
                   }}
+                  id="taverna-texto"
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}
                   maxLength={1000}

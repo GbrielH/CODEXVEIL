@@ -207,6 +207,8 @@ mapa e notas lado a lado).
       `lh*.googleusercontent.com`; o site só aceita a foto da própria conta). Sem migração, sem upload.
 - [x] Taverna: imagens (clipe ou Ctrl+V no site; galeria no app), em `tavern/` no bucket; só quem lê
       a mensagem vê; somem com a mensagem (migração `20261030130000`).
+- [x] Taverna: troca de grupo instantânea e sugestões de menção ao digitar "@" (Tomo e jogadores),
+      site e app (2026-10-30). A menção ainda não gera aviso para a pessoa mencionada.
 - [x] Taverna: cenas de fundo nos chats vazios (Tomo, campanhas e amigos, uma imagem cada) e Tomo
       sem o quadrado preto (2026-10-30).
 - [x] Taverna no lugar do card do Tomo (2026-10-30): o card do menu lateral (e o ícone do cabeçalho
