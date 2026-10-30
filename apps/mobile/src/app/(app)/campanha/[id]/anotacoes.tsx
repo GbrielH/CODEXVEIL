@@ -7,17 +7,16 @@ import {
   updateCampaignNote,
   type CampaignNote,
 } from '@codexveil/database';
-import { CONTENT_VISIBILITIES, visibilityLabels, type ContentVisibility } from '@codexveil/domain';
+import type { ContentVisibility } from '@codexveil/domain';
 import { fieldErrorsFrom, noteSchema, type FieldErrors } from '@codexveil/validation';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Pencil, Pin, PinOff, Plus, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { Button, IconButton } from '@/components/ui/button';
-import { Chip, ChipRow } from '@/components/ui/controls';
 import { useConfirm } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
-import { AppText, Badge, Card } from '@/components/ui/primitives';
+import { AppText, Card } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states';
 import { useToast } from '@/components/ui/toast';
@@ -41,7 +40,7 @@ const emptyForm: NoteForm = {
   version: 1,
   title: '',
   body: '',
-  visibility: 'members',
+  visibility: 'author',
   isPinned: false,
 };
 
@@ -145,19 +144,7 @@ export default function NotesScreen() {
               onChangeText={(body) => setForm({ ...form, body })}
               error={errors.body}
             />
-            <AppText variant="small" style={{ color: colors.fg }}>
-              Quem vê
-            </AppText>
-            <ChipRow>
-              {CONTENT_VISIBILITIES.map((visibility) => (
-                <Chip
-                  key={visibility}
-                  label={visibilityLabels[visibility]}
-                  selected={form.visibility === visibility}
-                  onPress={() => setForm({ ...form, visibility })}
-                />
-              ))}
-            </ChipRow>
+            <AppText variant="small">Só você lê suas anotações.</AppText>
             <View style={{ flexDirection: 'row', gap: spacing[2] }}>
               <Button
                 label="Cancelar"
@@ -248,16 +235,6 @@ export default function NotesScreen() {
               ) : null}
             </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-              <Badge
-                label={
-                  note.visibility === 'members'
-                    ? 'Geral'
-                    : note.visibility === 'author'
-                      ? 'Pessoal'
-                      : visibilityLabels[note.visibility]
-                }
-                tone={note.visibility === 'members' ? 'neutral' : 'brand'}
-              />
               <AppText variant="small">por {mine ? 'você' : note.authorName}</AppText>
             </View>
             {note.body ? <AppText variant="serif">{note.body}</AppText> : null}

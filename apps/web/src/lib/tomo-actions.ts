@@ -109,7 +109,6 @@ export function extractTomoActions(text: string): { text: string; actions: TomoA
 }
 
 const SYSTEM_NAMES = { dnd5e: 'D&D 5e', tormenta20: 'Tormenta20' } as const;
-const VISIBILITY_NAMES = { grupo: 'visível ao grupo', mestre: 'você e o mestre', so_eu: 'só você' } as const;
 
 export function describeTomoAction(action: TomoAction): { title: string; detail: string } {
   switch (action.acao) {
@@ -121,7 +120,7 @@ export function describeTomoAction(action: TomoAction): { title: string; detail:
         detail: ['Abre a criação já preenchida para você terminar.', action.aparencia].filter(Boolean).join(' '),
       };
     case 'criar_anotacao':
-      return { title: `Criar anotação (${VISIBILITY_NAMES[action.visibilidade]}): ${action.titulo}`, detail: action.texto };
+      return { title: `Criar anotação pessoal: ${action.titulo}`, detail: action.texto };
     case 'criar_criatura':
       return {
         title: `Criar ${action.tipo === 'npc' ? 'NPC' : 'monstro'}: ${action.nome}`,
@@ -166,7 +165,7 @@ export function tomoActionsPrompt(scope: { campaignRole: 'gm' | 'player' | null;
   ];
   if (scope.campaignRole) {
     lines.push(
-      '- criar_anotacao (nesta campanha): {"acao":"criar_anotacao","titulo":"...","texto":"...","visibilidade":"so_eu", "mestre" ou "grupo"}.',
+      '- criar_anotacao (nesta campanha; anotações são pessoais, só a pessoa lê): {"acao":"criar_anotacao","titulo":"...","texto":"..."}.',
     );
   }
   if (scope.campaignRole === 'gm') {

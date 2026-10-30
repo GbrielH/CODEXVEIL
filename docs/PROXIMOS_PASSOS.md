@@ -195,7 +195,8 @@ mapa e notas lado a lado).
 - [x] Tormenta20: campo Idiomas na criação (site e app) e na ficha (`identity.languages`; o livro
       não fixa lista nem quantidade, então é texto livre começando em "Valkar (comum)").
 - [ ] Histórico de moedas (D&D e T20): cada gasto/recebimento pede valor e descrição.
-- [ ] Aba Anotações só individual (cada um vê as próprias).
+- [x] Anotações só individuais (migração `20261030100000`): cada um lê e apaga só as próprias,
+      inclusive o mestre; as compartilhadas viraram do autor. Site, app e Tomo sem opção de visibilidade.
 - [ ] Falha crítica: dragão do GIF cuspindo fogo com "CRÍTICO" no meio do fogo.
 - [ ] Aba "Dados" no perfil: textura própria dos dados e cor do número (pedido de 2026-10-25).
 - [ ] **Taverna:** chat livre e flutuante (acima até do Tomo), com grupos = campanhas e amigos;

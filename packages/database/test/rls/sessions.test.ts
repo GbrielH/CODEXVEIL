@@ -564,33 +564,28 @@ describe('cena e combate', () => {
 });
 
 describe('anotações', () => {
-  it('respeitam a visibilidade escolhida pelo autor', async () => {
+  it('são individuais: cada um vê só as próprias, inclusive o mestre', async () => {
     const { gm, player, otherPlayer, campaign } = await createTable(db);
-    const write = (user: TestUser, title: string, visibility: string) =>
-      db.as(user, (s) =>
-        s.query(
-          `insert into public.campaign_notes (campaign_id, title, visibility) values ($1, $2, $3::public.content_visibility)`,
-          [campaign.id, title, visibility],
-        ),
-      );
-    await write(gm, 'Mapa do reino', 'members');
-    await write(gm, 'Segredos do mestre', 'gm');
-    await write(player, 'Diário de Aria', 'author');
-    await write(player, 'Pergunta ao mestre', 'gm');
+    const write = (user: TestUser, title: string) =>
+      db.as(user, (s) => s.query(`insert into public.campaign_notes (campaign_id, title) values ($1, $2)`, [campaign.id, title]));
+    await write(gm, 'Segredos do mestre');
+    await write(player, 'Diário de Aria');
 
     const titles = async (user: TestUser) =>
       (
         await db.as(user, (s) =>
-          s.query<{ title: string }>(
-            `select title from public.campaign_notes where campaign_id = $1 order by title`,
-            [campaign.id],
-          ),
+          s.query<{ title: string }>(`select title from public.campaign_notes where campaign_id = $1 order by title`, [campaign.id]),
         )
       ).map((row) => row.title);
 
-    expect(await titles(otherPlayer)).toEqual(['Mapa do reino']);
-    expect(await titles(player)).toEqual(['Diário de Aria', 'Mapa do reino', 'Pergunta ao mestre']);
-    expect(await titles(gm)).toEqual(['Mapa do reino', 'Pergunta ao mestre', 'Segredos do mestre']);
+    expect(await titles(otherPlayer)).toEqual([]);
+    expect(await titles(player)).toEqual(['Diário de Aria']);
+    expect(await titles(gm)).toEqual(['Segredos do mestre']);
+    // Compartilhar não é mais possível.
+    await expectSqlError(
+      db.as(gm, (s) => s.query(`insert into public.campaign_notes (campaign_id, title, visibility) values ($1, 'Mapa', 'members')`, [campaign.id])),
+      '23514',
+    );
   });
 
   it('só o autor edita a própria anotação', async () => {

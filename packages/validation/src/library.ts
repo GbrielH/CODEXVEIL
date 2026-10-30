@@ -33,7 +33,8 @@ export type CreatureGmDataInput = z.input<typeof creatureGmDataSchema>;
 export const noteSchema = z.object({
   title: requiredText('o título', 1, 120),
   body: optionalText(20000),
-  visibility: z.enum(CONTENT_VISIBILITIES).default('members'),
+  /** Anotações são individuais (só o autor lê); o banco recusa outros valores. */
+  visibility: z.enum(CONTENT_VISIBILITIES).default('author'),
   isPinned: z.boolean().default(false),
 });
 export type NoteInput = z.input<typeof noteSchema>;

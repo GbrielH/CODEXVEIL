@@ -129,7 +129,7 @@ export async function runTomoAction(
         await createCampaignNote(supabase, campaign.id, {
           title: data.titulo,
           body: data.texto,
-          visibility: data.visibilidade === 'grupo' ? 'members' : data.visibilidade === 'mestre' ? 'gm' : 'author',
+          visibility: 'author',
           isPinned: false,
         });
         revalidatePath(campaignPath(campaign.id, '/anotacoes'));

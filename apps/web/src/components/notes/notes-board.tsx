@@ -10,12 +10,7 @@ import {
   updateCampaignNote,
   type CampaignNote,
 } from '@codexveil/database';
-import {
-  CONTENT_VISIBILITIES,
-  visibilityDescriptions,
-  visibilityLabels,
-  type ContentVisibility,
-} from '@codexveil/domain';
+import type { ContentVisibility } from '@codexveil/domain';
 import {
   IMAGE_EXTENSIONS,
   fieldErrorsFrom,
@@ -23,22 +18,18 @@ import {
   type FieldErrors,
 } from '@codexveil/validation';
 import {
-  Globe,
-  Lock,
   NotebookPen,
   Pencil,
   Pin,
   PinOff,
   Plus,
   Trash2,
-  UserRound,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useId, useState, type ReactNode } from 'react';
-import { Badge } from '@/components/ui/badge';
+import { useId, useState } from 'react';
 import { MenuButton } from '@/components/ui/menu';
 import { Button } from '@/components/ui/button';
-import { SelectField, TextareaField, TextField } from '@/components/ui/field';
+import { TextareaField, TextField } from '@/components/ui/field';
 import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/states';
 import { useToast } from '@/components/ui/toast';
@@ -58,11 +49,6 @@ interface NotesBoardProps {
   canWrite: boolean;
 }
 
-const visibilityIcons: Record<ContentVisibility, ReactNode> = {
-  members: <Globe className="h-3 w-3" aria-hidden="true" />,
-  gm: <Lock className="h-3 w-3" aria-hidden="true" />,
-  author: <UserRound className="h-3 w-3" aria-hidden="true" />,
-};
 
 /** Mural de anotações. O banco só entrega as notas que o usuário pode ver. */
 export function NotesBoard({
@@ -70,7 +56,7 @@ export function NotesBoard({
   notes,
   images = {},
   currentUserId,
-  isGm,
+  isGm: _isGm,
   canWrite,
 }: NotesBoardProps) {
   const router = useRouter();
@@ -135,7 +121,7 @@ export function NotesBoard({
         <ul className="grid gap-4 md:grid-cols-2">
           {notes.map((note) => {
             const mine = note.authorId === currentUserId;
-            const canDelete = canWrite && (mine || (isGm && note.visibility === 'members'));
+            const canDelete = canWrite && mine;
             return (
               <li
                 key={note.id}
@@ -207,16 +193,6 @@ export function NotesBoard({
                   <span>
                     {note.authorName} · {formatRelative(note.updatedAt)}
                   </span>
-                  <Badge
-                    tone={note.visibility === 'members' ? 'neutral' : 'brand'}
-                    icon={visibilityIcons[note.visibility]}
-                  >
-                    {note.visibility === 'members'
-                      ? 'Geral'
-                      : note.visibility === 'author'
-                        ? 'Pessoal'
-                        : visibilityLabels[note.visibility]}
-                  </Badge>
                 </p>
               </li>
             );
@@ -274,7 +250,7 @@ function NoteFormModal({
   const [form, setForm] = useState({
     title: '',
     body: '',
-    visibility: 'members' as ContentVisibility,
+    visibility: 'author' as ContentVisibility,
     isPinned: false,
   });
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -297,7 +273,7 @@ function NoteFormModal({
             visibility: note.visibility,
             isPinned: note.isPinned,
           }
-        : { title: '', body: '', visibility: 'members', isPinned: false },
+        : { title: '', body: '', visibility: 'author', isPinned: false },
     );
   }
 
@@ -407,24 +383,7 @@ function NoteFormModal({
             PNG, JPG ou WebP; a imagem é reduzida antes do envio.
           </span>
         </div>
-        <SelectField
-          id={`${id}-visibility`}
-          label="Quem pode ler"
-          hint={visibilityDescriptions[form.visibility]}
-          value={form.visibility}
-          onChange={(event) =>
-            setForm((current) => ({
-              ...current,
-              visibility: event.target.value as ContentVisibility,
-            }))
-          }
-        >
-          {CONTENT_VISIBILITIES.map((visibility) => (
-            <option key={visibility} value={visibility}>
-              {visibilityLabels[visibility]}
-            </option>
-          ))}
-        </SelectField>
+        <p className="text-xs text-fg-muted">Só você lê suas anotações.</p>
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose} disabled={busy}>
             Cancelar

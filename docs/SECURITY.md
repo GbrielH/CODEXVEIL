@@ -254,3 +254,8 @@ pode usar na página aberta.
   convidado consegue aceitar (os outros recebem a mesma recusa de convite pessoal).
 - Ficha compartilhada é só leitura: as regras de edição não mudaram. O compartilhamento só pode ser
   criado pelo dono, só para amigos, e para de valer quando a amizade é desfeita.
+
+## Anotações individuais (2026-10-30)
+
+`campaign_notes` só é lida, editada e apagada pelo autor (nem o mestre lê as dos jogadores); a
+restrição `campaign_notes_individual` impede criar anotação compartilhada.

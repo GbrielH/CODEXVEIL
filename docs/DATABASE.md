@@ -187,6 +187,9 @@ Migração `20261018120000_gameplay_turns.sql`:
 Migração `20261023100000_session_attendance.sql`: tabela `session_attendance` (presença: `yes`/`no`
 por pessoa e sessão; membros leem; cada um responde só por si, em sessão agendada não iniciada).
 
+Migração `20261030100000_notes_individual.sql`: anotações só individuais (`visibility = 'author'`
+obrigatório; leitura, remoção e imagens só do autor).
+
 Migração `20261027120000_friends_and_shares.sql`: `profiles.friend_code` (8 caracteres, único);
 tabela `friendships` (pedido `pending` ou `accepted`, um registro por par; as duas pessoas leem e
 qualquer uma desfaz) e as funções `request_friend(código | id de quem já joga junto)` e

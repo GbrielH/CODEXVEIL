@@ -117,7 +117,7 @@ begin
 
   insert into public.campaign_notes (campaign_id, author_id, title, body, visibility, is_pinned)
   values
-    (v_campaign, v_gm, '[DEMO] Mapa de Brumafria', 'Vila, capela, cemitério e a estrada do norte.', 'members', true),
-    (v_campaign, v_gm, '[DEMO] Segredos do mestre', 'O diário do padre está sob o altar.', 'gm', false);
+    (v_campaign, v_gm, '[DEMO] Mapa de Brumafria', 'Vila, capela, cemitério e a estrada do norte.', 'author', true),
+    (v_campaign, v_gm, '[DEMO] Segredos do mestre', 'O diário do padre está sob o altar.', 'author', false);
 end;
 $$;
