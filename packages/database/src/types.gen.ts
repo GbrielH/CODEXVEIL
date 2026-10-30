@@ -164,6 +164,7 @@ export type Database = {
           created_at: string;
           id: string;
           items: Json;
+          session_id: string | null;
           title: string;
           updated_at: string;
           version: number;
@@ -173,6 +174,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           items?: Json;
+          session_id?: string | null;
           title: string;
           updated_at?: string;
           version?: number;
@@ -182,6 +184,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           items?: Json;
+          session_id?: string | null;
           title?: string;
           updated_at?: string;
           version?: number;
@@ -192,6 +195,13 @@ export type Database = {
             columns: ['campaign_id'];
             isOneToOne: false;
             referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'campaign_boards_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'sessions';
             referencedColumns: ['id'];
           },
         ];

@@ -19,11 +19,13 @@ export interface Board extends BoardSummary {
   version: number;
 }
 
-export async function listBoards(client: CodexveilClient, campaignId: string): Promise<BoardSummary[]> {
+/** Quadros de uma sessão (o mestre planeja cada sessão no quadro dela). */
+export async function listBoards(client: CodexveilClient, campaignId: string, sessionId: string): Promise<BoardSummary[]> {
   const { data, error } = await client
     .from('campaign_boards')
     .select('id, title, updated_at')
     .eq('campaign_id', campaignId)
+    .eq('session_id', sessionId)
     .order('created_at');
   if (error) throw toAppError(error);
   return data.map((row) => ({ id: row.id, title: row.title, updatedAt: row.updated_at }));
@@ -47,8 +49,12 @@ export async function getBoard(client: CodexveilClient, boardId: string): Promis
   };
 }
 
-export async function createBoard(client: CodexveilClient, campaignId: string, title: string): Promise<string> {
-  const { data, error } = await client.from('campaign_boards').insert({ campaign_id: campaignId, title }).select('id').single();
+export async function createBoard(client: CodexveilClient, campaignId: string, sessionId: string, title: string): Promise<string> {
+  const { data, error } = await client
+    .from('campaign_boards')
+    .insert({ campaign_id: campaignId, session_id: sessionId, title })
+    .select('id')
+    .single();
   if (error) throw toAppError(error);
   return data.id;
 }

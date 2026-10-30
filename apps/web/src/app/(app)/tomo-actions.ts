@@ -204,7 +204,12 @@ export async function runTomoAction(
       case 'criar_quadro': {
         const problem = needCampaign(true);
         if (problem || !campaign) return { ok: false, message: problem ?? '' };
-        const boardId = await createBoard(supabase, campaign.id, data.titulo);
+        // O quadro é de uma sessão: a em andamento ou, sem ela, a mais recente.
+        const sessions = await listSessions(supabase, campaign.id);
+        const target =
+          sessions.find((entry) => entry.status === 'in_progress') ?? [...sessions].sort((a, b) => b.number - a.number)[0];
+        if (!target) return { ok: false, message: 'Crie uma sessão primeiro: cada quadro fica dentro de uma sessão.' };
+        const boardId = await createBoard(supabase, campaign.id, target.id, data.titulo);
         if (data.notas.length) {
           // Notas em grade, 4 por linha.
           const items = data.notas.map((note, index) => ({
@@ -219,7 +224,11 @@ export async function runTomoAction(
           }));
           await saveBoardItems(supabase, boardId, items, 1);
         }
-        return { ok: true, message: 'Quadro criado.', href: `${campaignPath(campaign.id, '/quadros')}?quadro=${boardId}` };
+        return {
+          ok: true,
+          message: `Quadro criado na sessão ${target.number}.`,
+          href: `${campaignPath(campaign.id, `/sessoes/${target.id}/editar`)}?aba=quadro&quadro=${boardId}`,
+        };
       }
       case 'editar_personagem': {
         const character = await resolveCharacter();

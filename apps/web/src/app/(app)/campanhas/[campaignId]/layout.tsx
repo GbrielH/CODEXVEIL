@@ -47,7 +47,6 @@ export default async function CampaignLayout({
   );
   if (isGm) {
     tabs.push(
-      { href: `${base}/quadros` as Route, label: 'Quadros' },
       { href: `${base}/convites` as Route, label: 'Convites' },
       { href: `${base}/configuracoes` as Route, label: 'Configurações' },
     );
