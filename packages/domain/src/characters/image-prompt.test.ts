@@ -22,8 +22,8 @@ describe('characterImagePrompt', () => {
     expect(prompt).toContain('Veterano');
   });
 
-  it('funciona só com o sistema e corta textos longos', () => {
+  it('funciona só com o sistema e leva a história inteira', () => {
     expect(characterImagePrompt({ system: 'Tormenta20' })).toContain('Tormenta20');
-    expect(characterImagePrompt({ system: 'X', backstory: 'a'.repeat(2000) }).length).toBeLessThan(800);
+    expect(characterImagePrompt({ system: 'X', backstory: 'a'.repeat(2000) })).toContain('a'.repeat(2000));
   });
 });
