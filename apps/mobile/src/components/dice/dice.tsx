@@ -1,4 +1,5 @@
 import { rollDice, type DiceRoll } from '@codexveil/database';
+import { DragonFumble } from './dragon-fumble';
 import {
   COMMON_DICE,
   DICE_ROLL_MODES,
@@ -65,6 +66,9 @@ export function DiceProvider({
   const toast = useToast();
   const [throwing, setThrowing] = useState<(ShownRoll & { key: number }) | null>(null);
   const clearThrow = useCallback(() => setThrowing(null), []);
+  // Falha crítica: o dragão (depois que os dados param de rolar).
+  const [fumble, setFumble] = useState<number | null>(null);
+  const clearFumble = useCallback(() => setFumble(null), []);
   const roll = useCallback(
     async (request: RollRequest): Promise<ShownRoll | null> => {
       const mode = request.mode ?? 'normal';
@@ -97,6 +101,7 @@ export function DiceProvider({
       // Uma rolagem nova substitui a animação anterior (só uma por vez na tela).
       setThrowing({ ...shown, key: Date.now() });
       const natural = naturalD20(shown);
+      if (natural === 1) setTimeout(() => setFumble(Date.now()), 1200);
       toast({
         tone: natural === 20 ? 'success' : natural === 1 ? 'danger' : 'info',
         title: `${shown.label ? `${shown.label}: ` : ''}${shown.total}${natural === 20 ? ' (20 natural!)' : natural === 1 ? ' (1 natural)' : ''}`,
@@ -111,6 +116,7 @@ export function DiceProvider({
     <DiceContext.Provider value={value}>
       {children}
       {throwing ? <DiceThrow key={throwing.key} roll={throwing} onDone={clearThrow} /> : null}
+      {fumble ? <DragonFumble key={fumble} onDone={clearFumble} /> : null}
     </DiceContext.Provider>
   );
 }

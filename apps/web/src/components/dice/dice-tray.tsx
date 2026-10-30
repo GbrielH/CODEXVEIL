@@ -289,8 +289,24 @@ export function DiceTray({
   if (!mounted) return null;
   return createPortal(
     <>
-      {/* Crítico (20 natural) ou falha (1 natural): explosão na tela, sem bloquear cliques. */}
-      {last && bubbleKey === last.key && (natural === 20 || natural === 1) ? (
+      {/* Falha crítica (1 natural): o dragão sopra fogo e "CRÍTICO" surge no meio das chamas. */}
+      {last && bubbleKey === last.key && natural === 1 ? (
+        <div
+          key={`dragao-${last.key}`}
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-[90] flex animate-dragon-scene items-center justify-center bg-black/80"
+        >
+          <div className="relative h-[min(80vh,640px)] aspect-[245/320] overflow-hidden rounded-xl shadow-[0_0_80px_rgb(239_68_68/0.5)]">
+            {/* eslint-disable-next-line @next/next/no-img-element -- WebP animado que toca uma vez; a chave reinicia a animação a cada falha */}
+            <img src={`/dados/falha-critica.webp?k=${encodeURIComponent(last.key)}`} alt="" className="h-full w-full object-cover" />
+            <p className="absolute inset-0 flex animate-dragon-word items-center justify-center font-display text-5xl font-bold tracking-[0.2em] text-[#2a0a02] uppercase [text-shadow:0_0_12px_rgb(255_220_120/0.95),0_0_40px_rgb(255_140_0/0.9)] sm:text-7xl">
+              Crítico
+            </p>
+          </div>
+        </div>
+      ) : null}
+      {/* Crítico (20 natural): explosão na tela, sem bloquear cliques. */}
+      {last && bubbleKey === last.key && natural === 20 ? (
         <div
           key={last.key}
           aria-hidden="true"

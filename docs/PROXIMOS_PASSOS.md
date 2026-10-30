@@ -198,7 +198,8 @@ mapa e notas lado a lado).
       saldo e histórico, no site e no app, D&D (PC/PP/PE/PO/PL) e T20 (tibares); o Tomo também registra.
 - [x] Anotações só individuais (migração `20261030100000`): cada um lê e apaga só as próprias,
       inclusive o mestre; as compartilhadas viraram do autor. Site, app e Tomo sem opção de visibilidade.
-- [ ] Falha crítica: dragão do GIF cuspindo fogo com "CRÍTICO" no meio do fogo.
+- [x] Falha crítica: dragão do GIF (site: WebP que toca uma vez, `public/dados/falha-critica.webp`,
+      259 KB; app: 48 quadros em `assets/dragon`) e "CRÍTICO" surge quando o fogo cobre a tela (~2,3 s).
 - [ ] Aba "Dados" no perfil: textura própria dos dados e cor do número (pedido de 2026-10-25).
 - [ ] **Taverna:** chat livre e flutuante (acima até do Tomo), com grupos = campanhas e amigos;
       mensagens apagadas sozinhas depois de 24 horas.
