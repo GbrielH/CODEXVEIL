@@ -1,5 +1,6 @@
 'use client';
 
+import { MoneyPanel } from '../money-panel';
 import {
   createCharacterAbility,
   adjustCharacterItemQuantity,
@@ -36,7 +37,7 @@ import {
   type Dnd5eAttackData,
 } from '@codexveil/rpg-systems/dnd5e';
 import { fieldErrorsFrom, inventoryItemSchema, type FieldErrors } from '@codexveil/validation';
-import { Backpack, Coins, Minus, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Backpack, Minus, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useId, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -65,61 +66,29 @@ export function InventoryTab() {
 }
 
 function CoinsCard() {
-  const { resources, adjustResource, permissions, character, setResources, run } = useSheet();
-  const id = useId();
+  const { resources, permissions, character, setResources } = useSheet();
   const coinResource = (coin: Currency) =>
     resources.find((resource) => resource.key === currencyResourceKey(coin));
   const amounts = Object.fromEntries(
     CURRENCIES.map((coin) => [coin, coinResource(coin)?.current ?? 0]),
   ) as Record<Currency, number>;
 
-  const setAmount = async (coin: Currency, value: number) => {
-    const existing = coinResource(coin);
-    if (existing) {
-      adjustResource(existing, 'set_current', value);
-      return;
-    }
-    // Personagens antigos podem não ter a trilha da moeda: ela é criada na primeira alteração.
-    const created = await run(
-      () =>
-        createCharacterResource(
-          getSupabaseBrowserClient(),
-          character.id,
-          currencyResource(coin, value),
-        ),
-      { failure: `${currencyLabels[coin].name}: valor não salvo` },
-    );
-    if (created) setResources((current) => [...current, created]);
-  };
 
   return (
-    <Card>
-      <CardHeader
-        icon={<Coins className="h-5 w-5" aria-hidden="true" />}
-        title="Moedas"
-        description={`Total ≈ ${totalInGold(amounts).toLocaleString('pt-BR')} PO`}
-      />
-      <div className="grid grid-cols-5 gap-2">
-        {CURRENCIES.map((coin) => (
-          <div key={coin} className="flex flex-col items-center gap-1">
-            <label htmlFor={`${id}-${coin}`} className="text-xs font-semibold text-fg-secondary">
-              <abbr title={currencyLabels[coin].name} className="no-underline">
-                {currencyLabels[coin].abbreviation}
-              </abbr>
-            </label>
-            <NumberInput
-              id={`${id}-${coin}`}
-              value={amounts[coin]}
-              min={0}
-              max={1_000_000}
-              disabled={!permissions.canEditPlay}
-              onCommit={(value) => void setAmount(coin, value ?? 0)}
-              className="h-10 px-1 text-sm"
-            />
-          </div>
-        ))}
-      </div>
-    </Card>
+    <MoneyPanel
+      characterId={character.id}
+      currencies={CURRENCIES.map((coin) => ({ key: currencyResourceKey(coin), label: currencyLabels[coin].abbreviation, amount: amounts[coin] }))}
+      canEdit={permissions.canEditPlay}
+      title={`Moedas · total ≈ ${totalInGold(amounts).toLocaleString('pt-BR')} PO`}
+      onChanged={(saved) => setResources((current) => current.map((entry) => (entry.id === saved.id ? saved : entry)))}
+      ensure={async (key) => {
+        // Personagens antigos podem não ter a trilha da moeda: ela é criada antes do primeiro registro.
+        const coin = CURRENCIES.find((entry) => currencyResourceKey(entry) === key);
+        if (!coin || coinResource(coin)) return;
+        const created = await createCharacterResource(getSupabaseBrowserClient(), character.id, currencyResource(coin, 0));
+        setResources((current) => [...current, created]);
+      }}
+    />
   );
 }
 

@@ -306,6 +306,9 @@ O passo a passo está em [`DEPLOY.md`](DEPLOY.md).
 
 ## Próximo passo exato
 
+- **2026-10-30:** CI corrigido: o lint do site gerava erro quando rodava antes do `next typegen`
+  (corrida com o typecheck); agora `lint` roda `next typegen && eslint .`.
+
 - **2026-10-27:** T20, carga com mochila (`tormenta20/carry.ts`, 3 testes): mochila vestida soma +2
   espaços (Mochila de carga +10) e não ocupa espaço; vale a maior. Site e app.
 

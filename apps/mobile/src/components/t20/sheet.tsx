@@ -70,7 +70,8 @@ import { DiceProvider, useDice } from '@/components/dice/dice';
 import { DeleteCharacterCard } from '@/components/sheet/delete-character';
 import { T20Attacks } from './attacks';
 import { CharacterName } from '@/components/sheet/rename-character';
-import { T20AbilityForm, T20MoneyCard, T20SkillsEditor, T20StatsEditor, T20StoryEditor, T20TempHitPoints } from './editors';
+import { MoneyPanel } from '@/components/sheet/money-panel';
+import { T20AbilityForm, T20SkillsEditor, T20StatsEditor, T20StoryEditor, T20TempHitPoints } from './editors';
 import { ImageUploadButtons } from '@/components/ui/image-upload';
 import { T20AutomaticBonusesCard, T20GrantsCard, T20SituationalCard } from './automation';
 import { LevelGate, type LevelGateInfo } from '@/components/sheet/level-gate';
@@ -721,11 +722,12 @@ function T20SheetBody(props: Props) {
             ) : null}
           </Card>
           {money ? (
-            <T20MoneyCard
-              amount={money.current}
+            <MoneyPanel
+              title="Tibares"
+              characterId={props.character.id}
+              currencies={[{ key: T20_RESOURCE_KEYS.money, label: 'T$', amount: money.current }]}
               canEdit={props.canEditPlay}
-              onSpend={(n) => adjust(T20_RESOURCE_KEYS.money, 'spend', n)}
-              onReceive={(n) => adjust(T20_RESOURCE_KEYS.money, 'set_current', money.current + n)}
+              onChanged={(saved) => setResources((current) => current.map((entry) => (entry.id === saved.id ? saved : entry)))}
             />
           ) : null}
         </>

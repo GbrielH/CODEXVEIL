@@ -2,6 +2,7 @@
 
 import { PendingUpdatesModal } from '../pending-updates-modal';
 import { T20GrantsCard } from './grants-card';
+import { MoneyPanel } from '../money-panel';
 import {
   adjustCharacterResource,
   applyCharacterCondition,
@@ -731,17 +732,15 @@ function T20SheetBody(props: T20SheetScreenProps) {
                 setConditions((current) => current.filter((entry) => entry.id !== condition.id));
             }}
           />
-          <TrackCard
-            title="Tibares"
-            track={money}
-            prefix="T$ "
-            showBar={false}
-            canEdit={permissions.canEditPlay}
-            minus="Gastar"
-            plus="Receber"
-            onMinus={(n) => adjust(T20_RESOURCE_KEYS.money, 'spend', n)}
-            onPlus={(n) => adjust(T20_RESOURCE_KEYS.money, 'set_current', (money?.current ?? 0) + n)}
-          />
+          {money ? (
+            <MoneyPanel
+              title="Tibares"
+              characterId={character.id}
+              currencies={[{ key: T20_RESOURCE_KEYS.money, label: 'T$', amount: money.current }]}
+              canEdit={permissions.canEditPlay}
+              onChanged={(saved) => setResources((current) => current.map((entry) => (entry.id === saved.id ? saved : entry)))}
+            />
+          ) : null}
         </div>
       ) : null}
 

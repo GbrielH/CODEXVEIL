@@ -187,6 +187,10 @@ Migração `20261018120000_gameplay_turns.sql`:
 Migração `20261023100000_session_attendance.sql`: tabela `session_attendance` (presença: `yes`/`no`
 por pessoa e sessão; membros leem; cada um responde só por si, em sessão agendada não iniciada).
 
+Migração `20261030110000_money_log.sql`: tabela `character_money_log` (gastos e recebimentos com
+valor, saldo e descrição; quem vê a ficha lê) e `record_money(personagem, moeda, valor, descrição)`,
+que altera o saldo e registra na mesma transação (recusa saldo negativo).
+
 Migração `20261030100000_notes_individual.sql`: anotações só individuais (`visibility = 'author'`
 obrigatório; leitura, remoção e imagens só do autor).
 

@@ -15,6 +15,7 @@ import {
   getCharacter,
   listCampaignCharacters,
   listCharacterResources,
+  recordMoney,
   saveCharacterSheet,
   listSessionBlocks,
   listSessions,
@@ -267,6 +268,13 @@ export async function runTomoAction(
           data.recurso === 'pv' ? 'hp' : data.recurso === 'pm' ? (t20 ? 'pm' : null) : t20 ? 'tibar' : `currency_${data.moeda ?? 'gp'}`;
         const track = key ? (await listCharacterResources(supabase, character.id)).find((entry) => entry.key === key) : undefined;
         if (!track) return { ok: false, message: 'Esta ficha não tem esse recurso.' };
+        // Dinheiro gasto ou recebido entra no histórico de moedas.
+        if (data.recurso === 'dinheiro' && (data.operacao === 'gastar' || data.operacao === 'receber') && data.valor > 0) {
+          await recordMoney(supabase, character.id, track.key, data.operacao === 'gastar' ? -data.valor : data.valor, 'Pelo Tomo');
+          const href = characterPath(character.id);
+          revalidatePath(href);
+          return { ok: true, message: 'Feito (registrado no histórico de moedas).', href };
+        }
         const operation =
           data.operacao === 'dano' ? 'damage' : data.operacao === 'cura' ? 'heal' : data.operacao === 'gastar' ? 'spend' : 'set_current';
         const amount = data.operacao === 'receber' ? track.current + data.valor : data.valor;

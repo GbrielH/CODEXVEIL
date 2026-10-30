@@ -7,6 +7,7 @@ import {
   setCharacterItemEquipped,
   type CharacterItem,
 } from '@codexveil/database';
+import { MoneyPanel } from './money-panel';
 import {
   ITEM_CATEGORIES,
   groupByCategory,
@@ -27,7 +28,7 @@ import {
 import { fieldErrorsFrom, inventoryItemSchema, type FieldErrors } from '@codexveil/validation';
 import { Minus, Plus, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Button, IconButton } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
@@ -37,54 +38,24 @@ import { colors, radii, spacing } from '@/lib/theme';
 import { useSheet } from './context';
 
 function Coins() {
-  const { resources, adjustResource, canEditPlay, characterId, setResources, run } = useSheet();
-  const [drafts, setDrafts] = useState<Partial<Record<Currency, string>>>({});
-  const amountOf = (coin: Currency) =>
-    resources.find((resource) => resource.key === currencyResourceKey(coin))?.current ?? 0;
-
-  const commit = async (coin: Currency) => {
-    const text = drafts[coin];
-    setDrafts((current) => ({ ...current, [coin]: undefined }));
-    if (text === undefined) return;
-    const value = Number(text.trim() || '0');
-    if (!Number.isInteger(value) || value < 0 || value > 1_000_000) return;
-    const existing = resources.find((resource) => resource.key === currencyResourceKey(coin));
-    if (existing) {
-      adjustResource(existing, 'set_current', value);
-      return;
-    }
-    const created = await run(
-      () => createCharacterResource(getSupabase(), characterId, currencyResource(coin, value)),
-      `${currencyLabels[coin].name}: valor não salvo`,
-    );
-    if (created) setResources((current) => [...current, created]);
-  };
-
-  const amounts = Object.fromEntries(CURRENCIES.map((coin) => [coin, amountOf(coin)])) as Record<
-    Currency,
-    number
-  >;
+  const { resources, canEditPlay, characterId, setResources } = useSheet();
+  const amountOf = (coin: Currency) => resources.find((resource) => resource.key === currencyResourceKey(coin))?.current ?? 0;
+  const amounts = Object.fromEntries(CURRENCIES.map((coin) => [coin, amountOf(coin)])) as Record<Currency, number>;
   return (
-    <Card>
-      <AppText variant="heading">Moedas</AppText>
-      <AppText variant="muted">Total ≈ {totalInGold(amounts).toLocaleString('pt-BR')} PO</AppText>
-      <View style={{ flexDirection: 'row', gap: 6 }}>
-        {CURRENCIES.map((coin) => (
-          <View key={coin} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
-            <AppText variant="small">{currencyLabels[coin].abbreviation}</AppText>
-            <TextInput
-              editable={canEditPlay}
-              value={drafts[coin] ?? String(amounts[coin])}
-              onChangeText={(text) => setDrafts((current) => ({ ...current, [coin]: text }))}
-              onEndEditing={() => void commit(coin)}
-              keyboardType="number-pad"
-              accessibilityLabel={currencyLabels[coin].name}
-              style={styles.coin}
-            />
-          </View>
-        ))}
-      </View>
-    </Card>
+    <MoneyPanel
+      characterId={characterId}
+      title={`Moedas · ≈ ${totalInGold(amounts).toLocaleString('pt-BR')} PO`}
+      currencies={CURRENCIES.map((coin) => ({ key: currencyResourceKey(coin), label: currencyLabels[coin].abbreviation, amount: amounts[coin] }))}
+      canEdit={canEditPlay}
+      onChanged={(saved) => setResources((current) => current.map((entry) => (entry.id === saved.id ? saved : entry)))}
+      ensure={async (key) => {
+        // Fichas antigas podem não ter a trilha da moeda: ela é criada antes do primeiro registro.
+        const coin = CURRENCIES.find((entry) => currencyResourceKey(entry) === key);
+        if (!coin || resources.some((resource) => resource.key === key)) return;
+        const created = await createCharacterResource(getSupabase(), characterId, currencyResource(coin, 0));
+        setResources((current) => [...current, created]);
+      }}
+    />
   );
 }
 

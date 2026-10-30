@@ -1066,3 +1066,52 @@ export async function grantCharacterLevel(client: CodexveilClient, characterId: 
   if (error) throw toAppError(error);
   return data;
 }
+
+// ---------------------------------------------------------------------------
+// Histórico de moedas
+// ---------------------------------------------------------------------------
+
+export interface MoneyLogEntry {
+  id: string;
+  resourceKey: string;
+  amount: number;
+  balance: number;
+  description: string;
+  createdAt: string;
+}
+
+/** Gasta (valor negativo) ou recebe (positivo) e registra com a descrição; devolve a trilha. */
+export async function recordMoney(
+  client: CodexveilClient,
+  characterId: string,
+  resourceKey: string,
+  amount: number,
+  description: string,
+): Promise<CharacterResource> {
+  const { data, error } = await client.rpc('record_money', {
+    p_character_id: characterId,
+    p_resource_key: resourceKey,
+    p_amount: amount,
+    p_description: description,
+  });
+  if (error) throw toAppError(error);
+  return toCharacterResource(data);
+}
+
+export async function listMoneyLog(client: CodexveilClient, characterId: string, limit = 50): Promise<MoneyLogEntry[]> {
+  const { data, error } = await client
+    .from('character_money_log')
+    .select('id, resource_key, amount, balance, description, created_at')
+    .eq('character_id', characterId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw toAppError(error);
+  return data.map((row) => ({
+    id: row.id,
+    resourceKey: row.resource_key,
+    amount: row.amount,
+    balance: row.balance,
+    description: row.description,
+    createdAt: row.created_at,
+  }));
+}

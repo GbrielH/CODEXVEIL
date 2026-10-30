@@ -194,7 +194,8 @@ mapa e notas lado a lado).
       T20 do app ganhou o cartão Personagem com altura, idade, idiomas e textos).
 - [x] Tormenta20: campo Idiomas na criação (site e app) e na ficha (`identity.languages`; o livro
       não fixa lista nem quantidade, então é texto livre começando em "Valkar (comum)").
-- [ ] Histórico de moedas (D&D e T20): cada gasto/recebimento pede valor e descrição.
+- [x] Histórico de moedas (migração `20261030110000`): gastar/receber sempre com valor e descrição,
+      saldo e histórico, no site e no app, D&D (PC/PP/PE/PO/PL) e T20 (tibares); o Tomo também registra.
 - [x] Anotações só individuais (migração `20261030100000`): cada um lê e apaga só as próprias,
       inclusive o mestre; as compartilhadas viraram do autor. Site, app e Tomo sem opção de visibilidade.
 - [ ] Falha crítica: dragão do GIF cuspindo fogo com "CRÍTICO" no meio do fogo.

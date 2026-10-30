@@ -856,6 +856,54 @@ export type Database = {
           },
         ];
       };
+      character_money_log: {
+        Row: {
+          amount: number;
+          author_id: string | null;
+          balance: number;
+          character_id: string;
+          created_at: string;
+          description: string;
+          id: string;
+          resource_key: string;
+        };
+        Insert: {
+          amount: number;
+          author_id?: string | null;
+          balance: number;
+          character_id: string;
+          created_at?: string;
+          description: string;
+          id?: string;
+          resource_key: string;
+        };
+        Update: {
+          amount?: number;
+          author_id?: string | null;
+          balance?: number;
+          character_id?: string;
+          created_at?: string;
+          description?: string;
+          id?: string;
+          resource_key?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'character_money_log_author_id_fkey';
+            columns: ['author_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'character_money_log_character_id_fkey';
+            columns: ['character_id'];
+            isOneToOne: false;
+            referencedRelation: 'characters';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       character_resources: {
         Row: {
           character_id: string;
@@ -2339,6 +2387,21 @@ export type Database = {
         SetofOptions: {
           from: '*';
           to: 'turn_actions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      record_money: {
+        Args: {
+          p_character_id: string;
+          p_resource_key: string;
+          p_amount: number;
+          p_description: string;
+        };
+        Returns: Database['public']['Tables']['character_resources']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'character_resources';
           isOneToOne: true;
           isSetofReturn: false;
         };

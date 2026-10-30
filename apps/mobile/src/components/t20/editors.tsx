@@ -210,32 +210,6 @@ export function T20TempHitPoints({ current, onSet }: { current: number; onSet: (
   );
 }
 
-/** Tibares: gastar e receber. */
-export function T20MoneyCard({ amount, canEdit, onSpend, onReceive }: { amount: number; canEdit: boolean; onSpend: (n: number) => Promise<void>; onReceive: (n: number) => Promise<void> }) {
-  const [value, setValue] = useState('');
-  const n = Math.max(0, Number(value) || 0);
-  return (
-    <Card>
-      <AppText variant="heading">Tibares</AppText>
-      <AppText variant="number">T$ {amount}</AppText>
-      {canEdit ? (
-        <View style={styles.stepper}>
-          <TextInput
-            value={value}
-            onChangeText={(text) => setValue(text.replace(/[^0-9]/g, '').slice(0, 7))}
-            keyboardType="number-pad"
-            placeholder="Valor"
-            placeholderTextColor={colors.fgMuted}
-            accessibilityLabel="Valor em tibares"
-            style={[styles.input, { flex: 1 }]}
-          />
-          <Button compact variant="secondary" label="Gastar" disabled={!n} onPress={() => void onSpend(n).then(() => setValue(''))} />
-          <Button compact variant="secondary" label="Receber" disabled={!n} onPress={() => void onReceive(n).then(() => setValue(''))} />
-        </View>
-      ) : null}
-    </Card>
-  );
-}
 
 /** Tipos que a ficha do Tormenta20 mostra. */
 export const T20_ABILITY_KINDS: { kind: AbilityEntryKind; label: string }[] = [
