@@ -64,4 +64,28 @@ describe('Taverna', () => {
     const all = await db.as(admin, (s) => s.query<{ body: string }>(`select body from public.tavern_messages where campaign_id = $1`, [campaign.id]));
     expect(all.map((row) => row.body)).toEqual(['Nova']);
   });
+
+  it('imagens seguem quem lê a mensagem; o Tomo responde a pedido de quem chamou', async () => {
+    const gm = await db.createUser('mestre-imagem@example.com');
+    const player = await db.createUser('jogador-imagem@example.com');
+    const outsider = await db.createUser('fora-imagem@example.com');
+    const campaign = await createCampaign(db, gm);
+    await addMember(db, campaign.id, player);
+    const path = `tavern/${campaign.id}/mapa.webp`;
+    const canWrite = (who: User) => db.as(who, (s) => s.one<{ ok: boolean }>(`select private.can_write_campaign_media($1) as ok`, [path]));
+    const canRead = (who: User) => db.as(who, (s) => s.one<{ ok: boolean }>(`select private.can_read_campaign_media($1) as ok`, [path]));
+    expect((await canWrite(player)).ok).toBe(true);
+    expect((await canWrite(outsider)).ok).toBe(false);
+
+    await db.as(player, (s) => s.query(`insert into public.tavern_messages (campaign_id, body, image_path) values ($1, '', $2)`, [campaign.id, path]));
+    expect((await canRead(gm)).ok).toBe(true);
+    expect((await canRead(outsider)).ok).toBe(false);
+
+    await db.as(player, (s) => s.query(`select public.tavern_tomo_reply($1, null, 'Saudações, aventureiros!')`, [campaign.id]));
+    const tomo = await db.as(gm, (s) =>
+      s.query<{ from_tomo: boolean; sender_id: string }>(`select from_tomo, sender_id from public.tavern_messages where campaign_id = $1 and from_tomo`, [campaign.id]),
+    );
+    expect(tomo).toEqual([{ from_tomo: true, sender_id: player.id }]);
+    await expectSqlError(db.as(outsider, (s) => s.query(`select public.tavern_tomo_reply($1, null, 'oi')`, [campaign.id])), '42501');
+  });
 });

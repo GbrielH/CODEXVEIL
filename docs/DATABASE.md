@@ -187,6 +187,10 @@ Migração `20261018120000_gameplay_turns.sql`:
 Migração `20261023100000_session_attendance.sql`: tabela `session_attendance` (presença: `yes`/`no`
 por pessoa e sessão; membros leem; cada um responde só por si, em sessão agendada não iniciada).
 
+Migração `20261030130000_tavern_images_tomo.sql`: `tavern_messages.image_path` (pasta `tavern/` do
+bucket; leitura de quem lê a mensagem) e `from_tomo`; `tavern_tomo_reply` grava a resposta do Tomo
+em nome de quem chamou; a limpeza de órfãos considera as imagens da Taverna.
+
 Migração `20261030120000_tavern.sql`: tabela `tavern_messages` (mensagem de campanha ou direta para
 um amigo; lidas só nas últimas 24 horas; o gatilho `tavern_messages_cleanup` apaga as vencidas a
 cada mensagem nova; publicada no Realtime).

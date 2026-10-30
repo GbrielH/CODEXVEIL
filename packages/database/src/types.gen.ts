@@ -2052,7 +2052,9 @@ export type Database = {
           body: string;
           campaign_id: string | null;
           created_at: string;
+          from_tomo: boolean;
           id: string;
+          image_path: string | null;
           recipient_id: string | null;
           sender_id: string;
         };
@@ -2060,7 +2062,9 @@ export type Database = {
           body: string;
           campaign_id?: string | null;
           created_at?: string;
+          from_tomo?: boolean;
           id?: string;
+          image_path?: string | null;
           recipient_id?: string | null;
           sender_id?: string;
         };
@@ -2068,7 +2072,9 @@ export type Database = {
           body?: string;
           campaign_id?: string | null;
           created_at?: string;
+          from_tomo?: boolean;
           id?: string;
+          image_path?: string | null;
           recipient_id?: string | null;
           sender_id?: string;
         };
@@ -2553,6 +2559,14 @@ export type Database = {
           p_rest: Database['public']['Enums']['resource_recovery'];
         };
         Returns: number;
+      };
+      tavern_tomo_reply: {
+        Args: {
+          p_campaign_id: string;
+          p_recipient_id: string;
+          p_body: string;
+        };
+        Returns: undefined;
       };
       tick_character_conditions: {
         Args: {

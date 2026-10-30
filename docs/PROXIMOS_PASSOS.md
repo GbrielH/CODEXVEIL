@@ -203,8 +203,12 @@ mapa e notas lado a lado).
 - [ ] Aba "Dados" no perfil: textura própria dos dados e cor do número (pedido de 2026-10-25).
 - [x] Taverna: capa da campanha no selo da lista (inicial colorida quando não há capa).
 - [ ] Foto do Google como foto de perfil, opcional (quem entra com Google escolhe usar).
-- [ ] Taverna: enviar imagens.
-- [ ] Taverna: chamar o Tomo com "@tomo" para ele responder no chat.
+- [x] Taverna: imagens (clipe ou Ctrl+V no site; galeria no app), em `tavern/` no bucket; só quem lê
+      a mensagem vê; somem com a mensagem (migração `20261030130000`).
+- [x] Taverna: "@tomo" na mensagem faz o Tomo responder no chat (`/api/taverna/tomo`, aceita a sessão
+      do site e o token do app); a resposta aparece como "Tomo · a pedido de …".
+- [x] Taverna: contador vermelho de mensagens não lidas no botão e em cada grupo (lidas guardadas
+      no navegador/aparelho), no site e no app.
 - [x] **Taverna** (migração `20261030120000`): chat livre em tempo real. Site: janela flutuante e
       arrastável acima do Tomo (botão de caneca; bolinha quando chega mensagem). App: botão flutuante
       em todas as telas que abre o chat. Grupos = campanhas ativas e amigos (conversa direta).

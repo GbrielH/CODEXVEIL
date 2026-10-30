@@ -1,7 +1,10 @@
 'use client';
 
 import {
+  CAMPAIGN_MEDIA_BUCKET,
+  countTavernUnread,
   deleteTavernMessage,
+  tavernImagePath,
   listFriends,
   listMyCampaigns,
   listTavernMessages,
@@ -11,7 +14,10 @@ import {
   type TavernChannel,
   type TavernMessage,
 } from '@codexveil/database';
-import { Beer, ScrollText, Send, Trash2, Users, X } from 'lucide-react';
+import { Beer, Paperclip, ScrollText, Send, Trash2, Users, X } from 'lucide-react';
+import Image from 'next/image';
+import { IMAGE_EXTENSIONS } from '@codexveil/validation';
+import { prepareImage } from '@/lib/images';
 import type { AvatarIcon } from '@codexveil/validation';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
@@ -42,56 +48,102 @@ const time = (value: string) => new Date(value).toLocaleTimeString('pt-BR', { ho
  * Taverna: chat livre e flutuante (arrastável, acima até do Tomo). Grupos = campanhas em que a
  * pessoa participa e amigos (conversa direta). Mensagens somem depois de 24 horas.
  */
+/** Quando a pessoa leu cada grupo (neste navegador): `c:<campanha>` ou `f:<amigo>` → data ISO. */
+const readKey = (userId: string) => `codexveil:taverna-lidas:${userId}`;
+function readMarks(userId: string): Record<string, string> {
+  try {
+    return JSON.parse(window.localStorage.getItem(readKey(userId)) ?? '{}') as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+function saveMark(userId: string, channelId: string) {
+  try {
+    window.localStorage.setItem(readKey(userId), JSON.stringify({ ...readMarks(userId), [channelId]: new Date().toISOString() }));
+  } catch {
+    // Sem armazenamento: o contador volta a contar ao recarregar.
+  }
+}
+
 export function TavernHost() {
   const [open, setOpen] = useState(false);
-  const [unread, setUnread] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [unread, setUnread] = useState<Record<string, number>>({});
   const mounted = useSyncExternalStore(subscribeNothing, () => true, () => false);
 
-  // Avisa (bolinha no botão) quando chega mensagem com a janela fechada.
-  const openRef = useRef(open);
   useEffect(() => {
-    openRef.current = open;
-  }, [open]);
-  useEffect(() => {
-    const client = getSupabaseBrowserClient();
-    let first = true;
-    return subscribeToChanges(client, 'taverna-aviso', [{ table: 'tavern_messages' }], {
-      onChange: () => {
-        if (first) {
-          first = false;
-          return;
-        }
-        if (!openRef.current) setUnread(true);
-      },
-    });
+    void getSupabaseBrowserClient()
+      .auth.getUser()
+      .then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
 
+  // Não lidas: mensagens de outras pessoas depois da última leitura de cada grupo (até 24 h atrás).
+  const refresh = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      setUnread(await countTavernUnread(getSupabaseBrowserClient(), userId, readMarks(userId), dayAgo));
+    } catch {
+      // Sem contador agora; tenta de novo na próxima mensagem.
+    }
+  }, [userId]);
+  useEffect(() => {
+    if (!userId) return;
+    return subscribeToChanges(getSupabaseBrowserClient(), 'taverna-aviso', [{ table: 'tavern_messages' }], { onChange: () => void refresh() });
+  }, [userId, refresh]);
+
+  const markRead = useCallback(
+    (channelId: string) => {
+      if (!userId) return;
+      saveMark(userId, channelId);
+      setUnread((current) => ({ ...current, [channelId]: 0 }));
+    },
+    [userId],
+  );
+
+  const total = Object.values(unread).reduce((sum, value) => sum + value, 0);
   if (!mounted) return null;
   return createPortal(
     <>
       {!open ? (
         <button
           type="button"
-          onClick={() => {
-            setOpen(true);
-            setUnread(false);
-          }}
-          aria-label="Abrir a Taverna"
+          onClick={() => setOpen(true)}
+          aria-label={total ? `Abrir a Taverna (${total} mensagens não lidas)` : 'Abrir a Taverna'}
           title="Taverna: converse com o grupo e com amigos"
           className="fixed bottom-20 left-3 z-[110] flex h-12 w-12 items-center justify-center rounded-full border border-line-strong bg-raised text-fg-accent shadow-xl hover:bg-hover lg:bottom-4 lg:left-[calc(var(--sidebar-width,16rem)+1rem)]"
         >
           <Beer className="h-5 w-5" aria-hidden="true" />
-          {unread ? <span className="absolute top-1 right-1 h-3 w-3 rounded-full bg-ember-400 ring-2 ring-raised" aria-label="Mensagens novas" /> : null}
+          {total ? (
+            <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[0.65rem] font-bold text-white ring-2 ring-raised">
+              {total > 99 ? '99+' : total}
+            </span>
+          ) : null}
         </button>
       ) : (
-        <TavernPanel onClose={() => setOpen(false)} />
+        <TavernPanel
+          onClose={() => {
+            setOpen(false);
+            void refresh();
+          }}
+          unread={unread}
+          onRead={markRead}
+        />
       )}
     </>,
     document.body,
   );
 }
 
-function TavernPanel({ onClose }: { onClose: () => void }) {
+function TavernPanel({
+  onClose,
+  unread,
+  onRead,
+}: {
+  onClose: () => void;
+  unread: Record<string, number>;
+  onRead: (channelId: string) => void;
+}) {
   const [userId, setUserId] = useState<string | null>(null);
   const [channels, setChannels] = useState<ChannelOption[] | null>(null);
   const [current, setCurrent] = useState<string>('');
@@ -142,11 +194,12 @@ function TavernPanel({ onClose }: { onClose: () => void }) {
     if (!selected || !userId) return;
     try {
       setMessages(await listTavernMessages(getSupabaseBrowserClient(), userId, selected.channel));
+      onRead(selected.id);
       requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
     } catch (cause) {
       setError(failureMessage(cause, 'Não foi possível carregar as mensagens.'));
     }
-  }, [selected, userId]);
+  }, [selected, userId, onRead]);
 
   useEffect(() => {
     if (!selected) return;
@@ -156,18 +209,57 @@ function TavernPanel({ onClose }: { onClose: () => void }) {
     });
   }, [selected, load]);
 
-  const send = async (event: FormEvent) => {
-    event.preventDefault();
+  // Imagens das mensagens: endereços assinados, renovados a cada recarga da conversa.
+  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const paths = messages.map((message) => message.imagePath).filter((path): path is string => Boolean(path) && !imageUrls[path!]);
+    if (!paths.length) return;
+    void signedMediaUrls(getSupabaseBrowserClient(), paths).then((urls) => setImageUrls((current) => ({ ...current, ...urls })));
+  }, [messages, imageUrls]);
+
+  const [image, setImage] = useState<File | null>(null);
+  const [tomoThinking, setTomoThinking] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const send = async (event?: FormEvent) => {
+    event?.preventDefault();
     const body = draft.trim();
-    if (!body || !selected || busy) return;
+    if ((!body && !image) || !selected || busy || !userId) return;
     setBusy(true);
     setError(null);
     try {
-      await sendTavernMessage(getSupabaseBrowserClient(), selected.channel, body);
+      const client = getSupabaseBrowserClient();
+      let imagePath: string | null = null;
+      if (image) {
+        const prepared = await prepareImage(image, 'scene');
+        if (!prepared.ok) throw new Error(prepared.message);
+        imagePath = tavernImagePath(selected.channel, userId, `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`);
+        const { error: uploadError } = await client.storage
+          .from(CAMPAIGN_MEDIA_BUCKET)
+          .upload(imagePath, prepared.file, { contentType: prepared.mimeType, upsert: false });
+        if (uploadError) throw uploadError;
+      }
+      await sendTavernMessage(client, selected.channel, body, imagePath);
       setDraft('');
+      setImage(null);
       await load();
+      // "@tomo" chama o Tomo para responder na conversa.
+      if (/@tomo\b/i.test(body)) {
+        setTomoThinking(true);
+        void fetch('/api/taverna/tomo', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ channel: selected.channel }),
+        })
+          .then(async (response) => {
+            if (!response.ok) setError(await response.text());
+            await load();
+          })
+          .catch(() => setError('O Tomo não conseguiu responder agora.'))
+          .finally(() => setTomoThinking(false));
+      }
     } catch (cause) {
-      setError(failureMessage(cause, 'A mensagem não foi enviada.'));
+      setError(cause instanceof Error && !('code' in cause) ? cause.message : failureMessage(cause, 'A mensagem não foi enviada.'));
     } finally {
       setBusy(false);
     }
@@ -253,6 +345,11 @@ function TavernPanel({ onClose }: { onClose: () => void }) {
                             <Avatar name={option.label} icon={option.icon ?? null} size="sm" className="!h-7 !w-7" />
                           )}
                           <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                          {!active && unread[option.id] ? (
+                            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[0.6rem] font-bold text-white">
+                              {unread[option.id]! > 99 ? '99+' : unread[option.id]}
+                            </span>
+                          ) : null}
                         </button>
                       </li>
                     );
@@ -291,13 +388,32 @@ function TavernPanel({ onClose }: { onClose: () => void }) {
               <p className="text-sm text-fg-muted">Ninguém falou nada nas últimas 24 horas. Puxe uma cadeira!</p>
             ) : (
               messages.map((message) => {
-                const mine = message.senderId === userId;
+                const mine = message.senderId === userId && !message.fromTomo;
                 return (
                   <div key={message.id} className={cx('group flex gap-2', mine && 'flex-row-reverse')}>
-                    <Avatar name={message.senderName} icon={message.senderIcon} size="sm" />
-                    <div className={cx('max-w-[75%] rounded-lg px-3 py-1.5 text-sm', mine ? 'bg-wine-800 text-parchment-50' : 'bg-sunken text-fg')}>
-                      {!mine ? <p className="text-xs font-semibold text-fg-accent">{message.senderName}</p> : null}
-                      <p className="whitespace-pre-wrap break-words">{message.body}</p>
+                    {message.fromTomo ? (
+                      <Image src="/mestre/icone.webp" alt="" width={32} height={32} className="h-8 w-8 shrink-0 rounded-full bg-sunken" />
+                    ) : (
+                      <Avatar name={message.senderName} icon={message.senderIcon} size="sm" />
+                    )}
+                    <div
+                      className={cx(
+                        'max-w-[75%] rounded-lg px-3 py-1.5 text-sm',
+                        message.fromTomo ? 'border border-wine-400/50 bg-wine-950/60 text-fg' : mine ? 'bg-wine-800 text-parchment-50' : 'bg-sunken text-fg',
+                      )}
+                    >
+                      {message.fromTomo ? (
+                        <p className="text-xs font-semibold text-fg-accent">Tomo · a pedido de {message.senderName}</p>
+                      ) : !mine ? (
+                        <p className="text-xs font-semibold text-fg-accent">{message.senderName}</p>
+                      ) : null}
+                      {message.imagePath && imageUrls[message.imagePath] ? (
+                        <a href={imageUrls[message.imagePath]} target="_blank" rel="noreferrer">
+                          {/* eslint-disable-next-line @next/next/no-img-element -- endereço assinado do Storage */}
+                          <img src={imageUrls[message.imagePath]} alt="Imagem enviada" className="my-1 max-h-60 rounded-md object-contain" />
+                        </a>
+                      ) : null}
+                      {message.body ? <p className="whitespace-pre-wrap break-words">{message.body}</p> : null}
                       <p className="mt-0.5 flex items-center justify-end gap-2 text-[0.65rem] opacity-70">
                         {time(message.createdAt)}
                         {mine ? (
@@ -317,6 +433,15 @@ function TavernPanel({ onClose }: { onClose: () => void }) {
               })
             )}
           </div>
+          {tomoThinking ? <p className="px-3 text-xs text-fg-muted">O Tomo está consultando o grimório…</p> : null}
+          {image ? (
+            <div className="flex items-center gap-2 px-3 text-xs text-fg-secondary">
+              Imagem: {image.name}
+              <button type="button" onClick={() => setImage(null)} aria-label="Tirar a imagem" className="text-fg-muted hover:text-fg">
+                <X className="h-3 w-3" aria-hidden="true" />
+              </button>
+            </div>
+          ) : null}
           {error ? (
             <p role="alert" className="px-3 text-xs text-danger">
               {error}
@@ -324,17 +449,44 @@ function TavernPanel({ onClose }: { onClose: () => void }) {
           ) : null}
           <form onSubmit={(event) => void send(event)} className="flex gap-2 border-t border-line p-2">
             <input
+              ref={fileInput}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              hidden
+              onChange={(event) => {
+                setImage(event.target.files?.[0] ?? null);
+                event.target.value = '';
+              }}
+            />
+            <button
+              type="button"
+              disabled={!selected}
+              onClick={() => fileInput.current?.click()}
+              aria-label="Anexar imagem"
+              title="Anexar imagem (ou cole com Ctrl+V)"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-line text-fg-muted hover:bg-hover hover:text-fg disabled:opacity-50"
+            >
+              <Paperclip className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <input
+              onPaste={(event) => {
+                const file = [...event.clipboardData.files].find((entry) => entry.type.startsWith('image/'));
+                if (file) {
+                  event.preventDefault();
+                  setImage(file);
+                }
+              }}
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               maxLength={1000}
               disabled={!selected}
-              placeholder={selected ? `Mensagem para ${selected.label}…` : 'Escolha um grupo'}
+              placeholder={selected ? `Mensagem para ${selected.label}… (@tomo chama o Tomo)` : 'Escolha um grupo'}
               aria-label="Mensagem"
               className="h-10 min-w-0 flex-1 rounded-md border border-line bg-sunken px-3 text-sm text-fg"
             />
             <button
               type="submit"
-              disabled={busy || !draft.trim() || !selected}
+              disabled={busy || (!draft.trim() && !image) || !selected}
               aria-label="Enviar"
               className="flex h-10 w-10 items-center justify-center rounded-md bg-wine-600 text-parchment-50 hover:bg-wine-500 disabled:opacity-50"
             >
