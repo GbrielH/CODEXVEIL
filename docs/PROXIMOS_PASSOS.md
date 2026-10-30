@@ -205,6 +205,10 @@ mapa e notas lado a lado).
 - [ ] Foto do Google como foto de perfil, opcional (quem entra com Google escolhe usar).
 - [x] Taverna: imagens (clipe ou Ctrl+V no site; galeria no app), em `tavern/` no bucket; só quem lê
       a mensagem vê; somem com a mensagem (migração `20261030130000`).
+- [x] Taverna no lugar do card do Tomo (2026-10-30): o card do menu lateral (e o ícone do cabeçalho
+      no celular) abre a Taverna, com contador de não lidas; o botão flutuante saiu. O chat do Tomo fica
+      fixado no topo da lista de grupos; sem mensagens, o Tomo aparece grande no centro. Só no site (o app
+      não tem Tomo).
 - [x] Taverna: "@tomo" na mensagem faz o Tomo responder no chat (`/api/taverna/tomo`, aceita a sessão
       do site e o token do app); a resposta aparece como "Tomo · a pedido de …".
 - [x] Taverna: contador vermelho de mensagens não lidas no botão e em cada grupo (lidas guardadas

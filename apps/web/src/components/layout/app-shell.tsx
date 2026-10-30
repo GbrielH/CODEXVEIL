@@ -8,8 +8,7 @@ import { Emblem, Wordmark } from '@/components/brand/emblem';
 import { EmberField } from '@/components/brand/ember-field';
 import { Avatar } from '@/components/ui/avatar';
 import { routes } from '@/lib/routes';
-import { AssistantCard, AssistantHost } from './assistant-card';
-import { TavernHost } from '@/components/tavern/tavern';
+import { TavernCard, TavernHost } from '@/components/tavern/tavern';
 import { NavLink } from './nav-link';
 import { ShellFrame, SidebarToggle } from './shell-frame';
 
@@ -88,7 +87,7 @@ function SignOutButton({ compact = false }: { compact?: boolean }) {
 export function AppShell({
   displayName,
   avatarIcon = null,
-  assistant = false,
+  assistant: _assistant = false,
   motion,
   children,
 }: AppShellProps) {
@@ -113,16 +112,16 @@ export function AppShell({
             <NavLink key={item.href} {...item} variant="sidebar" />
           ))}
         </nav>
-        {assistant ? (
+        {
           <div className="px-3 pb-3 group-data-[collapsed=true]/shell:px-2">
             <span className="group-data-[collapsed=true]/shell:hidden">
-              <AssistantCard />
+              <TavernCard />
             </span>
             <span className="hidden group-data-[collapsed=true]/shell:block">
-              <AssistantCard compact />
+              <TavernCard compact />
             </span>
           </div>
-        ) : null}
+        }
         <div className="mx-3 mb-3 flex items-center gap-3 rounded-xl border border-line bg-card/70 px-3 py-3 group-data-[collapsed=true]/shell:mx-2 group-data-[collapsed=true]/shell:flex-col group-data-[collapsed=true]/shell:px-1">
           {/* O cartão do usuário abre o perfil (o menu não tem mais o item "Perfil"). */}
           <Link
@@ -147,7 +146,6 @@ export function AppShell({
         </div>
       </aside>
 
-      {assistant ? <AssistantHost /> : null}
       <TavernHost />
       <div className="flex min-h-dvh min-w-0 flex-col">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-canvas/90 px-4 backdrop-blur lg:hidden">
@@ -162,7 +160,7 @@ export function AppShell({
             </span>
           </Link>
           <div className="flex items-center gap-1">
-            {assistant ? <AssistantCard compact /> : null}
+            <TavernCard compact />
             <Link href={routes.profile} aria-label="Abrir o perfil" className="rounded-full">
               <Avatar name={displayName} size="sm" icon={avatarIcon} />
             </Link>

@@ -85,7 +85,15 @@ function readState(): AssistantState {
 function setState(update: (current: AssistantState) => AssistantState) {
   state = update(readState());
   try {
-    const messages = state.messages.slice(-40).map(({ role, content, campaignId, characterId, done }) => ({ role, content, campaignId, characterId, done }));
+    const messages = state.messages
+      .slice(-40)
+      .map(({ role, content, campaignId, characterId, done }) => ({
+        role,
+        content,
+        campaignId,
+        characterId,
+        done,
+      }));
     window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ open: state.open, messages }));
   } catch {
     // Sem armazenamento (ou cheio): vale só nesta página.
@@ -153,7 +161,18 @@ export function AssistantHost() {
     : null;
 }
 
-function AssistantPanel({ onClose }: { onClose: () => void }) {
+/** Chat do Tomo dentro de outra janela (a Taverna): sem moldura, cabeçalho nem arrasto. */
+export function TomoChat() {
+  return <AssistantPanel onClose={() => undefined} embedded />;
+}
+
+function AssistantPanel({
+  onClose,
+  embedded = false,
+}: {
+  onClose: () => void;
+  embedded?: boolean;
+}) {
   const pathname = usePathname();
   const { messages } = useAssistantState();
   const setMessages = (update: ChatMessage[] | ((current: ChatMessage[]) => ChatMessage[])) =>
@@ -166,9 +185,9 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
   const addFiles = async (files: Iterable<File>) => {
-    const added = (await Promise.all([...files].slice(0, 3).map((file) => toAttachment(file).catch(() => null)))).filter(
-      (item): item is Attachment => item !== null,
-    );
+    const added = (
+      await Promise.all([...files].slice(0, 3).map((file) => toAttachment(file).catch(() => null)))
+    ).filter((item): item is Attachment => item !== null);
     setAttachments((current) => [...current, ...added].slice(0, 3));
   };
   const listRef = useRef<HTMLDivElement>(null);
@@ -206,10 +225,25 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
     const question = draft.trim() || (attachments.length ? 'O que você vê nesta imagem?' : '');
     if (!question || busy) return;
     const sending = attachments;
-    const next: ChatMessage[] = [...messages, { role: 'user', content: question, ...(sending.length ? { images: sending.map((item) => item.preview) } : {}) }];
+    const next: ChatMessage[] = [
+      ...messages,
+      {
+        role: 'user',
+        content: question,
+        ...(sending.length ? { images: sending.map((item) => item.preview) } : {}),
+      },
+    ];
     const campaignId = /^\/campanhas\/([0-9a-f-]{36})/.exec(pathname)?.[1];
     const characterId = /^\/personagens\/([0-9a-f-]{36})/.exec(pathname)?.[1];
-    setMessages([...next, { role: 'assistant', content: '', ...(campaignId ? { campaignId } : {}), ...(characterId ? { characterId } : {}) }]);
+    setMessages([
+      ...next,
+      {
+        role: 'assistant',
+        content: '',
+        ...(campaignId ? { campaignId } : {}),
+        ...(characterId ? { characterId } : {}),
+      },
+    ]);
     setDraft('');
     setAttachments([]);
     setBusy(true);
@@ -255,43 +289,55 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
       style={
         position ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' } : undefined
       }
-      className="fixed right-4 bottom-24 z-[100] flex max-h-[min(640px,calc(100dvh-8rem))] w-[min(420px,calc(100vw-2rem))] flex-col rounded-xl border border-line-strong bg-raised shadow-2xl lg:bottom-6 lg:left-[calc(var(--sidebar-width,16rem)+1rem)] lg:right-auto"
+      className={
+        embedded
+          ? 'flex min-h-0 flex-1 flex-col'
+          : 'fixed right-4 bottom-24 z-[100] flex max-h-[min(640px,calc(100dvh-8rem))] w-[min(420px,calc(100vw-2rem))] flex-col rounded-xl border border-line-strong bg-raised shadow-2xl lg:bottom-6 lg:left-[calc(var(--sidebar-width,16rem)+1rem)] lg:right-auto'
+      }
     >
-      <header
-        onPointerDown={startDrag}
-        title="Arraste para mover"
-        className="flex cursor-grab touch-none items-center gap-2 border-b border-line px-4 py-3 select-none active:cursor-grabbing"
-      >
-        <Image
-          src="/mestre/icone.webp"
-          alt=""
-          width={28}
-          height={28}
-          className="h-7 w-7 rounded-md"
-        />
-        <h2 className="flex-1 text-sm font-medium text-fg">{MASCOT_NAME}, o Mestre</h2>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Fechar"
-          className="rounded p-1 text-fg-muted hover:bg-hover hover:text-fg"
+      {embedded ? null : (
+        <header
+          onPointerDown={startDrag}
+          title="Arraste para mover"
+          className="flex cursor-grab touch-none items-center gap-2 border-b border-line px-4 py-3 select-none active:cursor-grabbing"
         >
-          <X className="h-4 w-4" aria-hidden="true" />
-        </button>
-      </header>
+          <Image
+            src="/mestre/icone.webp"
+            alt=""
+            width={28}
+            height={28}
+            className="h-7 w-7 rounded-md"
+          />
+          <h2 className="flex-1 text-sm font-medium text-fg">{MASCOT_NAME}, o Mestre</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar"
+            className="rounded p-1 text-fg-muted hover:bg-hover hover:text-fg"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </header>
+      )}
       <div ref={listRef} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-2 text-center">
+          <div className="relative m-auto flex max-w-sm flex-col items-center gap-3 py-4 text-center">
+            {/* Boas-vindas: o Tomo grande, com um halo arcano atrás. */}
+            <span
+              aria-hidden="true"
+              className="absolute top-6 h-52 w-52 rounded-full bg-[radial-gradient(circle,rgb(124_92_220/0.35),transparent_70%)] blur-md"
+            />
             <Image
               src="/mestre/feliz.webp"
               alt={`${MASCOT_NAME}, o grimório mestre`}
-              width={160}
-              height={154}
-              className="h-auto w-36"
+              width={240}
+              height={231}
+              className="relative h-auto w-52 drop-shadow-[0_12px_30px_rgb(107_59_198/0.55)]"
             />
-            <p className="text-sm text-fg-muted">
-              Saudações, aventureiro! Eu sou {MASCOT_NAME}. Pergunte sobre regras, a ficha ou a
-              campanha aberta. Só consulto: não mudo nada. Posso errar; a regra do livro vale.
+            <p className="relative font-display text-xl text-fg-accent">Saudações, aventureiro!</p>
+            <p className="relative text-sm text-fg-muted">
+              Eu sou {MASCOT_NAME}. Pergunte sobre regras, a ficha ou a campanha aberta, ou peça
+              para eu criar algo: você confirma antes de gravar. Posso errar; a regra do livro vale.
             </p>
           </div>
         ) : (
@@ -308,7 +354,12 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
                 <span className="mb-1 flex flex-wrap gap-1">
                   {message.images.map((src, imageIndex) => (
                     // eslint-disable-next-line @next/next/no-img-element -- miniatura local (data: URL) da imagem anexada
-                    <img key={imageIndex} src={src} alt="Imagem anexada" className="h-16 w-16 rounded object-cover" />
+                    <img
+                      key={imageIndex}
+                      src={src}
+                      alt="Imagem anexada"
+                      className="h-16 w-16 rounded object-cover"
+                    />
                   ))}
                 </span>
               ) : null}
@@ -341,7 +392,9 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
                       onDone={(result) =>
                         setMessages((current) =>
                           current.map((entry, position) =>
-                            position === index ? { ...entry, done: { ...entry.done, [actionIndex]: result } } : entry,
+                            position === index
+                              ? { ...entry, done: { ...entry.done, [actionIndex]: result } }
+                              : entry,
                           ),
                         )
                       }
@@ -351,7 +404,9 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
               {message.role === 'assistant' && message.content ? (
                 <button
                   type="button"
-                  onClick={() => void navigator.clipboard.writeText(extractTomoActions(message.content).text)}
+                  onClick={() =>
+                    void navigator.clipboard.writeText(extractTomoActions(message.content).text)
+                  }
                   aria-label="Copiar resposta"
                   className="absolute -top-2 -right-2 hidden rounded border border-line bg-raised p-1 text-fg-muted group-hover:block hover:text-fg"
                 >
@@ -367,10 +422,16 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
           {attachments.map((item, index) => (
             <span key={index} className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element -- miniatura local (data: URL) */}
-              <img src={item.preview} alt="Imagem anexada" className="h-14 w-14 rounded-md border border-line object-cover" />
+              <img
+                src={item.preview}
+                alt="Imagem anexada"
+                className="h-14 w-14 rounded-md border border-line object-cover"
+              />
               <button
                 type="button"
-                onClick={() => setAttachments((current) => current.filter((_, position) => position !== index))}
+                onClick={() =>
+                  setAttachments((current) => current.filter((_, position) => position !== index))
+                }
                 aria-label="Remover imagem"
                 className="absolute -top-1.5 -right-1.5 rounded-full border border-line bg-raised p-0.5 text-fg-muted hover:text-fg"
               >
@@ -407,7 +468,9 @@ function AssistantPanel({ onClose }: { onClose: () => void }) {
         </button>
         <textarea
           onPaste={(event) => {
-            const files = [...event.clipboardData.files].filter((file) => file.type.startsWith('image/'));
+            const files = [...event.clipboardData.files].filter((file) =>
+              file.type.startsWith('image/'),
+            );
             if (files.length) {
               event.preventDefault();
               void addFiles(files);

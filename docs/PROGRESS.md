@@ -139,6 +139,10 @@ realtime, criação guiada e duração das condições; todas aplicadas em produ
 demonstração **somente local** e templates de e-mail em português.
 Os detalhes estão em [`DATABASE.md`](DATABASE.md) e [`SECURITY.md`](SECURITY.md).
 
+- 2026-10-30: Taverna substitui o card do Tomo no menu do site; chat do Tomo fixado dentro da
+  Taverna; estados vazios com o Tomo grande. Verificado com `pnpm check` e `pnpm build`; visual não
+  conferido no navegador.
+
 ## Testes e verificações executados
 
 Execução em 2026-10-17, Windows 11, Node 24.20 e pnpm 12.14:
