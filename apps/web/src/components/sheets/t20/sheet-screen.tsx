@@ -63,6 +63,7 @@ import { T20StatsEditor } from './stats-editor';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
+import { ExpandTextButton } from '@/components/ui/expand-text';
 import { TextareaField, TextField } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
 import { Tabs } from '@/components/ui/tabs';
@@ -159,6 +160,25 @@ function T20SheetBody(props: T20SheetScreenProps) {
   const [rollMode, setRollMode] = useState<DiceRollMode>('normal');
   const [sheet, setSheet] = useState(props.sheet);
   const [version, setVersion] = useState(character.version);
+  // Nome editável no cabeçalho: grava ao sair do campo (como no D&D).
+  const [name, setName] = useState(character.name);
+  const [savedName, setSavedName] = useState(character.name);
+  const saveName = async () => {
+    const next = name.trim();
+    if (!next || next === savedName) {
+      setName(savedName);
+      return;
+    }
+    try {
+      const saved = await saveCharacterSheet(getSupabaseBrowserClient(), character.id, version, { name: next });
+      setVersion(saved.version);
+      setSavedName(next);
+      toast({ tone: 'success', title: 'Nome alterado.' });
+    } catch (error) {
+      setName(savedName);
+      toast({ tone: 'danger', title: 'O nome não foi salvo', description: failureMessage(error, 'Tente de novo.') });
+    }
+  };
   const [resources, setResources] = useState(props.resources);
   const [conditions, setConditions] = useState(props.conditions);
   const [items, setItems] = useState(props.items);
@@ -452,7 +472,19 @@ function T20SheetBody(props: T20SheetScreenProps) {
           ) : null}
           <div className="flex flex-1 flex-col gap-1">
             <p className="eyebrow text-wine-300">Tormenta20 · Nível {derived.level} · {t20TierLabels[derived.tier]}</p>
-            <h1 className="text-3xl leading-tight [text-shadow:0_2px_16px_rgb(0_0_0/0.8)] sm:text-4xl">{character.name}</h1>
+            <h1 className="sr-only">{name}</h1>
+            <input
+              aria-label="Nome do personagem"
+              value={name}
+              maxLength={80}
+              readOnly={!permissions.canEditSheet}
+              onChange={(event) => setName(event.target.value)}
+              onBlur={() => void saveName()}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') event.currentTarget.blur();
+              }}
+              className="-mx-1 w-full rounded-md border border-transparent bg-transparent px-1 font-display text-3xl leading-tight text-fg [text-shadow:0_2px_16px_rgb(0_0_0/0.8)] hover:border-line read-only:hover:border-transparent focus-visible:border-parchment-300 focus-visible:outline-none sm:text-4xl"
+            />
             <p className="text-fg-secondary">
               {[
                 sheet.identity.race,
@@ -1472,6 +1504,14 @@ function StoryCard({
           disabled={!canEdit}
           onChange={(event) => setForm({ ...form, appearance: event.target.value })}
         />
+        <div className="-mt-3 flex justify-end">
+          <ExpandTextButton
+            title="Aparência"
+            value={form.appearance}
+            maxLength={4000}
+            onChange={canEdit ? (value) => setForm({ ...form, appearance: value }) : undefined}
+          />
+        </div>
         <TextareaField
           id="t20-personality"
           label="Personalidade"
@@ -1481,6 +1521,14 @@ function StoryCard({
           disabled={!canEdit}
           onChange={(event) => setForm({ ...form, personality: event.target.value })}
         />
+        <div className="-mt-3 flex justify-end">
+          <ExpandTextButton
+            title="Personalidade"
+            value={form.personality}
+            maxLength={4000}
+            onChange={canEdit ? (value) => setForm({ ...form, personality: value }) : undefined}
+          />
+        </div>
         <TextareaField
           id="t20-history"
           label="História"
@@ -1490,6 +1538,14 @@ function StoryCard({
           disabled={!canEdit}
           onChange={(event) => setForm({ ...form, history: event.target.value })}
         />
+        <div className="-mt-3 flex justify-end">
+          <ExpandTextButton
+            title="História"
+            value={form.history}
+            maxLength={8000}
+            onChange={canEdit ? (value) => setForm({ ...form, history: value }) : undefined}
+          />
+        </div>
         <TextareaField
           id="t20-notes"
           label="Anotações"

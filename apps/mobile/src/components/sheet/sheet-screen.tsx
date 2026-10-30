@@ -13,6 +13,7 @@ import {
   type CharacterItem,
   type CharacterResource,
 } from '@codexveil/database';
+import { CharacterName } from '@/components/sheet/rename-character';
 import { Dnd5ePendingUpdates } from './pending-updates';
 import { applyTrackOperation, type TrackOperation } from '@codexveil/domain';
 import {
@@ -97,6 +98,8 @@ export function SheetScreen(props: SheetScreenProps) {
     },
   });
   const sheet = autosave.value;
+  // Nome (renomear grava na hora, fora do autosave da ficha).
+  const [name, setName] = useState(character.name);
   // CA, deslocamento e atributos vêm do que está equipado e das características (automático).
   const derived = computeDnd5eDerived(sheet, {
     items,
@@ -263,7 +266,7 @@ export function SheetScreen(props: SheetScreenProps) {
         <Dnd5ePendingUpdates isOwner={character.viewer.isOwner} />
         <Screen
           eyebrow={character.campaign?.name ?? 'Sem campanha'}
-          title={character.name}
+          title={name}
           subtitle={`${summary.subtitle} · ${character.ownerName}`}
         >
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
@@ -400,6 +403,18 @@ export function SheetScreen(props: SheetScreenProps) {
           {tab === 'atributos' && inCampaign ? <FeaturesSection show="passive" /> : null}
           {tab === 'inventario' ? <InventorySection /> : null}
           {tab === 'habilidades' && !inCampaign ? <FeaturesSection /> : null}
+          {tab === 'personagem' && props.canEditSheet ? (
+            <CharacterName
+              characterId={character.id}
+              name={name}
+              version={autosave.state.version}
+              canEdit
+              onRenamed={(next, version) => {
+                setName(next);
+                autosave.adoptVersion(version);
+              }}
+            />
+          ) : null}
           {tab === 'personagem' ? <StorySection /> : null}
           {tab === 'evolucao' ? (
             <EvolutionSection

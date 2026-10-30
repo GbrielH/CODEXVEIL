@@ -54,6 +54,27 @@ export const tomoActionSchema = z.discriminatedUnion('acao', [
     notas: z.array(z.string().trim().min(1).max(2000)).max(24).default([]),
   }),
   z.object({
+    acao: z.literal('editar_personagem'),
+    nome: z.string().trim().max(80).optional(),
+    aparencia: z.string().trim().max(4000).optional(),
+    personalidade: z.string().trim().max(4000).optional(),
+    historia: z.string().trim().max(20000).optional(),
+  }),
+  z.object({
+    acao: z.literal('ajustar_recurso'),
+    recurso: z.enum(['pv', 'pm', 'dinheiro']),
+    operacao: z.enum(['dano', 'cura', 'gastar', 'receber', 'definir']),
+    valor: z.number().int().min(0).max(1_000_000),
+    /** D&D: moeda (cp, sp, ep, gp, pp); padrão ouro. */
+    moeda: z.enum(['cp', 'sp', 'ep', 'gp', 'pp']).catch('gp').optional(),
+  }),
+  z.object({
+    acao: z.literal('habilidade_no_personagem'),
+    tipo: z.enum(['habilidade', 'poder', 'magia', 'talento']).catch('habilidade'),
+    nome: required(120),
+    descricao: text(8000),
+  }),
+  z.object({
     acao: z.literal('item_no_personagem'),
     nome: required(120),
     categoria: category,
@@ -114,6 +135,18 @@ export function describeTomoAction(action: TomoAction): { title: string; detail:
       return { title: `Nota do mestre na sessão ${action.sessao}`, detail: action.texto };
     case 'criar_quadro':
       return { title: `Criar quadro: ${action.titulo}`, detail: action.notas.length ? `${action.notas.length} nota(s): ${action.notas.slice(0, 3).join(' · ')}` : '' };
+    case 'editar_personagem':
+      return {
+        title: `Alterar a ficha${action.nome ? `: nome → ${action.nome}` : ''}`,
+        detail: [action.aparencia && 'aparência', action.personalidade && 'personalidade', action.historia && 'história'].filter(Boolean).join(', '),
+      };
+    case 'ajustar_recurso': {
+      const what = { pv: 'PV', pm: 'PM', dinheiro: 'dinheiro' }[action.recurso];
+      const verb = { dano: 'Dano em', cura: 'Curar', gastar: 'Gastar', receber: 'Receber', definir: 'Definir' }[action.operacao];
+      return { title: `${verb} ${what}: ${action.valor}`, detail: '' };
+    }
+    case 'habilidade_no_personagem':
+      return { title: `Adicionar à ficha (${action.tipo}): ${action.nome}`, detail: action.descricao };
     case 'item_no_personagem':
       return { title: `Adicionar ao inventário: ${action.quantidade}× ${action.nome}`, detail: action.descricao };
   }
@@ -148,8 +181,13 @@ export function tomoActionsPrompt(scope: { campaignRole: 'gm' | 'player' | null;
   if (scope.characterEditable) {
     lines.push(
       '- item_no_personagem (no personagem aberto): {"acao":"item_no_personagem","nome":"...","categoria":"gear","quantidade":1,"descricao":"..."}.',
+      '- editar_personagem (no personagem aberto): {"acao":"editar_personagem","nome":"...","aparencia":"...","personalidade":"...","historia":"..."} (mande só os campos que mudam).',
+      '- ajustar_recurso (no personagem aberto): {"acao":"ajustar_recurso","recurso":"pv"|"pm"|"dinheiro","operacao":"dano"|"cura"|"gastar"|"receber"|"definir","valor":10} (D&D: "moeda":"gp" etc.).',
+      '- habilidade_no_personagem (no personagem aberto): {"acao":"habilidade_no_personagem","tipo":"habilidade"|"poder"|"magia"|"talento","nome":"...","descricao":"..."}.',
     );
   }
-  lines.push('Se a pessoa pedir algo fora dessa lista, diga onde ela faz isso na plataforma.');
+  lines.push(
+    'Faça exatamente o que a pessoa pediu, com a ação certa. NUNCA troque o pedido por uma anotação: anotação só quando ela pedir uma anotação. Se nenhuma ação da lista serve, diga isso e onde ela faz na plataforma.',
+  );
   return lines.join('\n');
 }

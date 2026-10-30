@@ -12,7 +12,7 @@ interface ModalProps {
   description?: ReactNode;
   children: ReactNode;
   /** Largura máxima do painel. */
-  size?: 'md' | 'lg';
+  size?: 'md' | 'lg' | 'full';
   /** Impede fechar (Esc/botão) enquanto uma operação está em andamento. */
   busy?: boolean;
 }
@@ -87,7 +87,7 @@ export function Modal({
           tabIndex={-1}
           className={cx(
             'max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-lg border border-line-strong bg-raised text-fg shadow-overlay outline-none',
-            size === 'lg' ? 'max-w-2xl' : 'max-w-lg',
+            size === 'full' ? 'h-[calc(100dvh-2rem)] max-w-5xl' : size === 'lg' ? 'max-w-2xl' : 'max-w-lg',
           )}
         >
           <div className="flex flex-col gap-4 p-5 sm:p-6">

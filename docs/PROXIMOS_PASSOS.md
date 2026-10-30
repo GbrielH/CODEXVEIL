@@ -183,6 +183,22 @@ mapa e notas lado a lado).
 - [x] Respostas na ficha (site), visíveis só para o jogador e o mestre.
 - [ ] Ver e corrigir as respostas na ficha do app; editar as respostas depois de criado.
 
+### B0h. Melhorias pedidas em 2026-10-30 (Tormenta e D&D, site e app)
+
+- [x] Nome do personagem editável: cabeçalho do T20 no site; lápis nas fichas D&D e T20 do app.
+- [x] Tomo: reconhece a ficha também na aba "Meu personagem" da campanha; ações novas para
+      alterar a ficha (nome e textos), PV/PM/dinheiro e adicionar habilidade; nunca troca o pedido
+      por anotação.
+- [x] Prompts de imagem com aparência, personalidade e história completas (D&D passou a mandar).
+- [x] História, personalidade e aparência com "Tela cheia" (ler e editar) no site.
+- [ ] Tormenta20: seleção de idiomas (criação e ficha).
+- [ ] Histórico de moedas (D&D e T20): cada gasto/recebimento pede valor e descrição.
+- [ ] Aba Anotações só individual (cada um vê as próprias).
+- [ ] Falha crítica: dragão do GIF cuspindo fogo com "CRÍTICO" no meio do fogo.
+- [ ] Aba "Dados" no perfil: textura própria dos dados e cor do número (pedido de 2026-10-25).
+- [ ] **Taverna:** chat livre e flutuante (acima até do Tomo), com grupos = campanhas e amigos;
+      mensagens apagadas sozinhas depois de 24 horas.
+
 ### B0g. Habilidades automáticas (2026-10-27)
 
 **Tormenta20** (em andamento):

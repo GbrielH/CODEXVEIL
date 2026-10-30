@@ -73,6 +73,9 @@ function DndImagePrompt({ variant }: { variant: 'portrait' | 'token' }) {
     background: sheet.identity.background,
     alignment: sheet.identity.alignment,
     age: sheet.details.age,
+    appearance: sheet.details.appearance,
+    personality: sheet.details.personality,
+    backstory: sheet.details.backstory,
   };
   return (
     <ImagePromptCard

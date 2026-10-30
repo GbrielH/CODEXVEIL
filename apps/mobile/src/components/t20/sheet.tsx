@@ -69,6 +69,7 @@ import { Notice } from '@/components/ui/states';
 import { DiceProvider, useDice } from '@/components/dice/dice';
 import { DeleteCharacterCard } from '@/components/sheet/delete-character';
 import { T20Attacks } from './attacks';
+import { CharacterName } from '@/components/sheet/rename-character';
 import { T20AbilityForm, T20MoneyCard, T20SkillsEditor, T20StatsEditor, T20TempHitPoints } from './editors';
 import { ImageUploadButtons } from '@/components/ui/image-upload';
 import { T20AutomaticBonusesCard, T20GrantsCard, T20SituationalCard } from './automation';
@@ -121,6 +122,7 @@ function T20SheetBody(props: Props) {
   const [rollMode, setRollMode] = useState<DiceRollMode>('normal');
   const [sheet, setSheet] = useState(props.sheet);
   const [version, setVersion] = useState(props.character.version);
+  const [characterName, setCharacterName] = useState(props.character.name);
   const [resources, setResources] = useState(props.resources);
   const [conditions, setConditions] = useState(props.conditions);
   const [abilities, setAbilities] = useState(props.abilities);
@@ -401,7 +403,16 @@ function T20SheetBody(props: Props) {
           </Pressable>
         </Modal>
         <AppText variant="eyebrow">Tormenta20 · nível {derived.level}</AppText>
-        <AppText variant="title">{props.character.name}</AppText>
+        <CharacterName
+          characterId={props.character.id}
+          name={characterName}
+          version={version}
+          canEdit={props.canEditSheet}
+          onRenamed={(next, nextVersion) => {
+            setCharacterName(next);
+            setVersion(nextVersion);
+          }}
+        />
         <AppText variant="small">
           {[
             sheet.identity.race,

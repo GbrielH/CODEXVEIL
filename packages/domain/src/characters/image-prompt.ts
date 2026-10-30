@@ -45,10 +45,10 @@ export function characterImagePrompt(input: CharacterImageInput): string {
     input.alignment ? `Tendência: ${clip(input.alignment, 40)}.` : '',
     input.age ? `Idade: ${clip(input.age, 40)}.` : '',
     looks.length ? `Aparência física: ${looks.join(', ')}.` : '',
-    input.appearance ? `Descrição: ${clip(input.appearance, 500)}.` : '',
+    input.appearance ? `Descrição: ${clip(input.appearance, 8000)}.` : '',
     input.equipment?.length ? `Equipamento visível: ${input.equipment.slice(0, 6).join(', ')}.` : '',
-    input.personality ? `Personalidade que deve transparecer na pose e na expressão: ${clip(input.personality, 300)}.` : '',
-    input.backstory ? `Contexto da história: ${clip(input.backstory, 400)}.` : '',
+    input.personality ? `Personalidade que deve transparecer na pose e na expressão: ${clip(input.personality, 8000)}.` : '',
+    input.backstory ? `Contexto da história: ${clip(input.backstory, 20000)}.` : '',
     'Estilo: pintura digital de fantasia, iluminação dramática, meio corpo, fundo que combine com a origem do personagem, alta riqueza de detalhes, sem texto nem marca d’água.',
   ];
   return parts.filter(Boolean).join('\n');

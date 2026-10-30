@@ -1,5 +1,6 @@
 'use client';
 
+import { ExpandTextButton } from '@/components/ui/expand-text';
 import {
   ADVANCEMENT_MODES,
   ALIGNMENTS,
@@ -267,12 +268,21 @@ function DetailsCard() {
         ))}
         {fields.map((field) => (
           <div key={field.key} className={field.rows >= 6 ? 'md:col-span-2' : undefined}>
-            <label
-              htmlFor={`${id}-${field.key}`}
-              className="mb-1 block font-display text-sm font-semibold tracking-wide text-ink"
-            >
-              {field.label}
-            </label>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <label htmlFor={`${id}-${field.key}`} className="block font-display text-sm font-semibold tracking-wide text-ink">
+                {field.label}
+              </label>
+              <ExpandTextButton
+                title={field.label}
+                value={sheet.details[field.key]}
+                maxLength={field.max}
+                onChange={
+                  permissions.canEditSheet
+                    ? (value) => updateSheet((current) => ({ ...current, details: { ...current.details, [field.key]: value } }))
+                    : undefined
+                }
+              />
+            </div>
             <textarea
               id={`${id}-${field.key}`}
               rows={field.rows}

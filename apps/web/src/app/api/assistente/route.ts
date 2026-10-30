@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { characterAccessInput, getCampaign, getCharacter, listSessions } from '@codexveil/database';
+import { characterAccessInput, getCampaign, getCharacter, listCampaignCharacters, listSessions } from '@codexveil/database';
 import { canEditCharacterPlayState } from '@codexveil/domain';
 import { uuidSchema } from '@codexveil/validation';
 import { z } from 'zod';
@@ -83,7 +83,11 @@ async function buildContext(pathname: string, userId: string): Promise<string> {
       }
     }
   }
-  const characterId = /^\/personagens\/([^/]+)/.exec(pathname)?.[1];
+  let characterId = /^\/personagens\/([^/]+)/.exec(pathname)?.[1];
+  // Aba "Meu personagem" da campanha: a ficha é a do personagem da pessoa nessa campanha.
+  if (!characterId && campaignId && /^\/campanhas\/[^/]+\/personagem/.test(pathname) && uuidSchema.safeParse(campaignId).success) {
+    characterId = (await listCampaignCharacters(supabase, campaignId)).find((entry) => entry.ownerId === userId)?.id;
+  }
   if (characterId && uuidSchema.safeParse(characterId).success) {
     const character = await getCharacter(supabase, characterId, userId);
     if (character) {

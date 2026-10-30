@@ -5,19 +5,24 @@ import {
   createCampaign,
   createCampaignItem,
   createCampaignNote,
+  createCharacterAbility,
   createCharacterItem,
   createCreature,
   createSession,
   createSessionBlock,
   getCampaign,
+  adjustCharacterResource,
   getCharacter,
+  listCampaignCharacters,
+  listCharacterResources,
+  saveCharacterSheet,
   listSessionBlocks,
   listSessions,
   saveBoardItems,
   saveCharacterDraft,
   updateCreatureGmData,
 } from '@codexveil/database';
-import { canEditCharacterPlayState, positionBetween } from '@codexveil/domain';
+import { canEditCharacterPlayState, canEditCharacterSheet, positionBetween } from '@codexveil/domain';
 import { createDnd5eDraft } from '@codexveil/rpg-systems/dnd5e';
 import { createT20Draft } from '@codexveil/rpg-systems/tormenta20';
 import { uuidSchema } from '@codexveil/validation';
@@ -52,6 +57,14 @@ export async function runTomoAction(
   try {
     const supabase = await createSupabaseServerClient();
     const campaign = campaignId ? await getCampaign(supabase, campaignId, user.id) : null;
+    // Ficha em questão: a aberta (/personagens/…) ou, dentro de uma campanha ("Meu personagem"),
+    // o personagem da pessoa nela.
+    const resolveCharacter = async () => {
+      if (characterId) return getCharacter(supabase, characterId, user.id);
+      if (!campaign) return null;
+      const own = (await listCampaignCharacters(supabase, campaign.id)).find((entry) => entry.ownerId === user.id);
+      return own ? getCharacter(supabase, own.id, user.id) : null;
+    };
     const needCampaign = (gmOnly: boolean) => {
       if (!campaign) return 'Abra a campanha antes de pedir isso ao Tomo.';
       if (campaign.status !== 'active') return 'A campanha está arquivada.';
@@ -207,9 +220,81 @@ export async function runTomoAction(
         }
         return { ok: true, message: 'Quadro criado.', href: `${campaignPath(campaign.id, '/quadros')}?quadro=${boardId}` };
       }
+      case 'editar_personagem': {
+        const character = await resolveCharacter();
+        if (!character) return { ok: false, message: 'Não achei o personagem: abra a ficha dele (ou a aba Meu personagem da campanha).' };
+        if (!canEditCharacterSheet(characterAccessInput(character))) return { ok: false, message: 'Você não pode alterar esta ficha.' };
+        const sheet = (character.sheet ?? {}) as Record<string, Record<string, unknown> | undefined>;
+        const texts = { aparencia: data.aparencia, personalidade: data.personalidade, historia: data.historia };
+        let next: unknown = character.sheet;
+        if (Object.values(texts).some((value) => value !== undefined)) {
+          if (character.systemId === 'tormenta20') {
+            next = {
+              ...sheet,
+              identity: {
+                ...sheet.identity,
+                ...(texts.aparencia !== undefined ? { appearance: texts.aparencia } : {}),
+                ...(texts.personalidade !== undefined ? { personality: texts.personalidade } : {}),
+                ...(texts.historia !== undefined ? { history: texts.historia } : {}),
+              },
+            };
+          } else {
+            next = {
+              ...sheet,
+              details: {
+                ...sheet.details,
+                ...(texts.aparencia !== undefined ? { appearance: texts.aparencia } : {}),
+                ...(texts.personalidade !== undefined ? { personality: texts.personalidade } : {}),
+                ...(texts.historia !== undefined ? { backstory: texts.historia } : {}),
+              },
+            };
+          }
+        }
+        await saveCharacterSheet(supabase, character.id, character.version, {
+          ...(data.nome ? { name: data.nome } : {}),
+          ...(next !== character.sheet ? { sheet: next } : {}),
+        });
+        const href = characterPath(character.id);
+        revalidatePath(href);
+        return { ok: true, message: 'Ficha alterada.', href };
+      }
+      case 'ajustar_recurso': {
+        const character = await resolveCharacter();
+        if (!character) return { ok: false, message: 'Não achei o personagem: abra a ficha dele (ou a aba Meu personagem da campanha).' };
+        if (!canEditCharacterPlayState(characterAccessInput(character))) return { ok: false, message: 'Você não pode alterar este personagem.' };
+        const t20 = character.systemId === 'tormenta20';
+        const key =
+          data.recurso === 'pv' ? 'hp' : data.recurso === 'pm' ? (t20 ? 'pm' : null) : t20 ? 'tibar' : `currency_${data.moeda ?? 'gp'}`;
+        const track = key ? (await listCharacterResources(supabase, character.id)).find((entry) => entry.key === key) : undefined;
+        if (!track) return { ok: false, message: 'Esta ficha não tem esse recurso.' };
+        const operation =
+          data.operacao === 'dano' ? 'damage' : data.operacao === 'cura' ? 'heal' : data.operacao === 'gastar' ? 'spend' : 'set_current';
+        const amount = data.operacao === 'receber' ? track.current + data.valor : data.valor;
+        await adjustCharacterResource(supabase, track.id, operation, amount);
+        const href = characterPath(character.id);
+        revalidatePath(href);
+        return { ok: true, message: 'Feito.', href };
+      }
+      case 'habilidade_no_personagem': {
+        const character = await resolveCharacter();
+        if (!character) return { ok: false, message: 'Não achei o personagem: abra a ficha dele (ou a aba Meu personagem da campanha).' };
+        if (!canEditCharacterSheet(characterAccessInput(character))) return { ok: false, message: 'Você não pode alterar esta ficha.' };
+        const kind = data.tipo === 'magia' ? 'spell' : data.tipo === 'poder' || data.tipo === 'talento' ? 'feat' : 'class_feature';
+        await createCharacterAbility(supabase, character.id, {
+          kind,
+          name: data.nome,
+          source: 'Adicionado pelo Tomo',
+          description: data.descricao,
+          data: {},
+          resourceId: null,
+        });
+        const href = characterPath(character.id);
+        revalidatePath(href);
+        return { ok: true, message: 'Adicionado à ficha.', href };
+      }
       case 'item_no_personagem': {
-        const character = characterId ? await getCharacter(supabase, characterId, user.id) : null;
-        if (!character) return { ok: false, message: 'Abra a ficha do personagem antes de pedir isso ao Tomo.' };
+        const character = await resolveCharacter();
+        if (!character) return { ok: false, message: 'Não achei o personagem: abra a ficha dele (ou a aba Meu personagem da campanha).' };
         if (!canEditCharacterPlayState(characterAccessInput(character))) return { ok: false, message: 'Você não pode alterar o inventário deste personagem.' };
         await createCharacterItem(supabase, character.id, {
           name: data.nome,
