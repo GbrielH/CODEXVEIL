@@ -560,7 +560,7 @@ function TavernPanel({
             <>
               <div
                 ref={listRef}
-                className="flex-1 space-y-2 overflow-y-auto px-3 py-2"
+                className="relative flex-1 space-y-2 overflow-y-auto px-3 py-2"
                 aria-live="polite"
               >
                 {channels === null ? (
@@ -570,16 +570,29 @@ function TavernPanel({
                     Entre numa campanha ou adicione amigos para conversar aqui.
                   </p>
                 ) : messages.length === 0 ? (
-                  <div className="flex h-full flex-col items-center justify-center gap-2 py-4 text-center">
+                  // Chat vazio: a cena da taverna (campanhas e amigos têm a sua) com o convite por cima.
+                  <div className="absolute inset-0 flex flex-col items-center justify-end overflow-hidden px-6 pb-8 text-center">
                     <Image
-                      src="/mestre/feliz.webp"
+                      src={
+                        selected?.group === 'Amigos'
+                          ? '/taverna/amigos.webp'
+                          : '/taverna/campanhas.webp'
+                      }
                       alt=""
-                      width={200}
-                      height={192}
-                      className="h-auto w-40 opacity-90 drop-shadow-[0_10px_24px_rgb(107_59_198/0.45)]"
+                      fill
+                      sizes="400px"
+                      className="object-cover"
                     />
-                    <p className="font-display text-lg text-fg-accent">A taverna está quieta…</p>
-                    <p className="max-w-xs text-sm text-fg-muted">
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-0 bg-gradient-to-t from-raised via-raised/40 to-transparent"
+                    />
+                    <p className="relative font-display text-lg text-parchment-100 drop-shadow">
+                      {selected?.group === 'Amigos'
+                        ? 'Uma mesa só para vocês…'
+                        : 'A taverna está quieta…'}
+                    </p>
+                    <p className="relative max-w-xs text-sm text-fg-secondary">
                       Ninguém falou nada nas últimas 24 horas. Puxe uma cadeira! Escreva @tomo para
                       chamar o Tomo.
                     </p>

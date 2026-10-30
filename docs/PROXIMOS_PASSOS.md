@@ -207,6 +207,8 @@ mapa e notas lado a lado).
       `lh*.googleusercontent.com`; o site só aceita a foto da própria conta). Sem migração, sem upload.
 - [x] Taverna: imagens (clipe ou Ctrl+V no site; galeria no app), em `tavern/` no bucket; só quem lê
       a mensagem vê; somem com a mensagem (migração `20261030130000`).
+- [x] Taverna: cenas de fundo nos chats vazios (Tomo, campanhas e amigos, uma imagem cada) e Tomo
+      sem o quadrado preto (2026-10-30).
 - [x] Taverna no lugar do card do Tomo (2026-10-30): o card do menu lateral (e o ícone do cabeçalho
       no celular) abre a Taverna, com contador de não lidas; o botão flutuante saiu. O chat do Tomo fica
       fixado no topo da lista de grupos; sem mensagens, o Tomo aparece grande no centro. Só no site (o app

@@ -319,7 +319,23 @@ function AssistantPanel({
           </button>
         </header>
       )}
-      <div ref={listRef} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
+      <div ref={listRef} className="relative flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
+        {messages.length === 0 && embedded ? (
+          // Na Taverna: a cena de fundo, e o Tomo sem o quadrado escuro (o preto some no "lighten").
+          <Image
+            src="/taverna/tomo.webp"
+            alt=""
+            fill
+            sizes="400px"
+            className="object-cover opacity-80"
+          />
+        ) : null}
+        {messages.length === 0 && embedded ? (
+          <span
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-t from-raised via-raised/30 to-transparent"
+          />
+        ) : null}
         {messages.length === 0 ? (
           <div className="relative m-auto flex max-w-sm flex-col items-center gap-3 py-4 text-center">
             {/* Boas-vindas: o Tomo grande, com um halo arcano atrás. */}
@@ -332,7 +348,7 @@ function AssistantPanel({
               alt={`${MASCOT_NAME}, o grimório mestre`}
               width={240}
               height={231}
-              className="relative h-auto w-52 drop-shadow-[0_12px_30px_rgb(107_59_198/0.55)]"
+              className="relative h-auto w-52 mix-blend-lighten [mask-image:radial-gradient(circle,black_55%,transparent_72%)]"
             />
             <p className="relative font-display text-xl text-fg-accent">Saudações, aventureiro!</p>
             <p className="relative text-sm text-fg-muted">
