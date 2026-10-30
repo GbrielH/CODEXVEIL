@@ -3,6 +3,11 @@ import { RevealPanel } from '@/components/library/reveal-panel';
 import { parseDnd5eStatBlock } from '@codexveil/rpg-systems/dnd5e';
 import { buildT20Content, parseT20StatBlock } from '@codexveil/rpg-systems/tormenta20';
 import { T20ThreatEditor, T20ThreatView } from '@/components/library/t20-threat';
+import {
+  AssimilacaoThreatEditor,
+  AssimilacaoThreatView,
+} from '@/components/library/assimilacao-threat';
+import { parseAssimilacaoStatBlock } from '@codexveil/rpg-systems/assimilacao';
 import { T20TreasureRoller } from '@/components/library/t20-treasure';
 import { campaignBookPacks, loadBookSources, packsOfSystem } from '@/lib/books';
 import { creatureKindLabels, uuidSchema } from '@codexveil/validation';
@@ -56,7 +61,10 @@ export default async function CreaturePage({ params }: Props) {
       : [];
 
   // Jogadores: só as partes da ficha que o mestre liberou (o banco filtra).
-  const revealed = !isGm && creature.revealedStats.length > 0 ? await getCreatureRevealedStats(supabase, creature.id) : {};
+  const revealed =
+    !isGm && creature.revealedStats.length > 0
+      ? await getCreatureRevealedStats(supabase, creature.id)
+      : {};
   const revealedKeys = new Set(Object.keys(revealed));
 
   let statBlock = null;
@@ -128,10 +136,20 @@ export default async function CreaturePage({ params }: Props) {
       ) : null}
 
       {!isGm && revealedKeys.size > 0 ? (
-        campaign.systemId === 'tormenta20' ? (
-          <T20ThreatView name={creature.name} stats={parseT20StatBlock(revealed)} only={revealedKeys} />
+        campaign.systemId === 'assimilacao' ? (
+          <AssimilacaoThreatView name={creature.name} stats={parseAssimilacaoStatBlock(revealed)} />
+        ) : campaign.systemId === 'tormenta20' ? (
+          <T20ThreatView
+            name={creature.name}
+            stats={parseT20StatBlock(revealed)}
+            only={revealedKeys}
+          />
         ) : (
-          <StatBlockView name={creature.name} statBlock={parseDnd5eStatBlock(revealed)} only={revealedKeys} />
+          <StatBlockView
+            name={creature.name}
+            statBlock={parseDnd5eStatBlock(revealed)}
+            only={revealedKeys}
+          />
         )
       ) : null}
 
@@ -159,6 +177,22 @@ export default async function CreaturePage({ params }: Props) {
         ) : statBlock ? (
           <StatBlockView name={creature.name} statBlock={statBlock} />
         ) : null
+      ) : null}
+
+      {isGm && creature.gm && campaign.systemId === 'assimilacao' ? (
+        <>
+          <AssimilacaoThreatView
+            name={creature.name}
+            stats={parseAssimilacaoStatBlock(creature.gm.stats)}
+          />
+          {canManage ? (
+            <AssimilacaoThreatEditor
+              creatureId={creature.id}
+              stats={parseAssimilacaoStatBlock(creature.gm.stats)}
+              gm={{ notes: creature.gm.notes, secrets: creature.gm.secrets }}
+            />
+          ) : null}
+        </>
       ) : null}
 
       {isGm && creature.gm && campaign.systemId === 'tormenta20' ? (

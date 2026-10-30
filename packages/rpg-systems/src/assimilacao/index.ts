@@ -76,7 +76,13 @@ export const assimilacaoSystem: RpgSystem<
   defaultResources: assimilacaoDefaultResources,
   createDefaultStatBlock: createDefaultAssimilacaoStatBlock,
   parseStatBlock: parseAssimilacaoStatBlock,
-  combatDefaults: (block) => ({ hitPoints: block.health, armorClass: null, initiativeBonus: 0 }),
+  // No Conflito, a "vida" da Ameaça é a contagem de Sucessos que falta para neutralizá-la (o
+  // rastreador desconta cada Sucesso investido). Sem esse número, vale a Saúde.
+  combatDefaults: (block) => ({
+    hitPoints: block.neutralize > 0 ? block.neutralize : block.health,
+    armorClass: null,
+    initiativeBonus: 0,
+  }),
   // Sem iniciativa numérica: no Conflito, quem inicia a Ação age primeiro.
   initiativeBonus: (sheet) => sheet.instincts.reacao,
 };

@@ -60,11 +60,20 @@ import { CharacterIcon } from '@/components/creation/character-icon';
 import { ImagePromptCard } from '@/components/creation/image-prompt-card';
 import { ChoiceField, OptionCard } from '@/components/creation/choice-fields';
 import { T20MobileWizard } from '@/components/t20/wizard';
+import {
+  AssimilacaoMobileWizard,
+  type AssimilacaoMobileSource,
+} from '@/components/assimilacao/wizard';
+import { parseAssimilacaoCampaignRules } from '@codexveil/rpg-systems/assimilacao';
 import { Button } from '@/components/ui/button';
 import { Segmented } from '@/components/ui/segmented';
-import { loadT20Sources } from '@/lib/books';
+import { loadAssimilacaoSources, loadT20Sources } from '@/lib/books';
 import { parseT20CampaignRules, type T20ContentSource } from '@codexveil/rpg-systems/tormenta20';
-import { CreationAnswersCard, answersComplete, answersFor } from '@/components/characters/creation-answers';
+import {
+  CreationAnswersCard,
+  answersComplete,
+  answersFor,
+} from '@/components/characters/creation-answers';
 import { Field } from '@/components/ui/field';
 import { AppText, Badge, Card } from '@/components/ui/primitives';
 import { LoadingState, Notice } from '@/components/ui/states';
@@ -192,18 +201,107 @@ async function loadT20Data(userId: string) {
   return { campaigns, own: await loadT20Sources(client, own) };
 }
 
+async function loadAssimData(userId: string) {
+  const client = getSupabase();
+  const campaigns = (await listMyCampaigns(client, userId)).filter(
+    (campaign) =>
+      campaign.status === 'active' &&
+      campaign.role === 'player' &&
+      campaign.systemId === 'assimilacao',
+  );
+  const own = (await listMyBookPacks(client, userId)).filter((pack) => pack.isReady);
+  return { campaigns, own: await loadAssimilacaoSources(client, own) };
+}
+
 export default function NewCharacterScreen() {
   const params = useLocalSearchParams<{ campanha?: string }>();
   const userId = useUserId();
   const data = useAsyncData(() => loadCreationData(userId), userId);
   const t20 = useAsyncData(() => loadT20Data(userId), `t20:${userId}`);
-  const [system, setSystem] = useState<'dnd5e' | 'tormenta20'>('dnd5e');
+  const [system, setSystem] = useState<'dnd5e' | 'tormenta20' | 'assimilacao'>('dnd5e');
+  const assim = useAsyncData(() => loadAssimData(userId), `assim:${userId}`);
+  const [assimCampaign, setAssimCampaign] = useState('');
+  const [assimSources, setAssimSources] = useState<AssimilacaoMobileSource[] | null>(null);
   const [t20Campaign, setT20Campaign] = useState<string>('');
   const [t20Sources, setT20Sources] = useState<T20ContentSource[] | null>(null);
   const preT20 = t20.data?.campaigns.find((campaign) => campaign.id === params.campanha);
-  const activeSystem = preT20 ? 'tormenta20' : system;
+  const preAssim = assim.data?.campaigns.find((campaign) => campaign.id === params.campanha);
+  const activeSystem = preT20 ? 'tormenta20' : preAssim ? 'assimilacao' : system;
+  const systemOptions = [
+    { value: 'dnd5e' as const, label: 'D&D 5e' },
+    { value: 'tormenta20' as const, label: 'Tormenta20' },
+    { value: 'assimilacao' as const, label: 'Assimilação' },
+  ];
 
-  if (data.loading || t20.loading)
+  if (activeSystem === 'assimilacao' && assim.data) {
+    const chosenId = preAssim?.id ?? assimCampaign;
+    const chosen = assim.data.campaigns.find((campaign) => campaign.id === chosenId);
+    if (chosen && !assimSources) {
+      void (async () => {
+        const client = getSupabase();
+        const packs = await listCampaignBookPacks(
+          client,
+          chosen.ownerId,
+          campaignSourcebooks(chosen.characterRules),
+        );
+        setAssimSources(await loadAssimilacaoSources(client, packs));
+      })();
+      return <LoadingState label="Carregando os livros da campanha…" />;
+    }
+    if (!chosenId) {
+      return (
+        <ScrollView
+          style={{ flex: 1, backgroundColor: colors.canvas }}
+          contentContainerStyle={styles.content}
+        >
+          <Segmented
+            value="assimilacao"
+            onChange={(value) => setSystem(value)}
+            accessibilityLabel="Sistema"
+            options={systemOptions}
+          />
+          <AppText variant="title">Onde o Infectado vai jogar?</AppText>
+          {assim.data.campaigns.map((campaign) => (
+            <OptionCard
+              key={campaign.id}
+              selected={false}
+              title={campaign.name}
+              description="Campanha de Assimilação RPG"
+              onPress={() => {
+                setAssimSources(null);
+                setAssimCampaign(campaign.id);
+              }}
+            />
+          ))}
+          <OptionCard
+            selected={false}
+            title="Ficha pessoal"
+            description="Com os seus livros do Assimilação."
+            onPress={() => {
+              setAssimSources(assim.data!.own);
+              setAssimCampaign('pessoal');
+            }}
+          />
+        </ScrollView>
+      );
+    }
+    return (
+      <AssimilacaoMobileWizard
+        campaign={
+          chosen
+            ? {
+                id: chosen.id,
+                name: chosen.name,
+                rules: parseAssimilacaoCampaignRules(chosen.characterRules),
+                questions: chosen.creationQuestions,
+              }
+            : null
+        }
+        sources={chosen ? (assimSources ?? []) : assim.data.own}
+      />
+    );
+  }
+  if (data.loading || t20.loading || assim.loading)
     return <LoadingState label="Carregando suas campanhas e livros…" />;
   const hasT20 = (t20.data?.campaigns.length ?? 0) > 0 || (t20.data?.own.length ?? 0) > 0;
   if (activeSystem === 'tormenta20' && t20.data) {
@@ -233,10 +331,7 @@ export default function NewCharacterScreen() {
             value="tormenta20"
             onChange={(value) => setSystem(value)}
             accessibilityLabel="Sistema"
-            options={[
-              { value: 'dnd5e', label: 'D&D 5e' },
-              { value: 'tormenta20', label: 'Tormenta20' },
-            ]}
+            options={systemOptions}
           />
           <AppText variant="title">Onde o personagem vai jogar?</AppText>
           {t20.data.campaigns.map((campaign) => (
@@ -285,16 +380,13 @@ export default function NewCharacterScreen() {
     : '';
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      {hasT20 ? (
+      {hasT20 || (assim.data?.campaigns.length ?? 0) > 0 || (assim.data?.own.length ?? 0) > 0 ? (
         <View style={{ padding: spacing[4], paddingBottom: 0 }}>
           <Segmented
             value="dnd5e"
             onChange={(value) => setSystem(value)}
             accessibilityLabel="Sistema"
-            options={[
-              { value: 'dnd5e', label: 'D&D 5e' },
-              { value: 'tormenta20', label: 'Tormenta20' },
-            ]}
+            options={systemOptions}
           />
         </View>
       ) : null}
@@ -456,7 +548,8 @@ function Wizard({
         <AppText variant="heading">Armaduras e escudos</AppText>
         <AppText variant="small">Treino: {classDef.armorLabel || 'nenhum'}.</AppText>
         <AppText variant="muted">
-          Fixo pela classe, sem escolha. Usar armadura sem treino dá desvantagem em testes de Força e Destreza e impede conjurar magias; escudo sem treino não soma na CA.
+          Fixo pela classe, sem escolha. Usar armadura sem treino dá desvantagem em testes de Força
+          e Destreza e impede conjurar magias; escudo sem treino não soma na CA.
         </AppText>
       </Card>
     ) : null;
@@ -473,7 +566,9 @@ function Wizard({
       );
       return spec.id === 'class.weapon_mastery' && armorTraining ? [field, armorTraining] : [field];
     });
-    return stepSpecs.some((spec) => spec.id === 'class.weapon_mastery') || !armorTraining ? fields : [...fields, armorTraining];
+    return stepSpecs.some((spec) => spec.id === 'class.weapon_mastery') || !armorTraining
+      ? fields
+      : [...fields, armorTraining];
   };
 
   return (
@@ -841,7 +936,11 @@ function Wizard({
       ) : null}
 
       {step === 'review' ? (
-        <CreationAnswersCard questions={questions} values={answerValues} onChange={setAnswerValues} />
+        <CreationAnswersCard
+          questions={questions}
+          values={answerValues}
+          onChange={setAnswerValues}
+        />
       ) : null}
       {step === 'review' ? <Review draft={draft} issues={issues} onGo={goTo} /> : null}
 

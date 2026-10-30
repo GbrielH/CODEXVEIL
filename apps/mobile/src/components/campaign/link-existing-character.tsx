@@ -4,11 +4,28 @@ import {
   setCharacterCampaignWithAnswers,
   type CharacterListItem,
 } from '@codexveil/database';
-import { dnd5eCampaignIssues, parseDnd5eCampaignRules, parseDnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
-import { parseT20CampaignRules, parseT20Sheet, t20CampaignIssues } from '@codexveil/rpg-systems/tormenta20';
+import {
+  dnd5eCampaignIssues,
+  parseDnd5eCampaignRules,
+  parseDnd5eSheet,
+} from '@codexveil/rpg-systems/dnd5e';
+import {
+  parseT20CampaignRules,
+  parseT20Sheet,
+  t20CampaignIssues,
+} from '@codexveil/rpg-systems/tormenta20';
+import {
+  assimilacaoCampaignIssues,
+  parseAssimilacaoCampaignRules,
+  parseAssimilacaoSheet,
+} from '@codexveil/rpg-systems/assimilacao';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { CreationAnswersCard, answersComplete, answersFor } from '@/components/characters/creation-answers';
+import {
+  CreationAnswersCard,
+  answersComplete,
+  answersFor,
+} from '@/components/characters/creation-answers';
 import { Button } from '@/components/ui/button';
 import { Chip, ChipRow } from '@/components/ui/controls';
 import { useConfirm } from '@/components/ui/dialog';
@@ -20,10 +37,25 @@ import { getSupabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
 
 /** O que impede a ficha de entrar na campanha, pelas regras do sistema (as mesmas do site). */
-export function campaignRuleIssues(systemId: string, name: string, sheet: unknown, rules: unknown): string[] {
+export function campaignRuleIssues(
+  systemId: string,
+  name: string,
+  sheet: unknown,
+  rules: unknown,
+): string[] {
   try {
-    if (systemId === 'dnd5e') return dnd5eCampaignIssues({ name, sheet: parseDnd5eSheet(sheet) }, parseDnd5eCampaignRules(rules));
-    if (systemId === 'tormenta20') return t20CampaignIssues({ name, sheet: parseT20Sheet(sheet) }, parseT20CampaignRules(rules));
+    if (systemId === 'dnd5e')
+      return dnd5eCampaignIssues(
+        { name, sheet: parseDnd5eSheet(sheet) },
+        parseDnd5eCampaignRules(rules),
+      );
+    if (systemId === 'tormenta20')
+      return t20CampaignIssues({ name, sheet: parseT20Sheet(sheet) }, parseT20CampaignRules(rules));
+    if (systemId === 'assimilacao')
+      return assimilacaoCampaignIssues(
+        { name, sheet: parseAssimilacaoSheet(sheet) },
+        parseAssimilacaoCampaignRules(rules),
+      );
   } catch {
     return ['A ficha não pôde ser lida.'];
   }
@@ -52,13 +84,22 @@ export function LinkExistingCharacter({
 
   useEffect(() => {
     listMyCharacters(getSupabase(), userId)
-      .then((list) => setCharacters(list.filter((character) => character.systemId === campaign.systemId && character.campaignId !== campaign.id)))
+      .then((list) =>
+        setCharacters(
+          list.filter(
+            (character) =>
+              character.systemId === campaign.systemId && character.campaignId !== campaign.id,
+          ),
+        ),
+      )
       .catch(() => setCharacters([]));
   }, [userId, campaign.id, campaign.systemId]);
 
   if (!characters?.length) return null;
   const chosen = characters.find((character) => character.id === selected) ?? null;
-  const issues = chosen ? campaignRuleIssues(campaign.systemId, chosen.name, chosen.sheet, campaign.characterRules) : [];
+  const issues = chosen
+    ? campaignRuleIssues(campaign.systemId, chosen.name, chosen.sheet, campaign.characterRules)
+    : [];
   const questions = campaign.creationQuestions;
   const ready = chosen !== null && issues.length === 0 && answersComplete(questions, answers);
 
@@ -74,7 +115,13 @@ export function LinkExistingCharacter({
     }
     setBusy(true);
     try {
-      if (questions.length) await setCharacterCampaignWithAnswers(getSupabase(), chosen.id, campaign.id, answersFor(questions, answers));
+      if (questions.length)
+        await setCharacterCampaignWithAnswers(
+          getSupabase(),
+          chosen.id,
+          campaign.id,
+          answersFor(questions, answers),
+        );
       else await setCharacterCampaign(getSupabase(), chosen.id, campaign.id);
       toast({ tone: 'success', title: `${chosen.name} entrou na campanha.` });
       onLinked();
@@ -87,12 +134,19 @@ export function LinkExistingCharacter({
 
   return (
     <Card>
-      <CardTitle title="Trazer personagem existente" description="Fichas suas do mesmo sistema. O mestre passa a ver e poder editar a ficha." />
+      <CardTitle
+        title="Trazer personagem existente"
+        description="Fichas suas do mesmo sistema. O mestre passa a ver e poder editar a ficha."
+      />
       <ChipRow>
         {characters.map((character) => (
           <Chip
             key={character.id}
-            label={character.campaignName ? `${character.name} (em ${character.campaignName})` : character.name}
+            label={
+              character.campaignName
+                ? `${character.name} (em ${character.campaignName})`
+                : character.name
+            }
             selected={selected === character.id}
             role="radio"
             onPress={() => {
@@ -112,9 +166,20 @@ export function LinkExistingCharacter({
           ))}
         </View>
       ) : null}
-      {chosen && !issues.length && questions.length ? <CreationAnswersCard questions={questions} values={answers} onChange={setAnswers} /> : null}
-      {chosen && chosen.campaignId ? <Notice message={`Ele está em "${chosen.campaignName ?? 'outra campanha'}" e sairá de lá.`} /> : null}
-      <Button label="Trazer para a campanha" loading={busy} disabled={!ready} onPress={() => void link()} />
+      {chosen && !issues.length && questions.length ? (
+        <CreationAnswersCard questions={questions} values={answers} onChange={setAnswers} />
+      ) : null}
+      {chosen && chosen.campaignId ? (
+        <Notice
+          message={`Ele está em "${chosen.campaignName ?? 'outra campanha'}" e sairá de lá.`}
+        />
+      ) : null}
+      <Button
+        label="Trazer para a campanha"
+        loading={busy}
+        disabled={!ready}
+        onPress={() => void link()}
+      />
     </Card>
   );
 }

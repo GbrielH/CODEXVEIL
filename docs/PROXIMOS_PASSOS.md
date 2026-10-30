@@ -212,8 +212,10 @@ mapa e notas lado a lado).
       pacote (417 entradas), leitor, regras da campanha, criação guiada e ficha com dados especiais.
 - [ ] Aplicar a migração `20261030140000_assimilacao.sql` em produção (bloqueada pelo controle de
       permissões nesta sessão) e só então publicar.
-- [ ] Assimilação RPG no app: criação, ficha e teste com dados especiais.
-- [ ] Assimilação RPG: Ameaças de Conflito na biblioteca do mestre.
+- [x] Assimilação RPG no app (2026-10-30): criação, ficha e teste com dados especiais (OTA).
+- [x] Assimilação RPG (2026-10-30): Ameaças de Conflito na biblioteca, neutralização no rastreador e
+      baralhos de Assimilação e Eventos na mesa do mestre.
+- [ ] Assimilação RPG: testar no navegador e no celular com o livro importado.
 - [x] Assimilação RPG: teste com dados especiais na ficha do site (Rolagem Assimilada, dados mantidos).
 - [x] Faces 11 e 12 do d12 do Assimilação conferidas na tabela do livro (2026-10-30).
 - [x] Retratos de perfil novos (2026-10-30): 15 ícones em imagem, guardados no código (o banco só

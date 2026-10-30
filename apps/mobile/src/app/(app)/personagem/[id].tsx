@@ -14,12 +14,14 @@ import {
   setActiveDnd5eBookContent,
 } from '@codexveil/rpg-systems/dnd5e';
 import { parseT20Sheet } from '@codexveil/rpg-systems/tormenta20';
+import { parseAssimilacaoSheet } from '@codexveil/rpg-systems/assimilacao';
+import { AssimilacaoMobileSheet } from '@/components/assimilacao/sheet';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { SheetScreen } from '@/components/sheet/sheet-screen';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states';
 import { T20MobileSheet } from '@/components/t20/sheet';
-import { sheetBookSources, sheetT20Sources } from '@/lib/books';
+import { sheetAssimilacaoSources, sheetBookSources, sheetT20Sources } from '@/lib/books';
 import { useAsyncData } from '@/lib/hooks';
 import { useUserId } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase';
@@ -46,10 +48,16 @@ export default function CharacterScreen() {
     // Tormenta20: também para quem só joga (os ataques usam as armas do livro).
     const t20Books =
       character.systemId === 'tormenta20' &&
-      (canEditCharacterSheet(characterAccessInput(character)) || canEditCharacterPlayState(characterAccessInput(character)))
+      (canEditCharacterSheet(characterAccessInput(character)) ||
+        canEditCharacterPlayState(characterAccessInput(character)))
         ? await sheetT20Sources(supabase, userId, character)
         : [];
+    const assimBooks =
+      character.systemId === 'assimilacao'
+        ? await sheetAssimilacaoSources(supabase, userId, character)
+        : [];
     return {
+      assimBooks,
       character,
       resources,
       conditions,
@@ -71,6 +79,36 @@ export default function CharacterScreen() {
           description="Ela não existe ou você não tem acesso a ela."
         />
       </Screen>
+    );
+  }
+  if (data.character.systemId === 'assimilacao') {
+    let assimSheet;
+    try {
+      assimSheet = parseAssimilacaoSheet(data.character.sheet);
+    } catch {
+      return (
+        <ErrorState message="Os dados desta ficha não seguem o formato do Assimilação RPG. Nada foi alterado." />
+      );
+    }
+    const access = characterAccessInput(data.character);
+    return (
+      <>
+        <Stack.Screen options={{ title: data.character.name }} />
+        <AssimilacaoMobileSheet
+          key={data.character.id}
+          character={{
+            id: data.character.id,
+            name: data.character.name,
+            version: data.character.version,
+          }}
+          campaignId={data.character.campaign?.id ?? null}
+          sheet={assimSheet}
+          resources={data.resources}
+          canEditSheet={canEditCharacterSheet(access)}
+          canEditPlay={canEditCharacterPlayState(access)}
+          sources={data.assimBooks}
+        />
+      </>
     );
   }
   if (data.character.systemId === 'tormenta20') {

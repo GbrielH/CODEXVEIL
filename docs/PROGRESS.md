@@ -168,6 +168,9 @@ Os detalhes estão em [`DATABASE.md`](DATABASE.md) e [`SECURITY.md`](SECURITY.md
   testado no navegador. A migração `20261030140000` ainda não foi aplicada em produção; o código
   depende dela e não foi publicado.
 
+- 2026-10-30: Assimilação RPG no app, Ameaças de Conflito, neutralização no rastreador e baralhos do
+  Assimilador (detalhes em `docs/ASSIMILACAO.md`). Nada visto em tela.
+
 ## Testes e verificações executados
 
 Execução em 2026-10-17, Windows 11, Node 24.20 e pnpm 12.14:

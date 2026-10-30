@@ -15,6 +15,8 @@ import { findSystem } from '@codexveil/rpg-systems';
 import { CalendarPlus } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import { GmTable, type LibraryOption } from '@/components/gm/gm-table';
+import { AssimilacaoDecks } from '@/components/gm/assimilacao-decks';
+import { campaignBookPacks, loadBookSources, packsOfSystem } from '@/lib/books';
 import { ButtonLink } from '@/components/ui/button';
 import { EmptyState, ForbiddenState } from '@/components/ui/states';
 import { loadCampaignOrNotFound } from '@/lib/campaigns';
@@ -28,7 +30,9 @@ export default async function GmTablePage({ params }: PageProps<'/campanhas/[cam
   const { campaignId } = await params;
   const { user, campaign } = await loadCampaignOrNotFound(campaignId);
   if (campaign.role !== 'gm') {
-    return <ForbiddenState description="A mesa do mestre reúne informações privadas da campanha e é exclusiva dos mestres." />;
+    return (
+      <ForbiddenState description="A mesa do mestre reúne informações privadas da campanha e é exclusiva dos mestres." />
+    );
   }
 
   const supabase = await createSupabaseServerClient();
@@ -46,7 +50,11 @@ export default async function GmTablePage({ params }: PageProps<'/campanhas/[cam
         icon={<CalendarPlus className="h-8 w-8" aria-hidden="true" />}
         title="Nenhuma sessão planejada"
         description="A mesa do mestre acompanha a sessão em andamento ou a próxima planejada. Crie uma sessão para começar."
-        action={<ButtonLink href={campaignPath(campaign.id, '/sessoes') as Route}>Ir para as sessões</ButtonLink>}
+        action={
+          <ButtonLink href={campaignPath(campaign.id, '/sessoes') as Route}>
+            Ir para as sessões
+          </ButtonLink>
+        }
       />
     );
   }
@@ -55,8 +63,14 @@ export default async function GmTablePage({ params }: PageProps<'/campanhas/[cam
     listSceneEntities(supabase, session.id),
     getOpenEncounter(supabase, session.id),
     listSessionBlocks(supabase, session.id),
-    listCreatureStats(supabase, creatures.map((creature) => creature.id)),
-    signedMediaUrls(supabase, party.map((character) => character.portraitPath)),
+    listCreatureStats(
+      supabase,
+      creatures.map((creature) => creature.id),
+    ),
+    signedMediaUrls(
+      supabase,
+      party.map((character) => character.portraitPath),
+    ),
     listDiceRolls(supabase, campaign.id, 30),
   ]);
 
@@ -65,7 +79,11 @@ export default async function GmTablePage({ params }: PageProps<'/campanhas/[cam
   // Valores iniciais da instância na cena, calculados pelo módulo do sistema da campanha.
   const system = findSystem(campaign.systemId);
   const library: LibraryOption[] = creatures.map((creature) => {
-    let defaults = { hitPoints: null as number | null, armorClass: null as number | null, initiativeBonus: 0 };
+    let defaults = {
+      hitPoints: null as number | null,
+      armorClass: null as number | null,
+      initiativeBonus: 0,
+    };
     if (system) {
       try {
         defaults = system.combatDefaults(system.parseStatBlock(stats[creature.id] ?? {}));
@@ -73,35 +91,69 @@ export default async function GmTablePage({ params }: PageProps<'/campanhas/[cam
         // Estatísticas fora do formato: a instância começa sem valores e o mestre os informa.
       }
     }
-    return { id: creature.id, name: creature.name, subtitle: creature.subtitle, kind: creature.kind, ...defaults };
+    return {
+      id: creature.id,
+      name: creature.name,
+      subtitle: creature.subtitle,
+      kind: creature.kind,
+      ...defaults,
+    };
   });
 
   const outline = blocks
-    .filter((block) => block.content?.type === 'heading' || block.content?.type === 'subheading' || block.content?.type === 'gm_note')
+    .filter(
+      (block) =>
+        block.content?.type === 'heading' ||
+        block.content?.type === 'subheading' ||
+        block.content?.type === 'gm_note',
+    )
     .map((block) => ({
       id: block.id,
       type: block.content?.type ?? 'paragraph',
       text: block.content && 'text' in block.content.data ? block.content.data.text : '',
     }));
 
+  // Assimilação: baralhos de Assimilação e de Eventos com o texto do livro liberado.
+  const deckEntries =
+    campaign.systemId === 'assimilacao'
+      ? (
+          await loadBookSources(
+            supabase,
+            packsOfSystem(await campaignBookPacks(supabase, campaign), 'assimilacao'),
+            ['assimilation', 'event'],
+          )
+        ).flatMap((source) => source.entries)
+      : [];
+
   return (
-    <GmTable
-      campaignId={campaign.id}
-      systemId={campaign.systemId}
-      currentUserId={user.id}
-      isActive={campaign.status === 'active'}
-      session={{ id: session.id, number: session.number, title: session.title, status: session.status, scheduledAt: session.scheduledAt }}
-      initialParty={party}
-      initialEntities={entities}
-      initialEncounter={encounter}
-      portraits={portraits}
-      library={library}
-      outline={outline}
-      notes={notes.filter((note) => note.isPinned || note.visibility === 'gm').slice(0, 6)}
-      turnSettings={campaign.turnSettings}
-      rolls={rolls}
-      reveal={reveal}
-      sessionPublished={session.isPublished}
-    />
+    <div className="flex flex-col gap-6">
+      <GmTable
+        campaignId={campaign.id}
+        systemId={campaign.systemId}
+        currentUserId={user.id}
+        isActive={campaign.status === 'active'}
+        session={{
+          id: session.id,
+          number: session.number,
+          title: session.title,
+          status: session.status,
+          scheduledAt: session.scheduledAt,
+        }}
+        initialParty={party}
+        initialEntities={entities}
+        initialEncounter={encounter}
+        portraits={portraits}
+        library={library}
+        outline={outline}
+        notes={notes.filter((note) => note.isPinned || note.visibility === 'gm').slice(0, 6)}
+        turnSettings={campaign.turnSettings}
+        rolls={rolls}
+        reveal={reveal}
+        sessionPublished={session.isPublished}
+      />
+      {campaign.systemId === 'assimilacao' ? (
+        <AssimilacaoDecks campaignId={campaign.id} entries={deckEntries} />
+      ) : null}
+    </div>
   );
 }

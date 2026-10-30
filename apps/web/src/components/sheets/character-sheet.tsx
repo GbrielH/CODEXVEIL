@@ -222,9 +222,15 @@ export async function CharacterSheet({
       />
     );
   } else if (system?.id === 'assimilacao') {
+    // Ficha pessoal: todos os livros prontos do dono (a criação não grava a lista na ficha).
+    const assimPacks = campaign
+      ? activePacks
+      : character.viewer.isOwner
+        ? await ownReadyBookPacks(supabase, user.id)
+        : [];
     const assimSources =
       permissions.canEditSheet || permissions.canEditPlay
-        ? await loadAssimilacaoSources(supabase, activePacks)
+        ? await loadAssimilacaoSources(supabase, assimPacks)
         : [];
     let sheet;
     try {

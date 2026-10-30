@@ -12,6 +12,7 @@ import {
   type BookContentSource,
 } from '@codexveil/rpg-systems/dnd5e';
 import { T20_CHARACTER_BOOK_KINDS, type T20ContentSource } from '@codexveil/rpg-systems/tormenta20';
+import { ASSIMILACAO_PLAYER_BOOK_KINDS } from '@codexveil/rpg-systems/assimilacao';
 
 /** Livros de um sistema (um usuário pode ter livros de D&D e de Tormenta20). */
 export function packsOfSystem(
@@ -105,4 +106,35 @@ export async function sheetT20Sources(
   character: SheetCharacter,
 ): Promise<T20ContentSource[]> {
   return loadT20Sources(client, await packsFor(client, userId, character));
+}
+
+/** Conteúdo do Assimilação usado na ficha: Características, cartas de Assimilação e Artefatos. */
+export async function loadAssimilacaoSources(
+  client: CodexveilClient,
+  packs: readonly BookPackSummary[],
+): Promise<
+  {
+    book: { id: string; name: string };
+    entries: { kind: string; key: string; name: string; data: unknown }[];
+  }[]
+> {
+  return sourcesFor(client, packsOfSystem(packs, 'assimilacao'), ASSIMILACAO_PLAYER_BOOK_KINDS);
+}
+
+/**
+ * Livros de uma ficha do Assimilação: os da campanha ou, na ficha pessoal, todos os livros
+ * prontos do dono (a criação não grava uma lista de livros na ficha).
+ */
+export async function sheetAssimilacaoSources(
+  client: CodexveilClient,
+  userId: string,
+  character: SheetCharacter,
+) {
+  if (!character.campaign && character.viewer.isOwner) {
+    return loadAssimilacaoSources(
+      client,
+      (await listMyBookPacks(client, userId)).filter((pack) => pack.isReady),
+    );
+  }
+  return loadAssimilacaoSources(client, await packsFor(client, userId, character));
 }

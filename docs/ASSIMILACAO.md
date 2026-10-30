@@ -84,20 +84,24 @@ Os ícones viram marcadores (`{A}` Sucesso, `{B}` Adaptação, `{C}` Pressão, `
   sessão, Aptidões, Características, Assimilações com os níveis da carta, história e retrato.
 - Trilhas `saude`, `determinacao` e `assimilacao` (painel do mestre e combate as mostram).
 
+## App, Ameaças, Conflitos e baralhos
+
+- **App:** criação em 5 passos (com as Características do livro e requisitos), ficha com Cabo de
+  Guerra, Saúde, teste com dados especiais (rolados pelo servidor na campanha, com escolha dos dados
+  mantidos), Origens, Aptidões, Características, Assimilações com os níveis da carta e história.
+  Vínculo de ficha pronta a uma campanha também confere as regras do Assimilação. Só JavaScript: vai
+  por atualização OTA, sem APK novo.
+- **Ameaças de Conflito** (biblioteca do mestre): pilha de dados, Sucessos para neutralizar, Saúde,
+  ativações com custo em símbolos e rolagem da pilha; o mestre escolhe o que revelar aos jogadores.
+- **Conflitos:** a Ameaça colocada na cena entra no rastreador com a contagem de Sucessos para
+  neutralizá-la no lugar dos PV (cada Sucesso investido desconta). Objetivos Principais e Secundários
+  podem ser criados do mesmo jeito (uma "Ameaça" com os Sucessos necessários).
+- **Baralhos do Assimilador** (mesa do mestre): cartas de Assimilação e de Eventos com o texto do
+  livro liberado, comprar e embaralhar; o monte fica no navegador do mestre.
+
 ## Próximas etapas
 
-1. ~~**Registro do sistema**~~ e ~~**ficha no site**~~ (feitos em 2026-10-30).
-2. **App:** criação, ficha e teste com dados especiais no celular.
-3. **Ameaças de Conflito** na biblioteca do mestre (o esquema já existe: pilha, neutralização,
-   ativações).
-4. **Registro do sistema (antigo):** `RpgSystem` completo (resumo, trilhas de Determinação, Assimilação e
-   Saúde, condições, links oficiais, ficha de ameaça), entrada em `registry.ts` e migração em
-   `rpg_systems`. Só entra junto com a etapa 2, para ninguém criar campanha sem ficha.
-5. **Ficha no site e no app:** criação guiada (Concepção, Origens, Geração, Propósitos, Aptidões,
-   Cabo de Guerra, Saúde, Características) e ficha com Cabo de Guerra, trilha de Saúde e
-   Origens/Propósitos.
-6. **Rolador de dados especiais:** montar a pilha (Instinto + Aptidão), Rolagem Assimilada,
-   escolher os dados mantidos e registrar no histórico de rolagens; mostrar os símbolos nos dados
-   3D.
-7. **Conflitos:** objetivos com contadores de Sucessos, Ameaças e o turno do Assimilador.
-8. **Baralhos (Assimilação e Eventos)** e Refúgio, se o grupo quiser usar.
+1. Testar tudo no navegador e no celular com o livro importado (nada disso foi visto em tela ainda).
+2. Contadores de Objetivos próprios no Conflito (hoje reaproveitam o rastreador de combate).
+3. Mostrar os símbolos também na caixinha de dados 3D e no histórico de rolagens (hoje aparecem os
+   números; os símbolos aparecem na ficha).

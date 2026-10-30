@@ -19,14 +19,22 @@ export interface RevealGroup {
 
 /** Partes da ficha de D&D 5e que o mestre pode liberar, na ordem do bloco de estatísticas. */
 export const DND5E_REVEAL_GROUPS: RevealGroup[] = [
-  { id: 'identity', label: 'Tamanho, tipo e tendência', keys: ['size', 'creatureType', 'alignment'] },
+  {
+    id: 'identity',
+    label: 'Tamanho, tipo e tendência',
+    keys: ['size', 'creatureType', 'alignment'],
+  },
   { id: 'ac', label: 'Classe de armadura', keys: ['armorClass', 'armorNote'] },
   { id: 'hp', label: 'Pontos de vida', keys: ['hitPoints', 'hitPointFormula'] },
   { id: 'speed', label: 'Deslocamento', keys: ['speed'] },
   { id: 'abilities', label: 'Atributos', keys: ['abilities'] },
   { id: 'saves', label: 'Testes de resistência', keys: ['savingThrows'] },
   { id: 'skills', label: 'Perícias', keys: ['skills'] },
-  { id: 'defenses', label: 'Resistências e imunidades', keys: ['damageResistances', 'damageImmunities', 'conditionImmunities'] },
+  {
+    id: 'defenses',
+    label: 'Resistências e imunidades',
+    keys: ['damageResistances', 'damageImmunities', 'conditionImmunities'],
+  },
   { id: 'senses', label: 'Sentidos', keys: ['senses'] },
   { id: 'languages', label: 'Idiomas', keys: ['languages'] },
   { id: 'challenge', label: 'Nível de desafio', keys: ['challengeRating'] },
@@ -53,7 +61,18 @@ export const T20_REVEAL_GROUPS: RevealGroup[] = [
   { id: 'description', label: 'Descrição da ficha', keys: ['description'] },
 ];
 
+/** Assimilação: o que da Ameaça os jogadores podem ver. */
+const ASSIMILACAO_REVEAL_GROUPS: RevealGroup[] = [
+  { id: 'identity', label: 'Nome e tipo', keys: ['name', 'kind'] },
+  { id: 'pool', label: 'Pilha de dados', keys: ['pool'] },
+  { id: 'neutralize', label: 'Sucessos para neutralizar', keys: ['neutralize'] },
+  { id: 'health', label: 'Saúde', keys: ['health'] },
+  { id: 'activations', label: 'Ativações', keys: ['activations'] },
+  { id: 'notes', label: 'Anotações', keys: ['notes'] },
+];
+
 export function revealGroupsFor(systemId: string): RevealGroup[] {
+  if (systemId === 'assimilacao') return ASSIMILACAO_REVEAL_GROUPS;
   return systemId === 'tormenta20' ? T20_REVEAL_GROUPS : DND5E_REVEAL_GROUPS;
 }
 
@@ -86,7 +105,11 @@ export function RevealPanel({
       await setCreatureRevealedStats(getSupabaseBrowserClient(), creatureId, [...next]);
       router.refresh();
     } catch (error) {
-      toast({ tone: 'danger', title: 'Não foi possível salvar', description: failureMessage(error, 'Tente novamente.') });
+      toast({
+        tone: 'danger',
+        title: 'Não foi possível salvar',
+        description: failureMessage(error, 'Tente novamente.'),
+      });
       setSelected(new Set(revealed));
     } finally {
       setBusy(false);
@@ -122,17 +145,28 @@ export function RevealPanel({
               aria-pressed={on}
               onClick={() => toggle(group)}
               className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors disabled:opacity-60 ${
-                on ? 'border-wine-400/60 bg-wine-700/40 text-parchment-50' : 'border-line text-fg-muted hover:bg-hover hover:text-fg'
+                on
+                  ? 'border-wine-400/60 bg-wine-700/40 text-parchment-50'
+                  : 'border-line text-fg-muted hover:bg-hover hover:text-fg'
               }`}
             >
-              {on ? <Eye className="h-3.5 w-3.5" aria-hidden="true" /> : <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />}
+              {on ? (
+                <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+              ) : (
+                <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
               {group.label}
             </button>
           );
         })}
       </div>
       <div className="mt-3 flex gap-2">
-        <Button size="sm" variant="secondary" disabled={busy} onClick={() => void save(new Set(groups.flatMap((group) => group.keys)))}>
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={busy}
+          onClick={() => void save(new Set(groups.flatMap((group) => group.keys)))}
+        >
           Liberar tudo
         </Button>
         <Button size="sm" variant="ghost" disabled={busy} onClick={() => void save(new Set())}>
