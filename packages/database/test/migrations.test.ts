@@ -90,6 +90,7 @@ describe('migrações', () => {
       'session_entities',
       'session_maps',
       'sessions',
+      'tavern_messages',
       'turn_actions',
     ]);
   });

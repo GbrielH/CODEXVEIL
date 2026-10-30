@@ -199,10 +199,12 @@ mapa e notas lado a lado).
 - [x] Anotações só individuais (migração `20261030100000`): cada um lê e apaga só as próprias,
       inclusive o mestre; as compartilhadas viraram do autor. Site, app e Tomo sem opção de visibilidade.
 - [x] Falha crítica: dragão do GIF (site: WebP que toca uma vez, `public/dados/falha-critica.webp`,
-      259 KB; app: 48 quadros em `assets/dragon`) e "CRÍTICO" surge quando o fogo cobre a tela (~2,3 s).
+      259 KB; app: 48 quadros em `assets/dragon`) e "FALHA / CRÍTICA" (em duas linhas) surge quando o fogo cobre a tela (~2,3 s).
 - [ ] Aba "Dados" no perfil: textura própria dos dados e cor do número (pedido de 2026-10-25).
-- [ ] **Taverna:** chat livre e flutuante (acima até do Tomo), com grupos = campanhas e amigos;
-      mensagens apagadas sozinhas depois de 24 horas.
+- [x] **Taverna** (migração `20261030120000`): chat livre em tempo real. Site: janela flutuante e
+      arrastável acima do Tomo (botão de caneca; bolinha quando chega mensagem). App: botão flutuante
+      em todas as telas que abre o chat. Grupos = campanhas ativas e amigos (conversa direta).
+      Mensagens somem em 24 h (o banco esconde e apaga as vencidas a cada mensagem nova).
 
 ### B0g. Habilidades automáticas (2026-10-27)
 

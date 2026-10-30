@@ -9,6 +9,7 @@ import { EmberField } from '@/components/brand/ember-field';
 import { Avatar } from '@/components/ui/avatar';
 import { routes } from '@/lib/routes';
 import { AssistantCard, AssistantHost } from './assistant-card';
+import { TavernHost } from '@/components/tavern/tavern';
 import { NavLink } from './nav-link';
 import { ShellFrame, SidebarToggle } from './shell-frame';
 
@@ -147,6 +148,7 @@ export function AppShell({
       </aside>
 
       {assistant ? <AssistantHost /> : null}
+      <TavernHost />
       <div className="flex min-h-dvh min-w-0 flex-col">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-canvas/90 px-4 backdrop-blur lg:hidden">
           <Link

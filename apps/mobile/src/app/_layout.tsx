@@ -14,6 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PushBridge } from '@/components/push-bridge';
+import { TavernFloating } from '@/components/tavern/tavern';
 import { DialogProvider } from '@/components/ui/dialog';
 import { ToastProvider } from '@/components/ui/toast';
 import { SessionProvider, useSession } from '@/lib/session';
@@ -74,6 +75,7 @@ function RootNavigator() {
           <Stack.Screen name="(auth)/recuperar-senha" options={{ title: 'Recuperar senha' }} />
         </Stack.Protected>
       </Stack>
+      {signedIn && userId ? <TavernFloating userId={userId} /> : null}
     </>
   );
 }

@@ -58,12 +58,12 @@ const FRAMES: ImageSourcePropType[] = [
 ];
  
 const FRAME_MS = 70;
-/** Quando o fogo cobre a tela (quadro 33), "CRÍTICO" surge no meio das chamas. */
+/** Quando o fogo cobre a tela (quadro 33), "FALHA CRÍTICA" surge no meio das chamas. */
 const WORD_AT = 33;
 const TOTAL_MS = 4600;
 
 /**
- * Falha crítica (1 natural) no app: os quadros tocam uma vez e param no fogo; "CRÍTICO" aparece
+ * Falha crítica (1 natural) no app: os quadros tocam uma vez e param no fogo; "FALHA CRÍTICA" aparece
  * no meio das chamas. Fecha sozinho; toque para fechar antes.
  */
 export function DragonFumble({ onDone }: { onDone: () => void }) {
@@ -83,7 +83,8 @@ export function DragonFumble({ onDone }: { onDone: () => void }) {
           <Image source={FRAMES[frame]} style={StyleSheet.absoluteFill} resizeMode="cover" fadeDuration={0} />
           {frame >= WORD_AT ? (
             <Animated.View entering={ZoomIn.springify().damping(10)} style={styles.wordWrap}>
-              <AppText style={styles.word}>CRÍTICO</AppText>
+              <AppText style={styles.word}>FALHA</AppText>
+              <AppText style={[styles.word, { fontSize: 38 }]}>CRÍTICA</AppText>
             </Animated.View>
           ) : null}
         </View>

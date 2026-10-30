@@ -42,7 +42,8 @@ export type RealtimeTable =
   | 'session_blocks'
   | 'sessions'
   | 'session_maps'
-  | 'map_tokens';
+  | 'map_tokens'
+  | 'tavern_messages';
 
 export interface RealtimeBinding {
   table: RealtimeTable;

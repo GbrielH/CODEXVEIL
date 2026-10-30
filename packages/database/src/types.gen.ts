@@ -2047,6 +2047,55 @@ export type Database = {
           },
         ];
       };
+      tavern_messages: {
+        Row: {
+          body: string;
+          campaign_id: string | null;
+          created_at: string;
+          id: string;
+          recipient_id: string | null;
+          sender_id: string;
+        };
+        Insert: {
+          body: string;
+          campaign_id?: string | null;
+          created_at?: string;
+          id?: string;
+          recipient_id?: string | null;
+          sender_id?: string;
+        };
+        Update: {
+          body?: string;
+          campaign_id?: string | null;
+          created_at?: string;
+          id?: string;
+          recipient_id?: string | null;
+          sender_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tavern_messages_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tavern_messages_recipient_id_fkey';
+            columns: ['recipient_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tavern_messages_sender_id_fkey';
+            columns: ['sender_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       turn_actions: {
         Row: {
           actor_name: string;

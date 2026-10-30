@@ -428,7 +428,7 @@
 
 /*
  * Falha crítica: o dragão (WebP que toca uma vez, `public/dados/falha-critica.webp`) sopra fogo e,
- * quando as chamas cobrem a tela (~2,3 s), "CRÍTICO" surge no meio do fogo. Some depois de ~4,6 s.
+ * quando as chamas cobrem a tela (~2,3 s), "FALHA CRÍTICA" surge no meio do fogo. Some depois de ~4,6 s.
  */
 @keyframes codex-dragon-scene {
   0% {

@@ -259,3 +259,9 @@ pode usar na página aberta.
 
 `campaign_notes` só é lida, editada e apagada pelo autor (nem o mestre lê as dos jogadores); a
 restrição `campaign_notes_individual` impede criar anotação compartilhada.
+
+## Taverna (2026-10-30)
+
+`tavern_messages`: mensagens de campanha só para os participantes; diretas só entre amigos
+(`are_friends`) e lidas só pelas duas pessoas. O autor pode apagar a própria. Nada com mais de 24
+horas é lido, e as vencidas são apagadas a cada mensagem nova. O Realtime aplica o mesmo RLS.
