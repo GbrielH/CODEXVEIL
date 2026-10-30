@@ -851,6 +851,14 @@ export function T20CreationWizard({ campaign, sources, remoteDraft = null }: T20
                 error={errorFor('age')}
                 onChange={(event) => update({ age: event.target.value })}
               />
+              <TextField
+                id="t20-languages"
+                label="Idiomas"
+                hint="Os que o personagem fala. Todos falam o valkar; combine os demais com o mestre."
+                maxLength={300}
+                value={draft.languages}
+                onChange={(event) => update({ languages: event.target.value })}
+              />
               <TextareaField
                 id="t20-appearance"
                 label="Aparência"

@@ -70,7 +70,7 @@ import { DiceProvider, useDice } from '@/components/dice/dice';
 import { DeleteCharacterCard } from '@/components/sheet/delete-character';
 import { T20Attacks } from './attacks';
 import { CharacterName } from '@/components/sheet/rename-character';
-import { T20AbilityForm, T20MoneyCard, T20SkillsEditor, T20StatsEditor, T20TempHitPoints } from './editors';
+import { T20AbilityForm, T20MoneyCard, T20SkillsEditor, T20StatsEditor, T20StoryEditor, T20TempHitPoints } from './editors';
 import { ImageUploadButtons } from '@/components/ui/image-upload';
 import { T20AutomaticBonusesCard, T20GrantsCard, T20SituationalCard } from './automation';
 import { LevelGate, type LevelGateInfo } from '@/components/sheet/level-gate';
@@ -466,6 +466,15 @@ function T20SheetBody(props: Props) {
             onLevelUp={() => setLevelUp(true)}
           />
         </Card>
+      ) : null}
+      {tab === 'evolucao' ? (
+        <T20StoryEditor
+          sheet={sheet}
+          canEdit={props.canEditSheet}
+          onSave={async (next) => {
+            await saveSheet(next);
+          }}
+        />
       ) : null}
       {tab === 'evolucao' && props.canEditSheet && !editingStats ? (
         <Button variant="secondary" label="Ajustar números da ficha" onPress={() => setEditingStats(true)} />

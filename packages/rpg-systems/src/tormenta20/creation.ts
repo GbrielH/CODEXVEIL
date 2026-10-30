@@ -134,6 +134,8 @@ export interface T20Draft {
   height: string;
   /** Idade do personagem (ex.: "27 anos"); pedida na criação. */
   age: string;
+  /** Idiomas (texto livre). */
+  languages: string;
   appearance: string;
   personality: string;
   history: string;
@@ -185,6 +187,7 @@ export function createT20Draft(level = 1, method: T20AttributeMethodChoice = 'po
     money: null,
     height: '',
     age: '',
+    languages: 'Valkar (comum)',
     appearance: '',
     personality: '',
     history: '',
@@ -1095,6 +1098,7 @@ export function buildT20Character(
       speed: Math.max(0, (race?.speed ?? 9) - (heavy ? 3 : 0)),
       height: draft.height,
       age: draft.age,
+      languages: draft.languages,
       appearance: draft.appearance,
       personality: draft.personality,
       history: draft.history,
@@ -1420,6 +1424,7 @@ const t20DraftSchema = z.object({
   money: z.number().int().min(4).max(24).nullable().catch(null),
   height: shortText(40),
   age: shortText(40),
+  languages: shortText(300).catch('Valkar (comum)'),
   appearance: shortText(4000),
   personality: shortText(4000),
   history: shortText(20000),

@@ -7,6 +7,7 @@ import {
   withCurrentOption,
   type Dnd5eClass,
 } from '@codexveil/rpg-systems/dnd5e';
+import { LongField } from '@/components/t20/editors';
 import { View } from 'react-native';
 import { Chip, ChipRow } from '@/components/ui/controls';
 import { Field } from '@/components/ui/field';
@@ -146,14 +147,13 @@ export function StorySection() {
       <Card>
         <AppText variant="heading">Crônica</AppText>
         {detailFields.map((field) => (
-          <Field
+          <LongField
             key={field.key}
             label={field.label}
             value={sheet.details[field.key]}
             editable={canEditSheet}
             maxLength={field.max}
-            multiline
-            onChangeText={(text) =>
+            onChange={(text) =>
               updateSheet((current) => ({
                 ...current,
                 details: { ...current.details, [field.key]: text },

@@ -1463,6 +1463,7 @@ function StoryCard({
   const [form, setForm] = useState({
     height: sheet.identity.height,
     age: sheet.identity.age,
+    languages: sheet.identity.languages,
     appearance: sheet.identity.appearance,
     personality: sheet.identity.personality,
     history: sheet.identity.history,
@@ -1495,6 +1496,14 @@ function StoryCard({
             onChange={(event) => setForm({ ...form, age: event.target.value })}
           />
         </div>
+        <TextField
+          id="t20-sheet-languages"
+          label="Idiomas"
+          maxLength={300}
+          value={form.languages}
+          disabled={!canEdit}
+          onChange={(event) => setForm({ ...form, languages: event.target.value })}
+        />
         <TextareaField
           id="t20-appearance"
           label="Aparência"

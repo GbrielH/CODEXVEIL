@@ -190,8 +190,10 @@ mapa e notas lado a lado).
       alterar a ficha (nome e textos), PV/PM/dinheiro e adicionar habilidade; nunca troca o pedido
       por anotação.
 - [x] Prompts de imagem com aparência, personalidade e história completas (D&D passou a mandar).
-- [x] História, personalidade e aparência com "Tela cheia" (ler e editar) no site.
-- [ ] Tormenta20: seleção de idiomas (criação e ficha).
+- [x] História, personalidade e aparência com "Tela cheia" (ler e editar), no site e no app (a ficha
+      T20 do app ganhou o cartão Personagem com altura, idade, idiomas e textos).
+- [x] Tormenta20: campo Idiomas na criação (site e app) e na ficha (`identity.languages`; o livro
+      não fixa lista nem quantidade, então é texto livre começando em "Valkar (comum)").
 - [ ] Histórico de moedas (D&D e T20): cada gasto/recebimento pede valor e descrição.
 - [ ] Aba Anotações só individual (cada um vê as próprias).
 - [ ] Falha crítica: dragão do GIF cuspindo fogo com "CRÍTICO" no meio do fogo.

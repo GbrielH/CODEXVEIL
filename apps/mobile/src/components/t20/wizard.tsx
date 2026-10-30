@@ -945,6 +945,12 @@ export function T20MobileWizard({
             maxLength={40}
           />
           <Field
+            label="Idiomas (todos falam o valkar)"
+            value={draft.languages}
+            onChangeText={(languages) => update({ languages })}
+            maxLength={300}
+          />
+          <Field
             label="Aparência"
             multiline
             value={draft.appearance}

@@ -18,7 +18,7 @@ import {
 } from '@codexveil/rpg-systems/tormenta20';
 import { abilityEntrySchema, type AbilityEntryKind } from '@codexveil/validation';
 import { useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { Chip, ChipRow, NumberField } from '@/components/ui/controls';
 import { useConfirm } from '@/components/ui/dialog';
@@ -352,3 +352,83 @@ const styles = StyleSheet.create({
     color: colors.fg,
   },
 });
+
+/** Texto longo com "Tela cheia" (história, personalidade, aparência), para ler sem rolar a caixinha. */
+export function LongField({ label, value, onChange, editable, maxLength }: { label: string; value: string; onChange: (value: string) => void; editable: boolean; maxLength: number }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={{ gap: 4 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <AppText style={{ flex: 1 }}>{label}</AppText>
+        <Button compact variant="ghost" label="Tela cheia" onPress={() => setOpen(true)} />
+      </View>
+      <TextInput
+        value={value}
+        onChangeText={onChange}
+        editable={editable}
+        multiline
+        maxLength={maxLength}
+        accessibilityLabel={label}
+        style={[styles.input, { minHeight: 90, textAlignVertical: 'top' }]}
+      />
+      <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
+        <View style={{ flex: 1, backgroundColor: colors.canvas, padding: spacing[4], gap: spacing[3] }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <AppText variant="heading" style={{ flex: 1 }}>
+              {label}
+            </AppText>
+            <Button compact label="Fechar" onPress={() => setOpen(false)} />
+          </View>
+          <ScrollView style={{ flex: 1 }}>
+            <TextInput
+              value={value}
+              onChangeText={onChange}
+              editable={editable}
+              multiline
+              maxLength={maxLength}
+              accessibilityLabel={label}
+              style={{ color: colors.fg, fontSize: 18, lineHeight: 27, textAlignVertical: 'top', minHeight: 400 }}
+            />
+          </ScrollView>
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+/** Dados do personagem (altura, idade, idiomas e textos), com tela cheia para os textos longos. */
+export function T20StoryEditor({ sheet, canEdit, onSave }: { sheet: T20Sheet; canEdit: boolean; onSave: (next: T20Sheet) => Promise<void> }) {
+  const [form, setForm] = useState({
+    height: sheet.identity.height,
+    age: sheet.identity.age,
+    languages: sheet.identity.languages,
+    appearance: sheet.identity.appearance,
+    personality: sheet.identity.personality,
+    history: sheet.identity.history,
+  });
+  const [busy, setBusy] = useState(false);
+  const set = (patch: Partial<typeof form>) => setForm((current) => ({ ...current, ...patch }));
+  return (
+    <Card>
+      <CardTitle title="Personagem" />
+      <Field label="Altura" value={form.height} onChangeText={(height) => set({ height })} editable={canEdit} maxLength={40} />
+      <Field label="Idade" value={form.age} onChangeText={(age) => set({ age })} editable={canEdit} maxLength={40} />
+      <Field label="Idiomas" value={form.languages} onChangeText={(languages) => set({ languages })} editable={canEdit} maxLength={300} />
+      <LongField label="Aparência" value={form.appearance} onChange={(appearance) => set({ appearance })} editable={canEdit} maxLength={4000} />
+      <LongField label="Personalidade" value={form.personality} onChange={(personality) => set({ personality })} editable={canEdit} maxLength={4000} />
+      <LongField label="História" value={form.history} onChange={(history) => set({ history })} editable={canEdit} maxLength={8000} />
+      {canEdit ? (
+        <View style={styles.actions}>
+          <Button
+            label="Salvar"
+            loading={busy}
+            onPress={() => {
+              setBusy(true);
+              void onSave({ ...sheet, identity: { ...sheet.identity, ...form } }).finally(() => setBusy(false));
+            }}
+          />
+        </View>
+      ) : null}
+    </Card>
+  );
+}

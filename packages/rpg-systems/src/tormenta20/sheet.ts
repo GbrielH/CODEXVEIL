@@ -72,6 +72,8 @@ export const t20SheetSchema = z.object({
       speed: z.number().min(0).max(120).default(9),
       height: text(40),
       age: text(40),
+      /** Idiomas que o personagem fala (texto livre; o livro não fixa lista nem quantidade). */
+      languages: text(300),
       appearance: text(4000),
       personality: text(4000),
       history: text(8000),
