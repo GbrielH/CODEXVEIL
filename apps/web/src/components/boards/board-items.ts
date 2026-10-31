@@ -1,16 +1,17 @@
 /** Blocos do quadro livre. O banco guarda a lista como JSON; aqui ela é conferida ao abrir. */
 
+// As chaves ficam como estão (já gravadas nos quadros); as classes usam a paleta do Codexveil.
 export const BOARD_COLORS = ['amber', 'violet', 'sky', 'emerald', 'rose', 'slate'] as const;
 export type BoardColor = (typeof BOARD_COLORS)[number];
 
 /** Fundo e borda de cada cor (notas e molduras). */
 export const COLOR_STYLES: Record<BoardColor, { note: string; frame: string; swatch: string }> = {
-  amber: { note: 'bg-amber-200 text-stone-900', frame: 'border-amber-400/70 bg-amber-400/5', swatch: 'bg-amber-300' },
-  violet: { note: 'bg-violet-200 text-stone-900', frame: 'border-violet-400/70 bg-violet-400/5', swatch: 'bg-violet-300' },
-  sky: { note: 'bg-sky-200 text-stone-900', frame: 'border-sky-400/70 bg-sky-400/5', swatch: 'bg-sky-300' },
-  emerald: { note: 'bg-emerald-200 text-stone-900', frame: 'border-emerald-400/70 bg-emerald-400/5', swatch: 'bg-emerald-300' },
-  rose: { note: 'bg-rose-200 text-stone-900', frame: 'border-rose-400/70 bg-rose-400/5', swatch: 'bg-rose-300' },
-  slate: { note: 'bg-slate-200 text-stone-900', frame: 'border-slate-400/70 bg-slate-400/5', swatch: 'bg-slate-300' },
+  amber: { note: 'bg-amber-300 text-ink-900', frame: 'border-amber-400/70 bg-amber-400/5', swatch: 'bg-amber-300' },
+  violet: { note: 'bg-arcane-300 text-ink-900', frame: 'border-arcane-400/70 bg-arcane-400/5', swatch: 'bg-arcane-300' },
+  sky: { note: 'bg-silver-100 text-ink-900', frame: 'border-silver-400/70 bg-silver-400/5', swatch: 'bg-silver-200' },
+  emerald: { note: 'bg-verdigris-300 text-ink-900', frame: 'border-verdigris-400/70 bg-verdigris-400/5', swatch: 'bg-verdigris-300' },
+  rose: { note: 'bg-wine-200 text-ink-900', frame: 'border-wine-400/70 bg-wine-400/5', swatch: 'bg-wine-300' },
+  slate: { note: 'bg-parchment-200 text-ink-900', frame: 'border-silver-500/70 bg-silver-500/5', swatch: 'bg-silver-400' },
 };
 
 interface BoxBase {

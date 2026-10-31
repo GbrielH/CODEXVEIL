@@ -1,5 +1,5 @@
 import { listBookEntryIndex } from '@codexveil/database';
-import { BookOpen, Gem, Search, Skull, Swords } from 'lucide-react';
+import { BookOpen, Gem, ScrollText, Search, Skull, Sparkles, Swords } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
 import { LibraryNav } from '@/components/library/library-nav';
 import { buttonClasses } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/states';
-import { campaignBookPacks } from '@/lib/books';
+import { BOOK_KIND_SLUGS, campaignBookPacks } from '@/lib/books';
 import { loadCampaignOrNotFound } from '@/lib/campaigns';
 import { bookPath, campaignPath } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -21,7 +21,15 @@ const KINDS: Record<string, { kind: string; label: string; icon: ReactNode }[]> 
     { kind: 'magic_item', label: 'Itens mágicos', icon: <Gem className="h-4 w-4" /> },
     { kind: 'equipment', label: 'Equipamentos', icon: <Swords className="h-4 w-4" /> },
   ],
-  assimilacao: [{ kind: 'artifact', label: 'Artefatos', icon: <Gem className="h-4 w-4" /> }],
+  assimilacao: [
+    { kind: 'artifact', label: 'Artefatos', icon: <Gem className="h-4 w-4" /> },
+    {
+      kind: 'assimilation',
+      label: 'Cartas de Assimilação',
+      icon: <Sparkles className="h-4 w-4" />,
+    },
+    { kind: 'characteristic', label: 'Características', icon: <ScrollText className="h-4 w-4" /> },
+  ],
 };
 
 function normalize(text: string): string {
@@ -113,7 +121,11 @@ export default async function BookCatalogPage({
                 <li key={entry.id}>
                   <Link
                     href={
-                      bookPath(entry.packId, `/${entry.kind}/${entry.key}`, campaign.id) as Route
+                      bookPath(
+                        entry.packId,
+                        `/${BOOK_KIND_SLUGS[entry.kind] ?? entry.kind}/${entry.key}`,
+                        campaign.id,
+                      ) as Route
                     }
                     className="flex h-full flex-col gap-1 rounded-lg border border-line bg-card p-3 transition-colors hover:border-parchment-400/60 hover:bg-hover"
                   >

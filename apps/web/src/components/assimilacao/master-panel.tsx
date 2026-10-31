@@ -33,6 +33,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { SaveStatus } from '@/components/ui/save-status';
+import { useConfirm } from '@/components/ui/use-confirm';
 import { cx } from '@/lib/cx';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
@@ -567,9 +568,11 @@ export function AssimilacaoMasterPanel({
   const conflictStatus = useAutosave(campaignId, 'conflicts', conflicts);
   const refugeStatus = useAutosave(campaignId, 'refuges', refuges);
   const open = conflicts.find((conflict) => conflict.id === openId) ?? null;
+  const [confirm, confirmDialog] = useConfirm();
 
   return (
     <div className="flex flex-col gap-6">
+      {confirmDialog}
       <Card ornate>
         {open ? (
           <ConflictEditor
@@ -637,8 +640,13 @@ export function AssimilacaoMasterPanel({
                     <span className="absolute top-3 right-3">
                       <RemoveButton
                         label={`Apagar ${conflict.name}`}
-                        onClick={() => {
-                          if (window.confirm(`Apagar o conflito "${conflict.name}"?`))
+                        onClick={async () => {
+                          const ok = await confirm({
+                            title: 'Apagar o conflito?',
+                            description: `"${conflict.name}" e tudo o que há nele (ameaças, objetivos e ativações) serão apagados.`,
+                            confirmLabel: 'Apagar',
+                          });
+                          if (ok)
                             setConflicts((current) =>
                               current.filter((item) => item.id !== conflict.id),
                             );
@@ -704,9 +712,13 @@ export function AssimilacaoMasterPanel({
                     current.map((item) => (item.id === next.id ? next : item)),
                   )
                 }
-                onRemove={() => {
-                  if (window.confirm(`Apagar o refúgio "${refuge.name}"?`))
-                    setRefuges((current) => current.filter((item) => item.id !== refuge.id));
+                onRemove={async () => {
+                  const ok = await confirm({
+                    title: 'Apagar o refúgio?',
+                    description: `"${refuge.name}" será apagado com a população, os atributos e os recursos.`,
+                    confirmLabel: 'Apagar',
+                  });
+                  if (ok) setRefuges((current) => current.filter((item) => item.id !== refuge.id));
                 }}
               />
             ))}

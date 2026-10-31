@@ -43,6 +43,7 @@ import {
 import { IMAGE_EXTENSIONS } from '@codexveil/validation';
 import { CircleDot, Eraser, Expand, Shrink, EyeOff, ImageUp, Map as MapIcon, Minus, MousePointer2, Pencil, Plus, Radio, RotateCw, Ruler, Square, SquareDashed, StickyNote, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useConfirm } from '@/components/ui/use-confirm';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { CheckboxField, SelectField, TextField } from '@/components/ui/field';
@@ -118,6 +119,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [busy, setBusy] = useState(false);
+  const [confirm, confirmDialog] = useConfirm();
   const [tool, setTool] = useState<MapTool>('move');
   const [selectedToken, setSelectedToken] = useState<string | null>(null);
   const [markerLabel, setMarkerLabel] = useState('');
@@ -356,7 +358,13 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   };
 
   const removeMap = async () => {
-    if (!map || !window.confirm(`Apagar o mapa "${map.name}" e os tokens dele?`)) return;
+    if (!map) return;
+    const ok = await confirm({
+      title: 'Apagar o mapa?',
+      description: `"${map.name}" e os tokens dele serão apagados.`,
+      confirmLabel: 'Apagar',
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const client = getSupabaseBrowserClient();
@@ -432,6 +440,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
 
   return (
     <Card>
+      {confirmDialog}
       <CardHeader
         icon={<MapIcon className="h-5 w-5" aria-hidden="true" />}
         title="Mapa da sessão"
@@ -627,7 +636,9 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
               </Button>
             ) : null}
             {canManage && map.walls.length ? (
-              <Button size="sm" variant="ghost" onClick={() => window.confirm('Apagar todas as paredes?') && patchMap({ walls: [] })}>
+              <Button size="sm" variant="ghost" onClick={async () => {
+                  if (await confirm({ title: 'Apagar todas as paredes?', confirmLabel: 'Apagar' })) patchMap({ walls: [] });
+                }}>
                 Limpar paredes
               </Button>
             ) : null}

@@ -24,7 +24,7 @@ export function CharacterCardModal({ open, onClose }: { open: boolean; onClose: 
   const species = formatSpeciesName(sheet.identity.species);
   return (
     <Modal open={open} onClose={onClose} title={name || 'Personagem'} size="lg">
-      <div className="mx-auto w-full rounded-2xl bg-gradient-to-b from-parchment-300 via-amber-500 to-parchment-400 p-1.5 shadow-2xl">
+      <div className="mx-auto w-full rounded-2xl bg-gradient-to-b from-parchment-300 via-amber-400 to-parchment-400 p-1.5 shadow-2xl">
         <div className="flex flex-col gap-4 rounded-xl bg-gradient-to-br from-wine-950 via-canvas to-wine-950 p-3 sm:flex-row">
           <div className="relative aspect-[3/4] w-full shrink-0 overflow-hidden sm:w-2/5 rounded-lg border-2 border-parchment-400/60 bg-wine-900">
             {character.portraitUrl ? (

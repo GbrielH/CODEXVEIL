@@ -359,7 +359,7 @@ export function DiceTray({
                     : ''}
               </p>
               {last.secret ? (
-                <p className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-200">
+                <p className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-300">
                   <Lock className="h-3 w-3" aria-hidden="true" />
                   Apenas quem rolou e o mestre veem
                 </p>

@@ -425,19 +425,46 @@ function SheetBody({
         title="Cabo de Guerra"
         description="Determinação + Assimilação somam sempre 10."
       />
-      <div className="flex items-center gap-3" aria-hidden="true">
-        <span className="font-display text-2xl text-amber-200">{tug.determinationLevel}</span>
-        <div className="flex h-3 flex-1 overflow-hidden rounded-full bg-sunken">
-          <div
-            className="bg-gradient-to-r from-amber-600 to-amber-400"
-            style={{ width: `${tug.determinationLevel * 10}%` }}
-          />
-          <div
-            className="bg-gradient-to-r from-violet-500 to-violet-700"
-            style={{ width: `${tug.assimilationLevel * 10}%` }}
-          />
+      {/* A corda da ficha do livro: 10 laços, vermelhos da Determinação e verdes da Assimilação. */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        <span className="flex flex-col items-center">
+          <span className="flex h-11 w-11 items-center justify-center rounded-full font-display text-xl text-wine-100 ring-4 ring-wine-500">
+            {tug.determinationLevel}
+          </span>
+          <span className="mt-1 text-[0.65rem] tracking-wide text-wine-200 uppercase">Determ.</span>
+        </span>
+        <div
+          className="grid flex-1 grid-cols-10 gap-0.5"
+          role="meter"
+          aria-label={`Cabo de Guerra: Determinação ${tug.determinationLevel}, Assimilação ${tug.assimilationLevel}`}
+          aria-valuemin={0}
+          aria-valuemax={10}
+          aria-valuenow={tug.determinationLevel}
+        >
+          {Array.from({ length: 10 }, (_, index) => {
+            const side = index < tug.determinationLevel ? 'det' : 'assim';
+            return (
+              <svg key={index} viewBox="0 0 40 24" className="h-6 w-full" aria-hidden="true">
+                <path
+                  d="M2 3 L18 12 L2 21 Z M38 3 L22 12 L38 21 Z"
+                  fill={side === 'det' ? 'rgb(140 40 52 / 0.35)' : 'rgb(40 120 120 / 0.35)'}
+                  stroke={side === 'det' ? '#b03a48' : '#3fa3a0'}
+                  strokeWidth={2.2}
+                  strokeLinejoin="round"
+                />
+                <circle cx="20" cy="12" r="2.4" fill={side === 'det' ? '#b03a48' : '#3fa3a0'} />
+              </svg>
+            );
+          })}
         </div>
-        <span className="font-display text-2xl text-violet-200">{tug.assimilationLevel}</span>
+        <span className="flex flex-col items-center">
+          <span className="flex h-11 w-11 items-center justify-center rounded-full font-display text-xl text-verdigris-300 ring-4 ring-verdigris-400">
+            {tug.assimilationLevel}
+          </span>
+          <span className="mt-1 text-[0.65rem] tracking-wide text-verdigris-300 uppercase">
+            Assim.
+          </span>
+        </span>
       </div>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {[
@@ -458,14 +485,17 @@ function SheetBody({
             <p className="flex items-center gap-1 text-sm text-fg">
               <AssimSymbol code={code} /> {label}: <strong>{track?.current ?? 0}</strong> / {max}
             </p>
-            <div className="flex flex-wrap gap-1" aria-hidden="true">
+            <div className="flex flex-wrap gap-1.5" aria-hidden="true">
               {Array.from({ length: max }, (_, index) => (
                 <span
                   key={index}
                   className={cx(
-                    'h-3 w-3 rounded-full ring-1 ring-line',
-                    index < (track?.current ?? 0) &&
-                      (code === 'd' ? 'bg-amber-400' : 'bg-violet-400'),
+                    'h-3.5 w-3.5 rotate-45 rounded-[2px] ring-1',
+                    index < (track?.current ?? 0)
+                      ? code === 'd'
+                        ? 'bg-wine-500 ring-wine-300'
+                        : 'bg-verdigris-400 ring-verdigris-300'
+                      : 'ring-line',
                   )}
                 />
               ))}
@@ -989,8 +1019,26 @@ function SheetBody({
               key={key}
               className="flex items-center justify-between rounded-md border border-line px-2.5 py-1"
             >
-              <span className="text-sm text-fg">
-                {aptitudeLabels[key as keyof typeof aptitudeLabels]}
+              <span className="flex min-w-0 flex-col gap-1">
+                <span className="text-sm text-fg">
+                  {aptitudeLabels[key as keyof typeof aptitudeLabels]}
+                </span>
+                <span className="flex gap-1" aria-hidden="true">
+                  {Array.from({ length: 5 }, (_, pip) => (
+                    <span
+                      key={pip}
+                      className={cx(
+                        'h-2.5 w-2.5 ring-1',
+                        group === 'instincts' ? 'rounded-[1px]' : 'rotate-45 rounded-[1px]',
+                        pip < value
+                          ? group === 'instincts'
+                            ? 'bg-wine-500 ring-wine-300'
+                            : 'bg-parchment-300 ring-parchment-200'
+                          : 'ring-line',
+                      )}
+                    />
+                  ))}
+                </span>
               </span>
               {stepper(
                 value,
@@ -1587,7 +1635,9 @@ function SheetBody({
                 {permissions.isOwner ? (
                   <CharacterDiceCard
                     characterId={character.id}
-                    characterSummary={[imageInput.name, imageInput.className, imageInput.appearance].filter(Boolean).join(' · ')}
+                    characterSummary={[imageInput.name, imageInput.className, imageInput.appearance]
+                      .filter(Boolean)
+                      .join(' · ')}
                   />
                 ) : null}
                 {shareCard}
