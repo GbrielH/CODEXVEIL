@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 import { AppVersion } from '@/components/app-version';
 import { NewPasswordForm } from '@/components/change-password';
+import { FriendsCard } from '@/components/friends-card';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { CheckRow } from '@/components/ui/controls';
@@ -183,6 +184,7 @@ export default function ProfileScreen() {
       {data ? (
         <ProfileForm key={data.displayName + data.bio} profile={data} onSaved={reload} />
       ) : null}
+      <FriendsCard />
       <PushCard />
       <Card>
         <AppText variant="heading">Alterar senha</AppText>

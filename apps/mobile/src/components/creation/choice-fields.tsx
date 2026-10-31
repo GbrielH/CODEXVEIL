@@ -9,6 +9,7 @@ import {
 import { Check, Search } from 'lucide-react-native';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Button } from '@/components/ui/button';
 import { AppText, Badge } from '@/components/ui/primitives';
 import { colors, fonts, palette, radii, spacing } from '@/lib/theme';
 
@@ -130,7 +131,13 @@ export function OptionCard({
   onPress,
   icon,
   titleEn,
+  expandable = false,
 }: {
+  /**
+   * Cartão compacto: mostra só o título e uma linha; tocar abre os detalhes com "Selecionar" e
+   * "Fechar" (classes, antecedentes e espécies, de textos longos).
+   */
+  expandable?: boolean;
   selected: boolean;
   disabled?: boolean;
   title: string;
@@ -142,9 +149,11 @@ export function OptionCard({
   /** Ícone da classe ou espécie, à esquerda do título. */
   icon?: (color: string) => ReactNode;
 }) {
+  const [open, setOpen] = useState(false);
+  const compact = expandable && !open;
   return (
     <Pressable
-      onPress={onPress}
+      onPress={expandable ? () => setOpen((value) => !value) : onPress}
       disabled={disabled}
       accessibilityRole="radio"
       accessibilityState={{ selected, disabled }}
@@ -162,11 +171,29 @@ export function OptionCard({
           {titleEn ? <AppText variant="small">{`  ${titleEn}`}</AppText> : null}
         </AppText>
       </View>
-      {description ? <AppText variant="small">{description}</AppText> : null}
-      {note ? (
+      {description ? (
+        <AppText variant="small" numberOfLines={compact ? 1 : undefined}>
+          {description}
+        </AppText>
+      ) : null}
+      {note && !compact ? (
         <AppText variant="small" style={{ color: '#E6BE74' }}>
           {note}
         </AppText>
+      ) : null}
+      {expandable && open ? (
+        <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
+          <Button
+            label={selected ? 'Selecionado' : 'Selecionar'}
+            compact
+            disabled={disabled || selected}
+            onPress={() => {
+              onPress();
+              setOpen(false);
+            }}
+          />
+          <Button label="Fechar" compact variant="ghost" onPress={() => setOpen(false)} />
+        </View>
       ) : null}
     </Pressable>
   );

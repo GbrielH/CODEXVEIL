@@ -66,7 +66,6 @@ import {
 } from '@/components/assimilacao/wizard';
 import { parseAssimilacaoCampaignRules } from '@codexveil/rpg-systems/assimilacao';
 import { Button } from '@/components/ui/button';
-import { Segmented } from '@/components/ui/segmented';
 import { loadAssimilacaoSources, loadT20Sources } from '@/lib/books';
 import { parseT20CampaignRules, type T20ContentSource } from '@codexveil/rpg-systems/tormenta20';
 import {
@@ -162,11 +161,6 @@ const CLEAR_ON_CLASS = ['class.', 'subclass.', 'spells.', 'asi.', 'epic.', 'equi
 const CLEAR_ON_BACKGROUND = ['background.', 'equipment.background'];
 const CLEAR_ON_SPECIES = ['species.'];
 
-/** Resumo curto no cartão (os livros importados trazem textos longos). */
-function clip(text: string, max = 220): string {
-  return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
-}
-
 function without(
   selections: Dnd5eDraft['selections'],
   prefixes: string[],
@@ -213,12 +207,18 @@ async function loadAssimData(userId: string) {
   return { campaigns, own: await loadAssimilacaoSources(client, own) };
 }
 
+const systemDescriptions = {
+  dnd5e: 'Dungeons & Dragons 5ª edição (SRD e os seus livros).',
+  tormenta20: 'O RPG de fantasia brasileiro, com os livros importados.',
+  assimilacao: 'Horror e sobrevivência num mundo tomado pela Assimilação.',
+} as const;
+
 export default function NewCharacterScreen() {
   const params = useLocalSearchParams<{ campanha?: string }>();
   const userId = useUserId();
   const data = useAsyncData(() => loadCreationData(userId), userId);
   const t20 = useAsyncData(() => loadT20Data(userId), `t20:${userId}`);
-  const [system, setSystem] = useState<'dnd5e' | 'tormenta20' | 'assimilacao'>('dnd5e');
+  const [system, setSystem] = useState<'dnd5e' | 'tormenta20' | 'assimilacao' | null>(null);
   const assim = useAsyncData(() => loadAssimData(userId), `assim:${userId}`);
   const [assimCampaign, setAssimCampaign] = useState('');
   const [assimSources, setAssimSources] = useState<AssimilacaoMobileSource[] | null>(null);
@@ -226,13 +226,40 @@ export default function NewCharacterScreen() {
   const [t20Sources, setT20Sources] = useState<T20ContentSource[] | null>(null);
   const preT20 = t20.data?.campaigns.find((campaign) => campaign.id === params.campanha);
   const preAssim = assim.data?.campaigns.find((campaign) => campaign.id === params.campanha);
-  const activeSystem = preT20 ? 'tormenta20' : preAssim ? 'assimilacao' : system;
+  // Vindo de uma campanha, o sistema é o dela; senão a pessoa escolhe antes de tudo.
+  const activeSystem = preT20
+    ? 'tormenta20'
+    : preAssim
+      ? 'assimilacao'
+      : (system ?? (params.campanha && !t20.loading && !assim.loading ? 'dnd5e' : null));
   const systemOptions = [
     { value: 'dnd5e' as const, label: 'D&D 5e' },
     { value: 'tormenta20' as const, label: 'Tormenta20' },
     { value: 'assimilacao' as const, label: 'Assimilação' },
   ];
 
+  if (activeSystem === null) {
+    if (data.loading || t20.loading || assim.loading)
+      return <LoadingState label="Carregando suas campanhas e livros…" />;
+    return (
+      <ScrollView
+        style={{ flex: 1, backgroundColor: colors.canvas }}
+        contentContainerStyle={styles.content}
+      >
+        <AppText variant="title">Qual sistema?</AppText>
+        <AppText variant="muted">Escolha o sistema de RPG do personagem.</AppText>
+        {systemOptions.map((option) => (
+          <OptionCard
+            key={option.value}
+            selected={false}
+            title={option.label}
+            description={systemDescriptions[option.value]}
+            onPress={() => setSystem(option.value)}
+          />
+        ))}
+      </ScrollView>
+    );
+  }
   if (activeSystem === 'assimilacao' && assim.data) {
     const chosenId = preAssim?.id ?? assimCampaign;
     const chosen = assim.data.campaigns.find((campaign) => campaign.id === chosenId);
@@ -254,11 +281,11 @@ export default function NewCharacterScreen() {
           style={{ flex: 1, backgroundColor: colors.canvas }}
           contentContainerStyle={styles.content}
         >
-          <Segmented
-            value="assimilacao"
-            onChange={(value) => setSystem(value)}
-            accessibilityLabel="Sistema"
-            options={systemOptions}
+          <Button
+            label="Trocar o sistema"
+            variant="ghost"
+            compact
+            onPress={() => setSystem(null)}
           />
           <AppText variant="title">Onde o Infectado vai jogar?</AppText>
           {assim.data.campaigns.map((campaign) => (
@@ -303,7 +330,6 @@ export default function NewCharacterScreen() {
   }
   if (data.loading || t20.loading || assim.loading)
     return <LoadingState label="Carregando suas campanhas e livros…" />;
-  const hasT20 = (t20.data?.campaigns.length ?? 0) > 0 || (t20.data?.own.length ?? 0) > 0;
   if (activeSystem === 'tormenta20' && t20.data) {
     const chosenId = preT20?.id ?? t20Campaign;
     const chosen = t20.data.campaigns.find((campaign) => campaign.id === chosenId);
@@ -327,11 +353,11 @@ export default function NewCharacterScreen() {
           style={{ flex: 1, backgroundColor: colors.canvas }}
           contentContainerStyle={styles.content}
         >
-          <Segmented
-            value="tormenta20"
-            onChange={(value) => setSystem(value)}
-            accessibilityLabel="Sistema"
-            options={systemOptions}
+          <Button
+            label="Trocar o sistema"
+            variant="ghost"
+            compact
+            onPress={() => setSystem(null)}
           />
           <AppText variant="title">Onde o personagem vai jogar?</AppText>
           {t20.data.campaigns.map((campaign) => (
@@ -380,13 +406,19 @@ export default function NewCharacterScreen() {
     : '';
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      {hasT20 || (assim.data?.campaigns.length ?? 0) > 0 || (assim.data?.own.length ?? 0) > 0 ? (
-        <View style={{ padding: spacing[4], paddingBottom: 0 }}>
-          <Segmented
-            value="dnd5e"
-            onChange={(value) => setSystem(value)}
-            accessibilityLabel="Sistema"
-            options={systemOptions}
+      {!params.campanha ? (
+        <View
+          style={{
+            paddingHorizontal: spacing[4],
+            paddingTop: spacing[2],
+            alignItems: 'flex-start',
+          }}
+        >
+          <Button
+            label="Trocar o sistema"
+            variant="ghost"
+            compact
+            onPress={() => setSystem(null)}
           />
         </View>
       ) : null}
@@ -447,6 +479,8 @@ function Wizard({
   const [busy, setBusy] = useState(false);
   // Busca de classe e espécie pelo nome em português ou em inglês.
   const [query, setQuery] = useState('');
+  // Com a escolha feita, a lista recolhe e mostra só o escolhido ("Trocar" reabre).
+  const [browsing, setBrowsing] = useState(false);
   const [message, setMessage] = useState<string | null>(loadError);
 
   const specs = useMemo(() => listDnd5eChoices(draft), [draft, bookContent]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -476,6 +510,7 @@ function Wizard({
   const goTo = (target: Dnd5eStep) => {
     setStep(target);
     setQuery('');
+    setBrowsing(false);
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
   const next = () => {
@@ -689,23 +724,31 @@ function Wizard({
 
       {step === 'class' ? (
         <View style={{ gap: spacing[3] }}>
-          <Field
-            label="Buscar classe"
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Nome em português ou em inglês"
-          />
+          {draft.classId && !browsing ? null : (
+            <Field
+              label="Buscar classe"
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Nome em português ou em inglês"
+            />
+          )}
           {listClasses()
-            .filter((entry) => matchesNameSearch(entry.name, query))
+            .filter((entry) =>
+              draft.classId && !browsing
+                ? entry.id === draft.classId
+                : matchesNameSearch(entry.name, query),
+            )
             .map((entry) => (
               <OptionCard
+                expandable
                 key={entry.id}
                 titleEn={englishName(entry.name)}
                 selected={entry.id === draft.classId}
                 title={entry.name}
                 icon={(color) => <CharacterIcon kind="class" id={entry.id} color={color} />}
-                description={`${entry.primaryAbilityLabel} · ${entry.hitDie}${entry.book ? ` · ${entry.book}` : ''} · ${clip(entry.summary)}`}
-                onPress={() =>
+                description={`${entry.primaryAbilityLabel} · ${entry.hitDie}${entry.book ? ` · ${entry.book}` : ''} · ${entry.summary}`}
+                onPress={() => {
+                  setBrowsing(false);
                   setDraft((current) =>
                     current.classId === entry.id
                       ? current
@@ -714,10 +757,18 @@ function Wizard({
                           classId: entry.id,
                           selections: without(current.selections, CLEAR_ON_CLASS),
                         },
-                  )
-                }
+                  );
+                }}
               />
             ))}
+          {draft.classId && !browsing ? (
+            <Button
+              label="Trocar a classe"
+              variant="secondary"
+              compact
+              onPress={() => setBrowsing(true)}
+            />
+          ) : null}
           {errorFor('classId') ? <Notice tone="danger" message={errorFor('classId')!} /> : null}
           {classDef ? (
             <Card>
@@ -764,32 +815,47 @@ function Wizard({
 
       {step === 'background' ? (
         <View style={{ gap: spacing[3] }}>
-          {listBackgrounds().map((background) => (
-            <OptionCard
-              key={background.id}
-              selected={background.id === draft.backgroundId}
-              title={background.name}
-              icon={(color) => (
-                <CharacterIcon kind="background" id={background.name} color={color} />
-              )}
-              description={
-                background.book
-                  ? `${background.book} · Atributos à escolha · Talento de origem à escolha. ${clip(background.summary)}`
-                  : `${background.summary} Atributos: ${background.abilities.map((ability) => abilityLabels[ability].abbreviation).join(', ')}. Talento: ${findFeat(background.feat)?.name ?? background.feat}. Perícias: ${background.skills.map((skill) => skillDefinitions[skill].label).join(' e ')}.`
-              }
-              onPress={() =>
-                setDraft((current) =>
-                  current.backgroundId === background.id
-                    ? current
-                    : {
-                        ...current,
-                        backgroundId: background.id,
-                        selections: without(current.selections, CLEAR_ON_BACKGROUND),
-                      },
-                )
-              }
+          {listBackgrounds()
+            .filter(
+              (background) =>
+                !draft.backgroundId || browsing || background.id === draft.backgroundId,
+            )
+            .map((background) => (
+              <OptionCard
+                expandable
+                key={background.id}
+                selected={background.id === draft.backgroundId}
+                title={background.name}
+                icon={(color) => (
+                  <CharacterIcon kind="background" id={background.name} color={color} />
+                )}
+                description={
+                  background.book
+                    ? `${background.book} · Atributos à escolha · Talento de origem à escolha. ${background.summary}`
+                    : `${background.summary} Atributos: ${background.abilities.map((ability) => abilityLabels[ability].abbreviation).join(', ')}. Talento: ${findFeat(background.feat)?.name ?? background.feat}. Perícias: ${background.skills.map((skill) => skillDefinitions[skill].label).join(' e ')}.`
+                }
+                onPress={() => {
+                  setBrowsing(false);
+                  setDraft((current) =>
+                    current.backgroundId === background.id
+                      ? current
+                      : {
+                          ...current,
+                          backgroundId: background.id,
+                          selections: without(current.selections, CLEAR_ON_BACKGROUND),
+                        },
+                  );
+                }}
+              />
+            ))}
+          {draft.backgroundId && !browsing ? (
+            <Button
+              label="Trocar o antecedente"
+              variant="secondary"
+              compact
+              onPress={() => setBrowsing(true)}
             />
-          ))}
+          ) : null}
           {errorFor('backgroundId') ? (
             <Notice tone="danger" message={errorFor('backgroundId')!} />
           ) : null}
@@ -799,23 +865,31 @@ function Wizard({
 
       {step === 'species' ? (
         <View style={{ gap: spacing[3] }}>
-          <Field
-            label="Buscar espécie"
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Nome em português ou em inglês"
-          />
+          {draft.speciesId && !browsing ? null : (
+            <Field
+              label="Buscar espécie"
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Nome em português ou em inglês"
+            />
+          )}
           {listSpecies()
-            .filter((species) => matchesNameSearch(species.name, query))
+            .filter((species) =>
+              draft.speciesId && !browsing
+                ? species.id === draft.speciesId
+                : matchesNameSearch(species.name, query),
+            )
             .map((species) => (
               <OptionCard
+                expandable
                 key={species.id}
                 titleEn={englishName(species.name)}
                 selected={species.id === draft.speciesId}
                 title={species.name}
                 icon={(color) => <CharacterIcon kind="species" id={species.id} color={color} />}
-                description={`${species.sizeLabel} · ${formatDistance(species.speed, 'm')}${species.book ? ` · ${species.book}` : ''}. ${clip(species.summary)}`}
-                onPress={() =>
+                description={`${species.sizeLabel} · ${formatDistance(species.speed, 'm')}${species.book ? ` · ${species.book}` : ''}. ${species.summary}`}
+                onPress={() => {
+                  setBrowsing(false);
                   setDraft((current) =>
                     current.speciesId === species.id
                       ? current
@@ -824,10 +898,18 @@ function Wizard({
                           speciesId: species.id,
                           selections: without(current.selections, CLEAR_ON_SPECIES),
                         },
-                  )
-                }
+                  );
+                }}
               />
             ))}
+          {draft.speciesId && !browsing ? (
+            <Button
+              label="Trocar a espécie"
+              variant="secondary"
+              compact
+              onPress={() => setBrowsing(true)}
+            />
+          ) : null}
           {errorFor('speciesId') ? <Notice tone="danger" message={errorFor('speciesId')!} /> : null}
           {renderSpecs()}
         </View>

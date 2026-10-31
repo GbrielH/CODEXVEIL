@@ -59,9 +59,26 @@ async function readMarks(userId: string): Promise<Record<string, string>> {
   }
 }
 
+/** Quem chama o Tomo de fora (ex.: botão do Painel): abre a Taverna com "@tomo " no rascunho. */
+const tomoListeners = new Set<() => void>();
+export function openTomo() {
+  for (const listener of tomoListeners) listener();
+}
+
 export function TavernFloating({ userId }: { userId: string }) {
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
+  const [initialDraft, setInitialDraft] = useState('');
+  useEffect(() => {
+    const listener = () => {
+      setInitialDraft('@tomo ');
+      setOpen(true);
+    };
+    tomoListeners.add(listener);
+    return () => {
+      tomoListeners.delete(listener);
+    };
+  }, []);
   const [unread, setUnread] = useState<Record<string, number>>({});
   // Não lidas: mensagens de outras pessoas depois da última leitura de cada grupo (até 24 h).
   const refresh = useCallback(async () => {
@@ -114,9 +131,11 @@ export function TavernFloating({ userId }: { userId: string }) {
         <TavernModal
           userId={userId}
           unread={unread}
+          initialDraft={initialDraft}
           onRead={markRead}
           onClose={() => {
             setOpen(false);
+            setInitialDraft('');
             void refresh();
           }}
         />
@@ -128,11 +147,13 @@ export function TavernFloating({ userId }: { userId: string }) {
 function TavernModal({
   userId,
   unread,
+  initialDraft = '',
   onRead,
   onClose,
 }: {
   userId: string;
   unread: Record<string, number>;
+  initialDraft?: string;
   onRead: (channelId: string) => void;
   onClose: () => void;
 }) {
@@ -141,7 +162,7 @@ function TavernModal({
   const [channels, setChannels] = useState<ChannelOption[] | null>(null);
   const [current, setCurrent] = useState('');
   const [messages, setMessages] = useState<TavernMessage[]>([]);
-  const [draft, setDraft] = useState('');
+  const [draft, setDraft] = useState(initialDraft);
   const [busy, setBusy] = useState(false);
   const listRef = useRef<FlatList<TavernMessage>>(null);
 

@@ -2,9 +2,11 @@ import { getActiveMap, getCampaign, getCampaignTurn, listCampaignCharacters, lis
 import { formatMeters, gridDistance, movementCrossesWall, tokenSizeSquares } from '@codexveil/domain';
 import { characterSpeedMeters } from '@codexveil/rpg-systems';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { ZoomIn, ZoomOut } from 'lucide-react-native';
+import * as ScreenOrientation from 'expo-screen-orientation';
+import { Maximize2, X, ZoomIn, ZoomOut } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Image, View } from 'react-native';
+import { Image, Modal, StatusBar, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDicePalette } from '@/components/dice/dice-color';
 import { MapBoard } from '@/components/map/map-board';
 import { IconButton } from '@/components/ui/button';
@@ -29,6 +31,17 @@ export default function CampaignMapScreen() {
   const [zoom, setZoom] = useState(1);
   const [selected, setSelected] = useState(false);
   const [named, setNamed] = useState<string | null>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+  const window = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  // Tela cheia gira para a horizontal; ao sair, volta a seguir o aparelho.
+  useEffect(() => {
+    if (!fullscreen) return;
+    void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE).catch(() => undefined);
+    return () => {
+      void ScreenOrientation.unlockAsync().catch(() => undefined);
+    };
+  }, [fullscreen]);
   useEffect(() => {
     if (!named) return;
     const timer = setTimeout(() => setNamed(null), 4000);
@@ -159,6 +172,7 @@ export default function CampaignMapScreen() {
               : 'Cada quadrado = 1,5 m. O mestre ainda não colocou o seu personagem no mapa.'}
           </AppText>
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 6 }}>
+            <IconButton icon={<Maximize2 size={18} color={colors.fg} />} accessibilityLabel="Mapa em tela cheia" onPress={() => setFullscreen(true)} />
             <IconButton icon={<ZoomOut size={18} color={colors.fg} />} accessibilityLabel="Diminuir o zoom" onPress={() => setZoom((value) => Math.max(0.5, value - 0.25))} />
             <IconButton icon={<ZoomIn size={18} color={colors.fg} />} accessibilityLabel="Aumentar o zoom" onPress={() => setZoom((value) => Math.min(3, value + 0.25))} />
           </View>
@@ -177,6 +191,32 @@ export default function CampaignMapScreen() {
             colorOfCharacter={(characterId) => palette.colorOfCharacter(characterId)}
             onTapCell={tap}
           />
+          <Modal visible={fullscreen} animationType="fade" supportedOrientations={['landscape', 'portrait']} onRequestClose={() => setFullscreen(false)}>
+            <StatusBar hidden />
+            <View style={{ flex: 1, backgroundColor: '#0b0b0f', paddingLeft: insets.left, paddingRight: insets.right }}>
+          <MapBoard
+              map={map}
+              tokens={tokens}
+              imageUrl={imageUrl}
+              tokenImages={tokenImages}
+              layers={layers}
+              systemId={data.campaign.systemId}
+              myCharacterId={own?.id ?? null}
+              zoom={zoom}
+              selected={selected}
+              namedTokenId={named}
+              freeMovement={!inCombat}
+              colorOfCharacter={(characterId) => palette.colorOfCharacter(characterId)}
+              onTapCell={tap}
+              maxHeight={window.height}
+            />
+              <View style={{ position: 'absolute', top: 12, right: 12 + insets.right, flexDirection: 'row', gap: 6 }}>
+                <IconButton icon={<ZoomOut size={18} color={colors.fg} />} accessibilityLabel="Diminuir o zoom" onPress={() => setZoom((value) => Math.max(0.5, value - 0.25))} />
+                <IconButton icon={<ZoomIn size={18} color={colors.fg} />} accessibilityLabel="Aumentar o zoom" onPress={() => setZoom((value) => Math.min(3, value + 0.25))} />
+                <IconButton icon={<X size={18} color={colors.fg} />} accessibilityLabel="Sair da tela cheia" onPress={() => setFullscreen(false)} />
+              </View>
+            </View>
+          </Modal>
         </>
       )}
     </Screen>

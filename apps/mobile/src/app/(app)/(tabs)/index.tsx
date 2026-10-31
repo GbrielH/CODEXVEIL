@@ -9,10 +9,11 @@ import {
 import { formatInviteCode } from '@codexveil/domain';
 import { summarizeSheet } from '@codexveil/rpg-systems';
 import { useRouter } from 'expo-router';
-import { CalendarClock, Dices, Mail, ScrollText, Swords } from 'lucide-react-native';
+import { CalendarClock, Dices, Mail, ScrollText, Sparkles, Swords } from 'lucide-react-native';
 import { Image, View, type ImageSourcePropType } from 'react-native';
 import { CampaignCoverCard } from '@/components/campaign-cover-card';
 import { CharacterAvatar } from '@/components/character-avatar';
+import { openTomo } from '@/components/tavern/tavern';
 import {
   HeroCard,
   IconBubble,
@@ -90,48 +91,44 @@ export default function DashboardScreen() {
 
   return (
     <Screen
-      eyebrow="Codexveil"
       title={`Olá, ${firstName}`}
-      subtitle="Pronto para a próxima aventura?"
       refreshing={refreshing}
       onRefresh={reload}
     >
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
-      {/* Boas-vindas com o Tomo (redesign "Grimório Arcano"). */}
+      {/* Tomo: o assistente responde na Taverna (com "@tomo"). */}
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
           gap: 12,
-          padding: 16,
+          paddingVertical: 12,
+          paddingHorizontal: 14,
           borderRadius: 14,
           borderWidth: 1,
           borderColor: 'rgba(168, 139, 255, 0.30)',
           backgroundColor: '#140A29',
           overflow: 'hidden',
-          minHeight: 150,
         }}
       >
-        <ArcaneScene
-          seed="Bem-vindo de volta"
-          options={{ noMoon: true }}
-          style={{ opacity: 0.8 }}
-        />
-        <View style={{ flex: 1, gap: 4 }}>
-          <AppText variant="eyebrow" style={{ color: colors.fgBrand }}>
-            Bem-vindo de volta
-          </AppText>
-          <AppText style={{ color: colors.fgAccent, fontSize: 16 }}>
-            Suas campanhas, em um só lugar.
-          </AppText>
-          <AppText variant="small">Que suas próximas sessões sejam lendárias.</AppText>
-        </View>
+        <ArcaneScene seed="Bem-vindo de volta" options={{ noMoon: true }} style={{ opacity: 0.7 }} />
         <Image
           source={TOMO_HERO}
-          style={{ width: 120, height: 112 }}
+          style={{ width: 72, height: 68 }}
           resizeMode="contain"
           accessibilityIgnoresInvertColors
         />
+        <View style={{ flex: 1, gap: 8 }}>
+          <AppText style={{ color: colors.fgAccent, fontSize: 15 }}>
+            Precisa de uma regra, um nome ou uma ideia?
+          </AppText>
+          <QuickAction
+            primary
+            icon={<Sparkles size={16} color={colors.primaryFg} />}
+            label="Falar com o Tomo"
+            onPress={openTomo}
+          />
+        </View>
       </View>
       {data ? (
         <>
@@ -254,7 +251,7 @@ export default function DashboardScreen() {
             />
           ) : (
             active
-              .slice(0, 6)
+              .slice(0, 4)
               .map((campaign) => (
                 <CampaignCoverCard
                   key={campaign.id}
@@ -279,7 +276,7 @@ export default function DashboardScreen() {
           ) : (
             data.characters
               .filter((character) => character.id !== current?.id)
-              .slice(0, 4)
+              .slice(0, 3)
               .map((character) => (
                 <ListRow
                   key={character.id}

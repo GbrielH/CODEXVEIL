@@ -1,5 +1,5 @@
 import { findClassByName, parseDnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 import { CharacterIcon } from '@/components/creation/character-icon';
 import { AppText } from '@/components/ui/primitives';
 import { colors, fonts, palette } from '@/lib/theme';
@@ -15,19 +15,37 @@ export function characterClassId(systemId: string, sheet: unknown): string | nul
   }
 }
 
-/** Avatar do personagem: ícone da classe num selo vinho, ou a inicial do nome. */
+/** Avatar do personagem: o retrato, se houver; senão o ícone da classe num selo vinho, ou a inicial. */
 export function CharacterAvatar({
   name,
   systemId,
   sheet,
   size = 44,
+  portraitUrl = null,
 }: {
   name: string;
   systemId: string;
   sheet: unknown;
   size?: number;
+  portraitUrl?: string | null;
 }) {
   const classId = characterClassId(systemId, sheet);
+  if (portraitUrl) {
+    return (
+      <Image
+        source={{ uri: portraitUrl }}
+        accessibilityIgnoresInvertColors
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          borderWidth: 1,
+          borderColor: 'rgba(187, 167, 125, 0.45)',
+          backgroundColor: palette.wine[900],
+        }}
+      />
+    );
+  }
   return (
     <View
       style={{

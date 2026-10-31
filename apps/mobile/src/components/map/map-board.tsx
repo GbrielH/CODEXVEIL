@@ -45,6 +45,7 @@ export function MapBoard({
   freeMovement = false,
   colorOfCharacter,
   onTapCell,
+  maxHeight = 520,
 }: {
   map: SessionMap;
   tokens: MapToken[];
@@ -64,6 +65,8 @@ export function MapBoard({
   freeMovement?: boolean;
   colorOfCharacter: (characterId: string | null) => string | null;
   onTapCell: (x: number, y: number) => void;
+  /** Altura máxima da área rolável (na tela cheia, a altura da tela). */
+  maxHeight?: number;
 }) {
   const size = CELL * zoom;
 
@@ -116,7 +119,7 @@ export function MapBoard({
 
   return (
     <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator>
-      <ScrollView nestedScrollEnabled showsVerticalScrollIndicator style={{ maxHeight: 520 }}>
+      <ScrollView nestedScrollEnabled showsVerticalScrollIndicator style={{ maxHeight }}>
         <Pressable onPress={onPress} accessibilityLabel={`Mapa ${map.name}, ${map.cols} por ${map.rows} quadrados de 1,5 metro`}>
           <Svg width={map.cols * size} height={map.rows * size} viewBox={`0 0 ${map.cols} ${map.rows}`} style={{ backgroundColor: '#16130f' }}>
             <Defs>

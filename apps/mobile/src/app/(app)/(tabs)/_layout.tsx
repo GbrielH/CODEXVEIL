@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { LayoutDashboard, Puzzle, ScrollText, Swords, UserRound } from 'lucide-react-native';
+import { LayoutDashboard, Library, ScrollText, Swords, UserRound } from 'lucide-react-native';
 import { colors, fonts } from '@/lib/theme';
 
 /** Navegação principal: abas inferiores com alvos de toque grandes. */
@@ -14,16 +14,18 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: colors.raised,
           borderTopColor: colors.line,
-          minHeight: 64,
+          height: 72,
           paddingTop: 6,
+          paddingBottom: 10,
         },
-        tabBarActiveBackgroundColor: 'rgba(107, 59, 198, 0.35)',
-        tabBarItemStyle: { borderRadius: 14, marginHorizontal: 6, marginVertical: 4 },
+        tabBarActiveBackgroundColor: 'rgba(107, 59, 198, 0.28)',
+        tabBarItemStyle: { borderRadius: 14, marginHorizontal: 3, paddingVertical: 2 },
         tabBarActiveTintColor: colors.fgAccent,
         tabBarInactiveTintColor: colors.fgMuted,
-        // Só ícones: os nomes não cabem em telas estreitas (o leitor de tela ainda anuncia o título).
-        tabBarShowLabel: false,
-        tabBarLabelStyle: { fontFamily: fonts.sansMedium, fontSize: 11 },
+        // Ícone com o nome embaixo (curto, cabe em telas estreitas).
+        tabBarShowLabel: true,
+        tabBarLabelStyle: { fontFamily: fonts.sansMedium, fontSize: 10, marginTop: 2 },
+        tabBarAllowFontScaling: false,
         sceneStyle: { backgroundColor: colors.canvas },
       }}
     >
@@ -51,8 +53,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="comunidade"
         options={{
-          title: 'Comunidade',
-          tabBarIcon: ({ color, size }) => <Puzzle color={color} size={size} />,
+          title: 'Sistemas',
+          tabBarIcon: ({ color, size }) => <Library color={color} size={size} />,
         }}
       />
       <Tabs.Screen

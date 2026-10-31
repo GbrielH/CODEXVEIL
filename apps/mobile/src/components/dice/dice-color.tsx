@@ -1,5 +1,6 @@
 import { getCampaignDicePalette, getSessionState, setMyDiceColor } from '@codexveil/database';
 import { DICE_COLORS, diceTextColor } from '@codexveil/domain';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Path, Polygon, Text as SvgText } from 'react-native-svg';
 import { AppText, Card } from '@/components/ui/primitives';
@@ -107,8 +108,29 @@ export function ColorDot({ color }: { color: string | null }) {
 export function DiceColorCard({ campaignId }: { campaignId: string }) {
   const toast = useToast();
   const palette = useDicePalette(campaignId);
+  const [changing, setChanging] = useState(false);
   if (!palette.loaded || !palette.needsDice) return null;
   const waiting = !palette.isGm && !palette.gmReady && !palette.myColor;
+
+  // Já escolhida: só uma linha com o dado e "Trocar" (a grade abre de novo ao tocar).
+  if (palette.myColor && !changing) {
+    return (
+      <Pressable
+        onPress={() => setChanging(true)}
+        accessibilityRole="button"
+        accessibilityLabel="Trocar a cor dos seus dados"
+        style={styles.compact}
+      >
+        <DieIcon color={palette.myColor} size={26} />
+        <AppText variant="small" style={{ flex: 1 }}>
+          Cor dos seus dados nesta sessão
+        </AppText>
+        <AppText variant="small" style={{ color: colors.fgAccent }}>
+          Trocar
+        </AppText>
+      </Pressable>
+    );
+  }
 
   const choose = async (color: string) => {
     try {
@@ -152,7 +174,7 @@ export function DiceColorCard({ campaignId }: { campaignId: string }) {
                 accessibilityState={{ checked: current, disabled: taken }}
                 accessibilityLabel={taken ? `${name}, já escolhida` : name}
                 disabled={taken}
-                onPress={() => void choose(hex)}
+                onPress={() => void choose(hex).then(() => setChanging(false))}
                 style={[styles.swatch, current && styles.current, taken && { opacity: 0.2 }]}
               >
                 <DieIcon color={hex} size={34} />
@@ -168,5 +190,16 @@ export function DiceColorCard({ campaignId }: { campaignId: string }) {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[1], marginTop: spacing[2] },
   swatch: { padding: 2, borderRadius: radii.md, borderWidth: 2, borderColor: 'transparent' },
+  compact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.card,
+  },
   current: { borderColor: colors.fgAccent, backgroundColor: 'rgba(214, 190, 140, 0.15)' },
 });

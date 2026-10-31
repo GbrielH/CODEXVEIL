@@ -7,7 +7,8 @@ import {
 } from '@codexveil/rpg-systems/dnd5e';
 import { listMyBookPacks, type BookPackSummary } from '@codexveil/database';
 import { useEffect, useState } from 'react';
-import { Chip, ChipRow } from '@/components/ui/controls';
+import { CheckRow, Chip, ChipRow } from '@/components/ui/controls';
+import { Segmented } from '@/components/ui/segmented';
 import { ExternalLink, Minus, Plus } from 'lucide-react-native';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { IconButton } from '@/components/ui/button';
@@ -127,6 +128,7 @@ export function SourcebookChips({
   audience: 'campaign' | 'character';
 }) {
   const [expanded, setExpanded] = useState(selected.length > 0);
+  const [linksOpen, setLinksOpen] = useState(false);
   const userId = useUserId();
   const [books, setBooks] = useState<BookPackSummary[] | null>(null);
   useEffect(() => {
@@ -151,30 +153,20 @@ export function SourcebookChips({
   const ids = (books ?? []).map((book) => book.bookKey);
   const all = ids.length > 0 && ids.every((id) => selected.includes(id));
   return (
-    <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
+    <View style={styles.books}>
       <AppText style={{ fontFamily: fonts.sansMedium }}>Conteúdo do sistema</AppText>
-      <ChipRow>
-        <Chip
-          label="Sistema base"
-          selected={!expanded}
-          onPress={() => {
-            setExpanded(false);
-            onChange([]);
-          }}
-        />
-        <Chip label="Base + livros" selected={expanded} onPress={() => setExpanded(true)} />
-      </ChipRow>
-      <AppText variant="small">
-        {expanded
-          ? `Marque os livros que ${audience === 'campaign' ? 'a mesa usa' : 'este personagem usa'}. Cada livro importado em "Meus livros" (no site) traz tudo o que tem.`
-          : 'Só o SRD 5.2.1, gratuito e já pronto. Sem nada para escolher.'}
-      </AppText>
-      <AppText variant="small">Gratuitos:</AppText>
-      {dnd5eOfficialLinks
-        .filter((link) => link.access === 'free')
-        .map((link) => (
-          <OfficialLink key={link.url} label={link.label} url={link.url} />
-        ))}
+      <Segmented<'base' | 'books'>
+        value={expanded ? 'books' : 'base'}
+        accessibilityLabel="Conteúdo do sistema"
+        options={[
+          { value: 'base', label: 'Só o SRD' },
+          { value: 'books', label: 'SRD + meus livros' },
+        ]}
+        onChange={(value) => {
+          setExpanded(value === 'books');
+          if (value === 'base') onChange([]);
+        }}
+      />
       {expanded ? (
         books === null ? (
           <AppText variant="small">Carregando seus livros…</AppText>
@@ -184,12 +176,15 @@ export function SourcebookChips({
             site.
           </AppText>
         ) : (
-          <ChipRow>
+          <View style={{ gap: 2 }}>
+            <AppText variant="small">
+              {`Marque os livros que ${audience === 'campaign' ? 'a mesa usa' : 'este personagem usa'} (${selected.filter((id) => ids.includes(id)).length} de ${books.length}).`}
+            </AppText>
             {books.length > 1 ? (
-              <Chip
-                label={all ? 'Desmarcar todos' : 'Selecionar todos'}
-                selected={all}
-                onPress={() =>
+              <CheckRow
+                label="Todos os livros"
+                checked={all}
+                onChange={() =>
                   onChange(
                     all
                       ? selected.filter((id) => !ids.includes(id))
@@ -199,16 +194,32 @@ export function SourcebookChips({
               />
             ) : null}
             {books.map((book) => (
-              <Chip
+              <CheckRow
                 key={book.bookKey}
                 label={book.name}
-                selected={selected.includes(book.bookKey)}
-                onPress={() => toggle(book.bookKey)}
+                checked={selected.includes(book.bookKey)}
+                onChange={() => toggle(book.bookKey)}
               />
             ))}
-          </ChipRow>
+          </View>
         )
-      ) : null}
+      ) : (
+        <AppText variant="small">Só o SRD 5.2.1, gratuito e já pronto. Nada para escolher.</AppText>
+      )}
+      <Pressable
+        onPress={() => setLinksOpen((open) => !open)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: linksOpen }}
+      >
+        <AppText variant="small" style={{ color: colors.fgAccent }}>
+          {linksOpen ? 'Esconder as regras gratuitas' : 'Ver as regras gratuitas (sites oficiais)'}
+        </AppText>
+      </Pressable>
+      {linksOpen
+        ? dnd5eOfficialLinks
+            .filter((link) => link.access === 'free')
+            .map((link) => <OfficialLink key={link.url} label={link.label} url={link.url} />)
+        : null}
       {expanded && legacy.length > 0 ? (
         <View style={{ gap: 6 }}>
           <AppText variant="small">
@@ -265,4 +276,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(245, 237, 231, 0.08)',
   },
   link: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36 },
+  books: {
+    gap: spacing[2],
+    marginTop: spacing[2],
+    padding: spacing[3],
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
 });

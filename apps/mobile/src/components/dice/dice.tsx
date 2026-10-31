@@ -9,7 +9,7 @@ import {
   type DiceRollMode,
   type DiceRollResult,
 } from '@codexveil/domain';
-import { Dices } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, Dices } from 'lucide-react-native';
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { ZoomIn } from 'react-native-reanimated';
@@ -180,10 +180,13 @@ export function DicePanel({
   const valid = parseDiceExpression(expression) !== null;
   const inCampaign = Boolean(dice?.campaignId);
 
-  const go = async (text: string) => {
+  const [skillsOpen, setSkillsOpen] = useState(false);
+  const [skillQuery, setSkillQuery] = useState('');
+
+  const go = async (text: string, forLabel = label.trim()) => {
     if (!dice) return;
     setBusy(true);
-    const shown = await dice.roll({ expression: text, label: label.trim(), mode, secret });
+    const shown = await dice.roll({ expression: text, label: forLabel, mode, secret });
     if (shown) setLast(shown);
     setBusy(false);
   };
@@ -211,28 +214,56 @@ export function DicePanel({
         autoCapitalize="none"
         autoCorrect={false}
         error={valid ? undefined : 'Use dados como 1d20+5 (até 100 dados).'}
-        hint="Ex.: 1d20+5, 2d6+1d4+3, d100."
       />
       {skills.length ? (
-        <View style={{ gap: spacing[1] }}>
-          <AppText variant="small">Perícia (toque para rolar com o bônus da ficha)</AppText>
-          <ChipRow>
-            {skills.map((skill) => (
-              <Chip
-                key={skill.label}
-                label={`${skill.label} ${skill.bonus >= 0 ? '+' : ''}${skill.bonus}`}
-                selected={label === skill.label}
-                onPress={() => {
-                  if (label === skill.label) {
-                    setLabel('');
-                    return;
-                  }
-                  setLabel(skill.label);
-                  setExpression(`1d20${skill.bonus >= 0 ? '+' : ''}${skill.bonus}`);
-                }}
+        <View style={styles.skills}>
+          {/* Perícias recolhidas: abrem numa lista com busca; tocar rola com o bônus da ficha. */}
+          <Pressable
+            onPress={() => setSkillsOpen((open) => !open)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: skillsOpen }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}
+          >
+            <AppText style={{ flex: 1, color: colors.fg }}>Rolar perícia ({skills.length})</AppText>
+            {skillsOpen ? (
+              <ChevronUp size={18} color={colors.fgMuted} />
+            ) : (
+              <ChevronDown size={18} color={colors.fgMuted} />
+            )}
+          </Pressable>
+          {skillsOpen ? (
+            <>
+              <Field
+                label="Buscar perícia"
+                value={skillQuery}
+                onChangeText={setSkillQuery}
+                autoCorrect={false}
+                placeholder="Ex.: Percepção"
               />
-            ))}
-          </ChipRow>
+              {skills
+                .filter((skill) => plain(skill.label).includes(plain(skillQuery.trim())))
+                .map((skill) => (
+                  <Pressable
+                    key={skill.label}
+                    disabled={busy}
+                    onPress={() => {
+                      const text = `1d20${skill.bonus >= 0 ? '+' : ''}${skill.bonus}`;
+                      setExpression(text);
+                      void go(text, skill.label);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Rolar ${skill.label}`}
+                    style={({ pressed }) => [styles.skillRow, pressed && { backgroundColor: colors.hover }]}
+                  >
+                    <AppText style={{ flex: 1 }}>{skill.label}</AppText>
+                    <AppText style={{ color: colors.fgAccent }}>
+                      {skill.bonus >= 0 ? '+' : ''}
+                      {skill.bonus}
+                    </AppText>
+                  </Pressable>
+                ))}
+            </>
+          ) : null}
         </View>
       ) : null}
       <Field
@@ -240,7 +271,7 @@ export function DicePanel({
         value={label}
         onChangeText={setLabel}
         maxLength={80}
-        placeholder="Ex.: Percepção"
+        placeholder="Ex.: Ataque"
       />
       <ChipRow>
         {DICE_ROLL_MODES.map((option) => (
@@ -306,7 +337,25 @@ export function DicePanel({
   );
 }
 
+/** Comparação sem acento e sem caixa (busca de perícias). */
+const plain = (text: string) =>
+  text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
 const styles = StyleSheet.create({
+  skills: {
+    gap: spacing[2],
+    padding: spacing[3],
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  skillRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: radii.md,
+  },
   quick: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
   die: { minWidth: 56 },
   result: {

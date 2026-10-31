@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ConflictObjectivesCard } from '@/components/assimilacao/conflict';
 import {
   campaignCoverPath,
@@ -25,8 +26,10 @@ import {
   Swords,
   UserPlus,
   Users,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react-native';
-import { Image, Linking, StyleSheet, View } from 'react-native';
+import { Image, Linking, Pressable, StyleSheet, View } from 'react-native';
 import {
   LinkExistingCharacter,
   campaignRuleIssues,
@@ -57,6 +60,7 @@ export default function CampaignScreen() {
   const router = useRouter();
   const toast = useToast();
   const confirm = useConfirm();
+  const [linksOpen, setLinksOpen] = useState(false);
 
   const { data, error, loading, refreshing, reload } = useAsyncData(async () => {
     const supabase = getSupabase();
@@ -67,8 +71,12 @@ export default function CampaignScreen() {
       listCampaignCharacters(supabase, campaign.id),
       listSessions(supabase, campaign.id),
     ]);
-    const covers = await signedMediaUrls(supabase, [campaign.coverPath]);
+    const covers = await signedMediaUrls(supabase, [
+      campaign.coverPath,
+      ...party.map((character) => character.portraitPath),
+    ]);
     return {
+      portraits: covers,
       campaign,
       members,
       party,
@@ -90,7 +98,7 @@ export default function CampaignScreen() {
     );
   }
 
-  const { campaign, members, party, sessions, coverUrl } = data;
+  const { campaign, members, party, sessions, coverUrl, portraits } = data;
   const isGm = campaign.role === 'gm';
   const isActive = campaign.status === 'active';
   const ownCharacter = party.find((character) => character.ownerId === userId) ?? null;
@@ -355,6 +363,8 @@ export default function CampaignScreen() {
                     name={character.name}
                     systemId={character.systemId}
                     sheet={character.sheet}
+                    size={52}
+                    portraitUrl={character.portraitPath ? (portraits[character.portraitPath] ?? null) : null}
                   />
                   <View style={{ flex: 1 }}>
                     <AppText
@@ -409,14 +419,29 @@ export default function CampaignScreen() {
 
       {campaignLinks.length > 0 ? (
         <Card>
-          <SectionHeader
-            icon={<ExternalLink size={14} color={colors.fgAccent} />}
-            title="Links oficiais"
-          />
-          <AppText variant="muted">
-            Dúvidas de regras? Os sites oficiais do sistema (conteúdo da editora, em inglês).
-          </AppText>
-          {campaignLinks.map((link) => (
+          {/* Recolhido por padrão: é consulta eventual. */}
+          <Pressable
+            onPress={() => setLinksOpen((open) => !open)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: linksOpen }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+          >
+            <ExternalLink size={14} color={colors.fgAccent} />
+            <AppText variant="eyebrow" style={{ flex: 1 }}>
+              Links oficiais ({campaignLinks.length})
+            </AppText>
+            {linksOpen ? (
+              <ChevronUp size={18} color={colors.fgMuted} />
+            ) : (
+              <ChevronDown size={18} color={colors.fgMuted} />
+            )}
+          </Pressable>
+          {linksOpen ? (
+            <AppText variant="muted">
+              Dúvidas de regras? Os sites oficiais do sistema (conteúdo da editora, em inglês).
+            </AppText>
+          ) : null}
+          {(linksOpen ? campaignLinks : []).map((link) => (
             <ListRow
               key={link.url}
               title={link.label}

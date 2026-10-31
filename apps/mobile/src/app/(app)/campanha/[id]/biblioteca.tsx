@@ -1,7 +1,8 @@
-import { getCampaign, listCampaignItems, listCreatures } from '@codexveil/database';
+import { getCampaign, listCampaignItems, listCreatures, signedMediaUrls } from '@codexveil/database';
 import { itemCategoryLabels } from '@codexveil/domain';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
+import { Image, View } from 'react-native';
 import { ListRow } from '@/components/ui/list-row';
 import { AppText } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
@@ -10,6 +11,7 @@ import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states';
 import { useAsyncData } from '@/lib/hooks';
 import { useUserId } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase';
+import { colors, fonts, palette } from '@/lib/theme';
 
 type Tab = 'npc' | 'monster' | 'items';
 
@@ -28,7 +30,11 @@ export default function LibraryScreen() {
       listCreatures(supabase, campaign.id),
       listCampaignItems(supabase, campaign.id),
     ]);
-    return { campaign, creatures, items };
+    const images = await signedMediaUrls(
+      supabase,
+      creatures.map((creature) => creature.imagePath),
+    );
+    return { campaign, creatures, items, images };
   }, `${id}:${userId}`);
 
   if (loading) return <LoadingState />;
@@ -43,7 +49,7 @@ export default function LibraryScreen() {
       </Screen>
     );
   }
-  const { campaign, creatures, items } = data;
+  const { campaign, creatures, items, images } = data;
   const shown = creatures.filter((creature) => creature.kind === tab);
 
   return (
@@ -98,6 +104,30 @@ export default function LibraryScreen() {
         shown.map((creature) => (
           <ListRow
             key={creature.id}
+            leading={
+              creature.imagePath && images[creature.imagePath] ? (
+                <Image
+                  source={{ uri: images[creature.imagePath] }}
+                  accessibilityIgnoresInvertColors
+                  style={{ width: 48, height: 48, borderRadius: 10, backgroundColor: palette.wine[900] }}
+                />
+              ) : (
+                <View
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 10,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: palette.wine[900],
+                  }}
+                >
+                  <AppText style={{ fontFamily: fonts.displayBold, fontSize: 20, color: colors.fgAccent }}>
+                    {creature.name.trim().charAt(0).toUpperCase() || '?'}
+                  </AppText>
+                </View>
+              )
+            }
             title={creature.name}
             subtitle={creature.subtitle || undefined}
             onPress={() =>
