@@ -15,6 +15,38 @@ export type Database = {
   };
   public: {
     Tables: {
+      assimilacao_master: {
+        Row: {
+          campaign_id: string;
+          conflicts: Json;
+          created_at: string;
+          refuges: Json;
+          updated_at: string;
+        };
+        Insert: {
+          campaign_id: string;
+          conflicts?: Json;
+          created_at?: string;
+          refuges?: Json;
+          updated_at?: string;
+        };
+        Update: {
+          campaign_id?: string;
+          conflicts?: Json;
+          created_at?: string;
+          refuges?: Json;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'assimilacao_master_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: true;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       assistant_usage: {
         Row: {
           day: string;
@@ -2516,6 +2548,12 @@ export type Database = {
           p_limit?: number;
         };
         Returns: string[];
+      };
+      list_party_faces: {
+        Args: {
+          p_campaign_id: string;
+        };
+        Returns: unknown[];
       };
       move_my_token: {
         Args: {

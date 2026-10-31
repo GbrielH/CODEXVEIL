@@ -63,3 +63,33 @@ export function PartyList({ characters, portraits, currentUserId }: PartyListPro
     </ul>
   );
 }
+
+/** Grupo com fichas ocultas: só o retrato e o nome de cada personagem, sem link para a ficha. */
+export function PartyFaces({
+  faces,
+  portraits,
+}: {
+  faces: { id: string; name: string; ownerName: string; portraitPath: string | null }[];
+  portraits: Record<string, string>;
+}) {
+  return (
+    <ul className="grid gap-3 sm:grid-cols-2">
+      {faces.map((face) => (
+        <li
+          key={face.id}
+          className="flex items-center gap-3 rounded-md border border-line bg-raised p-3"
+        >
+          <Portrait
+            name={face.name}
+            url={face.portraitPath ? (portraits[face.portraitPath] ?? null) : null}
+            size="sm"
+          />
+          <div className="min-w-0">
+            <p className="truncate font-medium text-fg">{face.name}</p>
+            <p className="truncate text-xs text-fg-muted">{face.ownerName}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}

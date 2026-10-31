@@ -31,6 +31,9 @@ export default async function CampaignLayout({
   const tabs: SectionTab[] = [{ href: base as Route, label: 'Visão geral', exact: true }];
   if (!isGm) tabs.push({ href: `${base}/personagem` as Route, label: 'Meu personagem' });
   if (isGm) tabs.push({ href: `${base}/mesa` as Route, label: 'Mesa do mestre' });
+  // Ferramentas do Assimilador (Conflitos e Refúgios), só no Assimilação.
+  if (isGm && campaign.systemId === 'assimilacao')
+    tabs.push({ href: `${base}/master` as Route, label: 'MASTER' });
   tabs.push(
     { href: `${base}/mapa` as Route, label: 'Mapa' },
     {

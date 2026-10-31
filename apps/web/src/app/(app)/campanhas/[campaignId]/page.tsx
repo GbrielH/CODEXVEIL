@@ -1,11 +1,11 @@
-import { getCampaignTurn, listCampaignCharacters, listCampaignMembers, listMyCharacters, signedMediaUrls } from '@codexveil/database';
+import { getCampaignTurn, listCampaignCharacters, listCampaignMembers, listMyCharacters, listPartyFaces, signedMediaUrls } from '@codexveil/database';
 import { findSystem } from '@codexveil/rpg-systems';
 import { Eye, EyeOff, Lock, PenLine, ScrollText, Swords, Users } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import { LinkExistingCharacter } from '@/components/campaigns/link-existing-character';
 import { MemberList } from '@/components/campaigns/member-list';
 import { TurnStatus } from '@/components/campaigns/turn-status';
-import { PartyList } from '@/components/campaigns/party-list';
+import { PartyFaces, PartyList } from '@/components/campaigns/party-list';
 import { ButtonLink } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Notice } from '@/components/ui/notice';
@@ -20,6 +20,8 @@ export async function generateMetadata({ params }: PageProps<'/campanhas/[campai
   return { title: campaign.name };
 }
 
+const isGmRole = (role: string) => role === 'gm';
+
 export default async function CampaignOverviewPage({ params, searchParams }: PageProps<'/campanhas/[campaignId]'>) {
   const [{ campaignId }, query] = await Promise.all([params, searchParams]);
   const { user, campaign } = await loadCampaignOrNotFound(campaignId);
@@ -29,7 +31,15 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
     listCampaignCharacters(supabase, campaign.id),
     getCampaignTurn(supabase, campaign.id),
   ]);
-  const portraits = await signedMediaUrls(supabase, party.map((character) => character.portraitPath));
+  // Fichas ocultas: o jogador ainda vê o nome e o retrato de cada personagem do grupo.
+  const faces =
+    !isGmRole(campaign.role) && !campaign.settings.partySheetsVisible
+      ? (await listPartyFaces(supabase, campaign.id)).filter((face) => face.ownerId !== user.id)
+      : [];
+  const portraits = await signedMediaUrls(supabase, [
+    ...party.map((character) => character.portraitPath),
+    ...faces.map((face) => face.portraitPath),
+  ]);
   const system = findSystem(campaign.systemId);
   const isGm = campaign.role === 'gm';
   const isActive = campaign.status === 'active';
@@ -65,7 +75,7 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
                 ? pluralize(party.length, 'personagem na campanha', 'personagens na campanha')
                 : campaign.settings.partySheetsVisible
                   ? 'Os personagens dos outros jogadores. O seu fica na aba “Meu personagem”.'
-                  : 'O mestre deixou as fichas dos outros jogadores ocultas. O seu personagem fica na aba “Meu personagem”.'
+                  : 'O mestre deixou as fichas dos outros jogadores ocultas: aparecem só o nome e o retrato. O seu personagem fica na aba “Meu personagem”.'
             }
             action={
               isActive && !isGm && !hasOwnCharacter ? (
@@ -85,6 +95,7 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
           ) : (
             others.length > 0 ? <PartyList characters={others} portraits={portraits} currentUserId={user.id} /> : null
           )}
+          {faces.length > 0 ? <PartyFaces faces={faces} portraits={portraits} /> : null}
         </Card>
         <Card ornate>
           <CardHeader

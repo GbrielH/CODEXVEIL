@@ -32,6 +32,7 @@ import {
 } from './system';
 
 export * from './books/pack';
+export * from './master';
 export * from './dice';
 export * from './rules';
 export * from './sheet';

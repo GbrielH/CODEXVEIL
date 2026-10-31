@@ -1115,3 +1115,34 @@ export async function listMoneyLog(client: CodexveilClient, characterId: string,
     createdAt: row.created_at,
   }));
 }
+
+/** Rosto de um personagem do grupo: só nome, dono e retrato (vale mesmo com fichas ocultas). */
+export interface PartyFace {
+  id: string;
+  name: string;
+  ownerId: string;
+  ownerName: string;
+  portraitPath: string | null;
+}
+
+export async function listPartyFaces(
+  client: CodexveilClient,
+  campaignId: string,
+): Promise<PartyFace[]> {
+  const { data, error } = await client.rpc('list_party_faces', { p_campaign_id: campaignId });
+  if (error) throw toAppError(error);
+  const rows = (data ?? []) as {
+    id: string;
+    name: string;
+    owner_id: string;
+    owner_name: string | null;
+    portrait_path: string | null;
+  }[];
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    ownerId: row.owner_id,
+    ownerName: row.owner_name ?? 'Jogador',
+    portraitPath: row.portrait_path,
+  }));
+}
