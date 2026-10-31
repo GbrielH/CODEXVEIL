@@ -92,8 +92,9 @@ export function CardCost({ cost }: { cost: AssimCard['levels'][number]['cost'] }
 }
 
 /**
- * Carta de Assimilação na ficha: canto com valor e naipe, tipo, os Níveis com custo (os já
- * adquiridos acesos) e as ações (evoluir, Pressões, remover).
+ * Carta de Assimilação no modelo do livro: símbolo da categoria no canto esquerdo, valor do
+ * baralho no direito, faixa com o nome e a tabela de mutações (custo à esquerda, texto resumido à
+ * direita). Os Níveis já adquiridos ficam acesos.
  */
 export function AssimCardTile({
   name,
@@ -111,66 +112,97 @@ export function AssimCardTile({
   actions?: ReactNode;
   children?: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState<number | null>(null);
+  const suit = card ? SUIT_GLYPHS[card.suit] : undefined;
   return (
     <article
       className={cx(
-        'flex flex-col gap-2 rounded-xl bg-gradient-to-br p-3 shadow-lg ring-1',
+        'relative flex flex-col overflow-hidden rounded-2xl bg-gradient-to-b shadow-xl ring-2',
         KIND_TONES[kind],
       )}
     >
-      <header className="flex items-start gap-3">
-        {card ? <CardCorner rank={card.rank} suit={card.suit} /> : null}
-        <div className="min-w-0 flex-1">
-          <p className="font-display text-base text-fg">{name}</p>
-          <p className="text-[0.7rem] uppercase tracking-wide text-fg-muted">
-            {assimilationKindLabels[kind]}
-            {card?.levels.length
-              ? ` · Nível ${Math.min(level, card.levels.length)} de ${card.levels.length}`
-              : ''}
-          </p>
-        </div>
-        {actions}
+      {/* Topo: categoria (naipe) e valor, com o tipo no meio. */}
+      <header className="flex items-start justify-between gap-2 p-3 pb-6">
+        <span
+          title={assimilationKindLabels[kind]}
+          className={cx(
+            'flex h-10 w-10 items-center justify-center rounded-full bg-canvas/70 text-xl ring-1 ring-parchment-300/40',
+            suit?.red ? 'text-ember-300' : 'text-parchment-100',
+          )}
+        >
+          {suit?.glyph ?? '✦'}
+        </span>
+        <span className="mt-1 text-[0.65rem] tracking-[0.2em] text-fg-muted uppercase">
+          {assimilationKindLabels[kind]}
+        </span>
+        <span className="flex items-center gap-1">
+          {actions}
+          {card ? (
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-canvas/70 font-display text-lg text-fg ring-1 ring-parchment-300/40">
+              {card.rank}
+            </span>
+          ) : null}
+        </span>
       </header>
+      {/* Faixa com o nome, como o título da carta. */}
+      <div className="mx-3 -skew-x-6 rounded-sm bg-canvas/80 px-3 py-1.5 text-center ring-1 ring-parchment-300/30">
+        <p className="skew-x-6 font-display text-sm tracking-wide text-fg uppercase">{name}</p>
+      </div>
       {card?.levels.length ? (
-        <ol className="flex flex-col gap-1">
+        <ol className="m-3 flex flex-col divide-y divide-line/60 overflow-hidden rounded-lg bg-canvas/75 ring-1 ring-line">
           {card.levels.map((entry, index) => {
             const owned = index < level;
             return (
-              <li
-                key={entry.name}
-                className={cx(
-                  'rounded-md px-2 py-1 text-sm',
-                  owned ? 'bg-canvas/50 text-fg' : 'text-fg-muted opacity-60',
-                )}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span>
-                    {index + 1}. {entry.name}
+              <li key={entry.name}>
+                <button
+                  type="button"
+                  onClick={() => setOpen(open === index ? null : index)}
+                  aria-expanded={open === index}
+                  className={cx(
+                    'grid w-full grid-cols-[4.5rem_1fr] items-center gap-2 px-2 py-1.5 text-left text-xs',
+                    owned ? 'text-fg' : 'text-fg-muted opacity-55',
+                  )}
+                >
+                  <span className="flex justify-center border-r border-line/60 pr-2">
+                    <CardCost cost={entry.cost} />
                   </span>
-                  <CardCost cost={entry.cost} />
-                </div>
-                {open && entry.text ? (
-                  <p className="mt-1 text-xs text-fg-secondary">{withAssimSymbols(entry.text)}</p>
+                  <span>
+                    <span
+                      className={cx(
+                        'mr-1 rounded px-1 font-semibold uppercase',
+                        owned ? 'bg-wine-700/80 text-parchment-50' : 'bg-sunken',
+                      )}
+                    >
+                      {entry.name}
+                    </span>
+                    {entry.requirement ? (
+                      <span className="text-fg-secondary">
+                        ({withAssimSymbols(entry.requirement)}){' '}
+                      </span>
+                    ) : null}
+                    {open === index ? null : (
+                      <span className="line-clamp-1 text-fg-secondary">
+                        {withAssimSymbols(entry.text)}
+                      </span>
+                    )}
+                  </span>
+                </button>
+                {open === index && entry.text ? (
+                  <p className="px-3 pb-2 text-xs text-fg-secondary">
+                    {withAssimSymbols(entry.text)}
+                  </p>
                 ) : null}
               </li>
             );
           })}
         </ol>
+      ) : (
+        <div className="h-3" />
+      )}
+      {card?.text ? (
+        <p className="mx-3 mb-3 text-xs text-fg-secondary italic">{withAssimSymbols(card.text)}</p>
       ) : null}
-      {card && (card.text || card.levels.some((entry) => entry.text)) ? (
-        <button
-          type="button"
-          onClick={() => setOpen((value) => !value)}
-          className="self-start text-xs text-fg-accent hover:underline"
-        >
-          {open ? 'Esconder os textos' : 'Ver os textos da carta'}
-        </button>
-      ) : null}
-      {open && card?.text ? (
-        <p className="text-xs text-fg-secondary">{withAssimSymbols(card.text)}</p>
-      ) : null}
-      {children}
+      {children ? <div className="flex flex-col gap-2 px-3 pb-3">{children}</div> : null}
     </article>
   );
 }
