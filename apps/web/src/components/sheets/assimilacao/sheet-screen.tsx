@@ -963,23 +963,25 @@ function SheetBody({
       <ul className="mt-4 flex flex-col gap-2">
         {(['personal', 'collective'] as const).flatMap((group) =>
           sheet.purposes[group].map((purpose, index) => (
-            <li key={`${group}-${index}`} className="flex flex-wrap items-end gap-2">
-              <TextField
-                id={`asrpg-p-${group}-${index}`}
-                className="min-w-0 flex-1"
-                label={`${group === 'personal' ? 'Propósito Pessoal' : 'Propósito Coletivo'} ${index + 1}`}
-                value={purpose.text}
-                disabled={!editable}
-                maxLength={200}
-                onChange={(event) => {
-                  const list = [...sheet.purposes[group]];
-                  list[index] = { ...purpose, text: event.target.value };
-                  setSheet({ ...sheet, purposes: { ...sheet.purposes, [group]: list } });
-                }}
-                onBlur={() => void save(sheet)}
-              />
+            <li key={`${group}-${index}`} className="flex items-start gap-3">
+              <div className="min-w-0 flex-1">
+                <TextareaField
+                  id={`asrpg-p-${group}-${index}`}
+                  rows={2}
+                  label={`${group === 'personal' ? 'Propósito Pessoal' : 'Propósito Coletivo'} ${index + 1}`}
+                  value={purpose.text}
+                  disabled={!editable}
+                  maxLength={200}
+                  onChange={(event) => {
+                    const list = [...sheet.purposes[group]];
+                    list[index] = { ...purpose, text: event.target.value };
+                    setSheet({ ...sheet, purposes: { ...sheet.purposes, [group]: list } });
+                  }}
+                  onBlur={() => void save(sheet)}
+                />
+              </div>
               {group === 'collective' ? (
-                <label className="flex items-center gap-1 pb-2 text-xs text-fg-muted">
+                <label className="mt-7 flex shrink-0 items-center gap-1 text-xs text-fg-muted">
                   <input
                     type="checkbox"
                     checked={purpose.inert}
