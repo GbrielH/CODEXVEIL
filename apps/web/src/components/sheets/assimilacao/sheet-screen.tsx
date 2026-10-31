@@ -37,8 +37,10 @@ import {
   type Practice,
   type RolledDie,
 } from '@codexveil/rpg-systems/assimilacao';
-import { Dices, Minus, Plus, Trash2 } from 'lucide-react';
+import { Dices, Droplet, Minus, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
+import { DeathNotice, DeathVignette } from '@/components/assimilacao/death-vignette';
+import { AssimDieFace, AssimMarkIcon } from '@/components/assimilacao/die-face';
 import { AssimSymbol, withAssimSymbols } from '@/components/assimilacao/symbols';
 import {
   CampaignLinkCard,
@@ -51,6 +53,7 @@ import { TokenImageCard } from '@/components/characters/token-image-card';
 import { DiceProvider, useDice } from '@/components/dice/dice-roller';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Modal } from '@/components/ui/modal';
 import { Card, CardHeader } from '@/components/ui/card';
 import { SelectField, TextareaField, TextField } from '@/components/ui/field';
 import { Tabs } from '@/components/ui/tabs';
@@ -84,6 +87,33 @@ interface AssimilacaoSheetScreenProps {
   campaigns?: LinkCampaignOption[];
   /** Na campanha, as rolagens vão para o mural e só valem com a sessão em andamento. */
   variant?: 'full' | 'campaign';
+}
+
+/** Faixas da ficha do livro: cada par de Níveis tem a mesma recuperação. */
+const HEALTH_BANDS: { title: string; levels: [number, number]; notes: Record<number, string> }[] = [
+  { title: 'Ativa a Recuperação após cada repouso completo', levels: [6, 5], notes: {} },
+  {
+    title: 'Ativa a Recuperação após uma semana · menos 1 Sucesso em todos os testes',
+    levels: [4, 3],
+    notes: {},
+  },
+  {
+    title: 'Não regenera naturalmente: precisa de tratamento médico',
+    levels: [2, 1],
+    notes: {
+      2: 'Incapaz de agir, mas mantém a consciência. Menos 2 Sucessos em todos os testes.',
+      1: 'Inconsciente. Qualquer Ação com teste exige gastar Determinação para ativar.',
+    },
+  },
+];
+
+/** Cor da faixa de Saúde: verde nos Níveis leves, âmbar nos médios, brasa nos graves. */
+function healthTone(level: number) {
+  return level >= 5
+    ? { bar: 'bg-verdigris-400', text: 'text-verdigris-300', band: 'bg-verdigris-900/70' }
+    : level >= 3
+      ? { bar: 'bg-amber-300', text: 'text-amber-300', band: 'bg-amber-900/60' }
+      : { bar: 'bg-ember-400', text: 'text-ember-300', band: 'bg-ember-900/80' };
 }
 
 export function AssimilacaoSheetScreen(props: AssimilacaoSheetScreenProps) {
@@ -184,7 +214,7 @@ function SheetBody({
     if (result.levelsLost > 0) {
       const ok = await save({
         ...sheet,
-        tugOfWar: { determinationLevel: result.determinationLevel, locked: true },
+        tugOfWar: { determinationLevel: result.determinationLevel, locked: true, rested: false },
       });
       if (!ok) return;
       await adjust(determination, 'set_max', result.determinationLevel);
@@ -211,7 +241,7 @@ function SheetBody({
   const clarity = async () => {
     if (sheet.tugOfWar.determinationLevel >= 10) return;
     const level = sheet.tugOfWar.determinationLevel + 1;
-    if (!(await save({ ...sheet, tugOfWar: { determinationLevel: level, locked: false } }))) return;
+    if (!(await save({ ...sheet, tugOfWar: { determinationLevel: level, locked: false, rested: false } }))) return;
     await adjust(determination, 'set_max', level);
     await adjust(determination, 'set_current', level);
     if (assimilation) {
@@ -295,6 +325,8 @@ function SheetBody({
     ? sumFaces(rolled.kept.map((index) => rolled.dice[index]!.result))
     : null;
 
+  const [assimPickerOpen, setAssimPickerOpen] = useState(false);
+  const [pickedAssim, setPickedAssim] = useState('');
   const bookCards = useMemo(
     () =>
       sources.flatMap((source) =>
@@ -421,25 +453,90 @@ function SheetBody({
       </div>
       {sheet.tugOfWar.locked ? (
         <Alert tone="warning" className="mt-3">
-          Suscetível: a Determinação está bloqueada até a Assimilação se completar (escolha as
-          mutações no próximo repouso).
+          Suscetível: a Determinação está bloqueada até a Assimilação se completar.{' '}
+          {sheet.tugOfWar.rested
+            ? 'O repouso já aconteceu: escolha a Assimilação.'
+            : 'A escolha é liberada depois do próximo repouso completo.'}
           {editable ? (
             <Button
               size="sm"
               variant="secondary"
               className="ml-2"
-              onClick={() =>
-                patch((current) => ({
-                  ...current,
-                  tugOfWar: { ...current.tugOfWar, locked: false },
-                }))
-              }
+              disabled={!sheet.tugOfWar.rested}
+              title={sheet.tugOfWar.rested ? undefined : 'Faça um repouso completo primeiro'}
+              onClick={() => setAssimPickerOpen(true)}
             >
-              Assimilação concluída
+              Escolher a Assimilação
             </Button>
           ) : null}
         </Alert>
       ) : null}
+      <Modal
+        open={assimPickerOpen}
+        onClose={() => setAssimPickerOpen(false)}
+        title="Escolher a Assimilação"
+        description="A mutação se completa: ela entra na ficha e a Determinação volta a ser recuperável."
+      >
+        <div className="flex flex-col gap-3">
+          {bookCards.length ? (
+            <SelectField
+              id="asrpg-pick-assim"
+              label="Carta de Assimilação"
+              value={pickedAssim}
+              onChange={(event) => setPickedAssim(event.target.value)}
+            >
+              <option value="">Escolha…</option>
+              {ASSIMILATION_KINDS.map((kind) => (
+                <optgroup key={kind} label={assimilationKindLabels[kind]}>
+                  {bookCards
+                    .filter((card) => card.kind === kind)
+                    .map((card) => (
+                      <option key={card.name} value={card.name}>
+                        {card.rank} · {card.name}
+                      </option>
+                    ))}
+                </optgroup>
+              ))}
+            </SelectField>
+          ) : (
+            <TextField
+              id="asrpg-pick-assim"
+              label="Assimilação"
+              value={pickedAssim}
+              maxLength={120}
+              onChange={(event) => setPickedAssim(event.target.value)}
+            />
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setAssimPickerOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={!pickedAssim.trim()}
+              onClick={() => {
+                const card = bookCards.find((item) => item.name === pickedAssim);
+                patch((current) => ({
+                  ...current,
+                  assimilations: [
+                    ...current.assimilations,
+                    {
+                      name: pickedAssim.trim(),
+                      kind: card?.kind ?? 'evolutiva',
+                      pressures: 0,
+                      notes: '',
+                    },
+                  ],
+                  tugOfWar: { ...current.tugOfWar, locked: false, rested: false },
+                }));
+                setPickedAssim('');
+                setAssimPickerOpen(false);
+              }}
+            >
+              Concluir Assimilação
+            </Button>
+          </div>
+        </div>
+      </Modal>
       {permissions.canEditPlay ? (
         <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
           <Button size="sm" variant="secondary" onClick={() => void clarity()}>
@@ -455,7 +552,15 @@ function SheetBody({
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => void adjust(determination, 'heal', 1 + sheet.instincts.resolucao)}
+            onClick={() => {
+              // Suscetível: o repouso libera a escolha da Assimilação.
+              if (sheet.tugOfWar.locked && !sheet.tugOfWar.rested)
+                patch((current) => ({
+                  ...current,
+                  tugOfWar: { ...current.tugOfWar, rested: true },
+                }));
+              void adjust(determination, 'heal', 1 + sheet.instincts.resolucao);
+            }}
           >
             Repouso completo (+{1 + sheet.instincts.resolucao} d)
           </Button>
@@ -470,39 +575,85 @@ function SheetBody({
         title="Saúde"
         description={`${state.perLevel} pontos por Nível (1 + Potência + Resolução). ${state.penalty ? `Penalidade: −${state.penalty} Sucesso por teste.` : 'Sem penalidade.'}`}
       />
-      <ol className="flex flex-col gap-1.5">
-        {HEALTH_LEVEL_TITLES.map((title, index) => {
-          const level = 6 - index;
-          const filled =
-            level < state.level ? state.perLevel : level === state.level ? state.pointsInLevel : 0;
-          return (
-            <li
-              key={title}
-              className={cx(
-                'flex items-center gap-2 text-sm',
-                level === state.level ? 'text-fg' : 'text-fg-muted',
-              )}
-            >
-              <span className="w-6 font-display">{level}</span>
-              <span className="w-28">{title}</span>
-              <span
-                className="flex flex-wrap gap-0.5"
-                aria-label={`${filled} de ${state.perLevel}`}
-              >
-                {Array.from({ length: state.perLevel }, (_, point) => (
-                  <span
-                    key={point}
-                    className={cx(
-                      'h-3 w-3 rounded-sm ring-1 ring-line',
-                      point < filled && 'bg-rose-500',
-                    )}
-                  />
-                ))}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
+      {state.level === 0 ? (
+        <>
+          <DeathNotice />
+          <DeathVignette />
+        </>
+      ) : null}
+      {/* Barra geral: pontos que restam, na cor da faixa do Nível atual. */}
+      <div className="mb-3 flex items-center gap-3">
+        <div
+          className="h-2.5 flex-1 overflow-hidden rounded-full bg-sunken ring-1 ring-line"
+          role="meter"
+          aria-label="Saúde"
+          aria-valuemin={0}
+          aria-valuemax={state.total}
+          aria-valuenow={state.remaining}
+        >
+          <div
+            className={cx('h-full rounded-full transition-[width]', healthTone(state.level).bar)}
+            style={{ width: `${state.total ? (state.remaining / state.total) * 100 : 0}%` }}
+          />
+        </div>
+        <span className="font-display text-sm text-fg">
+          {state.remaining}/{state.total}
+        </span>
+      </div>
+      {/* Como na ficha do livro: pares de Níveis por faixa de recuperação, com gotas. */}
+      <div className="flex flex-col gap-3">
+        {HEALTH_BANDS.map((band) => (
+          <section key={band.levels[0]} className="overflow-hidden rounded-lg ring-1 ring-line">
+            <p className="bg-sunken px-3 py-1 text-center text-xs text-fg-secondary">{band.title}</p>
+            <div className="grid gap-px bg-line sm:grid-cols-2">
+              {band.levels.map((level) => {
+                const title = HEALTH_LEVEL_TITLES[6 - level]!;
+                const filled =
+                  level < state.level
+                    ? state.perLevel
+                    : level === state.level
+                      ? state.pointsInLevel
+                      : 0;
+                const current = level === state.level;
+                const tone = healthTone(level);
+                return (
+                  <div
+                    key={level}
+                    aria-current={current ? 'step' : undefined}
+                    className={cx('flex flex-col gap-2 bg-card p-2', current && 'bg-hover')}
+                  >
+                    <div className={cx('flex items-center gap-2 rounded-md px-2 py-1', tone.band)}>
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-canvas/80 font-display text-sm text-fg">
+                        {level}
+                      </span>
+                      <span className="flex-1 text-sm font-medium text-fg">{title}</span>
+                      {current ? <span className="text-[0.65rem] uppercase text-fg">Atual</span> : null}
+                    </div>
+                    <span
+                      className="flex flex-wrap gap-0.5 px-1"
+                      aria-label={`${title}: ${filled} de ${state.perLevel}`}
+                    >
+                      {Array.from({ length: state.perLevel }, (_, point) => (
+                        <Droplet
+                          key={point}
+                          aria-hidden="true"
+                          className={cx(
+                            'h-4 w-4',
+                            point < filled ? `${tone.text} fill-current` : 'text-fg-muted/50',
+                          )}
+                        />
+                      ))}
+                    </span>
+                    {band.notes[level] ? (
+                      <p className="px-1 text-[0.7rem] text-fg-muted">{band.notes[level]}</p>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+      </div>
       <p className="mt-2 text-xs text-fg-muted">
         Recuperação:{' '}
         {
@@ -660,29 +811,13 @@ function SheetBody({
                             : [...rolled.kept.slice(1), index],
                       })
                     }
+                    title={kept ? 'Mantido (toque para tirar)' : 'Toque para manter'}
                     className={cx(
-                      'flex min-h-14 min-w-14 flex-col items-center justify-center gap-1 rounded-lg border px-2 py-1',
-                      kept ? 'border-wine-400 bg-wine-900/60' : 'border-line bg-card',
+                      'rounded-xl p-1 transition-transform hover:-translate-y-0.5',
+                      kept ? 'scale-105' : 'opacity-70 hover:opacity-100',
                     )}
                   >
-                    <span className="text-[0.65rem] text-fg-muted">{die.die}</span>
-                    <span className="flex gap-0.5">
-                      {die.result.sucesso + die.result.adaptacao + die.result.pressao === 0 ? (
-                        <span className="text-fg-muted">—</span>
-                      ) : (
-                        <>
-                          {Array.from({ length: die.result.sucesso }, (_, i) => (
-                            <AssimSymbol key={`a${i}`} code="A" />
-                          ))}
-                          {Array.from({ length: die.result.adaptacao }, (_, i) => (
-                            <AssimSymbol key={`b${i}`} code="B" />
-                          ))}
-                          {Array.from({ length: die.result.pressao }, (_, i) => (
-                            <AssimSymbol key={`c${i}`} code="C" />
-                          ))}
-                        </>
-                      )}
-                    </span>
+                    <AssimDieFace die={die} kept={kept} size={72} />
                   </button>
                 </li>
               );
@@ -691,14 +826,17 @@ function SheetBody({
           {keptTotal ? (
             <p className="flex flex-wrap items-center gap-2 text-sm text-fg">
               Resultado mantido:
-              <span className="flex items-center gap-1">
-                <AssimSymbol code="A" /> {Math.max(0, keptTotal.sucesso - state.penalty)} Sucesso(s)
+              <span className="flex items-center gap-1 rounded-full bg-verdigris-900/60 px-2 py-0.5">
+                <AssimMarkIcon mark="sucesso" className="text-verdigris-300" />
+                {Math.max(0, keptTotal.sucesso - state.penalty)} Sucesso(s)
               </span>
-              <span className="flex items-center gap-1">
-                <AssimSymbol code="B" /> {keptTotal.adaptacao} Adaptação(ões)
+              <span className="flex items-center gap-1 rounded-full bg-arcane-900/60 px-2 py-0.5">
+                <AssimMarkIcon mark="adaptacao" className="text-arcane-300" />
+                {keptTotal.adaptacao} Adaptação(ões)
               </span>
-              <span className="flex items-center gap-1">
-                <AssimSymbol code="C" /> {keptTotal.pressao} Pressão(ões)
+              <span className="flex items-center gap-1 rounded-full bg-ember-900/60 px-2 py-0.5">
+                <AssimMarkIcon mark="pressao" className="text-ember-300" />
+                {keptTotal.pressao} Pressão(ões)
               </span>
             </p>
           ) : null}

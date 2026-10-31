@@ -114,7 +114,7 @@ const TOMO_ID = 'tomo';
 export function TavernCard({ compact = false }: { compact?: boolean }) {
   const { total } = useShared();
   const badge = total ? (
-    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[0.65rem] font-bold text-white">
+    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-ember-400 px-1 text-[0.65rem] font-bold text-white">
       {total > 99 ? '99+' : total}
     </span>
   ) : null;
@@ -595,7 +595,7 @@ function TavernPanel({
                           )}
                           <span className="min-w-0 flex-1 truncate">{option.label}</span>
                           {!active && unread[option.id] ? (
-                            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[0.6rem] font-bold text-white">
+                            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-ember-400 px-1 text-[0.6rem] font-bold text-white">
                               {unread[option.id]! > 99 ? '99+' : unread[option.id]}
                             </span>
                           ) : null}

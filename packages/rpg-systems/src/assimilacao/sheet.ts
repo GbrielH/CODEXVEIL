@@ -147,6 +147,8 @@ export const assimilacaoSheetSchema = z.object({
       determinationLevel: z.number().int().min(0).max(10).default(9),
       /** Determinação bloqueada até a Assimilação se completar (depois de cair um Nível). */
       locked: z.boolean().default(false),
+      /** Já houve repouso completo desde o bloqueio: a Assimilação pode ser escolhida. */
+      rested: z.boolean().default(false),
     })
     .prefault({}),
   experience: z
