@@ -550,7 +550,7 @@ function RefugeCard({
 }
 
 /**
- * Aba MASTER do Assimilação: as ferramentas do Assimilador para conduzir a mesa — o acervo de
+ * Aba WORLD do Assimilação (construção de mundo): as ferramentas do Assimilador para conduzir a mesa — o acervo de
  * Partituras de Conflito e os Refúgios do grupo. Salva sozinho a cada alteração.
  */
 export function AssimilacaoMasterPanel({
