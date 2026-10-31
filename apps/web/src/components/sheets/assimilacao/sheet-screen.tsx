@@ -30,7 +30,6 @@ import {
   sumFaces,
   tugOfWar,
   type AssimilacaoSheet,
-  type AssimilationKind,
   type Generation,
   type Instinct,
   type Knowledge,
@@ -40,6 +39,11 @@ import {
 import { Dices, Droplet, Minus, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { DeathNotice, DeathVignette } from '@/components/assimilacao/death-vignette';
+import {
+  AssimCardGallery,
+  AssimCardTile,
+  type AssimCard,
+} from '@/components/assimilacao/assim-cards';
 import { AssimDieFace, AssimMarkIcon } from '@/components/assimilacao/die-face';
 import { AssimSymbol, withAssimSymbols } from '@/components/assimilacao/symbols';
 import {
@@ -326,6 +330,7 @@ function SheetBody({
     : null;
 
   const [assimPickerOpen, setAssimPickerOpen] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
   const [pickedAssim, setPickedAssim] = useState('');
   const bookCards = useMemo(
     () =>
@@ -341,6 +346,7 @@ function SheetBody({
                   rank: data.rank,
                   suit: data.suit,
                   levels: data.levels,
+                  text: data.text,
                 },
               ]
             : [];
@@ -472,7 +478,7 @@ function SheetBody({
         </Alert>
       ) : null}
       <Modal
-        open={assimPickerOpen}
+        open={assimPickerOpen && bookCards.length === 0}
         onClose={() => setAssimPickerOpen(false)}
         title="Escolher a Assimilação"
         description="A mutação se completa: ela entra na ficha e a Determinação volta a ser recuperável."
@@ -523,6 +529,7 @@ function SheetBody({
                       name: pickedAssim.trim(),
                       kind: card?.kind ?? 'evolutiva',
                       pressures: 0,
+                      level: 1,
                       notes: '',
                     },
                   ],
@@ -1053,46 +1060,46 @@ function SheetBody({
     </Card>
   );
 
+  const addAssimilation = (card: AssimCard | null, name: string, conclude = false) =>
+    patch((current) => ({
+      ...current,
+      assimilations: [
+        ...current.assimilations,
+        { name: name.trim(), kind: card?.kind ?? 'evolutiva', pressures: 0, level: 1, notes: '' },
+      ],
+      ...(conclude ? { tugOfWar: { ...current.tugOfWar, locked: false, rested: false } } : {}),
+    }));
+
   const assimilationsCard = (
     <Card>
       <CardHeader
         title="Assimilações"
-        description="Mutações adquiridas. As Pressões das Inoportunas contam para a perda de consciência."
+        description="As cartas de mutação do personagem. Os Níveis custam símbolos dos dados; as Pressões das Inoportunas contam para a perda de consciência."
       />
-      <ul className="flex flex-col gap-2">
-        {sheet.assimilations.map((entry, index) => {
-          const card = bookCards.find((item) => item.name === entry.name);
-          return (
-            <li key={`${entry.name}-${index}`} className="rounded-lg border border-line p-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="flex items-center gap-2 font-display text-fg">
-                  {card ? (
-                    <span className="text-xs text-fg-muted">
-                      {card.rank}
-                      <AssimSymbol code={card.suit} />
-                    </span>
-                  ) : null}
-                  {entry.name}
-                  <span className="text-xs text-fg-muted">
-                    · {assimilationKindLabels[entry.kind]}
-                  </span>
-                </p>
-                <span className="flex items-center gap-2 text-sm">
-                  <AssimSymbol code="C" />
-                  {stepper(
-                    entry.pressures,
-                    (next) =>
-                      patch((current) => ({
-                        ...current,
-                        assimilations: current.assimilations.map((item, position) =>
-                          position === index ? { ...item, pressures: next } : item,
-                        ),
-                      })),
-                    0,
-                    10,
-                    'Pressões',
-                  )}
-                  {editable ? (
+      {sheet.assimilations.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-line p-4 text-center text-sm text-fg-muted">
+          Nenhuma Assimilação ainda. Elas chegam quando o Cabo de Guerra pende para a Assimilação.
+        </p>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {sheet.assimilations.map((entry, index) => {
+            const card = bookCards.find((item) => item.name === entry.name);
+            const update = (changes: Partial<typeof entry>) =>
+              patch((current) => ({
+                ...current,
+                assimilations: current.assimilations.map((item, position) =>
+                  position === index ? { ...item, ...changes } : item,
+                ),
+              }));
+            return (
+              <AssimCardTile
+                key={`${entry.name}-${index}`}
+                name={entry.name}
+                kind={entry.kind}
+                card={card}
+                level={entry.level}
+                actions={
+                  editable ? (
                     <button
                       type="button"
                       aria-label={`Tirar ${entry.name}`}
@@ -1107,105 +1114,92 @@ function SheetBody({
                     >
                       <Trash2 className="h-4 w-4 text-fg-muted hover:text-fg" aria-hidden="true" />
                     </button>
+                  ) : null
+                }
+              >
+                <div className="flex flex-wrap items-center gap-3 border-t border-line/60 pt-2 text-sm">
+                  {card && card.levels.length > 1 && editable ? (
+                    <span className="flex items-center gap-1">
+                      Nível
+                      {stepper(entry.level, (next) => update({ level: next }), 1, card.levels.length, 'Nível')}
+                    </span>
                   ) : null}
-                </span>
-              </div>
-              {card ? (
-                <details className="mt-1 text-sm text-fg-secondary">
-                  <summary className="cursor-pointer text-xs text-fg-muted">
-                    Níveis da carta
-                  </summary>
-                  <ul className="mt-1 flex flex-col gap-1">
-                    {card.levels.map((level) => (
-                      <li key={level.name}>
-                        {(['A', 'B', 'C'] as const).flatMap((code) =>
-                          Array.from({ length: level.cost[code] }, (_, i) => (
-                            <AssimSymbol key={`${code}${i}`} code={code} />
-                          )),
-                        )}{' '}
-                        <strong className="text-fg">{level.name}</strong>
-                        {level.requirement ? (
-                          <> ({withAssimSymbols(level.requirement)})</>
-                        ) : null}: {withAssimSymbols(level.text)}
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              ) : null}
-              {editable ? (
-                <TextareaField
-                  id={`asrpg-assim-notes-${index}`}
-                  label="Níveis adquiridos e anotações"
-                  rows={2}
-                  value={entry.notes}
-                  onChange={(event) =>
-                    setSheet({
-                      ...sheet,
-                      assimilations: sheet.assimilations.map((item, position) =>
-                        position === index ? { ...item, notes: event.target.value } : item,
-                      ),
-                    })
-                  }
-                  onBlur={() => void save(sheet)}
-                />
-              ) : entry.notes ? (
-                <p className="mt-1 text-sm text-fg-secondary">{withAssimSymbols(entry.notes)}</p>
-              ) : null}
-            </li>
-          );
-        })}
-      </ul>
+                  {entry.kind === 'inoportuna' || entry.pressures > 0 ? (
+                    <span className="flex items-center gap-1">
+                      <AssimMarkIcon mark="pressao" className="text-ember-300" />
+                      {stepper(entry.pressures, (next) => update({ pressures: next }), 0, 10, 'Pressões')}
+                    </span>
+                  ) : null}
+                </div>
+                {editable ? (
+                  <TextareaField
+                    id={`asrpg-assim-notes-${index}`}
+                    label="Anotações"
+                    rows={2}
+                    value={entry.notes}
+                    onChange={(event) =>
+                      setSheet({
+                        ...sheet,
+                        assimilations: sheet.assimilations.map((item, position) =>
+                          position === index ? { ...item, notes: event.target.value } : item,
+                        ),
+                      })
+                    }
+                    onBlur={() => void save(sheet)}
+                  />
+                ) : entry.notes ? (
+                  <p className="text-sm text-fg-secondary">{withAssimSymbols(entry.notes)}</p>
+                ) : null}
+              </AssimCardTile>
+            );
+          })}
+        </div>
+      )}
       {editable ? (
         <div className="mt-3 flex flex-wrap items-end gap-2">
           {bookCards.length ? (
-            <SelectField
-              id="asrpg-new-assim"
-              label="Carta de Assimilação"
-              value={newAssim}
-              onChange={(event) => setNewAssim(event.target.value)}
-            >
-              <option value="">Escolha…</option>
-              {ASSIMILATION_KINDS.map((kind) => (
-                <optgroup key={kind} label={assimilationKindLabels[kind]}>
-                  {bookCards
-                    .filter((card) => card.kind === kind)
-                    .map((card) => (
-                      <option key={card.name} value={card.name}>
-                        {card.rank} · {card.name}
-                      </option>
-                    ))}
-                </optgroup>
-              ))}
-            </SelectField>
+            <Button variant="secondary" onClick={() => setGalleryOpen(true)}>
+              Ver as cartas e adicionar
+            </Button>
           ) : (
-            <TextField
-              id="asrpg-new-assim"
-              label="Nova Assimilação"
-              value={newAssim}
-              maxLength={120}
-              onChange={(event) => setNewAssim(event.target.value)}
-            />
+            <>
+              <TextField
+                id="asrpg-new-assim"
+                label="Nova Assimilação"
+                value={newAssim}
+                maxLength={120}
+                onChange={(event) => setNewAssim(event.target.value)}
+              />
+              <Button
+                variant="secondary"
+                disabled={!newAssim.trim()}
+                onClick={() => {
+                  addAssimilation(null, newAssim);
+                  setNewAssim('');
+                }}
+              >
+                Adicionar
+              </Button>
+            </>
           )}
-          <Button
-            variant="secondary"
-            disabled={!newAssim.trim()}
-            onClick={() => {
-              const card = bookCards.find((item) => item.name === newAssim);
-              const kind: AssimilationKind = card?.kind ?? 'evolutiva';
-              patch((current) => ({
-                ...current,
-                assimilations: [
-                  ...current.assimilations,
-                  { name: newAssim.trim(), kind, pressures: 0, notes: '' },
-                ],
-              }));
-              setNewAssim('');
-            }}
-          >
-            Adicionar
-          </Button>
         </div>
       ) : null}
+      <AssimCardGallery
+        open={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        cards={bookCards}
+        owned={sheet.assimilations.map((entry) => entry.name)}
+        onPick={(card) => addAssimilation(card, card.name)}
+      />
+      <AssimCardGallery
+        open={assimPickerOpen && bookCards.length > 0}
+        onClose={() => setAssimPickerOpen(false)}
+        cards={bookCards}
+        owned={sheet.assimilations.map((entry) => entry.name)}
+        title="A Assimilação se completa: escolha a carta"
+        confirmLabel="Concluir Assimilação"
+        onPick={(card) => addAssimilation(card, card.name, true)}
+      />
     </Card>
   );
 

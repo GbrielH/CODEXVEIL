@@ -771,7 +771,7 @@ function Body({
                             ...sheet,
                             assimilations: [
                               ...sheet.assimilations,
-                              { name: card.name, kind: card.kind, pressures: 0, notes: '' },
+                              { name: card.name, kind: card.kind, pressures: 0, level: 1, notes: '' },
                             ],
                           })
                         }
@@ -796,7 +796,7 @@ function Body({
                           ...sheet,
                           assimilations: [
                             ...sheet.assimilations,
-                            { name: newAssim.trim(), kind: 'evolutiva', pressures: 0, notes: '' },
+                            { name: newAssim.trim(), kind: 'evolutiva', pressures: 0, level: 1, notes: '' },
                           ],
                         });
                         setNewAssim('');

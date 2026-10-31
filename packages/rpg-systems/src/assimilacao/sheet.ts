@@ -174,6 +174,8 @@ export const assimilacaoSheetSchema = z.object({
         kind: z.enum(ASSIMILATION_KINDS).default('evolutiva'),
         /** Pressões ainda ativas (Inoportunas contam para a perda de consciência). */
         pressures: z.number().int().min(0).max(10).default(0),
+        /** Níveis da carta já adquiridos (1 = o primeiro). */
+        level: z.number().int().min(1).max(10).default(1),
         notes: text(2000),
       }),
     )
