@@ -28,11 +28,11 @@ export function LibraryNav({
     { key: 'monster', href: `${base}?tipo=monstros`, label: 'Monstros' },
     { key: 'items', href: `${base}/itens`, label: 'Itens' },
   ];
-  // O SRD é de D&D 5e; nas outras mesas, ameaças e itens vêm dos livros importados (aba Livros).
+  // O SRD é de D&D 5e; nas outras mesas, ameaças e itens vêm dos livros liberados na campanha.
   if (isGm && systemId !== 'dnd5e') {
     tabs.push({
       key: 'books',
-      href: campaignPath(campaignId, '/livros'),
+      href: `${base}/livros`,
       label: 'Ameaças e itens dos livros',
     });
   } else if (isGm) {

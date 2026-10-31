@@ -1303,7 +1303,15 @@ function SheetBody({
               wrapperClassName="inline-block shrink-0 self-start"
               className="h-28 w-28 rounded-t-[999px] rounded-b-md object-cover ring-2 ring-wine-400/60 ring-offset-2 ring-offset-charcoal-950"
             />
-          ) : null}
+          ) : (
+            // Sem retrato: a mesma moldura com a inicial (o retrato é enviado na aba de imagens).
+            <span
+              aria-hidden="true"
+              className="flex h-28 w-28 shrink-0 items-center justify-center self-start rounded-t-[999px] rounded-b-md bg-wine-900/70 font-display text-5xl text-fg-accent ring-2 ring-wine-400/60 ring-offset-2 ring-offset-charcoal-950"
+            >
+              {character.name.trim().charAt(0).toUpperCase() || '?'}
+            </span>
+          )}
           <div className="flex min-w-0 flex-col gap-1">
             <p className="eyebrow text-wine-300">
               Assimilação RPG

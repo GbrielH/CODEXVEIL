@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { routes } from '@/lib/routes';
 import { DICE_COLORS, DieIcon, useCampaignColors } from './campaign-colors';
 import { TABLE_SETTLED_EVENT, throwDice } from './dice-scene';
-import { applyDiceLook } from './dice-look';
+import { applyDiceLook, useMyDiceLook } from './dice-look';
 import type { ShownRoll } from './dice-roller';
 
 /**
@@ -109,6 +109,7 @@ export function DiceTray({
   pending: TrayRoll | null;
 }) {
   const palette = useCampaignColors();
+  const myLook = useMyDiceLook();
   const containerId = `dados-3d-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const boxRef = useRef<DiceBox | null>(null);
   const queue = useRef<TrayRoll[]>([]);
@@ -173,8 +174,15 @@ export function DiceTray({
       if (box && text) {
         // O resultado (balão, cabeçalho e animação de crítico) só aparece quando os dados param.
         setRolling(next);
-        const color = (next.userId ? palette?.colorOfUser(next.userId) : myColor) ?? DEFAULT_COLOR;
-        const look = palette?.lookOfUser(next.userId ?? palette?.userId) ?? null;
+        const color =
+          (next.userId && next.userId !== palette?.userId
+            ? palette?.colorOfUser(next.userId)
+            : (myLook?.color ?? myColor)) ?? DEFAULT_COLOR;
+        // Rolagem própria (ou fora de campanha): a aparência vem do perfil; dos outros, da mesa.
+        const own = !next.userId || next.userId === palette?.userId;
+        const look = own
+          ? (myLook ?? palette?.lookOfUser(palette?.userId) ?? null)
+          : (palette?.lookOfUser(next.userId) ?? null);
         try {
           await applyDiceLook(box, 'cv', color, textColorFor(color), look);
           await throwDice(box, text);
@@ -190,7 +198,7 @@ export function DiceTray({
       setLast(next);
     }
     running.current = false;
-  }, [palette, myColor]);
+  }, [palette, myColor, myLook]);
 
   const enqueue = useCallback(
     (roll: TrayRoll) => {

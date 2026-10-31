@@ -1,5 +1,10 @@
+'use client';
+
 import type DiceBox from '@3d-dice/dice-box-threejs';
-import { diceFontLabels, type DiceLook } from '@codexveil/validation';
+import { signedMediaUrls } from '@codexveil/database';
+import { diceFontLabels, preferencesSchema, type DiceLook } from '@codexveil/validation';
+import { useEffect, useState } from 'react';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 /** Aparência de alguém já pronta para a mesa: a imagem vem como URL assinada. */
 export type DiceAppearance = DiceLook & { imageUrl: string | null };
@@ -110,4 +115,33 @@ export async function applyDiceLook(
       material: 'plastic',
     },
   });
+}
+
+/**
+ * A própria aparência ("Meus dados"), lida direto do perfil: vale também fora de uma campanha
+ * (rolagens na ficha), onde não há a paleta da mesa.
+ */
+export function useMyDiceLook(): DiceAppearance | null {
+  const [look, setLook] = useState<DiceAppearance | null>(null);
+  useEffect(() => {
+    let active = true;
+    const client = getSupabaseBrowserClient();
+    void (async () => {
+      const { data: auth } = await client.auth.getUser();
+      if (!auth.user) return;
+      const { data } = await client
+        .from('profiles')
+        .select('preferences')
+        .eq('id', auth.user.id)
+        .maybeSingle();
+      const dice = preferencesSchema.safeParse(data?.preferences).data?.dice;
+      if (!dice || !active) return;
+      const urls = dice.image ? await signedMediaUrls(client, [dice.image]) : {};
+      if (active) setLook({ ...dice, imageUrl: dice.image ? (urls[dice.image] ?? null) : null });
+    })().catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
+  return look;
 }
