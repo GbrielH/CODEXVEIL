@@ -25,6 +25,7 @@ import { sheetAssimilacaoSources, sheetBookSources, sheetT20Sources } from '@/li
 import { useAsyncData } from '@/lib/hooks';
 import { useUserId } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase';
+import { GhostAura, isDown } from '@/components/ghost-aura';
 
 export default function CharacterScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -108,6 +109,7 @@ export default function CharacterScreen() {
           canEditPlay={canEditCharacterPlayState(access)}
           sources={data.assimBooks}
         />
+        <GhostAura active={isDown(data.resources)} />
       </>
     );
   }
@@ -150,6 +152,7 @@ export default function CharacterScreen() {
           canEditPlay={canEditCharacterPlayState(t20Access)}
           sources={data.t20Books}
         />
+        <GhostAura active={isDown(data.resources)} />
       </>
     );
   }
@@ -195,6 +198,7 @@ export default function CharacterScreen() {
         portraitUrl={data.portraitUrl}
         onReload={reload}
       />
+        <GhostAura active={isDown(data.resources)} />
     </>
   );
 }

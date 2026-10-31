@@ -563,3 +563,23 @@
     animation: none;
   }
 }
+
+/* Fantasminhas em volta do painel de um personagem morto ou morrendo (vida em zero). */
+@keyframes codex-ghost-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.codex-ghost {
+  animation: codex-ghost-float 2.4s ease-in-out infinite;
+  image-rendering: pixelated;
+}
+@media (prefers-reduced-motion: reduce) {
+  .codex-ghost {
+    animation: none;
+  }
+}

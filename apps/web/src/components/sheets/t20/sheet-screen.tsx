@@ -79,6 +79,7 @@ import { failureMessage } from '@/lib/client-errors';
 import { cx } from '@/lib/cx';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { T20LevelUpButton } from './level-up';
+import { GhostAura, isDown } from '@/components/characters/ghost-aura';
 
 interface T20SheetScreenProps {
   /** Compartilhar com amigos: só na aba Personagem (o dono). */
@@ -459,6 +460,7 @@ function T20SheetBody(props: T20SheetScreenProps) {
         />
       ) : null}
       {/* Cabeçalho (redesign "Grimório Arcano"): paisagem do personagem, retrato, PV/PM e atributos. */}
+      <GhostAura active={isDown(resources)}>
       <header className="relative isolate overflow-hidden rounded-2xl border border-line p-5 shadow-[0_24px_60px_-36px_rgb(107_59_198/0.9)] sm:p-6">
         <ArcaneScene seed={character.name || character.id} className="absolute inset-0 -z-10 opacity-60" options={{ noMoon: true }} />
         <span className="absolute inset-0 -z-10 bg-gradient-to-r from-charcoal-950 via-charcoal-950/85 to-charcoal-950/60" aria-hidden="true" />
@@ -603,6 +605,7 @@ function T20SheetBody(props: T20SheetScreenProps) {
           ))}
         </ul>
       </header>
+      </GhostAura>
 
       <Tabs
         label="Seções da ficha"

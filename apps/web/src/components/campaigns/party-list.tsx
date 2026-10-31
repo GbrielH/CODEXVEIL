@@ -7,6 +7,7 @@ import { HealthBar } from '@/components/characters/health-bar';
 import { Portrait } from '@/components/characters/portrait';
 import { Badge } from '@/components/ui/badge';
 import { characterPath } from '@/lib/routes';
+import { GhostAura, isDown } from '@/components/characters/ghost-aura';
 
 interface PartyListProps {
   characters: PartyCharacter[];
@@ -24,39 +25,41 @@ export function PartyList({ characters, portraits, currentUserId }: PartyListPro
         const mine = character.ownerId === currentUserId;
         return (
           <li key={character.id}>
-            <Link
-              href={characterPath(character.id) as Route}
-              className="flex h-full gap-3 rounded-md border border-line bg-raised p-3 transition-colors hover:border-parchment-400/40 hover:bg-hover"
-            >
-              <Portrait
-                name={character.name}
-                url={character.portraitPath ? (portraits[character.portraitPath] ?? null) : null}
-                size="sm"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-2 truncate font-medium text-fg">
-                  <ColoredName characterId={character.id} className="truncate">
-                    {character.name}
-                  </ColoredName>
-                  {mine ? <Badge tone="brand">Seu</Badge> : null}
-                </p>
-                <p className="truncate text-xs text-fg-muted">
-                  {summary.subtitle} · {character.ownerName}
-                </p>
-                {hp ? (
-                  <HealthBar current={hp.current} max={hp.max} temp={hp.temp} className="mt-2" />
-                ) : null}
-                {character.conditions.length > 0 ? (
-                  <p className="mt-1 flex flex-wrap gap-1">
-                    {character.conditions.map((condition) => (
-                      <Badge key={condition.id} tone="warning">
-                        {conditionLabel(character.systemId, condition.key, condition.level)}
-                      </Badge>
-                    ))}
+            <GhostAura active={isDown(character.resources)} count={2} className="h-full">
+              <Link
+                href={characterPath(character.id) as Route}
+                className="flex h-full gap-3 rounded-md border border-line bg-raised p-3 transition-colors hover:border-parchment-400/40 hover:bg-hover"
+              >
+                <Portrait
+                  name={character.name}
+                  url={character.portraitPath ? (portraits[character.portraitPath] ?? null) : null}
+                  size="sm"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-2 truncate font-medium text-fg">
+                    <ColoredName characterId={character.id} className="truncate">
+                      {character.name}
+                    </ColoredName>
+                    {mine ? <Badge tone="brand">Seu</Badge> : null}
                   </p>
-                ) : null}
-              </div>
-            </Link>
+                  <p className="truncate text-xs text-fg-muted">
+                    {summary.subtitle} · {character.ownerName}
+                  </p>
+                  {hp ? (
+                    <HealthBar current={hp.current} max={hp.max} temp={hp.temp} className="mt-2" />
+                  ) : null}
+                  {character.conditions.length > 0 ? (
+                    <p className="mt-1 flex flex-wrap gap-1">
+                      {character.conditions.map((condition) => (
+                        <Badge key={condition.id} tone="warning">
+                          {conditionLabel(character.systemId, condition.key, condition.level)}
+                        </Badge>
+                      ))}
+                    </p>
+                  ) : null}
+                </div>
+              </Link>
+            </GhostAura>
           </li>
         );
       })}

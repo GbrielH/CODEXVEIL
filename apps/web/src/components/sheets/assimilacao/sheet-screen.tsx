@@ -68,6 +68,7 @@ import { cx } from '@/lib/cx';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { ArcaneScene } from '@/components/brand/arcane-scene';
 import { ZoomableImage } from '@/components/ui/zoomable-image';
+import { GhostAura } from '@/components/characters/ghost-aura';
 
 export interface AssimilacaoBookSource {
   book: { id: string; name: string };
@@ -1471,6 +1472,7 @@ function SheetBody({
   return (
     <div className="flex flex-col gap-5">
       {/* Cabeçalho (como o do Tormenta20): retrato, nome, origens e os números do jogo. */}
+      <GhostAura active={state.level === 0}>
       <header className="relative isolate overflow-hidden rounded-2xl border border-line p-5 sm:p-6">
         <ArcaneScene
           seed={character.name || character.id}
@@ -1563,6 +1565,7 @@ function SheetBody({
           ))}
         </dl>
       </header>
+      </GhostAura>
       <Tabs
         label="Ficha do Infectado"
         value={tab}

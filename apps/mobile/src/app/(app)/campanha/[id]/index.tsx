@@ -36,6 +36,7 @@ import {
 } from '@/components/campaign/link-existing-character';
 import { TurnStatus } from '@/components/campaign/turn-status';
 import { CharacterAvatar } from '@/components/character-avatar';
+import { GhostAura, isDown } from '@/components/ghost-aura';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/dialog';
 import { HealthBar } from '@/components/ui/health-bar';
@@ -378,6 +379,7 @@ export default function CampaignScreen() {
                   </View>
                 </View>
                 {hp ? <HealthBar current={hp.current} max={hp.max} temp={hp.temp} /> : null}
+                <GhostAura active={isDown(character.resources)} />
                 {character.conditions.length > 0 ? (
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
                     {character.conditions.map((condition) => (
