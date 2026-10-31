@@ -50,6 +50,7 @@ import {
   CampaignLinkCard,
   type LinkCampaignOption,
 } from '@/components/characters/campaign-link-card';
+import { CharacterDiceCard } from '@/components/dice/character-dice-card';
 import { DeleteCharacterCard } from '@/components/characters/delete-character';
 import { ImagePromptCard } from '@/components/characters/image-prompt-card';
 import { PortraitCard } from '@/components/characters/portrait-card';
@@ -1582,6 +1583,12 @@ function SheetBody({
                       <ImagePromptCard variant="token" prompt={characterTokenPrompt(imageInput)} />
                     </div>
                   </div>
+                ) : null}
+                {permissions.isOwner ? (
+                  <CharacterDiceCard
+                    characterId={character.id}
+                    characterSummary={[imageInput.name, imageInput.className, imageInput.appearance].filter(Boolean).join(' · ')}
+                  />
                 ) : null}
                 {shareCard}
                 {permissions.isOwner && campaigns ? (

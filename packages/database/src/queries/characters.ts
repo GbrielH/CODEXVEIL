@@ -42,6 +42,8 @@ export interface CharacterDetail {
   portraitPath: string | null;
   /** Imagem do token no mapa (sem ela, o mapa usa o retrato). */
   tokenPath: string | null;
+  /** Dado salvo do dono vinculado ao personagem ("Meus dados"). */
+  diceId: string | null;
   /** Ficha bruta; valide com o módulo do sistema (`findSystem(systemId).parseSheet`). */
   sheet: unknown;
   version: number;
@@ -349,7 +351,7 @@ export async function getCharacter(
   const { data, error } = await client
     .from('characters')
     .select(
-      'id, owner_id, campaign_id, system_id, name, portrait_path, token_path, sheet, version, updated_at, live_updated_at, granted_level, owner:profiles!characters_owner_id_fkey(display_name), campaign:campaigns(id, name, status, owner_id, party_sheets_visible, players_can_edit_sheets)',
+      'id, owner_id, campaign_id, system_id, name, portrait_path, token_path, dice_id, sheet, version, updated_at, live_updated_at, granted_level, owner:profiles!characters_owner_id_fkey(display_name), campaign:campaigns(id, name, status, owner_id, party_sheets_visible, players_can_edit_sheets)',
     )
     .eq('id', characterId)
     .maybeSingle();
@@ -376,6 +378,7 @@ export async function getCharacter(
     name: data.name,
     portraitPath: data.portrait_path,
     tokenPath: data.token_path,
+    diceId: data.dice_id,
     sheet: data.sheet,
     version: data.version,
     updatedAt: data.updated_at,
@@ -1123,6 +1126,7 @@ export interface PartyFace {
   ownerId: string;
   ownerName: string;
   portraitPath: string | null;
+  diceId: string | null;
 }
 
 export async function listPartyFaces(
@@ -1137,6 +1141,7 @@ export async function listPartyFaces(
     owner_id: string;
     owner_name: string | null;
     portrait_path: string | null;
+    dice_id: string | null;
   }[];
   return rows.map((row) => ({
     id: row.id,
@@ -1144,5 +1149,6 @@ export async function listPartyFaces(
     ownerId: row.owner_id,
     ownerName: row.owner_name ?? 'Jogador',
     portraitPath: row.portrait_path,
+    diceId: row.dice_id,
   }));
 }

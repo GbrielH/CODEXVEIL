@@ -1,5 +1,6 @@
 'use client';
 
+import { CharacterDiceCard } from '@/components/dice/character-dice-card';
 import { CAMPAIGN_MEDIA_BUCKET, deleteCharacter } from '@codexveil/database';
 import { characterImagePrompt, characterTokenPrompt } from '@codexveil/domain';
 import { dnd5eCampaignIssues, parseDnd5eCampaignRules } from '@codexveil/rpg-systems/dnd5e';
@@ -26,7 +27,7 @@ export function SettingsTab({
   /** Campanha já escolhida ao chegar pelo "Vincular" da campanha. */
   initialCampaignId?: string | null;
 }) {
-  const { permissions, character } = useSheet();
+  const { permissions, character, name, sheet } = useSheet();
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       {permissions.canEditSheet ? (
@@ -40,6 +41,14 @@ export function SettingsTab({
           <TokenImageCard characterId={character.id} portraitUrl={character.portraitUrl} />
           <DndImagePrompt variant="token" />
         </div>
+      ) : null}
+      {permissions.isOwner ? (
+        <CharacterDiceCard
+          characterId={character.id}
+          characterSummary={[name, sheet.identity.species, sheet.identity.classes[0]?.name, sheet.details.appearance]
+            .filter(Boolean)
+            .join(' · ')}
+        />
       ) : null}
       {permissions.isOwner ? <CampaignCard campaigns={campaigns} initialCampaignId={initialCampaignId} /> : null}
       {permissions.isOwner ? <DangerCard /> : null}

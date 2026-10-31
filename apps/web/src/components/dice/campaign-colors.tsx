@@ -39,6 +39,8 @@ interface CampaignColorsValue {
   colorOfCharacter: (characterId: string | null | undefined) => string | null;
   /** Face desenhada, cor e fonte dos números dos dados de alguém ("Meus dados"). */
   lookOfUser: (userId: string | null | undefined) => DiceAppearance | null;
+  /** Dado vinculado ao personagem (um dos dados salvos do dono), se houver. */
+  lookOfCharacter: (characterId: string | null | undefined) => DiceAppearance | null;
   /** Cores já usadas por outras pessoas da mesa. */
   taken: Set<string>;
   choose: (color: string) => Promise<boolean>;
@@ -60,6 +62,8 @@ export function CampaignColorsProvider({
     characterOwners: {},
     looks: {},
     imageUrls: {},
+    characterLooks: {},
+    characterImageUrls: {},
   });
   const [userId, setUserId] = useState<string | null>(null);
   const [needsDice, setNeedsDice] = useState(false);
@@ -127,6 +131,10 @@ export function CampaignColorsProvider({
       gmReady: palette.members.some((member) => member.role === 'gm' && member.color),
       colorOfUser,
       colorOfCharacter: (id) => (id ? colorOfUser(palette.characterOwners[id]) : null),
+      lookOfCharacter: (id) => {
+        const look = id ? palette.characterLooks[id] : undefined;
+        return look ? { ...look, imageUrl: palette.characterImageUrls[id!] ?? null } : null;
+      },
       lookOfUser: (id) => {
         const look = id ? palette.looks[id] : undefined;
         return look ? { ...look, imageUrl: palette.imageUrls[id!] ?? null } : null;

@@ -20,15 +20,18 @@ Descrição da skin que eu quero:`;
  * Prompt para gerar a skin do dado numa IA de imagens. A descrição da pessoa vai junto do
  * prompt (sem ela, o resultado sai genérico), por isso o "Copiar" só libera depois de escrever.
  */
-export function SkinPrompt() {
+export function SkinPrompt({ context }: { context?: string }) {
   const [description, setDescription] = useState('');
   const text = description.trim();
-  const prompt = `${BASE_PROMPT}\n${text || '[descreva aqui a skin que você quer]'}`;
+  // Para um personagem, o prompt já leva quem ele é (a skin combina com o personagem).
+  const prompt = `${BASE_PROMPT}\n${text || '[descreva aqui a skin que você quer]'}${
+    context ? `\n\nO dado é de um personagem de RPG; combine o visual com ele:\n${context}` : ''
+  }`;
   return (
     <div className="flex flex-col gap-3">
       <Alert tone="warning">
-        <strong>Importante:</strong> junto com o prompt vai a <strong>descrição da skin</strong>{' '}
-        que você quer (cores, material, tema, detalhes). Escreva abaixo: ela entra no fim do prompt.
+        <strong>Importante:</strong> junto com o prompt vai a <strong>descrição da skin</strong> que
+        você quer (cores, material, tema, detalhes). Escreva abaixo: ela entra no fim do prompt.
       </Alert>
       <label className="flex flex-col gap-1.5 text-sm font-medium text-fg">
         Descrição da skin
@@ -56,7 +59,7 @@ export function SkinPrompt() {
       </div>
       <p className="text-xs text-fg-muted">
         Cole na IA de imagens da sua preferência (ChatGPT, Gemini, Midjourney…). Depois baixe a
-        imagem e use “Imagem de fundo” no editor acima.
+        imagem e use “Imagem de fundo” no editor de “Meus dados”.
       </p>
     </div>
   );

@@ -68,6 +68,7 @@ import { ExpandTextButton } from '@/components/ui/expand-text';
 import { TextareaField, TextField } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
 import { Tabs } from '@/components/ui/tabs';
+import { CharacterDiceCard } from '@/components/dice/character-dice-card';
 import { ZoomableImage } from '@/components/ui/zoomable-image';
 import { DiceProvider, useDice } from '@/components/dice/dice-roller';
 import { DeleteCharacterCard } from '@/components/characters/delete-character';
@@ -1036,6 +1037,12 @@ function T20SheetBody(props: T20SheetScreenProps) {
             <ImagePromptCard variant="token" prompt={characterTokenPrompt(imageInput)} />
           </div>
         </div>
+      ) : null}
+      {tab === 'personagem' && permissions.isOwner ? (
+        <CharacterDiceCard
+          characterId={character.id}
+          characterSummary={[imageInput.name, imageInput.className, imageInput.appearance].filter(Boolean).join(' · ')}
+        />
       ) : null}
 
       {tab === 'personagem' ? props.shareCard : null}

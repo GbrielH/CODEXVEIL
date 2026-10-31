@@ -83,8 +83,10 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
       const late = Date.now() > next.expiresAt;
       setCurrent(late ? null : next);
       if (box && text && !late) {
-        const color = colors?.colorOfUser(next.userId) ?? DEFAULT_COLOR;
-        const look = colors?.lookOfUser(next.userId) ?? null;
+        // Dado vinculado ao personagem primeiro; senão o padrão de quem rolou.
+        const look =
+          colors?.lookOfCharacter(next.characterId) ?? colors?.lookOfUser(next.userId) ?? null;
+        const color = look?.color ?? colors?.colorOfUser(next.userId) ?? DEFAULT_COLOR;
         try {
           await applyDiceLook(box, 'mesa', color, textColorFor(color), look);
           // Fica na mesa até completar os 10 s desde a rolagem (mínimo de 4 s para dar para ver).
@@ -107,7 +109,7 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
       void getSupabaseBrowserClient()
         .from('dice_rolls')
         .select(
-          'id, user_id, roller_name, label, dice, total, expression, mode, modifier, visibility, created_at',
+          'id, user_id, character_id, roller_name, label, dice, total, expression, mode, modifier, visibility, created_at',
         )
         .eq('campaign_id', campaignId)
         .order('created_at', { ascending: false })
@@ -126,6 +128,7 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
             ...fresh.map((row) => ({
               key: row.id,
               userId: row.user_id,
+              characterId: row.character_id,
               rollerName: row.roller_name,
               secret: false,
               expiresAt: new Date(row.created_at).getTime() + VISIBLE_MS,

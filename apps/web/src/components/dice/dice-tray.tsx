@@ -52,6 +52,8 @@ export interface TrayRoll {
   roll: Pick<ShownRoll, 'dice' | 'total' | 'label' | 'expression' | 'mode' | 'modifier'>;
   rollerName: string;
   userId: string | null;
+  /** Personagem que rolou: se o dono vinculou um dado a ele, a mesa desenha com esse dado. */
+  characterId?: string | null;
   /** Rolagem "Apenas eu e o mestre": só quem rolou e o mestre recebem (o servidor filtra). */
   secret: boolean;
   /** Margem de crítico do ataque (19 = 19–20); sem ela, só o 20 natural. */
@@ -174,15 +176,19 @@ export function DiceTray({
       if (box && text) {
         // O resultado (balão, cabeçalho e animação de crítico) só aparece quando os dados param.
         setRolling(next);
-        const color =
-          (next.userId && next.userId !== palette?.userId
-            ? palette?.colorOfUser(next.userId)
-            : (myLook?.color ?? myColor)) ?? DEFAULT_COLOR;
-        // Rolagem própria (ou fora de campanha): a aparência vem do perfil; dos outros, da mesa.
+        // Dado vinculado ao personagem primeiro; senão o padrão de quem rolou. Na rolagem própria
+        // (ou fora de campanha) o padrão vem do perfil; na dos outros, da mesa.
         const own = !next.userId || next.userId === palette?.userId;
-        const look = own
-          ? (myLook ?? palette?.lookOfUser(palette?.userId) ?? null)
-          : (palette?.lookOfUser(next.userId) ?? null);
+        const look =
+          palette?.lookOfCharacter(next.characterId) ??
+          (own
+            ? (myLook ?? palette?.lookOfUser(palette?.userId))
+            : palette?.lookOfUser(next.userId)) ??
+          null;
+        const color =
+          look?.color ??
+          (own ? myColor : palette?.colorOfUser(next.userId)) ??
+          DEFAULT_COLOR;
         try {
           await applyDiceLook(box, 'cv', color, textColorFor(color), look);
           await throwDice(box, text);
@@ -224,7 +230,7 @@ export function DiceTray({
       void getSupabaseBrowserClient()
         .from('dice_rolls')
         .select(
-          'id, user_id, roller_name, label, dice, total, expression, mode, modifier, visibility, created_at',
+          'id, user_id, character_id, roller_name, label, dice, total, expression, mode, modifier, visibility, created_at',
         )
         .eq('campaign_id', campaignId)
         .order('created_at', { ascending: false })
@@ -241,6 +247,7 @@ export function DiceTray({
             enqueue({
               key: row.id,
               userId: row.user_id,
+              characterId: row.character_id,
               rollerName: row.roller_name,
               secret: row.visibility === 'gm',
               roll: {

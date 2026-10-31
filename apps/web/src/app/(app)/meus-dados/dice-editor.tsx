@@ -1,6 +1,6 @@
 'use client';
 
-import { CAMPAIGN_MEDIA_BUCKET } from '@codexveil/database';
+import { CAMPAIGN_MEDIA_BUCKET, saveDice } from '@codexveil/database';
 import { DICE_FONTS, diceFontLabels, type DiceLook } from '@codexveil/validation';
 import { Brush, Eraser, ImagePlus, PaintBucket, Trash2, Undo2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -62,7 +62,10 @@ function floodFill(context: CanvasRenderingContext2D, x: number, y: number, hex:
 }
 
 /** Desenha a imagem cobrindo o quadrado todo (corta as sobras, como `object-fit: cover`). */
-function drawCover(context: CanvasRenderingContext2D, image: CanvasImageSource & { width: number; height: number }) {
+function drawCover(
+  context: CanvasRenderingContext2D,
+  image: CanvasImageSource & { width: number; height: number },
+) {
   const scale = Math.max(SIZE / image.width, SIZE / image.height);
   const width = image.width * scale;
   const height = image.height * scale;
@@ -78,7 +81,10 @@ export function DiceEditor({
   userId,
   initial,
   initialImageUrl,
+  target,
 }: {
+  /** Dado da coleção em edição (`id` nulo = novo); sem ele, edita o dado padrão. */
+  target?: { id: string | null; name: string };
   userId: string;
   initial: DiceLook;
   initialImageUrl: string | null;
@@ -95,6 +101,7 @@ export function DiceEditor({
   const [numberColor, setNumberColor] = useState(initial.numberColor);
   const [font, setFont] = useState(initial.font);
   const [dieColor, setDieColor] = useState(initial.color);
+  const [diceName, setDiceName] = useState(target?.name ?? '');
   const [blank, setBlank] = useState(!initialImageUrl);
   const [version, setVersion] = useState(0);
   const [pending, startTransition] = useTransition();
@@ -275,7 +282,21 @@ export function DiceEditor({
           return;
         }
       }
-      const response = await updateDiceLookAction({ image, numberColor, font, color: dieColor });
+      const look = { image, numberColor, font, color: dieColor };
+      let response: { ok: boolean; message?: string };
+      let savedId: string | null = null;
+      if (target) {
+        // Dado da coleção: grava na tabela de dados salvos.
+        try {
+          savedId = (await saveDice(client, { id: target.id ?? undefined, name: diceName, look }))
+            .id;
+          response = { ok: true, message: 'Dado salvo na coleção.' };
+        } catch {
+          response = { ok: false, message: 'Não foi possível salvar o dado.' };
+        }
+      } else {
+        response = await updateDiceLookAction(look);
+      }
       if (!response.ok) {
         if (image) await bucket.remove([image]);
       } else if (initial.image && initial.image !== image) {
@@ -283,7 +304,8 @@ export function DiceEditor({
         await bucket.remove([initial.image]);
       }
       setResult({ ok: response.ok, message: response.message ?? '' });
-      if (response.ok) router.refresh();
+      if (response.ok && target && !target.id && savedId) router.replace(`?dado=${savedId}`);
+      else if (response.ok) router.refresh();
     });
 
   return (
@@ -367,7 +389,8 @@ export function DiceEditor({
             </Button>
           </div>
           <p className="text-xs text-fg-muted">
-            O desenho cobre cada face do dado. As partes vazias (quadriculadas) mostram a cor do dado.
+            O desenho cobre cada face do dado. As partes vazias (quadriculadas) mostram a cor do
+            dado.
           </p>
         </div>
 
@@ -427,8 +450,24 @@ export function DiceEditor({
               ))}
             </div>
           </div>
-          <Button loading={pending} onClick={save}>
-            Salvar meus dados
+          {target ? (
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-fg">
+              Nome do dado
+              <input
+                value={diceName}
+                maxLength={40}
+                onChange={(event) => setDiceName(event.target.value)}
+                placeholder="Ex.: Escamas douradas"
+                className="h-9 rounded-md border border-line bg-sunken px-3 text-sm font-normal text-fg focus:border-fg-brand focus:outline-none"
+              />
+            </label>
+          ) : null}
+          <Button loading={pending} onClick={save} disabled={Boolean(target) && !diceName.trim()}>
+            {target
+              ? target.id
+                ? 'Salvar este dado'
+                : 'Salvar na coleção'
+              : 'Salvar como dado padrão'}
           </Button>
         </div>
       </div>

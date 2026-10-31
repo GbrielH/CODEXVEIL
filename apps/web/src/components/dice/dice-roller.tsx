@@ -190,6 +190,7 @@ function DiceProviderInner({
         roll: shown,
         rollerName: 'Você',
         userId: null,
+        characterId,
         secret: shown.secret,
         critRange: request.critRange ?? 20,
       });

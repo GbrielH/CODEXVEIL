@@ -9,7 +9,7 @@ import {
   type RolledDiceGroup,
   type SharedVisibility,
 } from '@codexveil/domain';
-import { preferencesSchema, type DiceLook } from '@codexveil/validation';
+import { diceLookSchema, preferencesSchema, type DiceLook } from '@codexveil/validation';
 import { signedMediaUrls } from './storage';
 import type { CodexveilClient } from '../client';
 import { toAppError } from '../errors';
@@ -164,6 +164,10 @@ export interface DicePalette {
   looks: Record<string, DiceLook>;
   /** URL assinada da face desenhada de cada participante (pela chave do usuário). */
   imageUrls: Record<string, string>;
+  /** Dado escolhido para cada personagem (quando o dono vinculou um dos dados salvos). */
+  characterLooks: Record<string, DiceLook>;
+  /** URL assinada da face do dado de cada personagem. */
+  characterImageUrls: Record<string, string>;
 }
 
 /** Cores de todos os participantes e os donos dos personagens da campanha. */
@@ -176,7 +180,8 @@ export async function getCampaignDicePalette(
       .from('campaign_members')
       .select('user_id, role, dice_color')
       .eq('campaign_id', campaignId),
-    client.from('characters').select('id, owner_id').eq('campaign_id', campaignId),
+    // Nome e dono de todos os personagens, mesmo com fichas ocultas.
+    client.rpc('list_party_faces', { p_campaign_id: campaignId }),
   ]);
   if (members.error) throw toAppError(members.error);
   if (characters.error) throw toAppError(characters.error);
@@ -196,9 +201,26 @@ export async function getCampaignDicePalette(
       },
     ]),
   );
-  const signed = await signedMediaUrls(
-    client,
-    Object.values(looks).map((look) => look.image),
+  const faces = (characters.data ?? []) as { id: string; owner_id: string; dice_id: string | null }[];
+  const diceIds = [...new Set(faces.flatMap((face) => (face.dice_id ? [face.dice_id] : [])))];
+  const saved = diceIds.length
+    ? await client.from('user_dice').select(SAVED_DICE_COLUMNS).in('id', diceIds)
+    : { data: [] };
+  const savedById = new Map((saved.data ?? []).map((row) => [row.id, toSavedDice(row).look]));
+  const characterLooks = Object.fromEntries(
+    faces.flatMap((face) => {
+      const look = face.dice_id ? savedById.get(face.dice_id) : undefined;
+      return look ? [[face.id, look]] : [];
+    }),
+  );
+  const signed = await signedMediaUrls(client, [
+    ...Object.values(looks).map((look) => look.image),
+    ...Object.values(characterLooks).map((look) => look.image),
+  ]);
+  const characterImageUrls = Object.fromEntries(
+    Object.entries(characterLooks)
+      .filter(([, look]) => look.image && signed[look.image])
+      .map(([id, look]) => [id, signed[look.image!]!]),
   );
   const imageUrls = Object.fromEntries(
     Object.entries(looks)
@@ -208,14 +230,14 @@ export async function getCampaignDicePalette(
   return {
     looks,
     imageUrls,
+    characterLooks,
+    characterImageUrls,
     members: (members.data ?? []).map((row) => ({
       userId: row.user_id,
       role: row.role === 'gm' ? 'gm' : 'player',
       color: row.dice_color,
     })),
-    characterOwners: Object.fromEntries(
-      (characters.data ?? []).map((row) => [row.id, row.owner_id]),
-    ),
+    characterOwners: Object.fromEntries(faces.map((face) => [face.id, face.owner_id])),
   };
 }
 
@@ -229,5 +251,82 @@ export async function setMyDiceColor(
     p_campaign_id: campaignId,
     p_color: color,
   });
+  if (error) throw toAppError(error);
+}
+
+/** Um dado salvo em "Meus dados" (a coleção do jogador). */
+export interface SavedDice {
+  id: string;
+  ownerId: string;
+  name: string;
+  look: DiceLook;
+}
+
+const SAVED_DICE_COLUMNS = 'id, owner_id, name, image_path, number_color, font, color';
+
+function toSavedDice(row: {
+  id: string;
+  owner_id: string;
+  name: string;
+  image_path: string | null;
+  number_color: string | null;
+  font: string | null;
+  color: string | null;
+}): SavedDice {
+  return {
+    id: row.id,
+    ownerId: row.owner_id,
+    name: row.name,
+    look: diceLookSchema.parse({
+      image: row.image_path,
+      numberColor: row.number_color,
+      font: row.font,
+      color: row.color,
+    }),
+  };
+}
+
+export async function listMyDice(client: CodexveilClient, ownerId: string): Promise<SavedDice[]> {
+  const { data, error } = await client
+    .from('user_dice')
+    .select(SAVED_DICE_COLUMNS)
+    .eq('owner_id', ownerId)
+    .order('created_at');
+  if (error) throw toAppError(error);
+  return data.map(toSavedDice);
+}
+
+/** Cria (sem `id`) ou altera um dado salvo; devolve o dado gravado. */
+export async function saveDice(
+  client: CodexveilClient,
+  dice: { id?: string; name: string; look: DiceLook },
+): Promise<SavedDice> {
+  const values = {
+    name: dice.name.trim().slice(0, 40) || 'Meu dado',
+    image_path: dice.look.image,
+    number_color: dice.look.numberColor,
+    font: dice.look.font,
+    color: dice.look.color,
+  };
+  const query = dice.id
+    ? client.from('user_dice').update(values).eq('id', dice.id)
+    : client.from('user_dice').insert(values);
+  const { data, error } = await query.select(SAVED_DICE_COLUMNS).single();
+  if (error) throw toAppError(error);
+  return toSavedDice(data);
+}
+
+export async function deleteDice(client: CodexveilClient, id: string): Promise<void> {
+  const { error } = await client.from('user_dice').delete().eq('id', id);
+  if (error) throw toAppError(error);
+}
+
+/** Vincula um dado salvo ao personagem (ou volta ao padrão do dono com `null`). */
+export async function setCharacterDice(
+  client: CodexveilClient,
+  characterId: string,
+  diceId: string | null,
+): Promise<void> {
+  const { error } = await client.from('characters').update({ dice_id: diceId }).eq('id', characterId);
   if (error) throw toAppError(error);
 }

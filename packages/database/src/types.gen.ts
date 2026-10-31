@@ -1116,6 +1116,7 @@ export type Database = {
         Row: {
           campaign_id: string | null;
           created_at: string;
+          dice_id: string | null;
           granted_level: number;
           id: string;
           live_updated_at: string;
@@ -1131,6 +1132,7 @@ export type Database = {
         Insert: {
           campaign_id?: string | null;
           created_at?: string;
+          dice_id?: string | null;
           granted_level?: number;
           id?: string;
           live_updated_at?: string;
@@ -1146,6 +1148,7 @@ export type Database = {
         Update: {
           campaign_id?: string | null;
           created_at?: string;
+          dice_id?: string | null;
           granted_level?: number;
           id?: string;
           live_updated_at?: string;
@@ -1164,6 +1167,13 @@ export type Database = {
             columns: ['campaign_id'];
             isOneToOne: false;
             referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'characters_dice_id_fkey';
+            columns: ['dice_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_dice';
             referencedColumns: ['id'];
           },
           {
@@ -2335,6 +2345,50 @@ export type Database = {
             columns: ['target_combatant_id'];
             isOneToOne: false;
             referencedRelation: 'encounter_combatants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_dice: {
+        Row: {
+          color: string | null;
+          created_at: string;
+          font: string | null;
+          id: string;
+          image_path: string | null;
+          name: string;
+          number_color: string | null;
+          owner_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          color?: string | null;
+          created_at?: string;
+          font?: string | null;
+          id?: string;
+          image_path?: string | null;
+          name: string;
+          number_color?: string | null;
+          owner_id?: string;
+          updated_at?: string;
+        };
+        Update: {
+          color?: string | null;
+          created_at?: string;
+          font?: string | null;
+          id?: string;
+          image_path?: string | null;
+          name?: string;
+          number_color?: string | null;
+          owner_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_dice_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
         ];
