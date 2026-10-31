@@ -2725,6 +2725,13 @@ export type Database = {
         };
         Returns: undefined;
       };
+      set_character_dice: {
+        Args: {
+          p_character_id: string;
+          p_dice_id: string;
+        };
+        Returns: undefined;
+      };
       set_my_attendance: {
         Args: {
           p_session_id: string;

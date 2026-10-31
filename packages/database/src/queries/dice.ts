@@ -327,6 +327,10 @@ export async function setCharacterDice(
   characterId: string,
   diceId: string | null,
 ): Promise<void> {
-  const { error } = await client.from('characters').update({ dice_id: diceId }).eq('id', characterId);
+  // Função própria: o vínculo é só visual e vale mesmo com as fichas travadas pelo mestre.
+  const { error } = await client.rpc('set_character_dice', {
+    p_character_id: characterId,
+    p_dice_id: diceId as string,
+  });
   if (error) throw toAppError(error);
 }
