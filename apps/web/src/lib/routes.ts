@@ -21,6 +21,7 @@ export const routes = {
   friends: '/amigos',
   newCharacter: '/personagens/novo',
   books: '/livros',
+  myDice: '/meus-dados',
   licenses: '/licencas',
   privacy: '/privacidade',
   terms: '/termos',

@@ -13,6 +13,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
 import { DICE_COLORS, DiceColorPalette, DieIcon, useCampaignColors } from './campaign-colors';
 import { TABLE_SETTLED_EVENT, throwDice } from './dice-scene';
+import { applyDiceLook } from './dice-look';
 import type { ShownRoll } from './dice-roller';
 
 /**
@@ -143,8 +144,6 @@ export function DiceTray({
         if (cancelled) return;
         const box = new Box(`#${containerId}`, {
           sounds: false,
-          // Texturas dos dados ("Meus dados" do Perfil) servidas em public/dice/textures.
-          assetPath: '/dice/',
           shadows: false,
           theme_material: 'plastic',
           gravity_multiplier: 400,
@@ -174,19 +173,9 @@ export function DiceTray({
         // O resultado (balão, cabeçalho e animação de crítico) só aparece quando os dados param.
         setRolling(next);
         const color = (next.userId ? palette?.colorOfUser(next.userId) : myColor) ?? DEFAULT_COLOR;
-        const look = palette?.lookOfUser((next.userId ?? palette?.userId)) ?? null;
+        const look = palette?.lookOfUser(next.userId ?? palette?.userId) ?? null;
         try {
-          await box.updateConfig({
-            theme_customColorset: {
-              // A biblioteca guarda o conjunto pelo nome: cor, textura e números entram nele.
-              name: `cv-${color.slice(1)}-${look?.texture ?? 'lisa'}-${(look?.numberColor ?? 'auto').replace('#', '')}`,
-              background: color,
-              foreground: look?.numberColor ?? textColorFor(color),
-              outline: '#000000',
-              texture: look?.texture ?? 'none',
-              material: 'plastic',
-            },
-          });
+          await applyDiceLook(box, 'cv', color, textColorFor(color), look);
           await throwDice(box, text);
         } catch (error) {
           console.error('[codexveil] falha ao rolar os dados 3D', error);

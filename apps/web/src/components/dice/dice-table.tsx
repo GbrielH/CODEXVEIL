@@ -8,6 +8,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
 import { DICE_COLORS, useCampaignColors } from './campaign-colors';
 import { TABLE_SETTLED_EVENT, throwDice } from './dice-scene';
+import { applyDiceLook } from './dice-look';
 import { diceNotation, textColorFor, type TrayRoll } from './dice-tray';
 
 const DEFAULT_COLOR = DICE_COLORS[0]!.hex;
@@ -48,8 +49,6 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
         if (cancelled) return;
         const box = new Box(`#${containerId}`, {
           sounds: false,
-          // Texturas dos dados ("Meus dados" do Perfil) servidas em public/dice/textures.
-          assetPath: '/dice/',
           shadows: true,
           theme_material: 'plastic',
           gravity_multiplier: 400,
@@ -87,17 +86,7 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
         const color = colors?.colorOfUser(next.userId) ?? DEFAULT_COLOR;
         const look = colors?.lookOfUser(next.userId) ?? null;
         try {
-          await box.updateConfig({
-            theme_customColorset: {
-              // A biblioteca guarda o conjunto pelo nome: cor, textura e números entram nele.
-              name: `mesa-${color.slice(1)}-${look?.texture ?? 'lisa'}-${(look?.numberColor ?? 'auto').replace('#', '')}`,
-              background: color,
-              foreground: look?.numberColor ?? textColorFor(color),
-              outline: '#000000',
-              texture: look?.texture ?? 'none',
-              material: 'plastic',
-            },
-          });
+          await applyDiceLook(box, 'mesa', color, textColorFor(color), look);
           // Fica na mesa até completar os 10 s desde a rolagem (mínimo de 4 s para dar para ver).
           await throwDice(box, text, Math.max(4000, next.expiresAt - Date.now()));
         } catch (error) {

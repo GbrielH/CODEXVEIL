@@ -70,63 +70,27 @@ const avatarSchema = z.union([
 ]);
 
 /** Preferências de interface guardadas em `profiles.preferences`. */
-/**
- * Texturas dos dados 3D (catálogo da biblioteca `@3d-dice/dice-box-threejs`, arquivos em
- * `apps/web/public/dice/textures`). A chave é o nome que a biblioteca aceita.
- */
-export const DICE_TEXTURES = [
-  'marble',
-  'wood',
-  'metal',
-  'bronze01',
-  'paper',
-  'cloudy_2',
-  'speckles',
-  'glitter',
-  'stars',
-  'astral',
-  'stainedglass',
-  'fire',
-  'ice',
-  'water',
-  'dragon',
-  'lizard',
-  'bird',
-  'skulls',
-  'leopard',
-  'tiger',
-  'cheetah',
-] as const;
-export type DiceTexture = (typeof DICE_TEXTURES)[number];
+/** Fontes dos números dos dados 3D ("Meus dados"). */
+export const DICE_FONTS = ['classic', 'modern', 'machine', 'display'] as const;
+export type DiceFont = (typeof DICE_FONTS)[number];
 
-export const diceTextureLabels: Record<DiceTexture, { name: string; file: string }> = {
-  marble: { name: 'Mármore', file: 'marble.webp' },
-  wood: { name: 'Madeira', file: 'wood.webp' },
-  metal: { name: 'Aço', file: 'metal.webp' },
-  bronze01: { name: 'Bronze', file: 'bronze01.webp' },
-  paper: { name: 'Papel', file: 'paper.webp' },
-  cloudy_2: { name: 'Nuvens', file: 'cloudy.alt.webp' },
-  speckles: { name: 'Salpicado', file: 'speckles.webp' },
-  glitter: { name: 'Purpurina', file: 'glitter.webp' },
-  stars: { name: 'Estrelas', file: 'stars.webp' },
-  astral: { name: 'Mar astral', file: 'astral.webp' },
-  stainedglass: { name: 'Vitral', file: 'stainedglass.webp' },
-  fire: { name: 'Fogo', file: 'fire.webp' },
-  ice: { name: 'Gelo', file: 'ice.webp' },
-  water: { name: 'Água', file: 'water.webp' },
-  dragon: { name: 'Escamas de dragão', file: 'dragon.webp' },
-  lizard: { name: 'Lagarto', file: 'lizard.webp' },
-  bird: { name: 'Penas', file: 'feather.webp' },
-  skulls: { name: 'Caveiras', file: 'skulls.webp' },
-  leopard: { name: 'Leopardo', file: 'leopard.webp' },
-  tiger: { name: 'Tigre', file: 'tiger.webp' },
-  cheetah: { name: 'Guepardo', file: 'cheetah.webp' },
+export const diceFontLabels: Record<DiceFont, { name: string; family: string }> = {
+  classic: { name: 'Clássica', family: '"Times New Roman", serif' },
+  modern: { name: 'Moderna', family: 'Arial, sans-serif' },
+  machine: { name: 'Máquina', family: '"Courier New", monospace' },
+  display: { name: 'Título', family: 'var(--font-display)' },
 };
 
-/** Aparência dos próprios dados 3D ("Meus dados" no Perfil): textura e cor dos números. */
+/** Caminho de uma imagem de dado no Storage: `users/{usuário}/dice/{arquivo}`. */
+const diceImagePath = /^users\/[0-9a-f-]{36}\/dice\/[A-Za-z0-9_-]{1,80}\.(png|jpe?g|webp)$/;
+
+/**
+ * Aparência dos próprios dados 3D ("Meus dados"): a face desenhada pelo jogador (imagem no
+ * Storage), a cor e a fonte dos números. Valores antigos (texturas) são ignorados.
+ */
 export const diceLookSchema = z
   .object({
-    texture: z.enum(DICE_TEXTURES).nullable().default(null).catch(null),
+    image: z.string().regex(diceImagePath).nullable().default(null).catch(null),
     /** Cor dos números (#rrggbb); vazio = automática (contraste com a cor do dado). */
     numberColor: z
       .string()
@@ -134,6 +98,7 @@ export const diceLookSchema = z
       .nullable()
       .default(null)
       .catch(null),
+    font: z.enum(DICE_FONTS).nullable().default(null).catch(null),
   })
   .prefault({});
 export type DiceLook = z.output<typeof diceLookSchema>;

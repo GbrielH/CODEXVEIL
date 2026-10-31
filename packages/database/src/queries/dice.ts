@@ -10,6 +10,7 @@ import {
   type SharedVisibility,
 } from '@codexveil/domain';
 import { preferencesSchema, type DiceLook } from '@codexveil/validation';
+import { signedMediaUrls } from './storage';
 import type { CodexveilClient } from '../client';
 import { toAppError } from '../errors';
 import type { Tables } from '../types.gen';
@@ -161,6 +162,8 @@ export interface DicePalette {
   characterOwners: Record<string, string>;
   /** Aparência dos dados 3D de cada participante ("Meus dados" do Perfil). */
   looks: Record<string, DiceLook>;
+  /** URL assinada da face desenhada de cada participante (pela chave do usuário). */
+  imageUrls: Record<string, string>;
 }
 
 /** Cores de todos os participantes e os donos dos personagens da campanha. */
@@ -177,7 +180,7 @@ export async function getCampaignDicePalette(
   ]);
   if (members.error) throw toAppError(members.error);
   if (characters.error) throw toAppError(characters.error);
-  // Textura e cor dos números de cada um (perfis dos colegas de campanha são legíveis).
+  // Face desenhada, cor e fonte dos números de cada um (perfis dos colegas de campanha são legíveis).
   const ids = (members.data ?? []).map((row) => row.user_id);
   const profiles = ids.length
     ? await client.from('profiles').select('id, preferences').in('id', ids)
@@ -186,13 +189,24 @@ export async function getCampaignDicePalette(
     (profiles.data ?? []).map((row) => [
       row.id,
       preferencesSchema.safeParse(row.preferences).data?.dice ?? {
-        texture: null,
+        image: null,
         numberColor: null,
+        font: null,
       },
     ]),
   );
+  const signed = await signedMediaUrls(
+    client,
+    Object.values(looks).map((look) => look.image),
+  );
+  const imageUrls = Object.fromEntries(
+    Object.entries(looks)
+      .filter(([, look]) => look.image && signed[look.image])
+      .map(([id, look]) => [id, signed[look.image!]!]),
+  );
   return {
     looks,
+    imageUrls,
     members: (members.data ?? []).map((row) => ({
       userId: row.user_id,
       role: row.role === 'gm' ? 'gm' : 'player',

@@ -76,13 +76,16 @@ export async function sendPasswordResetAction(): Promise<ActionResult> {
   return { ok: true, message: `Enviamos um link para ${user.email}. Ele vale por uma hora.` };
 }
 
-/** "Meus dados": textura e cor dos números dos próprios dados 3D (o resto do perfil não muda). */
+/** "Meus dados": face desenhada, cor e fonte dos números dos próprios dados 3D (o resto do perfil não muda). */
 export async function updateDiceLookAction(input: {
-  texture: string | null;
+  image: string | null;
   numberColor: string | null;
+  font: string | null;
 }): Promise<ActionResult> {
-  const user = await requireSessionUser(routes.profile);
+  const user = await requireSessionUser(routes.myDice);
   const look = diceLookSchema.parse(input);
+  // Só aceita imagem da própria pasta (as políticas do Storage também barram as alheias).
+  if (look.image && !look.image.startsWith(`users/${user.id}/dice/`)) look.image = null;
   try {
     const supabase = await createSupabaseServerClient();
     const profile = await getProfile(supabase, user.id);

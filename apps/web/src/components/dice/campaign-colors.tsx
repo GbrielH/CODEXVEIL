@@ -1,6 +1,5 @@
 'use client';
 
-import type { DiceLook } from '@codexveil/validation';
 import {
   getCampaignDicePalette,
   getSessionState,
@@ -17,6 +16,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { type DiceAppearance } from './dice-look';
 import { useToast } from '@/components/ui/toast';
 import { cx } from '@/lib/cx';
 import { failureMessage } from '@/lib/client-errors';
@@ -37,8 +37,8 @@ interface CampaignColorsValue {
   needsDice: boolean;
   colorOfUser: (userId: string | null | undefined) => string | null;
   colorOfCharacter: (characterId: string | null | undefined) => string | null;
-  /** Textura e cor dos números dos dados de alguém ("Meus dados" do Perfil). */
-  lookOfUser: (userId: string | null | undefined) => DiceLook | null;
+  /** Face desenhada, cor e fonte dos números dos dados de alguém ("Meus dados"). */
+  lookOfUser: (userId: string | null | undefined) => DiceAppearance | null;
   /** Cores já usadas por outras pessoas da mesa. */
   taken: Set<string>;
   choose: (color: string) => Promise<boolean>;
@@ -59,6 +59,7 @@ export function CampaignColorsProvider({
     members: [],
     characterOwners: {},
     looks: {},
+    imageUrls: {},
   });
   const [userId, setUserId] = useState<string | null>(null);
   const [needsDice, setNeedsDice] = useState(false);
@@ -125,7 +126,10 @@ export function CampaignColorsProvider({
       gmReady: palette.members.some((member) => member.role === 'gm' && member.color),
       colorOfUser,
       colorOfCharacter: (id) => (id ? colorOfUser(palette.characterOwners[id]) : null),
-      lookOfUser: (id) => (id ? (palette.looks[id] ?? null) : null),
+      lookOfUser: (id) => {
+        const look = id ? palette.looks[id] : undefined;
+        return look ? { ...look, imageUrl: palette.imageUrls[id!] ?? null } : null;
+      },
       taken: new Set(
         palette.members
           .filter((member) => member.userId !== userId && member.color)
