@@ -105,8 +105,8 @@ const HEALTH_BANDS: { title: string; levels: [number, number]; notes: Record<num
     title: 'Não regenera naturalmente: precisa de tratamento médico',
     levels: [2, 1],
     notes: {
-      2: 'Incapaz de agir, mas mantém a consciência. Menos 2 Sucessos em todos os testes.',
-      1: 'Inconsciente. Qualquer Ação com teste exige gastar Determinação para ativar.',
+      2: 'Só age gastando 1 Ponto de Determinação (as penalidades continuam). Menos 2 Sucessos em todos os testes.',
+      1: 'Estado crítico: 1 Ponto de Determinação por rodada para manter a consciência e falar, sem agir. Precisa de atendimento médico.',
     },
   },
 ];
@@ -245,7 +245,13 @@ function SheetBody({
   const clarity = async () => {
     if (sheet.tugOfWar.determinationLevel >= 10) return;
     const level = sheet.tugOfWar.determinationLevel + 1;
-    if (!(await save({ ...sheet, tugOfWar: { determinationLevel: level, locked: false, rested: false } }))) return;
+    if (
+      !(await save({
+        ...sheet,
+        tugOfWar: { determinationLevel: level, locked: false, rested: false },
+      }))
+    )
+      return;
     await adjust(determination, 'set_max', level);
     await adjust(determination, 'set_current', level);
     if (assimilation) {
@@ -356,6 +362,31 @@ function SheetBody({
   );
   const [newAssim, setNewAssim] = useState('');
   const [newCharacteristic, setNewCharacteristic] = useState({ name: '', cost: 1 });
+  const [characteristicQuery, setCharacteristicQuery] = useState('');
+  const availableXp = Math.max(0, sheet.experience.total - sheet.experience.spent);
+  // Características do livro: escolhidas da lista, bloqueadas quando o XP não alcança.
+  const bookCharacteristics = useMemo(
+    () =>
+      sources
+        .flatMap((source) =>
+          source.entries.flatMap((entry) => {
+            if (entry.kind !== 'characteristic') return [];
+            const data = safeAssimilacaoBookEntryData('characteristic', entry.data);
+            return data
+              ? [
+                  {
+                    name: entry.name,
+                    cost: data.cost,
+                    requirement: data.requirement,
+                    text: data.text,
+                  },
+                ]
+              : [];
+          }),
+        )
+        .sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name, 'pt-BR')),
+    [sources],
+  );
 
   const stepper = (
     value: number,
@@ -611,7 +642,9 @@ function SheetBody({
       <div className="flex flex-col gap-3">
         {HEALTH_BANDS.map((band) => (
           <section key={band.levels[0]} className="overflow-hidden rounded-lg ring-1 ring-line">
-            <p className="bg-sunken px-3 py-1 text-center text-xs text-fg-secondary">{band.title}</p>
+            <p className="bg-sunken px-3 py-1 text-center text-xs text-fg-secondary">
+              {band.title}
+            </p>
             <div className="grid gap-px bg-line sm:grid-cols-2">
               {band.levels.map((level) => {
                 const title = HEALTH_LEVEL_TITLES[6 - level]!;
@@ -634,7 +667,9 @@ function SheetBody({
                         {level}
                       </span>
                       <span className="flex-1 text-sm font-medium text-fg">{title}</span>
-                      {current ? <span className="text-[0.65rem] uppercase text-fg">Atual</span> : null}
+                      {current ? (
+                        <span className="text-[0.65rem] uppercase text-fg">Atual</span>
+                      ) : null}
                     </div>
                     <span
                       className="flex flex-wrap gap-0.5 px-1"
@@ -997,6 +1032,11 @@ function SheetBody({
                       characteristics: current.characteristics.filter(
                         (_, position) => position !== index,
                       ),
+                      // Devolve o XP gasto na Característica.
+                      experience: {
+                        ...current.experience,
+                        spent: Math.max(0, current.experience.spent - entry.cost),
+                      },
                     }))
                   }
                 >
@@ -1011,51 +1051,134 @@ function SheetBody({
         ))}
       </ul>
       {editable ? (
-        <div className="mt-3 flex flex-wrap items-end gap-2">
-          <TextField
-            id="asrpg-new-char"
-            label="Nova Característica"
-            value={newCharacteristic.name}
-            maxLength={120}
-            onChange={(event) =>
-              setNewCharacteristic({ ...newCharacteristic, name: event.target.value })
-            }
-          />
-          <SelectField
-            id="asrpg-new-char-cost"
-            label="Custo"
-            value={String(newCharacteristic.cost)}
-            onChange={(event) =>
-              setNewCharacteristic({ ...newCharacteristic, cost: Number(event.target.value) })
-            }
-          >
-            {[1, 2, 3, 4, 5].map((cost) => (
-              <option key={cost} value={cost}>
-                {cost} XP
-              </option>
-            ))}
-          </SelectField>
-          <Button
-            variant="secondary"
-            disabled={!newCharacteristic.name.trim()}
-            onClick={() => {
-              patch((current) => ({
-                ...current,
-                characteristics: [
-                  ...current.characteristics,
-                  { name: newCharacteristic.name.trim(), cost: newCharacteristic.cost, notes: '' },
-                ],
-                experience: {
-                  ...current.experience,
-                  spent: current.experience.spent + newCharacteristic.cost,
-                },
-              }));
-              setNewCharacteristic({ name: '', cost: 1 });
-            }}
-          >
-            Adicionar
-          </Button>
-        </div>
+        bookCharacteristics.length ? (
+          <div className="mt-4 flex flex-col gap-2 border-t border-line pt-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium text-fg">
+                Adquirir Característica{' '}
+                <span className="text-fg-muted">({availableXp} XP disponíveis)</span>
+              </p>
+              <input
+                value={characteristicQuery}
+                onChange={(event) => setCharacteristicQuery(event.target.value)}
+                placeholder="Buscar no livro"
+                aria-label="Buscar Característica"
+                className="h-9 w-48 rounded-md border border-line bg-sunken px-3 text-sm text-fg placeholder:text-fg-muted focus:border-fg-brand focus:outline-none"
+              />
+            </div>
+            <ul className="grid max-h-96 gap-2 overflow-y-auto sm:grid-cols-2">
+              {bookCharacteristics
+                .filter((item) =>
+                  item.name.toLowerCase().includes(characteristicQuery.trim().toLowerCase()),
+                )
+                .map((item) => {
+                  const owned = sheet.characteristics.some((entry) => entry.name === item.name);
+                  const short = item.cost > availableXp;
+                  return (
+                    <li key={item.name}>
+                      <button
+                        type="button"
+                        disabled={owned || short}
+                        title={
+                          owned
+                            ? 'Já adquirida'
+                            : short
+                              ? `Faltam ${item.cost - availableXp} XP`
+                              : `Adquirir por ${item.cost} XP`
+                        }
+                        onClick={() =>
+                          patch((current) => ({
+                            ...current,
+                            characteristics: [
+                              ...current.characteristics,
+                              { name: item.name, cost: item.cost, notes: item.text },
+                            ],
+                            experience: {
+                              ...current.experience,
+                              spent: current.experience.spent + item.cost,
+                            },
+                          }))
+                        }
+                        className="flex h-full w-full flex-col gap-1 rounded-lg border border-line bg-card p-2.5 text-left transition-colors enabled:hover:border-parchment-400/60 enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-45"
+                      >
+                        <span className="flex items-center justify-between gap-2">
+                          <span className="font-medium text-fg">{item.name}</span>
+                          <span
+                            className={cx(
+                              'shrink-0 rounded-full px-2 py-0.5 text-xs',
+                              short
+                                ? 'bg-ember-900/60 text-ember-300'
+                                : 'bg-amber-900/60 text-amber-300',
+                            )}
+                          >
+                            {owned ? 'Adquirida' : `${item.cost} XP`}
+                          </span>
+                        </span>
+                        {item.requirement ? (
+                          <span className="text-xs text-fg-muted">
+                            Requisito: {withAssimSymbols(item.requirement)}
+                          </span>
+                        ) : null}
+                        <span className="line-clamp-2 text-xs text-fg-secondary">
+                          {withAssimSymbols(item.text)}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+            </ul>
+          </div>
+        ) : (
+          <div className="mt-3 flex flex-wrap items-end gap-2">
+            <TextField
+              id="asrpg-new-char"
+              label="Nova Característica"
+              value={newCharacteristic.name}
+              maxLength={120}
+              onChange={(event) =>
+                setNewCharacteristic({ ...newCharacteristic, name: event.target.value })
+              }
+            />
+            <SelectField
+              id="asrpg-new-char-cost"
+              label="Custo"
+              value={String(newCharacteristic.cost)}
+              onChange={(event) =>
+                setNewCharacteristic({ ...newCharacteristic, cost: Number(event.target.value) })
+              }
+            >
+              {[1, 2, 3, 4, 5].map((cost) => (
+                <option key={cost} value={cost}>
+                  {cost} XP
+                </option>
+              ))}
+            </SelectField>
+            <Button
+              variant="secondary"
+              disabled={!newCharacteristic.name.trim() || newCharacteristic.cost > availableXp}
+              onClick={() => {
+                patch((current) => ({
+                  ...current,
+                  characteristics: [
+                    ...current.characteristics,
+                    {
+                      name: newCharacteristic.name.trim(),
+                      cost: newCharacteristic.cost,
+                      notes: '',
+                    },
+                  ],
+                  experience: {
+                    ...current.experience,
+                    spent: current.experience.spent + newCharacteristic.cost,
+                  },
+                }));
+                setNewCharacteristic({ name: '', cost: 1 });
+              }}
+            >
+              Adicionar
+            </Button>
+          </div>
+        )
       ) : null}
     </Card>
   );
@@ -1121,13 +1244,25 @@ function SheetBody({
                   {card && card.levels.length > 1 && editable ? (
                     <span className="flex items-center gap-1">
                       Nível
-                      {stepper(entry.level, (next) => update({ level: next }), 1, card.levels.length, 'Nível')}
+                      {stepper(
+                        entry.level,
+                        (next) => update({ level: next }),
+                        1,
+                        card.levels.length,
+                        'Nível',
+                      )}
                     </span>
                   ) : null}
                   {entry.kind === 'inoportuna' || entry.pressures > 0 ? (
                     <span className="flex items-center gap-1">
                       <AssimMarkIcon mark="pressao" className="text-ember-300" />
-                      {stepper(entry.pressures, (next) => update({ pressures: next }), 0, 10, 'Pressões')}
+                      {stepper(
+                        entry.pressures,
+                        (next) => update({ pressures: next }),
+                        0,
+                        10,
+                        'Pressões',
+                      )}
                     </span>
                   ) : null}
                 </div>
