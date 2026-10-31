@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { routes } from '@/lib/routes';
 import { DICE_COLORS, DieIcon, useCampaignColors } from './campaign-colors';
 import { TABLE_SETTLED_EVENT, throwDice } from './dice-scene';
-import { applyDiceLook, useMyDiceLook } from './dice-look';
+import { applyDiceLook, loadCharacterLook, useMyDiceLook } from './dice-look';
 import type { ShownRoll } from './dice-roller';
 
 /**
@@ -179,16 +179,20 @@ export function DiceTray({
         // Dado vinculado ao personagem primeiro; senão o padrão de quem rolou. Na rolagem própria
         // (ou fora de campanha) o padrão vem do perfil; na dos outros, da mesa.
         const own = !next.userId || next.userId === palette?.userId;
+        // O vínculo é lido na hora (pode ter mudado depois que a mesa carregou a paleta).
+        const characterLook = next.characterId
+          ? ((await loadCharacterLook(next.characterId)) ??
+            palette?.lookOfCharacter(next.characterId) ??
+            null)
+          : null;
         const look =
-          palette?.lookOfCharacter(next.characterId) ??
+          characterLook ??
           (own
             ? (myLook ?? palette?.lookOfUser(palette?.userId))
             : palette?.lookOfUser(next.userId)) ??
           null;
         const color =
-          look?.color ??
-          (own ? myColor : palette?.colorOfUser(next.userId)) ??
-          DEFAULT_COLOR;
+          look?.color ?? (own ? myColor : palette?.colorOfUser(next.userId)) ?? DEFAULT_COLOR;
         try {
           await applyDiceLook(box, 'cv', color, textColorFor(color), look);
           await throwDice(box, text);

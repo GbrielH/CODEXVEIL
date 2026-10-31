@@ -2,7 +2,12 @@
 
 import type DiceBox from '@3d-dice/dice-box-threejs';
 import { signedMediaUrls } from '@codexveil/database';
-import { diceFontLabels, preferencesSchema, type DiceLook } from '@codexveil/validation';
+import {
+  diceFontLabels,
+  diceLookSchema,
+  preferencesSchema,
+  type DiceLook,
+} from '@codexveil/validation';
 import { useEffect, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
@@ -144,4 +149,43 @@ export function useMyDiceLook(): DiceAppearance | null {
     };
   }, []);
   return look;
+}
+
+/** Dados vinculados a personagens, lidos sob demanda (a paleta da mesa pode estar desatualizada). */
+const characterLooks = new Map<string, Promise<DiceAppearance | null>>();
+
+/** Esquece o dado guardado de um personagem (depois de trocar o vínculo). */
+export function forgetCharacterLook(characterId: string) {
+  characterLooks.delete(characterId);
+}
+
+/** Dado salvo vinculado ao personagem, com a URL assinada da face; `null` sem vínculo. */
+export function loadCharacterLook(characterId: string): Promise<DiceAppearance | null> {
+  const cached = characterLooks.get(characterId);
+  if (cached) return cached;
+  const promise = (async () => {
+    const client = getSupabaseBrowserClient();
+    const { data: character } = await client
+      .from('characters')
+      .select('dice_id')
+      .eq('id', characterId)
+      .maybeSingle();
+    if (!character?.dice_id) return null;
+    const { data: row } = await client
+      .from('user_dice')
+      .select('image_path, number_color, font, color')
+      .eq('id', character.dice_id)
+      .maybeSingle();
+    if (!row) return null;
+    const look = diceLookSchema.parse({
+      image: row.image_path,
+      numberColor: row.number_color,
+      font: row.font,
+      color: row.color,
+    });
+    const urls = look.image ? await signedMediaUrls(client, [look.image]) : {};
+    return { ...look, imageUrl: look.image ? (urls[look.image] ?? null) : null };
+  })().catch(() => null);
+  characterLooks.set(characterId, promise);
+  return promise;
 }

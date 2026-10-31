@@ -8,7 +8,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
 import { DICE_COLORS, useCampaignColors } from './campaign-colors';
 import { TABLE_SETTLED_EVENT, throwDice } from './dice-scene';
-import { applyDiceLook } from './dice-look';
+import { applyDiceLook, loadCharacterLook } from './dice-look';
 import { diceNotation, textColorFor, type TrayRoll } from './dice-tray';
 
 const DEFAULT_COLOR = DICE_COLORS[0]!.hex;
@@ -85,7 +85,10 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
       if (box && text && !late) {
         // Dado vinculado ao personagem primeiro; senão o padrão de quem rolou.
         const look =
-          colors?.lookOfCharacter(next.characterId) ?? colors?.lookOfUser(next.userId) ?? null;
+          (next.characterId ? await loadCharacterLook(next.characterId) : null) ??
+          colors?.lookOfCharacter(next.characterId) ??
+          colors?.lookOfUser(next.userId) ??
+          null;
         const color = look?.color ?? colors?.colorOfUser(next.userId) ?? DEFAULT_COLOR;
         try {
           await applyDiceLook(box, 'mesa', color, textColorFor(color), look);

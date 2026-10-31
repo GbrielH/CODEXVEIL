@@ -88,6 +88,12 @@ export async function runTomoAction(
       case 'criar_personagem': {
         // Numa campanha do mesmo sistema em que a pessoa joga, o rascunho já fica nela.
         const inCampaign = campaign && campaign.role === 'player' && campaign.status === 'active' && campaign.systemId === data.sistema ? campaign.id : null;
+        if (data.sistema === 'assimilacao') {
+          // O assistente do Assimilação ainda não guarda rascunho: abre a criação na campanha certa
+          // (as ideias do Tomo continuam na conversa para copiar).
+          const params = new URLSearchParams(inCampaign ? { campanha: inCampaign } : { sistema: 'assimilacao' });
+          return { ok: true, message: 'Abra a criação e use as ideias do Tomo.', href: `${routes.newCharacter}?${params.toString()}` };
+        }
         const draft =
           data.sistema === 'dnd5e'
             ? {

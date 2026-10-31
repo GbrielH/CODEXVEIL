@@ -7,7 +7,7 @@ import { z } from 'zod';
  */
 const text = (max: number) => z.string().trim().max(max).default('');
 const required = (max: number) => z.string().trim().min(1).max(max);
-const system = z.enum(['dnd5e', 'tormenta20']);
+const system = z.enum(['dnd5e', 'tormenta20', 'assimilacao']);
 const category = z.enum(['weapon', 'armor', 'gear', 'consumable', 'tool', 'treasure', 'other']).catch('gear');
 
 export const tomoActionSchema = z.discriminatedUnion('acao', [
@@ -108,7 +108,7 @@ export function extractTomoActions(text: string): { text: string; actions: TomoA
   return { text: clean.trim(), actions };
 }
 
-const SYSTEM_NAMES = { dnd5e: 'D&D 5e', tormenta20: 'Tormenta20' } as const;
+const SYSTEM_NAMES = { dnd5e: 'D&D 5e', tormenta20: 'Tormenta20', assimilacao: 'Assimilação RPG' } as const;
 
 export function describeTomoAction(action: TomoAction): { title: string; detail: string } {
   switch (action.acao) {
@@ -160,8 +160,8 @@ export function tomoActionsPrompt(scope: { campaignRole: 'gm' | 'player' | null;
     '```',
     'O JSON precisa ser válido, numa linha. Diga que ela confirma no cartão abaixo. Nunca afirme que já gravou.',
     'Ações disponíveis agora:',
-    '- criar_campanha: {"acao":"criar_campanha","nome":"...","descricao":"...","sistema":"dnd5e" ou "tormenta20"} (a pessoa vira mestre dela).',
-    '- criar_personagem: {"acao":"criar_personagem","sistema":"dnd5e" ou "tormenta20","nome":"...","altura":"...","idade":"...","aparencia":"...","personalidade":"...","historia":"..."}: abre o assistente de criação já preenchido; classe, raça e atributos ela escolhe lá.',
+    '- criar_campanha: {"acao":"criar_campanha","nome":"...","descricao":"...","sistema":"dnd5e", "tormenta20" ou "assimilacao"} (a pessoa vira mestre dela).',
+    '- criar_personagem: {"acao":"criar_personagem","sistema":"dnd5e", "tormenta20" ou "assimilacao","nome":"...","altura":"...","idade":"...","aparencia":"...","personalidade":"...","historia":"..."}: abre o assistente de criação já preenchido; classe, raça e atributos ela escolhe lá. É só para o personagem que a PRÓPRIA pessoa vai jogar.',
   ];
   if (scope.campaignRole) {
     lines.push(
@@ -186,7 +186,15 @@ export function tomoActionsPrompt(scope: { campaignRole: 'gm' | 'player' | null;
     );
   }
   lines.push(
-    'Faça exatamente o que a pessoa pediu, com a ação certa. NUNCA troque o pedido por uma anotação: anotação só quando ela pedir uma anotação. Se nenhuma ação da lista serve, diga isso e onde ela faz na plataforma.',
+    'Como escolher a ação (pense antes de propor):',
+    '1. Identifique O QUE a pessoa quer criar ou mudar e PARA QUEM: o personagem dela (jogador) ou algo da mesa (NPC, vilão, chefe/boss, monstro, inimigo, item, sessão).',
+    scope.campaignRole === 'gm'
+      ? '2. Personagem de jogador novo → criar_personagem, com o sistema da campanha do contexto. NPC, vilão, chefe/boss, inimigo ou criatura → criar_criatura (NUNCA criar_personagem nem habilidade_no_personagem).'
+      : '2. Personagem de jogador novo → criar_personagem, com o sistema da campanha do contexto. NPC, vilão, chefe/boss, inimigo ou criatura são do mestre: só podem ser criados por quem mestra, na página da campanha; não use criar_personagem nem habilidade_no_personagem para isso.',
+    '3. habilidade_no_personagem, item_no_personagem, editar_personagem e ajustar_recurso mudam a ficha que está ABERTA na tela; só use quando o pedido for para essa ficha (ex.: "adicione a habilidade X no meu personagem"). Nunca use para montar um personagem ou criatura novos.',
+    '4. Use somente as ações listadas acima: as que não estão na lista não funcionam nesta página. Se a ação certa não está disponível (ex.: criar um NPC fora da página de uma campanha que a pessoa mestra), NÃO improvise com outra: diga em uma frase onde ela abre (ex.: "abra a campanha e me peça de novo") e ofereça o conteúdo no texto.',
+    '5. Não peça informações desnecessárias: se o pedido já basta, proponha com o que tem e preencha o resto com sugestões coerentes (a pessoa revisa no cartão). Pergunte só o que for indispensável e que você não possa sugerir (no máximo uma pergunta).',
+    'Faça exatamente o que a pessoa pediu, com a ação certa. NUNCA troque o pedido por uma anotação: anotação só quando ela pedir uma anotação.',
   );
   return lines.join('\n');
 }

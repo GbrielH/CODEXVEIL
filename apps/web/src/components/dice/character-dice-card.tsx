@@ -10,6 +10,7 @@ import { cx } from '@/lib/cx';
 import { failureMessage } from '@/lib/client-errors';
 import { routes } from '@/lib/routes';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { forgetCharacterLook } from './dice-look';
 import { SkinPrompt } from './skin-prompt';
 
 /** Miniatura de um dado salvo: a face desenhada sobre a cor do dado. */
@@ -85,6 +86,7 @@ export function CharacterDiceCard({
     setBusy(true);
     try {
       await setCharacterDice(getSupabaseBrowserClient(), characterId, id);
+      forgetCharacterLook(characterId);
       toast({
         tone: 'success',
         title: id ? 'Dado vinculado ao personagem.' : 'Personagem usa o seu dado padrão.',
@@ -157,10 +159,7 @@ export function CharacterDiceCard({
       {dice?.length === 0 ? (
         <p className="mt-2 text-xs text-fg-muted">
           Você ainda não salvou dados na coleção.{' '}
-          <Link
-            href={routes.myDice}
-            className="text-fg-accent underline-offset-4 hover:underline"
-          >
+          <Link href={routes.myDice} className="text-fg-accent underline-offset-4 hover:underline">
             Criar em Meus dados
           </Link>
           .
