@@ -67,7 +67,7 @@ async function setupFight(options: { inProgress?: boolean } = {}) {
 }
 
 describe('cor dos dados', () => {
-  it('o mestre escolhe primeiro, cada cor é de uma pessoa e sem cor não se rola', async () => {
+  it('o mestre escolhe primeiro, cada cor é de uma pessoa e rolar não exige cor', async () => {
     const gm = await db.createUser('Mestre da cor');
     const player = await db.createUser('Jogador da cor');
     const other = await db.createUser('Outra jogadora');
@@ -86,10 +86,8 @@ describe('cor dos dados', () => {
         [campaign.id],
       ),
     );
-    await expectSqlError(
-      db.as(gm, (s) => s.query(`select public.roll_dice($1, '1d20')`, [campaign.id])),
-      'CVCOR',
-    );
+    // A aparência vem de "Meus dados": em sessão também se rola sem cor escolhida.
+    await db.as(gm, (s) => s.query(`select public.roll_dice($1, '1d20')`, [campaign.id]));
     await expectSqlError(
       db.as(player, (s) =>
         s.query(`select public.set_my_dice_color($1, '#2f7d4a')`, [campaign.id]),

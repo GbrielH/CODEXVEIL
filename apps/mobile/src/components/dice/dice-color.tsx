@@ -1,15 +1,9 @@
-import { getCampaignDicePalette, getSessionState, setMyDiceColor } from '@codexveil/database';
-import { DICE_COLORS, diceTextColor } from '@codexveil/domain';
-import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { getCampaignDicePalette, getSessionState } from '@codexveil/database';
+import { diceTextColor } from '@codexveil/domain';
 import Svg, { Path, Polygon, Text as SvgText } from 'react-native-svg';
-import { AppText, Card } from '@/components/ui/primitives';
-import { useToast } from '@/components/ui/toast';
-import { failureMessage } from '@/lib/errors';
 import { useAsyncData, useRealtimeRefresh } from '@/lib/hooks';
 import { useUserId } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase';
-import { colors, radii, spacing } from '@/lib/theme';
 
 /**
  * Cores dos dados da mesa (em tempo real), a cor de cada personagem (pelo dono) e se há sessão
@@ -35,12 +29,13 @@ export function useDicePalette(campaignId: string) {
   );
   const members = data?.members ?? [];
   const me = members.find((member) => member.userId === userId);
+  // A cor do dado vem de "Meus dados" (o perfil), não mais da sessão.
   const colorOfUser = (id: string | null | undefined) =>
-    id && data?.needsDice ? (members.find((member) => member.userId === id)?.color ?? null) : null;
+    id ? (data?.looks[id]?.color ?? null) : null;
   return {
     loaded: data !== null,
     needsDice: data?.needsDice ?? false,
-    myColor: me?.color ?? null,
+    myColor: colorOfUser(userId),
     isGm: me?.role === 'gm',
     gmReady: members.some((member) => member.role === 'gm' && member.color),
     taken: new Set(
@@ -100,106 +95,3 @@ export function ColorDot({ color }: { color: string | null }) {
   if (!color) return null;
   return <DieIcon color={color} size={14} />;
 }
-
-/**
- * Cor dos dados nesta sessão: obrigatória para rolar. O mestre escolhe primeiro; cada cor é de
- * uma pessoa; iniciar ou encerrar a sessão apaga as cores. Fora da sessão o cartão não aparece.
- */
-export function DiceColorCard({ campaignId }: { campaignId: string }) {
-  const toast = useToast();
-  const palette = useDicePalette(campaignId);
-  const [changing, setChanging] = useState(false);
-  if (!palette.loaded || !palette.needsDice) return null;
-  const waiting = !palette.isGm && !palette.gmReady && !palette.myColor;
-
-  // Já escolhida: só uma linha com o dado e "Trocar" (a grade abre de novo ao tocar).
-  if (palette.myColor && !changing) {
-    return (
-      <Pressable
-        onPress={() => setChanging(true)}
-        accessibilityRole="button"
-        accessibilityLabel="Trocar a cor dos seus dados"
-        style={styles.compact}
-      >
-        <DieIcon color={palette.myColor} size={26} />
-        <AppText variant="small" style={{ flex: 1 }}>
-          Cor dos seus dados nesta sessão
-        </AppText>
-        <AppText variant="small" style={{ color: colors.fgAccent }}>
-          Trocar
-        </AppText>
-      </Pressable>
-    );
-  }
-
-  const choose = async (color: string) => {
-    try {
-      await setMyDiceColor(getSupabase(), campaignId, color);
-      palette.setLocal(color);
-    } catch (cause) {
-      toast({ tone: 'danger', title: 'A cor não foi salva', description: failureMessage(cause) });
-      palette.reload();
-    }
-  };
-
-  return (
-    <Card style={!palette.myColor ? { borderColor: colors.parchmentEdge } : undefined}>
-      <AppText variant="eyebrow">
-        {palette.myColor
-          ? 'Cor dos seus dados nesta sessão'
-          : waiting
-            ? 'Aguardando o mestre escolher a cor'
-            : 'Escolha a cor dos seus dados nesta sessão'}
-      </AppText>
-      <AppText variant="small">
-        {waiting
-          ? 'O mestre escolhe primeiro; depois você escolhe a sua. Sem cor não é possível rolar dados.'
-          : palette.myColor
-            ? 'Vale até o fim da sessão: aparece nos seus dados e no nome do seu personagem para toda a mesa.'
-            : 'Obrigatório para rolar. Vale só para esta sessão.'}
-      </AppText>
-      {waiting ? null : (
-        <View
-          style={styles.row}
-          accessibilityRole="radiogroup"
-          accessibilityLabel="Cor dos seus dados"
-        >
-          {DICE_COLORS.map(({ hex, name }) => {
-            const taken = palette.taken.has(hex.toLowerCase());
-            const current = hex === palette.myColor;
-            return (
-              <Pressable
-                key={hex}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: current, disabled: taken }}
-                accessibilityLabel={taken ? `${name}, já escolhida` : name}
-                disabled={taken}
-                onPress={() => void choose(hex).then(() => setChanging(false))}
-                style={[styles.swatch, current && styles.current, taken && { opacity: 0.2 }]}
-              >
-                <DieIcon color={hex} size={34} />
-              </Pressable>
-            );
-          })}
-        </View>
-      )}
-    </Card>
-  );
-}
-
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[1], marginTop: spacing[2] },
-  swatch: { padding: 2, borderRadius: radii.md, borderWidth: 2, borderColor: 'transparent' },
-  compact: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[2],
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.card,
-  },
-  current: { borderColor: colors.fgAccent, backgroundColor: 'rgba(214, 190, 140, 0.15)' },
-});

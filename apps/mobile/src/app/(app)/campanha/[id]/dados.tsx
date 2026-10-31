@@ -1,7 +1,6 @@
 import { getCampaign, getSessionState, listCampaignCharacters } from '@codexveil/database';
 import { characterSkillBonuses } from '@codexveil/rpg-systems';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { DiceColorCard } from '@/components/dice/dice-color';
 import { DicePanel, DiceProvider } from '@/components/dice/dice';
 import { RollFeed } from '@/components/dice/roll-feed';
 import { AppText, Card } from '@/components/ui/primitives';
@@ -67,7 +66,6 @@ export default function CampaignDiceScreen() {
             </AppText>
           ) : isGm || playing ? (
             <>
-              {campaign.status === 'active' ? <DiceColorCard campaignId={campaign.id} /> : null}
               <DiceProvider campaignId={campaign.id} characterId={ownCharacter?.id ?? null}>
                 <DicePanel
                   isGm={isGm}

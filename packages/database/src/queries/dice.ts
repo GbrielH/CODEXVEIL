@@ -192,6 +192,7 @@ export async function getCampaignDicePalette(
         image: null,
         numberColor: null,
         font: null,
+        color: null,
       },
     ]),
   );

@@ -15,8 +15,8 @@ import { updateDiceLookAction } from '../perfil/actions';
 /** Tamanho da face desenhada (a biblioteca estica a imagem em cada face do dado). */
 const SIZE = 512;
 const HISTORY = 20;
-/** Cor de amostra do dado na prévia (na mesa vale a cor escolhida em cada sessão). */
-const PREVIEW_DIE = '#6b1d2a';
+/** Cor padrão do dado (quando a pessoa não escolhe uma). */
+const DEFAULT_DIE = '#6b1d2a';
 
 type Tool = 'brush' | 'fill' | 'eraser';
 
@@ -94,6 +94,7 @@ export function DiceEditor({
   const [size, setSize] = useState(16);
   const [numberColor, setNumberColor] = useState(initial.numberColor);
   const [font, setFont] = useState(initial.font);
+  const [dieColor, setDieColor] = useState(initial.color);
   const [blank, setBlank] = useState(!initialImageUrl);
   const [version, setVersion] = useState(0);
   const [pending, startTransition] = useTransition();
@@ -143,7 +144,7 @@ export function DiceEditor({
     }
     preview.closePath();
     preview.clip();
-    preview.fillStyle = PREVIEW_DIE;
+    preview.fillStyle = dieColor ?? DEFAULT_DIE;
     preview.fillRect(0, 0, side, side);
     preview.drawImage(source, 0, 0, side, side);
     preview.restore();
@@ -156,7 +157,7 @@ export function DiceEditor({
     preview.strokeText('20', side / 2, side / 2);
     preview.fillStyle = numberColor ?? '#ffffff';
     preview.fillText('20', side / 2, side / 2);
-  }, [font, numberColor]);
+  }, [font, numberColor, dieColor]);
 
   useEffect(() => {
     drawPreview();
@@ -274,7 +275,7 @@ export function DiceEditor({
           return;
         }
       }
-      const response = await updateDiceLookAction({ image, numberColor, font });
+      const response = await updateDiceLookAction({ image, numberColor, font, color: dieColor });
       if (!response.ok) {
         if (image) await bucket.remove([image]);
       } else if (initial.image && initial.image !== image) {
@@ -366,8 +367,7 @@ export function DiceEditor({
             </Button>
           </div>
           <p className="text-xs text-fg-muted">
-            O desenho cobre cada face do dado. As partes vazias (quadriculadas) mostram a cor do dado
-            que você escolhe em cada sessão.
+            O desenho cobre cada face do dado. As partes vazias (quadriculadas) mostram a cor do dado.
           </p>
         </div>
 
@@ -375,6 +375,16 @@ export function DiceEditor({
           <div className="flex flex-col items-center gap-2">
             <canvas ref={previewRef} width={160} height={160} aria-label="Prévia da face do dado" />
             <span className="text-xs text-fg-muted">Prévia</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium text-fg">Cor do dado</p>
+            <input
+              type="color"
+              aria-label="Cor do dado"
+              value={dieColor ?? DEFAULT_DIE}
+              onChange={(event) => setDieColor(event.target.value)}
+              className="h-9 w-12 cursor-pointer rounded border border-line bg-transparent"
+            />
           </div>
           <div className="flex flex-col gap-2">
             <p className="text-sm font-medium text-fg">Cor dos números</p>

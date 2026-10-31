@@ -5,7 +5,7 @@ import { Archive, ChevronLeft, Crown, Users } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { CampaignCover } from '@/components/campaigns/campaign-cover';
-import { CampaignColorsProvider, DiceColorRequired } from '@/components/dice/campaign-colors';
+import { CampaignColorsProvider } from '@/components/dice/campaign-colors';
 import { SectionTabs, type SectionTab } from '@/components/layout/section-tabs';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -123,7 +123,6 @@ export default async function CampaignLayout({
         ) : null}
 
         <SectionTabs tabs={tabs} label="Seções da campanha" />
-        {campaign.status === 'active' ? <DiceColorRequired /> : null}
         {children}
       </div>
     </CampaignColorsProvider>

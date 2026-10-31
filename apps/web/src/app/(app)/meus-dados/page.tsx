@@ -1,5 +1,5 @@
 import { getProfile, signedMediaUrls } from '@codexveil/database';
-import { Dices } from 'lucide-react';
+import { Dices, Sparkles } from 'lucide-react';
 import type { Metadata } from 'next';
 import { Card, CardHeader } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
@@ -8,6 +8,7 @@ import { requireSessionUser } from '@/lib/auth';
 import { routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { DiceEditor } from './dice-editor';
+import { SkinPrompt } from './skin-prompt';
 
 export const metadata: Metadata = { title: 'Meus dados' };
 
@@ -32,13 +33,21 @@ export default async function MyDicePage() {
         <CardHeader
           icon={<Dices className="h-5 w-5" aria-hidden="true" />}
           title="Aparência dos dados"
-          description="Desenhe, pinte ou use uma imagem de fundo. Vale em todas as campanhas; a cor do dado é a que você escolhe em cada sessão."
+          description="Desenhe, pinte ou use uma imagem de fundo. Cor, desenho e números valem em todas as campanhas."
         />
         <DiceEditor
           userId={user.id}
           initial={profile.preferences.dice}
           initialImageUrl={image ? (urls[image] ?? null) : null}
         />
+      </Card>
+      <Card className="max-w-5xl">
+        <CardHeader
+          icon={<Sparkles className="h-5 w-5" aria-hidden="true" />}
+          title="Gerar a skin com IA"
+          description="Um prompt pronto para criar a textura do dado numa IA de imagens."
+        />
+        <SkinPrompt />
       </Card>
     </div>
   );

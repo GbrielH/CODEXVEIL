@@ -35,7 +35,6 @@ import {
   campaignRuleIssues,
 } from '@/components/campaign/link-existing-character';
 import { TurnStatus } from '@/components/campaign/turn-status';
-import { DiceColorCard } from '@/components/dice/dice-color';
 import { CharacterAvatar } from '@/components/character-avatar';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/dialog';
@@ -163,7 +162,6 @@ export default function CampaignScreen() {
           resizeMode="cover"
         />
       ) : null}
-      {isActive ? <DiceColorCard campaignId={campaign.id} /> : null}
       {campaign.systemId === 'assimilacao' && isActive ? (
         <ConflictObjectivesCard campaignId={campaign.id} />
       ) : null}

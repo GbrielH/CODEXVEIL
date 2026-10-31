@@ -11,7 +11,9 @@ import { createPortal } from 'react-dom';
 import { cx } from '@/lib/cx';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
-import { DICE_COLORS, DiceColorPalette, DieIcon, useCampaignColors } from './campaign-colors';
+import Link from 'next/link';
+import { routes } from '@/lib/routes';
+import { DICE_COLORS, DieIcon, useCampaignColors } from './campaign-colors';
 import { TABLE_SETTLED_EVENT, throwDice } from './dice-scene';
 import { applyDiceLook } from './dice-look';
 import type { ShownRoll } from './dice-roller';
@@ -122,7 +124,6 @@ export function DiceTray({
   const [ready, setReady] = useState(false);
   const [last, setLast] = useState<TrayRoll | null>(null);
   const [mountedAt] = useState(() => Date.now());
-  const [picking, setPicking] = useState(false);
   const [rolling, setRolling] = useState<TrayRoll | null>(null);
   // A caixinha vai para o <body> (portal): dentro do <main>, a animação de entrada (transform) fazia o
   // "fixed" valer em relação ao conteúdo, e ela aparecia no fim da página em vez de presa à tela.
@@ -376,19 +377,18 @@ export function DiceTray({
               )}
             </span>
             {palette ? (
-              <button
-                type="button"
-                onClick={() => setPicking((current) => !current)}
-                aria-label="Escolher a cor dos seus dados"
-                title="Cor dos seus dados"
+              <Link
+                href={routes.myDice}
+                aria-label="Personalizar os seus dados"
+                title="Personalizar os seus dados (Meus dados)"
                 className="rounded p-0.5 hover:bg-hover"
               >
                 {myColor ? (
                   <DieIcon color={myColor} className="h-5 w-5" />
                 ) : (
-                  <span className="block h-5 w-5 rounded border border-dashed border-line-strong" />
+                  <DieIcon color={DEFAULT_COLOR} className="h-5 w-5" />
                 )}
-              </button>
+              </Link>
             ) : null}
             <button
               type="button"
@@ -403,11 +403,6 @@ export function DiceTray({
               )}
             </button>
           </div>
-          {picking ? (
-            <div className="border-b border-line px-3 py-2">
-              <DiceColorPalette onPicked={() => setPicking(false)} />
-            </div>
-          ) : null}
           {/* O canvas da biblioteca fica preso ao tamanho da área (senão ele estica a caixinha). */}
           <div
             id={containerId}

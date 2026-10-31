@@ -99,6 +99,13 @@ export const diceLookSchema = z
       .default(null)
       .catch(null),
     font: z.enum(DICE_FONTS).nullable().default(null).catch(null),
+    /** Cor de fundo do dado (#rrggbb); vazio = a cor padrão da mesa. */
+    color: z
+      .string()
+      .regex(/^#[0-9a-f]{6}$/i)
+      .nullable()
+      .default(null)
+      .catch(null),
   })
   .prefault({});
 export type DiceLook = z.output<typeof diceLookSchema>;

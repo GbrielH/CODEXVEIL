@@ -115,14 +115,15 @@ export function CampaignColorsProvider({
   const value = useMemo<CampaignColorsValue>(() => {
     const byUser = new Map(palette.members.map((member) => [member.userId, member]));
     const me = userId ? byUser.get(userId) : undefined;
+    // A cor do dado vem de "Meus dados" (vale em todas as campanhas; não se escolhe mais na sessão).
     const colorOfUser = (id: string | null | undefined) =>
-      id && needsDice ? (byUser.get(id)?.color ?? null) : null;
+      id ? (palette.looks[id]?.color ?? null) : null;
     return {
       campaignId,
       userId,
-      myColor: me?.color ?? null,
+      myColor: userId ? (palette.looks[userId]?.color ?? null) : null,
       isGm: me?.role === 'gm',
-      needsDice,
+      needsDice: false,
       gmReady: palette.members.some((member) => member.role === 'gm' && member.color),
       colorOfUser,
       colorOfCharacter: (id) => (id ? colorOfUser(palette.characterOwners[id]) : null),
@@ -237,31 +238,6 @@ export function DiceColorPalette({ onPicked }: { onPicked?: () => void }) {
         );
       })}
     </div>
-  );
-}
-
-/** Faixa obrigatória durante a sessão enquanto a pessoa não escolheu a cor (sem cor não rola). */
-export function DiceColorRequired() {
-  const colors = useCampaignColors();
-  if (!colors || !colors.userId || !colors.needsDice || colors.myColor) return null;
-  const waiting = !colors.isGm && !colors.gmReady;
-  return (
-    <section
-      className="flex flex-col gap-2 rounded-md border border-parchment-400/50 bg-raised p-4"
-      aria-labelledby="cor-dados-obrigatoria"
-    >
-      <h2 id="cor-dados-obrigatoria" className="text-base font-medium text-fg">
-        {waiting
-          ? 'Aguardando o mestre escolher a cor dos dados'
-          : 'Escolha a cor dos seus dados nesta sessão'}
-      </h2>
-      <p className="text-sm text-fg-secondary">
-        {waiting
-          ? 'O mestre escolhe primeiro; depois você escolhe a sua. Sem cor não é possível rolar dados.'
-          : 'Obrigatório para rolar. Vale só para esta sessão: aparece nos seus dados e no nome do seu personagem para toda a mesa.'}
-      </p>
-      {waiting ? null : <DiceColorPalette />}
-    </section>
   );
 }
 
