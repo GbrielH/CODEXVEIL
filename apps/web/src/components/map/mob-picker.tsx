@@ -153,6 +153,10 @@ export function MobPicker({
             : 'Nenhum separado para esta sessão. Em “Todos”, marque a estrela dos que vão aparecer.'}
         </p>
       ) : null}
+      <p className="text-xs text-fg-muted">
+        Entram ocultos. Para os jogadores verem nome e foto, selecione o token e desmarque “Oculto dos
+        jogadores”.
+      </p>
       <ul className="flex max-h-72 flex-col gap-1 overflow-y-auto">
         {shown.map((mob) => {
           const starred = inCast(mob);

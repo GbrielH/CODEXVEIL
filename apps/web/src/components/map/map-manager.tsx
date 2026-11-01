@@ -82,6 +82,8 @@ import { useMapData } from './use-map-data';
 export interface MapCharacter {
   id: string;
   name: string;
+  /** NPC com ficha: foto copiada para o token (os jogadores não leem a ficha). */
+  imagePath?: string | null;
 }
 export interface MapCreature {
   id: string;
@@ -652,7 +654,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
 
   // Evita o mesmo token entrar duas vezes num clique só (a lista pode avisar a escolha duas vezes).
   const adding = useRef<string | null>(null);
-  const addToken = async (input: { kind: MapToken['kind']; characterId?: string; creatureId?: string; label: string; size: TokenSize; isHidden?: boolean }) => {
+  const addToken = async ({ copyImage, ...input }: { kind: MapToken['kind']; characterId?: string; creatureId?: string; label: string; size: TokenSize; isHidden?: boolean; copyImage?: string | null }) => {
     if (!map) return;
     const key = `${input.kind}:${input.characterId ?? input.creatureId ?? input.label}`;
     if (adding.current === key) return;
@@ -662,7 +664,15 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
     const x = Math.max(0, Math.floor((map.cols - side) / 2));
     const y = Math.max(0, Math.floor((map.rows - side) / 2));
     try {
-      await addMapToken(getSupabaseBrowserClient(), { mapId: map.id, campaignId, ...input, isHidden: input.isHidden ?? addHidden, x, y });
+      const client = getSupabaseBrowserClient();
+      const tokenId = await addMapToken(client, { mapId: map.id, campaignId, ...input, isHidden: input.isHidden ?? addHidden, x, y });
+      // NPC com ficha: os jogadores não leem a ficha, então a foto vai copiada para o token
+      // (só nome e foto chegam a eles).
+      if (copyImage) {
+        const path = campaignMapPath(campaignId, `token-${crypto.randomUUID()}.${copyImage.split('.').pop() ?? 'webp'}`);
+        const { error } = await client.storage.from(CAMPAIGN_MEDIA_BUCKET).copy(copyImage, path);
+        if (!error) await updateMapToken(client, tokenId, { imagePath: path });
+      }
       reload();
     } catch (error) {
       fail('O token não foi adicionado', error);
@@ -1281,11 +1291,12 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                       ...creatures.map((creature) => ({ kind: 'creature' as const, id: creature.id, name: creature.name, size: creature.size })),
                       ...npcs.filter((npc) => !onMap.has(npc.id)).map((npc) => ({ kind: 'character' as const, id: npc.id, name: npc.name, size: 'medium' as const })),
                     ]}
+                    // NPCs e monstros sempre entram ocultos: o mestre libera (nome e foto) quando quiser.
                     onAdd={(mob) =>
                       void addToken(
                         mob.kind === 'creature'
-                          ? { kind: 'creature', creatureId: mob.id, label: mob.name, size: mob.size }
-                          : { kind: 'character', characterId: mob.id, label: mob.name, size: mob.size },
+                          ? { kind: 'creature', creatureId: mob.id, label: mob.name, size: mob.size, isHidden: true }
+                          : { kind: 'character', characterId: mob.id, label: mob.name, size: mob.size, isHidden: true, copyImage: npcs.find((npc) => npc.id === mob.id)?.imagePath ?? null },
                       )
                     }
                   />

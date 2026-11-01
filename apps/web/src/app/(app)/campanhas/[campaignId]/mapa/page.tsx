@@ -42,7 +42,7 @@ export default async function MapTabPage({ params }: PageProps<'/campanhas/[camp
         systemId={campaign.systemId}
         characters={party.map((character) => ({ id: character.id, name: character.name }))}
         creatures={creatures.map((creature) => ({ id: creature.id, name: creature.name, size: creature.size }))}
-        npcs={npcSheets.filter((npc) => npc.npcCampaignId === campaign.id).map((npc) => ({ id: npc.id, name: npc.name }))}
+        npcs={npcSheets.filter((npc) => npc.npcCampaignId === campaign.id).map((npc) => ({ id: npc.id, name: npc.name, imagePath: npc.portraitPath }))}
         canManage={campaign.status === 'active'}
       />
     ) : (

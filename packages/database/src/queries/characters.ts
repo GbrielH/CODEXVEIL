@@ -1222,7 +1222,7 @@ export async function listNpcCharacterCandidates(
 ): Promise<NpcCharacterItem[]> {
   const { data, error } = await client
     .from('characters')
-    .select('id, name, portrait_path, npc_campaign_id, npc_listed')
+    .select('id, name, portrait_path, token_path, npc_campaign_id, npc_listed')
     .eq('owner_id', userId)
     .eq('system_id', systemId)
     .is('campaign_id', null)
@@ -1232,7 +1232,8 @@ export async function listNpcCharacterCandidates(
   return data.map((row) => ({
     id: row.id,
     name: row.name,
-    portraitPath: row.portrait_path,
+    // Imagem de token da ficha; sem ela, o retrato.
+    portraitPath: row.token_path ?? row.portrait_path,
     npcCampaignId: row.npc_campaign_id,
     npcListed: row.npc_listed,
   }));
