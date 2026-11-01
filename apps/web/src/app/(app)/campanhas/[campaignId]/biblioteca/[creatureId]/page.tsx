@@ -1,4 +1,11 @@
-import { getCreature, getCreatureRevealedStats, listSessionsReferencingCreature, sessionStatusLabels, signedMediaUrls, type SessionStatus } from '@codexveil/database';
+import {
+  getCreature,
+  getCreatureRevealedStats,
+  listSessionsReferencingCreature,
+  sessionStatusLabels,
+  signedMediaUrls,
+  type SessionStatus,
+} from '@codexveil/database';
 import { RevealPanel } from '@/components/library/reveal-panel';
 import { parseDnd5eStatBlock } from '@codexveil/rpg-systems/dnd5e';
 import { buildT20Content, parseT20StatBlock } from '@codexveil/rpg-systems/tormenta20';
@@ -55,16 +62,30 @@ export default async function CreaturePage({ params }: Props) {
     ? await listSessionsReferencingCreature(supabase, campaign.id, creature.id).catch(() => [])
     : [];
   // Tabelas de tesouro dos livros T20 liberados (só o mestre lê).
-  const treasureTables =
+  // Também magias, poderes e equipamentos, para escolher na ficha da ameaça.
+  const t20Content =
     isGm && campaign.systemId === 'tormenta20'
       ? buildT20Content(
           await loadBookSources(
             supabase,
             packsOfSystem(await campaignBookPacks(supabase, campaign), 'tormenta20'),
-            ['table'],
+            ['table', 'spell', 'feat', 'equipment'],
           ),
-        ).tables
-      : [];
+        )
+      : null;
+  const treasureTables = t20Content?.tables ?? [];
+  const t20Book = t20Content
+    ? {
+        spells: t20Content.spells.map((spell) => ({
+          name: spell.name,
+          text: `${spell.circle}º círculo. ${spell.text ?? ''}`.trim(),
+        })),
+        powers: t20Content.powers.map((power) => ({ name: power.name, text: power.text ?? '' })),
+        equipment: t20Content.equipment
+          .filter((item) => item.group !== 'melhoria')
+          .map((item) => ({ name: item.name, text: item.price ?? '' })),
+      }
+    : { spells: [], powers: [], equipment: [] };
 
   // Jogadores: só as partes da ficha que o mestre liberou (o banco filtra).
   const revealed =
@@ -213,6 +234,7 @@ export default async function CreaturePage({ params }: Props) {
               creatureId={creature.id}
               stats={parseT20StatBlock(creature.gm.stats)}
               gm={{ notes: creature.gm.notes, secrets: creature.gm.secrets }}
+              book={t20Book}
             />
           ) : null}
         </>
@@ -237,7 +259,9 @@ export default async function CreaturePage({ params }: Props) {
                     <span>
                       Sessão {session.number}: {session.title}
                     </span>
-                    <span className="text-xs text-fg-muted">{sessionStatusLabels[session.status as SessionStatus] ?? session.status}</span>
+                    <span className="text-xs text-fg-muted">
+                      {sessionStatusLabels[session.status as SessionStatus] ?? session.status}
+                    </span>
                   </Link>
                 </li>
               ))}
