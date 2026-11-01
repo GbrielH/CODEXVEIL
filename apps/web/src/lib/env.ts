@@ -35,3 +35,14 @@ export const googleAuthEnabled = process.env.NEXT_PUBLIC_AUTH_GOOGLE?.trim() ===
 export function assistantEnabled(): boolean {
   return Boolean(process.env.GEMINI_API_KEY?.trim());
 }
+
+/**
+ * Call (LiveKit). Só no servidor: a chave e o segredo nunca vão para o navegador nem para o app.
+ * Trocar o LiveKit Cloud por um servidor próprio é só mudar estas três variáveis.
+ */
+export function livekitConfig(): { url: string; apiKey: string; apiSecret: string } | null {
+  const url = process.env.LIVEKIT_URL?.trim();
+  const apiKey = process.env.LIVEKIT_API_KEY?.trim();
+  const apiSecret = process.env.LIVEKIT_API_SECRET?.trim();
+  return url && apiKey && apiSecret ? { url, apiKey, apiSecret } : null;
+}

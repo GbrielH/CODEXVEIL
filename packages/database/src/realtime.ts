@@ -45,7 +45,9 @@ export type RealtimeTable =
   | 'map_tokens'
   | 'tavern_messages'
   | 'conflict_objectives'
-  | 'card_decks';
+  | 'card_decks'
+  | 'call_invites'
+  | 'call_participants';
 
 export interface RealtimeBinding {
   table: RealtimeTable;

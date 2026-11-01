@@ -9,6 +9,7 @@ import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
 import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
 import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
 import { configureValidationLocale } from '@codexveil/validation';
+import { setupCallMedia } from '@/lib/livekit';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -20,8 +21,10 @@ import { DialogProvider } from '@/components/ui/dialog';
 import { ToastProvider } from '@/components/ui/toast';
 import { SessionProvider, useSession } from '@/lib/session';
 import { colors, fonts, navigationTheme } from '@/lib/theme';
+import { CallInviteListener } from '@/components/call/call-invite-listener';
 
 configureValidationLocale();
+setupCallMedia();
 void SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
@@ -78,6 +81,7 @@ function RootNavigator() {
         </Stack.Protected>
       </Stack>
       {signedIn && userId ? <TavernFloating userId={userId} /> : null}
+      {signedIn && userId ? <CallInviteListener userId={userId} /> : null}
     </>
   );
 }

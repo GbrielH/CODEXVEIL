@@ -8,6 +8,7 @@ import {
   ScrollText,
   Swords,
   Users,
+  Video,
 } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
@@ -18,6 +19,7 @@ import { EmberField } from '@/components/brand/ember-field';
 import { Avatar } from '@/components/ui/avatar';
 import { routes } from '@/lib/routes';
 import { TavernCard, TavernHost } from '@/components/tavern/tavern';
+import { CallInviteListener } from './call-invite-listener';
 import { NavLink } from './nav-link';
 import { ShellFrame, SidebarToggle } from './shell-frame';
 
@@ -42,6 +44,11 @@ const navItems: NavItem[] = [
     href: routes.characters,
     label: 'Personagens',
     icon: <Swords className="h-5 w-5" aria-hidden="true" />,
+  },
+  {
+    href: routes.call,
+    label: 'Call',
+    icon: <Video className="h-5 w-5" aria-hidden="true" />,
   },
   {
     href: routes.friends,
@@ -161,6 +168,7 @@ export function AppShell({
       </aside>
 
       <TavernHost />
+      <CallInviteListener />
       <div className="flex min-h-dvh min-w-0 flex-col">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-canvas/90 px-4 backdrop-blur lg:hidden">
           <Link

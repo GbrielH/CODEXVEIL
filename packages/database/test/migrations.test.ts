@@ -77,6 +77,8 @@ describe('migrações', () => {
       ),
     );
     expect(published.map((row) => row.tablename)).toEqual([
+      'call_invites',
+      'call_participants',
       'campaign_members',
       'campaign_turns',
       'card_decks',

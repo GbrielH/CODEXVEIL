@@ -22,6 +22,7 @@ export const routes = {
   newCharacter: '/personagens/novo',
   books: '/livros',
   myDice: '/meus-dados',
+  call: '/call',
   licenses: '/licencas',
   privacy: '/privacidade',
   terms: '/termos',
@@ -45,7 +46,7 @@ export function sessionPath(campaignId: string, sessionId: string, section = '')
 }
 
 /** Áreas que exigem sessão. */
-const privatePrefixes = ['/painel', '/perfil', '/comunidade', '/campanhas', '/personagens', '/convite', '/livros'];
+const privatePrefixes = ['/painel', '/perfil', '/comunidade', '/campanhas', '/personagens', '/convite', '/livros', '/call', '/meus-dados', '/amigos'];
 
 /** Páginas que não fazem sentido para quem já está autenticado. */
 const guestOnlyPaths = [routes.signIn, routes.signUp, routes.forgotPassword];
@@ -69,4 +70,9 @@ export function signInPath(next?: string, reason?: 'sessao-expirada'): string {
   if (reason) params.set('motivo', reason);
   const query = params.toString();
   return query ? `${routes.signIn}?${query}` : routes.signIn;
+}
+
+/** Sala de call pelo link curto. */
+export function callPath(slug: string): string {
+  return `/call/${slug}`;
 }

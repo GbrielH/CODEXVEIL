@@ -72,6 +72,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         imageWidth: 200,
       },
     ],
+    // Call de voz e vídeo (LiveKit/WebRTC): módulos nativos e permissões de câmera e microfone.
+    '@livekit/react-native-expo-plugin',
+    [
+      '@config-plugins/react-native-webrtc',
+      {
+        cameraPermission: 'O Codexveil usa a câmera nas calls da mesa.',
+        microphonePermission: 'O Codexveil usa o microfone nas calls da mesa.',
+      },
+    ],
   ],
   experiments: {
     typedRoutes: true,

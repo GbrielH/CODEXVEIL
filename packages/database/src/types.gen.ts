@@ -190,6 +190,165 @@ export type Database = {
           },
         ];
       };
+      call_invites: {
+        Row: {
+          created_at: string;
+          invited_by: string;
+          room_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          invited_by?: string;
+          room_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          invited_by?: string;
+          room_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'call_invites_invited_by_fkey';
+            columns: ['invited_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'call_invites_room_id_fkey';
+            columns: ['room_id'];
+            isOneToOne: false;
+            referencedRelation: 'call_rooms';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'call_invites_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      call_participants: {
+        Row: {
+          character_id: string | null;
+          joined_at: string;
+          left_at: string | null;
+          role: string;
+          room_id: string;
+          status: string;
+          user_id: string;
+        };
+        Insert: {
+          character_id?: string | null;
+          joined_at?: string;
+          left_at?: string | null;
+          role?: string;
+          room_id: string;
+          status?: string;
+          user_id: string;
+        };
+        Update: {
+          character_id?: string | null;
+          joined_at?: string;
+          left_at?: string | null;
+          role?: string;
+          room_id?: string;
+          status?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'call_participants_character_id_fkey';
+            columns: ['character_id'];
+            isOneToOne: false;
+            referencedRelation: 'characters';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'call_participants_room_id_fkey';
+            columns: ['room_id'];
+            isOneToOne: false;
+            referencedRelation: 'call_rooms';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'call_participants_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      call_rooms: {
+        Row: {
+          access_mode: string;
+          campaign_id: string | null;
+          code: string;
+          created_at: string;
+          ended_at: string | null;
+          id: string;
+          owner_id: string;
+          session_id: string | null;
+          slug: string;
+          status: string;
+          title: string;
+        };
+        Insert: {
+          access_mode?: string;
+          campaign_id?: string | null;
+          code: string;
+          created_at?: string;
+          ended_at?: string | null;
+          id?: string;
+          owner_id?: string;
+          session_id?: string | null;
+          slug: string;
+          status?: string;
+          title?: string;
+        };
+        Update: {
+          access_mode?: string;
+          campaign_id?: string | null;
+          code?: string;
+          created_at?: string;
+          ended_at?: string | null;
+          id?: string;
+          owner_id?: string;
+          session_id?: string | null;
+          slug?: string;
+          status?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'call_rooms_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'call_rooms_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'call_rooms_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       campaign_boards: {
         Row: {
           campaign_id: string;
@@ -2522,6 +2681,15 @@ export type Database = {
         Args: never;
         Returns: undefined;
       };
+      create_call_room: {
+        Args: {
+          p_title?: string;
+          p_access_mode?: string;
+          p_campaign_id?: string;
+          p_session_id?: string;
+        };
+        Returns: unknown[];
+      };
       create_character: {
         Args: {
           p_name: string;
@@ -2541,6 +2709,14 @@ export type Database = {
         };
         Returns: Json;
       };
+      decide_call_participant: {
+        Args: {
+          p_room_id: string;
+          p_user_id: string;
+          p_approve: boolean;
+        };
+        Returns: undefined;
+      };
       decline_campaign_invite: {
         Args: {
           p_code: string;
@@ -2556,6 +2732,12 @@ export type Database = {
       end_turn: {
         Args: {
           p_encounter_id: string;
+        };
+        Returns: unknown[];
+      };
+      find_call_room: {
+        Args: {
+          p_ref: string;
         };
         Returns: unknown[];
       };
@@ -2587,6 +2769,25 @@ export type Database = {
         Args: {
           p_campaign_id: string;
           p_friend_id: string;
+        };
+        Returns: undefined;
+      };
+      invite_to_call: {
+        Args: {
+          p_room_id: string;
+          p_user_id: string;
+        };
+        Returns: undefined;
+      };
+      join_call_room: {
+        Args: {
+          p_room_id: string;
+        };
+        Returns: string;
+      };
+      leave_call_room: {
+        Args: {
+          p_room_id: string;
         };
         Returns: undefined;
       };
