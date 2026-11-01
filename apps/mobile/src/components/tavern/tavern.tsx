@@ -13,7 +13,7 @@ import {
   type TavernChannel,
   type TavernMessage,
 } from '@codexveil/database';
-import { Beer, ImagePlus, Send, X } from 'lucide-react-native';
+import { Beer, ImagePlus, PanelLeft, ScrollText, Send, UserRound, X } from 'lucide-react-native';
 import Storage from 'expo-sqlite/kv-store';
 import { pickImage } from '@/lib/images';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -29,7 +29,6 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Chip } from '@/components/ui/controls';
 import { AppText } from '@/components/ui/primitives';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/errors';
@@ -164,6 +163,7 @@ function TavernModal({
   const [messages, setMessages] = useState<TavernMessage[]>([]);
   const [draft, setDraft] = useState(initialDraft);
   const [busy, setBusy] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const listRef = useRef<FlatList<TavernMessage>>(null);
 
   useEffect(() => {
@@ -332,10 +332,23 @@ function TavernModal({
       >
         <View style={[styles.header, { paddingTop: insets.top + spacing[2] }]}>
           <Beer size={18} color={colors.fgAccent} />
-          <AppText style={{ flex: 1, fontFamily: fonts.display, fontSize: 18, color: colors.fg }}>
-            Taverna
-          </AppText>
-          <AppText variant="small">somem em 24 h</AppText>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <AppText style={{ fontFamily: fonts.display, fontSize: 18, color: colors.fg }}>
+              Taverna
+            </AppText>
+            {/* Conversa aberta (o menu lateral pode estar fechado). */}
+            <AppText variant="small" numberOfLines={1}>
+              {channels?.find((option) => option.id === current)?.label ?? 'somem em 24 h'}
+            </AppText>
+          </View>
+          <Pressable
+            onPress={() => setSidebarOpen((open) => !open)}
+            accessibilityRole="button"
+            accessibilityLabel={sidebarOpen ? 'Esconder as conversas' : 'Mostrar as conversas'}
+            hitSlop={12}
+          >
+            <PanelLeft size={20} color={colors.fgMuted} />
+          </Pressable>
           <Pressable
             onPress={onClose}
             accessibilityRole="button"
@@ -345,181 +358,215 @@ function TavernModal({
             <X size={22} color={colors.fgMuted} />
           </Pressable>
         </View>
-        <FlatList
-          horizontal
-          data={channels ?? []}
-          keyExtractor={(option) => option.id}
-          style={{ flexGrow: 0 }}
-          contentContainerStyle={{
-            gap: 6,
-            paddingHorizontal: spacing[3],
-            paddingVertical: spacing[2],
-          }}
-          renderItem={({ item }) => (
-            <Chip
-              label={
-                unread[item.id] && item.id !== current
-                  ? `${item.label} (${unread[item.id]})`
-                  : item.label
-              }
-              selected={item.id === current}
-              role="radio"
-              onPress={() => setCurrent(item.id)}
-            />
-          )}
-        />
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(message) => message.id}
-          style={{ flex: 1 }}
-          contentContainerStyle={{ padding: spacing[3], gap: spacing[2] }}
-          ListEmptyComponent={
-            <AppText variant="small">
-              {channels === null
-                ? 'Abrindo a Taverna…'
-                : channels.length === 0
-                  ? 'Entre numa campanha ou adicione amigos para conversar aqui.'
-                  : 'Ninguém falou nada nas últimas 24 horas. Puxe uma cadeira!'}
-            </AppText>
-          }
-          renderItem={({ item }) => {
-            const mine = item.senderId === userId && !item.fromTomo;
-            return (
-              <Pressable
-                onLongPress={
-                  mine
-                    ? () => void deleteTavernMessage(getSupabase(), item.id).then(load)
-                    : undefined
-                }
-                style={[
-                  styles.bubble,
-                  item.fromTomo ? styles.tomo : mine ? styles.mine : styles.theirs,
-                ]}
-                accessibilityHint={mine ? 'Segure para apagar' : undefined}
-              >
-                {item.fromTomo ? (
-                  <AppText style={{ color: colors.fgAccent, fontSize: 12 }}>
-                    Tomo · a pedido de {item.senderName}
-                  </AppText>
-                ) : !mine ? (
-                  <AppText style={{ color: colors.fgAccent, fontSize: 12 }}>
-                    {item.senderName}
-                  </AppText>
-                ) : null}
-                {item.imagePath && imageUrls[item.imagePath] ? (
-                  <Image
-                    source={{ uri: imageUrls[item.imagePath] }}
-                    style={{ width: 220, height: 220, borderRadius: 8 }}
-                    resizeMode="cover"
-                    accessibilityLabel="Imagem enviada"
-                  />
-                ) : null}
-                {item.body ? (
-                  <AppText style={{ color: mine ? palette.parchment[50] : colors.fg }}>
-                    {item.body}
-                  </AppText>
-                ) : null}
-                <AppText
-                  style={{
-                    fontSize: 10,
-                    opacity: 0.7,
-                    alignSelf: 'flex-end',
-                    color: mine ? palette.parchment[50] : colors.fgMuted,
-                  }}
-                >
-                  {time(item.createdAt)}
+        {/* Menu lateral com as conversas (campanhas e amigos), recolhível no botão do topo. */}
+        <View style={{ flex: 1, flexDirection: 'row' }}>
+          {sidebarOpen ? (
+            <FlatList
+              data={channels ?? []}
+              keyExtractor={(option) => option.id}
+              style={styles.sidebar}
+              contentContainerStyle={{ gap: 4, padding: spacing[2] }}
+              ListHeaderComponent={
+                <AppText variant="eyebrow" style={{ paddingHorizontal: 6, paddingBottom: 4 }}>
+                  Conversas
                 </AppText>
-              </Pressable>
-            );
-          }}
-        />
-        {suggestions.length ? (
-          <View
-            style={{
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              gap: spacing[2],
-              paddingHorizontal: spacing[3],
-            }}
-          >
-            {suggestions.map((name) => (
-              <Pressable
-                key={name}
-                onPress={() => completeMention(name)}
-                accessibilityRole="button"
-                accessibilityLabel={`Mencionar ${name}`}
+              }
+              renderItem={({ item }) => {
+                const active = item.id === current;
+                const count = item.id !== current ? (unread[item.id] ?? 0) : 0;
+                return (
+                  <Pressable
+                    onPress={() => {
+                      setCurrent(item.id);
+                      setSidebarOpen(false);
+                    }}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: active }}
+                    style={[styles.channel, active && styles.channelActive]}
+                  >
+                    {item.channel.kind === 'campaign' ? (
+                      <ScrollText size={14} color={active ? colors.fgAccent : colors.fgMuted} />
+                    ) : (
+                      <UserRound size={14} color={active ? colors.fgAccent : colors.fgMuted} />
+                    )}
+                    <AppText
+                      numberOfLines={2}
+                      style={{
+                        flex: 1,
+                        fontSize: 13,
+                        color: active ? colors.fg : colors.fgSecondary,
+                      }}
+                    >
+                      {item.label}
+                    </AppText>
+                    {count ? (
+                      <View style={styles.channelBadge}>
+                        <AppText style={styles.badgeText}>{count > 99 ? '99+' : count}</AppText>
+                      </View>
+                    ) : null}
+                  </Pressable>
+                );
+              }}
+            />
+          ) : null}
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <FlatList
+              ref={listRef}
+              data={messages}
+              keyExtractor={(message) => message.id}
+              style={{ flex: 1 }}
+              contentContainerStyle={{ padding: spacing[3], gap: spacing[2] }}
+              ListEmptyComponent={
+                <AppText variant="small">
+                  {channels === null
+                    ? 'Abrindo a Taverna…'
+                    : channels.length === 0
+                      ? 'Entre numa campanha ou adicione amigos para conversar aqui.'
+                      : 'Ninguém falou nada nas últimas 24 horas. Puxe uma cadeira!'}
+                </AppText>
+              }
+              renderItem={({ item }) => {
+                const mine = item.senderId === userId && !item.fromTomo;
+                return (
+                  <Pressable
+                    onLongPress={
+                      mine
+                        ? () => void deleteTavernMessage(getSupabase(), item.id).then(load)
+                        : undefined
+                    }
+                    style={[
+                      styles.bubble,
+                      item.fromTomo ? styles.tomo : mine ? styles.mine : styles.theirs,
+                    ]}
+                    accessibilityHint={mine ? 'Segure para apagar' : undefined}
+                  >
+                    {item.fromTomo ? (
+                      <AppText style={{ color: colors.fgAccent, fontSize: 12 }}>
+                        Tomo · a pedido de {item.senderName}
+                      </AppText>
+                    ) : !mine ? (
+                      <AppText style={{ color: colors.fgAccent, fontSize: 12 }}>
+                        {item.senderName}
+                      </AppText>
+                    ) : null}
+                    {item.imagePath && imageUrls[item.imagePath] ? (
+                      <Image
+                        source={{ uri: imageUrls[item.imagePath] }}
+                        style={{ width: 220, height: 220, borderRadius: 8 }}
+                        resizeMode="cover"
+                        accessibilityLabel="Imagem enviada"
+                      />
+                    ) : null}
+                    {item.body ? (
+                      <AppText style={{ color: mine ? palette.parchment[50] : colors.fg }}>
+                        {item.body}
+                      </AppText>
+                    ) : null}
+                    <AppText
+                      style={{
+                        fontSize: 10,
+                        opacity: 0.7,
+                        alignSelf: 'flex-end',
+                        color: mine ? palette.parchment[50] : colors.fgMuted,
+                      }}
+                    >
+                      {time(item.createdAt)}
+                    </AppText>
+                  </Pressable>
+                );
+              }}
+            />
+            {suggestions.length ? (
+              <View
                 style={{
-                  paddingHorizontal: spacing[2],
-                  paddingVertical: 4,
-                  borderRadius: radii.md,
-                  borderWidth: 1,
-                  borderColor: colors.fgAccent,
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  gap: spacing[2],
+                  paddingHorizontal: spacing[3],
                 }}
               >
-                <AppText>
-                  @{name}
-                  {name === 'Tomo' ? ' · assistente' : ''}
-                </AppText>
+                {suggestions.map((name) => (
+                  <Pressable
+                    key={name}
+                    onPress={() => completeMention(name)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Mencionar ${name}`}
+                    style={{
+                      paddingHorizontal: spacing[2],
+                      paddingVertical: 4,
+                      borderRadius: radii.md,
+                      borderWidth: 1,
+                      borderColor: colors.fgAccent,
+                    }}
+                  >
+                    <AppText>
+                      @{name}
+                      {name === 'Tomo' ? ' · assistente' : ''}
+                    </AppText>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+            {tomoThinking ? (
+              <AppText variant="small" style={{ paddingHorizontal: spacing[3] }}>
+                O Tomo está consultando o grimório…
+              </AppText>
+            ) : null}
+            {image ? (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: spacing[2],
+                  paddingHorizontal: spacing[3],
+                }}
+              >
+                <Image
+                  source={{ uri: image.uri }}
+                  style={{ width: 48, height: 48, borderRadius: 6 }}
+                />
+                <Pressable
+                  onPress={() => setImage(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Tirar a imagem"
+                >
+                  <X size={18} color={colors.fgMuted} />
+                </Pressable>
+              </View>
+            ) : null}
+            <View style={[styles.composer, { paddingBottom: insets.bottom + spacing[2] }]}>
+              <Pressable
+                onPress={() => void attach()}
+                accessibilityRole="button"
+                accessibilityLabel="Anexar imagem"
+                style={styles.attach}
+                disabled={!selected}
+              >
+                <ImagePlus size={18} color={colors.fgMuted} />
               </Pressable>
-            ))}
+              <TextInput
+                value={draft}
+                onChangeText={setDraft}
+                maxLength={1000}
+                editable={Boolean(selected)}
+                placeholder={selected ? `Mensagem… (@tomo chama o Tomo)` : 'Escolha um grupo'}
+                placeholderTextColor={colors.fgMuted}
+                accessibilityLabel="Mensagem"
+                style={styles.input}
+                onSubmitEditing={() => void send()}
+                returnKeyType="send"
+              />
+              <Pressable
+                onPress={() => void send()}
+                disabled={busy || (!draft.trim() && !image)}
+                accessibilityRole="button"
+                accessibilityLabel="Enviar"
+                style={styles.send}
+              >
+                <Send size={18} color={palette.parchment[50]} />
+              </Pressable>
+            </View>
           </View>
-        ) : null}
-        {tomoThinking ? (
-          <AppText variant="small" style={{ paddingHorizontal: spacing[3] }}>
-            O Tomo está consultando o grimório…
-          </AppText>
-        ) : null}
-        {image ? (
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: spacing[2],
-              paddingHorizontal: spacing[3],
-            }}
-          >
-            <Image source={{ uri: image.uri }} style={{ width: 48, height: 48, borderRadius: 6 }} />
-            <Pressable
-              onPress={() => setImage(null)}
-              accessibilityRole="button"
-              accessibilityLabel="Tirar a imagem"
-            >
-              <X size={18} color={colors.fgMuted} />
-            </Pressable>
-          </View>
-        ) : null}
-        <View style={[styles.composer, { paddingBottom: insets.bottom + spacing[2] }]}>
-          <Pressable
-            onPress={() => void attach()}
-            accessibilityRole="button"
-            accessibilityLabel="Anexar imagem"
-            style={styles.attach}
-            disabled={!selected}
-          >
-            <ImagePlus size={18} color={colors.fgMuted} />
-          </Pressable>
-          <TextInput
-            value={draft}
-            onChangeText={setDraft}
-            maxLength={1000}
-            editable={Boolean(selected)}
-            placeholder={selected ? `Mensagem… (@tomo chama o Tomo)` : 'Escolha um grupo'}
-            placeholderTextColor={colors.fgMuted}
-            accessibilityLabel="Mensagem"
-            style={styles.input}
-            onSubmitEditing={() => void send()}
-            returnKeyType="send"
-          />
-          <Pressable
-            onPress={() => void send()}
-            disabled={busy || (!draft.trim() && !image)}
-            accessibilityRole="button"
-            accessibilityLabel="Enviar"
-            style={styles.send}
-          >
-            <Send size={18} color={palette.parchment[50]} />
-          </Pressable>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -527,6 +574,31 @@ function TavernModal({
 }
 
 const styles = StyleSheet.create({
+  sidebar: {
+    width: 128,
+    flexGrow: 0,
+    borderRightWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.raised,
+  },
+  channel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderRadius: radii.md,
+  },
+  channelActive: { backgroundColor: 'rgba(107, 59, 198, 0.28)' },
+  channelBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.ember[400],
+  },
   fab: {
     position: 'absolute',
     left: 14,
@@ -599,6 +671,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    minWidth: 0,
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: radii.md,

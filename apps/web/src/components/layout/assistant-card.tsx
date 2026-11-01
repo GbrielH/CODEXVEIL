@@ -4,7 +4,7 @@ import { AssistantMarkdown } from './assistant-markdown';
 import { TomoActionCard, type TomoActionDone } from './tomo-action-card';
 import { VoiceInputButton } from './voice-input';
 import { extractTomoActions } from '@/lib/tomo-actions';
-import { Copy, Paperclip, Send, X } from 'lucide-react';
+import { Copy, Paperclip, Send, Trash2, X } from 'lucide-react';
 import { prepareImageForUpload } from '@/lib/images';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -309,6 +309,18 @@ function AssistantPanel({
             className="h-7 w-7 rounded-md"
           />
           <h2 className="flex-1 text-sm font-medium text-fg">{MASCOT_NAME}, o Mestre</h2>
+          {messages.length ? (
+            <button
+              type="button"
+              onClick={() => setMessages([])}
+              disabled={busy}
+              aria-label="Limpar a conversa"
+              title="Limpar a conversa"
+              className="rounded p-1 text-fg-muted hover:bg-hover hover:text-fg disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={onClose}

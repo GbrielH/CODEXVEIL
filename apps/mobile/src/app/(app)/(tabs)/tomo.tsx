@@ -1,4 +1,4 @@
-import { Send, Sparkles } from 'lucide-react-native';
+import { Send, Sparkles, Trash2 } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { FlatList, Image, StyleSheet, TextInput, View, type ImageSourcePropType } from 'react-native';
 import { IconButton } from '@/components/ui/button';
@@ -147,6 +147,14 @@ export default function TomoScreen() {
         }
       />
       <View style={styles.composer}>
+        {messages.length ? (
+          <IconButton
+            icon={<Trash2 size={18} color={colors.fgMuted} />}
+            accessibilityLabel="Limpar a conversa"
+            disabled={thinking}
+            onPress={() => setMessages([])}
+          />
+        ) : null}
         <TextInput
           value={draft}
           onChangeText={setDraft}
