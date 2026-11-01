@@ -7,8 +7,8 @@ preferência de cada um.
 | Fase | O quê | Situação |
 | ---- | ----- | -------- |
 | 1 | Call de voz e vídeo (LiveKit) | feita (2026-11-01) |
-| 2 | Transcrição ao vivo por personagem | a fazer |
-| 3 | Melhores Momentos (análise por IA e prompts de imagem) | a fazer |
+| 2 | Transcrição ao vivo por personagem | feita (2026-11-01) |
+| 3 | Melhores Momentos (análise por IA e prompts de imagem) | feita (2026-11-01) |
 
 ## Fase 1: call de voz e vídeo
 
@@ -60,3 +60,60 @@ Sem as variáveis, a sala abre e avisa "A call ainda não foi configurada no ser
 - **Compartilhar tela**: só no site.
 - **Reconexão**: o LiveKit reconecta sozinho em quedas curtas; se a sala cair, a pessoa volta à
   aba Call e entra de novo pelo mesmo link (quem já foi aprovado não volta para a espera).
+
+## Fase 2: transcrição (grátis, no aparelho)
+
+- **Motor plugável**: `TranscriptionProvider` (`packages/domain/src/calls/transcription.ts`).
+  Hoje, dois motores grátis:
+  - **Site**: Web Speech API do navegador (`apps/web/src/lib/browser-transcription.ts`). Funciona
+    no **Chrome e no Edge** (no Firefox e no Safari, não: a pessoa ainda vê as falas dos outros).
+    Usa o serviço de reconhecimento do próprio navegador, sem custo.
+  - **App**: `expo-speech-recognition` (`apps/mobile/src/lib/device-transcription.ts`), no APK
+    com a transcrição. O microfone também está na call (WebRTC): em alguns aparelhos os dois
+    disputam o microfone; nesse caso a transcrição avisa e para. Precisa ser testado em cada
+    aparelho do grupo.
+  - Um motor no servidor (agente do LiveKit transcrevendo cada faixa com um serviço de voz pago)
+    pode entrar depois sem mudar o resto; não foi feito por ser pago.
+- **Atribuição sem identificar voz**: cada pessoa transcreve a própria voz, e o banco
+  (`transcript_segments`, gatilho `fill_transcript_segment`) põe o rótulo pela participação na
+  sala: jogador → o personagem dele na campanha; mestre → **"Mestre"** (narração e NPCs; quem
+  era cada NPC a IA deduz depois). O cliente não escolhe o rótulo.
+- **Consentimento (LGPD)**: só grava com **"Gravar transcrição"** ligado pelo dono da sala; todos
+  veem o aviso e cada um pode **pausar a própria voz**.
+- **Onde ver**: painel "Transcrição" na call (ao vivo); aba **Transcrição** no editor da sessão
+  (todas as calls vinculadas à sessão), onde o mestre corrige trechos (lápis, opcional).
+- **Exportar**: **Copiar**, **.md** e **.txt**, com cabeçalho (campanha, sessão, data e
+  personagens) e uma fala por linha: `[00:12:31] Gambiarra: Eu avanço e golpeio o ogro!`.
+
+## Fase 3: Melhores Momentos
+
+- **Análise**: `POST /api/sessoes/momentos` (só o mestre), com o **Gemini no plano gratuito** (a
+  mesma chave `GEMINI_API_KEY` do Tomo; modelo em `GEMINI_MODEL`). Recebe a transcrição (até
+  ~120 mil caracteres), os personagens, os NPCs e monstros citados no roteiro e o resumo da
+  campanha. O prompt (`buildHighlightsPrompt`) manda deduzir pelo contexto quando o "Mestre"
+  fala por um NPC ou monstro. A resposta é JSON validado com zod (`highlightsResponseSchema`), de
+  3 a 8 momentos.
+- **Imagens sem custo**: em vez de gerar (pago), cada momento traz o **prompt pronto** (em inglês,
+  no estilo dark fantasy do Codexveil) e os links dos **retratos** dos personagens envolvidos para
+  anexar como referência. O mestre gera na IA que preferir e **envia a imagem** no cartão.
+- **Banco** (`20261101120000_session_highlights.sql`): `session_highlights` (a mesa vê; só o
+  mestre cria, edita e apaga) e `highlight_runs` (uso registrado: modelo, tokens e quantos
+  momentos; só o mestre vê). A limpeza de órfãos conta as imagens dos momentos.
+- **Telas**: "Melhores Momentos" no fim da página de cada sessão (gerar, gerar de novo, criar à
+  mão escolhendo falas da transcrição, editar, excluir, enviar imagem, copiar o prompt) e a aba
+  **Momentos** da campanha, com a galeria de todas as sessões.
+- **Controle de uso**: até 8 momentos por geração, só sob demanda (nunca durante a call), e cada
+  geração registrada em `highlight_runs`. Gerar de novo troca só os momentos da IA.
+
+## Variáveis de ambiente (Vercel)
+
+| Variável | Para quê |
+| -------- | -------- |
+| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | Call (LiveKit Cloud grátis ou servidor próprio) |
+| `GEMINI_API_KEY` (já existe), `GEMINI_MODEL` (opcional) | Melhores Momentos (e o Tomo) |
+
+## Custos
+
+Nenhum gasto direto: LiveKit no plano gratuito (com cota mensal), transcrição no próprio aparelho,
+análise no plano gratuito do Gemini (com limite diário de pedidos) e imagens geradas fora, pelo
+prompt.

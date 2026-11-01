@@ -18,6 +18,8 @@ import { campaignPath } from '@/lib/routes';
 import { loadSessionOrNotFound } from '@/lib/sessions';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { SessionActions } from './session-actions';
+import { loadSessionHighlights } from '@/components/call/highlights-data';
+import { SessionHighlights } from '@/components/call/session-highlights';
 
 export async function generateMetadata({
   params,
@@ -44,6 +46,7 @@ export default async function SessionReaderPage({
   ]);
   const isGm = campaign.role === 'gm';
   const canManage = isGm && campaign.status === 'active';
+  const moments = await loadSessionHighlights(supabase, campaign.id, session.id, isGm);
 
   return (
     <article className="flex flex-col gap-6">
@@ -131,6 +134,14 @@ export default async function SessionReaderPage({
           ))}
         </div>
       )}
+      <SessionHighlights
+        campaignId={campaign.id}
+        sessionId={session.id}
+        highlights={moments.highlights}
+        characters={moments.characters}
+        transcript={moments.transcript}
+        canManage={canManage}
+      />
     </article>
   );
 }

@@ -1738,6 +1738,60 @@ export type Database = {
           },
         ];
       };
+      highlight_runs: {
+        Row: {
+          campaign_id: string;
+          created_at: string;
+          error: string;
+          id: string;
+          model: string;
+          moments: number;
+          session_id: string;
+          status: string;
+          tokens_in: number;
+          tokens_out: number;
+        };
+        Insert: {
+          campaign_id: string;
+          created_at?: string;
+          error?: string;
+          id?: string;
+          model?: string;
+          moments?: number;
+          session_id: string;
+          status: string;
+          tokens_in?: number;
+          tokens_out?: number;
+        };
+        Update: {
+          campaign_id?: string;
+          created_at?: string;
+          error?: string;
+          id?: string;
+          model?: string;
+          moments?: number;
+          session_id?: string;
+          status?: string;
+          tokens_in?: number;
+          tokens_out?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'highlight_runs_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'highlight_runs_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       map_tokens: {
         Row: {
           campaign_id: string;
@@ -2104,6 +2158,78 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'sessions';
             referencedColumns: ['id', 'campaign_id'];
+          },
+        ];
+      };
+      session_highlights: {
+        Row: {
+          campaign_id: string;
+          character_ids: string[];
+          created_at: string;
+          id: string;
+          image_path: string | null;
+          image_prompt: string;
+          location: string;
+          mood: string;
+          quotes: Json;
+          session_id: string;
+          source: string;
+          status: string;
+          summary: string;
+          title: string;
+          transcript_segment_ids: string[];
+          updated_at: string;
+        };
+        Insert: {
+          campaign_id: string;
+          character_ids?: string[];
+          created_at?: string;
+          id?: string;
+          image_path?: string | null;
+          image_prompt?: string;
+          location?: string;
+          mood?: string;
+          quotes?: Json;
+          session_id: string;
+          source?: string;
+          status?: string;
+          summary?: string;
+          title: string;
+          transcript_segment_ids?: string[];
+          updated_at?: string;
+        };
+        Update: {
+          campaign_id?: string;
+          character_ids?: string[];
+          created_at?: string;
+          id?: string;
+          image_path?: string | null;
+          image_prompt?: string;
+          location?: string;
+          mood?: string;
+          quotes?: Json;
+          session_id?: string;
+          source?: string;
+          status?: string;
+          summary?: string;
+          title?: string;
+          transcript_segment_ids?: string[];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'session_highlights_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'session_highlights_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'sessions';
+            referencedColumns: ['id'];
           },
         ];
       };

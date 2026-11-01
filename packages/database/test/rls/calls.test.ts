@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createCharacter, createTable } from '../support/fixtures';
+import { createCharacter, createSession, createTable } from '../support/fixtures';
 import { TestDatabase, expectSqlError } from '../support/pglite';
 
 let db: TestDatabase;
@@ -129,5 +129,30 @@ describe('call', () => {
       ]),
     );
     expect(changed).toEqual([]);
+  });
+
+  it('melhores momentos: o mestre cria e edita; a mesa vê; jogador e estranho não mexem', async () => {
+    const { gm, player, outsider, campaign } = await createTable(db);
+    const sessionId = await createSession(db, gm, campaign.id);
+    const add = (actor: Actor) =>
+      db.as(actor, (s) =>
+        s.query(
+          `insert into public.session_highlights (session_id, title, summary) values ($1, 'O ogro cai', 'Golpe final.') returning id`,
+          [sessionId],
+        ),
+      );
+    await add(gm);
+    await expectSqlError(add(player), '42501');
+    const seen = await db.as(player, (s) =>
+      s.query<{ campaign_id: string }>(
+        `select campaign_id from public.session_highlights where session_id = $1`,
+        [sessionId],
+      ),
+    );
+    expect(seen).toEqual([{ campaign_id: campaign.id }]);
+    const hidden = await db.as(outsider, (s) =>
+      s.query(`select id from public.session_highlights where session_id = $1`, [sessionId]),
+    );
+    expect(hidden).toEqual([]);
   });
 });

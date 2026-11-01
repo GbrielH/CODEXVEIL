@@ -46,6 +46,7 @@ export default async function CampaignLayout({
     { href: `${base}/biblioteca` as Route, label: 'Biblioteca' },
     { href: `${base}/livros` as Route, label: 'Livros' },
     { href: `${base}/anotacoes` as Route, label: 'Anotações' },
+    { href: `${base}/momentos` as Route, label: 'Momentos' },
     { href: `${base}/links` as Route, label: 'Links' },
   );
   if (isGm) {

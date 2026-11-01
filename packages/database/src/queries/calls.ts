@@ -369,3 +369,145 @@ export async function setCallTranscription(
     .eq('id', roomId);
   if (error) throw toAppError(error);
 }
+
+export interface SessionHighlight {
+  id: string;
+  sessionId: string;
+  campaignId: string;
+  title: string;
+  summary: string;
+  quotes: { speaker: string; text: string }[];
+  segmentIds: string[];
+  characterIds: string[];
+  location: string;
+  mood: string;
+  imagePrompt: string;
+  imagePath: string | null;
+  status: 'pending' | 'generating' | 'done' | 'failed';
+  source: 'ai' | 'manual';
+  createdAt: string;
+}
+
+const HIGHLIGHT_COLUMNS =
+  'id, session_id, campaign_id, title, summary, quotes, transcript_segment_ids, character_ids, location, mood, image_prompt, image_path, status, source, created_at';
+
+function toHighlight(row: Record<string, unknown>): SessionHighlight {
+  const quotes = Array.isArray(row.quotes)
+    ? (row.quotes as { speaker?: unknown; text?: unknown }[])
+    : [];
+  return {
+    id: row.id as string,
+    sessionId: row.session_id as string,
+    campaignId: row.campaign_id as string,
+    title: row.title as string,
+    summary: row.summary as string,
+    quotes: quotes
+      .filter((quote) => typeof quote.text === 'string')
+      .map((quote) => ({
+        speaker: typeof quote.speaker === 'string' ? quote.speaker : '',
+        text: quote.text as string,
+      })),
+    segmentIds: (row.transcript_segment_ids as string[] | null) ?? [],
+    characterIds: (row.character_ids as string[] | null) ?? [],
+    location: row.location as string,
+    mood: row.mood as string,
+    imagePrompt: row.image_prompt as string,
+    imagePath: (row.image_path as string | null) ?? null,
+    status: row.status as SessionHighlight['status'],
+    source: row.source === 'manual' ? 'manual' : 'ai',
+    createdAt: row.created_at as string,
+  };
+}
+
+export async function listSessionHighlights(
+  client: CodexveilClient,
+  sessionId: string,
+): Promise<SessionHighlight[]> {
+  const { data, error } = await client
+    .from('session_highlights')
+    .select(HIGHLIGHT_COLUMNS)
+    .eq('session_id', sessionId)
+    .order('created_at');
+  if (error) throw toAppError(error);
+  return (data as unknown as Record<string, unknown>[]).map(toHighlight);
+}
+
+/** Galeria da campanha: os momentos de todas as sessões, do mais novo ao mais antigo. */
+export async function listCampaignHighlights(
+  client: CodexveilClient,
+  campaignId: string,
+): Promise<(SessionHighlight & { sessionNumber: number; sessionTitle: string })[]> {
+  const { data, error } = await client
+    .from('session_highlights')
+    .select(`${HIGHLIGHT_COLUMNS}, session:sessions(number, title)`)
+    .eq('campaign_id', campaignId)
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) throw toAppError(error);
+  return (
+    data as unknown as (Record<string, unknown> & {
+      session: { number: number; title: string } | null;
+    })[]
+  ).map((row) => ({
+    ...toHighlight(row),
+    sessionNumber: row.session?.number ?? 0,
+    sessionTitle: row.session?.title ?? '',
+  }));
+}
+
+export async function createSessionHighlight(
+  client: CodexveilClient,
+  sessionId: string,
+  input: {
+    title: string;
+    summary: string;
+    quotes: { speaker: string; text: string }[];
+    segmentIds: string[];
+    characterIds: string[];
+    location?: string;
+    mood?: string;
+    imagePrompt: string;
+    source: 'ai' | 'manual';
+  },
+): Promise<void> {
+  const { error } = await client.from('session_highlights').insert({
+    session_id: sessionId,
+    title: input.title,
+    summary: input.summary,
+    quotes: input.quotes as never,
+    transcript_segment_ids: input.segmentIds,
+    character_ids: input.characterIds,
+    location: input.location ?? '',
+    mood: input.mood ?? '',
+    image_prompt: input.imagePrompt,
+    source: input.source,
+  } as never);
+  if (error) throw toAppError(error);
+}
+
+export async function updateSessionHighlight(
+  client: CodexveilClient,
+  id: string,
+  changes: Partial<{
+    title: string;
+    summary: string;
+    imagePrompt: string;
+    imagePath: string | null;
+  }>,
+): Promise<void> {
+  const values: Record<string, unknown> = {};
+  if (changes.title !== undefined) values.title = changes.title;
+  if (changes.summary !== undefined) values.summary = changes.summary;
+  if (changes.imagePrompt !== undefined) values.image_prompt = changes.imagePrompt;
+  if (changes.imagePath !== undefined) values.image_path = changes.imagePath;
+  const { error } = await client
+    .from('session_highlights')
+    .update(values as never)
+    .eq('id', id);
+  if (error) throw toAppError(error);
+}
+
+export async function deleteSessionHighlight(client: CodexveilClient, id: string): Promise<void> {
+  const { error } = await client.from('session_highlights').delete().eq('id', id);
+  if (error) throw toAppError(error);
+}

@@ -54,10 +54,18 @@ export default async function SessionEditorPage({
     'rounded-full border border-line px-4 py-1.5 text-sm text-fg-secondary hover:bg-hover aria-[current=page]:border-fg-brand aria-[current=page]:bg-hover aria-[current=page]:text-fg';
   const tabs = (
     <nav className="flex flex-wrap items-center gap-2" aria-label="Editor da sessão">
-      <Link href={editorPath as Route} aria-current={onBoard || onTranscript ? undefined : 'page'} className={tabClass}>
+      <Link
+        href={editorPath as Route}
+        aria-current={onBoard || onTranscript ? undefined : 'page'}
+        className={tabClass}
+      >
         Roteiro
       </Link>
-      <Link href={`${editorPath}?aba=quadro` as Route} aria-current={onBoard ? 'page' : undefined} className={tabClass}>
+      <Link
+        href={`${editorPath}?aba=quadro` as Route}
+        aria-current={onBoard ? 'page' : undefined}
+        className={tabClass}
+      >
         Quadro
       </Link>
       <Link
@@ -70,7 +78,10 @@ export default async function SessionEditorPage({
     </nav>
   );
   const back = (
-    <Link href={sessionPath(campaign.id, session.id) as Route} className="text-sm text-fg-muted hover:text-fg">
+    <Link
+      href={sessionPath(campaign.id, session.id) as Route}
+      className="text-sm text-fg-muted hover:text-fg"
+    >
       ← Ver sessão {session.number} em modo leitura
     </Link>
   );
@@ -85,7 +96,11 @@ export default async function SessionEditorPage({
         {tabs}
         <SessionTranscript
           segments={segments}
-          header={{ campaign: campaign.name, session: `Sessão ${session.number}: ${session.title}`, title: session.title }}
+          header={{
+            campaign: campaign.name,
+            session: `Sessão ${session.number}: ${session.title}`,
+            title: session.title,
+          }}
         />
       </div>
     );

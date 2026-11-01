@@ -6,3 +6,4 @@ export * from './characters';
 export * from './sessions';
 export * from './library';
 export * from './uploads';
+export * from './highlights';
