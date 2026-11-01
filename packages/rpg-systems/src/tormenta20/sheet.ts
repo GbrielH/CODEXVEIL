@@ -152,6 +152,8 @@ export const t20SheetSchema = z.object({
         )
         .max(200)
         .default([]),
+      /** Escolas de magia escolhidas (Bardo e Druida); vazio = todas as escolas. */
+      schools: z.array(z.string().trim().max(40)).max(8).default([]),
     })
     .prefault({}),
 });

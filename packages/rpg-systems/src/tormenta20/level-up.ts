@@ -136,6 +136,10 @@ export function planT20LevelUp(
           (spell) =>
             spell.circle <= t20MaxCircle(klass, newClassLevel) &&
             (spell.type === klass.spellcasting!.type || spell.type === 'universal') &&
+            // Bardo e Druida só aprendem magias das escolas escolhidas.
+            (!klass.spellcasting!.schoolsChoice ||
+              sheet.spells.schools.length === 0 ||
+              sheet.spells.schools.some((school) => plainT20(school) === plainT20(spell.school))) &&
             !known.has(plainT20(spell.name)),
         )
       : [];

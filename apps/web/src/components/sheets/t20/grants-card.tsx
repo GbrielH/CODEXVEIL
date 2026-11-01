@@ -152,8 +152,8 @@ function ListGrant({
                   onChange={() => toggle(option.id)}
                 />
                 <span className="min-w-0 flex-1 truncate">{option.name}</span>
-                {'circle' in option ? (
-                  <span className="text-xs text-fg-muted">{option.circle}º</span>
+                {grant.kind === 'spell' && 'circle' in option ? (
+                  <span className="text-xs text-fg-muted">{String(option.circle)}º</span>
                 ) : null}
               </label>
             </li>

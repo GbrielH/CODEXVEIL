@@ -73,7 +73,16 @@ export interface T20PowerGrant {
   options: T20Item<'feat'>[];
 }
 
-export type T20Grant = T20SpellGrant | T20PowerGrant;
+/** Escolas de magia do Bardo e do Druida (fichas criadas antes de a ficha guardar as escolas). */
+export interface T20SchoolGrant {
+  kind: 'school';
+  source: string;
+  title: string;
+  missing: number;
+  options: { id: string; name: string; text: string }[];
+}
+
+export type T20Grant = T20SpellGrant | T20PowerGrant | T20SchoolGrant;
 
 function casterInfo(content: T20Content, sheet: T20Sheet): { circle: number; types: SpellType[] } {
   let circle = 0;
@@ -93,8 +102,10 @@ function spellOptions(content: T20Content, sheet: T20Sheet, rule: SpellRule): T2
   const types: readonly SpellType[] = rule.types === 'caster' ? (caster.types.length ? [...caster.types, 'universal'] : ['arcana', 'divina', 'universal']) : rule.types;
   const known = new Set(sheet.spells.known.map((spell) => plainT20(spell.name)));
   const names = rule.names?.map(plainT20);
+  const schools = rule.types === 'caster' ? sheet.spells.schools.map(plainT20) : [];
   return content.spells
     .filter((spell) => spell.circle <= maxCircle && types.includes(spell.type) && !known.has(plainT20(spell.name)))
+    .filter((spell) => schools.length === 0 || schools.includes(plainT20(spell.school)))
     .filter((spell) => !names || names.includes(plainT20(spell.name)))
     .sort((a, b) => a.circle - b.circle || a.name.localeCompare(b.name, 'pt-BR'));
 }
@@ -114,6 +125,23 @@ const TOTEM_SPELLS: Record<string, string> = {
 /** O que a raça e os poderes da ficha concedem e ainda não foi escolhido. */
 export function listT20Grants(content: T20Content, sheet: T20Sheet): T20Grant[] {
   const grants: T20Grant[] = [];
+  // Bardo e Druida escolhem escolas; sem elas na ficha, pede a escolha (vale para as magias novas).
+  if (sheet.spells.schools.length === 0) {
+    for (const entry of sheet.identity.classes) {
+      const klass = findT20Class(content, entry.key) ?? content.classes.find((item) => plainT20(item.name) === plainT20(entry.name));
+      const count = klass?.spellcasting?.schoolsChoice ?? 0;
+      if (!count) continue;
+      const schools = [...new Set(content.spells.map((spell) => spell.school).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      grants.push({
+        kind: 'school',
+        source: `${klass!.name} (escolas)`,
+        title: `${klass!.name}: escolha ${count} escolas de magia (as magias novas virão delas)`,
+        missing: Math.min(count, schools.length),
+        options: schools.map((school) => ({ id: school, name: school, text: '' })),
+      });
+      break;
+    }
+  }
   const spellsFrom = (source: string) => sheet.spells.known.filter((spell) => spell.source === source).length;
 
   const totem = sheet.powers.map((power) => /^totem espiritual \((.+)\)$/.exec(plainT20(power.name))?.[1]).find(Boolean);
@@ -201,6 +229,10 @@ export function applyT20Grant(
 ): { sheet: T20Sheet; abilities: AbilityEntryTemplate[] } | { error: string } {
   const unique = [...new Set(pickedIds)];
   if (unique.length !== grant.missing) return { error: `Escolha ${grant.missing}.` };
+  if (grant.kind === 'school') {
+    if (unique.some((id) => !grant.options.some((option) => option.id === id))) return { error: 'Escolha inválida.' };
+    return { sheet: { ...sheet, spells: { ...sheet.spells, schools: unique } }, abilities: [] };
+  }
   if (grant.kind === 'spell') {
     const spells = unique.map((id) => grant.options.find((option) => option.id === id));
     if (spells.some((spell) => !spell)) return { error: 'Escolha inválida.' };

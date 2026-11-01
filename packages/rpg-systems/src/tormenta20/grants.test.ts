@@ -60,6 +60,16 @@ describe('escolhas concedidas (T20)', () => {
     expect(golem[0]?.options.map((option) => option.name)).toEqual(['Esquiva']);
   });
 
+  it('magias da classe respeitam as escolas escolhidas (Bardo e Druida)', () => {
+    const power = { key: 'conhecimento', name: 'Conhecimento Mágico', source: 'Poder geral' };
+    const free = listT20Grants(content, parseT20Sheet({ powers: [power] }));
+    expect(free[0]?.options.length).toBeGreaterThan(0);
+    const other = listT20Grants(content, parseT20Sheet({ powers: [power], spells: { schools: ['Evocação'] } }));
+    expect(other[0]?.options).toEqual([]);
+    const same = listT20Grants(content, parseT20Sheet({ powers: [power], spells: { schools: ['Ilusão'] } }));
+    expect(same[0]?.options.length).toBe(free[0]?.options.length);
+  });
+
   it('exige a quantidade certa', () => {
     const sheet = parseT20Sheet({ identity: { race: 'Sílfide' } });
     const [grant] = listT20Grants(content, sheet);

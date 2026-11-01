@@ -1123,6 +1123,7 @@ export function buildT20Character(
     powers: powerRefs,
     spells: {
       attribute: spellAttribute,
+      schools: klass?.spellcasting?.schoolsChoice ? draft.spellSchools : [],
       known: spells.map((spell) => ({
         key: spell.id,
         name: spell.name,
