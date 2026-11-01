@@ -48,6 +48,10 @@ type Gesture =
   | { kind: 'move'; startX: number; startY: number; origins: Map<string, { x: number; y: number }> }
   | { kind: 'resize'; id: string; startX: number; startY: number; w: number; h: number };
 
+/** Cópia de blocos entre quadros (localStorage, com a memória da página como reserva). */
+const BOARD_CLIPBOARD_KEY = 'codexveil:quadro-copia';
+let memoryClipboard: BoardItem[] = [];
+
 const TEXT_SIZES = { sm: 'text-sm', md: 'text-lg', lg: 'text-3xl font-display' } as const;
 const clampZoom = (zoom: number) => Math.min(2.5, Math.max(0.2, zoom));
 
@@ -72,7 +76,8 @@ function imageSize(file: File): Promise<{ w: number; h: number }> {
  * Quadro livre (estilo Miro): notas, textos, molduras e setas que o mestre arrasta à vontade.
  * Arrastar o fundo move a visão; a roda do mouse aproxima. Salva sozinho, um instante depois de
  * cada mudança. Ctrl+Z desfaz e Ctrl+Shift+Z (ou Ctrl+Y) refaz. Imagens entram pelo botão ou
- * colando (Ctrl+V). `readOnly` (campanha arquivada) só deixa mover a visão e aproximar.
+ * colando (Ctrl+V). Shift ou Ctrl + clique seleciona vários; Ctrl+A seleciona tudo; Ctrl+C copia,
+ * Ctrl+V cola (inclusive em outro quadro) e Ctrl+D duplica. `readOnly` (campanha arquivada) só deixa mover a visão e aproximar.
  */
 export function BoardCanvas({
   campaignId,
@@ -92,6 +97,8 @@ export function BoardCanvas({
 }) {
   const [items, setItems] = useState<BoardItem[]>(initialItems);
   const [selected, setSelected] = useState<string | null>(null);
+  // Seleção múltipla: blocos somados com Shift ou Ctrl + clique (o principal fica em `selected`).
+  const [multi, setMulti] = useState<string[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [connectFrom, setConnectFrom] = useState<string | null | undefined>(undefined);
   const [view, setView] = useState<View>({ x: 40, y: 40, zoom: 1 });
@@ -186,16 +193,57 @@ export function BoardCanvas({
   };
 
   const removeSelected = useCallback(() => {
-    if (!selected) return;
+    const ids = new Set(selected ? [selected, ...multi] : multi);
+    if (ids.size === 0) return;
     change((current) =>
       current.filter(
         (item) =>
-          item.id !== selected &&
-          !(item.type === 'arrow' && (item.from === selected || item.to === selected)),
+          !ids.has(item.id) && !(item.type === 'arrow' && (ids.has(item.from) || ids.has(item.to))),
       ),
     );
     setSelected(null);
-  }, [selected, change]);
+    setMulti([]);
+  }, [selected, multi, change]);
+
+  /** Copia os blocos selecionados (e as setas entre eles) para colar neste ou em outro quadro. */
+  const copySelection = useCallback(() => {
+    const ids = new Set(selected ? [selected, ...multi] : multi);
+    if (ids.size === 0) return false;
+    const copied = itemsRef.current.filter(
+      (item) =>
+        (item.type !== 'arrow' && ids.has(item.id)) ||
+        (item.type === 'arrow' && ids.has(item.from) && ids.has(item.to)),
+    );
+    try {
+      window.localStorage.setItem(BOARD_CLIPBOARD_KEY, JSON.stringify(copied));
+    } catch {
+      // Sem armazenamento: a cópia fica só na memória desta página.
+    }
+    memoryClipboard = copied;
+    return true;
+  }, [selected, multi]);
+
+  /** Cola a cópia com ids novos, deslocada para não ficar em cima da original. */
+  const paste = useCallback(() => {
+    let copied: BoardItem[] = memoryClipboard;
+    try {
+      const raw = window.localStorage.getItem(BOARD_CLIPBOARD_KEY);
+      if (raw) copied = JSON.parse(raw) as BoardItem[];
+    } catch {
+      // Usa a cópia da memória.
+    }
+    if (!copied.length) return;
+    const ids = new Map(copied.map((item) => [item.id, newId()]));
+    const pasted = copied.map((item) =>
+      item.type === 'arrow'
+        ? { ...item, id: ids.get(item.id)!, from: ids.get(item.from)!, to: ids.get(item.to)! }
+        : { ...item, id: ids.get(item.id)!, x: item.x + 32, y: item.y + 32 },
+    );
+    change((list) => [...list, ...pasted]);
+    const boxes = pasted.filter((item) => item.type !== 'arrow').map((item) => item.id);
+    setSelected(boxes[0] ?? null);
+    setMulti(boxes.slice(1));
+  }, [change]);
 
   useEffect(() => {
     if (readOnly) return;
@@ -213,15 +261,34 @@ export function BoardCanvas({
         redo();
         return;
       }
+      if (mod && event.key.toLowerCase() === 'c') {
+        if (copySelection()) event.preventDefault();
+        return;
+      }
+      if (mod && event.key.toLowerCase() === 'd') {
+        event.preventDefault();
+        if (copySelection()) paste();
+        return;
+      }
+      if (mod && event.key.toLowerCase() === 'a') {
+        event.preventDefault();
+        const boxes = itemsRef.current
+          .filter((item) => item.type !== 'arrow')
+          .map((item) => item.id);
+        setSelected(boxes[0] ?? null);
+        setMulti(boxes.slice(1));
+        return;
+      }
       if (event.key === 'Delete' || event.key === 'Backspace') removeSelected();
       if (event.key === 'Escape') {
+        setMulti([]);
         setSelected(null);
         setConnectFrom(undefined);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [readOnly, editing, removeSelected, undo, redo]);
+  }, [readOnly, editing, removeSelected, undo, redo, copySelection, paste]);
 
   // ---- Gestos ----
   const onPointerMove = (event: ReactPointerEvent) => {
@@ -269,6 +336,7 @@ export function BoardCanvas({
   const startPan = (event: ReactPointerEvent) => {
     if (event.button !== 0 && event.button !== 1) return;
     setSelected(null);
+    setMulti([]);
     setEditing(null);
     gesture.current = { kind: 'pan', startX: event.clientX, startY: event.clientY, origin: view };
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
@@ -287,11 +355,34 @@ export function BoardCanvas({
       }
       return;
     }
-    setSelected(item.id);
+    const additive = event.shiftKey || event.ctrlKey || event.metaKey;
+    const inGroup = selected === item.id || multi.includes(item.id);
+    if (additive) {
+      if (inGroup && selected !== item.id) {
+        setMulti((list) => list.filter((id) => id !== item.id));
+        return;
+      }
+      if (!inGroup) {
+        if (selected) setMulti((list) => [...list, item.id]);
+        else setSelected(item.id);
+      }
+    } else if (!inGroup) {
+      setSelected(item.id);
+      setMulti([]);
+    }
     if (editing === item.id) return;
     const origins = new Map<string, { x: number; y: number }>([
       [item.id, { x: item.x, y: item.y }],
     ]);
+    // Grupo selecionado: todos se movem juntos.
+    if (inGroup || additive)
+      for (const other of items)
+        if (
+          other.type !== 'arrow' &&
+          (other.id === selected || multi.includes(other.id)) &&
+          !origins.has(other.id)
+        )
+          origins.set(other.id, { x: other.x, y: other.y });
     // Moldura leva junto o que está dentro dela.
     if (item.type === 'frame') {
       for (const other of items) {
@@ -472,7 +563,11 @@ export function BoardCanvas({
       if (files.length) {
         event.preventDefault();
         void addImages(files);
+        return;
       }
+      // Sem imagem na área de transferência: cola os blocos copiados do quadro (Ctrl+C).
+      event.preventDefault();
+      paste();
     };
   });
   useEffect(() => {
@@ -496,7 +591,7 @@ export function BoardCanvas({
     'inline-flex h-9 items-center gap-1.5 rounded-md border border-line px-2.5 text-sm text-fg hover:bg-hover disabled:opacity-50 aria-pressed:border-fg-brand aria-pressed:bg-hover';
 
   const renderBox = (item: BoxItem) => {
-    const isSelected = selected === item.id;
+    const isSelected = selected === item.id || multi.includes(item.id);
     const isEditing = editing === item.id;
     const source = connectFrom === item.id;
     const ring = isSelected || source ? 'ring-2 ring-fg-brand' : '';
@@ -698,6 +793,13 @@ export function BoardCanvas({
           </span>
         </div>
       )}
+      {!readOnly && connectFrom === undefined ? (
+        <p className="text-xs text-fg-muted">
+          {multi.length
+            ? `${multi.length + (selected ? 1 : 0)} blocos selecionados: arraste para mover juntos, Delete apaga, Ctrl+C copia e Ctrl+D duplica.`
+            : 'Dica: Shift ou Ctrl + clique seleciona vários blocos; Ctrl+C e Ctrl+V copiam e colam (até entre quadros).'}
+        </p>
+      ) : null}
       {connectFrom !== undefined ? (
         <p className="text-xs text-fg-muted">
           {connectFrom === null

@@ -1,4 +1,4 @@
-import { getCreature, getCreatureRevealedStats, signedMediaUrls } from '@codexveil/database';
+import { getCreature, getCreatureRevealedStats, listSessionsReferencingCreature, sessionStatusLabels, signedMediaUrls, type SessionStatus } from '@codexveil/database';
 import { RevealPanel } from '@/components/library/reveal-panel';
 import { parseDnd5eStatBlock } from '@codexveil/rpg-systems/dnd5e';
 import { buildT20Content, parseT20StatBlock } from '@codexveil/rpg-systems/tormenta20';
@@ -11,7 +11,9 @@ import { parseAssimilacaoStatBlock } from '@codexveil/rpg-systems/assimilacao';
 import { T20TreasureRoller } from '@/components/library/t20-treasure';
 import { campaignBookPacks, loadBookSources, packsOfSystem } from '@/lib/books';
 import { creatureKindLabels, uuidSchema } from '@codexveil/validation';
-import { EyeOff, Skull, UserRound } from 'lucide-react';
+import { CalendarClock, EyeOff, Skull, UserRound } from 'lucide-react';
+import { Card, CardHeader } from '@/components/ui/card';
+import { sessionPath } from '@/lib/routes';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -48,6 +50,10 @@ export default async function CreaturePage({ params }: Props) {
   const imageUrl = creature.imagePath ? (images[creature.imagePath] ?? null) : null;
   const isGm = campaign.role === 'gm';
   const canManage = isGm && campaign.status === 'active';
+  // Onde a criatura aparece nos roteiros (só o mestre vê os roteiros inteiros).
+  const appearances = isGm
+    ? await listSessionsReferencingCreature(supabase, campaign.id, creature.id).catch(() => [])
+    : [];
   // Tabelas de tesouro dos livros T20 liberados (só o mestre lê).
   const treasureTables =
     isGm && campaign.systemId === 'tormenta20'
@@ -210,6 +216,34 @@ export default async function CreaturePage({ params }: Props) {
             />
           ) : null}
         </>
+      ) : null}
+      {isGm ? (
+        <Card>
+          <CardHeader
+            icon={<CalendarClock className="h-5 w-5" aria-hidden="true" />}
+            title="Aparece nas sessões"
+            description="Roteiros que citam esta criatura em um bloco de NPC ou monstro."
+          />
+          {appearances.length === 0 ? (
+            <p className="text-sm text-fg-muted">Nenhum roteiro cita esta criatura ainda.</p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-line">
+              {appearances.map((session) => (
+                <li key={session.id}>
+                  <Link
+                    href={sessionPath(campaign.id, session.id, '/editar') as Route}
+                    className="flex items-center justify-between gap-3 py-2 text-sm hover:text-fg-accent"
+                  >
+                    <span>
+                      Sessão {session.number}: {session.title}
+                    </span>
+                    <span className="text-xs text-fg-muted">{sessionStatusLabels[session.status as SessionStatus] ?? session.status}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
       ) : null}
     </div>
   );

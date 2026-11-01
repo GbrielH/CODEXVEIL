@@ -535,3 +535,30 @@ export async function setSessionCover(
   if (error) throw toAppError(error);
   if (data.length === 0) throw new AppError('forbidden');
 }
+
+/** Sessões cujo roteiro cita a criatura (blocos de NPC ou monstro), em ordem de número. */
+export async function listSessionsReferencingCreature(
+  client: CodexveilClient,
+  campaignId: string,
+  creatureId: string,
+): Promise<{ id: string; number: number; title: string; status: string }[]> {
+  const { data, error } = await client
+    .from('session_blocks')
+    .select('session_id, sessions!inner(id, number, title, status, campaign_id)')
+    .in('type', ['npc_ref', 'monster_ref'])
+    .eq('data->>creatureId', creatureId)
+    .eq('sessions.campaign_id', campaignId);
+  if (error) throw toAppError(error);
+  const seen = new Map<string, { id: string; number: number; title: string; status: string }>();
+  for (const row of data as unknown as {
+    sessions: { id: string; number: number; title: string; status: string };
+  }[]) {
+    seen.set(row.sessions.id, {
+      id: row.sessions.id,
+      number: row.sessions.number,
+      title: row.sessions.title,
+      status: row.sessions.status,
+    });
+  }
+  return [...seen.values()].sort((a, b) => a.number - b.number);
+}
