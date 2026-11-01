@@ -10,6 +10,8 @@ import {
 import {
   ABILITIES,
   CHALLENGE_RATINGS,
+  abilityModifier,
+  formatModifier,
   CREATURE_SIZES,
   abilityLabels,
   creatureSizeLabels,
@@ -63,6 +65,11 @@ interface CreatureEditorProps {
   /** `null` quando o sistema da campanha não tem bloco de estatísticas na interface. */
   statBlock: Dnd5eStatBlock | null;
 }
+
+/** Blocos de combate no visual da ficha do jogador (cabeçalho da ficha). */
+const statTile =
+  'flex flex-col items-center gap-1.5 rounded-xl border border-parchment-400/30 bg-canvas/60 p-3 text-center';
+const statLabel = 'text-[0.65rem] font-semibold tracking-wide text-fg-secondary uppercase';
 
 export function CreatureEditor({
   campaignId,
@@ -431,8 +438,10 @@ function GmDataCard({
         />
 
         {stats ? (
-          <fieldset className="flex flex-col gap-4 rounded-md border border-line p-3">
-            <legend className="px-1 text-sm font-medium">Estatísticas (D&amp;D 5e)</legend>
+          <fieldset className="flex flex-col gap-4 rounded-2xl border border-line bg-gradient-to-b from-wine-950/40 to-charcoal-900 p-4 shadow-[0_24px_60px_-36px_rgb(107_59_198/0.9)]">
+            <legend className="px-2 font-display text-sm tracking-[0.2em] text-wine-300 uppercase">
+              Ficha da criatura · D&amp;D 5e
+            </legend>
             {errors.stats ? <Alert tone="danger">{errors.stats}</Alert> : null}
             <div className="grid gap-3 sm:grid-cols-3">
               <SelectField
@@ -463,7 +472,11 @@ function GmDataCard({
               >
                 <option value="">Escolha…</option>
                 {withCurrentOption(
-                  [...ALIGNMENTS.map((alignment) => alignment.name), 'Sem alinhamento', 'Qualquer alinhamento'],
+                  [
+                    ...ALIGNMENTS.map((alignment) => alignment.name),
+                    'Sem alinhamento',
+                    'Qualquer alinhamento',
+                  ],
                   stats.alignment,
                 ).map((option) => (
                   <option key={option} value={option}>
@@ -473,9 +486,9 @@ function GmDataCard({
               </SelectField>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor={`${id}-ac`} className="text-sm font-medium">
-                  CA
+              <div className={statTile}>
+                <label htmlFor={`${id}-ac`} className={statLabel}>
+                  Classe de Armadura
                 </label>
                 <NumberInput
                   id={`${id}-ac`}
@@ -492,9 +505,9 @@ function GmDataCard({
                 value={stats.armorNote}
                 onChange={(event) => set({ armorNote: event.target.value })}
               />
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor={`${id}-hp`} className="text-sm font-medium">
-                  PV
+              <div className={statTile}>
+                <label htmlFor={`${id}-hp`} className={statLabel}>
+                  Pontos de Vida
                 </label>
                 <NumberInput
                   id={`${id}-hp`}
@@ -535,12 +548,24 @@ function GmDataCard({
                 ))}
               </SelectField>
             </div>
+            <p className="font-display text-xs tracking-[0.2em] text-fg-muted uppercase">
+              Atributos
+            </p>
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
               {ABILITIES.map((ability) => (
-                <div key={ability} className="flex flex-col gap-1.5">
-                  <label htmlFor={`${id}-${ability}`} className="text-center text-xs font-semibold">
-                    {abilityLabels[ability].abbreviation}
+                <div
+                  key={ability}
+                  className="flex flex-col items-center gap-1.5 rounded-xl border border-parchment-400/30 bg-canvas/60 p-2 text-center"
+                >
+                  <label
+                    htmlFor={`${id}-${ability}`}
+                    className="text-[0.65rem] font-semibold tracking-wide text-fg-secondary uppercase"
+                  >
+                    {abilityLabels[ability].name}
                   </label>
+                  <span className="font-display text-2xl leading-none text-fg-accent">
+                    {formatModifier(abilityModifier(stats.abilities[ability]))}
+                  </span>
                   <NumberInput
                     id={`${id}-${ability}`}
                     value={stats.abilities[ability]}

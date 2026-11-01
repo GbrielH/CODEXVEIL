@@ -18,13 +18,29 @@ import { failureMessage } from '@/lib/client-errors';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 /** Ficha de ameaça do Tormenta20 (leitura). Com `only`, só as partes que o mestre liberou. */
-export function T20ThreatView({ name, stats, only }: { name: string; stats: T20StatBlock; only?: ReadonlySet<string> }) {
+export function T20ThreatView({
+  name,
+  stats,
+  only,
+}: {
+  name: string;
+  stats: T20StatBlock;
+  only?: ReadonlySet<string>;
+}) {
   const show = (key: string) => !only || only.has(key);
   const rows = (
     [
       ['Iniciativa e sentidos', stats.senses, 'senses'],
-      ['Defesa', `${stats.defense}${stats.defenseNotes ? ` · ${stats.defenseNotes}` : ''}`, 'defense'],
-      ['Pontos de vida', `${stats.hitPoints}${stats.manaPoints !== null ? ` · PM ${stats.manaPoints}` : ''}`, 'hitPoints'],
+      [
+        'Defesa',
+        `${stats.defense}${stats.defenseNotes ? ` · ${stats.defenseNotes}` : ''}`,
+        'defense',
+      ],
+      [
+        'Pontos de vida',
+        `${stats.hitPoints}${stats.manaPoints !== null ? ` · PM ${stats.manaPoints}` : ''}`,
+        'hitPoints',
+      ],
       ['Deslocamento', stats.speed, 'speed'],
       ['Corpo a corpo', stats.melee, 'melee'],
       ['À distância', stats.ranged, 'ranged'],
@@ -39,7 +55,10 @@ export function T20ThreatView({ name, stats, only }: { name: string; stats: T20S
     <Card ornate>
       <CardHeader
         title={name}
-        description={[show('type') ? stats.type : '', show('challenge') && stats.challenge ? `ND ${stats.challenge}` : '']
+        description={[
+          show('type') ? stats.type : '',
+          show('challenge') && stats.challenge ? `ND ${stats.challenge}` : '',
+        ]
           .filter(Boolean)
           .join(' · ')}
       />
@@ -54,18 +73,18 @@ export function T20ThreatView({ name, stats, only }: { name: string; stats: T20S
           ))}
       </dl>
       {show('attributes') ? (
-      <div className="my-3 grid grid-cols-6 gap-1 text-center">
-        {T20_ATTRIBUTES.map((key) => (
-          <div key={key} className="rounded border border-line py-1">
-            <p className="text-[10px] tracking-wider text-fg-subtle uppercase">
-              {t20AttributeLabels[key].abbreviation}
-            </p>
-            <p className="tabular text-fg">
-              {stats.attributes[key] === null ? '—' : formatT20Bonus(stats.attributes[key])}
-            </p>
-          </div>
-        ))}
-      </div>
+        <div className="my-3 grid grid-cols-6 gap-1 text-center">
+          {T20_ATTRIBUTES.map((key) => (
+            <div key={key} className="rounded border border-line py-1">
+              <p className="text-[10px] tracking-wider text-fg-subtle uppercase">
+                {t20AttributeLabels[key].abbreviation}
+              </p>
+              <p className="tabular text-fg">
+                {stats.attributes[key] === null ? '—' : formatT20Bonus(stats.attributes[key])}
+              </p>
+            </div>
+          ))}
+        </div>
       ) : null}
       {(show('abilities') ? stats.abilities : []).map((ability) => (
         <p key={ability.name} className="mt-2 text-sm text-fg-secondary">
@@ -142,12 +161,12 @@ export function T20ThreatEditor({
   };
 
   return (
-    <Card>
+    <Card ornate>
       <CardHeader
-        title="Estatísticas (Tormenta20)"
+        title="Ficha da ameaça · Tormenta20"
         description="Defesa, PV e iniciativa entram na cena e no combate."
       />
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 rounded-2xl border border-line bg-gradient-to-b from-wine-950/40 to-charcoal-900 p-4 sm:grid-cols-2">
         <TextField
           id="t20-type"
           label="Tipo e tamanho"
@@ -188,23 +207,35 @@ export function T20ThreatEditor({
           onChange={(event) => set({ speed: event.target.value })}
         />
       </div>
-      <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
+      <p className="mt-4 font-display text-xs tracking-[0.2em] text-fg-muted uppercase">
+        Atributos
+      </p>
+      <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
         {T20_ATTRIBUTES.map((key) => (
-          <TextField
+          <div
             key={key}
-            id={`t20-attr-${key}`}
-            label={t20AttributeLabels[key].abbreviation}
-            inputMode="numeric"
-            value={form.attributes[key] === null ? '' : String(form.attributes[key])}
-            onChange={(event) =>
-              set({
-                attributes: {
-                  ...form.attributes,
-                  [key]: event.target.value === '' ? null : number(event.target.value),
-                },
-              })
-            }
-          />
+            className="flex flex-col items-center gap-1 rounded-xl border border-parchment-400/30 bg-canvas/60 p-2 text-center"
+          >
+            <span className="font-display text-2xl leading-none text-fg-accent">
+              {form.attributes[key] === null
+                ? '—'
+                : `${(form.attributes[key] ?? 0) >= 0 ? '+' : ''}${form.attributes[key]}`}
+            </span>
+            <TextField
+              id={`t20-attr-${key}`}
+              label={t20AttributeLabels[key].abbreviation}
+              inputMode="numeric"
+              value={form.attributes[key] === null ? '' : String(form.attributes[key])}
+              onChange={(event) =>
+                set({
+                  attributes: {
+                    ...form.attributes,
+                    [key]: event.target.value === '' ? null : number(event.target.value),
+                  },
+                })
+              }
+            />
+          </div>
         ))}
       </div>
       <div className="mt-3 flex flex-col gap-3">
