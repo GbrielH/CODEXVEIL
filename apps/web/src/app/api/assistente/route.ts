@@ -65,6 +65,7 @@ async function buildContext(pathname: string, userId: string): Promise<string> {
   const supabase = await createSupabaseServerClient();
   const lines = [`Página atual: ${pathname}`];
   let campaignRole: 'gm' | 'player' | null = null;
+  let systemId: string | null = null;
   let characterEditable = false;
   const campaignId = /^\/campanhas\/([^/]+)/.exec(pathname)?.[1];
   if (campaignId && uuidSchema.safeParse(campaignId).success) {
@@ -75,6 +76,7 @@ async function buildContext(pathname: string, userId: string): Promise<string> {
       );
       if (campaign.description) lines.push(`Descrição da campanha: ${clip(campaign.description, 1500)}`);
       if (campaign.status === 'active') campaignRole = campaign.role === 'gm' ? 'gm' : 'player';
+      systemId = campaign.systemId;
       if (campaignRole === 'gm') {
         const sessions = await listSessions(supabase, campaign.id);
         lines.push(
@@ -99,7 +101,7 @@ async function buildContext(pathname: string, userId: string): Promise<string> {
     }
   }
   // As instruções das ações vão por último e nunca são cortadas.
-  return `${clip(lines.join('\n'), MAX_CONTEXT)}\n${tomoActionsPrompt({ campaignRole, characterEditable })}`;
+  return `${clip(lines.join('\n'), MAX_CONTEXT)}\n${tomoActionsPrompt({ campaignRole, characterEditable, systemId })}`;
 }
 
 const text = (body: string, status: number) =>

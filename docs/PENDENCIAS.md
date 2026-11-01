@@ -89,6 +89,28 @@ compartilhar; (3) "?" dos pontos do T20; (4) Tomo no app (chat e ditado).
 - Behind the Magic: aguardando as respostas do Will.
 - Nada desta rodada foi verificado no navegador ou no aparelho (exige login).
 
+### 2026-10-31 e 2026-11-01 — regras, app em paridade e ferramentas do mestre
+
+Feito (site e app, verificado por tipos, lint, testes, pacote do app e CI; não conferido no aparelho):
+
+- Regras: escolas do Bardo e do Druida guardadas na ficha T20 (subida de nível e magias concedidas
+  respeitam; fichas antigas escolhem em "Escolhas pendentes"); Protótipo conferido no livro (pág. 67,
+  T$ 500 para os alquímicos); D&D com lembretes de Ataque Furtivo, Armas Grandes e Duas Armas;
+  respostas às perguntas do mestre editáveis pelo dono. Osteon e Foco em Magia já estavam prontos.
+- App: aba Personagem com respostas, prompts de retrato/token, dado do personagem, compartilhar com
+  amigos; "Compartilhados comigo"; altura e idade no D&D; "?" dos pontos no T20; Assimilação com
+  Cabo de Guerra em laços, Saúde em faixas, Características do livro (XP) e Nível das cartas.
+- Mestre: "Aparece nas sessões" na página de NPC/monstro; quadros com seleção múltipla, Ctrl+A/C/V/D
+  (cola até em outro quadro); Tomo cria criatura com ficha de estatísticas do sistema, monta
+  encontros (criaturas, tokens ocultos no mapa ativo e citação no roteiro) e acrescenta blocos ao
+  roteiro.
+- Também: aba WORLD (Conflitos e Refúgios, Assimilação), coleção de dados e dado do personagem,
+  fantasminhas de personagem morto, Tomo com Assimilação e escolha da ação certa.
+
+Ainda aberto: Tomo criando o personagem completo (hoje abre a criação já preenchida; no
+Assimilação, sem rascunho); Tomo como chat próprio no app (hoje é pela Taverna com "@tomo"); dados
+3D com a skin no app; conferência no aparelho e no navegador.
+
 ## 1. O que depende de você (configuração externa)
 
 | Item                                          | Situação (2026-10-16)                                                                                        | Onde está documentado                              |

@@ -258,11 +258,14 @@ mapa e notas lado a lado).
 (SRD 5.2.1 e livros importados: classes, subclasses, espécies, antecedentes e talentos) e as mesmas
 três etapas:
 
-- [ ] Levantamento: contar as habilidades com bônus numérico (CA, perícias, salvaguardas, PV,
+- [x] Levantamento (2026-11-01): CA (Defesa sem Armadura, Estilo Defesa), iniciativa (Alerta), PV
+      (Robusto, Resiliência Dracônica), deslocamento (Movimento Rápido/sem Armadura) e Habilidoso e
+      Iniciado em Magia já eram automáticos; faltavam lembretes de ataque (feitos).
+- [x] (antigo) Levantamento: contar as habilidades com bônus numérico (CA, perícias, salvaguardas, PV,
       deslocamento, atributos), com escolha, que concedem magia e que tornam proficiente.
 - [ ] Etapa 1: bônus fixos sempre ativos na ficha, com a origem (ex.: Robusto, Alerta, Defesa do
       Estilo de Luta, Movimento Rápido, Defesa sem Armadura).
-- [ ] Etapa 2: bônus condicionais como lembrete na rolagem.
+- [x] Etapa 2: lembretes no ataque (Ataque Furtivo, Armas Grandes, Duas Armas; Fúria já somava).
 - [ ] Etapa 3: todas as escolhas pendentes com seletor (magias de talentos e espécies, perícias,
       ferramentas, idiomas, "um talento à escolha").
 
@@ -270,9 +273,9 @@ três etapas:
 
 Tabela completa em [PENDENCIAS.md](PENDENCIAS.md#0-app-em-paridade-com-o-site-levantado-em-2026-10-27).
 
-- [ ] Amigos e "Compartilhados comigo" no app.
-- [ ] Ficha do app: altura, idade, respostas das perguntas, prompts de retrato/token, compartilhar.
-- [ ] "?" do custo de pontos na criação T20 do app.
+- [x] Amigos e "Compartilhados comigo" no app (2026-11-01).
+- [x] Ficha do app: altura, idade, respostas das perguntas, prompts de retrato/token, compartilhar.
+- [x] "?" do custo de pontos na criação T20 do app.
 - [ ] Tomo no app (chat e ditado).
 
 ### B0e. Amigos e fichas compartilhadas (2026-10-27)

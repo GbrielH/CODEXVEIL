@@ -22,10 +22,13 @@ import {
   saveBoardItems,
   saveCharacterDraft,
   updateCreatureGmData,
+  addMapToken,
+  getActiveMap,
 } from '@codexveil/database';
 import { canEditCharacterPlayState, canEditCharacterSheet, positionBetween } from '@codexveil/domain';
-import { createDnd5eDraft } from '@codexveil/rpg-systems/dnd5e';
-import { createT20Draft } from '@codexveil/rpg-systems/tormenta20';
+import { assimilacaoStatBlockSchema } from '@codexveil/rpg-systems/assimilacao';
+import { createDnd5eDraft, dnd5eStatBlockSchema } from '@codexveil/rpg-systems/dnd5e';
+import { createT20Draft, t20StatBlockSchema } from '@codexveil/rpg-systems/tormenta20';
 import { uuidSchema } from '@codexveil/validation';
 import { revalidatePath } from 'next/cache';
 import { failureMessage } from '@/lib/actions';
@@ -33,6 +36,28 @@ import { requireSessionUser } from '@/lib/auth';
 import { campaignPath, characterPath, routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { tomoActionSchema } from '@/lib/tomo-actions';
+
+/**
+ * Ficha de estatísticas proposta pelo Tomo, no formato do sistema. O que não passar no esquema
+ * não é gravado como ficha: volta em texto para as anotações do mestre.
+ */
+function creatureStats(
+  systemId: string,
+  name: string,
+  size: string,
+  raw: Record<string, unknown> | undefined,
+): { stats: Record<string, unknown>; leftover: string } {
+  if (!raw) return { stats: {}, leftover: '' };
+  const parsed =
+    systemId === 'tormenta20'
+      ? t20StatBlockSchema.safeParse(raw)
+      : systemId === 'assimilacao'
+        ? assimilacaoStatBlockSchema.safeParse({ name, ...raw })
+        : dnd5eStatBlockSchema.safeParse({ size, ...raw });
+  return parsed.success
+    ? { stats: parsed.data, leftover: '' }
+    : { stats: {}, leftover: `Estatísticas sugeridas pelo Tomo:\n${JSON.stringify(raw, null, 2)}` };
+}
 import { characterAccessInput } from '@codexveil/database';
 
 export type TomoActionResult = { ok: true; message: string; href: string } | { ok: false; message: string };
@@ -153,13 +178,116 @@ export async function runTomoAction(
           visibility: 'gm',
           size: data.tamanho,
         });
-        if (data.segredos) await updateCreatureGmData(supabase, creatureId, { stats: {}, notes: '', secrets: data.segredos });
+        const sheet = creatureStats(campaign.systemId, data.nome, data.tamanho, data.estatisticas);
+        if (data.segredos || data.estatisticas)
+          await updateCreatureGmData(supabase, creatureId, {
+            stats: sheet.stats as never,
+            notes: sheet.leftover,
+            secrets: data.segredos,
+          });
         revalidatePath(campaignPath(campaign.id, '/biblioteca'));
         return {
           ok: true,
           message: `${data.tipo === 'npc' ? 'NPC' : 'Monstro'} criado na biblioteca (oculto dos jogadores).`,
           href: campaignPath(campaign.id, `/biblioteca/${creatureId}`),
         };
+      }
+      case 'criar_encontro': {
+        const problem = needCampaign(true);
+        if (problem || !campaign) return { ok: false, message: problem ?? '' };
+        const created: { id: string; name: string; kind: 'npc' | 'monster'; size: string; count: number }[] = [];
+        for (const entry of data.criaturas) {
+          const kind = entry.tipo === 'npc' ? 'npc' : 'monster';
+          const id = await createCreature(supabase, campaign.id, {
+            kind,
+            name: entry.nome,
+            subtitle: data.titulo,
+            description: entry.descricao,
+            visibility: 'gm',
+            size: entry.tamanho,
+          });
+          const sheet = creatureStats(campaign.systemId, entry.nome, entry.tamanho, entry.estatisticas);
+          if (entry.estatisticas)
+            await updateCreatureGmData(supabase, id, { stats: sheet.stats as never, notes: sheet.leftover, secrets: '' });
+          created.push({ id, name: entry.nome, kind, size: entry.tamanho, count: entry.quantidade });
+        }
+        // Tokens no mapa ativo, ocultos, agrupados num canto livre (o mestre arrasta depois).
+        const map = await getActiveMap(supabase, campaign.id);
+        let placed = 0;
+        if (map) {
+          let x = 1;
+          let y = 1;
+          for (const entry of created)
+            for (let copy = 0; copy < entry.count; copy++) {
+              await addMapToken(supabase, {
+                mapId: map.id,
+                campaignId: campaign.id,
+                kind: 'creature',
+                creatureId: entry.id,
+                label: entry.count > 1 ? `${entry.name} ${copy + 1}` : entry.name,
+                x: Math.min(x, map.cols - 1),
+                y: Math.min(y, map.rows - 1),
+                size: entry.size as never,
+                isHidden: true,
+              });
+              placed += 1;
+              x += 2;
+              if (x > Math.min(map.cols - 2, 9)) {
+                x = 1;
+                y += 2;
+              }
+            }
+        }
+        // Cita as criaturas no roteiro da sessão, se ela foi dita.
+        let sessionNote = '';
+        if (data.sessao) {
+          const session = (await listSessions(supabase, campaign.id)).find((item) => item.number === data.sessao);
+          if (session) {
+            const blocks = await listSessionBlocks(supabase, session.id);
+            let last = blocks.at(-1)?.position ?? null;
+            const add = async (content: Parameters<typeof createSessionBlock>[1]['content']) => {
+              const position = positionBetween(last, null);
+              last = position;
+              await createSessionBlock(supabase, { sessionId: session.id, campaignId: campaign.id, position, visibility: 'gm', content });
+            };
+            await add({ type: 'subheading', data: { text: data.titulo } });
+            for (const entry of created)
+              await add({
+                type: entry.kind === 'npc' ? 'npc_ref' : 'monster_ref',
+                data: { creatureId: entry.id, note: entry.count > 1 ? `${entry.count}×` : '' },
+              });
+            sessionNote = ` e citado no roteiro da sessão ${session.number}`;
+          }
+        }
+        revalidatePath(campaignPath(campaign.id, '/biblioteca'));
+        revalidatePath(campaignPath(campaign.id, '/mapa'));
+        return {
+          ok: true,
+          message: `Encontro montado: ${created.length} criatura(s) na biblioteca${map ? `, ${placed} token(s) ocultos no mapa "${map.name}"` : ' (sem mapa ativo: nenhum token posto)'}${sessionNote}.`,
+          href: campaignPath(campaign.id, map ? '/mapa' : '/biblioteca'),
+        };
+      }
+      case 'bloco_no_roteiro': {
+        const problem = needCampaign(true);
+        if (problem || !campaign) return { ok: false, message: problem ?? '' };
+        const session = (await listSessions(supabase, campaign.id)).find((entry) => entry.number === data.sessao);
+        if (!session) return { ok: false, message: `Não achei a sessão ${data.sessao} nesta campanha.` };
+        const blocks = await listSessionBlocks(supabase, session.id);
+        await createSessionBlock(supabase, {
+          sessionId: session.id,
+          campaignId: campaign.id,
+          position: positionBetween(blocks.at(-1)?.position ?? null, null),
+          visibility: data.tipo === 'nota_do_mestre' ? 'gm' : 'members',
+          content:
+            data.tipo === 'titulo'
+              ? { type: 'heading', data: { text: data.texto.slice(0, 200) } }
+              : data.tipo === 'nota_do_mestre'
+                ? { type: 'gm_note', data: { text: data.texto } }
+                : { type: 'paragraph', data: { text: data.texto } },
+        });
+        const href = campaignPath(campaign.id, `/sessoes/${session.id}`);
+        revalidatePath(href);
+        return { ok: true, message: `Bloco adicionado ao fim do roteiro da sessão ${session.number}.`, href };
       }
       case 'criar_item': {
         const problem = needCampaign(true);

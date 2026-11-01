@@ -36,6 +36,32 @@ export const tomoActionSchema = z.discriminatedUnion('acao', [
     descricao: text(4000),
     segredos: text(8000),
     tamanho: z.enum(['tiny', 'small', 'medium', 'large', 'huge', 'gargantuan']).catch('medium'),
+    /** Ficha de estatísticas no formato do sistema da campanha (o servidor confere). */
+    estatisticas: z.record(z.string(), z.unknown()).optional(),
+  }),
+  z.object({
+    acao: z.literal('criar_encontro'),
+    titulo: required(120),
+    criaturas: z
+      .array(
+        z.object({
+          nome: required(80),
+          tipo: z.enum(['npc', 'monstro']).catch('monstro'),
+          quantidade: z.number().int().min(1).max(12).catch(1),
+          tamanho: z.enum(['tiny', 'small', 'medium', 'large', 'huge', 'gargantuan']).catch('medium'),
+          descricao: text(2000),
+          estatisticas: z.record(z.string(), z.unknown()).optional(),
+        }),
+      )
+      .min(1)
+      .max(8),
+    sessao: z.number().int().min(1).max(100000).optional(),
+  }),
+  z.object({
+    acao: z.literal('bloco_no_roteiro'),
+    sessao: z.number().int().min(1).max(100000),
+    tipo: z.enum(['paragrafo', 'titulo', 'nota_do_mestre']).catch('paragrafo'),
+    texto: required(20000),
   }),
   z.object({
     acao: z.literal('criar_item'),
@@ -126,6 +152,19 @@ export function describeTomoAction(action: TomoAction): { title: string; detail:
         title: `Criar ${action.tipo === 'npc' ? 'NPC' : 'monstro'}: ${action.nome}`,
         detail: [action.subtitulo, action.descricao].filter(Boolean).join(' · '),
       };
+    case 'criar_encontro':
+      return {
+        title: `Montar encontro: ${action.titulo}`,
+        detail: [
+          action.criaturas.map((entry) => `${entry.quantidade}× ${entry.nome}`).join(', '),
+          'Cria as criaturas na biblioteca (ocultas), põe os tokens no mapa ativo e cita no roteiro, se houver sessão.',
+        ].join(' · '),
+      };
+    case 'bloco_no_roteiro':
+      return {
+        title: `Adicionar ao roteiro da sessão ${action.sessao} (${{ paragrafo: 'parágrafo', titulo: 'título', nota_do_mestre: 'nota do mestre' }[action.tipo]})`,
+        detail: action.texto,
+      };
     case 'criar_item':
       return { title: `Criar item na biblioteca: ${action.nome}`, detail: [action.raridade, action.valor, action.descricao].filter(Boolean).join(' · ') };
     case 'criar_sessao':
@@ -152,7 +191,20 @@ export function describeTomoAction(action: TomoAction): { title: string; detail:
 }
 
 /** Instruções do modelo: o que ele pode propor, conforme a página e o papel da pessoa. */
-export function tomoActionsPrompt(scope: { campaignRole: 'gm' | 'player' | null; characterEditable: boolean }): string {
+/** Formato da ficha de estatísticas que o Tomo preenche, por sistema. */
+function statsGuide(systemId: string | null | undefined): string {
+  if (systemId === 'tormenta20')
+    return '  Tormenta20 ("estatisticas"): {"type":"Humanoide","challenge":"1","initiative":2,"defense":15,"hitPoints":20,"manaPoints":null,"speed":"9m","melee":"Espada +6 (1d8+3)","ranged":"","attributes":{"for":2,"des":1,"con":2,"int":0,"sab":0,"car":-1},"skills":"Percepção +4","abilities":[{"name":"...","text":"..."}],"equipment":""}.';
+  if (systemId === 'assimilacao')
+    return '  Assimilação RPG ("estatisticas"): {"kind":"Infectado","pool":{"d6":0,"d10":2,"d12":1},"neutralize":3,"health":6,"activations":[{"name":"...","cost":"2C","text":"..."}],"notes":"..."}.';
+  return '  D&D 5e ("estatisticas"): {"creatureType":"Morto-vivo","alignment":"Caótico e Mau","armorClass":13,"hitPoints":22,"hitPointFormula":"5d8","speed":"9 m","abilities":{"str":12,"dex":14,"con":10,"int":6,"wis":8,"cha":5},"senses":"Visão no escuro 18 m","languages":"","challengeRating":"1","traits":[{"name":"...","description":"..."}],"actions":[{"name":"...","description":"..."}]}.';
+}
+
+export function tomoActionsPrompt(scope: {
+  campaignRole: 'gm' | 'player' | null;
+  characterEditable: boolean;
+  systemId?: string | null;
+}): string {
   const lines = [
     'Você pode PROPOR ações que a pessoa confirma num cartão antes de gravar. Proponha quando ela pedir para criar, anotar, montar ou registrar algo. Escreva a resposta normalmente e, no fim, um bloco por ação (no máximo 5), assim:',
     '```tomo-acao',
@@ -170,7 +222,10 @@ export function tomoActionsPrompt(scope: { campaignRole: 'gm' | 'player' | null;
   }
   if (scope.campaignRole === 'gm') {
     lines.push(
-      '- criar_criatura: {"acao":"criar_criatura","tipo":"npc" ou "monstro","nome":"...","subtitulo":"...","descricao":"...","segredos":"...","tamanho":"medium"} (tiny, small, medium, large, huge, gargantuan); fica oculta dos jogadores; "segredos" só o mestre vê.',
+      '- criar_criatura: {"acao":"criar_criatura","tipo":"npc" ou "monstro","nome":"...","subtitulo":"...","descricao":"...","segredos":"...","tamanho":"medium","estatisticas":{...}} (tiny, small, medium, large, huge, gargantuan); fica oculta dos jogadores; "segredos" só o mestre vê. Sempre que fizer sentido (monstro, chefe, inimigo), preencha "estatisticas" no formato do sistema da campanha, abaixo.',
+      statsGuide(scope.systemId),
+      '- criar_encontro: {"acao":"criar_encontro","titulo":"...","criaturas":[{"nome":"...","tipo":"monstro","quantidade":2,"tamanho":"medium","descricao":"...","estatisticas":{...}}],"sessao":<número, opcional>}: cria as criaturas, põe os tokens no mapa ativo e cita no roteiro da sessão.',
+      '- bloco_no_roteiro: {"acao":"bloco_no_roteiro","sessao":<número>,"tipo":"paragrafo"|"titulo"|"nota_do_mestre","texto":"..."}: acrescenta um bloco no fim do roteiro (nota_do_mestre só o mestre vê).',
       '- criar_item: {"acao":"criar_item","nome":"...","categoria":"weapon|armor|gear|consumable|tool|treasure|other","raridade":"...","valor":"...","descricao":"...","visivel_ao_grupo":false} na biblioteca da campanha.',
       '- criar_sessao: {"acao":"criar_sessao","titulo":"..."} (fica não publicada).',
       '- nota_na_sessao: {"acao":"nota_na_sessao","sessao":<número da lista de sessões>,"texto":"..."}: nota privada do mestre no fim do roteiro.',
