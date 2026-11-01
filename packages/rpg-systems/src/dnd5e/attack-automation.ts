@@ -170,6 +170,26 @@ export function resolveDnd5eAttack(
     }
   }
 
+  // Lembretes condicionais (não somam sozinhos: dependem da situação na mesa).
+  const rogue = classLevel(sheet, 'Ladino', 'Rogue');
+  if (rogue > 0 && weapon && (ranged || weapon.properties.includes('finesse')))
+    notes.push(
+      `Ataque Furtivo: +${Math.ceil(rogue / 2)}d6 uma vez por turno, com vantagem ou com um aliado a 1,5 m do alvo`,
+    );
+  if (
+    weapon &&
+    !ranged &&
+    (weapon.properties.includes('two_handed') || weapon.properties.includes('versatile')) &&
+    hasFeature(features, 'combate com armas grandes', 'great weapon fighting')
+  )
+    notes.push('Combate com Armas Grandes: rolagens de 1 ou 2 no dano contam como 3');
+  if (
+    weapon &&
+    weapon.properties.includes('light') &&
+    hasFeature(features, 'combate com duas armas', 'two-weapon fighting')
+  )
+    notes.push('Combate com Duas Armas: some o modificador ao dano do ataque da mão inábil');
+
   const critRange = Math.min(data.critRange, weapon ? championCritRange(sheet) : 20);
   if (critRange < data.critRange) notes.push(`Crítico Aprimorado (${critRange}–20)`);
 

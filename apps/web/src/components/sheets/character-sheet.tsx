@@ -304,7 +304,14 @@ export async function CharacterSheet({
       {content}
       {answers?.length ? (
         <Card className="mt-6">
-          <CreationAnswersView answers={answers} />
+          <CreationAnswersView
+            answers={answers}
+            editable={
+              character.viewer.isOwner && character.campaign
+                ? { characterId: character.id, campaignId: character.campaign.id }
+                : null
+            }
+          />
         </Card>
       ) : null}
     </ItemCatalogProvider>
