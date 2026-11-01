@@ -351,7 +351,7 @@ export async function getCharacter(
   const { data, error } = await client
     .from('characters')
     .select(
-      'id, owner_id, campaign_id, system_id, name, portrait_path, token_path, dice_id, sheet, version, updated_at, live_updated_at, granted_level, owner:profiles!characters_owner_id_fkey(display_name), campaign:campaigns(id, name, status, owner_id, party_sheets_visible, players_can_edit_sheets)',
+      'id, owner_id, campaign_id, system_id, name, portrait_path, token_path, dice_id, sheet, version, updated_at, live_updated_at, granted_level, owner:profiles!characters_owner_id_fkey(display_name), campaign:campaigns!characters_campaign_id_fkey(id, name, status, owner_id, party_sheets_visible, players_can_edit_sheets)',
     )
     .eq('id', characterId)
     .maybeSingle();

@@ -56,7 +56,7 @@ export async function listMyCharacters(
 ): Promise<CharacterListItem[]> {
   const { data, error } = await client
     .from('characters')
-    .select('id, name, system_id, campaign_id, sheet, portrait_path, updated_at, campaign:campaigns(name)')
+    .select('id, name, system_id, campaign_id, sheet, portrait_path, updated_at, campaign:campaigns!characters_campaign_id_fkey(name)')
     .eq('owner_id', userId)
     .order('updated_at', { ascending: false });
   if (error) throw toAppError(error);

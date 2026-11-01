@@ -1342,6 +1342,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'characters_npc_campaign_id_fkey';
+            columns: ['npc_campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'characters_owner_id_fkey';
             columns: ['owner_id'];
             isOneToOne: false;
@@ -3138,8 +3145,8 @@ export type Database = {
       };
       set_character_npc_campaign: {
         Args: {
-          p_campaign_id: string;
           p_character_id: string;
+          p_campaign_id: string;
         };
         Returns: undefined;
       };
