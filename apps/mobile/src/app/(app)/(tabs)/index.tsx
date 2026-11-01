@@ -9,20 +9,12 @@ import {
 import { formatInviteCode } from '@codexveil/domain';
 import { summarizeSheet } from '@codexveil/rpg-systems';
 import { useRouter } from 'expo-router';
-import { CalendarClock, Dices, Mail, ScrollText, Sparkles, Swords } from 'lucide-react-native';
-import { Image, View, type ImageSourcePropType } from 'react-native';
+import { CalendarClock, Mail, ScrollText, Swords } from 'lucide-react-native';
+import { View } from 'react-native';
 import { CampaignCoverCard } from '@/components/campaign-cover-card';
 import { CharacterAvatar } from '@/components/character-avatar';
-import {
-  HeroCard,
-  IconBubble,
-  QuickAction,
-  QuickActions,
-  SectionHeader,
-} from '@/components/ui/layout';
+import { IconBubble, SectionHeader } from '@/components/ui/layout';
 import { ListRow } from '@/components/ui/list-row';
-import { ArcaneScene } from '@/components/ui/arcane-scene';
-import { AppText } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/states';
 import { AttendanceCard } from '@/components/sessions/attendance';
@@ -31,8 +23,6 @@ import { useUserId } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
 
-// Arte do Tomo (empacotada no app; vai junto na atualização OTA).
-const TOMO_HERO = require('../../../../assets/images/tomo-heroi.webp') as ImageSourcePropType;
 
 const dateFormat = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'medium',
@@ -95,103 +85,9 @@ export default function DashboardScreen() {
       onRefresh={reload}
     >
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
-      {/* Tomo: o assistente responde na Taverna (com "@tomo"). */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 12,
-          paddingVertical: 12,
-          paddingHorizontal: 14,
-          borderRadius: 14,
-          borderWidth: 1,
-          borderColor: 'rgba(168, 139, 255, 0.30)',
-          backgroundColor: '#140A29',
-          overflow: 'hidden',
-        }}
-      >
-        <ArcaneScene seed="Bem-vindo de volta" options={{ noMoon: true }} style={{ opacity: 0.7 }} />
-        <Image
-          source={TOMO_HERO}
-          style={{ width: 72, height: 68 }}
-          resizeMode="contain"
-          accessibilityIgnoresInvertColors
-        />
-        <View style={{ flex: 1, gap: 8 }}>
-          <AppText style={{ color: colors.fgAccent, fontSize: 15 }}>
-            Precisa de uma regra, um nome ou uma ideia?
-          </AppText>
-          <QuickAction
-            primary
-            icon={<Sparkles size={16} color={colors.primaryFg} />}
-            label="Falar com o Tomo"
-            onPress={() => router.push('/tomo')}
-          />
-        </View>
-      </View>
       {data ? (
         <>
-          {current?.campaignId ? (
-            <HeroCard
-              onPress={() =>
-                router.push({ pathname: '/personagem/[id]', params: { id: current.id } })
-              }
-              accessibilityLabel={`Continuar jogando com ${current.name}`}
-            >
-              <AppText variant="eyebrow" style={{ color: colors.fgBrand }}>
-                Continuar jogando
-              </AppText>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <CharacterAvatar
-                  name={current.name}
-                  systemId={current.systemId}
-                  sheet={current.sheet}
-                  size={56}
-                />
-                <View style={{ flex: 1, gap: 2 }}>
-                  <AppText variant="title" numberOfLines={1}>
-                    {current.name}
-                  </AppText>
-                  <AppText variant="muted" numberOfLines={1}>
-                    {summarizeSheet(current.systemId, current.sheet).subtitle}
-                  </AppText>
-                  <AppText variant="small" numberOfLines={1}>
-                    {current.campaignName}
-                  </AppText>
-                </View>
-              </View>
-              <QuickActions>
-                <QuickAction
-                  primary
-                  icon={<Swords size={16} color={colors.primaryFg} />}
-                  label="Ficha"
-                  onPress={() =>
-                    router.push({ pathname: '/personagem/[id]', params: { id: current.id } })
-                  }
-                />
-                <QuickAction
-                  icon={<Dices size={16} color={colors.fg} />}
-                  label="Dados"
-                  onPress={() =>
-                    router.push({
-                      pathname: '/campanha/[id]/dados',
-                      params: { id: current.campaignId ?? '' },
-                    })
-                  }
-                />
-                <QuickAction
-                  icon={<ScrollText size={16} color={colors.fg} />}
-                  label="Mesa"
-                  onPress={() =>
-                    router.push({
-                      pathname: '/campanha/[id]',
-                      params: { id: current.campaignId ?? '' },
-                    })
-                  }
-                />
-              </QuickActions>
-            </HeroCard>
-          ) : null}
+
 
           {nextSession ? (
             <ListRow

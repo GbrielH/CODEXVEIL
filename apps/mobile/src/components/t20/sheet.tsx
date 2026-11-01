@@ -934,8 +934,16 @@ function T20SheetBody(props: Props) {
             <Card key={group.category}>
               <AppText variant="eyebrow">{itemCategoryLabels[group.category]}</AppText>
               {group.items.map((item) => (
-                <View key={item.id} style={[styles.row, { paddingVertical: 6 }]}>
-                  <View style={{ flex: 1 }}>
+                <View
+                  key={item.id}
+                  style={{
+                    gap: 4,
+                    paddingVertical: 8,
+                    borderTopWidth: 1,
+                    borderColor: colors.line,
+                  }}
+                >
+                  <View>
                     <AppText>
                       {item.name}
                       {item.isEquipped ? ' · equipado' : ''}
@@ -954,7 +962,9 @@ function T20SheetBody(props: Props) {
                     ) : null}
                   </View>
                   {props.canEditPlay ? (
-                    <>
+                    <View
+                      style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 4 }}
+                    >
                       <Button
                         label={item.isEquipped ? 'Tirar' : 'Equipar'}
                         variant="ghost"
@@ -987,7 +997,7 @@ function T20SheetBody(props: Props) {
                         compact
                         onPress={() => void removeItem(item)}
                       />
-                    </>
+                    </View>
                   ) : (
                     <AppText>× {item.quantity}</AppText>
                   )}

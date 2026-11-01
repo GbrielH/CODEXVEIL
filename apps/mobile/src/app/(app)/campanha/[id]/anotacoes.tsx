@@ -4,6 +4,7 @@ import {
   getCampaign,
   listCampaignNotes,
   setCampaignNotePinned,
+  signedMediaUrls,
   updateCampaignNote,
   type CampaignNote,
 } from '@codexveil/database';
@@ -12,7 +13,7 @@ import { fieldErrorsFrom, noteSchema, type FieldErrors } from '@codexveil/valida
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Pencil, Pin, PinOff, Plus, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 import { Button, IconButton } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
@@ -58,7 +59,13 @@ export default function NotesScreen() {
     const supabase = getSupabase();
     const campaign = await getCampaign(supabase, id, userId);
     if (!campaign) return null;
-    return { campaign, notes: await listCampaignNotes(supabase, campaign.id) };
+    const notes = await listCampaignNotes(supabase, campaign.id);
+    // Imagens das anotações (feitas no site): endereços assinados para mostrar no app.
+    const images = await signedMediaUrls(
+      supabase,
+      notes.map((note) => note.imagePath),
+    );
+    return { campaign, notes, images };
   }, `${id}:${userId}`);
 
   if (loading) return <LoadingState />;
@@ -237,6 +244,19 @@ export default function NotesScreen() {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               <AppText variant="small">por {mine ? 'você' : note.authorName}</AppText>
             </View>
+            {note.imagePath && data.images[note.imagePath] ? (
+              <Image
+                source={{ uri: data.images[note.imagePath] }}
+                accessibilityLabel={`Imagem da anotação ${note.title}`}
+                resizeMode="contain"
+                style={{
+                  width: '100%',
+                  aspectRatio: 4 / 3,
+                  borderRadius: 10,
+                  backgroundColor: colors.sunken,
+                }}
+              />
+            ) : null}
             {note.body ? <AppText variant="serif">{note.body}</AppText> : null}
           </Card>
         );

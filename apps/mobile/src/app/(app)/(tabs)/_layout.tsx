@@ -14,16 +14,16 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: colors.raised,
           borderTopColor: colors.line,
-          height: 72,
-          paddingTop: 6,
-          paddingBottom: 10,
+          height: 64,
+          paddingTop: 8,
+          paddingBottom: 8,
         },
         tabBarActiveBackgroundColor: 'rgba(107, 59, 198, 0.28)',
         tabBarItemStyle: { borderRadius: 14, marginHorizontal: 3, paddingVertical: 2 },
         tabBarActiveTintColor: colors.fgAccent,
         tabBarInactiveTintColor: colors.fgMuted,
-        // Ícone com o nome embaixo (curto, cabe em telas estreitas).
-        tabBarShowLabel: true,
+        // Só ícones (os nomes cortavam em telas estreitas; o leitor de tela anuncia o título).
+        tabBarShowLabel: false,
         tabBarLabelStyle: { fontFamily: fonts.sansMedium, fontSize: 10, marginTop: 2 },
         tabBarAllowFontScaling: false,
         sceneStyle: { backgroundColor: colors.canvas },
