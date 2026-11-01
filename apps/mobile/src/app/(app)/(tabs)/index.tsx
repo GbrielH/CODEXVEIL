@@ -13,7 +13,6 @@ import { CalendarClock, Dices, Mail, ScrollText, Sparkles, Swords } from 'lucide
 import { Image, View, type ImageSourcePropType } from 'react-native';
 import { CampaignCoverCard } from '@/components/campaign-cover-card';
 import { CharacterAvatar } from '@/components/character-avatar';
-import { openTomo } from '@/components/tavern/tavern';
 import {
   HeroCard,
   IconBubble,
@@ -126,7 +125,7 @@ export default function DashboardScreen() {
             primary
             icon={<Sparkles size={16} color={colors.primaryFg} />}
             label="Falar com o Tomo"
-            onPress={openTomo}
+            onPress={() => router.push('/tomo')}
           />
         </View>
       </View>

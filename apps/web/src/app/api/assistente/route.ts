@@ -1,11 +1,10 @@
 import { GoogleGenAI } from '@google/genai';
-import { characterAccessInput, getCampaign, getCharacter, listCampaignCharacters, listSessions } from '@codexveil/database';
+import { characterAccessInput, getCampaign, getCharacter, listCampaignCharacters, listSessions, type CodexveilClient } from '@codexveil/database';
 import { canEditCharacterPlayState } from '@codexveil/domain';
 import { uuidSchema } from '@codexveil/validation';
 import { z } from 'zod';
-import { getSessionUser } from '@/lib/auth';
+import { corsHeaders, sessionFrom } from '@/lib/api-session';
 import { assistantEnabled } from '@/lib/env';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { tomoActionsPrompt } from '@/lib/tomo-actions';
 
 /**
@@ -61,8 +60,11 @@ function clip(text: string, max: number): string {
  * Contexto da tela atual: campanha e/ou personagem pela rota, lidos com o RLS da pessoa, e as
  * ações que o Tomo pode propor a ela ali (para o mestre, também a lista de sessões).
  */
-async function buildContext(pathname: string, userId: string): Promise<string> {
-  const supabase = await createSupabaseServerClient();
+async function buildContext(
+  supabase: CodexveilClient,
+  pathname: string,
+  userId: string,
+): Promise<string> {
   const lines = [`Página atual: ${pathname}`];
   let campaignRole: 'gm' | 'player' | null = null;
   let systemId: string | null = null;
@@ -105,12 +107,21 @@ async function buildContext(pathname: string, userId: string): Promise<string> {
 }
 
 const text = (body: string, status: number) =>
-  new Response(body, { status, headers: { 'content-type': 'text/plain; charset=utf-8' } });
+  new Response(body, {
+    status,
+    headers: { 'content-type': 'text/plain; charset=utf-8', ...corsHeaders },
+  });
+
+/** Pré-voo do navegador (app aberto no navegador chamando o site). */
+export function OPTIONS(): Response {
+  return new Response(null, { status: 204, headers: corsHeaders });
+}
 
 export async function POST(request: Request): Promise<Response> {
   if (!assistantEnabled()) return text('O assistente ainda não foi configurado.', 503);
-  const user = await getSessionUser();
-  if (!user) return text('Entre na sua conta para usar o assistente.', 401);
+  const session = await sessionFrom(request);
+  if (!session) return text('Entre na sua conta para usar o assistente.', 401);
+  const user = { id: session.userId };
 
   const parsed = requestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return text('Pergunta inválida.', 400);
@@ -119,7 +130,7 @@ export async function POST(request: Request): Promise<Response> {
   if (last?.role !== 'user') return text('Pergunta inválida.', 400);
   if (last.content.length > MAX_QUESTION) return text(`A pergunta pode ter até ${MAX_QUESTION} caracteres.`, 400);
 
-  const context = await buildContext(pathname, user.id);
+  const context = await buildContext(session.supabase, pathname, user.id);
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   const contents = messages.map((message, index) => ({
     role: message.role === 'assistant' ? 'model' : 'user',
@@ -179,6 +190,7 @@ export async function POST(request: Request): Promise<Response> {
     headers: {
       'content-type': 'text/plain; charset=utf-8',
       'cache-control': 'no-store',
+      ...corsHeaders,
     },
   });
 }

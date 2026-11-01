@@ -2,12 +2,8 @@ import { GoogleGenAI } from '@google/genai';
 import { getCampaign, listTavernMessages, postTomoReply } from '@codexveil/database';
 import { uuidSchema } from '@codexveil/validation';
 import { z } from 'zod';
-import { createClient } from '@supabase/supabase-js';
-import type { CodexveilClient, Database } from '@codexveil/database';
-import { getSessionUser } from '@/lib/auth';
-import { supabaseConfig } from '@/lib/env';
 import { assistantEnabled } from '@/lib/env';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { sessionFrom } from '@/lib/api-session';
 
 /**
  * "@tomo" na Taverna: o Tomo lê as últimas mensagens da conversa (com o RLS de quem chamou) e
@@ -27,21 +23,6 @@ const requestSchema = z.object({
 });
 
 const text = (body: string, status: number) => new Response(body, { status, headers: { 'content-type': 'text/plain; charset=utf-8' } });
-
-/** Site: sessão pelos cookies. App: `Authorization: Bearer <token>` (o RLS vale do mesmo jeito). */
-async function sessionFrom(request: Request): Promise<{ supabase: CodexveilClient; userId: string } | null> {
-  const bearer = /^Bearer (.+)$/i.exec(request.headers.get('authorization') ?? '')?.[1];
-  if (bearer && supabaseConfig.ok) {
-    const supabase = createClient<Database>(supabaseConfig.config.url, supabaseConfig.config.publishableKey, {
-      global: { headers: { Authorization: `Bearer ${bearer}` } },
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data } = await supabase.auth.getUser(bearer);
-    return data.user ? { supabase, userId: data.user.id } : null;
-  }
-  const user = await getSessionUser();
-  return user ? { supabase: await createSupabaseServerClient(), userId: user.id } : null;
-}
 
 export async function POST(request: Request): Promise<Response> {
   if (!assistantEnabled()) return text('O Tomo ainda não foi configurado.', 503);

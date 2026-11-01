@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { LayoutDashboard, Library, ScrollText, Swords, UserRound } from 'lucide-react-native';
+import { LayoutDashboard, Sparkles, ScrollText, Swords, UserRound } from 'lucide-react-native';
 import { colors, fonts } from '@/lib/theme';
 
 /** Navegação principal: abas inferiores com alvos de toque grandes. */
@@ -51,10 +51,10 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="comunidade"
+        name="tomo"
         options={{
-          title: 'Sistemas',
-          tabBarIcon: ({ color, size }) => <Library color={color} size={size} />,
+          title: 'Tomo',
+          tabBarIcon: ({ color, size }) => <Sparkles color={color} size={size} />,
         }}
       />
       <Tabs.Screen
