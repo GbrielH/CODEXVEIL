@@ -1,5 +1,6 @@
 // Cada peso é importado do próprio arquivo: importar o índice do pacote embutiria todos
 // os pesos da família no app (vários MB a mais no APK).
+import { Platform } from 'react-native';
 import { Alegreya_400Regular } from '@expo-google-fonts/alegreya/400Regular';
 import { Alegreya_400Regular_Italic } from '@expo-google-fonts/alegreya/400Regular_Italic';
 import { Cinzel_600SemiBold } from '@expo-google-fonts/cinzel/600SemiBold';
@@ -35,7 +36,8 @@ function RootNavigator() {
 
   return (
     <>
-      {signedIn && userId ? <PushBridge userId={userId} /> : null}
+      {/* Notificações só existem no aparelho (no navegador a API nativa não existe). */}
+      {signedIn && userId && Platform.OS !== 'web' ? <PushBridge userId={userId} /> : null}
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.raised },
