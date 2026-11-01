@@ -17,6 +17,7 @@ import { signOutAction } from '@/app/(auth)/actions';
 import { Emblem, Wordmark } from '@/components/brand/emblem';
 import { EmberField } from '@/components/brand/ember-field';
 import { Avatar } from '@/components/ui/avatar';
+import { callsEnabled } from '@/lib/env';
 import { routes } from '@/lib/routes';
 import { TavernCard, TavernHost } from '@/components/tavern/tavern';
 import { CallInviteListener } from './call-invite-listener';
@@ -112,6 +113,8 @@ export function AppShell({
   motion,
   children,
 }: AppShellProps) {
+  // Call ainda em teste: some do menu enquanto a chave estiver desligada.
+  const items = callsEnabled() ? navItems : navItems.filter((item) => item.href !== routes.call);
   return (
     <ShellFrame motion={motion}>
       <EmberField />
@@ -129,7 +132,7 @@ export function AppShell({
           aria-label="Navegação principal"
           className="flex flex-1 flex-col gap-1 px-3 group-data-[collapsed=true]/shell:px-2"
         >
-          {navItems.map((item) => (
+          {items.map((item) => (
             <NavLink key={item.href} {...item} variant="sidebar" />
           ))}
         </nav>
@@ -168,7 +171,7 @@ export function AppShell({
       </aside>
 
       <TavernHost />
-      <CallInviteListener />
+      {callsEnabled() ? <CallInviteListener /> : null}
       <div className="flex min-h-dvh min-w-0 flex-col">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-canvas/90 px-4 backdrop-blur lg:hidden">
           <Link
@@ -201,7 +204,7 @@ export function AppShell({
           aria-label="Navegação principal"
           className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-raised/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
         >
-          {navItems.map((item) => (
+          {items.map((item) => (
             <NavLink key={item.href} {...item} variant="bottom" />
           ))}
         </nav>

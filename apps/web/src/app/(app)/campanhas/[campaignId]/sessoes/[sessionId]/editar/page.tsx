@@ -1,3 +1,4 @@
+import { callsEnabled } from '@/lib/env';
 import {
   getBoard,
   listBoards,
@@ -49,7 +50,7 @@ export default async function SessionEditorPage({
 
   const editorPath = `${sessionPath(campaign.id, session.id)}/editar`;
   const onBoard = query.aba === 'quadro';
-  const onTranscript = query.aba === 'transcricao';
+  const onTranscript = callsEnabled() && query.aba === 'transcricao';
   const tabClass =
     'rounded-full border border-line px-4 py-1.5 text-sm text-fg-secondary hover:bg-hover aria-[current=page]:border-fg-brand aria-[current=page]:bg-hover aria-[current=page]:text-fg';
   const tabs = (
@@ -68,13 +69,15 @@ export default async function SessionEditorPage({
       >
         Quadro
       </Link>
-      <Link
-        href={`${editorPath}?aba=transcricao` as Route}
-        aria-current={onTranscript ? 'page' : undefined}
-        className={tabClass}
-      >
-        Transcrição
-      </Link>
+      {callsEnabled() ? (
+        <Link
+          href={`${editorPath}?aba=transcricao` as Route}
+          aria-current={onTranscript ? 'page' : undefined}
+          className={tabClass}
+        >
+          Transcrição
+        </Link>
+      ) : null}
     </nav>
   );
   const back = (

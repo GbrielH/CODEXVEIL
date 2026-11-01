@@ -14,3 +14,6 @@ export function setupCallMedia() {
     // APK antigo, sem o módulo: a call avisa ao abrir.
   }
 }
+
+/** Call, transcrição e Momentos ainda em teste: escondidos até `EXPO_PUBLIC_CALLS_ENABLED=1`. */
+export const callsEnabled = process.env.EXPO_PUBLIC_CALLS_ENABLED === '1';

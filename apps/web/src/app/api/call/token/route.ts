@@ -3,7 +3,7 @@ import { uuidSchema } from '@codexveil/validation';
 import { AccessToken } from 'livekit-server-sdk';
 import { z } from 'zod';
 import { corsHeaders, sessionFrom } from '@/lib/api-session';
-import { livekitConfig } from '@/lib/env';
+import { callsEnabled, livekitConfig } from '@/lib/env';
 
 export const runtime = 'nodejs';
 
@@ -25,6 +25,7 @@ export function OPTIONS(): Response {
  * na sala de espera recebe `waiting` e tenta de novo quando for aprovado.
  */
 export async function POST(request: Request): Promise<Response> {
+  if (!callsEnabled()) return json({ error: 'A call ainda não está liberada.' }, 404);
   const config = livekitConfig();
   if (!config) return json({ error: 'A call ainda não foi configurada no servidor.' }, 503);
   const session = await sessionFrom(request);

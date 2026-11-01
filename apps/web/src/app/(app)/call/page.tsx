@@ -1,3 +1,5 @@
+import { callsEnabled } from '@/lib/env';
+import { notFound } from 'next/navigation';
 import { listMyCallInvites, listMyCallRooms, listMyCampaigns } from '@codexveil/database';
 import { Video } from 'lucide-react';
 import type { Metadata, Route } from 'next';
@@ -13,6 +15,7 @@ export const metadata: Metadata = { title: 'Call' };
 
 /** Aba Call: criar sala (com link e código), entrar por código e as salas e convites recentes. */
 export default async function CallPage() {
+  if (!callsEnabled()) notFound();
   const user = await requireSessionUser(routes.call);
   const supabase = await createSupabaseServerClient();
   const [campaigns, rooms, invites] = await Promise.all([

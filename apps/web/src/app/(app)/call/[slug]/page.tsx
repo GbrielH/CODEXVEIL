@@ -1,3 +1,4 @@
+import { callsEnabled } from '@/lib/env';
 import { findCallRoom, getCallRoom, listFriends } from '@codexveil/database';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -10,6 +11,7 @@ export const metadata: Metadata = { title: 'Call' };
 
 /** Sala de call pelo link: entra (ou aguarda aprovação) e abre a chamada. */
 export default async function CallRoomPage({ params }: PageProps<'/call/[slug]'>) {
+  if (!callsEnabled()) notFound();
   const { slug } = await params;
   const user = await requireSessionUser(callPath(slug));
   const supabase = await createSupabaseServerClient();

@@ -1,3 +1,4 @@
+import { callsEnabled } from '@/lib/env';
 import {
   listSessionBlocks,
   resolveBlockReferences,
@@ -46,7 +47,9 @@ export default async function SessionReaderPage({
   ]);
   const isGm = campaign.role === 'gm';
   const canManage = isGm && campaign.status === 'active';
-  const moments = await loadSessionHighlights(supabase, campaign.id, session.id, isGm);
+  const moments = callsEnabled()
+    ? await loadSessionHighlights(supabase, campaign.id, session.id, isGm)
+    : null;
 
   return (
     <article className="flex flex-col gap-6">
@@ -134,14 +137,16 @@ export default async function SessionReaderPage({
           ))}
         </div>
       )}
-      <SessionHighlights
-        campaignId={campaign.id}
-        sessionId={session.id}
-        highlights={moments.highlights}
-        characters={moments.characters}
-        transcript={moments.transcript}
-        canManage={canManage}
-      />
+      {moments ? (
+        <SessionHighlights
+          campaignId={campaign.id}
+          sessionId={session.id}
+          highlights={moments.highlights}
+          characters={moments.characters}
+          transcript={moments.transcript}
+          canManage={canManage}
+        />
+      ) : null}
     </article>
   );
 }

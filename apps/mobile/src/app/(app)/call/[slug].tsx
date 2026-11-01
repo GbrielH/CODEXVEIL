@@ -16,6 +16,7 @@ import { ErrorState, LoadingState } from '@/components/ui/states';
 import { useToast } from '@/components/ui/toast';
 import { useAsyncData, useRealtimeRefresh } from '@/lib/hooks';
 import { useUserId } from '@/lib/session';
+import { callsEnabled } from '@/lib/livekit';
 import { getSupabase, siteUrl } from '@/lib/supabase';
 import { colors, spacing } from '@/lib/theme';
 
@@ -87,6 +88,7 @@ export default function CallRoomScreen() {
     router.back();
   };
 
+  if (!callsEnabled) return <ErrorState message="A call ainda não está liberada." />;
   if (room.loading) return <LoadingState label="Abrindo a sala…" />;
   if (!room.data) return <ErrorState message="Sala não encontrada." />;
   if (Platform.OS === 'web')

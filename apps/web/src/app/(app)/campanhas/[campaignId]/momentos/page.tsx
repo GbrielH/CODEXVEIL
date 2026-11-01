@@ -1,3 +1,5 @@
+import { callsEnabled } from '@/lib/env';
+import { notFound } from 'next/navigation';
 import {
   listCampaignCharacters,
   listCampaignHighlights,
@@ -16,6 +18,7 @@ export const metadata: Metadata = { title: 'Melhores Momentos' };
 export default async function CampaignMomentsPage({
   params,
 }: PageProps<'/campanhas/[campaignId]/momentos'>) {
+  if (!callsEnabled()) notFound();
   const { campaignId } = await params;
   const { campaign } = await loadCampaignOrNotFound(campaignId);
   const supabase = await createSupabaseServerClient();

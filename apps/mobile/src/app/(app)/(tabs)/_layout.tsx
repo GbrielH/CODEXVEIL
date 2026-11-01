@@ -1,4 +1,5 @@
 import { Tabs } from 'expo-router';
+import { callsEnabled } from '@/lib/livekit';
 import {
   LayoutDashboard,
   Sparkles,
@@ -60,6 +61,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="call"
         options={{
+          // Em teste: fora da barra até a chave ser ligada.
+          href: callsEnabled ? undefined : null,
           title: 'Call',
           tabBarIcon: ({ color, size }) => <Video color={color} size={size} />,
         }}

@@ -46,3 +46,11 @@ export function livekitConfig(): { url: string; apiKey: string; apiSecret: strin
   const apiSecret = process.env.LIVEKIT_API_SECRET?.trim();
   return url && apiKey && apiSecret ? { url, apiKey, apiSecret } : null;
 }
+
+/**
+ * Call, transcrição e Melhores Momentos ainda em teste: ficam escondidos até `CALLS_ENABLED=1`
+ * na Vercel (padrão: desligado em produção).
+ */
+export function callsEnabled(): boolean {
+  return process.env.CALLS_ENABLED?.trim() === '1';
+}

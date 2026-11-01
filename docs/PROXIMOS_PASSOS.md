@@ -240,6 +240,13 @@ mapa e notas lado a lado).
       em todas as telas que abre o chat. Grupos = campanhas ativas e amigos (conversa direta).
       Mensagens somem em 24 h (o banco esconde e apaga as vencidas a cada mensagem nova).
 
+### B0h. Call, transcrição e Melhores Momentos (2026-11-01, em andamento)
+
+Código das três fases pronto e escondido (chaves desligadas). Próximo: chaves do LiveKit na
+Vercel, aplicar as migrações `20261101110000` e `20261101120000`, testar num ambiente de teste,
+gerar o APK com a transcrição do celular e só então ligar em produção. Detalhes em
+[call-transcricao-momentos.md](call-transcricao-momentos.md#onde-parou-2026-11-01).
+
 ### B0g. Habilidades automáticas (2026-10-27)
 
 **Tormenta20** (em andamento):

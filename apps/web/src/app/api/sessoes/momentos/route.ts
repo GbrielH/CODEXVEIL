@@ -12,7 +12,7 @@ import { summarizeSheet } from '@codexveil/rpg-systems';
 import { highlightsResponseSchema, uuidSchema } from '@codexveil/validation';
 import { z } from 'zod';
 import { sessionFrom } from '@/lib/api-session';
-import { assistantEnabled } from '@/lib/env';
+import { assistantEnabled, callsEnabled } from '@/lib/env';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -34,6 +34,8 @@ const json = (body: unknown, status = 200) =>
  * prompt de imagem. Substitui os momentos da IA desta sessão; os criados à mão ficam.
  */
 export async function POST(request: Request): Promise<Response> {
+  if (!callsEnabled())
+    return json({ error: 'Os Melhores Momentos ainda não estão liberados.' }, 404);
   if (!assistantEnabled())
     return json({ error: 'A IA ainda não foi configurada no servidor.' }, 503);
   const session = await sessionFrom(request);

@@ -89,6 +89,17 @@ compartilhar; (3) "?" dos pontos do T20; (4) Tomo no app (chat e ditado).
 - Behind the Magic: aguardando as respostas do Will.
 - Nada desta rodada foi verificado no navegador ou no aparelho (exige login).
 
+### 2026-11-01 — Call, transcrição e Melhores Momentos (em andamento, escondidos)
+
+Três fases feitas no código, só com opções grátis (LiveKit no plano gratuito, transcrição no
+próprio aparelho, Gemini gratuito e prompts de imagem no lugar de gerar imagens). **Não liberado
+em produção** a pedido do responsável: fica atrás de `CALLS_ENABLED` / `EXPO_PUBLIC_CALLS_ENABLED`
+(desligadas). Onde parou e os próximos passos: [call-transcricao-momentos.md](call-transcricao-momentos.md#onde-parou-2026-11-01).
+
+Também em 2026-11-01: app com aba Tomo (no lugar de Sistemas), Taverna com menu lateral, limpar
+conversa do Tomo (site e app), dados 3D caindo pela tela no app (APK novo), painel do app enxuto,
+abas só com ícones, montanha no carregamento, imagens das anotações, aba Itens corrigida.
+
 ### 2026-10-31 e 2026-11-01 — regras, app em paridade e ferramentas do mestre
 
 Feito (site e app, verificado por tipos, lint, testes, pacote do app e CI; não conferido no aparelho):
