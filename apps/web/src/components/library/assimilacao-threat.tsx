@@ -19,6 +19,7 @@ import { TextareaField, TextField } from '@/components/ui/field';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { useDraftState } from '@/lib/use-draft-state';
 
 function Faces({ dice }: { dice: RolledDie[] }) {
   const total = sumFaces(dice.map((die) => die.result));
@@ -117,7 +118,11 @@ export function AssimilacaoThreatEditor({
 }) {
   const router = useRouter();
   const { toast } = useToast();
-  const [stats, setStats] = useState(initial);
+  // Rascunho guardado na aba até salvar (o celular pode recarregar a página no meio).
+  const [stats, setStats, clearDraft, draftRestored] = useDraftState(
+    `criatura:${creatureId}:assimilacao`,
+    initial,
+  );
   const [busy, setBusy] = useState(false);
   const save = async () => {
     const parsed = assimilacaoStatBlockSchema.safeParse(stats);
@@ -136,6 +141,7 @@ export function AssimilacaoThreatEditor({
         notes: gm.notes,
         secrets: gm.secrets,
       });
+      clearDraft();
       toast({ tone: 'success', title: 'Ameaça salva.' });
       router.refresh();
     } catch (error) {
@@ -155,6 +161,11 @@ export function AssimilacaoThreatEditor({
         title="Editar Ameaça"
         description="Use {A}, {B}, {C}… nos textos para mostrar os ícones."
       />
+      {draftRestored ? (
+        <p className="mb-3 rounded-md border border-arcane-400/40 bg-arcane-900/30 px-3 py-2 text-sm text-fg-secondary">
+          Recuperamos o que você tinha preenchido e ainda não salvou. Confira e salve.
+        </p>
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-2">
         <TextField
           id="threat-name"

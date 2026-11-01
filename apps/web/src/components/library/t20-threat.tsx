@@ -16,6 +16,7 @@ import { TextField, TextareaField } from '@/components/ui/field';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { useDraftState } from '@/lib/use-draft-state';
 
 /** Ficha de ameaça do Tormenta20 (leitura). Com `only`, só as partes que o mestre liberou. */
 export function T20ThreatView({
@@ -110,10 +111,19 @@ export function T20ThreatEditor({
 }) {
   const router = useRouter();
   const { toast } = useToast();
-  const [form, setForm] = useState(stats);
-  const [abilitiesText, setAbilitiesText] = useState(
-    stats.abilities.map((ability) => `${ability.name}. ${ability.text}`).join('\n\n'),
-  );
+  // Rascunho guardado na aba até salvar (o celular pode recarregar a página no meio).
+  const [draft, setDraft, clearDraft, draftRestored] = useDraftState(`criatura:${creatureId}:t20`, {
+    form: stats,
+    abilitiesText: stats.abilities.map((ability) => `${ability.name}. ${ability.text}`).join('\n\n'),
+  });
+  const form = draft.form;
+  const abilitiesText = draft.abilitiesText;
+  const setForm = (next: T20StatBlock | ((current: T20StatBlock) => T20StatBlock)) =>
+    setDraft((current) => ({
+      ...current,
+      form: typeof next === 'function' ? next(current.form) : next,
+    }));
+  const setAbilitiesText = (next: string) => setDraft((current) => ({ ...current, abilitiesText: next }));
   const [busy, setBusy] = useState(false);
   const set = (patch: Partial<T20StatBlock>) => setForm((current) => ({ ...current, ...patch }));
   const number = (value: string) =>
@@ -147,6 +157,7 @@ export function T20ThreatEditor({
         notes: gm.notes,
         secrets: gm.secrets,
       });
+      clearDraft();
       toast({ tone: 'success', title: 'Estatísticas salvas.' });
       router.refresh();
     } catch (error) {
@@ -166,6 +177,11 @@ export function T20ThreatEditor({
         title="Ficha da ameaça · Tormenta20"
         description="Defesa, PV e iniciativa entram na cena e no combate."
       />
+      {draftRestored ? (
+        <p className="mb-3 rounded-md border border-arcane-400/40 bg-arcane-900/30 px-3 py-2 text-sm text-fg-secondary">
+          Recuperamos o que você tinha preenchido e ainda não salvou. Confira e salve.
+        </p>
+      ) : null}
       <div className="grid gap-3 rounded-2xl border border-line bg-gradient-to-b from-wine-950/40 to-charcoal-900 p-4 sm:grid-cols-2">
         <TextField
           id="t20-type"

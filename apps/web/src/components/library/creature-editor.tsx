@@ -44,6 +44,7 @@ import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
 import { prepareImage } from '@/lib/images';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { useDraftState } from '@/lib/use-draft-state';
 import { StatBlockView } from './stat-block-view';
 
 interface CreatureEditorProps {
@@ -108,7 +109,8 @@ function ProfileCard({
   const { toast } = useToast();
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState({
+  // Rascunho guardado na aba: escolher a imagem no celular pode recarregar a página.
+  const [form, setForm, clearFormDraft] = useDraftState(`criatura:${creature.id}:perfil`, {
     name: creature.name,
     subtitle: creature.subtitle,
     description: creature.description,
@@ -134,6 +136,7 @@ function ProfileCard({
     setBusy(true);
     try {
       await updateCreature(getSupabaseBrowserClient(), creature.id, parsed.data);
+      clearFormDraft();
       toast({ tone: 'success', title: 'Perfil salvo.' });
       router.refresh();
     } catch (error) {
@@ -360,14 +363,21 @@ function GmDataCard({
   const router = useRouter();
   const { toast } = useToast();
   const id = useId();
-  const [notes, setNotes] = useState(gm.notes);
-  const [secrets, setSecrets] = useState(gm.secrets);
-  const [stats, setStats] = useState<Dnd5eStatBlock | null>(statBlock);
+  const [draft, setDraft, clearDraft, draftRestored] = useDraftState(`criatura:${creatureId}:mestre`, {
+    notes: gm.notes,
+    secrets: gm.secrets,
+    stats: statBlock,
+  });
+  const { notes, secrets, stats } = draft;
+  const setNotes = (next: string) => setDraft((current) => ({ ...current, notes: next }));
+  const setSecrets = (next: string) => setDraft((current) => ({ ...current, secrets: next }));
   const [errors, setErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
 
   const set = (patch: Partial<Dnd5eStatBlock>) =>
-    setStats((current) => (current ? { ...current, ...patch } : current));
+    setDraft((current) =>
+      current.stats ? { ...current, stats: { ...current.stats, ...patch } } : current,
+    );
 
   const save = async () => {
     const texts = creatureGmDataSchema.safeParse({ notes, secrets });
@@ -389,6 +399,7 @@ function GmDataCard({
         secrets: texts.data.secrets,
         stats: parsedStats?.success ? parsedStats.data : {},
       });
+      clearDraft();
       toast({ tone: 'success', title: 'Dados do mestre salvos.' });
       router.refresh();
     } catch (error) {
@@ -417,6 +428,11 @@ function GmDataCard({
           void save();
         }}
       >
+{draftRestored ? (
+          <Alert tone="info">
+            Recuperamos o que você tinha preenchido e ainda não salvou. Confira e salve.
+          </Alert>
+        ) : null}
         <TextareaField
           id={`${id}-secrets`}
           label="Segredos"
