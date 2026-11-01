@@ -3,6 +3,7 @@ import { createCharacter } from '@codexveil/database';
 import {
   T20_ATTRIBUTES,
   T20_POINT_BUY_BUDGET,
+  T20_POINT_BUY_COST,
   T20_POINT_BUY_MAX,
   T20_POINT_BUY_MIN,
   T20_SKILLS,
@@ -118,6 +119,7 @@ export function T20MobileWizard({
   );
   const content = useMemo(() => buildT20Content(selectedSources), [selectedSources]);
   const [step, setStep] = useState<T20Step>('inicio');
+  const [costHelp, setCostHelp] = useState(false);
   const [attempted, setAttempted] = useState<Set<T20Step>>(new Set());
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -375,6 +377,29 @@ export function T20MobileWizard({
               <AppText>
                 Pontos: {t20PointsSpent(draft.points)} de {T20_POINT_BUY_BUDGET}
               </AppText>
+              {/* "?" do custo: a tabela do livro (o custo sobe com o valor). */}
+              <Pressable
+                onPress={() => setCostHelp((open) => !open)}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: costHelp }}
+              >
+                <AppText variant="small" style={{ color: colors.fgAccent }}>
+                  {costHelp ? 'Esconder a tabela de custos' : '? Quanto custa cada valor'}
+                </AppText>
+              </Pressable>
+              {costHelp ? (
+                <View style={{ gap: 2 }}>
+                  <AppText variant="small">
+                    O custo sobe com o valor (regra do Tormenta20): de +2 para +3 custa 2 pontos, e
+                    de +3 para +4 custa 3. O –1 devolve 1 ponto.
+                  </AppText>
+                  {[-1, 0, 1, 2, 3, 4].map((value) => (
+                    <AppText key={value} variant="small">
+                      {formatT20Bonus(value)}: {T20_POINT_BUY_COST[value] ?? 0} ponto(s) no total
+                    </AppText>
+                  ))}
+                </View>
+              ) : null}
               {T20_ATTRIBUTES.map((key) => (
                 <View key={key} style={styles.row}>
                   <AppText style={{ flex: 1 }}>{t20AttributeLabels[key].name}</AppText>

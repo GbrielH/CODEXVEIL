@@ -1,20 +1,10 @@
 'use client';
 
+import { diceSkinPrompt } from '@codexveil/domain';
 import { Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { CopyButton } from '@/components/ui/copy-button';
-
-/** Instruções fixas: a imagem precisa servir de textura quadrada para a face do dado 3D. */
-const BASE_PROMPT = `Crie uma textura quadrada (1:1, 1024 × 1024 px) para ser aplicada nas faces de um dado de RPG 3D.
-Regras:
-- Padrão contínuo que preencha a imagem inteira, sem bordas, molduras, sombras externas ou fundo branco.
-- Nada de números, letras, logotipos ou marcas d'água: os números do dado são colocados depois.
-- Contraste médio no centro, para que um número por cima continue legível.
-- Visual de material (pedra, metal, cristal, osso, tecido, energia…) visto de frente, sem perspectiva e sem mostrar o dado inteiro.
-- Estilo de fantasia sombria, rico em detalhes, alta resolução.
-
-Descrição da skin que eu quero:`;
 
 /**
  * Prompt para gerar a skin do dado numa IA de imagens. A descrição da pessoa vai junto do
@@ -23,10 +13,7 @@ Descrição da skin que eu quero:`;
 export function SkinPrompt({ context }: { context?: string }) {
   const [description, setDescription] = useState('');
   const text = description.trim();
-  // Para um personagem, o prompt já leva quem ele é (a skin combina com o personagem).
-  const prompt = `${BASE_PROMPT}\n${text || '[descreva aqui a skin que você quer]'}${
-    context ? `\n\nO dado é de um personagem de RPG; combine o visual com ele:\n${context}` : ''
-  }`;
+  const prompt = diceSkinPrompt(description, context);
   return (
     <div className="flex flex-col gap-3">
       <Alert tone="warning">

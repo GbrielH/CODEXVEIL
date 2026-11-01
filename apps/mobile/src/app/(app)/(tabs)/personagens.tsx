@@ -1,7 +1,9 @@
-import { listMyCharacters, signedMediaUrls } from '@codexveil/database';
+import { listCharactersSharedWithMe, listMyCharacters, signedMediaUrls } from '@codexveil/database';
 import { summarizeSheet } from '@codexveil/rpg-systems';
 import { useRouter } from 'expo-router';
-import { Plus, Swords } from 'lucide-react-native';
+import { Plus, Share2, Swords } from 'lucide-react-native';
+import { SectionHeader } from '@/components/ui/layout';
+import { ListRow } from '@/components/ui/list-row';
 import { CharacterCoverCard } from '@/components/character-cover-card';
 import { Button } from '@/components/ui/button';
 import { Screen } from '@/components/ui/screen';
@@ -16,15 +18,21 @@ export default function CharactersScreen() {
   const router = useRouter();
   const { data, error, loading, refreshing, reload } = useAsyncData(async () => {
     const supabase = getSupabase();
-    const characters = await listMyCharacters(supabase, userId);
+    const [characters, shared] = await Promise.all([
+      listMyCharacters(supabase, userId),
+      listCharactersSharedWithMe(supabase, userId).catch(() => []),
+    ]);
     const portraits = await signedMediaUrls(
       supabase,
       characters.map((character) => character.portraitPath),
     );
-    return characters.map((character) => ({
-      character,
-      portraitUrl: character.portraitPath ? (portraits[character.portraitPath] ?? null) : null,
-    }));
+    return {
+      shared,
+      mine: characters.map((character) => ({
+        character,
+        portraitUrl: character.portraitPath ? (portraits[character.portraitPath] ?? null) : null,
+      })),
+    };
   }, userId);
 
   if (loading) return <LoadingState />;
@@ -42,14 +50,14 @@ export default function CharactersScreen() {
         onPress={() => router.push('/personagem/novo')}
       />
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
-      {data && data.length === 0 ? (
+      {data && data.mine.length === 0 ? (
         <EmptyState
           icon={<Swords size={28} color={colors.fgSecondary} />}
           title="Nenhum personagem ainda"
           description="Crie seu primeiro personagem. Você pode vinculá-lo a uma campanha depois."
         />
       ) : null}
-      {data?.map(({ character, portraitUrl }) => (
+      {data?.mine.map(({ character, portraitUrl }) => (
         <CharacterCoverCard
           key={character.id}
           name={character.name}
@@ -63,6 +71,24 @@ export default function CharactersScreen() {
           }
         />
       ))}
+      {data?.shared.length ? (
+        <>
+          <SectionHeader
+            icon={<Share2 size={14} color={colors.fgAccent} />}
+            title="Compartilhados comigo"
+          />
+          {data.shared.map((character) => (
+            <ListRow
+              key={character.id}
+              title={character.name}
+              subtitle={`De ${character.ownerName} · só leitura`}
+              onPress={() =>
+                router.push({ pathname: '/personagem/[id]', params: { id: character.id } })
+              }
+            />
+          ))}
+        </>
+      ) : null}
     </Screen>
   );
 }

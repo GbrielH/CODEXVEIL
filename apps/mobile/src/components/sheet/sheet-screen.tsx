@@ -25,7 +25,7 @@ import {
   parseDnd5eSheet,
   type Dnd5eSheet,
 } from '@codexveil/rpg-systems/dnd5e';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Image, View } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { ImageUploadButtons } from '@/components/ui/image-upload';
@@ -73,6 +73,8 @@ interface SheetScreenProps {
   /** Retrato assinado (URL temporária) e recarga após trocá-lo. */
   portraitUrl: string | null;
   onReload: () => void;
+  /** Parte comum da aba Personagem (respostas, prompts, dado, compartilhar). */
+  extras?: ReactNode;
 }
 
 export function SheetScreen(props: SheetScreenProps) {
@@ -416,6 +418,7 @@ export function SheetScreen(props: SheetScreenProps) {
             />
           ) : null}
           {tab === 'personagem' ? <StorySection /> : null}
+          {tab === 'personagem' ? props.extras : null}
           {tab === 'evolucao' ? (
             <EvolutionSection
               characterName={character.name}

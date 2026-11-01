@@ -57,7 +57,7 @@ import {
   type T20RestQuality,
   type T20Sheet,
 } from '@codexveil/rpg-systems/tormenta20';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Image, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { CheckRow } from '@/components/ui/controls';
@@ -82,7 +82,7 @@ import { failureMessage } from '@/lib/errors';
 import { getSupabase } from '@/lib/supabase';
 import { colors, fonts, palette, spacing } from '@/lib/theme';
 
-type Tab = 'jogo' | 'pericias' | 'poderes' | 'itens' | 'evolucao';
+type Tab = 'jogo' | 'pericias' | 'poderes' | 'itens' | 'evolucao' | 'personagem';
 
 interface Props {
   character: { id: string; name: string; version: number };
@@ -94,6 +94,8 @@ interface Props {
   canEditSheet: boolean;
   canEditPlay: boolean;
   sources: T20ContentSource[];
+  /** Parte comum da aba Personagem (respostas, prompts, dado, compartilhar). */
+  extras?: ReactNode;
   /** Campanha: o mestre libera o nível e o jogador escolhe as melhorias. */
   gate: LevelGateInfo;
   /** Campanha do personagem (turno e registro de uso), ou `null`. */
@@ -443,8 +445,10 @@ function T20SheetBody(props: Props) {
           { value: 'poderes', label: 'Poderes' },
           { value: 'itens', label: 'Itens' },
           { value: 'evolucao', label: 'Evolução' },
+          { value: 'personagem', label: 'Personagem' },
         ]}
       />
+      {tab === 'personagem' ? props.extras : null}
 
       {tab === 'evolucao' ? (
         <Card>

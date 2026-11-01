@@ -26,6 +26,7 @@ import { useAsyncData } from '@/lib/hooks';
 import { useUserId } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase';
 import { GhostAura, isDown } from '@/components/ghost-aura';
+import { CharacterExtras } from '@/components/characters/character-extras';
 
 export default function CharacterScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -108,6 +109,23 @@ export default function CharacterScreen() {
           canEditSheet={canEditCharacterSheet(access)}
           canEditPlay={canEditCharacterPlayState(access)}
           sources={data.assimBooks}
+          extras={
+            <CharacterExtras
+              characterId={data.character.id}
+              campaignId={data.character.campaign?.id ?? null}
+              isOwner={data.character.viewer.isOwner}
+              imageInput={{
+                system: 'Assimilação RPG (pós-apocalipse com mutações)',
+                name: data.character.name,
+                species: 'Humano Infectado',
+                className: assimSheet.origins.occupation,
+                age: assimSheet.identity.age,
+                appearance: assimSheet.identity.appearance,
+                personality: assimSheet.identity.personality,
+                backstory: assimSheet.identity.backstory,
+              }}
+            />
+          }
         />
         <GhostAura active={isDown(data.resources)} />
       </>
@@ -151,6 +169,23 @@ export default function CharacterScreen() {
           canEditSheet={canEditCharacterSheet(t20Access)}
           canEditPlay={canEditCharacterPlayState(t20Access)}
           sources={data.t20Books}
+          extras={
+            <CharacterExtras
+              characterId={data.character.id}
+              campaignId={data.character.campaign?.id ?? null}
+              isOwner={data.character.viewer.isOwner}
+              imageInput={{
+                system: 'Tormenta20',
+                name: data.character.name,
+                species: t20Sheet.identity.race,
+                className: t20Sheet.identity.classes.map((entry) => entry.name).join(' / '),
+                age: t20Sheet.identity.age,
+                appearance: t20Sheet.identity.appearance,
+                personality: t20Sheet.identity.personality,
+                backstory: t20Sheet.identity.history,
+              }}
+            />
+          }
         />
         <GhostAura active={isDown(data.resources)} />
       </>
@@ -197,8 +232,27 @@ export default function CharacterScreen() {
         }
         portraitUrl={data.portraitUrl}
         onReload={reload}
+        extras={
+          <CharacterExtras
+            characterId={data.character.id}
+            campaignId={data.character.campaign?.id ?? null}
+            isOwner={data.character.viewer.isOwner}
+            imageInput={{
+              system: 'D&D 5e',
+              name: data.character.name,
+              species: sheet.identity.species,
+              className: sheet.identity.classes[0]?.name ?? '',
+              background: sheet.identity.background,
+              alignment: sheet.identity.alignment,
+              age: sheet.details.age,
+              appearance: sheet.details.appearance,
+              personality: sheet.details.personality,
+              backstory: sheet.details.backstory,
+            }}
+          />
+        }
       />
-        <GhostAura active={isDown(data.resources)} />
+      <GhostAura active={isDown(data.resources)} />
     </>
   );
 }

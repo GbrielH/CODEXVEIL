@@ -146,6 +146,24 @@ export function StorySection() {
       </Card>
       <Card>
         <AppText variant="heading">Crônica</AppText>
+        <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+          {(['height', 'age'] as const).map((key) => (
+            <View key={key} style={{ flex: 1 }}>
+              <Field
+                label={key === 'height' ? 'Altura' : 'Idade'}
+                value={sheet.details[key]}
+                editable={canEditSheet}
+                maxLength={40}
+                onChangeText={(text) =>
+                  updateSheet((current) => ({
+                    ...current,
+                    details: { ...current.details, [key]: text },
+                  }))
+                }
+              />
+            </View>
+          ))}
+        </View>
         {detailFields.map((field) => (
           <LongField
             key={field.key}

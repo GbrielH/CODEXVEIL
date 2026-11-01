@@ -29,7 +29,8 @@ import {
   type Practice,
   type RolledDie,
 } from '@codexveil/rpg-systems/assimilacao';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { Droplet } from 'lucide-react-native';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { AssimSymbol, withAssimSymbols } from '@/components/assimilacao/symbols';
@@ -53,6 +54,8 @@ interface Props {
   canEditSheet: boolean;
   canEditPlay: boolean;
   sources: readonly AssimilacaoMobileSource[];
+  /** Parte comum da aba (respostas, prompts, dado, compartilhar). */
+  extras?: ReactNode;
 }
 
 export function AssimilacaoMobileSheet(props: Props) {
@@ -95,6 +98,7 @@ function Body({
   canEditSheet,
   canEditPlay,
   sources,
+  extras,
 }: Props) {
   const toast = useToast();
   const dice = useDice();
@@ -249,6 +253,21 @@ function Body({
       ),
     [sources],
   );
+  const bookCharacteristics = useMemo(
+    () =>
+      sources
+        .flatMap((source) =>
+          source.entries.flatMap((entry) => {
+            if (entry.kind !== 'characteristic') return [];
+            const data = safeAssimilacaoBookEntryData('characteristic', entry.data);
+            return data ? [{ name: entry.name, cost: data.cost, text: data.text }] : [];
+          }),
+        )
+        .sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name, 'pt-BR')),
+    [sources],
+  );
+  const [charQuery, setCharQuery] = useState('');
+  const availableXp = Math.max(0, sheet.experience.total - sheet.experience.spent);
   const [newAssim, setNewAssim] = useState('');
   const [newChar, setNewChar] = useState('');
 
@@ -304,17 +323,24 @@ function Body({
               <AppText>
                 Determinação {tug.determinationLevel} · Assimilação {tug.assimilationLevel}
               </AppText>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  height: 10,
-                  borderRadius: radii.full,
-                  overflow: 'hidden',
-                  backgroundColor: colors.sunken,
-                }}
-              >
-                <View style={{ flex: tug.determinationLevel, backgroundColor: '#f59e0b' }} />
-                <View style={{ flex: tug.assimilationLevel, backgroundColor: '#8b5cf6' }} />
+              <View style={{ flexDirection: 'row', gap: 3 }} accessibilityRole="progressbar">
+                {Array.from({ length: 10 }, (_, index) => {
+                  const det = index < tug.determinationLevel;
+                  return (
+                    <View
+                      key={index}
+                      style={{
+                        flex: 1,
+                        height: 14,
+                        borderRadius: 3,
+                        borderWidth: 2,
+                        borderColor: det ? '#b03a48' : '#3fa3a0',
+                        backgroundColor: det ? 'rgba(140,40,52,0.35)' : 'rgba(40,120,120,0.35)',
+                        transform: [{ skewX: '-12deg' }],
+                      }}
+                    />
+                  );
+                })}
               </View>
               <AppText>
                 <AssimSymbol code="d" /> Determinação: {determination?.current ?? 0}/
@@ -423,11 +449,49 @@ function Body({
                     : level === state.level
                       ? state.pointsInLevel
                       : 0;
+                const tone = level >= 5 ? '#3fa3a0' : level >= 3 ? '#e8c872' : '#e26d5a';
+                const band =
+                  level === 6
+                    ? 'Recupera a cada repouso completo'
+                    : level === 4
+                      ? 'Recupera a cada semana · −1 Sucesso nos testes'
+                      : level === 2
+                        ? 'Só com tratamento médico · −2 Sucessos nos testes'
+                        : null;
                 return (
-                  <AppText key={title} variant={level === state.level ? 'body' : 'small'}>
-                    {level} · {title}: {'■'.repeat(filled)}
-                    {'□'.repeat(state.perLevel - filled)}
-                  </AppText>
+                  <View key={title} style={{ gap: 4 }}>
+                    {band ? (
+                      <AppText variant="small" style={{ color: colors.fgMuted, marginTop: 4 }}>
+                        {band}
+                      </AppText>
+                    ) : null}
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: spacing[2],
+                        padding: 6,
+                        borderRadius: radii.md,
+                        backgroundColor: level === state.level ? colors.hover : 'transparent',
+                        opacity: level > state.level ? 0.6 : 1,
+                      }}
+                    >
+                      <AppText style={{ width: 18, color: tone }}>{level}</AppText>
+                      <AppText style={{ width: 96 }} numberOfLines={1}>
+                        {title}
+                      </AppText>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 2, flex: 1 }}>
+                        {Array.from({ length: state.perLevel }, (_, point) => (
+                          <Droplet
+                            key={point}
+                            size={14}
+                            color={point < filled ? tone : colors.fgMuted}
+                            fill={point < filled ? tone : 'transparent'}
+                          />
+                        ))}
+                      </View>
+                    </View>
+                  </View>
                 );
               })}
               <AppText variant="small">
@@ -659,13 +723,62 @@ function Body({
                           characteristics: sheet.characteristics.filter(
                             (_, position) => position !== index,
                           ),
+                          // Devolve o XP gasto na Característica.
+                          experience: {
+                            ...sheet.experience,
+                            spent: Math.max(0, sheet.experience.spent - entry.cost),
+                          },
                         })
                       }
                     />
                   ) : null}
                 </View>
               ))}
-              {canEditSheet ? (
+              {canEditSheet && bookCharacteristics.length ? (
+                <View style={{ gap: spacing[2] }}>
+                  <AppText variant="small">
+                    Adquirir do livro ({availableXp} XP disponíveis). As que custam mais ficam
+                    bloqueadas.
+                  </AppText>
+                  <Field
+                    label="Buscar Característica"
+                    value={charQuery}
+                    onChangeText={setCharQuery}
+                    maxLength={60}
+                  />
+                  {bookCharacteristics
+                    .filter((item) =>
+                      item.name.toLowerCase().includes(charQuery.trim().toLowerCase()),
+                    )
+                    .slice(0, 30)
+                    .map((item) => {
+                      const owned = sheet.characteristics.some((entry) => entry.name === item.name);
+                      const short = item.cost > availableXp;
+                      return (
+                        <Button
+                          key={item.name}
+                          label={`${item.name} · ${owned ? 'adquirida' : `${item.cost} XP`}`}
+                          variant="secondary"
+                          compact
+                          disabled={owned || short}
+                          onPress={() =>
+                            void save({
+                              ...sheet,
+                              characteristics: [
+                                ...sheet.characteristics,
+                                { name: item.name, cost: item.cost, notes: item.text },
+                              ],
+                              experience: {
+                                ...sheet.experience,
+                                spent: sheet.experience.spent + item.cost,
+                              },
+                            })
+                          }
+                        />
+                      );
+                    })}
+                </View>
+              ) : canEditSheet ? (
                 <>
                   <Field
                     label="Nova Característica"
@@ -727,8 +840,30 @@ function Body({
                         'Pressões',
                       )}
                     </View>
-                    {card?.levels.map((level) => (
-                      <AppText key={level.name} variant="small">
+                    {card && card.levels.length > 1 && canEditSheet ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+                        <AppText>Nível adquirido</AppText>
+                        {counter(
+                          entry.level,
+                          1,
+                          card.levels.length,
+                          (next) =>
+                            void save({
+                              ...sheet,
+                              assimilations: sheet.assimilations.map((item, position) =>
+                                position === index ? { ...item, level: next } : item,
+                              ),
+                            }),
+                          'Nível',
+                        )}
+                      </View>
+                    ) : null}
+                    {card?.levels.map((level, levelIndex) => (
+                      <AppText
+                        key={level.name}
+                        variant="small"
+                        style={levelIndex < entry.level ? { color: colors.fg } : { opacity: 0.5 }}
+                      >
                         {(['A', 'B', 'C'] as const).flatMap((code) =>
                           Array.from({ length: level.cost[code] }, (_, i) => (
                             <AssimSymbol key={`${code}${i}`} code={code} />
@@ -809,6 +944,7 @@ function Body({
           </>
         ) : null}
 
+        {tab === 'historia' ? extras : null}
         {tab === 'historia' ? (
           <Card>
             {(['appearance', 'personality', 'backstory'] as const).map((field) => (
