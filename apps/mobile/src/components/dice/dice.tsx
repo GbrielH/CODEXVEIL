@@ -10,8 +10,16 @@ import {
   type DiceRollResult,
 } from '@codexveil/domain';
 import { ChevronDown, ChevronUp, Dices } from 'lucide-react-native';
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+import { Platform, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 import { Button } from '@/components/ui/button';
 import { CheckRow, Chip, ChipRow } from '@/components/ui/controls';
@@ -21,6 +29,7 @@ import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/errors';
 import { getSupabase } from '@/lib/supabase';
 import { colors, radii, spacing } from '@/lib/theme';
+import { Dice3DThrow, loadDiceAppearance, type DiceAppearance } from './dice-3d';
 import { DiceThrow } from './dice-throw';
 import { describeRoll, rollHeadline } from '@/lib/roll-display';
 
@@ -65,6 +74,19 @@ export function DiceProvider({
   const toast = useToast();
   const [throwing, setThrowing] = useState<(ShownRoll & { key: number }) | null>(null);
   const clearThrow = useCallback(() => setThrowing(null), []);
+  // Aparência dos dados (dado do personagem ou o padrão de "Meus dados"), lida uma vez.
+  const [look, setLook] = useState<DiceAppearance | null>(null);
+  useEffect(() => {
+    let active = true;
+    loadDiceAppearance(characterId)
+      .then((next) => {
+        if (active) setLook(next);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [characterId]);
   const roll = useCallback(
     async (request: RollRequest): Promise<ShownRoll | null> => {
       const mode = request.mode ?? 'normal';
@@ -110,7 +132,14 @@ export function DiceProvider({
   return (
     <DiceContext.Provider value={value}>
       {children}
-      {throwing ? <DiceThrow key={throwing.key} roll={throwing} onDone={clearThrow} /> : null}
+      {throwing ? (
+        // Dados 3D caindo pela tela no aparelho; no navegador (desenvolvimento), a animação 2D.
+        Platform.OS === 'web' ? (
+          <DiceThrow key={throwing.key} roll={throwing} onDone={clearThrow} />
+        ) : (
+          <Dice3DThrow key={throwing.key} roll={throwing} look={look} onDone={clearThrow} />
+        )
+      ) : null}
     </DiceContext.Provider>
   );
 }
