@@ -208,7 +208,7 @@ function ProfileCard({
         <p className="text-sm text-fg-muted">
           {creature.imageUrl ? 'Imagem atual do registro.' : 'Sem imagem ainda.'} Use “
           {creature.imagePath ? 'Trocar imagem' : 'Enviar imagem'}” abaixo (PNG, JPEG ou WebP; a
-          imagem é reduzida antes do envio).
+          imagem é reduzida antes do envio). Ela também vira o token no mapa da sessão.
         </p>
       </div>
       <form
