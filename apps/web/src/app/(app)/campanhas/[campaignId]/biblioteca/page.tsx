@@ -1,16 +1,23 @@
-import { listCreatures, signedMediaUrls, type CreatureSummary } from '@codexveil/database';
+import {
+  listCreatures,
+  listNpcCharacterCandidates,
+  signedMediaUrls,
+  type CreatureSummary,
+} from '@codexveil/database';
 import { ZoomableImage } from '@/components/ui/zoomable-image';
 import { creatureKindLabels } from '@codexveil/validation';
 import { BookOpen, EyeOff, Skull, UserRound } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { LibraryNav } from '@/components/library/library-nav';
+import { NpcSheets } from '@/components/library/npc-sheets';
 import { VisibilityToggle } from '@/components/library/visibility-toggle';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Notice } from '@/components/ui/notice';
 import { EmptyState } from '@/components/ui/states';
 import { loadCampaignOrNotFound } from '@/lib/campaigns';
+import { requireSessionUser } from '@/lib/auth';
 import { campaignPath } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { NewCreatureForm } from './new-creature-form';
@@ -91,6 +98,15 @@ export default async function LibraryPage({
   );
   const isGm = campaign.role === 'gm';
   const canManage = isGm && campaign.status === 'active';
+  // NPCs com ficha de jogador (fichas pessoais do mestre guardadas nesta campanha).
+  const npcSheets = canManage
+    ? await listNpcCharacterCandidates(
+        supabase,
+        (await requireSessionUser(campaignPath(campaign.id, '/biblioteca'))).id,
+        campaign.id,
+        campaign.systemId,
+      ).catch(() => [])
+    : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -135,7 +151,7 @@ export default async function LibraryPage({
           )}
         </section>
         {canManage ? (
-          <aside>
+          <aside className="flex flex-col gap-6">
             <Card ornate>
               <CardHeader
                 title="Novo registro"
@@ -145,6 +161,17 @@ export default async function LibraryPage({
                 campaignId={campaign.id}
                 systemId={campaign.systemId}
                 defaultKind={kind ?? 'npc'}
+              />
+            </Card>
+            <Card>
+              <CardHeader
+                title="NPCs com ficha de jogador"
+                description="Fichas completas que sobem de nível como as dos jogadores. Só você vê."
+              />
+              <NpcSheets
+                campaignId={campaign.id}
+                systemId={campaign.systemId}
+                characters={npcSheets}
               />
             </Card>
           </aside>

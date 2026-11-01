@@ -1,13 +1,16 @@
 'use client';
 
 import { TOKEN_SIZES, tokenSizeLabels, tokenSizeSquares, type TokenSize } from '@codexveil/domain';
-import { Skull, UserRound } from 'lucide-react';
+import { ScrollText, Skull, UserRound } from 'lucide-react';
+import type { Route } from 'next';
+import Link from 'next/link';
 import { useActionState, useState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { CheckboxField } from '@/components/ui/field';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { idleFormState } from '@/lib/actions';
 import { cx } from '@/lib/cx';
+import { routes } from '@/lib/routes';
 import { createCreatureAction } from './actions';
 
 /**
@@ -31,6 +34,9 @@ export function NewCreatureForm({
   const [kind, setKind] = useState<'npc' | 'monster'>(
     (state.values?.kind as 'npc' | 'monster' | undefined) ?? defaultKind,
   );
+  // NPC: ficha básica (registro da biblioteca) ou completa (assistente de personagem, sobe de nível).
+  const [sheet, setSheet] = useState<'basic' | 'full'>('basic');
+  const fullSheet = kind === 'npc' && sheet === 'full';
   const [size, setSize] = useState<TokenSize | ''>(
     (state.values?.size as TokenSize | undefined) ?? '',
   );
@@ -72,79 +78,126 @@ export function NewCreatureForm({
         ))}
       </div>
 
-      {/* Nome em destaque, como no cabeçalho da ficha. */}
-      <label className="flex flex-col gap-1">
-        <span className="text-[0.65rem] font-semibold tracking-[0.2em] text-wine-300 uppercase">
-          Nome *
-        </span>
-        <input
-          name="name"
-          required
-          maxLength={80}
-          defaultValue={state.values?.name}
-          placeholder={kind === 'npc' ? 'Ex.: Velha Morgana' : 'Ex.: Ogro das Cavernas'}
-          className="w-full rounded-md border border-transparent bg-transparent px-1 font-display text-3xl leading-tight text-fg placeholder:text-fg-muted/50 hover:border-line focus-visible:border-parchment-300 focus-visible:outline-none"
-        />
-        {state.fieldErrors?.name ? (
-          <span className="text-xs text-danger">{state.fieldErrors.name}</span>
-        ) : null}
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-[0.65rem] font-semibold tracking-[0.2em] text-fg-muted uppercase">
-          Descrição curta
-        </span>
-        <input
-          name="subtitle"
-          maxLength={80}
-          defaultValue={state.values?.subtitle}
-          placeholder="Ex.: Taverneiro de Brumafria"
-          className="w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-fg-secondary focus-visible:border-parchment-300 focus-visible:outline-none"
-        />
-      </label>
-
-      {/* Tamanho em blocos (define o token na grade). */}
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-[0.65rem] font-semibold tracking-[0.2em] text-fg-muted uppercase">
-          Tamanho *
-        </legend>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-          {TOKEN_SIZES.map((option) => (
+      {kind === 'npc' ? (
+        <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Ficha do NPC">
+          {(
+            [
+              ['basic', 'Ficha básica', 'Estatísticas de ameaça'],
+              ['full', 'Ficha completa', 'Estilo jogador, sobe de nível'],
+            ] as const
+          ).map(([key, label, hint]) => (
             <button
-              key={option}
+              key={key}
               type="button"
-              aria-pressed={size === option}
-              onClick={() => setSize(option)}
+              role="radio"
+              aria-checked={sheet === key}
+              onClick={() => setSheet(key)}
               className={cx(
-                'flex flex-col items-center gap-0.5 rounded-xl border p-2 text-center transition-colors',
-                size === option
+                'flex flex-col items-center gap-0.5 rounded-xl border px-2 py-2 text-center transition-colors',
+                sheet === key
                   ? 'border-parchment-300 bg-wine-900/60 text-fg-accent'
-                  : 'border-parchment-400/30 bg-canvas/60 text-fg-secondary hover:bg-hover',
+                  : 'border-line text-fg-secondary hover:bg-hover',
               )}
             >
-              <span className="text-sm font-medium">{sizeLabels[option]}</span>
-              <span className="text-[0.65rem] text-fg-muted">
-                {tokenSizeSquares[option]}×{tokenSizeSquares[option]}
-              </span>
+              <span className="text-sm font-medium">{label}</span>
+              <span className="text-[0.65rem] text-fg-muted">{hint}</span>
             </button>
           ))}
         </div>
-        <span className="text-xs text-fg-muted">
-          Define o token na grade da sessão (cada quadrado = 1,5 m).
-        </span>
-        {state.fieldErrors?.size ? (
-          <span className="text-xs text-danger">{state.fieldErrors.size}</span>
-        ) : null}
-      </fieldset>
+      ) : null}
 
-      <CheckboxField
-        id="revealed"
-        name="revealed"
-        label="Revelar aos jogadores"
-        description="Jogadores veem apenas nome, descrição e imagem. Estatísticas e segredos nunca são enviados a eles."
-      />
-      <div>
-        <SubmitButton pendingLabel="Criando…">Criar e abrir a ficha</SubmitButton>
-      </div>
+      {fullSheet ? (
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-fg-secondary">
+            A ficha completa é criada pelo mesmo passo a passo dos jogadores e evolui como a deles.
+            Depois de criar, guarde-a em “NPCs com ficha de jogador”, aqui na biblioteca. Só você vê
+            essas fichas.
+          </p>
+          <Link
+            href={`${routes.newCharacter}?sistema=${systemId}` as Route}
+            className="flex items-center justify-center gap-2 rounded-md bg-wine-700 px-4 py-2.5 text-sm font-medium text-parchment-50 transition-colors hover:bg-wine-600"
+          >
+            <ScrollText className="h-4 w-4" aria-hidden="true" />
+            Criar ficha completa
+          </Link>
+        </div>
+      ) : (
+        <>
+          {/* Nome em destaque, como no cabeçalho da ficha. */}
+          <label className="flex flex-col gap-1">
+            <span className="text-[0.65rem] font-semibold tracking-[0.2em] text-wine-300 uppercase">
+              Nome *
+            </span>
+            <input
+              name="name"
+              required
+              maxLength={80}
+              defaultValue={state.values?.name}
+              placeholder={kind === 'npc' ? 'Ex.: Velha Morgana' : 'Ex.: Ogro das Cavernas'}
+              className="w-full rounded-md border border-transparent bg-transparent px-1 font-display text-3xl leading-tight text-fg placeholder:text-fg-muted/50 hover:border-line focus-visible:border-parchment-300 focus-visible:outline-none"
+            />
+            {state.fieldErrors?.name ? (
+              <span className="text-xs text-danger">{state.fieldErrors.name}</span>
+            ) : null}
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[0.65rem] font-semibold tracking-[0.2em] text-fg-muted uppercase">
+              Descrição curta
+            </span>
+            <input
+              name="subtitle"
+              maxLength={80}
+              defaultValue={state.values?.subtitle}
+              placeholder="Ex.: Taverneiro de Brumafria"
+              className="w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-fg-secondary focus-visible:border-parchment-300 focus-visible:outline-none"
+            />
+          </label>
+
+          {/* Tamanho em blocos (define o token na grade). */}
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1 text-[0.65rem] font-semibold tracking-[0.2em] text-fg-muted uppercase">
+              Tamanho *
+            </legend>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+              {TOKEN_SIZES.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={size === option}
+                  onClick={() => setSize(option)}
+                  className={cx(
+                    'flex flex-col items-center gap-0.5 rounded-xl border p-2 text-center transition-colors',
+                    size === option
+                      ? 'border-parchment-300 bg-wine-900/60 text-fg-accent'
+                      : 'border-parchment-400/30 bg-canvas/60 text-fg-secondary hover:bg-hover',
+                  )}
+                >
+                  <span className="text-sm font-medium">{sizeLabels[option]}</span>
+                  <span className="text-[0.65rem] text-fg-muted">
+                    {tokenSizeSquares[option]}×{tokenSizeSquares[option]}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <span className="text-xs text-fg-muted">
+              Define o token na grade da sessão (cada quadrado = 1,5 m).
+            </span>
+            {state.fieldErrors?.size ? (
+              <span className="text-xs text-danger">{state.fieldErrors.size}</span>
+            ) : null}
+          </fieldset>
+
+          <CheckboxField
+            id="revealed"
+            name="revealed"
+            label="Revelar aos jogadores"
+            description="Jogadores veem apenas nome, descrição e imagem. Estatísticas e segredos nunca são enviados a eles."
+          />
+          <div>
+            <SubmitButton pendingLabel="Criando…">Criar e abrir a ficha</SubmitButton>
+          </div>
+        </>
+      )}
     </form>
   );
 }

@@ -1152,3 +1152,51 @@ export async function listPartyFaces(
     diceId: row.dice_id,
   }));
 }
+
+export interface NpcCharacterItem {
+  id: string;
+  name: string;
+  portraitPath: string | null;
+  npcCampaignId: string | null;
+}
+
+/**
+ * Fichas pessoais do usuário no sistema da campanha: as já guardadas como NPC nela e as livres
+ * para guardar. Fichas de NPC continuam fora do grupo, então só o dono (o mestre) as vê.
+ */
+export async function listNpcCharacterCandidates(
+  client: CodexveilClient,
+  userId: string,
+  campaignId: string,
+  systemId: string,
+): Promise<NpcCharacterItem[]> {
+  const { data, error } = await client
+    .from('characters')
+    .select('id, name, portrait_path, npc_campaign_id')
+    .eq('owner_id', userId)
+    .eq('system_id', systemId)
+    .is('campaign_id', null)
+    .or(`npc_campaign_id.is.null,npc_campaign_id.eq.${campaignId}`)
+    .order('name');
+  if (error) throw toAppError(error);
+  return data.map((row) => ({
+    id: row.id,
+    name: row.name,
+    portraitPath: row.portrait_path,
+    npcCampaignId: row.npc_campaign_id,
+  }));
+}
+
+/** Guarda a ficha como NPC da campanha (ou tira, com `null`). Somente o dono, mestre dela. */
+export async function setCharacterNpcCampaign(
+  client: CodexveilClient,
+  characterId: string,
+  campaignId: string | null,
+): Promise<void> {
+  const { error } = await client.rpc('set_character_npc_campaign', {
+    p_character_id: characterId,
+    // A função aceita NULL para tirar; o gerador de tipos não expressa isso.
+    p_campaign_id: campaignId as string,
+  });
+  if (error) throw toAppError(error);
+}

@@ -1283,6 +1283,7 @@ export type Database = {
           id: string;
           live_updated_at: string;
           name: string;
+          npc_campaign_id: string | null;
           owner_id: string;
           portrait_path: string | null;
           sheet: Json;
@@ -1299,6 +1300,7 @@ export type Database = {
           id?: string;
           live_updated_at?: string;
           name: string;
+          npc_campaign_id?: string | null;
           owner_id?: string;
           portrait_path?: string | null;
           sheet?: Json;
@@ -1315,6 +1317,7 @@ export type Database = {
           id?: string;
           live_updated_at?: string;
           name?: string;
+          npc_campaign_id?: string | null;
           owner_id?: string;
           portrait_path?: string | null;
           sheet?: Json;
@@ -3130,6 +3133,13 @@ export type Database = {
         Args: {
           p_character_id: string;
           p_dice_id: string;
+        };
+        Returns: undefined;
+      };
+      set_character_npc_campaign: {
+        Args: {
+          p_campaign_id: string;
+          p_character_id: string;
         };
         Returns: undefined;
       };
