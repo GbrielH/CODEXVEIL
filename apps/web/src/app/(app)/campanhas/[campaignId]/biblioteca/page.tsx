@@ -6,7 +6,7 @@ import {
 } from '@codexveil/database';
 import { ZoomableImage } from '@/components/ui/zoomable-image';
 import { creatureKindLabels } from '@codexveil/validation';
-import { BookOpen, EyeOff, Skull, UserRound } from 'lucide-react';
+import { BookOpen, EyeOff, Search, Skull, UserRound } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { LibraryNav } from '@/components/library/library-nav';
@@ -92,7 +92,15 @@ export default async function LibraryPage({
   const { campaign } = await loadCampaignOrNotFound(campaignId);
   const kind = query.tipo === 'monstros' ? 'monster' : query.tipo === 'npcs' ? 'npc' : undefined;
   const supabase = await createSupabaseServerClient();
-  const creatures = await listCreatures(supabase, campaign.id, kind);
+  // Busca por nome (a biblioteca do mestre acumula muitos registros).
+  const search = typeof query.busca === 'string' ? query.busca.trim() : '';
+  const term = search.toLocaleLowerCase('pt-BR');
+  const creatures = (await listCreatures(supabase, campaign.id, kind)).filter(
+    (creature) =>
+      !term ||
+      creature.name.toLocaleLowerCase('pt-BR').includes(term) ||
+      creature.subtitle.toLocaleLowerCase('pt-BR').includes(term),
+  );
   const images = await signedMediaUrls(
     supabase,
     creatures.map((creature) => creature.imagePath),
@@ -121,6 +129,23 @@ export default async function LibraryPage({
             isGm={isGm}
             systemId={campaign.systemId}
           />
+          <form role="search" className="relative">
+            {kind ? (
+              <input type="hidden" name="tipo" value={kind === 'monster' ? 'monstros' : 'npcs'} />
+            ) : null}
+            <Search
+              className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-fg-muted"
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              name="busca"
+              defaultValue={search}
+              placeholder="Buscar NPCs e monstros pelo nome"
+              aria-label="Buscar NPCs e monstros"
+              className="h-10 w-full rounded-md border border-line bg-sunken pr-3 pl-9 text-sm text-fg placeholder:text-fg-muted focus:border-fg-brand focus:outline-none"
+            />
+          </form>
           {!isGm ? (
             <p className="text-sm text-fg-muted">
               Personagens e criaturas que o mestre já revelou ao grupo.
@@ -129,11 +154,13 @@ export default async function LibraryPage({
           {creatures.length === 0 && npcSheets.length === 0 ? (
             <EmptyState
               icon={<BookOpen className="h-8 w-8" aria-hidden="true" />}
-              title={isGm ? 'Biblioteca vazia' : 'Nada revelado ainda'}
+              title={search ? 'Nada encontrado' : isGm ? 'Biblioteca vazia' : 'Nada revelado ainda'}
               description={
-                isGm
-                  ? 'Cadastre NPCs e monstros uma vez e reutilize-os em qualquer sessão, sem precisar recriá-los.'
-                  : 'Quando o mestre revelar NPCs ou criaturas, eles aparecerão aqui.'
+                search
+                  ? `Nenhum registro com “${search}”.`
+                  : isGm
+                    ? 'Cadastre NPCs e monstros uma vez e reutilize-os em qualquer sessão, sem precisar recriá-los.'
+                    : 'Quando o mestre revelar NPCs ou criaturas, eles aparecerão aqui.'
               }
             />
           ) : (

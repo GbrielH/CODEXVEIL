@@ -1,4 +1,4 @@
-import { listCampaignCharacters, listCreatures, listSessions } from '@codexveil/database';
+import { listCampaignCharacters, listCreatures, listNpcCharacterCandidates, listSessions } from '@codexveil/database';
 import type { Metadata, Route } from 'next';
 import { DiceProvider } from '@/components/dice/dice-roller';
 import { MapManager } from '@/components/map/map-manager';
@@ -21,10 +21,11 @@ export default async function MapTabPage({ params }: PageProps<'/campanhas/[camp
   const { user, campaign } = await loadCampaignOrNotFound(campaignId);
   const supabase = await createSupabaseServerClient();
   const isGm = campaign.role === 'gm';
-  const [all, party, creatures] = await Promise.all([
+  const [all, party, creatures, npcSheets] = await Promise.all([
     listSessions(supabase, campaign.id),
     listCampaignCharacters(supabase, campaign.id),
     isGm ? listCreatures(supabase, campaign.id) : Promise.resolve([]),
+    isGm ? listNpcCharacterCandidates(supabase, user.id, campaign.id, campaign.systemId).catch(() => []) : Promise.resolve([]),
   ]);
   const sessions = isGm ? all : all.filter((session) => session.isPublished);
   const current = sessions.find((session) => session.status === 'in_progress') ?? null;
@@ -41,6 +42,7 @@ export default async function MapTabPage({ params }: PageProps<'/campanhas/[camp
         systemId={campaign.systemId}
         characters={party.map((character) => ({ id: character.id, name: character.name }))}
         creatures={creatures.map((creature) => ({ id: creature.id, name: creature.name, size: creature.size }))}
+        npcs={npcSheets.filter((npc) => npc.npcCampaignId === campaign.id).map((npc) => ({ id: npc.id, name: npc.name }))}
         canManage={campaign.status === 'active'}
       />
     ) : (

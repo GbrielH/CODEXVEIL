@@ -2525,6 +2525,33 @@ export type Database = {
           },
         ];
       };
+      session_cast: {
+        Row: {
+          campaign_id: string;
+          character_id: string | null;
+          created_at: string;
+          creature_id: string | null;
+          id: string;
+          session_id: string;
+        };
+        Insert: {
+          campaign_id: string;
+          character_id?: string | null;
+          created_at?: string;
+          creature_id?: string | null;
+          id?: string;
+          session_id: string;
+        };
+        Update: {
+          campaign_id?: string;
+          character_id?: string | null;
+          created_at?: string;
+          creature_id?: string | null;
+          id?: string;
+          session_id?: string;
+        };
+        Relationships: [];
+      };
       sessions: {
         Row: {
           campaign_id: string;

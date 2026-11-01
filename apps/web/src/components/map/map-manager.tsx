@@ -74,6 +74,7 @@ import { failureMessage } from '@/lib/client-errors';
 import { prepareImage } from '@/lib/images';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
+import { MobPicker } from './mob-picker';
 import { CELL, MapBoard, type MapTool } from './map-board';
 import { useBoardViewport } from './use-board-viewport';
 import { useMapData } from './use-map-data';
@@ -103,6 +104,8 @@ interface MapManagerProps {
   systemId: string;
   characters: MapCharacter[];
   creatures: MapCreature[];
+  /** NPCs com ficha completa (fichas do mestre guardadas na biblioteca). */
+  npcs?: MapCharacter[];
   /** Campanha ativa (arquivada: só leitura). */
   canManage: boolean;
 }
@@ -136,7 +139,7 @@ const DEFAULT_REVEAL_RADIUS = 6;
  * ativa o mapa para os jogadores, coloca tokens (personagens, criaturas, marcadores), pinta a
  * névoa de guerra e desenha paredes para a linha de visão opcional.
  */
-export function MapManager({ campaignId, sessions, sessionId, systemId, characters, creatures, canManage }: MapManagerProps) {
+export function MapManager({ campaignId, sessions, sessionId, systemId, characters, creatures, npcs = [], canManage }: MapManagerProps) {
   const { toast } = useToast();
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -1271,27 +1274,21 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                       </Button>
                     ))}
                   </div>
-                  {creatures.length === 0 ? (
-                    <p className="text-xs text-fg-muted">Sem criaturas na biblioteca: crie monstros e NPCs na aba Biblioteca para colocá-los aqui.</p>
-                  ) : null}
-                  {creatures.length ? (
-                    <SelectField
-                      id={`${id}-criatura`}
-                      label="Criatura da biblioteca"
-                      value=""
-                      onChange={(event) => {
-                        const creature = creatures.find((entry) => entry.id === event.target.value);
-                        if (creature) void addToken({ kind: 'creature', creatureId: creature.id, label: creature.name, size: creature.size });
-                      }}
-                    >
-                      <option value="">Escolha…</option>
-                      {creatures.map((creature) => (
-                        <option key={creature.id} value={creature.id}>
-                          {creature.name} · {sizeLabels[creature.size]}
-                        </option>
-                      ))}
-                    </SelectField>
-                  ) : null}
+                  <MobPicker
+                    campaignId={campaignId}
+                    sessionId={map.sessionId}
+                    mobs={[
+                      ...creatures.map((creature) => ({ kind: 'creature' as const, id: creature.id, name: creature.name, size: creature.size })),
+                      ...npcs.filter((npc) => !onMap.has(npc.id)).map((npc) => ({ kind: 'character' as const, id: npc.id, name: npc.name, size: 'medium' as const })),
+                    ]}
+                    onAdd={(mob) =>
+                      void addToken(
+                        mob.kind === 'creature'
+                          ? { kind: 'creature', creatureId: mob.id, label: mob.name, size: mob.size }
+                          : { kind: 'character', characterId: mob.id, label: mob.name, size: mob.size },
+                      )
+                    }
+                  />
                   <div className="flex items-end gap-2">
                     <TextField id={`${id}-marcador`} label="Marcador" placeholder="Ex.: Baú" maxLength={80} value={markerLabel} onChange={(event) => setMarkerLabel(event.target.value)} />
                     <Button

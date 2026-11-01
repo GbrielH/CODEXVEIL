@@ -406,3 +406,39 @@ export async function tokenSpeedSources(
     creatures: Object.fromEntries((creatures.data ?? []).map((row) => [row.creature_id, row.stats])),
   };
 }
+
+/** NPCs/monstros que o mestre separou para a sessão (o resto da biblioteca fica em "Todos"). */
+export interface SessionCast {
+  creatureIds: string[];
+  characterIds: string[];
+}
+
+export async function getSessionCast(client: CodexveilClient, sessionId: string): Promise<SessionCast> {
+  const { data, error } = await client.from('session_cast').select('creature_id, character_id').eq('session_id', sessionId);
+  if (error) throw toAppError(error);
+  return {
+    creatureIds: data.flatMap((row) => (row.creature_id ? [row.creature_id] : [])),
+    characterIds: data.flatMap((row) => (row.character_id ? [row.character_id] : [])),
+  };
+}
+
+/** Põe ou tira um NPC/monstro (ou ficha de NPC) do elenco da sessão. */
+export async function setSessionCastMember(
+  client: CodexveilClient,
+  input: { sessionId: string; campaignId: string; creatureId?: string; characterId?: string; included: boolean },
+): Promise<void> {
+  if (input.included) {
+    const { error } = await client.from('session_cast').insert({
+      session_id: input.sessionId,
+      campaign_id: input.campaignId,
+      creature_id: input.creatureId ?? null,
+      character_id: input.characterId ?? null,
+    });
+    if (error && error.code !== '23505') throw toAppError(error);
+    return;
+  }
+  let query = client.from('session_cast').delete().eq('session_id', input.sessionId);
+  query = input.creatureId ? query.eq('creature_id', input.creatureId) : query.eq('character_id', input.characterId ?? '');
+  const { error } = await query;
+  if (error) throw toAppError(error);
+}
