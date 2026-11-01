@@ -18,6 +18,7 @@ import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { useToast } from '@/components/ui/toast';
+import { TranscriptPanel } from '@/components/call/transcript-panel';
 import { useConfirm } from '@/components/ui/use-confirm';
 import { cx } from '@/lib/cx';
 import { failureMessage } from '@/lib/client-errors';
@@ -38,11 +39,13 @@ type Entry =
 export function CallRoomView({
   room,
   isOwner,
+  transcriptionEnabled,
   userId,
   friends,
 }: {
   room: CallRoomSummary;
   isOwner: boolean;
+  transcriptionEnabled: boolean;
   userId: string;
   friends: { id: string; name: string }[];
 }) {
@@ -299,6 +302,18 @@ export function CallRoomView({
               </ul>
             )}
           </Card>
+
+          <TranscriptPanel
+            roomId={room.id}
+            initialEnabled={transcriptionEnabled}
+            isOwner={isOwner}
+            canEdit={
+              isOwner ||
+              participants.some((person) => person.userId === userId && person.role === 'master')
+            }
+            inCall={entry.state === 'ready'}
+            header={{ campaign: room.campaignName, title: room.title || 'Call' }}
+          />
 
           {friends.length ? (
             <Card>

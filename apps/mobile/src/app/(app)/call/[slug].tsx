@@ -8,6 +8,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { CallStage } from '@/components/call/call-stage';
+import { CallTranscript } from '@/components/call/call-transcript';
 import { Button } from '@/components/ui/button';
 import { AppText, Card } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
@@ -109,6 +110,7 @@ export default function CallRoomScreen() {
             toast({ tone: 'danger', title: 'Problema na call', description: message })
           }
         />
+        <CallTranscript roomId={room.data.id} isOwner={isOwner} />
         {isOwner && waiting.length ? (
           <View style={{ position: 'absolute', top: 12, left: 12, right: 12, gap: spacing[2] }}>
             {waiting.map((person) => (

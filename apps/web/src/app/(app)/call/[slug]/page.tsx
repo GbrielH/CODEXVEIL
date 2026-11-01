@@ -23,6 +23,7 @@ export default async function CallRoomPage({ params }: PageProps<'/call/[slug]'>
     <CallRoomView
       room={summary}
       isOwner={room?.ownerId === user.id}
+      transcriptionEnabled={room?.transcriptionEnabled ?? false}
       userId={user.id}
       friends={friends
         .filter((friend) => friend.status === 'accepted')

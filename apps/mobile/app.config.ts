@@ -74,6 +74,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
     // Call de voz e vídeo (LiveKit/WebRTC): módulos nativos e permissões de câmera e microfone.
     '@livekit/react-native-expo-plugin',
+    // Transcrição grátis da call no próprio aparelho.
+    [
+      'expo-speech-recognition',
+      {
+        microphonePermission: 'O Codexveil usa o microfone para transcrever a sua fala na call.',
+        speechRecognitionPermission: 'O Codexveil transcreve a sua fala na call quando a gravação está ligada.',
+      },
+    ],
     [
       '@config-plugins/react-native-webrtc',
       {

@@ -298,6 +298,7 @@ export type Database = {
           slug: string;
           status: string;
           title: string;
+          transcription_enabled: boolean;
         };
         Insert: {
           access_mode?: string;
@@ -311,6 +312,7 @@ export type Database = {
           slug: string;
           status?: string;
           title?: string;
+          transcription_enabled?: boolean;
         };
         Update: {
           access_mode?: string;
@@ -324,6 +326,7 @@ export type Database = {
           slug?: string;
           status?: string;
           title?: string;
+          transcription_enabled?: boolean;
         };
         Relationships: [
           {
@@ -2389,6 +2392,77 @@ export type Database = {
           {
             foreignKeyName: 'tavern_messages_sender_id_fkey';
             columns: ['sender_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      transcript_segments: {
+        Row: {
+          character_id: string | null;
+          created_at: string;
+          ended_at: string;
+          id: string;
+          room_id: string;
+          session_id: string | null;
+          speaker_label: string;
+          speaker_type: string;
+          started_at: string;
+          text: string;
+          user_id: string;
+        };
+        Insert: {
+          character_id?: string | null;
+          created_at?: string;
+          ended_at: string;
+          id?: string;
+          room_id: string;
+          session_id?: string | null;
+          speaker_label: string;
+          speaker_type: string;
+          started_at: string;
+          text: string;
+          user_id?: string;
+        };
+        Update: {
+          character_id?: string | null;
+          created_at?: string;
+          ended_at?: string;
+          id?: string;
+          room_id?: string;
+          session_id?: string | null;
+          speaker_label?: string;
+          speaker_type?: string;
+          started_at?: string;
+          text?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'transcript_segments_character_id_fkey';
+            columns: ['character_id'];
+            isOneToOne: false;
+            referencedRelation: 'characters';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'transcript_segments_room_id_fkey';
+            columns: ['room_id'];
+            isOneToOne: false;
+            referencedRelation: 'call_rooms';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'transcript_segments_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'transcript_segments_user_id_fkey';
+            columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];

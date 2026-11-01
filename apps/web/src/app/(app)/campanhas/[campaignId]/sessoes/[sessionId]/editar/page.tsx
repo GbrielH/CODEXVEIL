@@ -7,7 +7,9 @@ import {
   listSessionBlocks,
   listSessions,
   signedMediaUrls,
+  listSessionTranscript,
 } from '@codexveil/database';
+import { SessionTranscript } from '@/components/call/session-transcript';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { BoardCanvas } from '@/components/boards/board-canvas';
@@ -47,15 +49,23 @@ export default async function SessionEditorPage({
 
   const editorPath = `${sessionPath(campaign.id, session.id)}/editar`;
   const onBoard = query.aba === 'quadro';
+  const onTranscript = query.aba === 'transcricao';
   const tabClass =
     'rounded-full border border-line px-4 py-1.5 text-sm text-fg-secondary hover:bg-hover aria-[current=page]:border-fg-brand aria-[current=page]:bg-hover aria-[current=page]:text-fg';
   const tabs = (
     <nav className="flex flex-wrap items-center gap-2" aria-label="Editor da sessão">
-      <Link href={editorPath as Route} aria-current={onBoard ? undefined : 'page'} className={tabClass}>
+      <Link href={editorPath as Route} aria-current={onBoard || onTranscript ? undefined : 'page'} className={tabClass}>
         Roteiro
       </Link>
       <Link href={`${editorPath}?aba=quadro` as Route} aria-current={onBoard ? 'page' : undefined} className={tabClass}>
         Quadro
+      </Link>
+      <Link
+        href={`${editorPath}?aba=transcricao` as Route}
+        aria-current={onTranscript ? 'page' : undefined}
+        className={tabClass}
+      >
+        Transcrição
       </Link>
     </nav>
   );
@@ -66,6 +76,20 @@ export default async function SessionEditorPage({
   );
 
   const supabase = await createSupabaseServerClient();
+
+  if (onTranscript) {
+    const segments = await listSessionTranscript(supabase, session.id).catch(() => []);
+    return (
+      <div className="flex flex-col gap-4">
+        {back}
+        {tabs}
+        <SessionTranscript
+          segments={segments}
+          header={{ campaign: campaign.name, session: `Sessão ${session.number}: ${session.title}`, title: session.title }}
+        />
+      </div>
+    );
+  }
 
   if (onBoard) {
     const boards = await listBoards(supabase, campaign.id, session.id);

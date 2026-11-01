@@ -31,6 +31,7 @@ export interface CallRoom {
   sessionId: string | null;
   accessMode: CallAccessMode;
   status: 'active' | 'ended';
+  transcriptionEnabled: boolean;
   createdAt: string;
 }
 
@@ -45,7 +46,7 @@ export interface CallParticipant {
 }
 
 const ROOM_COLUMNS =
-  'id, slug, code, title, owner_id, campaign_id, session_id, access_mode, status, created_at';
+  'id, slug, code, title, owner_id, campaign_id, session_id, access_mode, status, transcription_enabled, created_at';
 
 function toRoom(row: {
   id: string;
@@ -57,6 +58,7 @@ function toRoom(row: {
   session_id: string | null;
   access_mode: string;
   status: string;
+  transcription_enabled: boolean;
   created_at: string;
 }): CallRoom {
   return {
@@ -69,6 +71,7 @@ function toRoom(row: {
     sessionId: row.session_id,
     accessMode: row.access_mode as CallAccessMode,
     status: row.status === 'ended' ? 'ended' : 'active',
+    transcriptionEnabled: row.transcription_enabled,
     createdAt: row.created_at,
   };
 }
@@ -256,4 +259,113 @@ export async function listMyCallInvites(
       code: row.room!.code,
       createdAt: row.created_at,
     }));
+}
+
+export interface TranscriptSegment {
+  id: string;
+  roomId: string;
+  userId: string;
+  speakerType: 'player' | 'master';
+  characterId: string | null;
+  speakerLabel: string;
+  text: string;
+  startedAt: string;
+  endedAt: string;
+}
+
+const SEGMENT_COLUMNS =
+  'id, room_id, user_id, speaker_type, character_id, speaker_label, text, started_at, ended_at';
+
+function toSegment(row: {
+  id: string;
+  room_id: string;
+  user_id: string;
+  speaker_type: string;
+  character_id: string | null;
+  speaker_label: string;
+  text: string;
+  started_at: string;
+  ended_at: string;
+}): TranscriptSegment {
+  return {
+    id: row.id,
+    roomId: row.room_id,
+    userId: row.user_id,
+    speakerType: row.speaker_type === 'master' ? 'master' : 'player',
+    characterId: row.character_id,
+    speakerLabel: row.speaker_label,
+    text: row.text,
+    startedAt: row.started_at,
+    endedAt: row.ended_at,
+  };
+}
+
+/** Grava um trecho final da própria fala (o banco põe o personagem ou "Mestre"). */
+export async function saveTranscriptSegment(
+  client: CodexveilClient,
+  roomId: string,
+  speech: { text: string; startedAt: Date; endedAt: Date },
+): Promise<void> {
+  const { error } = await client.from('transcript_segments').insert({
+    room_id: roomId,
+    text: speech.text.trim().slice(0, 4000),
+    started_at: speech.startedAt.toISOString(),
+    ended_at: speech.endedAt.toISOString(),
+  } as never);
+  if (error) throw toAppError(error);
+}
+
+export async function listTranscript(
+  client: CodexveilClient,
+  roomId: string,
+): Promise<TranscriptSegment[]> {
+  const { data, error } = await client
+    .from('transcript_segments')
+    .select(SEGMENT_COLUMNS)
+    .eq('room_id', roomId)
+    .order('started_at')
+    .limit(5000);
+  if (error) throw toAppError(error);
+  return data.map(toSegment);
+}
+
+/** Transcrição de uma sessão (todas as calls vinculadas a ela). */
+export async function listSessionTranscript(
+  client: CodexveilClient,
+  sessionId: string,
+): Promise<TranscriptSegment[]> {
+  const { data, error } = await client
+    .from('transcript_segments')
+    .select(SEGMENT_COLUMNS)
+    .eq('session_id', sessionId)
+    .order('started_at')
+    .limit(5000);
+  if (error) throw toAppError(error);
+  return data.map(toSegment);
+}
+
+/** O mestre corrige o texto de um trecho (erro de reconhecimento). */
+export async function updateTranscriptSegment(
+  client: CodexveilClient,
+  id: string,
+  text: string,
+): Promise<void> {
+  const { error } = await client
+    .from('transcript_segments')
+    .update({ text: text.trim() })
+    .eq('id', id);
+  if (error) throw toAppError(error);
+}
+
+/** O dono liga ou desliga "Gravar transcrição". */
+export async function setCallTranscription(
+  client: CodexveilClient,
+  roomId: string,
+  enabled: boolean,
+): Promise<void> {
+  const { error } = await client
+    .from('call_rooms')
+    .update({ transcription_enabled: enabled })
+    .eq('id', roomId);
+  if (error) throw toAppError(error);
 }
