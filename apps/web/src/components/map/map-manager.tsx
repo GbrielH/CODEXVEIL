@@ -43,10 +43,10 @@ import {
   type WallStyle,
 } from '@codexveil/domain';
 import { IMAGE_EXTENSIONS } from '@codexveil/validation';
-import { Castle, CircleDot, Eraser, Hash, Expand, Shrink, EyeOff, ImageUp, Map as MapIcon, Minus, MousePointer2, Pencil, Plus, Radio, RotateCw, Ruler, Square, SquareDashed, StickyNote, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
+import { Castle, CircleDot, Eraser, ExternalLink, Hash, Expand, Shrink, EyeOff, ImageUp, Map as MapIcon, Minus, MousePointer2, Pencil, Plus, Radio, RotateCw, Ruler, Square, SquareDashed, StickyNote, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useConfirm } from '@/components/ui/use-confirm';
-import { Button } from '@/components/ui/button';
+import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { CheckboxField, SelectField, TextField } from '@/components/ui/field';
 import { NumberInput } from '@/components/ui/number-input';
@@ -554,6 +554,32 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
           </>
         ) : null}
       </div>
+      {canManage ? (
+        <div className="mt-3 flex flex-col gap-3 rounded-lg border border-line bg-sunken/40 p-3 text-sm sm:flex-row sm:items-start">
+          <Castle className="mt-0.5 h-5 w-5 shrink-0 text-fg-accent" aria-hidden="true" />
+          <div className="min-w-0 flex-1 text-fg-secondary">
+            <p className="font-medium text-fg">Masmorra pronta em um minuto</p>
+            <p className="mt-1">
+              Gere a masmorra no One Page Dungeon, exporte em <strong>JSON</strong> e clique em <strong>Importar masmorra</strong>. O mapa nasce pronto:
+            </p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5">
+              <li>grade do tamanho certo e paredes de pedra em volta das salas e corredores;</li>
+              <li>névoa e linha de visão já ligadas;</li>
+              <li>números das salas visíveis para todos;</li>
+              <li>legenda só para o mestre.</li>
+            </ul>
+          </div>
+          <a
+            href="https://watabou.github.io/one-page-dungeon/"
+            target="_blank"
+            rel="noreferrer"
+            className={buttonClasses('secondary', 'sm', 'shrink-0 gap-2')}
+          >
+            <ExternalLink className="h-4 w-4" aria-hidden="true" />
+            Gerar masmorra
+          </a>
+        </div>
+      ) : null}
 
       {map ? (
         <div className="mt-4 flex flex-col gap-4">

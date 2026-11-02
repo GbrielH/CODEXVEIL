@@ -261,6 +261,8 @@ gerar o APK com a transcrição do celular e só então ligar em produção. Det
 - [x] **Sala numerada** (ferramenta do mapa): o próximo número aparece para todos; a descrição vai
       para a legenda, só do mestre.
 - [x] **Tutorial do mapa** para o mestre, recolhido no topo do mapa da sessão.
+- [x] Quadro "Masmorra pronta em um minuto" no mapa da sessão (só o mestre), com o passo a passo e o
+      botão **Gerar masmorra**, que abre o One Page Dungeon em outra aba.
 - [ ] Conferir a importação com um JSON real do One Page Dungeon (pedir um ao responsável).
 - [ ] Ideias anotadas para depois: gerador próprio de masmorra, texturas de chão por área e biblioteca
       de ícones (baú, porta, armadilha, escada).
