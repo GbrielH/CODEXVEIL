@@ -4,9 +4,12 @@ import type { MapImage, MapToken, SessionMap, Wall } from '@codexveil/database';
 import {
   areaCells,
   areaOutline,
+  MAP_CONDITIONS,
   cellRect,
   fogCells,
   formatMeters,
+  mapConditionLabel,
+  mapLightCells,
   gridDistance,
   pointInPolygon,
   snapMeters,
@@ -19,6 +22,7 @@ import {
   type MapArea,
   type MapDrawing,
   type MapIconKind,
+  type MapLightKind,
   type Point,
   type WallStyle,
 } from '@codexveil/domain';
@@ -28,7 +32,7 @@ import { WallPatterns, WallShape } from './wall-art';
 import { FloorPatterns, MapIconShape, floorPatternId } from './map-decorations';
 
 /** Ferramenta do mestre no tabuleiro. */
-export type MapTool = 'move' | 'image' | 'ruler' | 'area' | 'reveal' | 'hide' | 'wall' | 'erase-wall' | 'draw' | 'note' | 'room' | 'icon' | 'texture' | 'erase-drawing';
+export type MapTool = 'move' | 'image' | 'ruler' | 'area' | 'reveal' | 'hide' | 'wall' | 'erase-wall' | 'draw' | 'note' | 'room' | 'icon' | 'texture' | 'light' | 'erase-drawing';
 
 export const CELL = 40;
 const CREATURE_COLOR = '#571F2B';
@@ -71,6 +75,8 @@ interface MapBoardProps {
   zoom: number;
   tool?: MapTool;
   selectedTokenId?: string | null;
+  /** Token do combatente da vez, vindo do resumo público da iniciativa. */
+  activeTokenId?: string | null;
   onSelectToken?: (tokenId: string | null) => void;
   onMoveToken?: (token: MapToken, x: number, y: number) => void;
   onPaintFog?: (area: GridRect, reveal: boolean) => void;
@@ -81,6 +87,8 @@ interface MapBoardProps {
   /** Cor dos desenhos e anotações. */
   drawColor?: string;
   selectedIcon?: MapIconKind;
+  lightKind?: MapLightKind;
+  onAddLight?: (x: number, y: number, kind: MapLightKind) => void;
   /** Áreas só desta tela (prévia do jogador, não gravadas). */
   localAreas?: MapArea[];
   /** Desenhos e anotações só do mestre. */
@@ -121,6 +129,7 @@ export function MapBoard({
   zoom,
   tool = 'move',
   selectedTokenId = null,
+  activeTokenId = null,
   onSelectToken,
   onMoveToken,
   onPaintFog,
@@ -129,10 +138,12 @@ export function MapBoard({
   areaKind = 'circle',
   drawColor = '#f3e2b3',
   selectedIcon = 'chest',
+  lightKind = 'torch',
   localAreas = [],
   secretDrawings = [],
   onAddArea,
   onAddDrawing,
+  onAddLight,
   onPaintTexture,
   floorTexture = 'stone',
   onRequestNote,
@@ -251,10 +262,20 @@ export function MapBoard({
     return visibilityPolygon(origin, blocking, map.cols, map.rows, myToken.visionRadius);
   }, [isGm, map.lineOfSight, map.walls, map.cols, map.rows, myToken]);
   const sightPoints = sight ? sight.map((point) => `${point.x},${point.y}`).join(' ') : null;
+  const lightCells = useMemo(() => {
+    const tokenLights = tokens.filter((token) => token.lightDimRadius > 0).map((token) => {
+      const side = tokenSizeSquares[token.size];
+      return { id: `token-${token.id}`, kind: 'lantern' as const, x: token.x + side / 2, y: token.y + side / 2, brightRadius: token.lightBrightRadius, dimRadius: token.lightDimRadius };
+    });
+    const side = myToken ? tokenSizeSquares[myToken.size] : 0;
+    return mapLightCells({ illumination: map.illumination, cols: map.cols, rows: map.rows, walls: map.walls, lights: [...map.lights, ...tokenLights], darkvision: myToken && myToken.darkvisionRadius > 0 ? { x: myToken.x + side / 2, y: myToken.y + side / 2, radius: myToken.darkvisionRadius } : null });
+  }, [map.illumination, map.cols, map.rows, map.walls, map.lights, tokens, myToken]);
   // Fora da linha de visão os tokens nem aparecem (só o próprio).
   const visibleToMe = (token: MapToken) => {
-    if (!sight || token.id === myToken?.id) return true;
     const side = tokenSizeSquares[token.size];
+    const light = lightCells.get(`${Math.floor(token.x + side / 2)},${Math.floor(token.y + side / 2)}`);
+    if (!isGm && light === 'dark' && token.id !== myToken?.id) return false;
+    if (!sight || token.id === myToken?.id) return true;
     return pointInPolygon({ x: token.x + side / 2, y: token.y + side / 2 }, sight);
   };
 
@@ -284,6 +305,11 @@ export function MapBoard({
       return;
     }
     if (!isGm && tool !== 'move') return;
+    if (tool === 'light') {
+      const cell = center(point);
+      onAddLight?.(cell.x, cell.y, lightKind);
+      return;
+    }
     if (tool === 'icon') {
       const cell = toCell(point);
       onAddDrawing?.({ type: 'icon', x: cell.x, y: cell.y, icon: selectedIcon, color: drawColor });
@@ -610,6 +636,22 @@ export function MapBoard({
         <WallShape key={`${wall.join(',')}-${index}`} wall={wall} uid={uid} isGm={isGm} />
       ))}
 
+      {map.lights.map((light) => (
+        <g key={light.id} transform={`translate(${light.x} ${light.y})`} style={{ pointerEvents: 'none' }}>
+          <circle r={0.22} fill="#f6c453" opacity={0.28} />
+          <text textAnchor="middle" dominantBaseline="central" fontSize={0.28}>{light.kind === 'torch' ? '🔥' : '🏮'}</text>
+        </g>
+      ))}
+
+      {map.illumination !== 'bright' ? (
+        <g style={{ pointerEvents: 'none' }}>
+          {[...lightCells].filter(([, level]) => level !== 'bright').map(([key, level]) => {
+            const [x, y] = key.split(',').map(Number);
+            return <rect key={key} x={x} y={y} width={1} height={1} fill="#050505" opacity={level === 'dim' ? 0.3 : isGm ? 0.58 : 1} />;
+          })}
+        </g>
+      ) : null}
+
       {ordered.map((token) => {
         const side = tokenSizeSquares[token.size];
         const dragging = drag?.tokenId === token.id;
@@ -656,10 +698,23 @@ export function MapBoard({
             <circle
               r={radius}
               fill={tokenImages[token.id] ? 'none' : color}
-              stroke={selectedTokenId === token.id ? '#f3e2b3' : mine ? '#ffffff' : 'rgba(0,0,0,0.6)'}
-              strokeWidth={selectedTokenId === token.id || mine ? 0.09 : 0.05}
+              stroke={activeTokenId === token.id ? '#f6c453' : selectedTokenId === token.id ? '#f3e2b3' : mine ? '#ffffff' : 'rgba(0,0,0,0.6)'}
+              strokeWidth={activeTokenId === token.id ? 0.14 : selectedTokenId === token.id || mine ? 0.09 : 0.05}
               strokeDasharray={token.isHidden ? '0.15 0.1' : undefined}
             />
+            {activeTokenId === token.id ? <circle r={radius + 0.16} fill="none" stroke="#f6c453" strokeWidth={0.06} opacity={0.8} /> : null}
+            {token.conditions.slice(0, 8).map((condition, index) => {
+              const definition = MAP_CONDITIONS.find((entry) => entry.key === condition.key);
+              const angle = (index / Math.max(4, token.conditions.length)) * Math.PI * 2 - Math.PI / 2;
+              const distance = radius + 0.2;
+              return (
+                <g key={condition.key} transform={`translate(${Math.cos(angle) * distance} ${Math.sin(angle) * distance})`} style={{ pointerEvents: 'auto' }}>
+                  <title>{mapConditionLabel(condition)}. {definition?.description}</title>
+                  <circle r={0.16} fill="#241b18" stroke="#f6c453" strokeWidth={0.03} />
+                  <text textAnchor="middle" dominantBaseline="central" fontSize={0.18} fill="#f6c453">{definition?.icon}</text>
+                </g>
+              );
+            })}
             {tokenImages[token.id] ? null : (
             <text textAnchor="middle" dominantBaseline="central" fontSize={radius * 0.75} fontWeight={700} fill="#ffffff" style={{ pointerEvents: 'none' }}>
               {initials(token.label)}

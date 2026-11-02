@@ -294,3 +294,11 @@ Em 2026-11-02, a auditoria de grants de coluna encontrou que o cliente usava `up
 só possa atualizar `pile`, `drawn` e `shown`. O cliente agora atualiza apenas essas três colunas e
 insere as chaves somente na criação. O teste PGlite reproduz o 42501 e protege o caminho corrigido.
 O inventário completo está em [`AUDITORIA_GRAVACOES_2026-11-02.md`](AUDITORIA_GRAVACOES_2026-11-02.md).
+
+## Mapa e call (2026-11-02)
+
+- Condições, iluminação, luzes e visão no escuro só são alteradas pelo mestre (política de update
+  existente de `map_tokens`/`session_maps` + GRANT por coluna); jogadores recebem os valores
+  apenas dos mapas e tokens que já podem ver.
+- `close_idle_call_rooms()` é `security definer` e só muda o status de salas paradas há 6 h; não
+  devolve dados.

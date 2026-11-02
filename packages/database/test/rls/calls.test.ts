@@ -313,4 +313,25 @@ describe('call', () => {
     await db.as(gm, (s) => s.query(`select public.set_call_speaker($1, null)`, [room.id]));
     expect((await say(gm, 'Rolem iniciativa.')).speaker_label).toBe('Mestre');
   });
+
+  it('encerra a sala esquecida há mais de 6 horas e mantém a recente', async () => {
+    const { gm, campaign } = await createTable(db);
+    const old = await createRoom(gm, 'open', campaign.id);
+    const fresh = await createRoom(gm, 'open', campaign.id);
+    await db.as({ kind: 'admin' }, (s) =>
+      s.query(
+        `update public.call_rooms set created_at = now() - interval '7 hours' where id = $1`,
+        [old.id],
+      ),
+    );
+    await db.as(gm, (s) => s.query(`select public.close_idle_call_rooms()`));
+    const rows = await db.as(gm, (s) =>
+      s.query<{ id: string; status: string }>(
+        `select id, status from public.call_rooms where id in ($1, $2)`,
+        [old.id, fresh.id],
+      ),
+    );
+    expect(rows.find((row) => row.id === old.id)?.status).toBe('ended');
+    expect(rows.find((row) => row.id === fresh.id)?.status).toBe('active');
+  });
 });

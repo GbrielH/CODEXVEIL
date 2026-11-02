@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advanceTurn, moveInTurnOrder, orderCombatants, orderTurns, parseTurnEconomy, rewindTurn, startCombat, turnBudget, type Combatant } from './initiative';
+import { activeTurnTokenId, advanceTurn, moveInTurnOrder, orderCombatants, orderTurns, parseTurnEconomy, rewindTurn, startCombat, turnBudget, type Combatant } from './initiative';
 
 const make = (id: string, initiative: number | null, tiebreaker = 0, isDefeated = false) =>
   ({ id, name: id, initiative, tiebreaker, isDefeated }) satisfies Combatant;
@@ -94,5 +94,21 @@ describe('orçamento do turno', () => {
         { kind: 'bonus_action', grantsAction: false },
       ]),
     ).toEqual({ action: 1, bonus_action: 0, movement: 1, reaction: 1 });
+  });
+});
+
+describe('iniciativa no mapa', () => {
+  const tokens = [
+    { id: 'heroi', characterId: 'personagem-1', label: 'Aria' },
+    { id: 'goblin', characterId: null, label: 'Goblin' },
+  ];
+
+  it('acha personagem pelo UUID e criatura pelo nome público', () => {
+    expect(activeTurnTokenId(tokens, { status: 'active', mode: 'combat', activeCharacterId: 'personagem-1', activeName: 'Aria' })).toBe('heroi');
+    expect(activeTurnTokenId(tokens, { status: 'active', mode: 'combat', activeCharacterId: null, activeName: 'goblin' })).toBe('goblin');
+  });
+
+  it('não destaca token fora de combate ativo', () => {
+    expect(activeTurnTokenId(tokens, { status: 'preparing', mode: 'combat', activeCharacterId: 'personagem-1', activeName: 'Aria' })).toBeNull();
   });
 });

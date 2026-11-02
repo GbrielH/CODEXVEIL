@@ -1812,13 +1812,17 @@ export type Database = {
         Row: {
           campaign_id: string;
           character_id: string | null;
+          conditions: Json;
           created_at: string;
           creature_id: string | null;
+          darkvision_radius: number;
           id: string;
           image_path: string | null;
           is_hidden: boolean;
           kind: string;
           label: string;
+          light_bright_radius: number;
+          light_dim_radius: number;
           map_id: string;
           size: string;
           updated_at: string;
@@ -1829,13 +1833,17 @@ export type Database = {
         Insert: {
           campaign_id: string;
           character_id?: string | null;
+          conditions?: Json;
           created_at?: string;
           creature_id?: string | null;
+          darkvision_radius?: number;
           id?: string;
           image_path?: string | null;
           is_hidden?: boolean;
           kind: string;
           label?: string;
+          light_bright_radius?: number;
+          light_dim_radius?: number;
           map_id: string;
           size?: string;
           updated_at?: string;
@@ -1846,13 +1854,17 @@ export type Database = {
         Update: {
           campaign_id?: string;
           character_id?: string | null;
+          conditions?: Json;
           created_at?: string;
           creature_id?: string | null;
+          darkvision_radius?: number;
           id?: string;
           image_path?: string | null;
           is_hidden?: boolean;
           kind?: string;
           label?: string;
+          light_bright_radius?: number;
+          light_dim_radius?: number;
           map_id?: string;
           size?: string;
           updated_at?: string;
@@ -2289,12 +2301,14 @@ export type Database = {
           fog_enabled: boolean;
           fog_revealed: Json;
           id: string;
+          illumination: string;
           image_offset_x: number;
           image_offset_y: number;
           image_path: string | null;
           image_scale: number;
           images: Json;
           is_active: boolean;
+          lights: Json;
           line_of_sight: boolean;
           name: string;
           rows: number;
@@ -2313,12 +2327,14 @@ export type Database = {
           fog_enabled?: boolean;
           fog_revealed?: Json;
           id?: string;
+          illumination?: string;
           image_offset_x?: number;
           image_offset_y?: number;
           image_path?: string | null;
           image_scale?: number;
           images?: Json;
           is_active?: boolean;
+          lights?: Json;
           line_of_sight?: boolean;
           name: string;
           rows?: number;
@@ -2337,12 +2353,14 @@ export type Database = {
           fog_enabled?: boolean;
           fog_revealed?: Json;
           id?: string;
+          illumination?: string;
           image_offset_x?: number;
           image_offset_y?: number;
           image_path?: string | null;
           image_scale?: number;
           images?: Json;
           is_active?: boolean;
+          lights?: Json;
           line_of_sight?: boolean;
           name?: string;
           rows?: number;
@@ -2887,6 +2905,10 @@ export type Database = {
         Args: {
           p_map_id: string;
         };
+        Returns: undefined;
+      };
+      close_idle_call_rooms: {
+        Args: never;
         Returns: undefined;
       };
       consume_assistant_question: {

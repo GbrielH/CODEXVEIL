@@ -1,7 +1,7 @@
 'use client';
 
 import { addMyMapArea, clearMyMapAreas, moveMyToken } from '@codexveil/database';
-import { MAP_AREA_KINDS, type MapArea } from '@codexveil/domain';
+import { MAP_AREA_KINDS, activeTurnTokenId, type MapArea } from '@codexveil/domain';
 import { CircleDot, Expand, Map as MapIcon, MousePointer2, Ruler, Shrink, ZoomIn, ZoomOut } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useCampaignColors } from '@/components/dice/campaign-colors';
@@ -19,7 +19,7 @@ import { useMapData } from './use-map-data';
 /** Mapa ativo da sessão para o jogador: vê a grade e arrasta só o próprio token. */
 export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: string; systemId: string; myCharacterId: string | null }) {
   const { toast } = useToast();
-  const { map, tokens, imageUrl, tokenImages, tokenSpeeds, inCombat, layerUrls, loaded, live, reload, setData, track } = useMapData(campaignId, 'active');
+  const { map, tokens, imageUrl, tokenImages, tokenSpeeds, inCombat, turn, layerUrls, loaded, live, reload, setData, track } = useMapData(campaignId, 'active');
   const [tool, setTool] = useState<MapTool>('move');
   const [areaKind, setAreaKind] = useState<MapArea['kind']>('circle');
   // Áreas que não chegaram ao mapa (sem a função no banco ou erro): ficam só nesta tela.
@@ -32,6 +32,7 @@ export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: s
   if (!map) return <EmptyState title="Nenhum mapa na mesa" description="Quando o mestre mostrar um mapa, ele aparece aqui na hora." />;
   const sharedMine = userId ? map.areas.filter((area) => area.by === userId).length : 0;
   const mine = tokens.some((token) => token.characterId !== null && token.characterId === myCharacterId);
+  const activeTokenId = activeTurnTokenId(tokens, turn);
 
   return (
     <Card>
@@ -112,6 +113,7 @@ export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: s
           tokenImages={tokenImages}
                 tokenSpeeds={tokenSpeeds}
                 freeMovement={!inCombat}
+                activeTokenId={activeTokenId}
           isGm={false}
           myCharacterId={myCharacterId}
           zoom={zoom}

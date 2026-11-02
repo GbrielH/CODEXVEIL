@@ -1,5 +1,5 @@
 import type { MapToken, SessionMap } from '@codexveil/database';
-import { areaCells, areaOutline, fogCells, formatMeters, gridDistance, pointInPolygon, tokenSizeSquares, visibilityPolygon, wallBlocksSight, type MapIconKind, type WallStyle } from '@codexveil/domain';
+import { MAP_CONDITIONS, areaCells, areaOutline, fogCells, formatMeters, gridDistance, mapConditionLabel, mapLightCells, pointInPolygon, tokenSizeSquares, visibilityPolygon, wallBlocksSight, type MapIconKind, type WallStyle } from '@codexveil/domain';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, type GestureResponderEvent } from 'react-native';
 import Svg, { Circle, ClipPath, Defs, G, Image as SvgImage, Line, Mask, Path, Pattern, Polygon, Polyline, Rect, Text as SvgText } from 'react-native-svg';
@@ -24,6 +24,22 @@ function initials(label: string): string {
   const words = label.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return '?';
   return (words.length === 1 ? words[0]!.slice(0, 2) : `${words[0]![0]}${words[1]![0]}`).toUpperCase();
+}
+
+function TokenConditionMarks({ token, radius }: { token: MapToken; radius: number }) {
+  const cx = token.x + tokenSizeSquares[token.size] / 2;
+  const cy = token.y + tokenSizeSquares[token.size] / 2;
+  return token.conditions.slice(0, 8).map((condition, index) => {
+    const definition = MAP_CONDITIONS.find((entry) => entry.key === condition.key);
+    const angle = (index / Math.max(4, token.conditions.length)) * Math.PI * 2 - Math.PI / 2;
+    const distance = radius + 0.2;
+    return (
+      <G key={condition.key}>
+        <Circle cx={cx + Math.cos(angle) * distance} cy={cy + Math.sin(angle) * distance} r={0.17} fill="#241b18" stroke="#f6c453" strokeWidth={0.03} />
+        <SvgText x={cx + Math.cos(angle) * distance} y={cy + Math.sin(angle) * distance + 0.06} textAnchor="middle" fontSize={0.18} fill="#f6c453">{definition?.icon}</SvgText>
+      </G>
+    );
+  });
 }
 
 function MapIconShape({ icon, color }: { icon: MapIconKind; color: string }) {
@@ -54,6 +70,7 @@ export function MapBoard({
   zoom,
   selected,
   namedTokenId = null,
+  activeTokenId = null,
   freeMovement = false,
   colorOfCharacter,
   onTapCell,
@@ -73,6 +90,8 @@ export function MapBoard({
   selected: boolean;
   /** Token tocado: mostra o nome por cima dele. */
   namedTokenId?: string | null;
+  /** Token do combatente da vez. */
+  activeTokenId?: string | null;
   /** Fora de combate: os movimentos não deixam rastro com metros. */
   freeMovement?: boolean;
   colorOfCharacter: (characterId: string | null) => string | null;
@@ -117,9 +136,19 @@ export function MapBoard({
     return visibilityPolygon({ x: myToken.x + side / 2, y: myToken.y + side / 2 }, blocking, map.cols, map.rows, myToken.visionRadius);
   }, [map.lineOfSight, map.walls, map.cols, map.rows, myToken]);
 
+  const lightCells = useMemo(() => {
+    const tokenLights = tokens.filter((token) => token.lightDimRadius > 0).map((token) => {
+      const side = tokenSizeSquares[token.size];
+      return { id: `token-${token.id}`, kind: 'lantern' as const, x: token.x + side / 2, y: token.y + side / 2, brightRadius: token.lightBrightRadius, dimRadius: token.lightDimRadius };
+    });
+    const side = myToken ? tokenSizeSquares[myToken.size] : 0;
+    return mapLightCells({ illumination: map.illumination, cols: map.cols, rows: map.rows, walls: map.walls, lights: [...map.lights, ...tokenLights], darkvision: myToken && myToken.darkvisionRadius > 0 ? { x: myToken.x + side / 2, y: myToken.y + side / 2, radius: myToken.darkvisionRadius } : null });
+  }, [map.illumination, map.cols, map.rows, map.walls, map.lights, tokens, myToken]);
+
   const visible = tokens.filter((token) => {
-    if (!sight || token.id === myToken?.id) return true;
     const side = tokenSizeSquares[token.size];
+    if (lightCells.get(`${Math.floor(token.x + side / 2)},${Math.floor(token.y + side / 2)}`) === 'dark' && token.id !== myToken?.id) return false;
+    if (!sight || token.id === myToken?.id) return true;
     return pointInPolygon({ x: token.x + side / 2, y: token.y + side / 2 }, sight);
   });
 
@@ -243,6 +272,16 @@ export function MapBoard({
                 </G>
               );
             })}
+            {map.lights.map((light) => (
+              <G key={light.id}>
+                <Circle cx={light.x} cy={light.y} r={0.22} fill="#f6c453" opacity={0.28} />
+                <SvgText x={light.x} y={light.y + 0.09} textAnchor="middle" fontSize={0.28}>{light.kind === 'torch' ? '🔥' : '🏮'}</SvgText>
+              </G>
+            ))}
+            {map.illumination !== 'bright' ? [...lightCells].filter(([, level]) => level !== 'bright').map(([key, level]) => {
+              const [x, y] = key.split(',').map(Number);
+              return <Rect key={`luz-${key}`} x={x} y={y} width={1} height={1} fill="#050505" opacity={level === 'dim' ? 0.3 : 1} />;
+            }) : null}
             {[...visible]
               .sort((a, b) => tokenSizeSquares[b.size] - tokenSizeSquares[a.size])
               .map((token) => {
@@ -270,20 +309,25 @@ export function MapBoard({
                         preserveAspectRatio="xMidYMid slice"
                         clipPath={`url(#token-${token.id})`}
                       />
-                      <Circle cx={token.x + side / 2} cy={token.y + side / 2} r={radius} fill="none" stroke={mine && selected ? '#f3e2b3' : mine ? '#ffffff' : color} strokeWidth={mine ? 0.12 : 0.08} />
+                      <Circle cx={token.x + side / 2} cy={token.y + side / 2} r={radius} fill="none" stroke={activeTokenId === token.id ? '#f6c453' : mine && selected ? '#f3e2b3' : mine ? '#ffffff' : color} strokeWidth={activeTokenId === token.id ? 0.15 : mine ? 0.12 : 0.08} />
+                      {activeTokenId === token.id ? <Circle cx={token.x + side / 2} cy={token.y + side / 2} r={radius + 0.16} fill="none" stroke="#f6c453" strokeWidth={0.06} opacity={0.8} /> : null}
+                      <TokenConditionMarks token={token} radius={radius} />
                     </G>
                   );
                 }
                 return (
-                  <Circle
-                    key={token.id}
-                    cx={token.x + side / 2}
-                    cy={token.y + side / 2}
-                    r={radius}
-                    fill={color}
-                    stroke={mine && selected ? '#f3e2b3' : mine ? '#ffffff' : 'rgba(0,0,0,0.6)'}
-                    strokeWidth={mine ? 0.12 : 0.05}
-                  />
+                  <G key={token.id}>
+                    <Circle
+                      cx={token.x + side / 2}
+                      cy={token.y + side / 2}
+                      r={radius}
+                      fill={color}
+                      stroke={activeTokenId === token.id ? '#f6c453' : mine && selected ? '#f3e2b3' : mine ? '#ffffff' : 'rgba(0,0,0,0.6)'}
+                      strokeWidth={activeTokenId === token.id ? 0.15 : mine ? 0.12 : 0.05}
+                    />
+                    {activeTokenId === token.id ? <Circle cx={token.x + side / 2} cy={token.y + side / 2} r={radius + 0.16} fill="none" stroke="#f6c453" strokeWidth={0.06} opacity={0.8} /> : null}
+                    <TokenConditionMarks token={token} radius={radius} />
+                  </G>
                 );
               })}
             {visible.filter((token) => !tokenImages[token.id]).map((token) => {
@@ -314,12 +358,14 @@ export function MapBoard({
               const token = namedTokenId ? visible.find((entry) => entry.id === namedTokenId) : null;
               if (!token?.label) return null;
               const half = tokenSizeSquares[token.size] / 2;
-              const width = Math.max(1.2, token.label.length * 0.2 + 0.3);
+              const conditions = token.conditions.map(mapConditionLabel).join(', ');
+              const text = conditions ? `${token.label} · ${conditions}` : token.label;
+              const width = Math.max(1.2, text.length * 0.2 + 0.3);
               return (
                 <G>
                   <Rect x={token.x + half - width / 2} y={token.y - 0.65} width={width} height={0.42} rx={0.12} fill="rgba(20,16,12,0.9)" stroke="#f3e2b3" strokeWidth={0.03} />
                   <SvgText x={token.x + half} y={token.y - 0.35} textAnchor="middle" fontSize={0.26} fontWeight="700" fill="#f3e2b3">
-                    {token.label}
+                    {text}
                   </SvgText>
                 </G>
               );

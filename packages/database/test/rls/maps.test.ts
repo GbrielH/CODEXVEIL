@@ -139,6 +139,40 @@ describe('grade da sessão', () => {
 });
 
 describe('ferramentas do mapa', () => {
+  it('iluminação só é configurada pelo mestre e chega aos membros com mapa e token visíveis', async () => {
+    const { gm, player, map, lyraToken } = await setupMap();
+    await db.as(gm, (s) => s.query(`update public.session_maps set illumination = 'dark', lights = '[{"id":"tocha-1","kind":"torch","x":2.5,"y":2.5,"brightRadius":4,"dimRadius":8}]' where id = $1`, [map]));
+    await db.as(gm, (s) => s.query(`update public.map_tokens set darkvision_radius = 8, light_bright_radius = 2, light_dim_radius = 4 where id = $1`, [lyraToken]));
+    expect(await db.as(player, (s) => s.one<{ illumination: string; lights: unknown[] }>(`select illumination, lights from public.session_maps where id = $1`, [map]))).toMatchObject({ illumination: 'dark', lights: [{ kind: 'torch' }] });
+    expect(await db.as(player, (s) => s.one<{ darkvision_radius: number; light_bright_radius: number; light_dim_radius: number }>(`select darkvision_radius, light_bright_radius, light_dim_radius from public.map_tokens where id = $1`, [lyraToken]))).toEqual({ darkvision_radius: 8, light_bright_radius: 2, light_dim_radius: 4 });
+    expect(await db.as(player, (s) => s.query(`update public.session_maps set illumination = 'bright' where id = $1 returning id`, [map]))).toEqual([]);
+    expect(await db.as(player, (s) => s.query(`update public.map_tokens set darkvision_radius = 200 where id = $1 returning id`, [lyraToken]))).toEqual([]);
+  });
+
+  it('condições dos tokens são visíveis com o token, só o mestre altera e a rodada reduz a duração', async () => {
+    const { gm, player, campaign, session, lyraToken, goblinToken } = await setupMap();
+    await db.as(gm, (s) =>
+      s.query(`update public.map_tokens set conditions = '[{"key":"poisoned","rounds":2}]' where id in ($1, $2)`, [lyraToken, goblinToken]),
+    );
+
+    const visible = await db.as(player, (s) =>
+      s.query<{ id: string; conditions: { key: string; rounds: number }[] }>(`select id, conditions from public.map_tokens where conditions <> '[]' order by id`),
+    );
+    expect(visible).toEqual([{ id: lyraToken, conditions: [{ key: 'poisoned', rounds: 2 }] }]);
+    expect(await db.as(player, (s) => s.query(`update public.map_tokens set conditions = '[]' where id = $1 returning id`, [lyraToken]))).toEqual([]);
+
+    const encounter = await db.as(gm, (s) =>
+      s.one<{ id: string }>(`insert into public.encounters (session_id, campaign_id, name, status) values ($1, $2, 'Combate', 'preparing') returning id`, [session, campaign.id]),
+    );
+    await db.as(gm, (s) => s.query(`update public.encounters set status = 'active', round = 1 where id = $1`, [encounter.id]));
+    await db.as(gm, (s) => s.query(`update public.encounters set round = 2 where id = $1`, [encounter.id]));
+    const after = await db.as(gm, (s) => s.query<{ conditions: { rounds: number }[] }>(`select conditions from public.map_tokens where id in ($1, $2) order by id`, [lyraToken, goblinToken]));
+    expect(after.every((row) => row.conditions[0]?.rounds === 1)).toBe(true);
+    await db.as(gm, (s) => s.query(`update public.encounters set round = 3 where id = $1`, [encounter.id]));
+    const ended = await db.as(gm, (s) => s.query<{ conditions: unknown[] }>(`select conditions from public.map_tokens where id in ($1, $2)`, [lyraToken, goblinToken]));
+    expect(ended.every((row) => row.conditions.length === 0)).toBe(true);
+  });
+
   it('desenhos secretos só chegam ao mestre; áreas e desenhos públicos chegam a todos', async () => {
     const { gm, player, campaign, map } = await setupMap();
     await db.as(gm, (s) =>

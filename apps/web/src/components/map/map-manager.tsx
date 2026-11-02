@@ -27,14 +27,20 @@ import {
   DRAWING_COLORS,
   FLOOR_TEXTURES,
   MAP_ICON_KINDS,
+  MAP_CONDITIONS,
+  MAP_ILLUMINATIONS,
+  MAP_LIGHT_KINDS,
   MAP_AREA_KINDS,
   TOKEN_SIZES,
   WALL_STYLES,
+  activeTurnTokenId,
   fogCells,
   generateDungeon,
   importOnePageDungeon,
   paintFog,
   paintMapTexture,
+  mapIlluminationLabels,
+  mapLightLabels,
   pointInPolygon,
   rectsFromCells,
   tokenSizeLabels,
@@ -46,6 +52,8 @@ import {
   type DungeonSize,
   type FloorTexture,
   type MapIconKind,
+  type MapConditionKey,
+  type MapLightKind,
   type TokenSize,
   type WallStyle,
 } from '@codexveil/domain';
@@ -66,7 +74,7 @@ import { failureMessage } from '@/lib/client-errors';
 import { prepareImage } from '@/lib/images';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
-import { MapBoard, type MapTool } from './map-board';
+import { CELL, MapBoard, type MapTool } from './map-board';
 import { useBoardViewport } from './use-board-viewport';
 import { useMapData } from './use-map-data';
 
@@ -113,6 +121,7 @@ const TOOLS: { tool: MapTool; label: string; icon: ReactNode }[] = [
   { tool: 'room', label: 'Sala numerada', icon: <Hash className="h-4 w-4" aria-hidden="true" /> },
   { tool: 'icon', label: 'Ícone', icon: <CircleDot className="h-4 w-4" aria-hidden="true" /> },
   { tool: 'texture', label: 'Textura', icon: <Square className="h-4 w-4" aria-hidden="true" /> },
+  { tool: 'light', label: 'Luz', icon: <CircleDot className="h-4 w-4" aria-hidden="true" /> },
   { tool: 'erase-drawing', label: 'Apagar desenho', icon: <Eraser className="h-4 w-4" aria-hidden="true" /> },
 ];
 
@@ -139,6 +148,9 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   const [confirm, confirmDialog] = useConfirm();
   const [tool, setTool] = useState<MapTool>('move');
   const [selectedToken, setSelectedToken] = useState<string | null>(null);
+  const [tokenCondition, setTokenCondition] = useState<MapConditionKey>('grappled');
+  const [tokenConditionRounds, setTokenConditionRounds] = useState<number | null>(null);
+  const [tokenConditionLevel, setTokenConditionLevel] = useState(1);
   const [markerLabel, setMarkerLabel] = useState('');
   const [wallStyle, setWallStyle] = useState<WallStyle>('stone');
   const [areaKind, setAreaKind] = useState<MapArea['kind']>('circle');
@@ -146,6 +158,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   const [drawSecret, setDrawSecret] = useState(false);
   const [selectedIcon, setSelectedIcon] = useState<MapIconKind>('chest');
   const [floorTexture, setFloorTexture] = useState<FloorTexture>('stone');
+  const [lightKind, setLightKind] = useState<MapLightKind>('torch');
   const [dungeonSeed, setDungeonSeed] = useState('codexveil');
   const [dungeonSize, setDungeonSize] = useState<DungeonSize>('medium');
   const [secrets, setSecrets] = useState<MapDrawing[]>([]);
@@ -160,14 +173,34 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   /** Novos tokens entram ocultos? (por padrão sim enquanto o mapa não está sendo mostrado). */
   const [addHiddenChoice, setAddHiddenChoice] = useState<boolean | null>(null);
   const [followsTurn, setFollowsTurn] = useState(true);
+  const [centerFollowsTurn, setCenterFollowsTurn] = useState(true);
   const saveTimer = useRef<number | null>(null);
   const pendingPatch = useRef<{ mapId: string; patch: SessionMapPatch } | null>(null);
   const tokenInputRef = useRef<HTMLInputElement>(null);
   const sizeLabels = tokenSizeLabels(systemId);
   const selectedKey = useMemo(() => (selectedId ? { id: selectedId } : null), [selectedId]);
 
-  const { map, tokens, imageUrl, tokenImages, tokenSpeeds, inCombat, layerUrls, live, reload, setData, track } = useMapData(campaignId, selectedKey);
+  const { map, tokens, imageUrl, tokenImages, tokenSpeeds, inCombat, turn, layerUrls, live, reload, setData, track } = useMapData(campaignId, selectedKey);
   const { zoom, setZoom, fullscreen, toggleFullscreen } = useBoardViewport({ boardAreaRef, scrollRef, cols: map?.cols ?? 0, rows: map?.rows ?? 0, min: 0.3, max: 3 });
+  const activeTokenId = activeTurnTokenId(tokens, turn);
+  const centerActiveToken = useCallback(() => {
+    const scroll = scrollRef.current;
+    const active = tokens.find((entry) => entry.id === activeTokenId);
+    if (!scroll || !active) return;
+    const side = tokenSizeSquares[active.size];
+    scroll.scrollTo({
+      left: Math.max(0, (active.x + side / 2) * CELL * zoom - scroll.clientWidth / 2),
+      top: Math.max(0, (active.y + side / 2) * CELL * zoom - scroll.clientHeight / 2),
+      behavior: 'smooth',
+    });
+  }, [activeTokenId, tokens, zoom]);
+  const centeredTurn = useRef<string | null>(null);
+  useEffect(() => {
+    if (!centerFollowsTurn || !activeTokenId || centeredTurn.current === activeTokenId) return;
+    centeredTurn.current = activeTokenId;
+    const frame = window.requestAnimationFrame(centerActiveToken);
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeTokenId, centerActiveToken, centerFollowsTurn]);
   const [newSessionId, setNewSessionId] = useState(sessionId);
   const [selectedLayer, setSelectedLayer] = useState<number | null>(null);
   const sessionMaps = maps.filter((entry) => entry.sessionId === newSessionId);
@@ -226,7 +259,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
     }, delay);
   };
 
-  const patchToken = (token: MapToken, patch: Partial<Pick<MapToken, 'label' | 'x' | 'y' | 'size' | 'isHidden' | 'visionRadius' | 'imagePath'>>) => {
+  const patchToken = (token: MapToken, patch: Partial<Pick<MapToken, 'label' | 'x' | 'y' | 'size' | 'isHidden' | 'visionRadius' | 'imagePath' | 'conditions' | 'darkvisionRadius' | 'lightBrightRadius' | 'lightDimRadius'>>) => {
     setData((current) => ({ ...current, tokens: current.tokens.map((entry) => (entry.id === token.id ? { ...entry, ...patch } : entry)) }));
     void track(() => updateMapToken(getSupabaseBrowserClient(), token.id, patch)).catch((error: unknown) => {
       fail('O token não foi alterado', error);
@@ -915,6 +948,9 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                 Linhas
                 <NumberInput value={map.rows} min={4} max={200} onCommit={(value) => value && patchMap({ rows: value })} />
               </label>
+              <SelectField id={`${id}-iluminacao`} label="Iluminação" value={map.illumination} onChange={(event) => patchMap({ illumination: event.target.value as SessionMap['illumination'] })}>
+                {MAP_ILLUMINATIONS.map((illumination) => <option key={illumination} value={illumination}>{mapIlluminationLabels[illumination]}</option>)}
+              </SelectField>
               <div className="flex flex-wrap gap-4 sm:col-span-3 lg:col-span-6">
                 <CheckboxField id={`${id}-grade`} label="Mostrar linhas da grade" checked={map.showGrid} onChange={(event) => patchMap({ showGrid: event.target.checked })} />
                 <CheckboxField id={`${id}-nevoa`} label="Névoa de guerra" checked={map.fogEnabled} onChange={(event) => patchMap({ fogEnabled: event.target.checked })} />
@@ -1026,6 +1062,15 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
               <p className="text-xs text-fg-muted">Arraste sobre os quadrados. A pintura é compactada em retângulos leves e aparece no site e no app.</p>
             </div>
           ) : null}
+          {tool === 'light' ? (
+            <div className="flex flex-wrap items-end gap-3">
+              <SelectField id={`${id}-tipo-luz`} label="Fonte de luz" value={lightKind} onChange={(event) => setLightKind(event.target.value as MapLightKind)}>
+                {MAP_LIGHT_KINDS.map((kind) => <option key={kind} value={kind}>{mapLightLabels[kind]}</option>)}
+              </SelectField>
+              <p className="text-xs text-fg-muted">Clique no mapa para colocar. Tocha: 4/8 quadrados; lanterna: 6/12.</p>
+              {map.lights.map((light) => <Button key={light.id} size="sm" variant="ghost" onClick={() => patchMap({ lights: map.lights.filter((entry) => entry.id !== light.id) })}>Tirar {mapLightLabels[light.kind]} ({light.x}, {light.y})</Button>)}
+            </div>
+          ) : null}
           {tool === 'room' ? (
             <p className="text-xs text-fg-muted">
               Clique numa sala: o próximo número ({nextRoomNumber()}) aparece para todos e a descrição fica na legenda, só para você.
@@ -1058,6 +1103,11 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
             >
               {fullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
             </Button>
+            {activeTokenId ? (
+              <Button size="sm" variant="secondary" className="absolute top-12 right-2 z-10 shadow" onClick={centerActiveToken}>
+                Centralizar na vez
+              </Button>
+            ) : null}
             <div ref={scrollRef} className={cx('flex overflow-auto rounded-md border border-line', fullscreen ? 'h-[calc(100vh-1rem)]' : 'h-[calc(100vh-14rem)] min-h-[28rem]')}>
               <div className="m-auto">
               <MapBoard
@@ -1068,6 +1118,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                 tokenImages={tokenImages}
                 tokenSpeeds={tokenSpeeds}
                 freeMovement={!inCombat}
+                activeTokenId={activeTokenId}
                 layerUrls={layerUrls}
                 selectedLayer={selectedLayer}
                 onSelectLayer={setSelectedLayer}
@@ -1087,10 +1138,12 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                 drawColor={drawColor}
                 selectedIcon={selectedIcon}
                 floorTexture={floorTexture}
+                lightKind={lightKind}
                 secretDrawings={secrets}
                 onAddArea={(shape) => patchMap({ areas: [...map.areas, shape] })}
                 onAddDrawing={addDrawing}
                 onPaintTexture={(area, texture) => patchMap({ drawings: paintMapTexture(map.drawings, area, texture) })}
+                onAddLight={(x, y, kind) => patchMap({ lights: [...map.lights, { id: crypto.randomUUID(), kind, x, y, brightRadius: kind === 'torch' ? 4 : 6, dimRadius: kind === 'torch' ? 8 : 12 }] })}
                 onRequestNote={(point) => {
                   setNoteText('');
                   setNoteAt(point);
@@ -1139,12 +1192,47 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                       ) : null}
                     </div>
                     <p className="text-xs text-fg-muted">Sem imagem própria, o token usa a foto do personagem ou a imagem da criatura.</p>
+                    <div className="flex flex-col gap-2 rounded-md border border-line p-2">
+                      <p className="text-xs font-medium text-fg">Condições</p>
+                      <div className="flex flex-wrap gap-1">
+                        {token.conditions.map((condition) => {
+                          const definition = MAP_CONDITIONS.find((entry) => entry.key === condition.key);
+                          return (
+                            <Button
+                              key={condition.key}
+                              size="sm"
+                              variant="ghost"
+                              title={definition?.description}
+                              onClick={() => patchToken(token, { conditions: token.conditions.filter((entry) => entry.key !== condition.key) })}
+                            >
+                              {definition?.icon} {definition?.name}{condition.level ? ` ${condition.level}` : ''}{condition.rounds ? ` · ${condition.rounds}` : ''} ×
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      <SelectField id={`${id}-condicao-token`} label="Nova condição" value={tokenCondition} onChange={(event) => setTokenCondition(event.target.value as MapConditionKey)}>
+                        {MAP_CONDITIONS.map((condition) => <option key={condition.key} value={condition.key}>{condition.icon} {condition.name}</option>)}
+                      </SelectField>
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="flex flex-col gap-1 text-xs text-fg-secondary">Rodadas (vazio = até remover)<NumberInput value={tokenConditionRounds} min={1} max={10000} onCommit={setTokenConditionRounds} /></label>
+                        {tokenCondition === 'exhaustion' ? <label className="flex flex-col gap-1 text-xs text-fg-secondary">Nível de exaustão<NumberInput value={tokenConditionLevel} min={1} max={6} onCommit={(value) => setTokenConditionLevel(value ?? 1)} /></label> : null}
+                      </div>
+                      <Button size="sm" variant="secondary" onClick={() => {
+                        const next = token.conditions.filter((condition) => condition.key !== tokenCondition);
+                        next.push({ key: tokenCondition, ...(tokenConditionRounds ? { rounds: tokenConditionRounds } : {}), ...(tokenCondition === 'exhaustion' ? { level: tokenConditionLevel } : {}) });
+                        patchToken(token, { conditions: next });
+                      }}>Aplicar condição</Button>
+                    </div>
                     {token.kind === 'character' ? (
-                      <label className="flex flex-col gap-1 text-xs text-fg-secondary">
-                        Alcance da visão (quadrados; 0 = sem limite)
-                        <NumberInput value={token.visionRadius} min={0} max={200} onCommit={(value) => patchToken(token, { visionRadius: value ?? 0 })} />
-                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="flex flex-col gap-1 text-xs text-fg-secondary">Alcance da visão (0 = sem limite)<NumberInput value={token.visionRadius} min={0} max={200} onCommit={(value) => patchToken(token, { visionRadius: value ?? 0 })} /></label>
+                        <label className="flex flex-col gap-1 text-xs text-fg-secondary">Visão no escuro (quadrados)<NumberInput value={token.darkvisionRadius} min={0} max={200} onCommit={(value) => patchToken(token, { darkvisionRadius: value ?? 0 })} /></label>
+                      </div>
                     ) : null}
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="flex flex-col gap-1 text-xs text-fg-secondary">Luz plena carregada<NumberInput value={token.lightBrightRadius} min={0} max={200} onCommit={(value) => { const bright = value ?? 0; patchToken(token, { lightBrightRadius: bright, lightDimRadius: Math.max(bright, token.lightDimRadius) }); }} /></label>
+                      <label className="flex flex-col gap-1 text-xs text-fg-secondary">Penumbra carregada<NumberInput value={token.lightDimRadius} min={token.lightBrightRadius} max={200} onCommit={(value) => patchToken(token, { lightDimRadius: Math.max(token.lightBrightRadius, value ?? 0) })} /></label>
+                    </div>
                     <CheckboxField id={`${id}-oculto`} label="Oculto dos jogadores" checked={token.isHidden} onChange={(event) => patchToken(token, { isHidden: event.target.checked })} />
                     <Button
                       variant="ghost"
@@ -1229,6 +1317,16 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                     setFollowsTurn(value);
                     lastTurnCharacter.current = null;
                     setMapFollowsTurn(getSupabaseBrowserClient(), campaignId, value).catch((error: unknown) => fail('A opção não foi salva', error));
+                  }}
+                />
+                <CheckboxField
+                  id={`${id}-centraliza-turno`}
+                  label="Centralizar a câmera na vez"
+                  description="Ao trocar o turno, leva a câmera até o token do combatente atual."
+                  checked={centerFollowsTurn}
+                  onChange={(event) => {
+                    setCenterFollowsTurn(event.target.checked);
+                    centeredTurn.current = null;
                   }}
                 />
                 <p className={cx('flex items-center gap-1.5 text-xs text-fg-muted')}>

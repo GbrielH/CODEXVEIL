@@ -206,6 +206,8 @@ export async function getCallRoom(client: CodexveilClient, slug: string): Promis
 
 /** Salas recentes em que a pessoa criou, entrou ou foi convidada. */
 export async function listMyCallRooms(client: CodexveilClient): Promise<CallRoom[]> {
+  // Salas esquecidas (6 h sem ninguém entrar ou sair) são encerradas antes de listar.
+  await client.rpc('close_idle_call_rooms');
   const { data, error } = await client
     .from('call_rooms')
     .select(ROOM_COLUMNS)

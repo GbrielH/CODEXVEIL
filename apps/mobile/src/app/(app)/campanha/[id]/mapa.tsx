@@ -1,5 +1,5 @@
 import { getActiveMap, getCampaign, getCampaignTurn, listCampaignCharacters, listMapTokens, moveMyToken, signedMediaUrls, tokenImagePaths, type MapToken } from '@codexveil/database';
-import { formatMeters, gridDistance, movementCrossesWall, tokenSizeSquares } from '@codexveil/domain';
+import { activeTurnTokenId, formatMeters, gridDistance, movementCrossesWall, tokenSizeSquares } from '@codexveil/domain';
 import { characterSpeedMeters } from '@codexveil/rpg-systems';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
@@ -55,7 +55,7 @@ export default function CampaignMapScreen() {
     // Só em combate valem o limite de deslocamento e os metros; fora dele, movimentação livre.
     const inCombat = turn?.mode === 'combat' && turn.status === 'active';
     const own = party.find((character) => character.ownerId === userId) ?? null;
-    if (!map) return { campaign, map: null, tokens: [] as MapToken[], imageUrl: null as string | null, tokenImages: {}, layers: [] as MapLayer[], own, inCombat };
+    if (!map) return { campaign, map: null, tokens: [] as MapToken[], imageUrl: null as string | null, tokenImages: {}, layers: [] as MapLayer[], own, inCombat, turn };
     const tokens = await listMapTokens(client, map.id);
     const paths = await tokenImagePaths(client, tokens).catch((): Record<string, string> => ({}));
     const urls = await signedMediaUrls(client, [map.imagePath, ...map.images.map((layer) => layer.path), ...Object.values(paths)]);
@@ -76,7 +76,7 @@ export default function CampaignMapScreen() {
       }),
     );
     const tokenImages = Object.fromEntries(Object.entries(paths).flatMap(([tokenId, path]) => (urls[path] ? [[tokenId, urls[path]]] : [])));
-    return { campaign, map, tokens, imageUrl: map.imagePath ? (urls[map.imagePath] ?? null) : null, tokenImages, layers, own, inCombat };
+    return { campaign, map, tokens, imageUrl: map.imagePath ? (urls[map.imagePath] ?? null) : null, tokenImages, layers, own, inCombat, turn };
   }, `${id}:${userId}`);
 
   useRealtimeRefresh(
@@ -104,8 +104,10 @@ export default function CampaignMapScreen() {
     );
   }
 
-  const { map, tokens, imageUrl, tokenImages, layers, own, inCombat } = data;
+  const { map, tokens, imageUrl, tokenImages, layers, own, inCombat, turn } = data;
   const myToken = tokens.find((token) => token.characterId !== null && token.characterId === own?.id) ?? null;
+  const activeTokenId = activeTurnTokenId(tokens, turn);
+  const myTurn = turn?.status === 'active' && turn.mode === 'combat' && turn.activeCharacterId === own?.id;
 
   const tap = (x: number, y: number) => {
     if (!map) return;
@@ -164,6 +166,12 @@ export default function CampaignMapScreen() {
         <EmptyState title="Nenhum mapa ativo" description="Quando o mestre mostrar um mapa da sessão, ele aparece aqui na hora." />
       ) : (
         <>
+          {inCombat ? (
+            <View style={{ borderWidth: 1, borderColor: myTurn ? '#f6c453' : colors.line, borderRadius: 8, padding: 10, backgroundColor: myTurn ? 'rgba(246,196,83,0.12)' : colors.sunken }}>
+              <AppText variant="small">Vez: {turn?.activeName ?? 'combatente oculto'} · rodada {turn?.round ?? 0}</AppText>
+              {myTurn ? <AppText variant="heading">Sua vez</AppText> : null}
+            </View>
+          ) : null}
           <AppText variant="small">
             {myToken
               ? selected
@@ -187,6 +195,7 @@ export default function CampaignMapScreen() {
             zoom={zoom}
             selected={selected}
             namedTokenId={named}
+            activeTokenId={activeTokenId}
             freeMovement={!inCombat}
             colorOfCharacter={(characterId) => palette.colorOfCharacter(characterId)}
             onTapCell={tap}
@@ -205,6 +214,7 @@ export default function CampaignMapScreen() {
               zoom={zoom}
               selected={selected}
               namedTokenId={named}
+              activeTokenId={activeTokenId}
               freeMovement={!inCombat}
               colorOfCharacter={(characterId) => palette.colorOfCharacter(characterId)}
               onTapCell={tap}

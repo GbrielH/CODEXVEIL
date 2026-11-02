@@ -20,3 +20,5 @@ export * from './calls/highlights';
 export * from './text/ordinals';
 export * from './combat/dungeon-import';
 export * from './combat/dungeon-generator';
+export * from './combat/map-conditions';
+export * from './combat/map-lighting';

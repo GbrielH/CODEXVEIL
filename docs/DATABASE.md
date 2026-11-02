@@ -338,3 +338,13 @@ personagens" quando o dono liga a opção, por `public.set_character_npc_listed(
   função `set_call_speaker(room, label)`, permitida apenas ao mestre aprovado na sala.
 - `fill_transcript_segment`: fala do mestre usa `speaking_as` (ou "Mestre"); jogador continua com
   o personagem dele. `join_call_room` mantém o personagem gravado ao reconectar.
+
+## Mapa: condições, luz e escuridão; call esquecida (2026-11-02)
+
+- `map_tokens.conditions` (jsonb, validado): `[{key, rounds?, level?}]`; o catálogo fica em
+  `packages/domain`. Gatilho `encounters_tick_map_token_conditions` reduz `rounds` na troca de
+  rodada e tira a condição ao zerar.
+- `session_maps.illumination` (`bright`/`dim`/`dark`) e `session_maps.lights` (tochas e lanternas
+  com raios de luz plena e penumbra).
+- `map_tokens.darkvision_radius`, `light_bright_radius`, `light_dim_radius`.
+- `close_idle_call_rooms()`: encerra salas sem entrada/saída há 6 h; chamada ao listar as salas.

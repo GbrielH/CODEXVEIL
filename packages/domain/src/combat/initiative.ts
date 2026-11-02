@@ -19,6 +19,21 @@ export interface TurnState {
   activeCombatantId: string | null;
 }
 
+/**
+ * Liga o resumo público da iniciativa ao token do mapa sem criar um segundo estado de combate.
+ * Personagens usam o UUID; NPCs e monstros antigos usam o nome, pois o resumo público ainda não
+ * expõe o vínculo da criatura.
+ */
+export function activeTurnTokenId(
+  tokens: readonly { id: string; characterId: string | null; label: string }[],
+  turn: { status: string; mode: string; activeCharacterId: string | null; activeName: string | null } | null,
+): string | null {
+  if (!turn || turn.status !== 'active' || turn.mode !== 'combat') return null;
+  if (turn.activeCharacterId) return tokens.find((token) => token.characterId === turn.activeCharacterId)?.id ?? null;
+  const name = turn.activeName?.trim().toLocaleLowerCase('pt-BR');
+  return name ? tokens.find((token) => token.label.trim().toLocaleLowerCase('pt-BR') === name)?.id ?? null : null;
+}
+
 /** Ordena por iniciativa (maior primeiro, sem iniciativa ao final), desempate e nome. */
 export function orderCombatants<T extends Combatant>(combatants: readonly T[]): T[] {
   return [...combatants].sort((a, b) => {

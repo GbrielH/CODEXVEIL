@@ -1,6 +1,6 @@
 'use client';
 
-import { getActiveMap, getCampaignTurn, getSessionMap, listMapTokens, signedMediaUrls, tokenImagePaths, tokenSpeedSources, type MapToken, type SessionMap } from '@codexveil/database';
+import { getActiveMap, getCampaignTurn, getSessionMap, listMapTokens, signedMediaUrls, tokenImagePaths, tokenSpeedSources, type CampaignTurn, type MapToken, type SessionMap } from '@codexveil/database';
 import { characterSpeedMeters, speedTextMeters } from '@codexveil/rpg-systems';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
@@ -21,13 +21,17 @@ export interface MapData {
   tokenSpeeds: Record<string, number>;
   /** Combate em andamento: só nele aparecem o limite de deslocamento e os rastros em metros. */
   inCombat: boolean;
+  /** Resumo público da iniciativa; é o mesmo estado usado pelas telas de turno. */
+  turn: CampaignTurn | null;
 }
+
+const emptyMapData = (): MapData => ({ map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {}, tokenSpeeds: {}, inCombat: false, turn: null });
 
 async function load(campaignId: string, mapId: MapSelector): Promise<MapData> {
   const client = getSupabaseBrowserClient();
-  if (!mapId) return { map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {}, tokenSpeeds: {}, inCombat: false };
+  if (!mapId) return emptyMapData();
   const map = mapId === 'active' ? await getActiveMap(client, campaignId) : await getSessionMap(client, mapId.id);
-  if (!map) return { map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {}, tokenSpeeds: {}, inCombat: false };
+  if (!map) return emptyMapData();
   const [tokens, turn] = await Promise.all([listMapTokens(client, map.id), getCampaignTurn(client, campaignId).catch(() => null)]);
   const inCombat = turn?.mode === 'combat' && turn.status === 'active';
   const paths = await tokenImagePaths(client, tokens).catch((): Record<string, string> => ({}));
@@ -47,7 +51,7 @@ async function load(campaignId: string, mapId: MapSelector): Promise<MapData> {
         : null;
     if (speed) tokenSpeeds[token.id] = speed;
   }
-  return { map, tokens, imageUrl: map.imagePath ? (urls[map.imagePath] ?? null) : null, tokenImages, layerUrls, tokenSpeeds, inCombat };
+  return { map, tokens, imageUrl: map.imagePath ? (urls[map.imagePath] ?? null) : null, tokenImages, layerUrls, tokenSpeeds, inCombat, turn };
 }
 
 /**
@@ -55,7 +59,7 @@ async function load(campaignId: string, mapId: MapSelector): Promise<MapData> {
  * recarregado em tempo real quando o mestre ou outro jogador muda algo.
  */
 export function useMapData(campaignId: string, mapId: MapSelector) {
-  const [data, setData] = useState<MapData>({ map: null, tokens: [], imageUrl: null, tokenImages: {}, layerUrls: {}, tokenSpeeds: {}, inCombat: false });
+  const [data, setData] = useState<MapData>(emptyMapData);
   const [loaded, setLoaded] = useState(false);
 
   // Só a resposta mais recente vale (respostas antigas chegando depois desfaziam mudanças), e

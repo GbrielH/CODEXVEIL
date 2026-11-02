@@ -3,7 +3,7 @@
  * jogadores recebem do banco só o mapa ativo e os tokens visíveis, e movem o próprio token por
  * `move_my_token`.
  */
-import { AppError, isMapArea, isMapDrawing, isTokenSize, isWallStyle, type MapArea, type MapDrawing, type TokenSize, type WallStyle } from '@codexveil/domain';
+import { AppError, isMapArea, isMapDrawing, isTokenSize, isWallStyle, parseMapLights, parseMapTokenConditions, type MapArea, type MapDrawing, type MapIllumination, type MapLight, type MapTokenCondition, type TokenSize, type WallStyle } from '@codexveil/domain';
 import type { CodexveilClient } from '../client';
 import { toAppError } from '../errors';
 import type { Json, Tables } from '../types.gen';
@@ -53,6 +53,8 @@ export interface SessionMap {
   drawings: MapDrawing[];
   /** Imagens do mapa, da de baixo para a de cima. */
   images: MapImage[];
+  illumination: MapIllumination;
+  lights: MapLight[];
 }
 
 export type MapTokenKind = 'character' | 'creature' | 'marker';
@@ -72,14 +74,18 @@ export interface MapToken {
   visionRadius: number;
   /** Imagem enviada pelo mestre para o token (tem prioridade sobre foto/imagem da criatura). */
   imagePath: string | null;
+  conditions: MapTokenCondition[];
+  darkvisionRadius: number;
+  lightBrightRadius: number;
+  lightDimRadius: number;
 }
 
 const MAP_COLUMNS =
-  'id, campaign_id, session_id, name, image_path, image_scale, image_offset_x, image_offset_y, cols, rows, show_grid, fog_enabled, fog_revealed, line_of_sight, walls, is_active, fog_auto_reveal, areas, drawings, images' as const;
-const TOKEN_COLUMNS = 'id, map_id, campaign_id, kind, character_id, creature_id, label, x, y, size, is_hidden, vision_radius, image_path' as const;
+  'id, campaign_id, session_id, name, image_path, image_scale, image_offset_x, image_offset_y, cols, rows, show_grid, fog_enabled, fog_revealed, line_of_sight, walls, is_active, fog_auto_reveal, areas, drawings, images, illumination, lights' as const;
+const TOKEN_COLUMNS = 'id, map_id, campaign_id, kind, character_id, creature_id, label, x, y, size, is_hidden, vision_radius, image_path, conditions, darkvision_radius, light_bright_radius, light_dim_radius' as const;
 
-type MapRow = Pick<Tables<'session_maps'>, 'id' | 'campaign_id' | 'session_id' | 'name' | 'image_path' | 'image_scale' | 'image_offset_x' | 'image_offset_y' | 'cols' | 'rows' | 'show_grid' | 'fog_enabled' | 'fog_revealed' | 'line_of_sight' | 'walls' | 'is_active' | 'fog_auto_reveal' | 'areas' | 'drawings' | 'images'>;
-type TokenRow = Pick<Tables<'map_tokens'>, 'id' | 'map_id' | 'campaign_id' | 'kind' | 'character_id' | 'creature_id' | 'label' | 'x' | 'y' | 'size' | 'is_hidden' | 'vision_radius' | 'image_path'>;
+type MapRow = Pick<Tables<'session_maps'>, 'id' | 'campaign_id' | 'session_id' | 'name' | 'image_path' | 'image_scale' | 'image_offset_x' | 'image_offset_y' | 'cols' | 'rows' | 'show_grid' | 'fog_enabled' | 'fog_revealed' | 'line_of_sight' | 'walls' | 'is_active' | 'fog_auto_reveal' | 'areas' | 'drawings' | 'images' | 'illumination' | 'lights'>;
+type TokenRow = Pick<Tables<'map_tokens'>, 'id' | 'map_id' | 'campaign_id' | 'kind' | 'character_id' | 'creature_id' | 'label' | 'x' | 'y' | 'size' | 'is_hidden' | 'vision_radius' | 'image_path' | 'conditions' | 'darkvision_radius' | 'light_bright_radius' | 'light_dim_radius'>;
 
 function quads(value: Json): [number, number, number, number][] {
   if (!Array.isArray(value)) return [];
@@ -131,6 +137,8 @@ function toMap(row: MapRow): SessionMap {
     areas: Array.isArray(row.areas) ? row.areas.filter(isMapArea) : [],
     drawings: Array.isArray(row.drawings) ? row.drawings.filter(isMapDrawing) : [],
     images: mapImages(row.images),
+    illumination: row.illumination === 'dim' || row.illumination === 'dark' ? row.illumination : 'bright',
+    lights: parseMapLights(row.lights),
   };
 }
 
@@ -149,6 +157,10 @@ function toToken(row: TokenRow): MapToken {
     isHidden: row.is_hidden,
     visionRadius: row.vision_radius,
     imagePath: row.image_path,
+    conditions: parseMapTokenConditions(row.conditions),
+    darkvisionRadius: row.darkvision_radius,
+    lightBrightRadius: row.light_bright_radius,
+    lightDimRadius: row.light_dim_radius,
   };
 }
 
@@ -194,7 +206,7 @@ export async function createSessionMap(client: CodexveilClient, input: { campaig
   return data.id;
 }
 
-export type SessionMapPatch = Partial<Pick<SessionMap, 'name' | 'imagePath' | 'imageScale' | 'imageOffsetX' | 'imageOffsetY' | 'cols' | 'rows' | 'showGrid' | 'fogEnabled' | 'fogRevealed' | 'lineOfSight' | 'walls' | 'fogAutoReveal' | 'areas' | 'drawings' | 'images'>>;
+export type SessionMapPatch = Partial<Pick<SessionMap, 'name' | 'imagePath' | 'imageScale' | 'imageOffsetX' | 'imageOffsetY' | 'cols' | 'rows' | 'showGrid' | 'fogEnabled' | 'fogRevealed' | 'lineOfSight' | 'walls' | 'fogAutoReveal' | 'areas' | 'drawings' | 'images' | 'illumination' | 'lights'>>;
 
 export async function updateSessionMap(client: CodexveilClient, mapId: string, patch: SessionMapPatch): Promise<void> {
   const update: Partial<Tables<'session_maps'>> = {};
@@ -214,6 +226,8 @@ export async function updateSessionMap(client: CodexveilClient, mapId: string, p
   if (patch.areas !== undefined) update.areas = patch.areas;
   if (patch.images !== undefined) update.images = patch.images as unknown as Json;
   if (patch.drawings !== undefined) update.drawings = patch.drawings;
+  if (patch.illumination !== undefined) update.illumination = patch.illumination;
+  if (patch.lights !== undefined) update.lights = patch.lights as unknown as Json;
   const { data, error } = await client.from('session_maps').update(update).eq('id', mapId).select('id');
   if (error) throw toAppError(error);
   if (data.length === 0) throw new AppError('forbidden');
@@ -264,7 +278,7 @@ export async function addMapToken(
   return data.id;
 }
 
-export async function updateMapToken(client: CodexveilClient, tokenId: string, patch: Partial<Pick<MapToken, 'label' | 'x' | 'y' | 'size' | 'isHidden' | 'visionRadius' | 'imagePath'>>): Promise<void> {
+export async function updateMapToken(client: CodexveilClient, tokenId: string, patch: Partial<Pick<MapToken, 'label' | 'x' | 'y' | 'size' | 'isHidden' | 'visionRadius' | 'imagePath' | 'conditions' | 'darkvisionRadius' | 'lightBrightRadius' | 'lightDimRadius'>>): Promise<void> {
   const update: Partial<Tables<'map_tokens'>> = {};
   if (patch.label !== undefined) update.label = patch.label;
   if (patch.x !== undefined) update.x = patch.x;
@@ -273,6 +287,10 @@ export async function updateMapToken(client: CodexveilClient, tokenId: string, p
   if (patch.isHidden !== undefined) update.is_hidden = patch.isHidden;
   if (patch.visionRadius !== undefined) update.vision_radius = patch.visionRadius;
   if (patch.imagePath !== undefined) update.image_path = patch.imagePath;
+  if (patch.conditions !== undefined) update.conditions = patch.conditions as unknown as Json;
+  if (patch.darkvisionRadius !== undefined) update.darkvision_radius = patch.darkvisionRadius;
+  if (patch.lightBrightRadius !== undefined) update.light_bright_radius = patch.lightBrightRadius;
+  if (patch.lightDimRadius !== undefined) update.light_dim_radius = patch.lightDimRadius;
   const { data, error } = await client.from('map_tokens').update(update).eq('id', tokenId).select('id');
   if (error) throw toAppError(error);
   if (data.length === 0) throw new AppError('forbidden');

@@ -23,7 +23,6 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 export function CallStart({ campaigns }: { campaigns: { id: string; name: string }[] }) {
   const router = useRouter();
   const { toast } = useToast();
-  const [title, setTitle] = useState('');
   const [mode, setMode] = useState<CallAccessMode>('open');
   const [campaignId, setCampaignId] = useState('');
   const [sessions, setSessions] = useState<{ id: string; label: string }[]>([]);
@@ -58,7 +57,14 @@ export function CallStart({ campaigns }: { campaigns: { id: string; name: string
     setBusy('create');
     try {
       const room = await createCallRoom(getSupabaseBrowserClient(), {
-        title: title.trim(),
+        // O nome da sala é o da campanha (com a sessão, quando escolhida).
+        title: [
+          campaigns.find((campaign) => campaign.id === campaignId)?.name,
+          sessions.find((session) => session.id === sessionId)?.label,
+        ]
+          .filter(Boolean)
+          .join(' · ')
+          .slice(0, 80),
         accessMode: mode,
         campaignId,
         sessionId: sessionId || null,
@@ -98,17 +104,9 @@ export function CallStart({ campaigns }: { campaigns: { id: string; name: string
           description="Gera um link e um código para chamar o grupo."
         />
         <div className="flex flex-col gap-3">
-          <TextField
-            id="call-title"
-            label="Nome da sala (opcional)"
-            value={title}
-            maxLength={80}
-            placeholder="Ex.: Sessão 12, A Cripta"
-            onChange={(event) => setTitle(event.target.value)}
-          />
           <SelectField
             id="call-campaign"
-            label="Campanha"
+            label="Campanha (nome da sala)"
             value={campaignId}
             onChange={(event) => {
               setCampaignId(event.target.value);

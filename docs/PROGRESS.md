@@ -5,6 +5,13 @@
 
 ## Estado atual
 
+**2026-11-02 (noite, mapa e call):** fases 1–3 do pacote do mapa (iniciativa no mapa, condições
+nos tokens, luz e escuridão) e encerramento automático de call esquecida. Migrações
+`20261102135500_call_idle_close`, `20261102140000_map_token_conditions` e
+`20261102150000_map_lighting` conferidas com `--dry-run` e aplicadas em produção. `pnpm check` e
+`pnpm build` passaram; testes: domain 105, rpg-systems 265, validation 17, ui 34, database 237
+(11 ao vivo pulados). Sem teste manual no navegador/celular.
+
 **2026-11-02 (call do app e Storage do mapa):** a call do app ficou estritamente para jogadores:
 entrar por convite/código/link, microfone, câmera, sair e pausar a própria transcrição; criação,
 sala de espera e controle da gravação ficam no site do mestre. No mapa, apagar mapa/camada/token e

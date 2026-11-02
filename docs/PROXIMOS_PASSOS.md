@@ -864,6 +864,18 @@ de segurança).
 
 ## Histórico
 
+### 2026-11-02 (noite) — iniciativa no mapa, condições, luz e escuridão; call
+
+- [x] Iniciativa ligada ao mapa: token da vez destacado (site e app), centralizar na vez.
+- [x] Condições nos tokens (catálogo SRD 5.2.1 + concentrando no domínio), duração em rodadas que
+      diminui na troca de rodada (gatilho no encontro); só o mestre altera.
+- [x] Luz e escuridão: iluminação do mapa, tochas/lanternas, luz carregada e visão no escuro por
+      token, respeitando paredes (site e app).
+- [x] Call esquecida (6 h sem entrada/saída) é encerrada ao listar as salas; nome da sala = nome da
+      campanha (e da sessão), sem campo de texto.
+- [ ] Gerador rápido de NPC (fase 4) e agenda da campanha (fase 5).
+- [ ] Teste manual no navegador e no celular das fases 1 a 3.
+
 ### 2026-11-02 (noite) — call do app para jogadores e mídia órfã do mapa
 
 - [x] O app deixou de oferecer recursos de mestre na call: não cria sala, não aprova/recusa sala
