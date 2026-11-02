@@ -4,6 +4,7 @@ import { Eye, EyeOff, Lock, PenLine, ScrollText, Swords, Users } from 'lucide-re
 import type { Metadata, Route } from 'next';
 import { LinkExistingCharacter } from '@/components/campaigns/link-existing-character';
 import { MemberList } from '@/components/campaigns/member-list';
+import { ScheduleCard } from '@/components/campaigns/schedule-card';
 import { TurnStatus } from '@/components/campaigns/turn-status';
 import { PartyFaces, PartyList } from '@/components/campaigns/party-list';
 import { ButtonLink } from '@/components/ui/button';
@@ -123,6 +124,7 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
         </div>
 
         <div className="flex flex-col gap-6">
+          {isActive ? <ScheduleCard campaignId={campaign.id} userId={user.id} canManage={isGm} /> : null}
           <Card>
             <h2 className="text-lg">Sobre a campanha</h2>
             {campaign.description ? (

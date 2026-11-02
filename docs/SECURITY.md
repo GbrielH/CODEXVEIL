@@ -302,3 +302,9 @@ O inventário completo está em [`AUDITORIA_GRAVACOES_2026-11-02.md`](AUDITORIA_
   apenas dos mapas e tokens que já podem ver.
 - `close_idle_call_rooms()` é `security definer` e só muda o status de salas paradas há 6 h; não
   devolve dados.
+
+## Agenda da campanha (2026-11-02)
+
+- Leitura das votações, datas e respostas só para membros da campanha (RLS). Sem INSERT/UPDATE
+  direto: propor e confirmar exigem `can_manage_campaign`; votar exige ser membro e a votação
+  estar aberta. Teste em `packages/database/test/rls/schedule-polls.test.ts`.

@@ -30,6 +30,7 @@ export * from './queries/library';
 export * from './queries/scene';
 export * from './queries/boards';
 export * from './queries/calls';
+export * from './queries/schedule';
 export * from './queries/assimilacao-master';
 export * from './queries/friends';
 export * from './queries/notes';

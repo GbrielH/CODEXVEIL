@@ -876,7 +876,10 @@ de segurança).
 - [x] NPC rápido na biblioteca (mestre): nome, aparência, jeito de falar, motivação e segredo por
       semente; "Salvar na biblioteca" (registro só do mestre) e "Usar na call" (o nome entra nos
       botões de "Quem está falando" da próxima call aberta neste navegador).
-- [ ] Agenda da campanha (fase 5).
+- [x] Agenda da campanha: o mestre propõe até 10 datas no site (opcionalmente ligadas a uma
+      sessão), membros respondem posso/talvez/não posso no site e no app, e o mestre confirma uma
+      (vira a data da sessão). Sem notificação push.
+- [ ] Teste manual no navegador e no celular das fases 4 e 5.
 - [ ] Teste manual no navegador e no celular das fases 1 a 3.
 
 ### 2026-11-02 (noite) — call do app para jogadores e mídia órfã do mapa

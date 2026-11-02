@@ -348,3 +348,11 @@ personagens" quando o dono liga a opção, por `public.set_character_npc_listed(
   com raios de luz plena e penumbra).
 - `map_tokens.darkvision_radius`, `light_bright_radius`, `light_dim_radius`.
 - `close_idle_call_rooms()`: encerra salas sem entrada/saída há 6 h; chamada ao listar as salas.
+
+## Agenda da campanha (2026-11-02)
+
+- `schedule_polls` (campanha, sessão opcional, título, `open`/`closed`, opção escolhida),
+  `schedule_options` (datas) e `schedule_votes` (`yes`/`maybe`/`no` por membro e data).
+- Escritas só por funções: `create_schedule_poll` (mestre, 1–10 datas), `vote_schedule` (membro,
+  votação aberta) e `confirm_schedule` (mestre; grava `sessions.scheduled_at` quando há sessão).
+  O mestre também apaga a votação (política de delete).

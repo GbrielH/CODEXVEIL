@@ -5,6 +5,11 @@
 
 ## Estado atual
 
+**2026-11-02 (noite, agenda):** votação de datas da campanha (site e app). Migração
+`20261102160000_campaign_schedule_polls` conferida com `--dry-run` e aplicada em produção. Teste
+PGlite `schedule-polls.test.ts` (1 caso: propor, votar, estranho recusado, confirmar e gravar a
+data da sessão). `pnpm check` e `pnpm build` passaram. Sem teste manual.
+
 **2026-11-02 (noite, NPC rápido):** gerador de NPC na biblioteca (domínio `npc-generator`, 3
 testes), salvar como registro só do mestre e mandar o nome para a call. Sem migração. Sem teste
 manual no navegador.

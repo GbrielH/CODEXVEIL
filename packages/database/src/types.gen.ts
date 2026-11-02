@@ -2015,6 +2015,123 @@ export type Database = {
         };
         Relationships: [];
       };
+      schedule_options: {
+        Row: {
+          id: string;
+          poll_id: string;
+          starts_at: string;
+        };
+        Insert: {
+          id?: string;
+          poll_id: string;
+          starts_at: string;
+        };
+        Update: {
+          id?: string;
+          poll_id?: string;
+          starts_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'schedule_options_poll_id_fkey';
+            columns: ['poll_id'];
+            isOneToOne: false;
+            referencedRelation: 'schedule_polls';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      schedule_polls: {
+        Row: {
+          campaign_id: string;
+          chosen_option_id: string | null;
+          created_at: string;
+          created_by: string;
+          id: string;
+          session_id: string | null;
+          status: string;
+          title: string;
+        };
+        Insert: {
+          campaign_id: string;
+          chosen_option_id?: string | null;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          session_id?: string | null;
+          status?: string;
+          title?: string;
+        };
+        Update: {
+          campaign_id?: string;
+          chosen_option_id?: string | null;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          session_id?: string | null;
+          status?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'schedule_polls_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'schedule_polls_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'schedule_polls_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      schedule_votes: {
+        Row: {
+          answer: string;
+          option_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          answer: string;
+          option_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          answer?: string;
+          option_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'schedule_votes_option_id_fkey';
+            columns: ['option_id'];
+            isOneToOne: false;
+            referencedRelation: 'schedule_options';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'schedule_votes_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       session_attendance: {
         Row: {
           campaign_id: string;
@@ -2911,6 +3028,13 @@ export type Database = {
         Args: never;
         Returns: undefined;
       };
+      confirm_schedule: {
+        Args: {
+          p_poll_id: string;
+          p_option_id: string;
+        };
+        Returns: undefined;
+      };
       consume_assistant_question: {
         Args: never;
         Returns: number;
@@ -2938,6 +3062,15 @@ export type Database = {
           p_items?: Json;
           p_abilities?: Json;
           p_answers?: Json;
+        };
+        Returns: string;
+      };
+      create_schedule_poll: {
+        Args: {
+          p_campaign_id: string;
+          p_session_id: string;
+          p_title: string;
+          p_starts: string[];
         };
         Returns: string;
       };
@@ -3267,6 +3400,13 @@ export type Database = {
       unarchive_campaign: {
         Args: {
           p_campaign_id: string;
+        };
+        Returns: undefined;
+      };
+      vote_schedule: {
+        Args: {
+          p_option_id: string;
+          p_answer: string;
         };
         Returns: undefined;
       };

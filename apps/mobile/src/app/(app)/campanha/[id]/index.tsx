@@ -34,6 +34,7 @@ import {
   LinkExistingCharacter,
   campaignRuleIssues,
 } from '@/components/campaign/link-existing-character';
+import { ScheduleVotes } from '@/components/campaign/schedule-votes';
 import { TurnStatus } from '@/components/campaign/turn-status';
 import { CharacterAvatar } from '@/components/character-avatar';
 import { GhostAura, isDown } from '@/components/ghost-aura';
@@ -166,6 +167,7 @@ export default function CampaignScreen() {
       {campaign.systemId === 'assimilacao' && isActive ? (
         <ConflictObjectivesCard campaignId={campaign.id} />
       ) : null}
+      {isActive ? <ScheduleVotes campaignId={campaign.id} /> : null}
       {/* Só o mestre troca a capa (o Storage confere); ela aparece no painel de todos. */}
       {isGm && isActive ? (
         <Card>
@@ -363,7 +365,9 @@ export default function CampaignScreen() {
                     systemId={character.systemId}
                     sheet={character.sheet}
                     size={52}
-                    portraitUrl={character.portraitPath ? (portraits[character.portraitPath] ?? null) : null}
+                    portraitUrl={
+                      character.portraitPath ? (portraits[character.portraitPath] ?? null) : null
+                    }
                   />
                   <View style={{ flex: 1 }}>
                     <AppText
