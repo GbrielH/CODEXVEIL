@@ -251,6 +251,20 @@ Vercel, aplicar as migrações `20261101110000` e `20261101120000`, testar num a
 gerar o APK com a transcrição do celular e só então ligar em produção. Detalhes em
 [call-transcricao-momentos.md](call-transcricao-momentos.md#onde-parou-2026-11-01).
 
+### B0i. Mapas: ideias do watabou e do RPG Map (2026-11-02)
+
+- [x] **Importar masmorra** do One Page Dungeon (watabou.github.io): o JSON exportado vira um mapa
+      com grade, paredes de pedra em volta do chão, névoa e linha de visão ligadas, números das
+      salas para todos e a legenda só para o mestre (`importOnePageDungeon` em `@codexveil/domain`).
+      O formato não tem documentação oficial; o leitor foi escrito pelo que a comunidade descreve
+      (`rects`, `doors`, `notes` com `ref` e `pos`) e **ainda não foi testado com um arquivo real**.
+- [x] **Sala numerada** (ferramenta do mapa): o próximo número aparece para todos; a descrição vai
+      para a legenda, só do mestre.
+- [x] **Tutorial do mapa** para o mestre, recolhido no topo do mapa da sessão.
+- [ ] Conferir a importação com um JSON real do One Page Dungeon (pedir um ao responsável).
+- [ ] Ideias anotadas para depois: gerador próprio de masmorra, texturas de chão por área e biblioteca
+      de ícones (baú, porta, armadilha, escada).
+
 ### B0g. Habilidades automáticas (2026-10-27)
 
 **Tormenta20** (em andamento):

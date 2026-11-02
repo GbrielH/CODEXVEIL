@@ -179,6 +179,10 @@ Os detalhes estão em [`DATABASE.md`](DATABASE.md) e [`SECURITY.md`](SECURITY.md
   criada pela campanha caía na lista pessoal e não virava NPC). Teste novo em
   `test/rls/npc-characters.test.ts`. Não visto em tela.
 
+- 2026-11-02: mapa com importação de masmorra do One Page Dungeon, salas numeradas com legenda do
+  mestre e tutorial. Testes da conversão em `packages/domain/src/combat/dungeon-import.test.ts` (com
+  um arquivo montado à mão, não um exportado de verdade). Não visto em tela.
+
 ## Testes e verificações executados
 
 Execução em 2026-10-17, Windows 11, Node 24.20 e pnpm 12.14:

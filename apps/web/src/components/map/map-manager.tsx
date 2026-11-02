@@ -21,6 +21,7 @@ import {
   type MapToken,
   type SessionMap,
   type SessionMapPatch,
+  type Wall,
 } from '@codexveil/database';
 import {
   DRAWING_COLORS,
@@ -28,6 +29,7 @@ import {
   TOKEN_SIZES,
   WALL_STYLES,
   fogCells,
+  importOnePageDungeon,
   paintFog,
   pointInPolygon,
   rectsFromCells,
@@ -41,7 +43,7 @@ import {
   type WallStyle,
 } from '@codexveil/domain';
 import { IMAGE_EXTENSIONS } from '@codexveil/validation';
-import { CircleDot, Eraser, Expand, Shrink, EyeOff, ImageUp, Map as MapIcon, Minus, MousePointer2, Pencil, Plus, Radio, RotateCw, Ruler, Square, SquareDashed, StickyNote, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
+import { Castle, CircleDot, Eraser, Hash, Expand, Shrink, EyeOff, ImageUp, Map as MapIcon, Minus, MousePointer2, Pencil, Plus, Radio, RotateCw, Ruler, Square, SquareDashed, StickyNote, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useConfirm } from '@/components/ui/use-confirm';
 import { Button } from '@/components/ui/button';
@@ -100,6 +102,7 @@ const TOOLS: { tool: MapTool; label: string; icon: ReactNode }[] = [
   { tool: 'area', label: 'Área de magia', icon: <CircleDot className="h-4 w-4" aria-hidden="true" /> },
   { tool: 'draw', label: 'Desenhar', icon: <Pencil className="h-4 w-4" aria-hidden="true" /> },
   { tool: 'note', label: 'Anotação', icon: <StickyNote className="h-4 w-4" aria-hidden="true" /> },
+  { tool: 'room', label: 'Sala numerada', icon: <Hash className="h-4 w-4" aria-hidden="true" /> },
   { tool: 'erase-drawing', label: 'Apagar desenho', icon: <Eraser className="h-4 w-4" aria-hidden="true" /> },
 ];
 
@@ -118,6 +121,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   const [maps, setMaps] = useState<SessionMap[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
+  const dungeonInputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [confirm, confirmDialog] = useConfirm();
   const [tool, setTool] = useState<MapTool>('move');
@@ -289,6 +293,53 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
     // eslint-disable-next-line react-hooks/exhaustive-deps -- a chave já resume mapa, tokens e paredes.
   }, [autoRevealKey]);
 
+  /** Próximo número de sala: um a mais que o maior número já posto no mapa. */
+  const nextRoomNumber = () =>
+    1 + Math.max(0, ...(map?.drawings ?? []).flatMap((drawing) => (drawing.type === 'note' && /^\d+$/.test(drawing.text) ? [Number(drawing.text)] : [])));
+
+  /** Sala numerada: o número fica visível a todos; a descrição, só para o mestre (legenda). */
+  const addRoom = (point: { x: number; y: number }, description: string) => {
+    if (!map) return;
+    const number = String(nextRoomNumber());
+    patchMap({ drawings: [...map.drawings, { type: 'note', x: point.x, y: point.y, text: number, color: DRAWING_COLORS[0] }] });
+    if (description) saveSecrets([...secrets, { type: 'note', x: point.x, y: point.y + 0.7, text: `${number}. ${description}`.slice(0, 120), color: DRAWING_COLORS[1] }]);
+  };
+
+  /** Masmorra do One Page Dungeon (watabou): mapa novo com grade, paredes, névoa, números e legenda. */
+  const importDungeon = async (file: File) => {
+    setBusy(true);
+    const client = getSupabaseBrowserClient();
+    try {
+      const dungeon = importOnePageDungeon(JSON.parse(await file.text()) as unknown);
+      const mapId = await createSessionMap(client, { campaignId, sessionId: newSessionId, name: dungeon.title, cols: dungeon.cols, rows: dungeon.rows });
+      await updateSessionMap(client, mapId, {
+        walls: dungeon.walls.map(([x1, y1, x2, y2]) => [x1, y1, x2, y2, 'stone'] as Wall),
+        fogEnabled: true,
+        lineOfSight: true,
+        drawings: dungeon.labels.map((label) => ({ type: 'note' as const, x: label.x, y: label.y, text: label.ref, color: DRAWING_COLORS[0] })),
+      });
+      const legend = dungeon.legend.flatMap((entry) => {
+        const label = dungeon.labels.find((item) => item.ref === entry.ref);
+        return label ? [{ type: 'note' as const, x: label.x, y: label.y + 0.7, text: `${entry.ref}. ${entry.text}`.slice(0, 120), color: DRAWING_COLORS[1] }] : [];
+      });
+      if (legend.length) await saveMapSecrets(client, mapId, campaignId, legend);
+      await reloadMaps();
+      setSelectedId(mapId);
+      toast({
+        tone: 'success',
+        title: `Masmorra “${dungeon.title}” importada.`,
+        description: `${dungeon.stats.rects} salas e corredores, ${dungeon.walls.length} paredes e ${dungeon.legend.length} notas na legenda (só você vê). Névoa e linha de visão já estão ligadas.`,
+      });
+    } catch (error) {
+      if (error instanceof SyntaxError) toast({ tone: 'danger', title: 'Arquivo inválido', description: 'Envie o JSON exportado pelo One Page Dungeon.' });
+      else if (error instanceof Error && !('code' in error)) toast({ tone: 'danger', title: 'Não deu para importar', description: error.message });
+      else fail('A masmorra não foi importada', error);
+    } finally {
+      setBusy(false);
+      if (dungeonInputRef.current) dungeonInputRef.current.value = '';
+    }
+  };
+
   const createMap = async () => {
     const name = newName.trim();
     if (!name) return;
@@ -447,6 +498,19 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
         description="Cada quadrado = 1,5 m. Ative um mapa para os jogadores verem; eles movem só o próprio token."
         action={map ? <LiveBadge status={live} /> : undefined}
       />
+      {canManage ? <MapTutorial /> : null}
+      {canManage && map && roomLegend(secrets).length ? (
+        <details open className="mb-4 rounded-lg border border-line p-3 text-sm">
+          <summary className="cursor-pointer font-medium text-fg">Legenda das salas (só você vê)</summary>
+          <ol className="mt-2 flex flex-col gap-1 text-fg-secondary">
+            {roomLegend(secrets).map((entry) => (
+              <li key={`${entry.number}-${entry.text}`}>
+                <strong className="text-fg">{entry.number}.</strong> {entry.text}
+              </li>
+            ))}
+          </ol>
+        </details>
+      ) : null}
 
       <div className="flex flex-wrap items-end gap-2">
         {maps.length ? (
@@ -473,6 +537,19 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
             <TextField id={`${id}-novo`} label="Nome do mapa" placeholder="Ex.: Taverna do Javali" maxLength={80} value={newName} onChange={(event) => setNewName(event.target.value)} />
             <Button icon={<Plus className="h-4 w-4" aria-hidden="true" />} disabled={!newName.trim()} loading={busy && !map} onClick={() => void createMap()}>
               Criar mapa
+            </Button>
+            <input
+              ref={dungeonInputRef}
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void importDungeon(file);
+              }}
+            />
+            <Button variant="secondary" icon={<Castle className="h-4 w-4" aria-hidden="true" />} disabled={busy} onClick={() => dungeonInputRef.current?.click()}>
+              Importar masmorra
             </Button>
           </>
         ) : null}
@@ -687,6 +764,11 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
               <p className="text-xs text-fg-muted">{tool === 'draw' ? 'Arraste para desenhar.' : 'Clique no mapa para escrever uma anotação.'}</p>
             </div>
           ) : null}
+          {tool === 'room' ? (
+            <p className="text-xs text-fg-muted">
+              Clique numa sala: o próximo número ({nextRoomNumber()}) aparece para todos e a descrição fica na legenda, só para você.
+            </p>
+          ) : null}
           {tool === 'wall' ? (
             <div className="flex flex-col gap-2">
               <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Estilo da parede">
@@ -898,27 +980,117 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
       ) : maps.length === 0 ? (
         <p className="mt-3 text-sm text-fg-muted">Nenhum mapa nesta sessão. Crie um, envie a imagem e ajuste a grade.</p>
       ) : null}
-      <Modal open={noteAt !== null} onClose={() => setNoteAt(null)} title="Nova anotação" description={drawSecret ? 'Só você vai ver esta anotação.' : 'Todos na mesa vão ver esta anotação.'}>
+      <Modal
+        open={noteAt !== null}
+        onClose={() => setNoteAt(null)}
+        title={tool === 'room' ? `Sala ${nextRoomNumber()}` : 'Nova anotação'}
+        description={
+          tool === 'room'
+            ? 'O número aparece para todos. A descrição (o que tem na sala) fica na legenda, só para você.'
+            : drawSecret
+              ? 'Só você vai ver esta anotação.'
+              : 'Todos na mesa vão ver esta anotação.'
+        }
+      >
         <form
           className="flex flex-col gap-4"
           onSubmit={(event) => {
             event.preventDefault();
             const text = noteText.trim();
-            if (noteAt && text) addDrawing({ type: 'note', x: noteAt.x, y: noteAt.y, text: text.slice(0, 120), color: drawColor });
+            if (noteAt && tool === 'room') addRoom(noteAt, text);
+            else if (noteAt && text) addDrawing({ type: 'note', x: noteAt.x, y: noteAt.y, text: text.slice(0, 120), color: drawColor });
             setNoteAt(null);
           }}
         >
-          <TextField id={`${id}-nota`} label="Texto da anotação" maxLength={120} autoFocus value={noteText} onChange={(event) => setNoteText(event.target.value)} placeholder="Ex.: Armadilha de fosso" />
+          <TextField
+            id={`${id}-nota`}
+            label={tool === 'room' ? 'O que tem na sala (opcional)' : 'Texto da anotação'}
+            maxLength={110}
+            autoFocus
+            value={noteText}
+            onChange={(event) => setNoteText(event.target.value)}
+            placeholder={tool === 'room' ? 'Ex.: Altar profanado, 2 esqueletos' : 'Ex.: Armadilha de fosso'}
+          />
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => setNoteAt(null)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={!noteText.trim()}>
+            <Button type="submit" disabled={tool !== 'room' && !noteText.trim()}>
               Pôr no mapa
             </Button>
           </div>
         </form>
       </Modal>
     </Card>
+  );
+}
+
+/** Legenda das salas numeradas (anotações secretas "N. descrição"), em ordem. */
+export function roomLegend(secrets: readonly MapDrawing[]): { number: number; text: string }[] {
+  return secrets
+    .flatMap((drawing) => {
+      if (drawing.type !== 'note') return [];
+      const match = /^(\d+)\.\s+(.*)$/s.exec(drawing.text);
+      return match ? [{ number: Number(match[1]), text: match[2]! }] : [];
+    })
+    .sort((a, b) => a.number - b.number);
+}
+
+/**
+ * Tutorial do mapa para o mestre: o passo a passo das ferramentas e a importação de masmorras do
+ * One Page Dungeon (watabou). Fica recolhido; aberto, ensina do zero.
+ */
+function MapTutorial() {
+  return (
+    <details className="mb-4 rounded-lg border border-line bg-sunken/40 p-3 text-sm">
+      <summary className="cursor-pointer font-medium text-fg">Como usar o mapa (tutorial do mestre)</summary>
+      <div className="mt-3 flex flex-col gap-4 text-fg-secondary">
+        <section>
+          <h3 className="font-display text-fg">1. Monte o cenário</h3>
+          <ol className="mt-1 list-decimal space-y-1 pl-5">
+            <li>Escolha a sessão, dê um nome e clique em <strong>Criar mapa</strong>.</li>
+            <li>Envie a imagem do mapa e, com a ferramenta <strong>Imagem</strong>, arraste e ajuste a largura até os quadrados combinarem (1 quadrado = 1,5 m).</li>
+            <li>Com <strong>Parede</strong>, desenhe as paredes: elas bloqueiam a visão quando a linha de visão está ligada.</li>
+            <li>Ligue a <strong>névoa</strong> e use <strong>Revelar névoa</strong>/<strong>Cobrir com névoa</strong> para mostrar só o que o grupo descobriu (ou a névoa automática, que abre o que os tokens enxergam).</li>
+          </ol>
+        </section>
+        <section>
+          <h3 className="font-display text-fg">2. Masmorra pronta em um minuto</h3>
+          <ol className="mt-1 list-decimal space-y-1 pl-5">
+            <li>
+              Abra o{' '}
+              <a href="https://watabou.github.io/one-page-dungeon/" target="_blank" rel="noreferrer" className="text-fg-brand underline-offset-2 hover:underline">
+                One Page Dungeon
+              </a>{' '}
+              (gerador gratuito do watabou) e gere masmorras até gostar de uma.
+            </li>
+            <li>No menu de exportação do gerador, salve em <strong>JSON</strong>.</li>
+            <li>Aqui, escolha a sessão e clique em <strong>Importar masmorra</strong> com esse arquivo.</li>
+            <li>O Codexveil cria o mapa com a grade, as paredes, a névoa e a linha de visão já ligadas, os números das salas para todos e a legenda só para você.</li>
+            <li>
+              Para o visual, exporte também a imagem (PNG) no gerador e envie como imagem do mapa; ajuste a largura para os quadrados baterem com as paredes.
+            </li>
+          </ol>
+          <p className="mt-1 text-xs text-fg-muted">
+            Outros geradores do watabou (cidade, vila, caverna, casa) exportam só imagem: envie como imagem do mapa e desenhe as paredes que importam.
+          </p>
+        </section>
+        <section>
+          <h3 className="font-display text-fg">3. Salas numeradas e legenda</h3>
+          <p className="mt-1">
+            Com <strong>Sala numerada</strong>, clique numa sala: o próximo número aparece para todos, e o que tem nela (monstros, armadilhas, tesouro) fica
+            na legenda abaixo do mapa, só para você.
+          </p>
+        </section>
+        <section>
+          <h3 className="font-display text-fg">4. Durante o jogo</h3>
+          <ul className="mt-1 list-disc space-y-1 pl-5">
+            <li><strong>Ative</strong> o mapa para os jogadores verem; cada um move só o próprio token.</li>
+            <li>Ponha personagens e criaturas da biblioteca como tokens; tokens novos entram ocultos até você mostrar.</li>
+            <li>Use a <strong>Régua</strong> para distâncias e <strong>Área de magia</strong> para cones, esferas e linhas.</li>
+          </ul>
+        </section>
+      </div>
+    </details>
   );
 }

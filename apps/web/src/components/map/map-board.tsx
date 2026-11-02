@@ -25,7 +25,7 @@ import { useCampaignColors } from '@/components/dice/campaign-colors';
 import { WallPatterns, WallShape } from './wall-art';
 
 /** Ferramenta do mestre no tabuleiro. */
-export type MapTool = 'move' | 'image' | 'ruler' | 'area' | 'reveal' | 'hide' | 'wall' | 'erase-wall' | 'draw' | 'note' | 'erase-drawing';
+export type MapTool = 'move' | 'image' | 'ruler' | 'area' | 'reveal' | 'hide' | 'wall' | 'erase-wall' | 'draw' | 'note' | 'room' | 'erase-drawing';
 
 export const CELL = 40;
 const CREATURE_COLOR = '#571F2B';
@@ -273,7 +273,7 @@ export function MapBoard({
       setStroke([[point.x, point.y]]);
       return;
     }
-    if (tool === 'note') {
+    if (tool === 'note' || tool === 'room') {
       onRequestNote?.(point);
       return;
     }
