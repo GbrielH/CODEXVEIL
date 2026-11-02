@@ -100,6 +100,10 @@ lock da geração (`20261102110000`–`20261102120000`) estão aplicadas. Faltam
 LiveKit em Preview, deploy de Preview, teste ao vivo e APK novo autorizado. Onde parou e o roteiro:
 [call-transcricao-momentos.md](call-transcricao-momentos.md#onde-parou-atualizado-em-2026-11-02).
 
+No app, a call é somente do jogador: entrar por convite/código/link, usar microfone/câmera, sair,
+ver o aviso de transcrição e pausar a própria voz. Criar/encerrar sala, convidar, decidir a sala de
+espera e ligar/desligar a gravação são responsabilidades do mestre no site.
+
 Também em 2026-11-01: app com aba Tomo (no lugar de Sistemas), Taverna com menu lateral, limpar
 conversa do Tomo (site e app), dados 3D caindo pela tela no app (APK novo), painel do app enxuto,
 abas só com ícones, montanha no carregamento, imagens das anotações, aba Itens corrigida.

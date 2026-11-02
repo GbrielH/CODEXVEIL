@@ -1,12 +1,7 @@
-import {
-  decideCallParticipant,
-  findCallRoom,
-  leaveCallRoom,
-  listCallParticipants,
-} from '@codexveil/database';
+import { findCallRoom, leaveCallRoom, listCallParticipants } from '@codexveil/database';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, View } from 'react-native';
+import { Platform } from 'react-native';
 import { CallStage } from '@/components/call/call-stage';
 import { CallTranscript } from '@/components/call/call-transcript';
 import { Button } from '@/components/ui/button';
@@ -15,10 +10,9 @@ import { Screen } from '@/components/ui/screen';
 import { ErrorState, LoadingState } from '@/components/ui/states';
 import { useToast } from '@/components/ui/toast';
 import { useAsyncData, useRealtimeRefresh } from '@/lib/hooks';
-import { useUserId } from '@/lib/session';
 import { callsEnabled } from '@/lib/livekit';
 import { getSupabase, siteUrl } from '@/lib/supabase';
-import { colors, spacing } from '@/lib/theme';
+import { colors } from '@/lib/theme';
 
 type Entry =
   | { state: 'loading' }
@@ -29,7 +23,6 @@ type Entry =
 /** Sala de call no app (também pelo link `codexveil://call/<slug>`). */
 export default function CallRoomScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
-  const userId = useUserId();
   const router = useRouter();
   const toast = useToast();
   const [entry, setEntry] = useState<Entry>({ state: 'loading' });
@@ -94,9 +87,6 @@ export default function CallRoomScreen() {
   if (Platform.OS === 'web')
     return <ErrorState message="A call do app só funciona no celular. No navegador, use o site." />;
 
-  const waiting = (participants.data ?? []).filter((person) => person.status === 'waiting');
-  const isOwner = room.data.ownerId === userId;
-
   if (entry.state === 'ready')
     return (
       <>
@@ -110,33 +100,7 @@ export default function CallRoomScreen() {
             toast({ tone: 'danger', title: 'Problema na call', description: message })
           }
         />
-        <CallTranscript roomId={room.data.id} isOwner={isOwner} />
-        {isOwner && waiting.length ? (
-          <View style={{ position: 'absolute', top: 12, left: 12, right: 12, gap: spacing[2] }}>
-            {waiting.map((person) => (
-              <Card key={person.userId}>
-                <AppText>{person.displayName} quer entrar</AppText>
-                <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-                  <Button
-                    label="Aprovar"
-                    compact
-                    onPress={() =>
-                      void decideCallParticipant(getSupabase(), room.data!.id, person.userId, true)
-                    }
-                  />
-                  <Button
-                    label="Recusar"
-                    compact
-                    variant="ghost"
-                    onPress={() =>
-                      void decideCallParticipant(getSupabase(), room.data!.id, person.userId, false)
-                    }
-                  />
-                </View>
-              </Card>
-            ))}
-          </View>
-        ) : null}
+        <CallTranscript roomId={room.data.id} />
       </>
     );
 

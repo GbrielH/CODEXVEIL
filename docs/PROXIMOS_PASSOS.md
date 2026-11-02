@@ -864,6 +864,21 @@ de segurança).
 
 ## Histórico
 
+### 2026-11-02 (noite) — call do app para jogadores e mídia órfã do mapa
+
+- [x] O app deixou de oferecer recursos de mestre na call: não cria sala, não aprova/recusa sala
+      de espera e não liga/desliga a transcrição. Jogadores entram por convite/código/link, usam
+      microfone e câmera, saem e pausam a própria voz na transcrição. A sala é criada pelo mestre
+      no site.
+- [x] Exclusão de mapa, retirada de camada, exclusão de token e troca/remoção da imagem própria do
+      token agora só apagam o arquivo do Storage depois da gravação no banco. Antes de apagar, o
+      site confere se o caminho continua usado por outro mapa, camada ou token.
+- [x] Upload de imagem de mapa/token que falha antes de ser vinculado ao banco limpa o arquivo novo.
+- [x] `pnpm check`: 20/20 tarefas, 669 testes aprovados e 11 testes ao vivo pulados. `pnpm build`:
+      2/2 tarefas (site e exportação Android) aprovadas; 3 avisos de lint preexistentes, sem erros.
+- [ ] Conferir manualmente a call no aparelho e os quatro fluxos de imagem no navegador; nesta
+      rodada a verificação foi automatizada por lint, tipos, testes e build.
+
 ### 2026-11-02 (noite) — confirmações do responsável
 
 - [x] Chave do LiveKit trocada; mapa com masmorra importada testado; Assimilação e roteiro manual

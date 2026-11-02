@@ -5,6 +5,16 @@
 
 ## Estado atual
 
+**2026-11-02 (call do app e Storage do mapa):** a call do app ficou estritamente para jogadores:
+entrar por convite/código/link, microfone, câmera, sair e pausar a própria transcrição; criação,
+sala de espera e controle da gravação ficam no site do mestre. No mapa, apagar mapa/camada/token e
+trocar ou remover imagem própria de token agora aguarda o banco e só remove do Storage quando o
+caminho não está referenciado por outro mapa, camada ou token; uploads não vinculados também são
+limpos. Não houve mudança de esquema nem dependência/configuração nativa. `pnpm check` passou nas
+20 tarefas, com 669 testes aprovados e 11 testes ao vivo pulados; `pnpm build` passou nas 2 tarefas
+(Next.js e exportação Android do Expo). Permanecem 3 avisos de lint preexistentes, sem erros. Não
+houve teste manual no aparelho ou no navegador.
+
 **2026-11-02 (confirmações):** o responsável confirmou a troca da chave do LiveKit, o teste do
 mapa com masmorra importada, o Assimilação, o roteiro manual e os dados 3D no app. Firebase foi
 descartado. Falta só o teste da call com duas contas.

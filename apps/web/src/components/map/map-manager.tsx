@@ -234,8 +234,38 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
     });
   };
 
+  /** Remove do Storage apenas arquivos que, depois da gravação, não aparecem em outra camada ou token. */
+  const removeUnusedMapMedia = async (client: ReturnType<typeof getSupabaseBrowserClient>, paths: (string | null | undefined)[]) => {
+    const candidates = [...new Set(paths.filter((path): path is string => Boolean(path)))];
+    if (!candidates.length) return;
+    try {
+      const [mapRefs, tokenRefs] = await Promise.all([
+        client.from('session_maps').select('image_path, images').eq('campaign_id', campaignId),
+        client.from('map_tokens').select('image_path').eq('campaign_id', campaignId),
+      ]);
+      if (mapRefs.error) throw mapRefs.error;
+      if (tokenRefs.error) throw tokenRefs.error;
+      const used = new Set<string>();
+      for (const row of mapRefs.data ?? []) {
+        if (row.image_path) used.add(row.image_path);
+        if (Array.isArray(row.images)) for (const item of row.images) {
+          if (item && typeof item === 'object' && !Array.isArray(item) && typeof item.path === 'string') used.add(item.path);
+        }
+      }
+      for (const row of tokenRefs.data ?? []) if (row.image_path) used.add(row.image_path);
+      const unused = candidates.filter((path) => !used.has(path));
+      if (!unused.length) return;
+      const { error } = await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove(unused);
+      if (error) throw error;
+    } catch (error) {
+      toast({ tone: 'warning', title: 'O registro foi salvo, mas sobrou um arquivo antigo', description: failureMessage(error, 'Ele pode ser limpo depois no Storage.') });
+    }
+  };
+
   const uploadTokenImage = async (target: MapToken, original: File) => {
     const client = getSupabaseBrowserClient();
+    let uploadedPath: string | null = null;
+    let saved = false;
     try {
       const prepared = await prepareImage(original, 'portrait');
       if (!prepared.ok) {
@@ -243,14 +273,17 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
         return;
       }
       const path = campaignMapPath(campaignId, `token-${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`);
+      uploadedPath = path;
       const bucket = client.storage.from(CAMPAIGN_MEDIA_BUCKET);
       const { error } = await bucket.upload(path, prepared.file, { contentType: prepared.mimeType, upsert: false });
       if (error) throw error;
       const previous = target.imagePath;
       await track(() => updateMapToken(client, target.id, { imagePath: path }));
-      if (previous) await bucket.remove([previous]);
+      saved = true;
+      await removeUnusedMapMedia(client, [previous]);
       reload();
     } catch (error) {
+      if (uploadedPath && !saved) await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([uploadedPath]);
       fail('A imagem do token não foi enviada', error);
     } finally {
       if (tokenInputRef.current) tokenInputRef.current.value = '';
@@ -260,8 +293,47 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   const removeTokenImage = async (target: MapToken) => {
     if (!target.imagePath) return;
     const previous = target.imagePath;
-    patchToken(target, { imagePath: null });
-    await getSupabaseBrowserClient().storage.from(CAMPAIGN_MEDIA_BUCKET).remove([previous]);
+    const client = getSupabaseBrowserClient();
+    try {
+      await track(() => updateMapToken(client, target.id, { imagePath: null }));
+      setData((current) => ({ ...current, tokens: current.tokens.map((entry) => (entry.id === target.id ? { ...entry, imagePath: null } : entry)) }));
+      await removeUnusedMapMedia(client, [previous]);
+    } catch (error) {
+      fail('A imagem do token não foi removida', error);
+      reload();
+    }
+  };
+
+  const removeLayer = async (index: number) => {
+    if (!map || !map.images[index]) return;
+    const layer = map.images[index];
+    const next = map.images.filter((_, position) => position !== index);
+    const client = getSupabaseBrowserClient();
+    try {
+      if (saveTimer.current) window.clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+      const pending = pendingPatch.current?.mapId === map.id ? pendingPatch.current.patch : null;
+      pendingPatch.current = null;
+      await track(() => updateSessionMap(client, map.id, { ...pending, images: next }));
+      setData((current) => (current.map ? { ...current, map: { ...current.map, images: next } } : current));
+      setSelectedLayer(null);
+      await removeUnusedMapMedia(client, [layer.path]);
+    } catch (error) {
+      fail('A imagem não foi retirada do mapa', error);
+      reload();
+    }
+  };
+
+  const removeToken = async (target: MapToken) => {
+    const client = getSupabaseBrowserClient();
+    try {
+      await deleteMapToken(client, target.id);
+      setSelectedToken(null);
+      await removeUnusedMapMedia(client, [target.imagePath]);
+      reload();
+    } catch (error) {
+      fail('O token não foi removido', error);
+    }
   };
 
   // Desenhos e anotações só do mestre (tabela separada; o banco não envia aos jogadores).
@@ -463,6 +535,8 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
     if (!map) return;
     setBusy(true);
     const client = getSupabaseBrowserClient();
+    let uploadedPath: string | null = null;
+    let saved = false;
     try {
       const prepared = await prepareImage(original, 'map');
       if (!prepared.ok) {
@@ -470,17 +544,20 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
         return;
       }
       const path = campaignMapPath(campaignId, `${crypto.randomUUID()}.${IMAGE_EXTENSIONS[prepared.mimeType]}`);
+      uploadedPath = path;
       const bucket = client.storage.from(CAMPAIGN_MEDIA_BUCKET);
       const { error } = await bucket.upload(path, prepared.file, { contentType: prepared.mimeType, upsert: false });
       if (error) throw error;
       // Nova camada no canto de cima, com a largura do mapa; o mestre arrasta e ajusta.
       const layers = [...map.images, { path, x: 0, y: 0, width: map.cols }];
       await track(() => updateSessionMap(client, map.id, { images: layers }));
+      saved = true;
       setSelectedLayer(layers.length - 1);
       setTool('image');
       toast({ tone: 'success', title: 'Imagem adicionada ao mapa.', description: 'Com a ferramenta "Imagem", arraste para posicionar e ajuste a largura até os quadrados combinarem (1 quadrado = 1,5 m).' });
       reload();
     } catch (error) {
+      if (uploadedPath && !saved) await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([uploadedPath]);
       fail('A imagem não foi enviada', error);
     } finally {
       setBusy(false);
@@ -522,8 +599,12 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
     setBusy(true);
     try {
       const client = getSupabaseBrowserClient();
+      const media = [map.imagePath, ...map.images.map((layer) => layer.path), ...tokens.map((token) => token.imagePath)];
+      if (saveTimer.current) window.clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+      pendingPatch.current = null;
       await deleteSessionMap(client, map.id);
-      if (map.imagePath) await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([map.imagePath]);
+      await removeUnusedMapMedia(client, media);
       setSelectedId(null);
       await reloadMaps();
     } catch (error) {
@@ -817,12 +898,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                           size="sm"
                           variant="ghost"
                           icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
-                          onClick={() => {
-                            const layer = map.images[selectedLayer]!;
-                            patchMap({ images: map.images.filter((_, index) => index !== selectedLayer) });
-                            setSelectedLayer(null);
-                            void getSupabaseBrowserClient().storage.from(CAMPAIGN_MEDIA_BUCKET).remove([layer.path]);
-                          }}
+                          onClick={() => void removeLayer(selectedLayer)}
                         >
                           Tirar imagem
                         </Button>
@@ -1074,12 +1150,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                       variant="ghost"
                       size="sm"
                       icon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
-                      onClick={() => {
-                        setSelectedToken(null);
-                        deleteMapToken(getSupabaseBrowserClient(), token.id)
-                          .then(reload)
-                          .catch((error: unknown) => fail('O token não foi removido', error));
-                      }}
+                      onClick={() => void removeToken(token)}
                     >
                       Tirar do mapa
                     </Button>

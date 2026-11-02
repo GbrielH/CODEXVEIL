@@ -1,7 +1,6 @@
 import {
   listTranscript,
   saveTranscriptSegment,
-  setCallTranscription,
   type TranscriptSegment,
 } from '@codexveil/database';
 import { useCallback, useEffect, useState } from 'react';
@@ -13,10 +12,10 @@ import { getSupabase } from '@/lib/supabase';
 import { colors, radii, spacing } from '@/lib/theme';
 
 /**
- * Transcrição na call do app: aviso de gravação, botão do dono, pausa da própria voz e as
- * últimas falas (com o personagem) por cima da chamada.
+ * Transcrição na call do app: aviso de gravação, pausa da própria voz e as últimas falas (com o
+ * personagem) por cima da chamada. O mestre liga e desliga a gravação somente pelo site.
  */
-export function CallTranscript({ roomId, isOwner }: { roomId: string; isOwner: boolean }) {
+export function CallTranscript({ roomId }: { roomId: string }) {
   const [enabled, setEnabled] = useState(false);
   const [paused, setPaused] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -70,7 +69,7 @@ export function CallTranscript({ roomId, isOwner }: { roomId: string; isOwner: b
     return () => provider.stop();
   }, [enabled, paused, provider, roomId]);
 
-  if (!enabled && !isOwner) return null;
+  if (!enabled) return null;
   return (
     <View style={styles.box} pointerEvents="box-none">
       {enabled ? (
@@ -96,20 +95,6 @@ export function CallTranscript({ roomId, isOwner }: { roomId: string; isOwner: b
         </AppText>
       ))}
       <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-        {isOwner ? (
-          <Pressable
-            style={styles.chip}
-            accessibilityRole="button"
-            onPress={() => {
-              setProblem(null);
-              void setCallTranscription(getSupabase(), roomId, !enabled)
-                .then(loadState)
-                .catch(() => setProblem('Não foi possível alterar a gravação da transcrição.'));
-            }}
-          >
-            <AppText variant="small">{enabled ? 'Parar de gravar' : 'Gravar transcrição'}</AppText>
-          </Pressable>
-        ) : null}
         {enabled && provider.supported ? (
           <Pressable
             style={styles.chip}
