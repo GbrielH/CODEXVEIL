@@ -13,6 +13,13 @@ na raiz do repositório.
 
 ## 1. Supabase: projeto e migrações
 
+### Call em produção (2026-11-02)
+
+A pedido do responsável, `CALLS_ENABLED=1`, `LIVEKIT_URL`, `LIVEKIT_API_KEY` e
+`LIVEKIT_API_SECRET` também foram cadastradas em Production (via `vercel env add`) e a produção
+foi republicada. O segredo apareceu no chat: trocar a chave no LiveKit e atualizar Production e
+Preview. Teste com duas contas ainda pendente.
+
 ### Preview da call (2026-11-02)
 
 `CALLS_ENABLED=1` está configurada somente no ambiente Preview do projeto Vercel `codexveil`.
