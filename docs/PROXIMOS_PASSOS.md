@@ -870,7 +870,7 @@ de segurança).
       dele (o banco só permite um personagem por jogador na campanha).
 - [x] Barra opcional "Quem está falando" para o mestre na call: botões de NPC (nomes editáveis) e
       Narração, atalhos 1–9 e 0 (Mestre). As falas transcritas do mestre saem com esse nome.
-- [ ] Aplicar a migração `20261102130000_call_campaign_speaker.sql` em produção (dry-run ok).
+- [x] Migração `20261102130000_call_campaign_speaker.sql` aplicada em produção (2026-11-02).
 - [ ] Testar com duas contas na call de produção.
 
 ### 2026-11-02 (noite) — mapa: menu das anotações, renomear e "Novo mapa"
