@@ -135,7 +135,7 @@ Assimilação, sem rascunho); Tomo como chat próprio no app (hoje é pela Taver
 | SMTP próprio (Brevo) e templates em português | **Feito:** SMTP ligado em 2026-10-18; entrega confirmada pelo responsável em 2026-10-26                      | [DEPLOY](DEPLOY.md#2-autenticação)                 |
 | Hospedagem da web                             | **Feito:** <https://codexveil.vercel.app>, publicado sozinho a cada push em `main` (conferido em 2026-10-18) | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
 | Conta Expo e projeto EAS                      | **Feito:** `@gabriel.xxtth/codexveil`; o workflow roda a cada push (OTA; APK novo só com mudança nativa)     | [DEPLOY](DEPLOY.md#5-app-android-apk-e-aab)        |
-| Firebase (notificações de sessão)             | **Pendente:** projeto Firebase e chave FCM V1 no Expo (passo 0c de PROXIMOS_PASSOS)                          | [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md)              |
+| Firebase (notificações de sessão)             | **Descartado** pelo responsável em 2026-11-02 (sem notificações por Firebase)                                | [PROXIMOS_PASSOS](PROXIMOS_PASSOS.md)              |
 | Domínio próprio                               | Opcional                                                                                                     | [DEPLOY](DEPLOY.md#4-site-nextjs)                  |
 
 ## 2. Critérios de aceitação do MVP (seção 22)

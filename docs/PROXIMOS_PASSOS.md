@@ -222,7 +222,7 @@ mapa e notas lado a lado).
       "Meus personagens"; a opção "Adicionar aos personagens" mostra o NPC lá também (migração
       `20261102100000`).
 - [x] Migrações `20261030140000` e `20261030150000` aplicadas em produção e publicadas (2026-10-30).
-- [ ] Assimilação RPG: testar no navegador e no celular com o livro importado.
+- [x] Assimilação RPG: testar no navegador e no celular com o livro importado.
 - [x] Assimilação RPG: teste com dados especiais na ficha do site (Rolagem Assimilada, dados mantidos).
 - [x] Faces 11 e 12 do d12 do Assimilação conferidas na tabela do livro (2026-10-30).
 - [x] Retratos de perfil novos (2026-10-30): 15 ícones em imagem, guardados no código (o banco só
@@ -711,14 +711,14 @@ Próximos passos, em ordem:
 
 ## Próximos passos (em ordem)
 
-### 0c. Notificações de sessão agendada — você e Claude
+### 0c. Notificações de sessão agendada — você e Claude (descartado pelo responsável em 2026-11-02)
 
-- [ ] **Você:** Firebase → criar projeto `Codexveil` → app Android `app.codexveil.mobile` →
-      baixar o `google-services.json` para `apps/mobile/` (ignorado pelo Git).
-- [ ] **Você:** Firebase → Configurações do projeto → Contas de serviço → Gerar nova chave
-      privada; no expo.dev → Credentials → Android → FCM V1 service account key → enviar.
-- [ ] **Claude:** `eas env:create --name GOOGLE_SERVICES_JSON --type file` (preview e
-      production) e push: o workflow gera o APK com notificações.
+- [-] **Você:** Firebase → criar projeto `Codexveil` → app Android `app.codexveil.mobile` →
+  baixar o `google-services.json` para `apps/mobile/` (ignorado pelo Git).
+- [-] **Você:** Firebase → Configurações do projeto → Contas de serviço → Gerar nova chave
+  privada; no expo.dev → Credentials → Android → FCM V1 service account key → enviar.
+- [-] **Claude:** `eas env:create --name GOOGLE_SERVICES_JSON --type file` (preview e
+  production) e push: o workflow gera o APK com notificações.
 - [x] **Claude:** tabelas `push_tokens` e `session_notifications`, Edge Function
       `notify-session` publicada, registro do aparelho no app e opção no Perfil.
 
@@ -738,7 +738,7 @@ regras de criação do mestre em cada campanha, mestres sem personagens nas pró
 - [x] **Claude:** APK novo gerado pelo workflow do EAS ([execução](https://expo.dev/accounts/gabriel.xxtth/projects/codexveil/workflows/01a148df-de0f-7af9-a35a-8c24798df51d), build
       `420f6c37`). O app também foi percorrido no navegador (Expo web), logado, contra o banco
       real.
-- [ ] **Você:** instalar o APK novo no celular (link no README).
+- [x] **Você:** instalar o APK novo no celular (link no README).
 
 **Pronto quando:** um jogador criar um personagem completo pelo assistente numa campanha cujo
 mestre definiu o nível inicial, e o mestre não conseguir criar personagem nessa campanha. No
@@ -795,25 +795,25 @@ reinstalar.
 
 Mestre e jogador, em navegadores diferentes, no site publicado:
 
-- [ ] Cadastro, e-mail de confirmação, login e logout.
-- [ ] O mestre cria uma campanha e um convite; o jogador aceita pelo link.
-- [ ] O jogador cria um personagem na campanha e edita a ficha (o status "salvo" aparece).
-- [ ] O mestre abre a mesa, adiciona um NPC à cena e altera a vida do personagem; a ficha do
+- [x] Cadastro, e-mail de confirmação, login e logout.
+- [x] O mestre cria uma campanha e um convite; o jogador aceita pelo link.
+- [x] O jogador cria um personagem na campanha e edita a ficha (o status "salvo" aparece).
+- [x] O mestre abre a mesa, adiciona um NPC à cena e altera a vida do personagem; a ficha do
       jogador atualiza sozinha.
-- [ ] O mestre cria uma sessão com uma nota privada e publica a sessão; o jogador **não** vê a
+- [x] O mestre cria uma sessão com uma nota privada e publica a sessão; o jogador **não** vê a
       nota.
-- [ ] Criação guiada: classe, antecedente, espécie, perícias, atributos, magias e equipamento,
+- [x] Criação guiada: classe, antecedente, espécie, perícias, atributos, magias e equipamento,
       com o nível definido pelo mestre.
-- [ ] Upload de retrato do personagem (a imagem é reduzida antes do envio).
-- [ ] O layout funciona no navegador do celular.
+- [x] Upload de retrato do personagem (a imagem é reduzida antes do envio).
+- [x] O layout funciona no navegador do celular.
 
 No APK, instalado num Android:
 
-- [ ] O app abre na tela de login, sem aviso de configuração ausente.
-- [ ] Entra com a conta do jogador; painel, campanhas e personagens aparecem.
-- [ ] A ficha abre; alterar a vida salva e aparece no site (e o contrário).
-- [ ] A leitura de sessão mostra só o conteúdo público.
-- [ ] A sessão continua depois de fechar e abrir o app.
+- [x] O app abre na tela de login, sem aviso de configuração ausente.
+- [x] Entra com a conta do jogador; painel, campanhas e personagens aparecem.
+- [x] A ficha abre; alterar a vida salva e aparece no site (e o contrário).
+- [x] A leitura de sessão mostra só o conteúdo público.
+- [x] A sessão continua depois de fechar e abrir o app.
 
 Envie aqui os erros com print ou mensagem. **Pronto quando:** todos os itens estiverem
 marcados e os critérios "Validado na API" e "Falta validar ao vivo" de
@@ -864,6 +864,13 @@ de segurança).
 
 ## Histórico
 
+### 2026-11-02 (noite) — confirmações do responsável
+
+- [x] Chave do LiveKit trocada; mapa com masmorra importada testado; Assimilação e roteiro manual
+      (site e app) conferidos pelo responsável. Dados 3D e aba Dados do app funcionando.
+- [-] Notificações por Firebase: descartadas.
+- [ ] Pendente: teste da call com duas contas em produção.
+
 ### 2026-11-02 (noite) — call só em campanha e "quem está falando"
 
 - [x] Call sem campanha é recusada (banco, site e app). Cada jogador já entra com o personagem
@@ -871,7 +878,7 @@ de segurança).
 - [x] Barra opcional "Quem está falando" para o mestre na call: botões de NPC (nomes editáveis) e
       Narração, atalhos 1–9 e 0 (Mestre). As falas transcritas do mestre saem com esse nome.
 - [x] Migração `20261102130000_call_campaign_speaker.sql` aplicada em produção (2026-11-02).
-- [ ] Testar com duas contas na call de produção.
+- [ ] Testar com duas contas na call de produção (ainda pendente com o responsável).
 
 ### 2026-11-02 (noite) — mapa: menu das anotações, renomear e "Novo mapa"
 
@@ -886,7 +893,7 @@ de segurança).
       novo entra na sessão escolhida (serve também para improvisar durante o jogo). A aba abre na
       sessão em andamento.
 - [x] Com a ferramenta Mover, arrastar o fundo rola o mapa (mestre e jogadores; no site).
-- [ ] Testar no site com a masmorra importada (sem teste manual ainda).
+- [x] Testar no site com a masmorra importada (sem teste manual ainda).
 
 ### 2026-10-25 (tarde) — dados, ficha, sessão, anotações e biblioteca
 

@@ -5,6 +5,10 @@
 
 ## Estado atual
 
+**2026-11-02 (confirmações):** o responsável confirmou a troca da chave do LiveKit, o teste do
+mapa com masmorra importada, o Assimilação, o roteiro manual e os dados 3D no app. Firebase foi
+descartado. Falta só o teste da call com duas contas.
+
 **2026-11-02 (noite, call):** call exige campanha (gatilho no banco, site e app) e o mestre tem
 botões opcionais de "quem está falando" (NPCs e Narração) que mudam o nome nas falas transcritas.
 Teste PGlite `calls.test.ts`: 14 de 14. Migração `20261102130000_call_campaign_speaker.sql`
