@@ -8,7 +8,7 @@
 **2026-11-02 (noite, mapa):** menu de botão direito (Editar/Apagar) para anotações e salas
 numeradas, mantendo número público e legenda secreta pareados; renomear mapa; painel "Novo mapa"
 recolhível. Depois: menu do botão direito corrigido (o arrasto capturava o ponteiro) e mapas
-separados por sessão. Verificado com `eslint` e `tsc` do web, `pnpm check` e `pnpm build`; sem teste
+separados por sessão; arrastar o fundo com Mover rola o mapa. Verificado com `eslint` e `tsc` do web, `pnpm check` e `pnpm build`; sem teste
 manual no navegador.
 
 **2026-11-02 (gravações, mapas e próximo APK):** a auditoria de `.upsert()`, `.update()` e

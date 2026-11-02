@@ -876,6 +876,7 @@ de segurança).
 - [x] Mapas por sessão: escolhe-se a sessão e aparecem só os mapas preparados para ela; o mapa
       novo entra na sessão escolhida (serve também para improvisar durante o jogo). A aba abre na
       sessão em andamento.
+- [x] Com a ferramenta Mover, arrastar o fundo rola o mapa (mestre e jogadores; no site).
 - [ ] Testar no site com a masmorra importada (sem teste manual ainda).
 
 ### 2026-10-25 (tarde) — dados, ficha, sessão, anotações e biblioteca

@@ -143,6 +143,8 @@ export function MapBoard({
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const colors = useCampaignColors();
   const svgRef = useRef<SVGSVGElement>(null);
+  // Arrastar o fundo com "Mover" rola o mapa (como segurar e puxar).
+  const pan = useRef<{ x: number; y: number; scroller: HTMLElement } | null>(null);
   const [drag, setDrag] = useState<{ tokenId: string; offsetX: number; offsetY: number; x: number; y: number } | null>(null);
   const [area, setArea] = useState<{ start: Point; end: Point } | null>(null);
   const [wallStart, setWallStart] = useState<Point | null>(null);
@@ -281,7 +283,7 @@ export function MapBoard({
       setAreaDraft({ origin, point: origin });
       return;
     }
-    if (!isGm) return;
+    if (!isGm && tool !== 'move') return;
     if (tool === 'icon') {
       const cell = toCell(point);
       onAddDrawing?.({ type: 'icon', x: cell.x, y: cell.y, icon: selectedIcon, color: drawColor });
@@ -309,10 +311,22 @@ export function MapBoard({
       }
     } else if (tool === 'move') {
       onSelectToken?.(null);
+      let scroller = svgRef.current?.parentElement ?? null;
+      while (scroller && scroller.scrollHeight <= scroller.clientHeight && scroller.scrollWidth <= scroller.clientWidth) scroller = scroller.parentElement;
+      if (scroller) {
+        event.currentTarget.setPointerCapture(event.pointerId);
+        pan.current = { x: event.clientX, y: event.clientY, scroller };
+      }
     }
   };
 
   const onBoardMove = (event: ReactPointerEvent<SVGSVGElement>) => {
+    if (pan.current) {
+      pan.current.scroller.scrollLeft -= event.clientX - pan.current.x;
+      pan.current.scroller.scrollTop -= event.clientY - pan.current.y;
+      pan.current = { ...pan.current, x: event.clientX, y: event.clientY };
+      return;
+    }
     const point = toGrid(event);
     if (layerDrag) {
       setLayerDrag({ ...layerDrag, x: point.x - layerDrag.offsetX, y: point.y - layerDrag.offsetY });
@@ -351,6 +365,7 @@ export function MapBoard({
   };
 
   const onBoardUp = () => {
+    pan.current = null;
     if (noteDrag) {
       onMoveDrawing?.(noteDrag.index, noteDrag.secret, Math.round(noteDrag.x * 4) / 4, Math.round(noteDrag.y * 4) / 4);
       setNoteDrag(null);
@@ -407,7 +422,7 @@ export function MapBoard({
       width={map.cols * CELL * zoom}
       height={map.rows * CELL * zoom}
       className="block touch-none select-none"
-      style={{ background: '#16130f', cursor: tool === 'move' ? 'default' : 'crosshair' }}
+      style={{ background: '#16130f', cursor: tool === 'move' ? 'grab' : 'crosshair' }}
       onPointerDown={onBoardDown}
       onPointerMove={onBoardMove}
       onPointerUp={onBoardUp}
