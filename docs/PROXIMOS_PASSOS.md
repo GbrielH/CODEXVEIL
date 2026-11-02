@@ -384,8 +384,8 @@ tesouro por ND, mundo de Arton).
       NÍVEIS; acento perdido: beneficios → benefícios; dados: ld4/Id8/dlOO → 1d4/1d8/d100), com
       exceções medidas ("tom…" e acento na última letra estragavam palavras certas). Aplicado aos
       pacotes já gerados por `ocr_fix_pack.py`: Xanathar com 462 textos corrigidos (palavras fora do
-      vocabulário 6,7% → 6,1%) e Livro do Jogador com 194. **Falta reimportar** `xgte` e `phb-2014`
-      (`livros-trabalho/out-novo`) em Meus livros.
+      vocabulário 6,7% → 6,1%) e Livro do Jogador com 194. Reimportados na conta do responsável em
+      2026-11-02 (`import_books.mjs`).
 - [x] Regras opcionais dos livros (Xanathar, Tasha, PHB, T20): decisão do responsável em 2026-11-02 de
       **não automatizar**; continuam como texto nos livros importados.
 
