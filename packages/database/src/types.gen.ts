@@ -2231,6 +2231,62 @@ export type Database = {
           },
         ];
       };
+      session_cast: {
+        Row: {
+          campaign_id: string;
+          character_id: string | null;
+          created_at: string;
+          creature_id: string | null;
+          id: string;
+          session_id: string;
+        };
+        Insert: {
+          campaign_id: string;
+          character_id?: string | null;
+          created_at?: string;
+          creature_id?: string | null;
+          id?: string;
+          session_id: string;
+        };
+        Update: {
+          campaign_id?: string;
+          character_id?: string | null;
+          created_at?: string;
+          creature_id?: string | null;
+          id?: string;
+          session_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'session_cast_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'session_cast_character_id_fkey';
+            columns: ['character_id'];
+            isOneToOne: false;
+            referencedRelation: 'characters';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'session_cast_creature_id_fkey';
+            columns: ['creature_id'];
+            isOneToOne: false;
+            referencedRelation: 'creatures';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'session_cast_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       session_entities: {
         Row: {
           armor_class: number | null;
@@ -2524,33 +2580,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
-      };
-      session_cast: {
-        Row: {
-          campaign_id: string;
-          character_id: string | null;
-          created_at: string;
-          creature_id: string | null;
-          id: string;
-          session_id: string;
-        };
-        Insert: {
-          campaign_id: string;
-          character_id?: string | null;
-          created_at?: string;
-          creature_id?: string | null;
-          id?: string;
-          session_id: string;
-        };
-        Update: {
-          campaign_id?: string;
-          character_id?: string | null;
-          created_at?: string;
-          creature_id?: string | null;
-          id?: string;
-          session_id?: string;
-        };
-        Relationships: [];
       };
       sessions: {
         Row: {
