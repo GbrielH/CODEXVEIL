@@ -864,6 +864,15 @@ de segurança).
 
 ## Histórico
 
+### 2026-11-02 (noite) — mapa: menu das anotações, renomear e "Novo mapa"
+
+- [x] Botão direito numa anotação ou sala numerada (mestre): menu Editar/Apagar. Na sala, editar
+      muda a descrição da legenda secreta e apagar tira o número e a legenda juntos.
+- [x] Renomear o mapa (o nome vindo do JSON deixou de ser fixo).
+- [x] Criar, importar e gerar masmorra ficam num painel recolhível "Novo mapa", separado da
+      escolha do mapa existente (abre sozinho quando a campanha não tem mapas).
+- [ ] Testar no site com a masmorra importada (sem teste manual ainda).
+
 ### 2026-10-25 (tarde) — dados, ficha, sessão, anotações e biblioteca
 
 - [x] Dados 3D: cada rolagem fica 10 s visível na mesa para todos (quem abre a aba Dados até 10 s

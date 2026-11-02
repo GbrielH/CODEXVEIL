@@ -150,6 +150,10 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   const [secrets, setSecrets] = useState<MapDrawing[]>([]);
   const [noteAt, setNoteAt] = useState<{ x: number; y: number } | null>(null);
   const [noteText, setNoteText] = useState('');
+  const [drawingMenu, setDrawingMenu] = useState<{ index: number; secret: boolean; x: number; y: number } | null>(null);
+  const [editing, setEditing] = useState<{ index: number; secret: boolean } | null>(null);
+  const [editText, setEditText] = useState('');
+  const [nameDraft, setNameDraft] = useState<{ mapId: string; value: string } | null>(null);
   const boardAreaRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   /** Novos tokens entram ocultos? (por padrão sim enquanto o mapa não está sendo mostrado). */
@@ -274,10 +278,64 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
     };
   }, [mapId]);
 
+  const mapName = nameDraft && nameDraft.mapId === mapId ? nameDraft.value : map?.name ?? '';
+
   const saveSecrets = (next: MapDrawing[]) => {
     if (!map) return;
     setSecrets(next);
     saveMapSecrets(getSupabaseBrowserClient(), map.id, campaignId, next).catch((error: unknown) => fail('A anotação secreta não foi salva', error));
+  };
+
+  /** Sala numerada: o número público ("N") e a legenda secreta ("N. descrição") andam juntos. */
+  const roomNumberOf = (index: number, secret: boolean): string | null => {
+    const drawing = (secret ? secrets : map?.drawings ?? [])[index];
+    if (drawing?.type !== 'note') return null;
+    const match = secret ? /^(\d+)\.\s/.exec(drawing.text) : /^(\d+)$/.exec(drawing.text.trim());
+    return match ? match[1]! : null;
+  };
+  const roomPublicIndex = (number: string) => (map?.drawings ?? []).findIndex((drawing) => drawing.type === 'note' && drawing.text.trim() === number);
+  const roomSecretIndex = (number: string) => secrets.findIndex((drawing) => drawing.type === 'note' && drawing.text.startsWith(`${number}. `));
+
+  const openEdit = (index: number, secret: boolean) => {
+    const number = roomNumberOf(index, secret);
+    if (number) {
+      const legend = secrets[roomSecretIndex(number)];
+      setEditText(legend?.type === 'note' ? legend.text.slice(number.length + 2) : '');
+    } else {
+      const drawing = (secret ? secrets : map?.drawings ?? [])[index];
+      setEditText(drawing?.type === 'note' ? drawing.text : '');
+    }
+    setEditing({ index, secret });
+  };
+
+  const saveEdit = () => {
+    if (!map || !editing) return;
+    const text = editText.trim();
+    const number = roomNumberOf(editing.index, editing.secret);
+    if (number) {
+      const secretIndex = roomSecretIndex(number);
+      const publicNote = map.drawings[roomPublicIndex(number)];
+      const color = publicNote?.type === 'note' ? publicNote.color : drawColor;
+      const at = publicNote?.type === 'note' ? publicNote : { x: 0, y: 0 };
+      const legend: MapDrawing = { type: 'note', x: at.x, y: at.y + 0.5, text: `${number}. ${text}`.slice(0, 120), color };
+      if (!text) saveSecrets(secrets.filter((_, position) => position !== secretIndex));
+      else if (secretIndex >= 0) saveSecrets(secrets.map((drawing, position) => (position === secretIndex && drawing.type === 'note' ? { ...drawing, text: legend.type === 'note' ? legend.text : drawing.text } : drawing)));
+      else saveSecrets([...secrets, legend]);
+    } else if (text) {
+      const edit = (list: MapDrawing[]) => list.map((drawing, position) => (position === editing.index && drawing.type === 'note' ? { ...drawing, text: text.slice(0, 120) } : drawing));
+      if (editing.secret) saveSecrets(edit(secrets));
+      else patchMap({ drawings: edit(map.drawings) });
+    }
+    setEditing(null);
+  };
+
+  const removeNote = (index: number, secret: boolean) => {
+    if (!map) return;
+    const number = roomNumberOf(index, secret);
+    const publicIndex = number ? roomPublicIndex(number) : secret ? -1 : index;
+    const secretIndex = number ? roomSecretIndex(number) : secret ? index : -1;
+    if (secretIndex >= 0) saveSecrets(secrets.filter((_, position) => position !== secretIndex));
+    if (publicIndex >= 0) patchMap({ drawings: map.drawings.filter((_, position) => position !== publicIndex) });
   };
 
   const addDrawing = (drawing: MapDrawing) => {
@@ -570,7 +628,9 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
           </SelectField>
         ) : null}
         {canManage ? (
-          <>
+          <details className="w-full rounded-lg border border-line p-3" open={maps.length === 0}>
+            <summary className="cursor-pointer text-sm font-medium text-fg">Novo mapa: criar, importar ou gerar masmorra</summary>
+            <div className="mt-3 flex flex-wrap items-end gap-3">
             <SelectField id={`${id}-sessao`} label="Sessão do novo mapa" value={newSessionId} onChange={(event) => setNewSessionId(event.target.value)} className="min-w-48">
               {sessions.map((entry) => (
                 <option key={entry.id} value={entry.id}>
@@ -604,7 +664,8 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
             <Button variant="secondary" icon={<Castle className="h-4 w-4" aria-hidden="true" />} disabled={busy} onClick={() => void createGeneratedDungeon()}>
               Gerar masmorra
             </Button>
-          </>
+          </div>
+          </details>
         ) : null}
       </div>
       {canManage ? (
@@ -652,6 +713,22 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
               <Button variant="ghost" icon={<Trash2 className="h-4 w-4" aria-hidden="true" />} disabled={busy} onClick={() => void removeMap()}>
                 Apagar mapa
               </Button>
+              <form
+                className="flex items-end gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const name = mapName.trim();
+                  if (name && name !== map.name) {
+                    patchMap({ name });
+                    setMaps((current) => current.map((entry) => (entry.id === map.id ? { ...entry, name } : entry)));
+                  }
+                }}
+              >
+                <TextField id={`${id}-renomear`} label="Nome do mapa" maxLength={80} value={mapName} onChange={(event) => setNameDraft({ mapId: map.id, value: event.target.value })} />
+                <Button type="submit" variant="secondary" disabled={!mapName.trim() || mapName.trim() === map.name}>
+                  Renomear
+                </Button>
+              </form>
             </div>
           ) : null}
 
@@ -934,6 +1011,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                   if (secret) saveSecrets(move(secrets));
                   else patchMap({ drawings: move(map.drawings) });
                 }}
+                onDrawingMenu={canManage ? (index, secret, x, y) => setDrawingMenu({ index, secret, x, y }) : undefined}
                 onRemoveDrawing={(index, secret) =>
                   secret ? saveSecrets(secrets.filter((_, position) => position !== index)) : patchMap({ drawings: map.drawings.filter((_, position) => position !== index) })
                 }
@@ -1117,6 +1195,34 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
             <Button type="submit" disabled={tool !== 'room' && !noteText.trim()}>
               Pôr no mapa
             </Button>
+          </div>
+        </form>
+      </Modal>
+      {drawingMenu ? (
+        <div className="fixed inset-0 z-50" onClick={() => setDrawingMenu(null)} onContextMenu={(event) => { event.preventDefault(); setDrawingMenu(null); }}>
+          <div role="menu" className="absolute flex min-w-36 flex-col rounded-md border border-line bg-surface p-1 shadow-lg" style={{ left: drawingMenu.x, top: drawingMenu.y }} onClick={(event) => event.stopPropagation()}>
+            <button type="button" role="menuitem" className="flex items-center gap-2 rounded px-3 py-1.5 text-left text-sm hover:bg-sunken" onClick={() => { openEdit(drawingMenu.index, drawingMenu.secret); setDrawingMenu(null); }}>
+              <Pencil className="h-4 w-4" aria-hidden="true" /> Editar
+            </button>
+            <button type="button" role="menuitem" className="flex items-center gap-2 rounded px-3 py-1.5 text-left text-sm text-danger hover:bg-sunken" onClick={() => { removeNote(drawingMenu.index, drawingMenu.secret); setDrawingMenu(null); }}>
+              <Trash2 className="h-4 w-4" aria-hidden="true" /> Apagar
+            </button>
+          </div>
+        </div>
+      ) : null}
+      <Modal
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+        title={editing && roomNumberOf(editing.index, editing.secret) ? `Sala ${roomNumberOf(editing.index, editing.secret)}` : 'Editar anotação'}
+        description={editing && roomNumberOf(editing.index, editing.secret) ? 'A descrição fica na legenda, só para você. Deixe em branco para tirar.' : undefined}
+      >
+        <form className="flex flex-col gap-4" onSubmit={(event) => { event.preventDefault(); saveEdit(); }}>
+          <TextField id={`${id}-editar-nota`} label="Texto" maxLength={110} autoFocus value={editText} onChange={(event) => setEditText(event.target.value)} />
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => setEditing(null)}>
+              Cancelar
+            </Button>
+            <Button type="submit">Salvar</Button>
           </div>
         </form>
       </Modal>

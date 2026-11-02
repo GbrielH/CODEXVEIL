@@ -5,6 +5,11 @@
 
 ## Estado atual
 
+**2026-11-02 (noite, mapa):** menu de botão direito (Editar/Apagar) para anotações e salas
+numeradas, mantendo número público e legenda secreta pareados; renomear mapa; painel "Novo mapa"
+recolhível. Verificado com `eslint` e `tsc` do web, `pnpm check` e `pnpm build`; sem teste
+manual no navegador.
+
 **2026-11-02 (gravações, mapas e próximo APK):** a auditoria de `.upsert()`, `.update()` e
 `.insert()` encontrou e corrigiu o `saveCardDeck`, que repetia chaves sem `GRANT UPDATE`; relatório
 em [`AUDITORIA_GRAVACOES_2026-11-02.md`](AUDITORIA_GRAVACOES_2026-11-02.md). O mapa do site agora

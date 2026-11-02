@@ -93,6 +93,8 @@ interface MapBoardProps {
   onRequestNote?: (point: Point) => void;
   /** Apaga um desenho: índice na lista pública ou na secreta. */
   onRemoveDrawing?: (index: number, secret: boolean) => void;
+  /** Botão direito numa anotação (mestre): abre o menu de editar/apagar na posição do clique. */
+  onDrawingMenu?: (index: number, secret: boolean, clientX: number, clientY: number) => void;
   /** Mestre arrastou uma anotação (ferramenta Mover): nova posição em quadrados. */
   onMoveDrawing?: (index: number, secret: boolean, x: number, y: number) => void;
 }
@@ -135,6 +137,7 @@ export function MapBoard({
   floorTexture = 'stone',
   onRequestNote,
   onRemoveDrawing,
+  onDrawingMenu,
   onMoveDrawing,
 }: MapBoardProps) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
@@ -549,7 +552,16 @@ export function MapBoard({
           <g
             key={`nota-${secret ? 's' : 'p'}-${index}`}
             transform={`translate(${noteX} ${noteY})`}
-            style={{ pointerEvents: erasing || movable ? 'auto' : 'none', cursor: erasing ? 'pointer' : movable ? 'move' : 'default' }}
+            style={{ pointerEvents: erasing || movable || (isGm && onDrawingMenu) ? 'auto' : 'none', cursor: erasing ? 'pointer' : movable ? 'move' : 'default' }}
+            onContextMenu={
+              isGm && onDrawingMenu
+                ? (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onDrawingMenu(index, secret, event.clientX, event.clientY);
+                  }
+                : undefined
+            }
             onPointerDown={
               erasing
                 ? onErase
