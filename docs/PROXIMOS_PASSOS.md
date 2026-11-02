@@ -266,7 +266,15 @@ então ligar em produção. Detalhes em
 - [x] **Tutorial do mapa** para o mestre, recolhido no topo do mapa da sessão.
 - [x] Quadro "Masmorra pronta em um minuto" no mapa da sessão (só o mestre), com o passo a passo e o
       botão **Gerar masmorra**, que abre o One Page Dungeon em outra aba.
-- [ ] Conferir a importação com um JSON real do One Page Dungeon (pedir um ao responsável).
+- [x] Importação conferida com um JSON real (`temple_of_uadjedimeh.json`, versão 1.2.7 do gerador): 41×43
+      quadrados, 212 paredes, 7 números e 7 notas na legenda; o formato bate com o leitor.
+- [x] Corrigido (2026-11-02): **anotações secretas do mapa nunca eram salvas**. `saveMapSecrets` usava
+      `upsert`, que reescreve `map_id` e `campaign_id`, e o mestre só pode atualizar `drawings`
+      (42501, "Você não tem permissão"). Isso também derrubava a importação da masmorra, na
+      gravação da legenda. Agora atualiza e, sem linha, insere (teste em
+      `test/rls/map-secrets.test.ts`).
+- [x] Botão do quadro passa a abrir todos os geradores do watabou (`watabou.github.io`); só a
+      masmorra é importada em JSON, os outros entram como imagem de fundo.
 - [ ] Ideias anotadas para depois: gerador próprio de masmorra, texturas de chão por área e biblioteca
       de ícones (baú, porta, armadilha, escada).
 

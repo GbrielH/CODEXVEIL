@@ -558,9 +558,10 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
         <div className="mt-3 flex flex-col gap-3 rounded-lg border border-line bg-sunken/40 p-3 text-sm sm:flex-row sm:items-start">
           <Castle className="mt-0.5 h-5 w-5 shrink-0 text-fg-accent" aria-hidden="true" />
           <div className="min-w-0 flex-1 text-fg-secondary">
-            <p className="font-medium text-fg">Masmorra pronta em um minuto</p>
+            <p className="font-medium text-fg">Mapas prontos com os geradores do watabou</p>
             <p className="mt-1">
-              Gere a masmorra no One Page Dungeon, exporte em <strong>JSON</strong> e clique em <strong>Importar masmorra</strong>. O mapa nasce pronto:
+              Nos geradores gratuitos do watabou há reino, cidade, vila, caverna, masmorra e casa. Gere a <strong>masmorra</strong> (One Page Dungeon),
+              exporte em <strong>JSON</strong> e clique em <strong>Importar masmorra</strong>. O mapa nasce pronto:
             </p>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">
               <li>grade do tamanho certo e paredes de pedra em volta das salas e corredores;</li>
@@ -568,15 +569,18 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
               <li>números das salas visíveis para todos;</li>
               <li>legenda só para o mestre.</li>
             </ul>
+            <p className="mt-1 text-xs text-fg-muted">
+              Os outros geradores (reino, cidade, vila, caverna e casa) exportam imagem: baixe em PNG, crie o mapa e envie como imagem de fundo.
+            </p>
           </div>
           <a
-            href="https://watabou.github.io/one-page-dungeon/"
+            href="https://watabou.github.io/"
             target="_blank"
             rel="noreferrer"
             className={buttonClasses('secondary', 'sm', 'shrink-0 gap-2')}
           >
             <ExternalLink className="h-4 w-4" aria-hidden="true" />
-            Gerar masmorra
+            Abrir geradores
           </a>
         </div>
       ) : null}
@@ -1084,11 +1088,11 @@ function MapTutorial() {
           <h3 className="font-display text-fg">2. Masmorra pronta em um minuto</h3>
           <ol className="mt-1 list-decimal space-y-1 pl-5">
             <li>
-              Abra o{' '}
-              <a href="https://watabou.github.io/one-page-dungeon/" target="_blank" rel="noreferrer" className="text-fg-brand underline-offset-2 hover:underline">
-                One Page Dungeon
+              Abra os{' '}
+              <a href="https://watabou.github.io/" target="_blank" rel="noreferrer" className="text-fg-brand underline-offset-2 hover:underline">
+                geradores do watabou
               </a>{' '}
-              (gerador gratuito do watabou) e gere masmorras até gostar de uma.
+              (gratuitos), escolha <strong>Dungeon</strong> (One Page Dungeon) e gere masmorras até gostar de uma.
             </li>
             <li>No menu de exportação do gerador, salve em <strong>JSON</strong>.</li>
             <li>Aqui, escolha a sessão e clique em <strong>Importar masmorra</strong> com esse arquivo.</li>

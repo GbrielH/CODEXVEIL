@@ -195,6 +195,11 @@ Os detalhes estão em [`DATABASE.md`](DATABASE.md) e [`SECURITY.md`](SECURITY.md
   mestre e tutorial. Testes da conversão em `packages/domain/src/combat/dungeon-import.test.ts` (com
   um arquivo montado à mão, não um exportado de verdade). Não visto em tela.
 
+- 2026-11-02: corrigida a gravação das anotações secretas do mapa (o `upsert` era recusado pelo
+  banco) e, com isso, a importação de masmorra; conferido com o JSON real do responsável no banco de
+  teste (PGlite). A repetição em produção foi bloqueada pelo controle de permissões; falta o
+  responsável testar a importação no site.
+
 ## Testes e verificações executados
 
 Execução em 2026-10-17, Windows 11, Node 24.20 e pnpm 12.14:

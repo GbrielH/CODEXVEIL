@@ -315,10 +315,20 @@ export async function getMapSecrets(client: CodexveilClient, mapId: string): Pro
 }
 
 export async function saveMapSecrets(client: CodexveilClient, mapId: string, campaignId: string, drawings: MapDrawing[]): Promise<void> {
-  const { error } = await client
+  // Atualiza a linha do mapa e só cria quando ainda não existe. Não usar `upsert`: ele reescreve
+  // `map_id` e `campaign_id`, e o mestre só tem permissão de atualizar `drawings` (o banco recusava
+  // sempre, e as anotações secretas nunca eram salvas).
+  const { data, error } = await client
     .from('session_map_secrets')
-    .upsert({ map_id: mapId, campaign_id: campaignId, drawings: drawings as unknown as Json }, { onConflict: 'map_id' });
+    .update({ drawings: drawings })
+    .eq('map_id', mapId)
+    .select('map_id');
   if (error) throw toAppError(error);
+  if (data.length > 0) return;
+  const { error: insertError } = await client
+    .from('session_map_secrets')
+    .insert({ map_id: mapId, campaign_id: campaignId, drawings: drawings as unknown as Json });
+  if (insertError) throw toAppError(insertError);
 }
 
 /** Jogador move o token do próprio personagem (validado no banco). */
