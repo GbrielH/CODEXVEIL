@@ -201,7 +201,8 @@ mapa e notas lado a lado).
       inclusive o mestre; as compartilhadas viraram do autor. Site, app e Tomo sem opção de visibilidade.
 - [~] Falha crítica com o dragão do GIF: feita e **retirada a pedido em 2026-10-30**; voltou o aviso
   "Falha crítica" de antes.
-- [ ] Aba "Dados" no perfil: textura própria dos dados e cor do número (pedido de 2026-10-25).
+- [x] Aba "Dados" no perfil: textura própria dos dados e cor do número ("Meus dados", confirmado
+      pelo responsável em 2026-11-02).
 - [x] Taverna: capa da campanha no selo da lista (inicial colorida quando não há capa).
 - [x] Foto do Google como retrato opcional (2026-10-30): no Perfil (site e app) aparece "Foto do
       Google" para quem entrou com o Google. Fica em `preferences.avatar` (só endereços
@@ -326,7 +327,8 @@ Tabela completa em [PENDENCIAS.md](PENDENCIAS.md#0-app-em-paridade-com-o-site-le
       lista e na ordem de liberação). Vários quadros, notas coloridas, textos, imagens (botão ou
       Ctrl+V), molduras (levam junto o que está dentro), setas, arrastar, redimensionar, zoom, "ver
       tudo", desfazer/refazer (Ctrl+Z, Ctrl+Shift+Z). Salva sozinho e avisa conflito entre abas.
-- [ ] Quadro, próximos: atalhos de copiar/colar blocos, seleção de vários blocos.
+- [x] Quadro: seleção de vários blocos (Shift/Ctrl + clique, Ctrl+A) e copiar/colar/duplicar
+      (Ctrl+C/V/D, também entre quadros) — feito em 2026-11-01, conferido no código em 2026-11-02.
 
 ### B1. Behind the Magic — iniciado em 2026-10-26
 
@@ -377,8 +379,14 @@ tesouro por ND, mundo de Arton).
 - [x] Terreno do Círculo da Terra escolhido também na subida de nível (site; `landId`).
 - [x] Os 6 pacotes foram importados na conta do responsável em 2026-10-25 pelo
       `scripts/books/import_books.mjs` (ver `scripts/books/README.md`).
-- [ ] Ainda em aberto: erros residuais de OCR do Xanathar/PHB que o
-      vocabulário não corrige com segurança; decidir quais regras opcionais viram automação.
+- [x] 3ª rodada de OCR (2026-11-02): `ocr_fix.py` ganhou trocas sistemáticas só com resultado único
+      e conhecido ("m" lido no lugar de "rn": tumo → turno; "Í" maiúsculo lido como "f": NfVEIS →
+      NÍVEIS; acento perdido: beneficios → benefícios; dados: ld4/Id8/dlOO → 1d4/1d8/d100), com
+      exceções medidas ("tom…" e acento na última letra estragavam palavras certas). Aplicado aos
+      pacotes já gerados por `ocr_fix_pack.py`: Xanathar com 462 textos corrigidos (palavras fora do
+      vocabulário 6,7% → 6,1%) e Livro do Jogador com 194. **Falta reimportar** `xgte` e `phb-2014`
+      (`livros-trabalho/out-novo`) em Meus livros.
+- [ ] Ainda em aberto: decidir quais regras opcionais dos livros viram automação.
 
 ### B2a. Texto original do pedido, página por página (pedido de 2026-10-24)
 

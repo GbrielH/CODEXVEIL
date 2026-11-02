@@ -66,3 +66,9 @@ export SERVICE_KEY=$(node -e "process.stdout.write(JSON.parse(process.argv[1]).f
 export ANON_KEY=$(node -e "process.stdout.write(JSON.parse(process.argv[1]).find(k=>k.name==='anon').api_key)" "$KEYS")
 node scripts/books/import_books.mjs <email> <pasta out> phb-2014.book.json xgte.book.json …
 ```
+
+## Correção de OCR num pacote já gerado
+
+`ocr_fix_pack.py <pasta layout> <pacote.book.json>` aplica `ocr_fix.fix_text` nos textos do pacote
+(nomes e campos de texto), sem refazer o OCR, e guarda o original em `.bak`. Depois, reimporte o
+pacote em Meus livros.
