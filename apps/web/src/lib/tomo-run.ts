@@ -22,6 +22,9 @@ import {
   updateCreatureGmData,
   addMapToken,
   getActiveMap,
+  createSessionMap,
+  setActiveMap,
+  updateSessionBlock,
 } from '@codexveil/database';
 import {
   canEditCharacterPlayState,
@@ -352,6 +355,71 @@ export async function executeTomoAction(
         return {
           ok: true,
           message: `Bloco adicionado ao fim do roteiro da sessão ${session.number}.`,
+          href,
+        };
+      }
+      case 'editar_bloco_roteiro': {
+        const problem = needCampaign(true);
+        if (problem || !campaign) return { ok: false, message: problem ?? '' };
+        const session = (await listSessions(supabase, campaign.id)).find(
+          (entry) => entry.number === data.sessao,
+        );
+        if (!session)
+          return { ok: false, message: `Não achei a sessão ${data.sessao} nesta campanha.` };
+        const wanted = data.trecho.toLocaleLowerCase('pt-BR');
+        const block = (await listSessionBlocks(supabase, session.id)).find((entry) => {
+          const content = entry.content;
+          return (
+            content &&
+            ['heading', 'subheading', 'paragraph', 'gm_note'].includes(content.type) &&
+            'text' in content.data &&
+            String(content.data.text).toLocaleLowerCase('pt-BR').includes(wanted)
+          );
+        });
+        if (!block?.content || !('text' in block.content.data))
+          return {
+            ok: false,
+            message: `Não achei um bloco com “${data.trecho}” no roteiro da sessão ${session.number}.`,
+          };
+        const isTitle = block.content.type === 'heading' || block.content.type === 'subheading';
+        await updateSessionBlock(supabase, block.id, {
+          content: {
+            ...block.content,
+            data: {
+              ...block.content.data,
+              text: isTitle ? data.novo_texto.slice(0, 200) : data.novo_texto,
+            },
+          } as typeof block.content,
+        });
+        const href = campaignPath(campaign.id, `/sessoes/${session.id}`);
+        revalidatePath(href);
+        return {
+          ok: true,
+          message: `Bloco do roteiro da sessão ${session.number} atualizado.`,
+          href,
+        };
+      }
+      case 'criar_mapa': {
+        const problem = needCampaign(true);
+        if (problem || !campaign) return { ok: false, message: problem ?? '' };
+        const session = (await listSessions(supabase, campaign.id)).find(
+          (entry) => entry.number === data.sessao,
+        );
+        if (!session)
+          return { ok: false, message: `Não achei a sessão ${data.sessao} nesta campanha.` };
+        const mapId = await createSessionMap(supabase, {
+          campaignId: campaign.id,
+          sessionId: session.id,
+          name: data.nome,
+          cols: data.colunas,
+          rows: data.linhas,
+        });
+        if (data.ativar) await setActiveMap(supabase, campaign.id, mapId);
+        const href = campaignPath(campaign.id, '/mapa');
+        revalidatePath(href);
+        return {
+          ok: true,
+          message: `Mapa “${data.nome}” criado na sessão ${session.number}${data.ativar ? ' e ativo para a mesa' : ''}. Envie a imagem na aba Mapa.`,
           href,
         };
       }

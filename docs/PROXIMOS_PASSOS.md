@@ -318,8 +318,9 @@ Tabela completa em [PENDENCIAS.md](PENDENCIAS.md#0-app-em-paridade-com-o-site-le
       criar campanha e começar personagem (rascunho preenchido no assistente). Membros: anotação
       (só eu / mestre / grupo). Mestre: NPC/monstro, item da biblioteca, sessão, nota na sessão e
       quadro com notas. Na ficha editável: item no inventário. Sempre com cartão de confirmação.
-- [ ] Tomo, próximas ações: ficha de estatísticas da criatura, encontro no mapa, editar blocos
-      existentes do roteiro, mapas.
+- [x] Tomo, próximas ações: ficha de estatísticas e encontro no mapa (2026-11-01); editar blocos
+      existentes do roteiro (`editar_bloco_roteiro`) e criar mapa com grade na sessão (`criar_mapa`,
+      opcionalmente ativo), em 2026-11-02.
 - [x] Quadro livre (estilo Miro), feito em 2026-10-27, solução própria sem biblioteca paga: aba
       **Quadros**, só do mestre (os jogadores continuam vendo o que ele libera nas outras abas, em
       lista e na ordem de liberação). Vários quadros, notas coloridas, textos, imagens (botão ou

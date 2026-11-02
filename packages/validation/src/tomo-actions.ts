@@ -8,10 +8,17 @@ import { z } from 'zod';
 const text = (max: number) => z.string().trim().max(max).default('');
 const required = (max: number) => z.string().trim().min(1).max(max);
 const system = z.enum(['dnd5e', 'tormenta20', 'assimilacao']);
-const category = z.enum(['weapon', 'armor', 'gear', 'consumable', 'tool', 'treasure', 'other']).catch('gear');
+const category = z
+  .enum(['weapon', 'armor', 'gear', 'consumable', 'tool', 'treasure', 'other'])
+  .catch('gear');
 
 export const tomoActionSchema = z.discriminatedUnion('acao', [
-  z.object({ acao: z.literal('criar_campanha'), nome: required(80), descricao: text(2000), sistema: system }),
+  z.object({
+    acao: z.literal('criar_campanha'),
+    nome: required(80),
+    descricao: text(2000),
+    sistema: system,
+  }),
   z.object({
     acao: z.literal('criar_personagem'),
     sistema: system,
@@ -48,7 +55,9 @@ export const tomoActionSchema = z.discriminatedUnion('acao', [
           nome: required(80),
           tipo: z.enum(['npc', 'monstro']).catch('monstro'),
           quantidade: z.number().int().min(1).max(12).catch(1),
-          tamanho: z.enum(['tiny', 'small', 'medium', 'large', 'huge', 'gargantuan']).catch('medium'),
+          tamanho: z
+            .enum(['tiny', 'small', 'medium', 'large', 'huge', 'gargantuan'])
+            .catch('medium'),
           descricao: text(2000),
           estatisticas: z.record(z.string(), z.unknown()).optional(),
         }),
@@ -64,6 +73,21 @@ export const tomoActionSchema = z.discriminatedUnion('acao', [
     texto: required(20000),
   }),
   z.object({
+    acao: z.literal('editar_bloco_roteiro'),
+    sessao: z.number().int().min(1).max(100000),
+    /** Trecho que identifica o bloco (parte do texto atual). */
+    trecho: required(300),
+    novo_texto: required(20000),
+  }),
+  z.object({
+    acao: z.literal('criar_mapa'),
+    sessao: z.number().int().min(1).max(100000),
+    nome: required(80),
+    colunas: z.number().int().min(5).max(100).catch(30),
+    linhas: z.number().int().min(5).max(100).catch(20),
+    ativar: z.boolean().catch(false),
+  }),
+  z.object({
     acao: z.literal('criar_item'),
     nome: required(120),
     categoria: category,
@@ -73,7 +97,11 @@ export const tomoActionSchema = z.discriminatedUnion('acao', [
     visivel_ao_grupo: z.boolean().catch(false),
   }),
   z.object({ acao: z.literal('criar_sessao'), titulo: required(120) }),
-  z.object({ acao: z.literal('nota_na_sessao'), sessao: z.number().int().min(1).max(100000), texto: required(20000) }),
+  z.object({
+    acao: z.literal('nota_na_sessao'),
+    sessao: z.number().int().min(1).max(100000),
+    texto: required(20000),
+  }),
   z.object({
     acao: z.literal('criar_quadro'),
     titulo: required(80),
@@ -134,16 +162,25 @@ export function extractTomoActions(text: string): { text: string; actions: TomoA
   return { text: clean.trim(), actions };
 }
 
-const SYSTEM_NAMES = { dnd5e: 'D&D 5e', tormenta20: 'Tormenta20', assimilacao: 'Assimilação RPG' } as const;
+const SYSTEM_NAMES = {
+  dnd5e: 'D&D 5e',
+  tormenta20: 'Tormenta20',
+  assimilacao: 'Assimilação RPG',
+} as const;
 
 export function describeTomoAction(action: TomoAction): { title: string; detail: string } {
   switch (action.acao) {
     case 'criar_campanha':
-      return { title: `Criar campanha (${SYSTEM_NAMES[action.sistema]}): ${action.nome}`, detail: action.descricao };
+      return {
+        title: `Criar campanha (${SYSTEM_NAMES[action.sistema]}): ${action.nome}`,
+        detail: action.descricao,
+      };
     case 'criar_personagem':
       return {
         title: `Começar personagem (${SYSTEM_NAMES[action.sistema]}): ${action.nome}`,
-        detail: ['Abre a criação já preenchida para você terminar.', action.aparencia].filter(Boolean).join(' '),
+        detail: ['Abre a criação já preenchida para você terminar.', action.aparencia]
+          .filter(Boolean)
+          .join(' '),
       };
     case 'criar_anotacao':
       return { title: `Criar anotação pessoal: ${action.titulo}`, detail: action.texto };
@@ -165,28 +202,67 @@ export function describeTomoAction(action: TomoAction): { title: string; detail:
         title: `Adicionar ao roteiro da sessão ${action.sessao} (${{ paragrafo: 'parágrafo', titulo: 'título', nota_do_mestre: 'nota do mestre' }[action.tipo]})`,
         detail: action.texto,
       };
+    case 'editar_bloco_roteiro':
+      return {
+        title: `Editar o roteiro da sessão ${action.sessao}`,
+        detail: `Trecho: “${action.trecho}” → ${action.novo_texto}`,
+      };
+    case 'criar_mapa':
+      return {
+        title: `Criar mapa: ${action.nome}`,
+        detail: `Sessão ${action.sessao} · grade ${action.colunas}×${action.linhas}${action.ativar ? ' · fica ativo para a mesa' : ''}. A imagem de fundo você envia na aba Mapa.`,
+      };
     case 'criar_item':
-      return { title: `Criar item na biblioteca: ${action.nome}`, detail: [action.raridade, action.valor, action.descricao].filter(Boolean).join(' · ') };
+      return {
+        title: `Criar item na biblioteca: ${action.nome}`,
+        detail: [action.raridade, action.valor, action.descricao].filter(Boolean).join(' · '),
+      };
     case 'criar_sessao':
-      return { title: `Criar sessão: ${action.titulo}`, detail: 'Fica como rascunho (não publicada) até você publicar.' };
+      return {
+        title: `Criar sessão: ${action.titulo}`,
+        detail: 'Fica como rascunho (não publicada) até você publicar.',
+      };
     case 'nota_na_sessao':
       return { title: `Nota do mestre na sessão ${action.sessao}`, detail: action.texto };
     case 'criar_quadro':
-      return { title: `Criar quadro: ${action.titulo}`, detail: action.notas.length ? `${action.notas.length} nota(s): ${action.notas.slice(0, 3).join(' · ')}` : '' };
+      return {
+        title: `Criar quadro: ${action.titulo}`,
+        detail: action.notas.length
+          ? `${action.notas.length} nota(s): ${action.notas.slice(0, 3).join(' · ')}`
+          : '',
+      };
     case 'editar_personagem':
       return {
         title: `Alterar a ficha${action.nome ? `: nome → ${action.nome}` : ''}`,
-        detail: [action.aparencia && 'aparência', action.personalidade && 'personalidade', action.historia && 'história'].filter(Boolean).join(', '),
+        detail: [
+          action.aparencia && 'aparência',
+          action.personalidade && 'personalidade',
+          action.historia && 'história',
+        ]
+          .filter(Boolean)
+          .join(', '),
       };
     case 'ajustar_recurso': {
       const what = { pv: 'PV', pm: 'PM', dinheiro: 'dinheiro' }[action.recurso];
-      const verb = { dano: 'Dano em', cura: 'Curar', gastar: 'Gastar', receber: 'Receber', definir: 'Definir' }[action.operacao];
+      const verb = {
+        dano: 'Dano em',
+        cura: 'Curar',
+        gastar: 'Gastar',
+        receber: 'Receber',
+        definir: 'Definir',
+      }[action.operacao];
       return { title: `${verb} ${what}: ${action.valor}`, detail: '' };
     }
     case 'habilidade_no_personagem':
-      return { title: `Adicionar à ficha (${action.tipo}): ${action.nome}`, detail: action.descricao };
+      return {
+        title: `Adicionar à ficha (${action.tipo}): ${action.nome}`,
+        detail: action.descricao,
+      };
     case 'item_no_personagem':
-      return { title: `Adicionar ao inventário: ${action.quantidade}× ${action.nome}`, detail: action.descricao };
+      return {
+        title: `Adicionar ao inventário: ${action.quantidade}× ${action.nome}`,
+        detail: action.descricao,
+      };
   }
 }
 
@@ -226,6 +302,8 @@ export function tomoActionsPrompt(scope: {
       statsGuide(scope.systemId),
       '- criar_encontro: {"acao":"criar_encontro","titulo":"...","criaturas":[{"nome":"...","tipo":"monstro","quantidade":2,"tamanho":"medium","descricao":"...","estatisticas":{...}}],"sessao":<número, opcional>}: cria as criaturas, põe os tokens no mapa ativo e cita no roteiro da sessão.',
       '- bloco_no_roteiro: {"acao":"bloco_no_roteiro","sessao":<número>,"tipo":"paragrafo"|"titulo"|"nota_do_mestre","texto":"..."}: acrescenta um bloco no fim do roteiro (nota_do_mestre só o mestre vê).',
+      '- editar_bloco_roteiro: {"acao":"editar_bloco_roteiro","sessao":<número>,"trecho":"parte do texto atual do bloco","novo_texto":"..."}: troca o texto de um bloco que já está no roteiro (título, parágrafo ou nota). Use um trecho que só aquele bloco tem.',
+      '- criar_mapa: {"acao":"criar_mapa","sessao":<número>,"nome":"...","colunas":30,"linhas":20,"ativar":false}: cria um mapa vazio com grade na sessão (a imagem o mestre envia na aba Mapa); "ativar" mostra para a mesa.',
       '- criar_item: {"acao":"criar_item","nome":"...","categoria":"weapon|armor|gear|consumable|tool|treasure|other","raridade":"...","valor":"...","descricao":"...","visivel_ao_grupo":false} na biblioteca da campanha.',
       '- criar_sessao: {"acao":"criar_sessao","titulo":"..."} (fica não publicada).',
       '- nota_na_sessao: {"acao":"nota_na_sessao","sessao":<número da lista de sessões>,"texto":"..."}: nota privada do mestre no fim do roteiro.',
