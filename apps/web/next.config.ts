@@ -14,7 +14,7 @@ const securityHeaders = [
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   // Microfone só para o próprio site (ditado por voz no chat do Tomo).
-  { key: 'Permissions-Policy', value: 'camera=(), microphone=(self), geolocation=(), payment=()' },
+  { key: 'Permissions-Policy', value: 'camera=(self), microphone=(self), geolocation=(), payment=()' },
   { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
 ];
 
