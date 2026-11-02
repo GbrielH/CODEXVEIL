@@ -134,7 +134,7 @@ export function NewCreatureForm({
               maxLength={80}
               defaultValue={state.values?.name}
               placeholder={kind === 'npc' ? 'Ex.: Velha Morgana' : 'Ex.: Ogro das Cavernas'}
-              className="w-full rounded-md border border-transparent bg-transparent px-1 font-display text-3xl leading-tight text-fg placeholder:text-fg-muted/50 hover:border-line focus-visible:border-parchment-300 focus-visible:outline-none"
+              className="w-full rounded-md border border-transparent bg-transparent px-1 font-display text-xl leading-tight text-fg placeholder:text-fg-muted/50 hover:border-line focus-visible:border-parchment-300 focus-visible:outline-none"
             />
             {state.fieldErrors?.name ? (
               <span className="text-xs text-danger">{state.fieldErrors.name}</span>
@@ -158,7 +158,7 @@ export function NewCreatureForm({
             <legend className="mb-1 text-[0.65rem] font-semibold tracking-[0.2em] text-fg-muted uppercase">
               Tamanho *
             </legend>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+            <div className="grid grid-cols-3 gap-2">
               {TOKEN_SIZES.map((option) => (
                 <button
                   key={option}
@@ -166,13 +166,13 @@ export function NewCreatureForm({
                   aria-pressed={size === option}
                   onClick={() => setSize(option)}
                   className={cx(
-                    'flex flex-col items-center gap-0.5 rounded-xl border p-2 text-center transition-colors',
+                    'flex min-w-0 flex-col items-center gap-0.5 rounded-xl border px-1 py-2 text-center transition-colors',
                     size === option
                       ? 'border-parchment-300 bg-wine-900/60 text-fg-accent'
                       : 'border-parchment-400/30 bg-canvas/60 text-fg-secondary hover:bg-hover',
                   )}
                 >
-                  <span className="text-sm font-medium">{sizeLabels[option]}</span>
+                  <span className="text-xs font-medium">{sizeLabels[option]}</span>
                   <span className="text-[0.65rem] text-fg-muted">
                     {tokenSizeSquares[option]}×{tokenSizeSquares[option]}
                   </span>

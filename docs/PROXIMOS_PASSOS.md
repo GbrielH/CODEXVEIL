@@ -864,6 +864,11 @@ de segurança).
 
 ## Histórico
 
+### 2026-11-02 (noite) — biblioteca
+
+- [x] Formulário "Novo registro" da biblioteca cabia mal na coluna lateral (tamanhos em 6 colunas
+      sobrepostos, nome gigante): tamanhos em 3 colunas e fonte menor.
+
 ### 2026-11-02 (noite) — taverna no app
 
 - [x] Mensagem da taverna voltava como não lida ao reabrir o app: a marca de leitura usava o
