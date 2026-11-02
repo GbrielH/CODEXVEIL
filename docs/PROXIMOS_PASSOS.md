@@ -871,6 +871,11 @@ de segurança).
 - [x] NPC com ficha completa: criado só por "Novo registro" → NPC → Ficha completa (saiu o botão do
       quadro "NPCs com ficha de jogador"); ao terminar o assistente, volta para a biblioteca em vez
       de abrir a página de personagem. Continua NPC (fora de "Meus personagens").
+- [x] Saiu o quadro "NPCs com ficha de jogador": as fichas completas de NPC aparecem na lista
+      principal da biblioteca (Todos/NPCs), com o selo "Ficha completa".
+- [x] Monstro rápido na biblioteca (aparência, comportamento, habilidade, fraqueza e porte por
+      semente), salvo como monstro só do mestre.
+- [x] Busca do Bestiário e dos Itens mágicos SRD: já aceitava português; o campo agora diz isso.
 
 ### 2026-11-02 (noite) — taverna no app
 

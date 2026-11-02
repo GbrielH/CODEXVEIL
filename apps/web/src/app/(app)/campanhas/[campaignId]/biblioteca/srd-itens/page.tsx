@@ -86,7 +86,7 @@ export default async function SrdItemsPage({ params, searchParams }: PageProps<'
               type="search"
               name="q"
               defaultValue={term}
-              placeholder="Nome (em inglês)"
+              placeholder="Nome (português ou inglês)"
               className="h-11 w-full rounded-md border border-line-strong bg-sunken pr-3 pl-9 text-sm text-fg placeholder:text-fg-subtle focus-visible:border-parchment-300 focus-visible:outline-none"
             />
           </span>

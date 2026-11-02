@@ -218,3 +218,130 @@ export function quickNpcDescription(npc: QuickNpc): string {
     `Segredo (só o mestre): ${npc.secret}.`,
   ].join('\n');
 }
+
+export interface QuickMonster {
+  name: string;
+  size: 'small' | 'medium' | 'large' | 'huge';
+  appearance: string;
+  behavior: string;
+  ability: string;
+  weakness: string;
+}
+
+const MONSTER_BASES: { name: string; size: QuickMonster['size'] }[] = [
+  { name: 'Rastejador', size: 'medium' },
+  { name: 'Devorador', size: 'large' },
+  { name: 'Espreitador', size: 'medium' },
+  { name: 'Colosso', size: 'huge' },
+  { name: 'Diabrete', size: 'small' },
+  { name: 'Lobo', size: 'medium' },
+  { name: 'Serpe', size: 'large' },
+  { name: 'Aranha', size: 'large' },
+  { name: 'Carniçal', size: 'medium' },
+  { name: 'Golem', size: 'large' },
+  { name: 'Morcego', size: 'small' },
+  { name: 'Troll', size: 'large' },
+  { name: 'Verme', size: 'huge' },
+  { name: 'Espectro', size: 'medium' },
+];
+
+const MONSTER_EPITHETS = [
+  'das Cinzas',
+  'do Pântano',
+  'de Ossos',
+  'Sombrio',
+  'das Profundezas',
+  'de Cristal',
+  'Pestilento',
+  'de Ferrugem',
+  'Uivante',
+  'da Névoa',
+  'Sanguinário',
+  'de Musgo',
+  'do Abismo',
+  'Faminto',
+  'de Gelo',
+];
+
+const MONSTER_LOOKS = [
+  'couro rachado que solta brasas',
+  'olhos demais espalhados pelo corpo',
+  'carapaça coberta de runas',
+  'corpo translúcido com órgãos à mostra',
+  'pelagem emaranhada de raízes',
+  'boca vertical cheia de dentes',
+  'escamas que mudam de cor',
+  'membros longos e articulados ao contrário',
+  'cheiro de enxofre e carne podre',
+  'chifres retorcidos cobertos de musgo',
+  'pele de pedra com veios de magma',
+  'asas membranosas rasgadas',
+];
+
+const MONSTER_BEHAVIORS = [
+  'caça em bando e cerca a presa',
+  'espera imóvel e ataca de emboscada',
+  'foge quando ferido e volta à noite',
+  'protege um ninho com ovos',
+  'arrasta as vítimas para o covil',
+  'imita vozes para atrair viajantes',
+  'só ataca quem carrega luz',
+  'é territorial e marca o caminho com ossos',
+  'serve a um mestre que o controla',
+  'devora metal e ignora quem não carrega nada',
+];
+
+const MONSTER_ABILITIES = [
+  'cospe ácido em linha',
+  'fica invisível na penumbra',
+  'regenera feridas a cada turno',
+  'grita e amedronta quem ouve',
+  'agarra e contém com tentáculos',
+  'atravessa paredes finas',
+  'envenena com a mordida',
+  'explode em esporos ao morrer',
+  'escala tetos sem esforço',
+  'drena calor e causa dano de frio',
+  'salta grandes distâncias',
+  'reflete magias fracas',
+];
+
+const MONSTER_WEAKNESSES = [
+  'fogo',
+  'luz do sol',
+  'prata',
+  'sal',
+  'barulho alto',
+  'água corrente',
+  'ferro frio',
+  'música',
+  'o próprio reflexo',
+  'fumaça de ervas',
+  'magia sagrada',
+  'ser chamado pelo nome verdadeiro',
+];
+
+/** Gera um monstro a partir da semente (vazia = "codexveil"). */
+export function generateQuickMonster(seed: string): QuickMonster {
+  const random = randomFrom(`monstro:${seed.trim()}`);
+  const pick = <T>(list: readonly T[]): T => list[Math.floor(random() * list.length)]!;
+  const base = pick(MONSTER_BASES);
+  return {
+    name: `${base.name} ${pick(MONSTER_EPITHETS)}`,
+    size: base.size,
+    appearance: pick(MONSTER_LOOKS),
+    behavior: pick(MONSTER_BEHAVIORS),
+    ability: pick(MONSTER_ABILITIES),
+    weakness: pick(MONSTER_WEAKNESSES),
+  };
+}
+
+/** Texto para a descrição do monstro na biblioteca. */
+export function quickMonsterDescription(monster: QuickMonster): string {
+  return [
+    `Aparência: ${monster.appearance}.`,
+    `Comportamento: ${monster.behavior}.`,
+    `Habilidade: ${monster.ability}.`,
+    `Fraqueza: ${monster.weakness}.`,
+  ].join('\n');
+}

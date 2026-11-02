@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { generateQuickNpc, quickNpcDescription } from './npc-generator';
+import {
+  generateQuickMonster,
+  generateQuickNpc,
+  quickMonsterDescription,
+  quickNpcDescription,
+} from './npc-generator';
 
 describe('generateQuickNpc', () => {
   it('a mesma semente gera o mesmo NPC', () => {
@@ -18,5 +23,14 @@ describe('generateQuickNpc', () => {
     expect(npc.name.length).toBeLessThanOrEqual(80);
     expect(Object.values(npc).every((value: string) => value.length > 0)).toBe(true);
     expect(quickNpcDescription(npc).length).toBeLessThan(4000);
+  });
+});
+
+describe('generateQuickMonster', () => {
+  it('a mesma semente gera o mesmo monstro e tem porte válido', () => {
+    const monster = generateQuickMonster('cripta');
+    expect(monster).toEqual(generateQuickMonster('cripta'));
+    expect(['small', 'medium', 'large', 'huge']).toContain(monster.size);
+    expect(quickMonsterDescription(monster).length).toBeLessThan(4000);
   });
 });

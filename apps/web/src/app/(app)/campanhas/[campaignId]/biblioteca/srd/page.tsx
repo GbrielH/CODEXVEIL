@@ -73,7 +73,7 @@ export default async function SrdBestiaryPage({ params, searchParams }: PageProp
               type="search"
               name="q"
               defaultValue={term}
-              placeholder="Nome (em inglês) ou tipo"
+              placeholder="Nome (português ou inglês) ou tipo"
               className="h-11 w-full rounded-md border border-line-strong bg-sunken pr-3 pl-9 text-sm text-fg placeholder:text-fg-subtle focus-visible:border-parchment-300 focus-visible:outline-none"
             />
           </span>

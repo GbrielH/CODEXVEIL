@@ -14,7 +14,12 @@ import {
   srdMonsterToStatBlock,
   srdSlug,
 } from '@codexveil/rpg-systems/dnd5e';
-import { generateQuickNpc, quickNpcDescription } from '@codexveil/domain';
+import {
+  generateQuickMonster,
+  generateQuickNpc,
+  quickMonsterDescription,
+  quickNpcDescription,
+} from '@codexveil/domain';
 import { campaignItemSchema, creatureSchema, fieldErrorsFrom, uuidSchema } from '@codexveil/validation';
 import type { Route } from 'next';
 import { revalidatePath } from 'next/cache';
@@ -68,6 +73,30 @@ export async function saveQuickNpcAction(campaignId: string, seed: string): Prom
     visibility: 'gm',
   });
   if (!parsed.success) return { ok: false, message: 'NPC inválido.' };
+  try {
+    const supabase = await createSupabaseServerClient();
+    await createCreature(supabase, campaignId, parsed.data);
+  } catch (error) {
+    return { ok: false, message: failureMessage(error) };
+  }
+  revalidatePath(campaignPath(campaignId, '/biblioteca'));
+  return { ok: true };
+}
+
+/** Salva o monstro rápido (mesma semente = mesmo monstro) na biblioteca, só para o mestre ver. */
+export async function saveQuickMonsterAction(campaignId: string, seed: string): Promise<ActionResult> {
+  await requireSessionUser(campaignPath(campaignId, '/biblioteca'));
+  if (!uuidSchema.safeParse(campaignId).success) return { ok: false, message: 'Requisição inválida.' };
+  const monster = generateQuickMonster(seed.slice(0, 40));
+  const parsed = creatureSchema.safeParse({
+    kind: 'monster',
+    size: monster.size,
+    name: monster.name,
+    subtitle: monster.appearance.slice(0, 80),
+    description: quickMonsterDescription(monster),
+    visibility: 'gm',
+  });
+  if (!parsed.success) return { ok: false, message: 'Monstro inválido.' };
   try {
     const supabase = await createSupabaseServerClient();
     await createCreature(supabase, campaignId, parsed.data);

@@ -10,7 +10,6 @@ import { BookOpen, EyeOff, Skull, UserRound } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { LibraryNav } from '@/components/library/library-nav';
-import { NpcSheets } from '@/components/library/npc-sheets';
 import { VisibilityToggle } from '@/components/library/visibility-toggle';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -18,9 +17,10 @@ import { Notice } from '@/components/ui/notice';
 import { EmptyState } from '@/components/ui/states';
 import { loadCampaignOrNotFound } from '@/lib/campaigns';
 import { requireSessionUser } from '@/lib/auth';
-import { campaignPath } from '@/lib/routes';
+import { campaignPath, characterPath } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { NewCreatureForm } from './new-creature-form';
+import { QuickMonster } from './quick-monster';
 import { QuickNpc } from './quick-npc';
 
 export const metadata: Metadata = { title: 'Biblioteca' };
@@ -100,14 +100,15 @@ export default async function LibraryPage({
   const isGm = campaign.role === 'gm';
   const canManage = isGm && campaign.status === 'active';
   // NPCs com ficha de jogador (fichas pessoais do mestre guardadas nesta campanha).
-  const npcSheets = canManage
-    ? await listNpcCharacterCandidates(
+  const npcSheets = canManage && (!kind || kind === 'npc')
+    ? (await listNpcCharacterCandidates(
         supabase,
         (await requireSessionUser(campaignPath(campaign.id, '/biblioteca'))).id,
         campaign.id,
         campaign.systemId,
-      ).catch(() => [])
+      ).catch(() => [])).filter((sheet) => sheet.npcCampaignId === campaign.id)
     : [];
+  const sheetPortraits = await signedMediaUrls(supabase, npcSheets.map((sheet) => sheet.portraitPath));
 
   return (
     <div className="flex flex-col gap-6">
@@ -125,7 +126,7 @@ export default async function LibraryPage({
               Personagens e criaturas que o mestre já revelou ao grupo.
             </p>
           ) : null}
-          {creatures.length === 0 ? (
+          {creatures.length === 0 && npcSheets.length === 0 ? (
             <EmptyState
               icon={<BookOpen className="h-8 w-8" aria-hidden="true" />}
               title={isGm ? 'Biblioteca vazia' : 'Nada revelado ainda'}
@@ -137,6 +138,33 @@ export default async function LibraryPage({
             />
           ) : (
             <ul className="grid gap-3 sm:grid-cols-2">
+              {npcSheets.map((sheet) => (
+                <li key={sheet.id}>
+                  <Link
+                    href={characterPath(sheet.id) as Route}
+                    className="flex h-full gap-3 rounded-lg border border-line bg-card p-3 shadow-card transition-colors hover:border-parchment-400/40 hover:bg-raised"
+                  >
+                    <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-line bg-wine-950 text-parchment-300">
+                      {sheet.portraitPath && sheetPortraits[sheet.portraitPath] ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Storage.
+                        <img src={sheetPortraits[sheet.portraitPath]} alt={sheet.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <UserRound className="h-7 w-7" aria-hidden="true" />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-display text-lg text-fg-accent">{sheet.name}</span>
+                      <span className="mt-1 flex flex-wrap gap-1.5">
+                        <Badge tone="neutral">NPC</Badge>
+                        <Badge tone="neutral">Ficha completa</Badge>
+                        <Badge tone="warning" icon={<EyeOff className="h-3 w-3" aria-hidden="true" />}>
+                          Oculto
+                        </Badge>
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
               {creatures.map((creature) => (
                 <li key={creature.id}>
                   <CreatureCard
@@ -173,14 +201,10 @@ export default async function LibraryPage({
             </Card>
             <Card>
               <CardHeader
-                title="NPCs com ficha de jogador"
-                description="Fichas completas que sobem de nível como as dos jogadores. Só você vê."
+                title="Monstro rápido"
+                description="Aparência, comportamento, habilidade e fraqueza num clique."
               />
-              <NpcSheets
-                campaignId={campaign.id}
-                systemId={campaign.systemId}
-                characters={npcSheets}
-              />
+              <QuickMonster campaignId={campaign.id} />
             </Card>
           </aside>
         ) : null}
