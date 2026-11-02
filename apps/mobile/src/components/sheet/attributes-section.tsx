@@ -13,6 +13,8 @@ import {
   type Ability,
   type ConditionRollSource,
   type ProficiencyLevel,
+  dnd5eBonusAreaLabels,
+  listDnd5eAutomaticBonuses,
 } from '@codexveil/rpg-systems/dnd5e';
 import { d20Expression, type DiceRollMode } from '@codexveil/domain';
 import { Minus, Plus } from 'lucide-react-native';
@@ -22,6 +24,7 @@ import { IconButton } from '@/components/ui/button';
 import { AppText, Card } from '@/components/ui/primitives';
 import { colors, radii, spacing } from '@/lib/theme';
 import { useSheet } from './context';
+import { useMemo } from 'react';
 
 /** Ordem do ciclo ao tocar na proficiência de uma perícia. */
 const proficiencyCycle: ProficiencyLevel[] = ['none', 'proficient', 'expertise', 'half'];
@@ -98,7 +101,10 @@ export function AttributesSection() {
               label={`Teste de ${abilityLabels[ability].name}`}
               mode={rollModeOf(effects.abilityChecks)}
             >
-              <AppText variant="display" style={{ fontSize: 28, lineHeight: 32, color: penalty > 0 ? '#E6BE74' : undefined }}>
+              <AppText
+                variant="display"
+                style={{ fontSize: 28, lineHeight: 32, color: penalty > 0 ? '#E6BE74' : undefined }}
+              >
                 {formatModifier(derived.abilityModifiers[ability] - penalty)}
               </AppText>
             </RollButton>
@@ -235,6 +241,7 @@ export function AttributesSection() {
           );
         })}
       </Card>
+      <AutomaticBonuses />
     </View>
   );
 }
@@ -268,3 +275,33 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 });
+
+/** Bônus que a ficha já soma sozinha, com a origem (como no site). */
+function AutomaticBonuses() {
+  const { sheet, derived, abilities } = useSheet();
+  const bonuses = useMemo(
+    () =>
+      listDnd5eAutomaticBonuses(
+        sheet,
+        derived,
+        abilities
+          .filter((entry) => entry.kind !== 'attack' && entry.kind !== 'spell')
+          .map((entry) => entry.name),
+      ),
+    [sheet, derived, abilities],
+  );
+  if (bonuses.length === 0) return null;
+  return (
+    <Card>
+      <AppText variant="eyebrow">Bônus automáticos</AppText>
+      <AppText variant="small">Já somados na ficha.</AppText>
+      {bonuses.map((bonus) => (
+        <AppText key={`${bonus.area}-${bonus.source}`}>
+          <AppText variant="small">{dnd5eBonusAreaLabels[bonus.area]} · </AppText>
+          {bonus.source}
+          {bonus.effect ? <AppText variant="small"> {bonus.effect}</AppText> : null}
+        </AppText>
+      ))}
+    </Card>
+  );
+}

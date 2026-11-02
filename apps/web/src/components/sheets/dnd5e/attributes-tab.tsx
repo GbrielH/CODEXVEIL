@@ -17,8 +17,10 @@ import {
   type Ability,
   type ProficiencyLevel,
   SRD_LANGUAGES,
+  dnd5eBonusAreaLabels,
+  listDnd5eAutomaticBonuses,
 } from '@codexveil/rpg-systems/dnd5e';
-import { useId } from 'react';
+import { useId, useMemo } from 'react';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Select } from '@/components/ui/select';
 import { NumberInput } from '@/components/ui/number-input';
@@ -45,6 +47,7 @@ export function AttributesTab({
         <div className="flex flex-col gap-5">
           <SavingThrows />
           <CombatBasics />
+          <AutomaticBonuses />
           <Spellcasting />
         </div>
         <SkillsTable />
@@ -300,6 +303,45 @@ function SkillsTable() {
             </li>
           );
         })}
+      </ul>
+    </Card>
+  );
+}
+
+/** Bônus que a ficha já soma sozinha, com a origem de cada um (talentos, classe, espécie, itens). */
+function AutomaticBonuses() {
+  const { sheet, derived, abilities } = useSheet();
+  const bonuses = useMemo(
+    () =>
+      listDnd5eAutomaticBonuses(
+        sheet,
+        derived,
+        abilities
+          .filter((entry) => entry.kind !== 'attack' && entry.kind !== 'spell')
+          .map((entry) => entry.name),
+      ),
+    [sheet, derived, abilities],
+  );
+  if (bonuses.length === 0) return null;
+  return (
+    <Card>
+      <CardHeader
+        title="Bônus automáticos"
+        description="Já somados na ficha. Mudam sozinhos com o equipamento e as características."
+      />
+      <ul className="flex flex-col gap-1.5 text-sm">
+        {bonuses.map((bonus) => (
+          <li
+            key={`${bonus.area}-${bonus.source}`}
+            className="flex flex-wrap items-baseline gap-x-2"
+          >
+            <span className="text-xs uppercase tracking-wide text-fg-muted">
+              {dnd5eBonusAreaLabels[bonus.area]}
+            </span>
+            <span className="font-medium text-fg">{bonus.source}</span>
+            {bonus.effect ? <span className="text-fg-secondary">{bonus.effect}</span> : null}
+          </li>
+        ))}
       </ul>
     </Card>
   );

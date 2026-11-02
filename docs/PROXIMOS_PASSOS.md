@@ -210,8 +210,6 @@ mapa e notas lado a lado).
 - [x] Assimilação RPG, etapa 0 (2026-10-30): núcleo de regras e testes (`docs/ASSIMILACAO.md`).
 - [x] Assimilação RPG no site (2026-10-30): registro, migração `20261030140000`, livro completo como
       pacote (417 entradas), leitor, regras da campanha, criação guiada e ficha com dados especiais.
-- [ ] Aplicar a migração `20261030140000_assimilacao.sql` em produção (bloqueada pelo controle de
-      permissões nesta sessão) e só então publicar.
 - [x] Assimilação RPG no app (2026-10-30): criação, ficha e teste com dados especiais (OTA).
 - [x] Assimilação RPG (2026-10-30): Ameaças de Conflito na biblioteca, neutralização no rastreador e
       baralhos de Assimilação e Eventos na mesa do mestre.
@@ -274,8 +272,11 @@ três etapas:
       Iniciado em Magia já eram automáticos; faltavam lembretes de ataque (feitos).
 - [x] (antigo) Levantamento: contar as habilidades com bônus numérico (CA, perícias, salvaguardas, PV,
       deslocamento, atributos), com escolha, que concedem magia e que tornam proficiente.
-- [ ] Etapa 1: bônus fixos sempre ativos na ficha, com a origem (ex.: Robusto, Alerta, Defesa do
-      Estilo de Luta, Movimento Rápido, Defesa sem Armadura).
+- [x] Etapa 1 (2026-11-02): cartão "Bônus automáticos" na aba de atributos (site e app), com a
+      origem de cada bônus já somado: CA (armadura, escudo, Defesa sem Armadura, Resiliência
+      Dracônica, itens, Estilo de Luta), deslocamento (Movimento Rápido, Movimento sem Armadura,
+      Errante), Alerta, PV por nível (Robusto, Tenacidade Anã, Resiliência Dracônica) e Pau para Toda
+      Obra. Corrigido: o Errante do Patrulheiro (6º) não entrava no deslocamento da ficha.
 - [x] Etapa 2: lembretes no ataque (Ataque Furtivo, Armas Grandes, Duas Armas; Fúria já somava).
 - [ ] Etapa 3: todas as escolhas pendentes com seletor (magias de talentos e espécies, perícias,
       ferramentas, idiomas, "um talento à escolha").

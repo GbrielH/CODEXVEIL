@@ -100,6 +100,7 @@ export * from './attack-automation';
 export * from './sheet';
 export * from './derived';
 export * from './equipment-effects';
+export * from './automatic-bonuses';
 export * from './resources';
 export * from './entries';
 export * from './stat-block';

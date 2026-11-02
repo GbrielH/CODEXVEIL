@@ -95,14 +95,14 @@ const PROTECTION_ITEMS = [
   'cloak of protection',
 ];
 
-function classLevel(sheet: Dnd5eSheet, ...names: string[]): number {
+export function classLevel(sheet: Dnd5eSheet, ...names: string[]): number {
   const wanted = names.map(normalize);
   return sheet.identity.classes
     .filter((entry) => wanted.includes(normalize(entry.name)))
     .reduce((total, entry) => total + entry.level, 0);
 }
 
-function hasSubclass(sheet: Dnd5eSheet, fragment: string): boolean {
+export function hasSubclass(sheet: Dnd5eSheet, fragment: string): boolean {
   return sheet.identity.classes.some((entry) => normalize(entry.subclass ?? '').includes(fragment));
 }
 
@@ -235,6 +235,11 @@ export function computeDnd5eCombat(
   if (barbarian >= 5 && body?.armor?.category !== 'heavy') {
     feet += 10;
     speedNotes.push(`Movimento Rápido: +${toUnit(10, unit)} ${unit}`);
+  }
+  // Errante (Patrulheiro 6º): +3 m sem armadura pesada.
+  if (classLevel(sheet, 'Patrulheiro', 'Ranger') >= 6 && body?.armor?.category !== 'heavy') {
+    feet += 10;
+    speedNotes.push(`Errante (Patrulheiro): +${toUnit(10, unit)} ${unit}`);
   }
   if (body?.armor?.strength && abilities.str < body.armor.strength) {
     feet -= 10;
