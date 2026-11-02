@@ -428,6 +428,12 @@ export function SessionHighlights({
       />
       {generating ? <Alert tone="info">Gerando… a IA está lendo a transcrição.</Alert> : null}
       {problem ? <Alert tone="danger">{problem}</Alert> : null}
+      {canManage && highlights.some((highlight) => highlight.source === 'ai') ? (
+        <p className="text-xs text-fg-muted">
+          Gerar de novo substitui somente os cartões automáticos sem imagem e que você ainda não
+          editou.
+        </p>
+      ) : null}
       {canManage && transcript.length < 3 ? (
         <p className="text-sm text-fg-muted">
           Os momentos saem da transcrição da sessão: faça a call vinculada a esta sessão com “Gravar

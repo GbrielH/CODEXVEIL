@@ -3,6 +3,12 @@
 O esquema fica em `supabase/migrations/` (Postgres 17 no Supabase). As regras de acesso estão
 em [`SECURITY.md`](SECURITY.md).
 
+Em 2026-11-02, `20261102110000_call_security_hardening.sql` passou a derivar
+`highlight_runs.campaign_id` da sessão por gatilho e ampliou o retorno de `find_call_room` com o
+`owner_id`. `20261102120000_highlight_generation_lock.sql` acrescentou o estado `running`, um índice
+parcial único por sessão e as RPCs `start_highlight_run` / `finish_highlight_run`; locks abandonados
+expiram em três minutos. As duas migrações estão aplicadas no Supabase de produção.
+
 ## Convenções
 
 - Todas as tabelas de `public` têm RLS habilitado e **GRANTs explícitos por coluna**. Colunas

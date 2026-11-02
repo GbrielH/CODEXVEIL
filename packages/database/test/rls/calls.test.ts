@@ -66,6 +66,20 @@ describe('call', () => {
     expect((await join(outsider, room.id)).join_call_room).toBe('approved');
   });
 
+  it('convidado que ainda não entrou não vê a lista nem convida terceiros', async () => {
+    const { gm, player, outsider } = await createTable(db);
+    const room = await createRoom(gm, 'invite');
+    await db.as(gm, (s) => s.query(`select public.invite_to_call($1, $2)`, [room.id, player.id]));
+    const participants = await db.as(player, (s) =>
+      s.query(`select user_id from public.call_participants where room_id = $1`, [room.id]),
+    );
+    expect(participants).toEqual([]);
+    await expectSqlError(
+      db.as(player, (s) => s.query(`select public.invite_to_call($1, $2)`, [room.id, outsider.id])),
+      '42501',
+    );
+  });
+
   it('sala de espera: aguarda até o dono aprovar; só o dono decide', async () => {
     const { gm, player, outsider } = await createTable(db);
     const room = await createRoom(gm, 'lobby');
@@ -80,6 +94,27 @@ describe('call', () => {
       s.query(`select public.decide_call_participant($1, $2, true)`, [room.id, outsider.id]),
     );
     expect((await join(outsider, room.id)).join_call_room).toBe('approved');
+  });
+
+  it('quem espera ou foi recusado vê apenas a própria entrada, sem transcrição', async () => {
+    const { gm, outsider } = await createTable(db);
+    const room = await createRoom(gm, 'lobby');
+    await join(gm, room.id);
+    expect((await join(outsider, room.id)).join_call_room).toBe('waiting');
+    const own = await db.as(outsider, (s) =>
+      s.query<{ user_id: string }>(
+        `select user_id from public.call_participants where room_id = $1`,
+        [room.id],
+      ),
+    );
+    expect(own).toEqual([{ user_id: outsider.id }]);
+    await db.as(gm, (s) =>
+      s.query(`select public.decide_call_participant($1, $2, false)`, [room.id, outsider.id]),
+    );
+    const transcript = await db.as(outsider, (s) =>
+      s.query(`select id from public.transcript_segments where room_id = $1`, [room.id]),
+    );
+    expect(transcript).toEqual([]);
   });
 
   it('quem não está na sala não vê os participantes', async () => {
@@ -154,5 +189,83 @@ describe('call', () => {
       s.query(`select id from public.session_highlights where session_id = $1`, [sessionId]),
     );
     expect(hidden).toEqual([]);
+  });
+
+  it('uso dos momentos deriva a campanha da sessão e não aceita sessão alheia', async () => {
+    const table = await createTable(db);
+    const other = await createTable(db);
+    const sessionId = await createSession(db, table.gm, table.campaign.id);
+    const foreignSessionId = await createSession(db, other.gm, other.campaign.id);
+    const inserted = await db.as(table.gm, (s) =>
+      s.one<{ campaign_id: string }>(
+        `insert into public.highlight_runs (session_id, campaign_id, status)
+         values ($1, $2, 'done') returning campaign_id`,
+        [sessionId, other.campaign.id],
+      ),
+    );
+    expect(inserted.campaign_id).toBe(table.campaign.id);
+    await expectSqlError(
+      db.as(table.gm, (s) =>
+        s.query(
+          `insert into public.highlight_runs (session_id, campaign_id, status)
+           values ($1, $2, 'done')`,
+          [foreignSessionId, table.campaign.id],
+        ),
+      ),
+      '42501',
+    );
+  });
+
+  it('permite só uma geração de momentos por sessão e libera depois de finalizar', async () => {
+    const { gm, outsider, campaign } = await createTable(db);
+    const sessionId = await createSession(db, gm, campaign.id);
+    const first = await db.as(gm, (s) =>
+      s.one<{ start_highlight_run: string }>(`select public.start_highlight_run($1)`, [sessionId]),
+    );
+
+    const message = await expectSqlError(
+      db.as(gm, (s) => s.query(`select public.start_highlight_run($1)`, [sessionId])),
+      '55P03',
+    );
+    expect(message).toContain('Já existe uma geração em andamento para esta sessão.');
+    await expectSqlError(
+      db.as(outsider, (s) => s.query(`select public.start_highlight_run($1)`, [sessionId])),
+      '42501',
+    );
+
+    await db.as(gm, (s) =>
+      s.query(`select public.finish_highlight_run($1, 'done', 'teste', 10, 5, 3, '')`, [
+        first.start_highlight_run,
+      ]),
+    );
+    const second = await db.as(gm, (s) =>
+      s.one<{ start_highlight_run: string }>(`select public.start_highlight_run($1)`, [sessionId]),
+    );
+    expect(second.start_highlight_run).not.toBe(first.start_highlight_run);
+  });
+
+  it('expira uma geração abandonada depois de três minutos', async () => {
+    const { gm, campaign } = await createTable(db);
+    const sessionId = await createSession(db, gm, campaign.id);
+    const first = await db.as(gm, (s) =>
+      s.one<{ start_highlight_run: string }>(`select public.start_highlight_run($1)`, [sessionId]),
+    );
+    await db.as({ kind: 'admin' }, (s) =>
+      s.query(
+        `update public.highlight_runs set created_at = now() - interval '4 minutes' where id = $1`,
+        [first.start_highlight_run],
+      ),
+    );
+    await db.as(gm, (s) => s.query(`select public.start_highlight_run($1)`, [sessionId]));
+    const old = await db.as(gm, (s) =>
+      s.one<{ status: string; error: string }>(
+        `select status, error from public.highlight_runs where id = $1`,
+        [first.start_highlight_run],
+      ),
+    );
+    expect(old).toEqual({
+      status: 'failed',
+      error: 'Geração interrompida antes de terminar.',
+    });
   });
 });

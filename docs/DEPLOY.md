@@ -13,6 +13,17 @@ na raiz do repositório.
 
 ## 1. Supabase: projeto e migrações
 
+### Preview da call (2026-11-02)
+
+`CALLS_ENABLED=1` está configurada somente no ambiente Preview do projeto Vercel `codexveil`.
+Production continua sem a chave ligada. O dono deve cadastrar `LIVEKIT_URL`, `LIVEKIT_API_KEY` e
+`LIVEKIT_API_SECRET` somente em Preview e criar um novo deploy de Preview; não gravar esses valores
+em arquivos. O roteiro completo está em [`call-transcricao-momentos.md`](call-transcricao-momentos.md#roteiro-do-teste-em-preview).
+
+O APK atual não contém `expo-speech-recognition`. O plugin e as permissões estão conferidos em
+`apps/mobile/app.config.ts`, mas `eas build` só deve ser executado com autorização do dono porque
+gasta cota e muda o fingerprint das atualizações OTA.
+
 1. Crie o projeto em <https://supabase.com/dashboard> e escolha a região mais próxima dos
    jogadores (por exemplo, `sa-east-1`).
 2. Vincule e aplique as migrações. A CLI usa um papel de login temporário, então a senha do

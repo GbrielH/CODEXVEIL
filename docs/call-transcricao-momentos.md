@@ -10,27 +10,65 @@ preferência de cada um.
 | 2    | Transcrição ao vivo por personagem                     | código feito; migração aplicada; **escondida** |
 | 3    | Melhores Momentos (análise por IA e prompts de imagem) | código feito; migração aplicada; **escondida** |
 
-## Onde parou (2026-11-01)
+## Onde parou (atualizado em 2026-11-02)
 
 Pedido do responsável: parar aqui e **não liberar em produção** enquanto não estiver testado.
 
-- **Escondido por chave**: tudo fica fora do site e do app até ligar `CALLS_ENABLED=1` (Vercel)
+- **Escondido por chave**: `CALLS_ENABLED=1` foi ligado **somente em Preview** na Vercel em
+  2026-11-02. Production continua desligada. O app continua desligado até ligar
+  `EXPO_PUBLIC_CALLS_ENABLED=1` num APK novo. Sem as chaves do LiveKit e sem um novo deploy de
+  Preview, ainda não há uma sala utilizável.
+- **Chaves**: em Production tudo fica fora do site e do app até ligar `CALLS_ENABLED=1` (Vercel)
   e `EXPO_PUBLIC_CALLS_ENABLED=1` (app; vai no próximo build/OTA). Desligado, somem a aba Call, o
   aviso de convite, a aba Momentos, a galeria da sessão, a aba Transcrição do editor e as rotas
   `/api/call/token` e `/api/sessoes/momentos` respondem 404.
-- **Banco**: as três migrações estão aplicadas em produção (`20261101100000_call_rooms.sql`,
-  `20261101110000_call_transcripts.sql` e `20261101120000_session_highlights.sql`; conferido em
-  2026-11-02 com `npx supabase db push --dry-run`: banco em dia). As tabelas estão vazias e sem uso.
+- **Banco**: as três migrações das fases e as correções `20261102110000`–`20261102120000` estão
+  aplicadas em produção. O `db push` de 2026-11-02 aplicou somente essas duas correções.
 - **APK**: o de 2026-11-01 19:15 UTC (`f6EiER5f…apk`) já tem o LiveKit; **não** tem o módulo de
   transcrição do celular (`expo-speech-recognition`), que exige o próximo APK.
+- **Revisão antes do teste**: `20261102110000_call_security_hardening.sql` restringe
+  participantes/transcrição a quem foi
+  aprovado, impede convidados/recusados de convidar terceiros, protege a troca de sessão da sala e
+  deriva a campanha dos registros de uso dos Momentos. O app agora distingue o dono real de outro
+  mestre. `20261102120000_highlight_generation_lock.sql` garante uma geração por sessão e libera
+  locks abandonados após três minutos. A regeneração preserva cartões anteriores se uma gravação
+  falhar e nunca apaga cartões da IA que receberam imagem ou edição do mestre.
 - **Nada foi testado ao vivo** (sem as chaves do LiveKit). Para continuar:
   1. Criar o projeto grátis no LiveKit Cloud e pôr `LIVEKIT_URL`, `LIVEKIT_API_KEY` e
      `LIVEKIT_API_SECRET` na Vercel.
   2. ~~Aplicar as duas migrações pendentes~~ (feito; ver acima).
-  3. Ligar `CALLS_ENABLED=1` só num ambiente de teste (ex.: preview da Vercel) e testar: criar
-     sala, os três modos, convite, transcrição no Chrome/Edge, exportar, gerar momentos.
-  4. Gerar o APK com a transcrição do celular e testar o conflito de microfone com a call.
-  5. Com tudo certo, ligar as chaves em produção.
+  3. ~~Aplicar as migrações de endurecimento e lock~~ (feito em 2026-11-02).
+  4. Conferir as três chaves do LiveKit em Preview e criar um novo deploy de Preview.
+  5. Executar o roteiro abaixo.
+  6. Gerar o APK com a transcrição do celular e testar o conflito de microfone com a call.
+  7. Com tudo certo, ligar as chaves em produção.
+
+## Roteiro do teste em Preview
+
+Use duas contas de teste e apague as salas/dados criados ao terminar. A Preview usa o mesmo projeto
+Supabase configurado no site; portanto, o recurso fica escondido dos usuários de Production, mas os
+registros de teste ainda são gravados no banco real.
+
+1. Confirmar no painel da Vercel que `CALLS_ENABLED=1`, `LIVEKIT_URL`, `LIVEKIT_API_KEY` e
+   `LIVEKIT_API_SECRET` estão marcadas apenas para **Preview**; criar um novo deploy de Preview.
+2. Criar uma sala **aberta** vinculada a campanha e sessão; entrar com a segunda conta por link e
+   por código; conferir mestre, personagem, áudio, câmera, troca de câmera e saída/reentrada.
+3. Criar uma sala **só para convidados**; confirmar que a segunda conta não entra antes do convite,
+   entra depois dele e que uma pessoa apenas convidada não vê participantes nem convida terceiros.
+4. Criar uma sala com **sala de espera**; aprovar e recusar entradas; confirmar que só o dono vê os
+   controles e que a pessoa recusada não recebe token nem lê participantes/transcrição.
+5. No Chrome e no Edge, ligar **Gravar transcrição**, pausar/retomar a própria voz, conferir rótulos
+   de personagem/Mestre, correção pelo mestre e atualização em tempo real. Confirmar a mensagem de
+   incompatibilidade no Firefox/Safari.
+6. Exportar por **Copiar**, `.md` e `.txt`; conferir cabeçalho, horário relativo e UTF-8.
+7. Com pelo menos três falas, gerar de 3 a 8 **Melhores Momentos**, conferir citações, personagens,
+   prompt em inglês, retratos de referência, criação manual, edição, exclusão e envio/troca de imagem.
+8. Forçar uma falha de gravação em ambiente controlado e confirmar que a geração anterior de
+   Momentos continua visível.
+9. No APK novo, repetir áudio/câmera/transcrição em cada aparelho do grupo. Se Android/WebRTC negar
+   a segunda captura, a transcrição deve parar com aviso em português e a call deve continuar.
+10. Registrar navegador/aparelho, resultado e evidências; manter Production e a chave do app
+    desligadas até a aprovação do dono.
 
 ## Fase 1: call de voz e vídeo
 
@@ -92,8 +130,10 @@ Sem as variáveis, a sala abre e avisa "A call ainda não foi configurada no ser
     Usa o serviço de reconhecimento do próprio navegador, sem custo.
   - **App**: `expo-speech-recognition` (`apps/mobile/src/lib/device-transcription.ts`), no APK
     com a transcrição. O microfone também está na call (WebRTC): em alguns aparelhos os dois
-    disputam o microfone; nesse caso a transcrição avisa e para. Precisa ser testado em cada
-    aparelho do grupo.
+    disputam o microfone. A alternativa gratuita escolhida preserva a função principal: a call
+    continua e somente a transcrição para, com aviso em português. Alternar automaticamente o
+    microfone da call foi descartado porque cortaria a voz enviada aos demais. Precisa ser testado
+    e documentado em cada aparelho do grupo.
   - Um motor no servidor (agente do LiveKit transcrevendo cada faixa com um serviço de voz pago)
     pode entrar depois sem mudar o resto; não foi feito por ser pago.
 - **Atribuição sem identificar voz**: cada pessoa transcreve a própria voz, e o banco
@@ -125,7 +165,10 @@ Sem as variáveis, a sala abre e avisa "A call ainda não foi configurada no ser
   mão escolhendo falas da transcrição, editar, excluir, enviar imagem, copiar o prompt) e a aba
   **Momentos** da campanha, com a galeria de todas as sessões.
 - **Controle de uso**: até 8 momentos por geração, só sob demanda (nunca durante a call), e cada
-  geração registrada em `highlight_runs`. Gerar de novo troca só os momentos da IA.
+  geração registrada em `highlight_runs`. Um índice parcial e as RPCs `start_highlight_run` /
+  `finish_highlight_run` permitem só uma geração por sessão; outra tentativa recebe 409. Um lock
+  abandonado expira em três minutos. Gerar de novo troca somente cartões da IA sem imagem e nunca
+  editados; cartões manuais, ilustrados ou curados pelo mestre são preservados.
 
 ## Variáveis de ambiente (Vercel)
 

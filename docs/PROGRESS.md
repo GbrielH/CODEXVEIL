@@ -1,9 +1,21 @@
 # Progresso do Codexveil
 
-> Documento de retomada. Última atualização: **2026-10-21**. Para retomar o trabalho em andamento, veja primeiro a seção "Continuidade" de [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md#continuidade-parada-em-2026-10-19-retomar-em-outra-máquina).
+> Documento de retomada. Última atualização: **2026-11-02**. Para retomar o trabalho em andamento, veja primeiro a seção "Continuidade" de [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md#continuidade-parada-em-2026-10-19-retomar-em-outra-máquina).
 > O que falta em relação ao prompt inicial está em [`PENDENCIAS.md`](PENDENCIAS.md).
 
 ## Estado atual
+
+**2026-11-02 (call pronta para Preview):** aplicadas no CODEXVEIL as migrações
+`20261102110000_call_security_hardening.sql` e `20261102120000_highlight_generation_lock.sql`. A
+auditoria restringiu convidados/recusados, protegeu vínculos de sessão e corrigiu o dono real no app.
+Melhores Momentos agora aceita uma geração por sessão (lock atômico; abandono expira em 3 minutos),
+responde 409 em concorrência e preserva cartões de IA com imagem ou edição. A geração anterior também
+é preservada se a gravação nova falhar. `CALLS_ENABLED=1` permanece somente em Preview; Production e
+app continuam desligados. Verificações: `pnpm db:types -- --check` em dia; dry-run listou somente as
+duas migrações; `pnpm check` passou (20/20, 661 testes passando e 11 ao vivo pulados); `pnpm build`
+passou (2/2: Next.js e export Android); duas advertências antigas de lint, nenhum erro. **Não testado
+ao vivo:** LiveKit, transcrição real, Gemini e upload. Próximo passo exato: conferir as três variáveis
+LiveKit em Preview; se existirem, publicar a Preview e executar o roteiro documentado.
 
 **2026-10-23 (assistente de IA):** card no menu do site, rota `/api/assistente` com streaming e
 Gemini 3.1 Flash-Lite com personalidade de Mestre, sem limite por pessoa (a migração

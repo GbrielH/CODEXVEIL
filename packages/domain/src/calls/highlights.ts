@@ -13,6 +13,27 @@ export interface HighlightPromptInput {
   segments: { id: string; speaker: string; text: string }[];
 }
 
+export interface ExistingAiHighlight {
+  id: string;
+  imagePath: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Só cartões automáticos ainda intactos podem ser substituídos. Uma imagem enviada ou qualquer
+ * edição posterior à criação transforma o cartão em parte do registro curado pelo mestre.
+ */
+export function replaceableAiHighlightIds(highlights: readonly ExistingAiHighlight[]): string[] {
+  return highlights.flatMap((highlight) => {
+    if (highlight.imagePath) return [];
+    const created = Date.parse(highlight.createdAt);
+    const updated = Date.parse(highlight.updatedAt);
+    if (!Number.isFinite(created) || !Number.isFinite(updated) || updated > created) return [];
+    return [highlight.id];
+  });
+}
+
 /**
  * Prompt da análise. As falas do mestre chegam só como "Mestre": a IA deduz pelo contexto quando
  * é narração e quando é a fala de um NPC ou monstro (ex.: no combate contra o ogro, a fala do

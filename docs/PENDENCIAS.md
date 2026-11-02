@@ -94,7 +94,10 @@ compartilhar; (3) "?" dos pontos do T20; (4) Tomo no app (chat e ditado).
 Três fases feitas no código, só com opções grátis (LiveKit no plano gratuito, transcrição no
 próprio aparelho, Gemini gratuito e prompts de imagem no lugar de gerar imagens). **Não liberado
 em produção** a pedido do responsável: fica atrás de `CALLS_ENABLED` / `EXPO_PUBLIC_CALLS_ENABLED`
-(desligadas). Onde parou e os próximos passos: [call-transcricao-momentos.md](call-transcricao-momentos.md#onde-parou-2026-11-01).
+(Production e app desligados; Preview do site ligado em 2026-11-02). As migrações de segurança e
+lock da geração (`20261102110000`–`20261102120000`) estão aplicadas. Faltam conferir as chaves do
+LiveKit em Preview, deploy de Preview, teste ao vivo e APK novo autorizado. Onde parou e o roteiro:
+[call-transcricao-momentos.md](call-transcricao-momentos.md#onde-parou-atualizado-em-2026-11-02).
 
 Também em 2026-11-01: app com aba Tomo (no lugar de Sistemas), Taverna com menu lateral, limpar
 conversa do Tomo (site e app), dados 3D caindo pela tela no app (APK novo), painel do app enxuto,

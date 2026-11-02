@@ -95,9 +95,7 @@ export default function CallRoomScreen() {
     return <ErrorState message="A call do app só funciona no celular. No navegador, use o site." />;
 
   const waiting = (participants.data ?? []).filter((person) => person.status === 'waiting');
-  const isOwner = (participants.data ?? []).some(
-    (person) => person.userId === userId && person.role === 'master',
-  );
+  const isOwner = room.data.ownerId === userId;
 
   if (entry.state === 'ready')
     return (

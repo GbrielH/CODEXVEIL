@@ -2961,6 +2961,18 @@ export type Database = {
         };
         Returns: undefined;
       };
+      finish_highlight_run: {
+        Args: {
+          p_run_id: string;
+          p_status: string;
+          p_model?: string;
+          p_tokens_in?: number;
+          p_tokens_out?: number;
+          p_moments?: number;
+          p_error?: string;
+        };
+        Returns: undefined;
+      };
       get_invite_preview: {
         Args: {
           p_code: string;
@@ -3173,6 +3185,12 @@ export type Database = {
           p_color: string;
         };
         Returns: undefined;
+      };
+      start_highlight_run: {
+        Args: {
+          p_session_id: string;
+        };
+        Returns: string;
       };
       t20_attribute_dice: {
         Args: never;

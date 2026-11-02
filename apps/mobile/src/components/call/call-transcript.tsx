@@ -100,9 +100,12 @@ export function CallTranscript({ roomId, isOwner }: { roomId: string; isOwner: b
           <Pressable
             style={styles.chip}
             accessibilityRole="button"
-            onPress={() =>
-              void setCallTranscription(getSupabase(), roomId, !enabled).then(loadState)
-            }
+            onPress={() => {
+              setProblem(null);
+              void setCallTranscription(getSupabase(), roomId, !enabled)
+                .then(loadState)
+                .catch(() => setProblem('Não foi possível alterar a gravação da transcrição.'));
+            }}
           >
             <AppText variant="small">{enabled ? 'Parar de gravar' : 'Gravar transcrição'}</AppText>
           </Pressable>

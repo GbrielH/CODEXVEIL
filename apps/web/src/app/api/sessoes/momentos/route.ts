@@ -7,7 +7,7 @@ import {
   listSessionBlocks,
   listSessionTranscript,
 } from '@codexveil/database';
-import { buildHighlightsPrompt } from '@codexveil/domain';
+import { buildHighlightsPrompt, replaceableAiHighlightIds } from '@codexveil/domain';
 import { summarizeSheet } from '@codexveil/rpg-systems';
 import { highlightsResponseSchema, uuidSchema } from '@codexveil/validation';
 import { z } from 'zod';
@@ -97,6 +97,16 @@ export async function POST(request: Request): Promise<Response> {
     })),
   });
 
+  const { data: startedRun, error: startError } = await supabase.rpc('start_highlight_run', {
+    p_session_id: row.id,
+  });
+  if (startError) {
+    if (startError.code === '55P03')
+      return json({ error: 'Já existe uma geração em andamento para esta sessão.' }, 409);
+    return json({ error: 'Não foi possível iniciar a geração dos momentos.' }, 500);
+  }
+  const runId = startedRun;
+
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   let result: { moments: z.output<typeof highlightsResponseSchema>['moments'] } | null = null;
   let usage = { in: 0, out: 0, model: '' };
@@ -123,43 +133,89 @@ export async function POST(request: Request): Promise<Response> {
       lastError = error instanceof Error ? error.message : 'Falha na IA.';
     }
   }
-  const record = (status: 'done' | 'failed', moments: number) =>
-    supabase.from('highlight_runs').insert({
-      session_id: row.id,
-      campaign_id: campaign.id,
-      status,
-      model: usage.model,
-      tokens_in: usage.in,
-      tokens_out: usage.out,
-      moments,
-      error: status === 'failed' ? lastError.slice(0, 500) : '',
+  const finish = (status: 'done' | 'failed', moments: number, error = lastError) =>
+    supabase.rpc('finish_highlight_run', {
+      p_run_id: runId,
+      p_status: status,
+      p_model: usage.model,
+      p_tokens_in: usage.in,
+      p_tokens_out: usage.out,
+      p_moments: moments,
+      p_error: status === 'failed' ? error.slice(0, 500) : '',
     });
   if (!result) {
-    await record('failed', 0);
+    await finish('failed', 0);
     return json({ error: 'A IA não conseguiu montar os momentos agora. Tente de novo.' }, 502);
   }
 
-  // Substitui os momentos gerados antes (os manuais ficam).
-  await supabase.from('session_highlights').delete().eq('session_id', row.id).eq('source', 'ai');
+  // Cria a nova geração antes de remover a anterior. Se uma gravação falhar, apaga somente os
+  // cartões novos já criados e preserva a geração que a mesa ainda vê.
+  const { data: previous, error: previousError } = await supabase
+    .from('session_highlights')
+    .select('id, image_path, created_at, updated_at')
+    .eq('session_id', row.id)
+    .eq('source', 'ai');
+  if (previousError) {
+    await finish('failed', 0, 'Não foi possível ler a geração anterior.');
+    return json({ error: 'Não foi possível preparar a nova geração de momentos.' }, 500);
+  }
   const byId = new Map(segments.map((segment) => [segment.id, segment]));
   const byName = new Map(party.map((character) => [character.name.toLowerCase(), character.id]));
-  for (const moment of result.moments) {
-    const ids = moment.segmentIds.filter((id) => byId.has(id));
-    await createSessionHighlight(supabase, row.id, {
-      title: moment.title,
-      summary: moment.summary,
-      quotes: ids.map((id) => ({ speaker: byId.get(id)!.speakerLabel, text: byId.get(id)!.text })),
-      segmentIds: ids,
-      characterIds: moment.characters.flatMap((name) => {
-        const id = byName.get(name.toLowerCase());
-        return id ? [id] : [];
-      }),
-      location: moment.location,
-      mood: moment.mood,
-      imagePrompt: moment.imagePrompt,
-      source: 'ai',
-    });
+  const created: string[] = [];
+  try {
+    for (const moment of result.moments) {
+      const ids = moment.segmentIds.filter((id) => byId.has(id));
+      created.push(
+        await createSessionHighlight(supabase, row.id, {
+          title: moment.title,
+          summary: moment.summary,
+          quotes: ids.map((id) => ({
+            speaker: byId.get(id)!.speakerLabel,
+            text: byId.get(id)!.text,
+          })),
+          segmentIds: ids,
+          characterIds: moment.characters.flatMap((name) => {
+            const id = byName.get(name.toLowerCase());
+            return id ? [id] : [];
+          }),
+          location: moment.location,
+          mood: moment.mood,
+          imagePrompt: moment.imagePrompt,
+          source: 'ai',
+        }),
+      );
+    }
+  } catch {
+    if (created.length) await supabase.from('session_highlights').delete().in('id', created);
+    await finish('failed', 0, 'Não foi possível salvar os novos momentos.');
+    return json(
+      { error: 'Não foi possível salvar os novos momentos. Os anteriores foram preservados.' },
+      500,
+    );
   }
-  await record('done', result.moments.length);
+  const previousIds = replaceableAiHighlightIds(
+    previous.map((entry) => ({
+      id: entry.id,
+      imagePath: entry.image_path,
+      createdAt: entry.created_at,
+      updatedAt: entry.updated_at,
+    })),
+  );
+  if (previousIds.length) {
+    const { error: deleteError } = await supabase
+      .from('session_highlights')
+      .delete()
+      .in('id', previousIds);
+    if (deleteError) {
+      await finish('failed', 0, 'Não foi possível remover os momentos automáticos anteriores.');
+      return json(
+        { error: 'Os novos momentos foram salvos, mas os anteriores não puderam ser removidos.' },
+        500,
+      );
+    }
+  }
+  const { error: finishError } = await finish('done', result.moments.length);
+  if (finishError)
+    return json({ error: 'Os momentos foram salvos, mas a geração não pôde ser finalizada.' }, 500);
   return json({ moments: result.moments.length, tokens: usage.in + usage.out });
 }

@@ -1,5 +1,16 @@
 # Segurança e autorização
 
+## Call (revisão de 2026-11-02)
+
+A migração `20261102110000_call_security_hardening.sql` separa localizar uma sala de
+acessar seu conteúdo. Convites e entradas em espera/recusadas podem ver apenas o necessário para o
+próprio fluxo; participantes, transcrição e convites a terceiros exigem dono ou participante
+aprovado. O vínculo posterior da sala aceita somente uma sessão da campanha da própria sala, e o
+registro de uso dos Momentos deriva a campanha da sessão. Testes PGlite cobrem convite sem entrada,
+espera/recusa e sessão/campanha incompatíveis. A migração `20261102120000` usa RPCs
+`SECURITY DEFINER` que conferem o mestre e um índice parcial único para serializar a geração de
+Momentos por sessão. As duas estão aplicadas em produção.
+
 ## Princípios
 
 1. **O banco é a barreira de segurança.** Toda leitura e escrita passa pelo RLS do Postgres.

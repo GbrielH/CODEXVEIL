@@ -17,6 +17,7 @@ export interface CallRoomSummary {
   title: string;
   accessMode: CallAccessMode;
   status: 'active' | 'ended';
+  ownerId: string;
   ownerName: string;
   campaignName: string | null;
 }
@@ -113,6 +114,7 @@ export async function findCallRoom(
       title: string;
       access_mode: string;
       status: string;
+      owner_id: string;
       owner_name: string | null;
       campaign_name: string | null;
     }[]
@@ -125,6 +127,7 @@ export async function findCallRoom(
         title: row.title,
         accessMode: row.access_mode as CallAccessMode,
         status: row.status === 'ended' ? 'ended' : 'active',
+        ownerId: row.owner_id,
         ownerName: row.owner_name ?? 'Alguém',
         campaignName: row.campaign_name,
       }
@@ -469,20 +472,25 @@ export async function createSessionHighlight(
     imagePrompt: string;
     source: 'ai' | 'manual';
   },
-): Promise<void> {
-  const { error } = await client.from('session_highlights').insert({
-    session_id: sessionId,
-    title: input.title,
-    summary: input.summary,
-    quotes: input.quotes as never,
-    transcript_segment_ids: input.segmentIds,
-    character_ids: input.characterIds,
-    location: input.location ?? '',
-    mood: input.mood ?? '',
-    image_prompt: input.imagePrompt,
-    source: input.source,
-  } as never);
+): Promise<string> {
+  const { data, error } = await client
+    .from('session_highlights')
+    .insert({
+      session_id: sessionId,
+      title: input.title,
+      summary: input.summary,
+      quotes: input.quotes as never,
+      transcript_segment_ids: input.segmentIds,
+      character_ids: input.characterIds,
+      location: input.location ?? '',
+      mood: input.mood ?? '',
+      image_prompt: input.imagePrompt,
+      source: input.source,
+    } as never)
+    .select('id')
+    .single();
   if (error) throw toAppError(error);
+  return data.id;
 }
 
 export async function updateSessionHighlight(

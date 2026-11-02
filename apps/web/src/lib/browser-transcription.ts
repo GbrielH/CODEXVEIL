@@ -73,11 +73,10 @@ export function createBrowserTranscription(): TranscriptionProvider {
         };
         current.onerror = (event) => {
           if (event.error === 'no-speech' || event.error === 'aborted') return;
-          const message = ERRORS[event.error];
-          if (message) {
-            running = false;
-            onError(message);
-          }
+          running = false;
+          onError(
+            ERRORS[event.error] ?? 'O reconhecimento de fala parou. A call continua normalmente.',
+          );
         };
         // O navegador para de ouvir depois de um tempo: volta a ouvir enquanto estiver ligada.
         current.onend = () => {
@@ -87,7 +86,8 @@ export function createBrowserTranscription(): TranscriptionProvider {
         try {
           current.start();
         } catch {
-          // Já estava ouvindo.
+          running = false;
+          onError('Não foi possível iniciar o reconhecimento de fala neste navegador.');
         }
       };
       listen();

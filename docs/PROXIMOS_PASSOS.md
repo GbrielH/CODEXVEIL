@@ -246,10 +246,13 @@ mapa e notas lado a lado).
 
 ### B0h. Call, transcrição e Melhores Momentos (2026-11-01, em andamento)
 
-Código das três fases pronto e escondido (chaves desligadas). Próximo: chaves do LiveKit na
-Vercel (as migrações `20261101110000` e `20261101120000` já estão aplicadas), testar num ambiente de teste,
-gerar o APK com a transcrição do celular e só então ligar em produção. Detalhes em
-[call-transcricao-momentos.md](call-transcricao-momentos.md#onde-parou-2026-11-01).
+Código das três fases pronto. As migrações de transcrição/Momentos e as correções
+`20261102110000`–`20261102120000` estão aplicadas em produção. A regeneração agora aceita só uma
+execução por sessão e preserva cartões ilustrados ou editados. `CALLS_ENABLED=1` está somente em
+Preview; Production e app continuam desligados. Próximo: o dono cadastrar as chaves LiveKit somente
+em Preview, publicar uma Preview e executar o roteiro ao vivo; depois gerar o APK autorizado e só
+então ligar em produção. Detalhes em
+[call-transcricao-momentos.md](call-transcricao-momentos.md#onde-parou-atualizado-em-2026-11-02).
 
 ### B0i. Mapas: ideias do watabou e do RPG Map (2026-11-02)
 
