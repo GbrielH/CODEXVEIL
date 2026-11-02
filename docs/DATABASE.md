@@ -314,3 +314,8 @@ cartas de Assimilação e Artefatos dos livros liberados (Eventos só para o mes
 - `card_decks`: monte e cartas compradas dos baralhos (`assimilation`, `event`) e a carta mostrada
   (`shown`, com nome e texto). Só mestres leem e escrevem; membros leem a carta mostrada por
   `public.campaign_shown_cards(campanha)`.
+
+## NPCs fora de Meus personagens (`20261102100000_npc_listing.sql`)
+
+`characters.npc_listed` (padrão falso): um NPC de campanha (`npc_campaign_id`) só aparece em "Meus
+personagens" quando o dono liga a opção, por `public.set_character_npc_listed(ficha, mostrar)`.

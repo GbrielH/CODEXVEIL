@@ -17,13 +17,13 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { failureMessage } from '@/lib/actions';
 import { requireSessionUser } from '@/lib/auth';
+import { keepAsNpc, npcCampaignIdFrom } from '@/lib/npc-creation';
 import { campaignBookPacks, loadDnd5eBookContent, ownReadyBookPacks } from '@/lib/books';
 import { routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export type CreateCharacterResult =
-  | { ok: true; characterId: string }
-  | { ok: false; message: string; issues?: DraftIssue[] };
+  { ok: true; characterId: string } | { ok: false; message: string; issues?: DraftIssue[] };
 
 const inputSchema = z.object({
   campaignId: uuidSchema.nullable(),
@@ -41,7 +41,8 @@ export async function createDnd5eCharacterAction(input: unknown): Promise<Create
   const parsedInput = inputSchema.safeParse(input);
   if (!parsedInput.success) return { ok: false, message: 'Requisição inválida.' };
   const draft = dnd5eDraftSchema.safeParse(parsedInput.data.draft);
-  if (!draft.success) return { ok: false, message: 'Os dados do personagem estão incompletos ou inválidos.' };
+  if (!draft.success)
+    return { ok: false, message: 'Os dados do personagem estão incompletos ou inválidos.' };
   const campaignId = parsedInput.data.campaignId;
   const answers = parsedInput.data.answers;
 
@@ -58,9 +59,14 @@ export async function createDnd5eCharacterAction(input: unknown): Promise<Create
         return { ok: false, message: 'Escolha uma campanha ativa da qual você participa.' };
       }
       if (campaign.role !== 'player') {
-        return { ok: false, message: 'Mestres não criam personagens na própria campanha: use os NPCs e monstros da biblioteca.' };
+        return {
+          ok: false,
+          message:
+            'Mestres não criam personagens na própria campanha: use os NPCs e monstros da biblioteca.',
+        };
       }
-      if (campaign.systemId !== 'dnd5e') return { ok: false, message: 'Esta campanha usa outro sistema de RPG.' };
+      if (campaign.systemId !== 'dnd5e')
+        return { ok: false, message: 'Esta campanha usa outro sistema de RPG.' };
       const missing = campaign.creationQuestions.some(
         (question) => !answers.find((entry) => entry.question === question && entry.answer.trim()),
       );
@@ -76,7 +82,10 @@ export async function createDnd5eCharacterAction(input: unknown): Promise<Create
     } else {
       // Ficha pessoal: só os livros importados que o jogador marcou (o mesmo que o assistente mostra).
       const own = await ownReadyBookPacks(supabase, user.id);
-      content = await loadDnd5eBookContent(supabase, own.filter((pack) => sourcebooks.includes(pack.bookKey)));
+      content = await loadDnd5eBookContent(
+        supabase,
+        own.filter((pack) => sourcebooks.includes(pack.bookKey)),
+      );
     }
   } catch (error) {
     return { ok: false, message: failureMessage(error) };
@@ -85,12 +94,23 @@ export async function createDnd5eCharacterAction(input: unknown): Promise<Create
   // As regras consultam o SRD e os livros liberados (o mesmo conteúdo que o assistente usou).
   const issues = withDnd5eBookContent(content, () => validateDnd5eDraft(draft.data, context));
   if (issues.length > 0) {
-    return { ok: false, message: 'Ainda há escolhas pendentes. Revise os passos indicados.', issues };
+    return {
+      ok: false,
+      message: 'Ainda há escolhas pendentes. Revise os passos indicados.',
+      issues,
+    };
   }
-  const base = characterCreateSchema.safeParse({ name: draft.data.name, systemId: 'dnd5e', campaignId });
-  if (!base.success) return { ok: false, message: base.error.issues[0]?.message ?? 'Dados inválidos.' };
+  const base = characterCreateSchema.safeParse({
+    name: draft.data.name,
+    systemId: 'dnd5e',
+    campaignId,
+  });
+  if (!base.success)
+    return { ok: false, message: base.error.issues[0]?.message ?? 'Dados inválidos.' };
 
-  const built = withDnd5eBookContent(content, () => buildDnd5eCharacterFromDraft({ ...draft.data, sourcebooks }));
+  const built = withDnd5eBookContent(content, () =>
+    buildDnd5eCharacterFromDraft({ ...draft.data, sourcebooks }),
+  );
   let characterId: string;
   try {
     characterId = await createCharacter(supabase, {
@@ -106,6 +126,9 @@ export async function createDnd5eCharacterAction(input: unknown): Promise<Create
   } catch (error) {
     return { ok: false, message: failureMessage(error) };
   }
+  // Ficha de NPC criada pela biblioteca: fica só na campanha, fora de "Meus personagens".
+  const npcFailure = await keepAsNpc(supabase, characterId, npcCampaignIdFrom(input));
+  if (npcFailure) return npcFailure;
 
   revalidatePath(routes.characters);
   if (campaignId) revalidatePath(`/campanhas/${campaignId}`, 'layout');

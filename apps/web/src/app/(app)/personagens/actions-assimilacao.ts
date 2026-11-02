@@ -12,6 +12,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { failureMessage } from '@/lib/actions';
 import { requireSessionUser } from '@/lib/auth';
+import { keepAsNpc, npcCampaignIdFrom } from '@/lib/npc-creation';
 import { routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -105,6 +106,9 @@ export async function createAssimilacaoCharacterAction(
   } catch (error) {
     return { ok: false, message: failureMessage(error) };
   }
+  // Ficha de NPC criada pela biblioteca: fica só na campanha, fora de "Meus personagens".
+  const npcFailure = await keepAsNpc(supabase, characterId, npcCampaignIdFrom(input));
+  if (npcFailure) return npcFailure;
   revalidatePath(routes.characters);
   if (campaignId) revalidatePath(`/campanhas/${campaignId}`, 'layout');
   return { ok: true, characterId };

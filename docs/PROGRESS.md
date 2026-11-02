@@ -175,6 +175,10 @@ Os detalhes estão em [`DATABASE.md`](DATABASE.md) e [`SECURITY.md`](SECURITY.md
   Testes de acesso novos em `test/rls/conflict-objectives.test.ts`. Migrações `20261030140000` e
   `20261030150000` ainda não aplicadas em produção; commits só locais.
 
+- 2026-11-02: NPC de ficha completa não vai mais para "Meus personagens" (relato de jogador: a ficha
+  criada pela campanha caía na lista pessoal e não virava NPC). Teste novo em
+  `test/rls/npc-characters.test.ts`. Não visto em tela.
+
 ## Testes e verificações executados
 
 Execução em 2026-10-17, Windows 11, Node 24.20 e pnpm 12.14:

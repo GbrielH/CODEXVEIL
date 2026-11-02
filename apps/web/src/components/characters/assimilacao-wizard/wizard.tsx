@@ -20,7 +20,7 @@ import {
 } from '@codexveil/rpg-systems/assimilacao';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import type { Route } from 'next';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState, type ReactNode } from 'react';
 import { createAssimilacaoCharacterAction } from '@/app/(app)/personagens/actions-assimilacao';
 import { withAssimSymbols } from '@/components/assimilacao/symbols';
@@ -75,6 +75,8 @@ export function AssimilacaoCreationWizard({
   sources: readonly AssimilacaoSource[];
 }) {
   const router = useRouter();
+  // Ficha completa de NPC aberta pela biblioteca (`?npc=<campanha>`): nasce como NPC dela.
+  const npcCampaignId = useSearchParams().get('npc');
   const startingDetermination = campaign?.rules.startingDetermination ?? 9;
   const experience = campaign?.rules.startingExperience ?? CREATION.experience;
   const [step, setStep] = useState(0);
@@ -117,6 +119,7 @@ export function AssimilacaoCreationWizard({
     setBusy(true);
     setError(null);
     const result = await createAssimilacaoCharacterAction({
+      npcCampaignId,
       campaignId: campaign?.id ?? null,
       name,
       sheet: finalSheet,

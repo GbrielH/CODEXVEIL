@@ -159,7 +159,8 @@ type ResourceRow = Pick<
   'id' | 'key' | 'label' | 'current' | 'max' | 'temp' | 'recovery' | 'display' | 'sort_order'
 >;
 
-const RESOURCE_COLUMNS = 'id, key, label, current, max, temp, recovery, display, sort_order' as const;
+const RESOURCE_COLUMNS =
+  'id, key, label, current, max, temp, recovery, display, sort_order' as const;
 
 function isResourceDisplay(value: string): value is ResourceDisplay {
   return value === 'health' || value === 'pool' || value === 'checkboxes';
@@ -231,7 +232,8 @@ function toCharacterItem(row: ItemRow): CharacterItem {
   };
 }
 
-const ABILITY_COLUMNS = 'id, kind, name, source, description, data, resource_id, sort_order' as const;
+const ABILITY_COLUMNS =
+  'id, kind, name, source, description, data, resource_id, sort_order' as const;
 
 type AbilityRow = Pick<
   Tables<'character_abilities'>,
@@ -419,7 +421,12 @@ export async function getCharacterSheetState(
     .maybeSingle();
   if (error) throw toAppError(error);
   return data
-    ? { name: data.name, sheet: data.sheet, version: data.version, portraitPath: data.portrait_path }
+    ? {
+        name: data.name,
+        sheet: data.sheet,
+        version: data.version,
+        portraitPath: data.portrait_path,
+      }
     : null;
 }
 
@@ -518,13 +525,24 @@ export interface CreationAnswer {
 }
 
 /** Respostas às perguntas do mestre (só o dono do personagem e o mestre recebem). */
-export async function getCharacterAnswers(client: CodexveilClient, characterId: string): Promise<CreationAnswer[] | null> {
-  const { data, error } = await client.from('character_answers').select('answers').eq('character_id', characterId).maybeSingle();
+export async function getCharacterAnswers(
+  client: CodexveilClient,
+  characterId: string,
+): Promise<CreationAnswer[] | null> {
+  const { data, error } = await client
+    .from('character_answers')
+    .select('answers')
+    .eq('character_id', characterId)
+    .maybeSingle();
   if (error) throw toAppError(error);
   if (!data) return null;
   return Array.isArray(data.answers)
     ? data.answers.flatMap((entry) =>
-        entry && typeof entry === 'object' && !Array.isArray(entry) && typeof entry.question === 'string' && typeof entry.answer === 'string'
+        entry &&
+        typeof entry === 'object' &&
+        !Array.isArray(entry) &&
+        typeof entry.question === 'string' &&
+        typeof entry.answer === 'string'
           ? [{ question: entry.question, answer: entry.answer }]
           : [],
       )
@@ -540,12 +558,19 @@ export async function saveCharacterAnswers(
 ): Promise<void> {
   const { error } = await client
     .from('character_answers')
-    .upsert({ character_id: characterId, campaign_id: campaignId, answers: answers as unknown as Json }, { onConflict: 'character_id' });
+    .upsert(
+      { character_id: characterId, campaign_id: campaignId, answers: answers as unknown as Json },
+      { onConflict: 'character_id' },
+    );
   if (error) throw toAppError(error);
 }
 
 export async function deleteCharacter(client: CodexveilClient, characterId: string): Promise<void> {
-  const { data, error } = await client.from('characters').delete().eq('id', characterId).select('id');
+  const { data, error } = await client
+    .from('characters')
+    .delete()
+    .eq('id', characterId)
+    .select('id');
   if (error) throw toAppError(error);
   assertChanged(data);
 }
@@ -895,7 +920,11 @@ export async function adjustCharacterItemQuantity(
 }
 
 export async function deleteCharacterItem(client: CodexveilClient, itemId: string): Promise<void> {
-  const { data, error } = await client.from('character_items').delete().eq('id', itemId).select('id');
+  const { data, error } = await client
+    .from('character_items')
+    .delete()
+    .eq('id', itemId)
+    .select('id');
   if (error) throw toAppError(error);
   assertChanged(data);
 }
@@ -1053,8 +1082,16 @@ export async function listCharacterSnapshots(
 
 /** Caminho do retrato no bucket privado `campaign-media` (formato exigido pelas policies). */
 /** Troca (ou tira) a imagem de token do personagem. */
-export async function setCharacterToken(client: CodexveilClient, characterId: string, tokenPath: string | null): Promise<void> {
-  const { data, error } = await client.from('characters').update({ token_path: tokenPath }).eq('id', characterId).select('id');
+export async function setCharacterToken(
+  client: CodexveilClient,
+  characterId: string,
+  tokenPath: string | null,
+): Promise<void> {
+  const { data, error } = await client
+    .from('characters')
+    .update({ token_path: tokenPath })
+    .eq('id', characterId)
+    .select('id');
   if (error) throw toAppError(error);
   if (data.length === 0) throw new AppError('forbidden');
 }
@@ -1064,8 +1101,15 @@ export function characterPortraitPath(characterId: string, fileName: string): st
 }
 
 /** Mestre: libera o próximo nível do personagem (ou `level`). O jogador escolhe as melhorias. */
-export async function grantCharacterLevel(client: CodexveilClient, characterId: string, level?: number): Promise<number> {
-  const { data, error } = await client.rpc('grant_character_level', { p_character_id: characterId, ...(level ? { p_level: level } : {}) });
+export async function grantCharacterLevel(
+  client: CodexveilClient,
+  characterId: string,
+  level?: number,
+): Promise<number> {
+  const { data, error } = await client.rpc('grant_character_level', {
+    p_character_id: characterId,
+    ...(level ? { p_level: level } : {}),
+  });
   if (error) throw toAppError(error);
   return data;
 }
@@ -1101,7 +1145,11 @@ export async function recordMoney(
   return toCharacterResource(data);
 }
 
-export async function listMoneyLog(client: CodexveilClient, characterId: string, limit = 50): Promise<MoneyLogEntry[]> {
+export async function listMoneyLog(
+  client: CodexveilClient,
+  characterId: string,
+  limit = 50,
+): Promise<MoneyLogEntry[]> {
   const { data, error } = await client
     .from('character_money_log')
     .select('id, resource_key, amount, balance, description, created_at')
@@ -1158,6 +1206,8 @@ export interface NpcCharacterItem {
   name: string;
   portraitPath: string | null;
   npcCampaignId: string | null;
+  /** Também aparece em "Meus personagens". */
+  npcListed: boolean;
 }
 
 /**
@@ -1172,7 +1222,7 @@ export async function listNpcCharacterCandidates(
 ): Promise<NpcCharacterItem[]> {
   const { data, error } = await client
     .from('characters')
-    .select('id, name, portrait_path, npc_campaign_id')
+    .select('id, name, portrait_path, npc_campaign_id, npc_listed')
     .eq('owner_id', userId)
     .eq('system_id', systemId)
     .is('campaign_id', null)
@@ -1184,6 +1234,7 @@ export async function listNpcCharacterCandidates(
     name: row.name,
     portraitPath: row.portrait_path,
     npcCampaignId: row.npc_campaign_id,
+    npcListed: row.npc_listed,
   }));
 }
 
@@ -1197,6 +1248,19 @@ export async function setCharacterNpcCampaign(
     p_character_id: characterId,
     // A função aceita NULL para tirar; o gerador de tipos não expressa isso.
     p_campaign_id: campaignId as string,
+  });
+  if (error) throw toAppError(error);
+}
+
+/** Mostra (ou esconde) um NPC de campanha também em "Meus personagens". Só o dono. */
+export async function setCharacterNpcListed(
+  client: CodexveilClient,
+  characterId: string,
+  listed: boolean,
+): Promise<void> {
+  const { error } = await client.rpc('set_character_npc_listed', {
+    p_character_id: characterId,
+    p_listed: listed,
   });
   if (error) throw toAppError(error);
 }

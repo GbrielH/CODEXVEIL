@@ -1,6 +1,10 @@
 'use client';
 
-import { setCharacterNpcCampaign, type NpcCharacterItem } from '@codexveil/database';
+import {
+  setCharacterNpcCampaign,
+  setCharacterNpcListed,
+  type NpcCharacterItem,
+} from '@codexveil/database';
 import { ScrollText, X } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
@@ -13,15 +17,16 @@ import { characterPath, routes } from '@/lib/routes';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 /**
- * NPCs com ficha de jogador: o mestre cria uma ficha pessoal pelo assistente (ela sobe de nível
- * como a dos jogadores) e a guarda aqui. Os jogadores não veem essas fichas.
+ * NPCs com ficha de jogador: o mestre cria a ficha pelo assistente a partir daqui (ela sobe de nível
+ * como a dos jogadores) e ela já nasce como NPC desta campanha. Os jogadores não veem essas fichas,
+ * e elas não aparecem em "Meus personagens" a menos que o mestre marque "Adicionar aos personagens".
  */
 export function NpcSheets({
   campaignId,
-  systemId,
   characters,
 }: {
   campaignId: string;
+  /** Sistema da campanha (o assistente aberto por `?npc=` já usa o dela). */
   systemId: string;
   characters: NpcCharacterItem[];
 }) {
@@ -31,6 +36,28 @@ export function NpcSheets({
   const [choice, setChoice] = useState('');
   const linked = characters.filter((character) => character.npcCampaignId === campaignId);
   const free = characters.filter((character) => character.npcCampaignId !== campaignId);
+
+  const toggleListed = async (characterId: string, listed: boolean) => {
+    setBusy(true);
+    try {
+      await setCharacterNpcListed(getSupabaseBrowserClient(), characterId, listed);
+      toast({
+        tone: 'success',
+        title: listed
+          ? 'Também aparece em Meus personagens.'
+          : 'Saiu de Meus personagens; continua como NPC.',
+      });
+      router.refresh();
+    } catch (error) {
+      toast({
+        tone: 'danger',
+        title: 'Não deu para alterar',
+        description: failureMessage(error, 'Tente novamente.'),
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const link = async (characterId: string, next: string | null) => {
     setBusy(true);
@@ -68,6 +95,15 @@ export function NpcSheets({
               >
                 {character.name}
               </Link>
+              <label className="flex shrink-0 items-center gap-1.5 text-xs text-fg-muted">
+                <input
+                  type="checkbox"
+                  checked={character.npcListed}
+                  disabled={busy}
+                  onChange={(event) => void toggleListed(character.id, event.target.checked)}
+                />
+                Adicionar aos personagens
+              </label>
               <button
                 type="button"
                 disabled={busy}
@@ -82,11 +118,11 @@ export function NpcSheets({
         </ul>
       ) : (
         <p className="text-sm text-fg-muted">
-          Nenhuma ainda. Crie a ficha pelo assistente e guarde aqui.
+          Nenhuma ainda. A ficha criada pelo assistente abaixo já fica como NPC desta campanha.
         </p>
       )}
       <Link
-        href={`${routes.newCharacter}?sistema=${systemId}` as Route}
+        href={`${routes.newCharacter}?npc=${campaignId}` as Route}
         className="flex items-center justify-center gap-2 rounded-md border border-line px-3 py-2 text-sm text-fg transition-colors hover:border-line-strong hover:bg-hover"
       >
         <ScrollText className="h-4 w-4" aria-hidden="true" />
@@ -100,7 +136,7 @@ export function NpcSheets({
             aria-label="Ficha pessoal para guardar como NPC"
             className="h-9 min-w-0 flex-1 rounded-md border border-line bg-sunken px-2 text-sm text-fg"
           >
-            <option value="">Escolha uma ficha sua…</option>
+            <option value="">Ou guarde uma ficha sua já pronta…</option>
             {free.map((character) => (
               <option key={character.id} value={character.id}>
                 {character.name}

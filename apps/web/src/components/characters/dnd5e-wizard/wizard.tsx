@@ -26,9 +26,13 @@ import {
 } from '@codexveil/rpg-systems/dnd5e';
 import { AlertTriangle, Check, ChevronLeft, ChevronRight, RotateCcw, Sparkles } from 'lucide-react';
 import type { Route } from 'next';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from 'react';
-import { CreationAnswersFields, answersComplete, answersFor } from '@/components/characters/creation-answers';
+import {
+  CreationAnswersFields,
+  answersComplete,
+  answersFor,
+} from '@/components/characters/creation-answers';
 import { createDnd5eCharacterAction } from '@/app/(app)/personagens/actions';
 import { SourcebookLinks, SourcebookPicker } from '@/components/campaigns/sourcebook-picker';
 import {
@@ -155,6 +159,8 @@ export function Dnd5eCreationWizard({
   remoteDraft = null,
 }: WizardProps) {
   const router = useRouter();
+  // Ficha completa de NPC aberta pela biblioteca (`?npc=<campanha>`): nasce como NPC dela.
+  const npcCampaignId = useSearchParams().get('npc');
   const [campaignId, setCampaignId] = useState(defaultCampaignId);
   const campaign = campaigns.find((entry) => entry.id === campaignId);
   const context = useMemo(() => contextFor(campaign), [campaign]);
@@ -332,7 +338,12 @@ export function Dnd5eCreationWizard({
   const submit = () => {
     setSubmitError(null);
     startTransition(async () => {
-      const result = await createDnd5eCharacterAction({ campaignId: campaignId || null, draft, answers: answersFor(questions, answerValues) });
+      const result = await createDnd5eCharacterAction({
+        campaignId: campaignId || null,
+        draft,
+        npcCampaignId: npcCampaignId,
+        answers: answersFor(questions, answerValues),
+      });
       if (result.ok) {
         setDirty(false);
         writeStorage(storageKey, null);
@@ -663,7 +674,12 @@ export function Dnd5eCreationWizard({
           {step === 'review' ? (
             <div className="flex flex-col gap-5">
               <IssueList issues={issues} onGo={goTo} />
-              <CreationAnswersFields questions={questions} values={answerValues} onChange={setAnswerValues} showErrors />
+              <CreationAnswersFields
+                questions={questions}
+                values={answerValues}
+                onChange={setAnswerValues}
+                showErrors
+              />
               <CharacterReview draft={draft} />
             </div>
           ) : null}

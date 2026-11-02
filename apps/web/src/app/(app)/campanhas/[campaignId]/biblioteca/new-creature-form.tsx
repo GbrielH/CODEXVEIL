@@ -114,7 +114,7 @@ export function NewCreatureForm({
             essas fichas.
           </p>
           <Link
-            href={`${routes.newCharacter}?sistema=${systemId}` as Route}
+            href={`${routes.newCharacter}?npc=${campaignId}` as Route}
             className="flex items-center justify-center gap-2 rounded-md bg-wine-700 px-4 py-2.5 text-sm font-medium text-parchment-50 transition-colors hover:bg-wine-600"
           >
             <ScrollText className="h-4 w-4" aria-hidden="true" />

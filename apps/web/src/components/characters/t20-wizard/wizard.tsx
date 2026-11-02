@@ -75,11 +75,18 @@ import {
   Sparkles,
 } from 'lucide-react';
 import type { Route } from 'next';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Dice3DOverlay } from '@/components/dice/dice-3d-overlay';
 import { useMemo, useRef, useState, useTransition, type ReactNode } from 'react';
-import { CreationAnswersFields, answersComplete, answersFor } from '@/components/characters/creation-answers';
-import { createT20CharacterAction, rollT20AttributesAction } from '@/app/(app)/personagens/actions-t20';
+import {
+  CreationAnswersFields,
+  answersComplete,
+  answersFor,
+} from '@/components/characters/creation-answers';
+import {
+  createT20CharacterAction,
+  rollT20AttributesAction,
+} from '@/app/(app)/personagens/actions-t20';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -129,6 +136,8 @@ function d6(): number {
 /** Assistente de criação de personagem do Tormenta20, com as regras de `@codexveil/rpg-systems/tormenta20`. */
 export function T20CreationWizard({ campaign, sources, remoteDraft = null }: T20WizardProps) {
   const router = useRouter();
+  // Ficha completa de NPC aberta pela biblioteca (`?npc=<campanha>`): nasce como NPC dela.
+  const npcCampaignId = useSearchParams().get('npc');
   const questions = campaign?.questions ?? [];
   const [answerValues, setAnswerValues] = useState<Record<number, string>>({});
   const answersOk = answersComplete(questions, answerValues);
@@ -205,7 +214,12 @@ export function T20CreationWizard({ campaign, sources, remoteDraft = null }: T20
   const submit = () => {
     setSubmitError(null);
     startTransition(async () => {
-      const result = await createT20CharacterAction({ campaignId: campaign?.id ?? null, draft, answers: answersFor(questions, answerValues) });
+      const result = await createT20CharacterAction({
+        campaignId: campaign?.id ?? null,
+        draft,
+        npcCampaignId: npcCampaignId,
+        answers: answersFor(questions, answerValues),
+      });
       if (result.ok) {
         await discardDraftAfterCreate(draftId);
         router.push(`${characterPath(result.characterId)}?aviso=personagem-criado` as Route);
@@ -888,7 +902,12 @@ export function T20CreationWizard({ campaign, sources, remoteDraft = null }: T20
 
           {step === 'revisao' ? (
             <div className="flex flex-col gap-3">
-              <CreationAnswersFields questions={questions} values={answerValues} onChange={setAnswerValues} showErrors />
+              <CreationAnswersFields
+                questions={questions}
+                values={answerValues}
+                onChange={setAnswerValues}
+                showErrors
+              />
               {issues.length === 0 ? (
                 <Alert tone="success">Tudo certo! Crie o personagem.</Alert>
               ) : (
@@ -1206,8 +1225,7 @@ function AttributesStep({
             <strong className={cx(spent > T20_POINT_BUY_BUDGET ? 'text-danger' : 'text-fg')}>
               {spent}
             </strong>{' '}
-            de {T20_POINT_BUY_BUDGET}. Valores de –1 (devolve 1 ponto) a 4.{' '}
-            <PointCostHelp />
+            de {T20_POINT_BUY_BUDGET}. Valores de –1 (devolve 1 ponto) a 4. <PointCostHelp />
           </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {T20_ATTRIBUTES.map((key) => (
@@ -1586,8 +1604,8 @@ function PointCostHelp() {
       </summary>
       <div className="absolute top-7 left-0 z-30 w-72 rounded-lg border border-line bg-raised p-3 text-xs text-fg-secondary shadow-card">
         <p className="mb-2">
-          O custo sobe com o valor (regra do Tormenta20): subir de +2 para +3 custa 2 pontos, e de +3 para +4
-          custa 3.
+          O custo sobe com o valor (regra do Tormenta20): subir de +2 para +3 custa 2 pontos, e de
+          +3 para +4 custa 3.
         </p>
         <table className="w-full text-left tabular-nums">
           <thead>
@@ -1603,7 +1621,9 @@ function PointCostHelp() {
               const step = value > 0 ? total - (T20_POINT_BUY_COST[value - 1] ?? 0) : null;
               return (
                 <tr key={value} className="border-t border-line">
-                  <td className="py-0.5 text-fg">{value > 0 ? `+${value}` : value === 0 ? '0' : '–1'}</td>
+                  <td className="py-0.5 text-fg">
+                    {value > 0 ? `+${value}` : value === 0 ? '0' : '–1'}
+                  </td>
                   <td className="py-0.5">{total < 0 ? 'devolve 1' : total}</td>
                   <td className="py-0.5">{step ?? '—'}</td>
                 </tr>

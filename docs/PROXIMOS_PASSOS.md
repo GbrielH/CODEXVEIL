@@ -217,6 +217,10 @@ mapa e notas lado a lado).
       baralhos de Assimilação e Eventos na mesa do mestre.
 - [x] Assimilação RPG (2026-10-30): Objetivos do Conflito ao vivo, baralhos no banco com "Mostrar ao
       grupo" e símbolos nas rolagens (migração `20261030150000`).
+- [x] NPCs com ficha completa (2026-11-02): "Criar ficha completa" na Biblioteca abre o assistente
+      como NPC (`/personagens/novo?npc=<campanha>`) e a ficha já nasce guardada na campanha, fora de
+      "Meus personagens"; a opção "Adicionar aos personagens" mostra o NPC lá também (migração
+      `20261102100000`).
 - [x] Migrações `20261030140000` e `20261030150000` aplicadas em produção e publicadas (2026-10-30).
 - [ ] Assimilação RPG: testar no navegador e no celular com o livro importado.
 - [x] Assimilação RPG: teste com dados especiais na ficha do site (Rolagem Assimilada, dados mantidos).

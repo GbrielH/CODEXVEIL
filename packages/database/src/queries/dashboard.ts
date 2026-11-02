@@ -19,7 +19,9 @@ export async function listUpcomingSessions(
 ): Promise<UpcomingSession[]> {
   const { data, error } = await client
     .from('sessions')
-    .select('id, campaign_id, number, title, scheduled_at, status, campaign:campaigns(name, status)')
+    .select(
+      'id, campaign_id, number, title, scheduled_at, status, campaign:campaigns(name, status)',
+    )
     .gte('scheduled_at', new Date().toISOString())
     .neq('status', 'completed')
     .order('scheduled_at', { ascending: true })
@@ -56,8 +58,12 @@ export async function listMyCharacters(
 ): Promise<CharacterListItem[]> {
   const { data, error } = await client
     .from('characters')
-    .select('id, name, system_id, campaign_id, sheet, portrait_path, updated_at, campaign:campaigns!characters_campaign_id_fkey(name)')
+    .select(
+      'id, name, system_id, campaign_id, sheet, portrait_path, updated_at, campaign:campaigns!characters_campaign_id_fkey(name)',
+    )
     .eq('owner_id', userId)
+    // NPCs de campanha ficam só na biblioteca, a não ser que o mestre os adicione aqui também.
+    .or('npc_campaign_id.is.null,npc_listed.is.true')
     .order('updated_at', { ascending: false });
   if (error) throw toAppError(error);
   return data.map((row) => ({

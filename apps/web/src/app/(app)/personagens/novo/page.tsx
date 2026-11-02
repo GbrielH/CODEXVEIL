@@ -50,8 +50,21 @@ export default async function NewCharacterPage({ searchParams }: PageProps<'/per
     typeof params.campanha === 'string'
       ? playable.find((entry) => entry.id === params.campanha)
       : undefined;
-  const personalSystem =
-    typeof params.sistema === 'string' && isWizardSystem(params.sistema)
+  // Ficha completa de NPC pela biblioteca (`?npc=<campanha>`): só o mestre de uma campanha ativa;
+  // a ficha usa o sistema dela e, ao ser criada, fica como NPC (fora de "Meus personagens").
+  const npcCampaign =
+    typeof params.npc === 'string'
+      ? campaigns.find(
+          (entry) =>
+            entry.id === params.npc &&
+            entry.role === 'gm' &&
+            entry.status === 'active' &&
+            isWizardSystem(entry.systemId),
+        )
+      : undefined;
+  const personalSystem = npcCampaign
+    ? (npcCampaign.systemId as WizardSystem)
+    : typeof params.sistema === 'string' && isWizardSystem(params.sistema)
       ? params.sistema
       : undefined;
 
@@ -75,13 +88,19 @@ export default async function NewCharacterPage({ searchParams }: PageProps<'/per
     <div className="flex flex-col gap-8">
       <PageHeader
         eyebrow={
-          campaign ? `Campanha: ${campaign.name}` : `Ficha pessoal · ${system?.name ?? systemId}`
+          npcCampaign
+            ? `NPC da campanha: ${npcCampaign.name}`
+            : campaign
+              ? `Campanha: ${campaign.name}`
+              : `Ficha pessoal · ${system?.name ?? systemId}`
         }
-        title="Novo personagem"
+        title={npcCampaign ? 'Novo NPC' : 'Novo personagem'}
         description={
-          campaign
-            ? 'Um passo a passo com as regras do sistema e os livros que o mestre liberou nesta campanha.'
-            : 'Um passo a passo com as regras do sistema e os livros que você importou em Meus livros.'
+          npcCampaign
+            ? 'Ficha completa de NPC: fica na Biblioteca da campanha, visível só para você, e não aparece em Meus personagens.'
+            : campaign
+              ? 'Um passo a passo com as regras do sistema e os livros que o mestre liberou nesta campanha.'
+              : 'Um passo a passo com as regras do sistema e os livros que você importou em Meus livros.'
         }
         actions={
           <Link
