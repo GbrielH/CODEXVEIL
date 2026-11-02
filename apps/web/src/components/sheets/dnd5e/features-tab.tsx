@@ -50,6 +50,7 @@ import { useToast } from '@/components/ui/toast';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { AttackDetails, FeatureDetails, SpellDetails, useSrdSpellTexts } from './ability-details';
 import { useSheet } from './context';
+import { PendingChoicesCard } from './pending-choices';
 import { parseAttack } from './play-tab';
 
 function parseSpell(data: unknown): Dnd5eSpellData {
@@ -130,6 +131,7 @@ export function FeaturesTab({
 
   return (
     <div className="flex flex-col gap-5">
+      {show === 'all' ? <PendingChoicesCard /> : null}
       {withoutAttacks || show === 'passive' ? null : (
         <Card>
           <CardHeader

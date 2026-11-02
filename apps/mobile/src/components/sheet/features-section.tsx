@@ -29,6 +29,7 @@ import { colors, fonts, spacing } from '@/lib/theme';
 import { AbilityEditor } from './ability-editor';
 import { AttackDetails, SpellDetails, useSrdSpellTexts } from './ability-details';
 import { useSheet } from './context';
+import { PendingChoicesCard } from './pending-choices';
 
 /**
  * Ataques, magias e habilidades: consulta durante o jogo (toque para ver os detalhes, toque no
@@ -70,6 +71,7 @@ export function FeaturesSection({ show = 'all' }: { show?: 'all' | 'usable' | 'p
   return (
     <View style={{ gap: spacing[3] }}>
       {show === 'passive' ? <AppText variant="heading">Características</AppText> : null}
+      {show === 'all' ? <PendingChoicesCard /> : null}
       {derived.spellcasting && show !== 'passive' ? (
         <Card>
           <AppText variant="heading">Conjuração</AppText>

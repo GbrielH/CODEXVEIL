@@ -278,8 +278,11 @@ três etapas:
       Errante), Alerta, PV por nível (Robusto, Tenacidade Anã, Resiliência Dracônica) e Pau para Toda
       Obra. Corrigido: o Errante do Patrulheiro (6º) não entrava no deslocamento da ficha.
 - [x] Etapa 2: lembretes no ataque (Ataque Furtivo, Armas Grandes, Duas Armas; Fúria já somava).
-- [ ] Etapa 3: todas as escolhas pendentes com seletor (magias de talentos e espécies, perícias,
-      ferramentas, idiomas, "um talento à escolha").
+- [x] Etapa 3 (2026-11-02): cartão "Escolhas pendentes" na aba de características (site e app).
+      Acha no texto de talentos, espécies e antecedentes as escolhas não feitas (perícias, idiomas,
+      ferramentas, atributo +1, talento, truques e magias de círculo) e aplica com seletor; o que foi
+      escolhido fica em `sheet.choices`. Traços do SRD que o assistente já resolve e textos que já
+      registram a escolha não aparecem; "Já resolvi" descarta falsos positivos.
 
 ### B0f. App em paridade com o site (2026-10-27, próximo)
 

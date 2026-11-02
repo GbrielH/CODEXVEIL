@@ -579,7 +579,11 @@ export interface Dnd5eLevelUpResult {
   summary: string;
 }
 
-function spellEntry(spell: BookSpell, source: string, sortOrder: number): AbilityEntryTemplate {
+export function dnd5eSpellEntry(
+  spell: BookSpell,
+  source: string,
+  sortOrder: number,
+): AbilityEntryTemplate {
   const header = `${spell.level === 0 ? 'Truque' : `${spell.level}º círculo`} de ${spellSchoolLabels[spell.school].toLowerCase()}.`;
   return {
     kind: 'spell',
@@ -869,7 +873,7 @@ export function applyDnd5eLevelUp(
       if (initiate?.list) {
         const source = `Iniciado em Magia (${listLabel})`;
         for (const spell of initiateSpells) {
-          const entry = spellEntry(spell, source, order++);
+          const entry = dnd5eSpellEntry(spell, source, order++);
           if (spell.level > 0) {
             // A magia de 1º círculo pode ser conjurada 1 vez sem espaço por descanso longo.
             const key = `feat_magic_initiate_${initiate.list}`;
@@ -890,7 +894,7 @@ export function applyDnd5eLevelUp(
   }
   for (const name of [...choices.cantrips, ...choices.spells]) {
     const spell = findSpell(name);
-    if (spell) entries.push(spellEntry(spell, levelSource, order++));
+    if (spell) entries.push(dnd5eSpellEntry(spell, levelSource, order++));
   }
   // Magias sempre preparadas que chegam com o nível (domínio, juramento, círculo, classe): não
   // gastam escolhas de magia. Subclasse nova traz as do nível atual e as anteriores.
@@ -945,7 +949,7 @@ ${option.description}`
     for (const name of group.spells) {
       const spell = findSpell(name);
       if (spell && !choices.spells.includes(spell.name)) {
-        const entry = spellEntry(spell, `${group.owner} (sempre preparada)`, order++);
+        const entry = dnd5eSpellEntry(spell, `${group.owner} (sempre preparada)`, order++);
         entries.push({
           ...entry,
           description:
@@ -1058,7 +1062,7 @@ export function listDnd5ePendingUpdates(
         const spell = findSpell(name);
         if (!spell || owned.has(normalize(spell.name))) continue;
         owned.add(normalize(spell.name));
-        const template = spellEntry(spell, `${group.owner} (sempre preparada)`, order++);
+        const template = dnd5eSpellEntry(spell, `${group.owner} (sempre preparada)`, order++);
         missing.push({
           ...template,
           description:

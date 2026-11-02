@@ -110,6 +110,11 @@ export const dnd5eSheetSchema = z.object({
       languages: text(300),
     })
     .prefault({}),
+  /**
+   * Escolhas pendentes já resolvidas na ficha ("Escolhas pendentes"): chave da escolha → o que foi
+   * escolhido (ou `["—"]` quando o jogador marcou que já tinha resolvido por conta própria).
+   */
+  choices: z.record(z.string().max(200), z.array(z.string().max(120)).max(10)).default({}),
   details: z
     .object({
       height: text(40),
