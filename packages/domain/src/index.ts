@@ -22,3 +22,4 @@ export * from './combat/dungeon-import';
 export * from './combat/dungeon-generator';
 export * from './combat/map-conditions';
 export * from './combat/map-lighting';
+export * from './npc-generator';

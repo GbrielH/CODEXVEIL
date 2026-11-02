@@ -21,6 +21,7 @@ import { requireSessionUser } from '@/lib/auth';
 import { campaignPath } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { NewCreatureForm } from './new-creature-form';
+import { QuickNpc } from './quick-npc';
 
 export const metadata: Metadata = { title: 'Biblioteca' };
 
@@ -162,6 +163,13 @@ export default async function LibraryPage({
                 systemId={campaign.systemId}
                 defaultKind={kind ?? 'npc'}
               />
+            </Card>
+            <Card>
+              <CardHeader
+                title="NPC rápido"
+                description="Nome, aparência, jeito de falar, motivação e segredo num clique."
+              />
+              <QuickNpc campaignId={campaign.id} />
             </Card>
             <Card>
               <CardHeader

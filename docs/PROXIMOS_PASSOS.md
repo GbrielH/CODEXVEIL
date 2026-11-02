@@ -873,7 +873,10 @@ de segurança).
       token, respeitando paredes (site e app).
 - [x] Call esquecida (6 h sem entrada/saída) é encerrada ao listar as salas; nome da sala = nome da
       campanha (e da sessão), sem campo de texto.
-- [ ] Gerador rápido de NPC (fase 4) e agenda da campanha (fase 5).
+- [x] NPC rápido na biblioteca (mestre): nome, aparência, jeito de falar, motivação e segredo por
+      semente; "Salvar na biblioteca" (registro só do mestre) e "Usar na call" (o nome entra nos
+      botões de "Quem está falando" da próxima call aberta neste navegador).
+- [ ] Agenda da campanha (fase 5).
 - [ ] Teste manual no navegador e no celular das fases 1 a 3.
 
 ### 2026-11-02 (noite) — call do app para jogadores e mídia órfã do mapa

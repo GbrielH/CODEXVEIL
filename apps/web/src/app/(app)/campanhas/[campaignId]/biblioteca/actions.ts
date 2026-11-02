@@ -14,6 +14,7 @@ import {
   srdMonsterToStatBlock,
   srdSlug,
 } from '@codexveil/rpg-systems/dnd5e';
+import { generateQuickNpc, quickNpcDescription } from '@codexveil/domain';
 import { campaignItemSchema, creatureSchema, fieldErrorsFrom, uuidSchema } from '@codexveil/validation';
 import type { Route } from 'next';
 import { revalidatePath } from 'next/cache';
@@ -51,6 +52,30 @@ export async function createCreatureAction(
   }
   revalidatePath(campaignPath(campaignId, '/biblioteca'));
   redirect(campaignPath(campaignId, `/biblioteca/${creatureId}`) as Route);
+}
+
+/** Salva o NPC rápido (mesma semente = mesmo NPC) na biblioteca, só para o mestre ver. */
+export async function saveQuickNpcAction(campaignId: string, seed: string): Promise<ActionResult> {
+  await requireSessionUser(campaignPath(campaignId, '/biblioteca'));
+  if (!uuidSchema.safeParse(campaignId).success) return { ok: false, message: 'Requisição inválida.' };
+  const npc = generateQuickNpc(seed.slice(0, 40));
+  const parsed = creatureSchema.safeParse({
+    kind: 'npc',
+    size: 'medium',
+    name: npc.name,
+    subtitle: npc.appearance.slice(0, 80),
+    description: quickNpcDescription(npc),
+    visibility: 'gm',
+  });
+  if (!parsed.success) return { ok: false, message: 'NPC inválido.' };
+  try {
+    const supabase = await createSupabaseServerClient();
+    await createCreature(supabase, campaignId, parsed.data);
+  } catch (error) {
+    return { ok: false, message: failureMessage(error) };
+  }
+  revalidatePath(campaignPath(campaignId, '/biblioteca'));
+  return { ok: true };
 }
 
 export async function deleteCreatureAction(campaignId: string, creatureId: string): Promise<ActionResult> {

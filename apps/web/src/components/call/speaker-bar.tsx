@@ -16,14 +16,33 @@ const MAX_NPCS = 8;
 
 const storageKey = (roomId: string) => `codexveil:call-npcs:${roomId}`;
 
+const QUEUE_KEY = 'codexveil:call-npcs:fila';
+
+const readList = (key: string): string[] | null => {
+  const saved = JSON.parse(window.localStorage.getItem(key) ?? 'null') as unknown;
+  return Array.isArray(saved) && saved.every((name) => typeof name === 'string') ? saved : null;
+};
+
+/** NPC rápido da biblioteca: o nome entra nos botões da próxima call aberta. */
+export function queueCallNpc(name: string) {
+  try {
+    window.localStorage.setItem(
+      QUEUE_KEY,
+      JSON.stringify([...(readList(QUEUE_KEY) ?? []), name].slice(-MAX_NPCS)),
+    );
+  } catch {
+    // Sem armazenamento: o mestre digita o nome na call.
+  }
+}
+
 function readNames(roomId: string): string[] {
   try {
-    const saved = JSON.parse(window.localStorage.getItem(storageKey(roomId)) ?? 'null') as unknown;
-    if (Array.isArray(saved) && saved.every((name) => typeof name === 'string')) return saved;
+    const names = readList(storageKey(roomId)) ?? ['NPC 1', 'NPC 2', 'NPC 3'];
+    const queued = readList(QUEUE_KEY) ?? [];
+    return [...names.filter((name) => !queued.includes(name)), ...queued].slice(-MAX_NPCS);
   } catch {
-    // Sem armazenamento: começa com os nomes padrão.
+    return ['NPC 1', 'NPC 2', 'NPC 3'];
   }
-  return ['NPC 1', 'NPC 2', 'NPC 3'];
 }
 
 /**
@@ -39,6 +58,8 @@ export function SpeakerBar({ roomId }: { roomId: string }) {
   useEffect(() => {
     try {
       window.localStorage.setItem(storageKey(roomId), JSON.stringify(names));
+      // A fila do NPC rápido já entrou nos nomes desta sala.
+      window.localStorage.removeItem(QUEUE_KEY);
     } catch {
       // Lembrar os nomes é só conveniência.
     }

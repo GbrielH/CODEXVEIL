@@ -5,6 +5,10 @@
 
 ## Estado atual
 
+**2026-11-02 (noite, NPC rápido):** gerador de NPC na biblioteca (domínio `npc-generator`, 3
+testes), salvar como registro só do mestre e mandar o nome para a call. Sem migração. Sem teste
+manual no navegador.
+
 **2026-11-02 (noite, mapa e call):** fases 1–3 do pacote do mapa (iniciativa no mapa, condições
 nos tokens, luz e escuridão) e encerramento automático de call esquecida. Migrações
 `20261102135500_call_idle_close`, `20261102140000_map_token_conditions` e
