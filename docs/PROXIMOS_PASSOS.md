@@ -386,7 +386,8 @@ tesouro por ND, mundo de Arton).
       pacotes já gerados por `ocr_fix_pack.py`: Xanathar com 462 textos corrigidos (palavras fora do
       vocabulário 6,7% → 6,1%) e Livro do Jogador com 194. **Falta reimportar** `xgte` e `phb-2014`
       (`livros-trabalho/out-novo`) em Meus livros.
-- [ ] Ainda em aberto: decidir quais regras opcionais dos livros viram automação.
+- [x] Regras opcionais dos livros (Xanathar, Tasha, PHB, T20): decisão do responsável em 2026-11-02 de
+      **não automatizar**; continuam como texto nos livros importados.
 
 ### B2a. Texto original do pedido, página por página (pedido de 2026-10-24)
 
