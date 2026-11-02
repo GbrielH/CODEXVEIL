@@ -348,7 +348,12 @@ export function Dnd5eCreationWizard({
         setDirty(false);
         writeStorage(storageKey, null);
         await discardDraftAfterCreate(draftId);
-        router.push(`${characterPath(result.characterId)}?aviso=personagem-criado` as Route);
+        // NPC da biblioteca continua NPC: volta para a biblioteca da campanha, não para o personagem.
+        router.push(
+          (npcCampaignId
+            ? `/campanhas/${npcCampaignId}/biblioteca`
+            : `${characterPath(result.characterId)}?aviso=personagem-criado`) as Route,
+        );
         return;
       }
       // Mostra o que o servidor apontou (ele revalida com os livros que carregou).

@@ -5,7 +5,7 @@ import {
   setCharacterNpcListed,
   type NpcCharacterItem,
 } from '@codexveil/database';
-import { ScrollText, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -13,7 +13,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
-import { characterPath, routes } from '@/lib/routes';
+import { characterPath } from '@/lib/routes';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 /**
@@ -118,16 +118,9 @@ export function NpcSheets({
         </ul>
       ) : (
         <p className="text-sm text-fg-muted">
-          Nenhuma ainda. A ficha criada pelo assistente abaixo já fica como NPC desta campanha.
+          Nenhuma ainda. Crie em “Novo registro” → NPC → Ficha completa.
         </p>
       )}
-      <Link
-        href={`${routes.newCharacter}?npc=${campaignId}` as Route}
-        className="flex items-center justify-center gap-2 rounded-md border border-line px-3 py-2 text-sm text-fg transition-colors hover:border-line-strong hover:bg-hover"
-      >
-        <ScrollText className="h-4 w-4" aria-hidden="true" />
-        Criar ficha pelo assistente
-      </Link>
       {free.length ? (
         <div className="flex gap-2">
           <select

@@ -868,6 +868,9 @@ de segurança).
 
 - [x] Formulário "Novo registro" da biblioteca cabia mal na coluna lateral (tamanhos em 6 colunas
       sobrepostos, nome gigante): tamanhos em 3 colunas e fonte menor.
+- [x] NPC com ficha completa: criado só por "Novo registro" → NPC → Ficha completa (saiu o botão do
+      quadro "NPCs com ficha de jogador"); ao terminar o assistente, volta para a biblioteca em vez
+      de abrir a página de personagem. Continua NPC (fora de "Meus personagens").
 
 ### 2026-11-02 (noite) — taverna no app
 

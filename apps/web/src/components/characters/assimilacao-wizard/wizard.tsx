@@ -130,7 +130,12 @@ export function AssimilacaoCreationWizard({
       setError(result.message);
       return;
     }
-    router.push(`${characterPath(result.characterId)}?aviso=personagem-criado` as Route);
+    // NPC da biblioteca continua NPC: volta para a biblioteca da campanha, não para o personagem.
+    router.push(
+      (npcCampaignId
+        ? `/campanhas/${npcCampaignId}/biblioteca`
+        : `${characterPath(result.characterId)}?aviso=personagem-criado`) as Route,
+    );
   };
 
   const stepper = (

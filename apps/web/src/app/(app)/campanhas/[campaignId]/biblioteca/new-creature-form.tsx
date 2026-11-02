@@ -109,9 +109,9 @@ export function NewCreatureForm({
       {fullSheet ? (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-fg-secondary">
-            A ficha completa é criada pelo mesmo passo a passo dos jogadores e evolui como a deles.
-            Depois de criar, guarde-a em “NPCs com ficha de jogador”, aqui na biblioteca. Só você vê
-            essas fichas.
+            A ficha completa usa o mesmo passo a passo dos jogadores e sobe de nível como a deles, mas
+            continua sendo um NPC: ao terminar, ela volta para esta biblioteca e não entra em “Meus
+            personagens”. Só você vê.
           </p>
           <Link
             href={`${routes.newCharacter}?npc=${campaignId}` as Route}
