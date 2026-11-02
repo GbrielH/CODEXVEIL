@@ -52,6 +52,7 @@ import {
 import { IMAGE_EXTENSIONS } from '@codexveil/validation';
 import { Castle, CircleDot, Eraser, ExternalLink, Hash, Expand, Shrink, EyeOff, ImageUp, Map as MapIcon, Minus, MousePointer2, Pencil, Plus, Radio, RotateCw, Ruler, Square, SquareDashed, StickyNote, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useConfirm } from '@/components/ui/use-confirm';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -169,12 +170,12 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   const { zoom, setZoom, fullscreen, toggleFullscreen } = useBoardViewport({ boardAreaRef, scrollRef, cols: map?.cols ?? 0, rows: map?.rows ?? 0, min: 0.3, max: 3 });
   const [newSessionId, setNewSessionId] = useState(sessionId);
   const [selectedLayer, setSelectedLayer] = useState<number | null>(null);
-  const sessionLabel = (id: string) => {
-    const found = sessions.find((entry) => entry.id === id);
-    return found ? `Sessão ${found.number} · ${found.title}` : 'Sessão';
+  const sessionMaps = maps.filter((entry) => entry.sessionId === newSessionId);
+  // Abre nos mapas da sessão atual: o ativo, senão o primeiro preparado.
+  const pickDefault = (list: SessionMap[]) => {
+    const inSession = list.filter((entry) => entry.sessionId === sessionId);
+    return inSession.find((entry) => entry.isActive)?.id ?? inSession[0]?.id ?? null;
   };
-  // Mapas da sessão atual primeiro; depois os das outras sessões.
-  const pickDefault = (list: SessionMap[]) => list.find((entry) => entry.isActive)?.id ?? list.find((entry) => entry.sessionId === sessionId)?.id ?? list[0]?.id ?? null;
 
   const reloadMaps = useCallback(async () => {
     try {
@@ -615,29 +616,41 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
       ) : null}
 
       <div className="flex flex-wrap items-end gap-2">
-        {maps.length ? (
-          <SelectField id={`${id}-mapa`} label="Cenário (todos os mapas da campanha)" value={selectedId ?? ''} onChange={(event) => setSelectedId(event.target.value || null)} className="min-w-64">
-            {[...maps]
-              .sort((a, b) => (sessions.find((entry) => entry.id === b.sessionId)?.number ?? 0) - (sessions.find((entry) => entry.id === a.sessionId)?.number ?? 0))
-              .map((entry) => (
-                <option key={entry.id} value={entry.id}>
-                  {sessionLabel(entry.sessionId)} — {entry.name}
-                  {entry.isActive ? ' (ativo)' : ''}
-                </option>
-              ))}
+        <SelectField
+          id={`${id}-sessao`}
+          label="Sessão"
+          value={newSessionId}
+          onChange={(event) => {
+            const next = event.target.value;
+            setNewSessionId(next);
+            const inSession = maps.filter((entry) => entry.sessionId === next);
+            setSelectedId(inSession.find((entry) => entry.isActive)?.id ?? inSession[0]?.id ?? null);
+          }}
+          className="min-w-48"
+        >
+          {sessions.map((entry) => (
+            <option key={entry.id} value={entry.id}>
+              Sessão {entry.number} · {entry.title}
+            </option>
+          ))}
+        </SelectField>
+        {sessionMaps.length ? (
+          <SelectField id={`${id}-mapa`} label="Mapa desta sessão" value={selectedId ?? ''} onChange={(event) => setSelectedId(event.target.value || null)} className="min-w-64">
+            {sessionMaps.map((entry) => (
+              <option key={entry.id} value={entry.id}>
+                {entry.name}
+                {entry.isActive ? ' (ativo)' : ''}
+              </option>
+            ))}
           </SelectField>
-        ) : null}
+        ) : (
+          <p className="pb-2 text-sm text-fg-muted">Nenhum mapa preparado para esta sessão.</p>
+        )}
         {canManage ? (
-          <details className="w-full rounded-lg border border-line p-3" open={maps.length === 0}>
+          <details className="w-full rounded-lg border border-line p-3" open={sessionMaps.length === 0}>
             <summary className="cursor-pointer text-sm font-medium text-fg">Novo mapa: criar, importar ou gerar masmorra</summary>
             <div className="mt-3 flex flex-wrap items-end gap-3">
-            <SelectField id={`${id}-sessao`} label="Sessão do novo mapa" value={newSessionId} onChange={(event) => setNewSessionId(event.target.value)} className="min-w-48">
-              {sessions.map((entry) => (
-                <option key={entry.id} value={entry.id}>
-                  Sessão {entry.number} · {entry.title}
-                </option>
-              ))}
-            </SelectField>
+            <p className="w-full text-xs text-fg-muted">O mapa novo entra na sessão escolhida acima. Durante o jogo, use para improvisar.</p>
             <TextField id={`${id}-novo`} label="Nome do mapa" placeholder="Ex.: Taverna do Javali" maxLength={80} value={newName} onChange={(event) => setNewName(event.target.value)} />
             <Button icon={<Plus className="h-4 w-4" aria-hidden="true" />} disabled={!newName.trim()} loading={busy && !map} onClick={() => void createMap()}>
               Criar mapa
@@ -1198,7 +1211,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
           </div>
         </form>
       </Modal>
-      {drawingMenu ? (
+      {drawingMenu ? createPortal(
         <div className="fixed inset-0 z-50" onClick={() => setDrawingMenu(null)} onContextMenu={(event) => { event.preventDefault(); setDrawingMenu(null); }}>
           <div role="menu" className="absolute flex min-w-36 flex-col rounded-md border border-line bg-surface p-1 shadow-lg" style={{ left: drawingMenu.x, top: drawingMenu.y }} onClick={(event) => event.stopPropagation()}>
             <button type="button" role="menuitem" className="flex items-center gap-2 rounded px-3 py-1.5 text-left text-sm hover:bg-sunken" onClick={() => { openEdit(drawingMenu.index, drawingMenu.secret); setDrawingMenu(null); }}>
@@ -1209,7 +1222,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
             </button>
           </div>
         </div>
-      ) : null}
+      , document.body) : null}
       <Modal
         open={editing !== null}
         onClose={() => setEditing(null)}

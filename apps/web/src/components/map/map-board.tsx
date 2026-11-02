@@ -259,6 +259,8 @@ export function MapBoard({
   const center = (point: Point): Point => ({ x: Math.floor(point.x) + 0.5, y: Math.floor(point.y) + 0.5 });
 
   const onBoardDown = (event: ReactPointerEvent<SVGSVGElement>) => {
+    // O botão direito abre o menu das anotações; não desenha nem captura o ponteiro.
+    if (event.button === 2) return;
     showName(null);
     const point = toGrid(event);
     if (tool === 'ruler') {
@@ -567,6 +569,7 @@ export function MapBoard({
                 ? onErase
                 : movable
                   ? (event) => {
+                      if (event.button === 2) return;
                       event.stopPropagation();
                       svgRef.current?.setPointerCapture(event.pointerId);
                       const point = toGrid(event);

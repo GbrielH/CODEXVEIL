@@ -871,6 +871,11 @@ de segurança).
 - [x] Renomear o mapa (o nome vindo do JSON deixou de ser fixo).
 - [x] Criar, importar e gerar masmorra ficam num painel recolhível "Novo mapa", separado da
       escolha do mapa existente (abre sozinho quando a campanha não tem mapas).
+- [x] Botão direito não abria o menu: o arrasto da anotação capturava o ponteiro; agora o botão
+      direito é ignorado no arrasto e o menu abre por cima de tudo.
+- [x] Mapas por sessão: escolhe-se a sessão e aparecem só os mapas preparados para ela; o mapa
+      novo entra na sessão escolhida (serve também para improvisar durante o jogo). A aba abre na
+      sessão em andamento.
 - [ ] Testar no site com a masmorra importada (sem teste manual ainda).
 
 ### 2026-10-25 (tarde) — dados, ficha, sessão, anotações e biblioteca
