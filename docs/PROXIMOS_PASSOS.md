@@ -181,7 +181,8 @@ mapa e notas lado a lado).
 - [x] Respostas obrigatórias no passo de revisão dos assistentes (D&D e T20, site e app) e ao
       vincular uma ficha existente (site). O banco recusa sem todas as respostas.
 - [x] Respostas na ficha (site), visíveis só para o jogador e o mestre.
-- [ ] Ver e corrigir as respostas na ficha do app; editar as respostas depois de criado.
+- [x] Ver e corrigir as respostas na ficha do app; editar as respostas depois de criado (conferido em
+      2026-11-02: site e app já mostram e deixam o dono editar, nos três sistemas).
 
 ### B0h. Melhorias pedidas em 2026-10-30 (Tormenta e D&D, site e app)
 
@@ -291,7 +292,10 @@ Tabela completa em [PENDENCIAS.md](PENDENCIAS.md#0-app-em-paridade-com-o-site-le
 - [x] Amigos e "Compartilhados comigo" no app (2026-11-01).
 - [x] Ficha do app: altura, idade, respostas das perguntas, prompts de retrato/token, compartilhar.
 - [x] "?" do custo de pontos na criação T20 do app.
-- [ ] Tomo no app (chat e ditado).
+- [x] Tomo no app (2026-11-02): aba Tomo com escolha da campanha (o Tomo conhece a mesa e o seu
+      personagem) e cartões de ação com Confirmar, pela rota `/api/assistente/acao` (aceita o token do
+      app). O esquema das ações passou para `@codexveil/validation`.
+- [ ] Ditado por voz no Tomo do app: precisa de módulo nativo de reconhecimento de fala (APK novo).
 
 ### B0e. Amigos e fichas compartilhadas (2026-10-27)
 
