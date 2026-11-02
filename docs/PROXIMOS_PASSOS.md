@@ -864,6 +864,15 @@ de segurança).
 
 ## Histórico
 
+### 2026-11-02 (noite) — call só em campanha e "quem está falando"
+
+- [x] Call sem campanha é recusada (banco, site e app). Cada jogador já entra com o personagem
+      dele (o banco só permite um personagem por jogador na campanha).
+- [x] Barra opcional "Quem está falando" para o mestre na call: botões de NPC (nomes editáveis) e
+      Narração, atalhos 1–9 e 0 (Mestre). As falas transcritas do mestre saem com esse nome.
+- [ ] Aplicar a migração `20261102130000_call_campaign_speaker.sql` em produção (dry-run ok).
+- [ ] Testar com duas contas na call de produção.
+
 ### 2026-11-02 (noite) — mapa: menu das anotações, renomear e "Novo mapa"
 
 - [x] Botão direito numa anotação ou sala numerada (mestre): menu Editar/Apagar. Na sala, editar

@@ -83,14 +83,14 @@ export async function createCallRoom(
   input: {
     title: string;
     accessMode: CallAccessMode;
-    campaignId: string | null;
+    campaignId: string;
     sessionId: string | null;
   },
 ): Promise<{ id: string; slug: string; code: string }> {
   const { data, error } = await client.rpc('create_call_room', {
     p_title: input.title,
     p_access_mode: input.accessMode,
-    p_campaign_id: input.campaignId as string,
+    p_campaign_id: input.campaignId,
     p_session_id: input.sessionId as string,
   });
   if (error) throw toAppError(error);
@@ -142,6 +142,19 @@ export async function joinCallRoom(
   const { data, error } = await client.rpc('join_call_room', { p_room_id: roomId });
   if (error) throw toAppError(error);
   return data as CallJoinStatus;
+}
+
+/** Mestre: quem está falando nas próximas falas transcritas (nulo = "Mestre"). */
+export async function setCallSpeaker(
+  client: CodexveilClient,
+  roomId: string,
+  label: string | null,
+): Promise<void> {
+  const { error } = await client.rpc('set_call_speaker', {
+    p_room_id: roomId,
+    p_label: label as string,
+  });
+  if (error) throw toAppError(error);
 }
 
 export async function leaveCallRoom(client: CodexveilClient, roomId: string): Promise<void> {

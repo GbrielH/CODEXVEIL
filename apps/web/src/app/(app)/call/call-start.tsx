@@ -54,13 +54,14 @@ export function CallStart({ campaigns }: { campaigns: { id: string; name: string
   }, [campaignId]);
 
   const create = async () => {
+    if (!campaignId) return;
     setBusy('create');
     try {
       const room = await createCallRoom(getSupabaseBrowserClient(), {
         title: title.trim(),
         accessMode: mode,
-        campaignId: campaignId || null,
-        sessionId: campaignId && sessionId ? sessionId : null,
+        campaignId,
+        sessionId: sessionId || null,
       });
       router.push(callPath(room.slug) as Route);
     } catch (error) {
@@ -107,7 +108,7 @@ export function CallStart({ campaigns }: { campaigns: { id: string; name: string
           />
           <SelectField
             id="call-campaign"
-            label="Campanha (opcional)"
+            label="Campanha"
             value={campaignId}
             onChange={(event) => {
               setCampaignId(event.target.value);
@@ -117,7 +118,7 @@ export function CallStart({ campaigns }: { campaigns: { id: string; name: string
               }
             }}
           >
-            <option value="">Sem campanha</option>
+            <option value="">Escolha a campanha…</option>
             {campaigns.map((campaign) => (
               <option key={campaign.id} value={campaign.id}>
                 {campaign.name}
@@ -159,7 +160,12 @@ export function CallStart({ campaigns }: { campaigns: { id: string; name: string
               </label>
             ))}
           </fieldset>
-          <Button loading={busy === 'create'} onClick={() => void create()}>
+          {campaigns.length === 0 ? (
+            <p className="text-xs text-fg-muted">
+              A call fica dentro de uma campanha: crie ou entre numa campanha primeiro.
+            </p>
+          ) : null}
+          <Button loading={busy === 'create'} disabled={!campaignId} onClick={() => void create()}>
             Criar e entrar
           </Button>
         </div>

@@ -330,3 +330,11 @@ cartas de Assimilação e Artefatos dos livros liberados (Eventos só para o mes
 
 `characters.npc_listed` (padrão falso): um NPC de campanha (`npc_campaign_id`) só aparece em "Meus
 personagens" quando o dono liga a opção, por `public.set_character_npc_listed(ficha, mostrar)`.
+
+## Call: campanha obrigatória e "quem está falando" (2026-11-02)
+
+- `call_rooms`: gatilho `call_rooms_require_campaign` recusa sala nova sem `campaign_id`.
+- `call_participants.speaking_as` (texto, opcional): rótulo das falas do mestre. Só muda pela
+  função `set_call_speaker(room, label)`, permitida apenas ao mestre aprovado na sala.
+- `fill_transcript_segment`: fala do mestre usa `speaking_as` (ou "Mestre"); jogador continua com
+  o personagem dele. `join_call_room` mantém o personagem gravado ao reconectar.

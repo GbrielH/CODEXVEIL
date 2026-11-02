@@ -18,6 +18,7 @@ import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { useToast } from '@/components/ui/toast';
+import { SpeakerBar } from '@/components/call/speaker-bar';
 import { TranscriptPanel } from '@/components/call/transcript-panel';
 import { useConfirm } from '@/components/ui/use-confirm';
 import { cx } from '@/lib/cx';
@@ -302,6 +303,11 @@ export function CallRoomView({
               </ul>
             )}
           </Card>
+
+          {entry.state === 'ready' &&
+          participants.some((person) => person.userId === userId && person.role === 'master') ? (
+            <SpeakerBar roomId={room.id} />
+          ) : null}
 
           <TranscriptPanel
             roomId={room.id}

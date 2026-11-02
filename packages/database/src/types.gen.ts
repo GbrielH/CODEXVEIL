@@ -240,6 +240,7 @@ export type Database = {
           left_at: string | null;
           role: string;
           room_id: string;
+          speaking_as: string | null;
           status: string;
           user_id: string;
         };
@@ -249,6 +250,7 @@ export type Database = {
           left_at?: string | null;
           role?: string;
           room_id: string;
+          speaking_as?: string | null;
           status?: string;
           user_id: string;
         };
@@ -258,6 +260,7 @@ export type Database = {
           left_at?: string | null;
           role?: string;
           room_id?: string;
+          speaking_as?: string | null;
           status?: string;
           user_id?: string;
         };
@@ -3127,6 +3130,13 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      set_call_speaker: {
+        Args: {
+          p_room_id: string;
+          p_label: string;
+        };
+        Returns: undefined;
       };
       set_campaign_member_role: {
         Args: {

@@ -14,7 +14,7 @@ afterAll(async () => {
 
 type Actor = Awaited<ReturnType<typeof createTable>>['gm'];
 
-async function createRoom(actor: Actor, mode: string, campaignId: string | null = null) {
+async function createRoom(actor: Actor, mode: string, campaignId: string) {
   return db.as(actor, (s) =>
     s.one<{ id: string; slug: string; code: string }>(
       `select * from public.create_call_room('Sessão', $1, $2, null)`,
@@ -29,8 +29,8 @@ const join = (actor: Actor, roomId: string) =>
 
 describe('call', () => {
   it('cria a sala com link e código e acha pelos dois', async () => {
-    const { gm } = await createTable(db);
-    const room = await createRoom(gm, 'open');
+    const { gm, campaign } = await createTable(db);
+    const room = await createRoom(gm, 'open', campaign.id);
     expect(room.slug).toMatch(/^[a-z0-9]{10}$/);
     expect(room.code).toMatch(/^[A-Z]{4}-[0-9]{4}$/);
     const byCode = await db.as(gm, (s) =>
@@ -59,16 +59,16 @@ describe('call', () => {
   });
 
   it('só convidados: sem convite não entra; com convite entra', async () => {
-    const { gm, outsider } = await createTable(db);
-    const room = await createRoom(gm, 'invite');
+    const { gm, outsider, campaign } = await createTable(db);
+    const room = await createRoom(gm, 'invite', campaign.id);
     await expectSqlError(join(outsider, room.id), '42501');
     await db.as(gm, (s) => s.query(`select public.invite_to_call($1, $2)`, [room.id, outsider.id]));
     expect((await join(outsider, room.id)).join_call_room).toBe('approved');
   });
 
   it('convidado que ainda não entrou não vê a lista nem convida terceiros', async () => {
-    const { gm, player, outsider } = await createTable(db);
-    const room = await createRoom(gm, 'invite');
+    const { gm, player, outsider, campaign } = await createTable(db);
+    const room = await createRoom(gm, 'invite', campaign.id);
     await db.as(gm, (s) => s.query(`select public.invite_to_call($1, $2)`, [room.id, player.id]));
     const participants = await db.as(player, (s) =>
       s.query(`select user_id from public.call_participants where room_id = $1`, [room.id]),
@@ -81,8 +81,8 @@ describe('call', () => {
   });
 
   it('sala de espera: aguarda até o dono aprovar; só o dono decide', async () => {
-    const { gm, player, outsider } = await createTable(db);
-    const room = await createRoom(gm, 'lobby');
+    const { gm, player, outsider, campaign } = await createTable(db);
+    const room = await createRoom(gm, 'lobby', campaign.id);
     expect((await join(outsider, room.id)).join_call_room).toBe('waiting');
     await expectSqlError(
       db.as(player, (s) =>
@@ -97,8 +97,8 @@ describe('call', () => {
   });
 
   it('quem espera ou foi recusado vê apenas a própria entrada, sem transcrição', async () => {
-    const { gm, outsider } = await createTable(db);
-    const room = await createRoom(gm, 'lobby');
+    const { gm, outsider, campaign } = await createTable(db);
+    const room = await createRoom(gm, 'lobby', campaign.id);
     await join(gm, room.id);
     expect((await join(outsider, room.id)).join_call_room).toBe('waiting');
     const own = await db.as(outsider, (s) =>
@@ -118,8 +118,8 @@ describe('call', () => {
   });
 
   it('quem não está na sala não vê os participantes', async () => {
-    const { gm, outsider } = await createTable(db);
-    const room = await createRoom(gm, 'open');
+    const { gm, outsider, campaign } = await createTable(db);
+    const room = await createRoom(gm, 'open', campaign.id);
     await join(gm, room.id);
     const rows = await db.as(outsider, (s) =>
       s.query(`select * from public.call_participants where room_id = $1`, [room.id]),
@@ -267,5 +267,50 @@ describe('call', () => {
       status: 'failed',
       error: 'Geração interrompida antes de terminar.',
     });
+  });
+
+  it('recusa call sem campanha', async () => {
+    const { gm } = await createTable(db);
+    await expectSqlError(
+      db.as(gm, (s) =>
+        s.query(`select * from public.create_call_room('Sessão', 'open', null, null)`),
+      ),
+      '22023',
+    );
+  });
+
+  it('o mestre escolhe quem está falando e o jogador fala como o personagem', async () => {
+    const { gm, player, campaign } = await createTable(db);
+    const second = await createCharacter(db, player, campaign.id, 'Segundo');
+    const room = await createRoom(gm, 'open', campaign.id);
+    await join(gm, room.id);
+    await join(player, room.id);
+
+    await expectSqlError(
+      db.as(player, (s) => s.query(`select public.set_call_speaker($1, 'NPC')`, [room.id])),
+      '42501',
+    );
+    await db.as(gm, (s) => s.query(`select public.set_call_speaker($1, 'Narração')`, [room.id]));
+    await db.as(gm, (s) =>
+      s.query(`update public.call_rooms set transcription_enabled = true where id = $1`, [room.id]),
+    );
+    const say = (actor: Actor, text: string) =>
+      db.as(actor, (s) =>
+        s.one<{ speaker_label: string; character_id: string | null }>(
+          `insert into public.transcript_segments (room_id, text, started_at, ended_at)
+           values ($1, $2, now(), now()) returning speaker_label, character_id`,
+          [room.id, text],
+        ),
+      );
+    expect(await say(gm, 'A porta range.')).toMatchObject({
+      speaker_label: 'Narração',
+      character_id: null,
+    });
+    expect(await say(player, 'Eu entro.')).toMatchObject({
+      speaker_label: 'Segundo',
+      character_id: second,
+    });
+    await db.as(gm, (s) => s.query(`select public.set_call_speaker($1, null)`, [room.id]));
+    expect((await say(gm, 'Rolem iniciativa.')).speaker_label).toBe('Mestre');
   });
 });

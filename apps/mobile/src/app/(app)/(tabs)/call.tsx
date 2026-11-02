@@ -52,6 +52,7 @@ export default function CallTab() {
   const open = (slug: string) => router.push(`/call/${slug}` as Href);
 
   const create = async () => {
+    if (!campaignId) return;
     setBusy('create');
     try {
       const room = await createCallRoom(getSupabase(), {
@@ -95,13 +96,10 @@ export default function CallTab() {
         <Field label="Nome (opcional)" value={title} onChangeText={setTitle} maxLength={80} />
         {data?.campaigns.length ? (
           <>
-            <AppText variant="small">Campanha (para saber o personagem de cada um)</AppText>
+            <AppText variant="small">
+              Campanha (obrigatória: define o personagem de cada um)
+            </AppText>
             <ChipRow>
-              <Chip
-                label="Sem campanha"
-                selected={campaignId === null}
-                onPress={() => setCampaignId(null)}
-              />
               {data.campaigns.map((campaign) => (
                 <Chip
                   key={campaign.id}
@@ -112,7 +110,11 @@ export default function CallTab() {
               ))}
             </ChipRow>
           </>
-        ) : null}
+        ) : (
+          <AppText variant="small" style={{ color: colors.fgMuted }}>
+            A call fica dentro de uma campanha: entre numa campanha primeiro.
+          </AppText>
+        )}
         <AppText variant="small">Quem entra</AppText>
         <ChipRow>
           {(Object.keys(callAccessModeLabels) as CallAccessMode[]).map((key) => (
@@ -131,6 +133,7 @@ export default function CallTab() {
           label="Criar e entrar"
           icon={<Plus size={16} color={colors.primaryFg} />}
           loading={busy === 'create'}
+          disabled={!campaignId}
           onPress={() => void create()}
         />
       </Card>

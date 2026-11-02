@@ -5,6 +5,11 @@
 
 ## Estado atual
 
+**2026-11-02 (noite, call):** call exige campanha (gatilho no banco, site e app) e o mestre tem
+botões opcionais de "quem está falando" (NPCs e Narração) que mudam o nome nas falas transcritas.
+Teste PGlite `calls.test.ts`: 14 de 14. Migração `20261102130000_call_campaign_speaker.sql`
+conferida com `supabase db push --dry-run`, ainda não aplicada em produção.
+
 **2026-11-02 (noite, mapa):** menu de botão direito (Editar/Apagar) para anotações e salas
 numeradas, mantendo número público e legenda secreta pareados; renomear mapa; painel "Novo mapa"
 recolhível. Depois: menu do botão direito corrigido (o arrasto capturava o ponteiro) e mapas
