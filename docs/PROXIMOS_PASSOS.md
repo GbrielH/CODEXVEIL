@@ -867,7 +867,9 @@ de segurança).
 ### 2026-11-02 (noite) — confirmações do responsável
 
 - [x] Chave do LiveKit trocada; mapa com masmorra importada testado; Assimilação e roteiro manual
-      (site e app) conferidos pelo responsável. Dados 3D e aba Dados do app funcionando.
+      (site e app) conferidos pelo responsável. Dados 3D no app e aba Dados do perfil (textura e cor do número)
+      funcionando. Os itens de código restantes (amigos no app, e-mail de convite, CSP, PWA, E2E,
+      acessibilidade, limite de armazenamento etc.) ficam fora do plano por decisão do responsável.
 - [-] Notificações por Firebase: descartadas.
 - [ ] Pendente: teste da call com duas contas em produção.
 
@@ -915,7 +917,7 @@ de segurança).
 - [x] Capa da sessão: o mestre envia no editor do roteiro; aparece no topo da sessão (jogadores
       veem nas sessões publicadas). Migração `20261025130000_session_covers.sql`.
 - [x] Chat do Tomo sem salvar: só na memória (fecha ao recarregar).
-- [ ] **Futuro (pedido de 2026-10-25, não fazer ainda):** aba "Dados" no perfil para o usuário
+- [x] **(confirmado pelo responsável em 2026-11-02):** aba "Dados" no perfil para o usuário
       enviar a imagem (textura) dos próprios dados e escolher a cor do número.
 
 ### 2026-10-25 — regras opcionais automatizadas (pedido: itens 1, 2 e 4)
