@@ -247,7 +247,7 @@ mapa e notas lado a lado).
 ### B0h. Call, transcrição e Melhores Momentos (2026-11-01, em andamento)
 
 Código das três fases pronto e escondido (chaves desligadas). Próximo: chaves do LiveKit na
-Vercel, aplicar as migrações `20261101110000` e `20261101120000`, testar num ambiente de teste,
+Vercel (as migrações `20261101110000` e `20261101120000` já estão aplicadas), testar num ambiente de teste,
 gerar o APK com a transcrição do celular e só então ligar em produção. Detalhes em
 [call-transcricao-momentos.md](call-transcricao-momentos.md#onde-parou-2026-11-01).
 

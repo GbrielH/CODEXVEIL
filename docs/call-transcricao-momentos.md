@@ -4,11 +4,11 @@ Funcionalidade pedida em 2026-11-01. Regra do responsável: **só opções gratu
 direto. Onde um serviço seria pago (imagens), o Codexveil entrega o prompt pronto para a IA de
 preferência de cada um.
 
-| Fase | O quê | Situação |
-| ---- | ----- | -------- |
-| 1 | Call de voz e vídeo (LiveKit) | código feito; migração aplicada; **escondida** |
-| 2 | Transcrição ao vivo por personagem | código feito; migração **não aplicada**; **escondida** |
-| 3 | Melhores Momentos (análise por IA e prompts de imagem) | código feito; migração **não aplicada**; **escondida** |
+| Fase | O quê                                                  | Situação                                       |
+| ---- | ------------------------------------------------------ | ---------------------------------------------- |
+| 1    | Call de voz e vídeo (LiveKit)                          | código feito; migração aplicada; **escondida** |
+| 2    | Transcrição ao vivo por personagem                     | código feito; migração aplicada; **escondida** |
+| 3    | Melhores Momentos (análise por IA e prompts de imagem) | código feito; migração aplicada; **escondida** |
 
 ## Onde parou (2026-11-01)
 
@@ -18,14 +18,15 @@ Pedido do responsável: parar aqui e **não liberar em produção** enquanto nã
   e `EXPO_PUBLIC_CALLS_ENABLED=1` (app; vai no próximo build/OTA). Desligado, somem a aba Call, o
   aviso de convite, a aba Momentos, a galeria da sessão, a aba Transcrição do editor e as rotas
   `/api/call/token` e `/api/sessoes/momentos` respondem 404.
-- **Banco**: `20261101100000_call_rooms.sql` **já aplicada** (tabelas vazias e sem uso).
-  `20261101110000_call_transcripts.sql` e `20261101120000_session_highlights.sql` **ainda não**.
+- **Banco**: as três migrações estão aplicadas em produção (`20261101100000_call_rooms.sql`,
+  `20261101110000_call_transcripts.sql` e `20261101120000_session_highlights.sql`; conferido em
+  2026-11-02 com `npx supabase db push --dry-run`: banco em dia). As tabelas estão vazias e sem uso.
 - **APK**: o de 2026-11-01 19:15 UTC (`f6EiER5f…apk`) já tem o LiveKit; **não** tem o módulo de
   transcrição do celular (`expo-speech-recognition`), que exige o próximo APK.
 - **Nada foi testado ao vivo** (sem as chaves do LiveKit). Para continuar:
   1. Criar o projeto grátis no LiveKit Cloud e pôr `LIVEKIT_URL`, `LIVEKIT_API_KEY` e
      `LIVEKIT_API_SECRET` na Vercel.
-  2. Aplicar as duas migrações pendentes (`npx supabase db push`).
+  2. ~~Aplicar as duas migrações pendentes~~ (feito; ver acima).
   3. Ligar `CALLS_ENABLED=1` só num ambiente de teste (ex.: preview da Vercel) e testar: criar
      sala, os três modos, convite, transcrição no Chrome/Edge, exportar, gerar momentos.
   4. Gerar o APK com a transcrição do celular e testar o conflito de microfone com a call.
@@ -128,10 +129,10 @@ Sem as variáveis, a sala abre e avisa "A call ainda não foi configurada no ser
 
 ## Variáveis de ambiente (Vercel)
 
-| Variável | Para quê |
-| -------- | -------- |
-| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | Call (LiveKit Cloud grátis ou servidor próprio) |
-| `GEMINI_API_KEY` (já existe), `GEMINI_MODEL` (opcional) | Melhores Momentos (e o Tomo) |
+| Variável                                                | Para quê                                        |
+| ------------------------------------------------------- | ----------------------------------------------- |
+| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`  | Call (LiveKit Cloud grátis ou servidor próprio) |
+| `GEMINI_API_KEY` (já existe), `GEMINI_MODEL` (opcional) | Melhores Momentos (e o Tomo)                    |
 
 ## Custos
 
