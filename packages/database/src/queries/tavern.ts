@@ -86,7 +86,8 @@ export async function countTavernUnread(client: CodexveilClient, userId: string,
   const counts: Record<string, number> = {};
   for (const row of data) {
     const key = row.campaign_id ? `c:${row.campaign_id}` : `f:${row.sender_id}`;
-    if (row.created_at > (since[key] ?? defaultSince)) counts[key] = (counts[key] ?? 0) + 1;
+    // Compara como data: o banco devolve "+00:00" com microssegundos e a marca local usa "Z".
+    if (Date.parse(row.created_at) > Date.parse(since[key] ?? defaultSince)) counts[key] = (counts[key] ?? 0) + 1;
   }
   return counts;
 }

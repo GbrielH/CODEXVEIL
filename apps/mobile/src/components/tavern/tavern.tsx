@@ -96,12 +96,12 @@ export function TavernFloating({ userId }: { userId: string }) {
     [refresh],
   );
   const markRead = useCallback(
-    (channelId: string) => {
+    (channelId: string, latest?: string) => {
+      // Lida até a última mensagem vista (horário do servidor): o relógio do celular pode atrasar.
+      const now = Date.now();
+      const seen = latest && Date.parse(latest) > now ? latest : new Date(now).toISOString();
       void readMarks(userId).then((marks) =>
-        Storage.setItem(
-          readKey(userId),
-          JSON.stringify({ ...marks, [channelId]: new Date().toISOString() }),
-        ),
+        Storage.setItem(readKey(userId), JSON.stringify({ ...marks, [channelId]: seen })),
       );
       setUnread((current) => ({ ...current, [channelId]: 0 }));
     },
@@ -153,7 +153,7 @@ function TavernModal({
   userId: string;
   unread: Record<string, number>;
   initialDraft?: string;
-  onRead: (channelId: string) => void;
+  onRead: (channelId: string, latest?: string) => void;
   onClose: () => void;
 }) {
   const toast = useToast();
@@ -232,8 +232,16 @@ function TavernModal({
   const load = useCallback(async () => {
     if (!selected) return;
     try {
-      setMessages(await listTavernMessages(getSupabase(), userId, selected.channel));
-      onRead(selected.id);
+      const list = await listTavernMessages(getSupabase(), userId, selected.channel);
+      setMessages(list);
+      onRead(
+        selected.id,
+        list.reduce<string | undefined>(
+          (max, message) =>
+            !max || Date.parse(message.createdAt) > Date.parse(max) ? message.createdAt : max,
+          undefined,
+        ),
+      );
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
     } catch (error) {
       toast({ tone: 'danger', title: failureMessage(error) });

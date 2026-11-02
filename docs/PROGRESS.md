@@ -5,6 +5,10 @@
 
 ## Estado atual
 
+**2026-11-02 (noite, taverna):** correção das não lidas da taverna no app (marca pelo horário da
+última mensagem e comparação por data). `pnpm check` passou; sem teste no aparelho. Erro no
+Painel/Personagens do app em investigação.
+
 **2026-11-02 (noite, agenda):** votação de datas da campanha (site e app). Migração
 `20261102160000_campaign_schedule_polls` conferida com `--dry-run` e aplicada em produção. Teste
 PGlite `schedule-polls.test.ts` (1 caso: propor, votar, estranho recusado, confirmar e gravar a

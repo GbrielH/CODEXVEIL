@@ -864,6 +864,13 @@ de segurança).
 
 ## Histórico
 
+### 2026-11-02 (noite) — taverna no app
+
+- [x] Mensagem da taverna voltava como não lida ao reabrir o app: a marca de leitura usava o
+      relógio do celular e a comparação era por texto. Agora marca até a última mensagem vista
+      (horário do servidor) e compara como data.
+- [ ] Painel e Personagens do app mostram "Algo deu errado": investigando (falta a mensagem exibida).
+
 ### 2026-11-02 (noite) — iniciativa no mapa, condições, luz e escuridão; call
 
 - [x] Iniciativa ligada ao mapa: token da vez destacado (site e app), centralizar na vez.
