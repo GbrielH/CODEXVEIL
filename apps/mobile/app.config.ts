@@ -78,8 +78,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-speech-recognition',
       {
-        microphonePermission: 'O Codexveil usa o microfone para transcrever a sua fala na call.',
-        speechRecognitionPermission: 'O Codexveil transcreve a sua fala na call quando a gravação está ligada.',
+        microphonePermission:
+          'O Codexveil usa o microfone para o ditado do Tomo e para transcrever a sua fala na call.',
+        speechRecognitionPermission:
+          'O Codexveil reconhece sua fala no ditado do Tomo e na transcrição da call quando você ativa esses recursos.',
       },
     ],
     [

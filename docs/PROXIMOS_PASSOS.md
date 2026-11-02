@@ -864,6 +864,15 @@ de segurança).
 
 ## Histórico
 
+### 2026-11-02 (noite) — APK novo
+
+- [x] Causa do "Algo deu errado" no Painel/Personagens do app: o APK instalado (build de 01/11,
+      runtime `f37f8a44`) não recebia OTA desde a entrada do `expo-speech-recognition` (Fase 2 da
+      call); o JS antigo consultava personagens com embed ambíguo depois de `npc_campaign_id`.
+- [x] Aplicado `docs/patches/apk-proximo-ditado-e-expo-57.0.31.patch` (ditado do Tomo, Expo
+      57.0.31) e disparado `eas build` (perfil preview, Android).
+- [ ] Instalar o APK novo no celular e conferir Painel, Personagens, taverna e call.
+
 ### 2026-11-02 (noite) — biblioteca
 
 - [x] Formulário "Novo registro" da biblioteca cabia mal na coluna lateral (tamanhos em 6 colunas
