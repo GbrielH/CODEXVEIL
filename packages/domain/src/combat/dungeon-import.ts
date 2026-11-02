@@ -23,6 +23,8 @@ export interface ImportedDungeon {
   labels: { ref: string; x: number; y: number }[];
   /** Legenda (só para o mestre): número da sala → texto. */
   legend: { ref: string; text: string }[];
+  /** Portas na grade, já ajustadas para a margem do mapa. */
+  doors: { x: number; y: number; secret: boolean }[];
   /** Quantas salas/corredores e portas foram lidos (para o resumo da importação). */
   stats: { rects: number; doors: number; notes: number };
 }
@@ -121,6 +123,14 @@ export function importOnePageDungeon(data: unknown): ImportedDungeon {
 
   const labels: ImportedDungeon['labels'] = [];
   const legend: ImportedDungeon['legend'] = [];
+  const rawDoors = Array.isArray(source.doors) ? source.doors : [];
+  const doors = rawDoors.flatMap((item) => {
+    const door = item as Record<string, unknown>;
+    const x = num(door.x);
+    const y = num(door.y);
+    if (x === null || y === null) return [];
+    return [{ x: x + offsetX, y: y + offsetY, secret: door.secret === true || door.type === 2 }];
+  });
   const notes = Array.isArray(source.notes) ? source.notes : [];
   notes.forEach((item, index) => {
     const note = item as Record<string, unknown>;
@@ -146,9 +156,10 @@ export function importOnePageDungeon(data: unknown): ImportedDungeon {
     walls,
     labels,
     legend,
+    doors,
     stats: {
       rects: rects.length,
-      doors: Array.isArray(source.doors) ? source.doors.length : 0,
+      doors: rawDoors.length,
       notes: notes.length,
     },
   };

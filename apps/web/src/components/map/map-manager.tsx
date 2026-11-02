@@ -25,12 +25,16 @@ import {
 } from '@codexveil/database';
 import {
   DRAWING_COLORS,
+  FLOOR_TEXTURES,
+  MAP_ICON_KINDS,
   MAP_AREA_KINDS,
   TOKEN_SIZES,
   WALL_STYLES,
   fogCells,
+  generateDungeon,
   importOnePageDungeon,
   paintFog,
+  paintMapTexture,
   pointInPolygon,
   rectsFromCells,
   tokenSizeLabels,
@@ -39,6 +43,9 @@ import {
   wallBlocksSight,
   type MapArea,
   type MapDrawing,
+  type DungeonSize,
+  type FloorTexture,
+  type MapIconKind,
   type TokenSize,
   type WallStyle,
 } from '@codexveil/domain';
@@ -103,8 +110,13 @@ const TOOLS: { tool: MapTool; label: string; icon: ReactNode }[] = [
   { tool: 'draw', label: 'Desenhar', icon: <Pencil className="h-4 w-4" aria-hidden="true" /> },
   { tool: 'note', label: 'Anotação', icon: <StickyNote className="h-4 w-4" aria-hidden="true" /> },
   { tool: 'room', label: 'Sala numerada', icon: <Hash className="h-4 w-4" aria-hidden="true" /> },
+  { tool: 'icon', label: 'Ícone', icon: <CircleDot className="h-4 w-4" aria-hidden="true" /> },
+  { tool: 'texture', label: 'Textura', icon: <Square className="h-4 w-4" aria-hidden="true" /> },
   { tool: 'erase-drawing', label: 'Apagar desenho', icon: <Eraser className="h-4 w-4" aria-hidden="true" /> },
 ];
+
+const ICON_LABELS: Record<MapIconKind, string> = { chest: 'Baú', door: 'Porta', 'secret-door': 'Porta secreta', trap: 'Armadilha', stairs: 'Escada', campfire: 'Fogueira', altar: 'Altar', skull: 'Caveira' };
+const TEXTURE_LABELS: Record<FloorTexture, string> = { stone: 'Pedra', dirt: 'Terra', wood: 'Madeira', grass: 'Grama', water: 'Água' };
 
 /** Sem alcance definido e sem linha de visão, a névoa automática abre 6 quadrados (9 m). */
 const DEFAULT_REVEAL_RADIUS = 6;
@@ -131,6 +143,10 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   const [areaKind, setAreaKind] = useState<MapArea['kind']>('circle');
   const [drawColor, setDrawColor] = useState<string>(DRAWING_COLORS[0]);
   const [drawSecret, setDrawSecret] = useState(false);
+  const [selectedIcon, setSelectedIcon] = useState<MapIconKind>('chest');
+  const [floorTexture, setFloorTexture] = useState<FloorTexture>('stone');
+  const [dungeonSeed, setDungeonSeed] = useState('codexveil');
+  const [dungeonSize, setDungeonSize] = useState<DungeonSize>('medium');
   const [secrets, setSecrets] = useState<MapDrawing[]>([]);
   const [noteAt, setNoteAt] = useState<{ x: number; y: number } | null>(null);
   const [noteText, setNoteText] = useState('');
@@ -316,7 +332,10 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
         walls: dungeon.walls.map(([x1, y1, x2, y2]) => [x1, y1, x2, y2, 'stone'] as Wall),
         fogEnabled: true,
         lineOfSight: true,
-        drawings: dungeon.labels.map((label) => ({ type: 'note' as const, x: label.x, y: label.y, text: label.ref, color: DRAWING_COLORS[0] })),
+        drawings: [
+          ...dungeon.labels.map((label) => ({ type: 'note' as const, x: label.x, y: label.y, text: label.ref, color: DRAWING_COLORS[0] })),
+          ...dungeon.doors.map((door) => ({ type: 'icon' as const, x: Math.floor(door.x), y: Math.floor(door.y), icon: door.secret ? 'secret-door' as const : 'door' as const, color: DRAWING_COLORS[0] })),
+        ],
       });
       const legend = dungeon.legend.flatMap((entry) => {
         const label = dungeon.labels.find((item) => item.ref === entry.ref);
@@ -337,6 +356,31 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
     } finally {
       setBusy(false);
       if (dungeonInputRef.current) dungeonInputRef.current.value = '';
+    }
+  };
+
+  const createGeneratedDungeon = async () => {
+    setBusy(true);
+    const client = getSupabaseBrowserClient();
+    try {
+      const dungeon = generateDungeon(dungeonSeed, dungeonSize);
+      const mapId = await createSessionMap(client, { campaignId, sessionId: newSessionId, name: dungeon.title, cols: dungeon.cols, rows: dungeon.rows });
+      await updateSessionMap(client, mapId, {
+        walls: dungeon.walls.map(([x1, y1, x2, y2]) => [x1, y1, x2, y2, 'stone'] as Wall),
+        fogEnabled: true,
+        lineOfSight: true,
+        drawings: [
+          ...dungeon.labels.map((label) => ({ type: 'note' as const, x: label.x, y: label.y, text: label.ref, color: DRAWING_COLORS[0] })),
+          ...dungeon.doors.map((door) => ({ type: 'icon' as const, x: Math.floor(door.x), y: Math.floor(door.y), icon: door.secret ? 'secret-door' as const : 'door' as const, color: DRAWING_COLORS[0] })),
+        ],
+      });
+      await reloadMaps();
+      setSelectedId(mapId);
+      toast({ tone: 'success', title: `Masmorra “${dungeon.title}” criada.`, description: `${dungeon.labels.length} salas numeradas, ${dungeon.doors.length} portas, névoa e linha de visão ligadas.` });
+    } catch (error) {
+      fail('A masmorra não foi gerada', error);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -550,6 +594,15 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
             />
             <Button variant="secondary" icon={<Castle className="h-4 w-4" aria-hidden="true" />} disabled={busy} onClick={() => dungeonInputRef.current?.click()}>
               Importar masmorra
+            </Button>
+            <TextField id={`${id}-semente`} label="Semente da masmorra" maxLength={40} value={dungeonSeed} onChange={(event) => setDungeonSeed(event.target.value)} />
+            <SelectField id={`${id}-tamanho-masmorra`} label="Tamanho" value={dungeonSize} onChange={(event) => setDungeonSize(event.target.value as DungeonSize)}>
+              <option value="small">Pequena</option>
+              <option value="medium">Média</option>
+              <option value="large">Grande</option>
+            </SelectField>
+            <Button variant="secondary" icon={<Castle className="h-4 w-4" aria-hidden="true" />} disabled={busy} onClick={() => void createGeneratedDungeon()}>
+              Gerar masmorra
             </Button>
           </>
         ) : null}
@@ -774,8 +827,13 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
               </p>
             </div>
           ) : null}
-          {tool === 'draw' || tool === 'note' ? (
+          {tool === 'draw' || tool === 'note' || tool === 'icon' ? (
             <div className="flex flex-wrap items-center gap-3">
+              {tool === 'icon' ? (
+                <SelectField id={`${id}-icone`} label="Ícone" value={selectedIcon} onChange={(event) => setSelectedIcon(event.target.value as MapIconKind)}>
+                  {MAP_ICON_KINDS.map((icon) => <option key={icon} value={icon}>{ICON_LABELS[icon]}</option>)}
+                </SelectField>
+              ) : null}
               <div className="flex gap-1.5" role="radiogroup" aria-label="Cor">
                 {DRAWING_COLORS.map((color) => (
                   <button
@@ -791,7 +849,15 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                 ))}
               </div>
               <CheckboxField id={`${id}-segredo`} label="Só eu vejo (armadilhas, segredos)" checked={drawSecret} onChange={(event) => setDrawSecret(event.target.checked)} />
-              <p className="text-xs text-fg-muted">{tool === 'draw' ? 'Arraste para desenhar.' : 'Clique no mapa para escrever uma anotação.'}</p>
+              <p className="text-xs text-fg-muted">{tool === 'draw' ? 'Arraste para desenhar.' : tool === 'icon' ? 'Clique em um quadrado para colocar; use Mover para arrastar ou Apagar desenho para remover.' : 'Clique no mapa para escrever uma anotação.'}</p>
+            </div>
+          ) : null}
+          {tool === 'texture' ? (
+            <div className="flex flex-wrap items-end gap-3">
+              <SelectField id={`${id}-textura`} label="Textura do chão" value={floorTexture} onChange={(event) => setFloorTexture(event.target.value as FloorTexture)}>
+                {FLOOR_TEXTURES.map((texture) => <option key={texture} value={texture}>{TEXTURE_LABELS[texture]}</option>)}
+              </SelectField>
+              <p className="text-xs text-fg-muted">Arraste sobre os quadrados. A pintura é compactada em retângulos leves e aparece no site e no app.</p>
             </div>
           ) : null}
           {tool === 'room' ? (
@@ -853,15 +919,18 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                 onRemoveWall={(index) => patchMap({ walls: map.walls.filter((_, position) => position !== index) })}
                 areaKind={areaKind}
                 drawColor={drawColor}
+                selectedIcon={selectedIcon}
+                floorTexture={floorTexture}
                 secretDrawings={secrets}
                 onAddArea={(shape) => patchMap({ areas: [...map.areas, shape] })}
                 onAddDrawing={addDrawing}
+                onPaintTexture={(area, texture) => patchMap({ drawings: paintMapTexture(map.drawings, area, texture) })}
                 onRequestNote={(point) => {
                   setNoteText('');
                   setNoteAt(point);
                 }}
                 onMoveDrawing={(index, secret, x, y) => {
-                  const move = (list: MapDrawing[]) => list.map((drawing, position) => (position === index && drawing.type === 'note' ? { ...drawing, x, y } : drawing));
+                  const move = (list: MapDrawing[]) => list.map((drawing, position) => (position === index && (drawing.type === 'note' || drawing.type === 'icon') ? { ...drawing, x, y } : drawing));
                   if (secret) saveSecrets(move(secrets));
                   else patchMap({ drawings: move(map.drawings) });
                 }}
@@ -1081,11 +1150,14 @@ function MapTutorial() {
             <li>Escolha a sessão, dê um nome e clique em <strong>Criar mapa</strong>.</li>
             <li>Envie a imagem do mapa e, com a ferramenta <strong>Imagem</strong>, arraste e ajuste a largura até os quadrados combinarem (1 quadrado = 1,5 m).</li>
             <li>Com <strong>Parede</strong>, desenhe as paredes: elas bloqueiam a visão quando a linha de visão está ligada.</li>
+            <li>Sem imagem de fundo, use <strong>Textura</strong> para pintar pedra, terra, madeira, grama ou água diretamente nos quadrados.</li>
+            <li>Use <strong>Ícone</strong> para marcar baús, portas, armadilhas, escadas, fogueiras, altares e caveiras. Marque “Só eu vejo” para segredos; com <strong>Mover</strong> você reposiciona.</li>
             <li>Ligue a <strong>névoa</strong> e use <strong>Revelar névoa</strong>/<strong>Cobrir com névoa</strong> para mostrar só o que o grupo descobriu (ou a névoa automática, que abre o que os tokens enxergam).</li>
           </ol>
         </section>
         <section>
           <h3 className="font-display text-fg">2. Masmorra pronta em um minuto</h3>
+          <p className="mt-1">Informe uma <strong>semente</strong>, escolha pequena, média ou grande e clique em <strong>Gerar masmorra</strong>. O gerador do Codexveil cria salas, corredores, portas, números, paredes, névoa e linha de visão sem serviço externo.</p>
           <ol className="mt-1 list-decimal space-y-1 pl-5">
             <li>
               Abra os{' '}

@@ -26,6 +26,10 @@ Pedido do responsável: parar aqui e **não liberar em produção** enquanto nã
   aplicadas em produção. O `db push` de 2026-11-02 aplicou somente essas duas correções.
 - **APK**: o de 2026-11-01 19:15 UTC (`f6EiER5f…apk`) já tem o LiveKit; **não** tem o módulo de
   transcrição do celular (`expo-speech-recognition`), que exige o próximo APK.
+  A preparação de 2026-11-02 deixou plugin e permissões conferidos, `expo-doctor` 21/21 e
+  fingerprint Android local `25c309628a10712c7d7e692cb90398c97749e5b6`; **nenhum build foi
+  executado**. Entram nesse fingerprint o módulo de fala, suas permissões e os patches `expo`
+  57.0.31, `expo-notifications` 57.0.24 e `expo-router` 57.0.29.
 - **Revisão antes do teste**: `20261102110000_call_security_hardening.sql` restringe
   participantes/transcrição a quem foi
   aprovado, impede convidados/recusados de convidar terceiros, protege a troca de sessão da sala e
@@ -134,6 +138,9 @@ Sem as variáveis, a sala abre e avisa "A call ainda não foi configurada no ser
     continua e somente a transcrição para, com aviso em português. Alternar automaticamente o
     microfone da call foi descartado porque cortaria a voz enviada aos demais. Precisa ser testado
     e documentado em cada aparelho do grupo.
+    O mesmo provedor passou a alimentar o ditado do Tomo. No APK anterior, sem o módulo nativo, o
+    carregamento é protegido e o botão de microfone fica oculto; a atualização JavaScript não
+    quebra o app instalado.
   - Um motor no servidor (agente do LiveKit transcrevendo cada faixa com um serviço de voz pago)
     pode entrar depois sem mudar o resto; não foi feito por ser pago.
 - **Atribuição sem identificar voz**: cada pessoa transcreve a própria voz, e o banco

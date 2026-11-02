@@ -19,3 +19,4 @@ export * from './calls/transcription';
 export * from './calls/highlights';
 export * from './text/ordinals';
 export * from './combat/dungeon-import';
+export * from './combat/dungeon-generator';

@@ -272,6 +272,8 @@ limites (`null` = ilimitado), e não há cobrança, preço nem assinatura simula
 | Largura padrão dos controles só sem outra largura           | Duas classes de largura não se resolvem pela ordem das classes (vale a ordem do CSS); `w-full` só entra sem outra.                                                              |
 | Testes de RLS com PGlite                                    | Testam as policies reais sem Docker nem banco externo, na CI e em qualquer máquina.                                                                                             |
 | Pacotes sem build                                           | Menos configuração, e o mesmo código é usado pelos dois apps.                                                                                                                   |
+| Decoração do mapa no JSON `drawings`                        | Ícones SVG e retângulos de textura evoluem sem imagem no banco nem nova coluna; o site edita e site/app renderizam o mesmo formato compartilhado.                               |
+| Masmorra própria normalizada pelo importador                | O gerador por semente devolve `ImportedDungeon`, igual ao JSON externo, e reaproveita paredes, portas, números, névoa e linha de visão sem dependência nova.                    |
 
 ## Catálogo do SRD, dados e turnos (2026-10-17)
 

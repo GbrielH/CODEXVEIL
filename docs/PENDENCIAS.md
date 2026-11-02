@@ -43,19 +43,19 @@ Conferido no código em 2026-10-27. Tudo abaixo pode ir por atualização OTA (s
 gastar build). Quadros, ações do mestre e perguntas na campanha ficam só no site (o app é só para
 jogar).
 
-| Funcionalidade                                         | Site  | App                          |
-| ------------------------------------------------------ | ----- | ---------------------------- |
-| Responder às perguntas do mestre na criação            | feito | feito                        |
-| Idade na criação                                       | feito | feito                        |
-| Convites pendentes (inclusive convite direto de amigo) | feito | feito                        |
-| Ver as respostas das perguntas na ficha                | feito | **falta**                    |
-| Altura e idade na ficha                                | feito | **falta**                    |
-| Amigos (código, pedidos, lista)                        | feito | **falta**                    |
-| Fichas compartilhadas comigo                           | feito | **falta**                    |
-| Compartilhar minha ficha com amigos                    | feito | **falta**                    |
-| Tomo (chat, voz, imagens, ações)                       | feito | **falta** (o app nunca teve) |
-| Prompts de retrato e de token na ficha                 | feito | **falta**                    |
-| "?" do custo de pontos na criação T20                  | feito | **falta**                    |
+| Funcionalidade                                         | Site  | App                           |
+| ------------------------------------------------------ | ----- | ----------------------------- |
+| Responder às perguntas do mestre na criação            | feito | feito                         |
+| Idade na criação                                       | feito | feito                         |
+| Convites pendentes (inclusive convite direto de amigo) | feito | feito                         |
+| Ver as respostas das perguntas na ficha                | feito | **falta**                     |
+| Altura e idade na ficha                                | feito | **falta**                     |
+| Amigos (código, pedidos, lista)                        | feito | **falta**                     |
+| Fichas compartilhadas comigo                           | feito | **falta**                     |
+| Compartilhar minha ficha com amigos                    | feito | **falta**                     |
+| Tomo (chat, ditado, ações)                             | feito | feito; APK novo para o ditado |
+| Prompts de retrato e de token na ficha                 | feito | **falta**                     |
+| "?" do custo de pontos na criação T20                  | feito | **falta**                     |
 
 Ordem proposta: (1) amigos e "Compartilhados comigo"; (2) ficha: altura, idade, respostas, prompts,
 compartilhar; (3) "?" dos pontos do T20; (4) Tomo no app (chat e ditado).
@@ -84,7 +84,8 @@ compartilhar; (3) "?" dos pontos do T20; (4) Tomo no app (chat e ditado).
 - Login com Google (2026-10-27): Supabase configurado e modelo de recuperação por código enviado;
   app publicado no Google e botões ligados no site e no app. Falta testar o login de verdade e
   trocar a chave secreta (apareceu num print).
-- APK novo: ícones, splash e dados 3D no app (gasta build da cota EAS).
+- APK novo: `expo-speech-recognition`, ícones, splash e dados 3D no app (gasta build da cota EAS;
+  preparado, mas não gerado nesta rodada).
 - Redesign da ficha do app e da tela de sessão.
 - Behind the Magic: aguardando as respostas do Will.
 - Nada desta rodada foi verificado no navegador ou no aparelho (exige login).

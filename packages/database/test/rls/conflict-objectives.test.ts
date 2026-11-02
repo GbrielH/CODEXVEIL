@@ -102,4 +102,42 @@ describe('baralhos do Assimilador', () => {
       '42501',
     );
   });
+
+  it('atualiza só as colunas permitidas em vez de repetir as chaves no ON CONFLICT', async () => {
+    const gm = await db.createUser('mestre-baralho-grant@example.com');
+    const campaign = await createCampaign(db, gm);
+    await db.as(gm, (s) =>
+      s.query(
+        `insert into public.card_decks (campaign_id, deck, pile) values ($1, 'event', '{1,2}')`,
+        [campaign.id],
+      ),
+    );
+
+    await expectSqlError(
+      db.as(gm, (s) =>
+        s.query(
+          `insert into public.card_decks (campaign_id, deck, pile, drawn)
+           values ($1, 'event', '{3}', '{1,2}')
+           on conflict (campaign_id, deck) do update
+           set campaign_id = excluded.campaign_id,
+               deck = excluded.deck,
+               pile = excluded.pile,
+               drawn = excluded.drawn`,
+          [campaign.id],
+        ),
+      ),
+      '42501',
+    );
+
+    const updated = await db.as(gm, (s) =>
+      s.one<{ pile: string[]; drawn: string[] }>(
+        `update public.card_decks
+         set pile = '{3}', drawn = '{1,2}'
+         where campaign_id = $1 and deck = 'event'
+         returning pile, drawn`,
+        [campaign.id],
+      ),
+    );
+    expect(updated).toEqual({ pile: ['3'], drawn: ['1', '2'] });
+  });
 });

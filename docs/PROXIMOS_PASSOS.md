@@ -275,8 +275,12 @@ então ligar em produção. Detalhes em
       `test/rls/map-secrets.test.ts`).
 - [x] Botão do quadro passa a abrir todos os geradores do watabou (`watabou.github.io`); só a
       masmorra é importada em JSON, os outros entram como imagem de fundo.
-- [ ] Ideias anotadas para depois: gerador próprio de masmorra, texturas de chão por área e biblioteca
-      de ícones (baú, porta, armadilha, escada).
+- [x] Gerador próprio de masmorra por semente e tamanho (pequena/média/grande): cria salas,
+      corredores, portas, números, paredes, névoa e linha de visão, sem serviço externo.
+- [x] Texturas leves de pedra, terra, madeira, grama e água, pintadas por quadrados e compactadas
+      em retângulos no mesmo JSON de `drawings` (sem coluna ou migração nova).
+- [x] Biblioteca SVG própria de ícones: baú, porta, porta secreta, armadilha, escada, fogueira,
+      altar e caveira; públicos ou só do mestre, movíveis e apagáveis. O app renderiza o resultado.
 
 ### B0g. Habilidades automáticas (2026-10-27)
 
@@ -323,7 +327,9 @@ Tabela completa em [PENDENCIAS.md](PENDENCIAS.md#0-app-em-paridade-com-o-site-le
 - [x] Tomo no app (2026-11-02): aba Tomo com escolha da campanha (o Tomo conhece a mesa e o seu
       personagem) e cartões de ação com Confirmar, pela rota `/api/assistente/acao` (aceita o token do
       app). O esquema das ações passou para `@codexveil/validation`.
-- [ ] Ditado por voz no Tomo do app: precisa de módulo nativo de reconhecimento de fala (APK novo).
+- [x] Ditado por voz no Tomo do app usando `expo-speech-recognition`: pede permissão, preenche a
+      caixa e mostra erros em português. Em APK antigo, sem o módulo nativo, o botão fica oculto.
+      O próximo APK está preparado, mas **não foi gerado**; o dono precisa autorizar o build.
 
 ### B0e. Amigos e fichas compartilhadas (2026-10-27)
 

@@ -211,6 +211,13 @@ modelo do FinFlow.
 eas build --platform android --profile preview
 ```
 
+Preparação de 2026-11-02 (sem executar build): o próximo APK inclui o módulo nativo
+`expo-speech-recognition` para a transcrição da call e o ditado do Tomo, além dos patches
+recomendados pelo SDK (`expo` 57.0.31, `expo-notifications` 57.0.24 e `expo-router` 57.0.29).
+`npx expo-doctor` passou 21/21 e o fingerprint Android calculado localmente foi
+`25c309628a10712c7d7e692cb90398c97749e5b6`. O APK anterior não recebe essa parte por OTA; o
+dono ainda precisa autorizar o workflow manual de APK.
+
 **Não gere o APK pelo Windows.** O build falha na fase "Configure expo-updates" com "Runtime
 version calculated on local machine not equal to runtime version calculated during build": o
 fingerprint inclui os caminhos de `node_modules/.pnpm`, e no Windows o pnpm encurta esses nomes

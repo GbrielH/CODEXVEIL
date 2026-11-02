@@ -1,5 +1,5 @@
 import type { MapToken, SessionMap } from '@codexveil/database';
-import { areaCells, areaOutline, fogCells, formatMeters, gridDistance, pointInPolygon, tokenSizeSquares, visibilityPolygon, wallBlocksSight, type WallStyle } from '@codexveil/domain';
+import { areaCells, areaOutline, fogCells, formatMeters, gridDistance, pointInPolygon, tokenSizeSquares, visibilityPolygon, wallBlocksSight, type MapIconKind, type WallStyle } from '@codexveil/domain';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, type GestureResponderEvent } from 'react-native';
 import Svg, { Circle, ClipPath, Defs, G, Image as SvgImage, Line, Mask, Path, Pattern, Polygon, Polyline, Rect, Text as SvgText } from 'react-native-svg';
@@ -24,6 +24,18 @@ function initials(label: string): string {
   const words = label.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return '?';
   return (words.length === 1 ? words[0]!.slice(0, 2) : `${words[0]![0]}${words[1]![0]}`).toUpperCase();
+}
+
+function MapIconShape({ icon, color }: { icon: MapIconKind; color: string }) {
+  const common = { fill: 'none', stroke: color, strokeWidth: 0.09, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+  if (icon === 'chest') return <G><Rect x=".14" y=".34" width=".72" height=".48" rx=".08" {...common} /><Path d="M.16 .5h.68M.5 .5v.17" {...common} /></G>;
+  if (icon === 'door') return <G><Path d="M.2 .86V.15h.6v.71M.28 .86V.25h.44v.61" {...common} /><Circle cx=".62" cy=".56" r=".035" fill={color} /></G>;
+  if (icon === 'secret-door') return <G><Path d="M.14 .78h.72M.22 .78V.22h.56v.56" {...common} strokeDasharray={[0.12, 0.08]} /><SvgText x=".5" y=".62" textAnchor="middle" fontSize=".5" fontWeight="700" fill={color}>?</SvgText></G>;
+  if (icon === 'trap') return <G><Path d="M.5 .12l.4 .72H.1zM.5 .38v.22" {...common} /><Circle cx=".5" cy=".71" r=".035" fill={color} /></G>;
+  if (icon === 'stairs') return <Path d="M.12 .82h.2V.65h.2V.48h.2V.31h.2" {...common} />;
+  if (icon === 'campfire') return <G><Path d="M.25 .82l.5-.18M.25 .64l.5 .18M.5 .66c-.22-.18-.18-.38.02-.58.02.18.2.24.2.43 0 .13-.09.25-.22.15z" {...common} /></G>;
+  if (icon === 'altar') return <G><Path d="M.18 .78h.64M.28 .72l.08-.4h.28l.08.4M.24 .28h.52v.12H.24zM.5 .14v.22M.42 .22h.16" {...common} /></G>;
+  return <G><Path d="M.2 .42a.3.3 0 1 1 .6 0c0 .17-.1.26-.18.34v.12H.38V.76C.3 .68.2 .59.2 .42z" {...common} /><Circle cx=".39" cy=".42" r=".055" fill={color} /><Circle cx=".61" cy=".42" r=".055" fill={color} /></G>;
 }
 
 /**
@@ -126,6 +138,11 @@ export function MapBoard({
               <Pattern id="grade" width="1" height="1" patternUnits="userSpaceOnUse">
                 <Path d="M1 0H0V1" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth={1.2 / CELL} />
               </Pattern>
+              <Pattern id="piso-stone" width="1" height="1" patternUnits="userSpaceOnUse"><Rect width="1" height="1" fill="#68645d" /><Path d="M0 .5h1M.5 0v.5M.25 .5V1M.75 .5V1" stroke="#8b867d" strokeWidth=".04" /></Pattern>
+              <Pattern id="piso-dirt" width="1" height="1" patternUnits="userSpaceOnUse"><Rect width="1" height="1" fill="#765435" /><Circle cx=".2" cy=".28" r=".06" fill="#9b7650" /><Circle cx=".72" cy=".68" r=".08" fill="#5c3f29" /></Pattern>
+              <Pattern id="piso-wood" width="1" height="1" patternUnits="userSpaceOnUse"><Rect width="1" height="1" fill="#80542e" /><Path d="M0 .25h1M0 .75h1M.35 0v.25M.7 .25v.5M.25 .75V1" stroke="#b47a45" strokeWidth=".04" /></Pattern>
+              <Pattern id="piso-grass" width="1" height="1" patternUnits="userSpaceOnUse"><Rect width="1" height="1" fill="#496c36" /><Path d="M.2 .8l.05-.25.08.2M.7 .45l.05-.25.08.2" stroke="#7e9d55" strokeWidth=".04" fill="none" /></Pattern>
+              <Pattern id="piso-water" width="1" height="1" patternUnits="userSpaceOnUse"><Rect width="1" height="1" fill="#356b82" /><Path d="M-.1 .3q.25-.18.5 0t.5 0M.1 .72q.25-.18.5 0t.5 0" stroke="#69a9bd" strokeWidth=".05" fill="none" /></Pattern>
               {sight ? (
                 <Mask id="visao">
                   <Rect x="0" y="0" width={map.cols} height={map.rows} fill="white" />
@@ -168,6 +185,7 @@ export function MapBoard({
                   />
                 )
                 : null}
+            {map.drawings.map((drawing, index) => drawing.type === 'texture' ? <Rect key={`piso-${index}`} x={drawing.x} y={drawing.y} width={drawing.width} height={drawing.height} fill={`url(#piso-${drawing.texture})`} /> : null)}
             {map.showGrid ? <Rect x="0" y="0" width={map.cols} height={map.rows} fill="url(#grade)" /> : null}
             {map.areas.map((shape, index) => {
               const cells = areaCells(shape, map.cols, map.rows);
@@ -180,8 +198,13 @@ export function MapBoard({
               );
             })}
             {map.drawings.map((drawing, index) =>
-              drawing.type === 'path' ? (
+              drawing.type === 'texture' ? null : drawing.type === 'path' ? (
                 <Polyline key={`desenho-${index}`} points={drawing.points.map(([x, y]) => `${x},${y}`).join(' ')} fill="none" stroke={drawing.color} strokeWidth={0.08} strokeLinecap="round" strokeLinejoin="round" />
+              ) : drawing.type === 'icon' ? (
+                <G key={`icone-${index}`} transform={`translate(${drawing.x} ${drawing.y})`}>
+                  <Rect x=".04" y=".04" width=".92" height=".92" rx=".12" fill="rgba(20,16,12,.72)" stroke={drawing.color} strokeWidth=".035" />
+                  <MapIconShape icon={drawing.icon} color={drawing.color} />
+                </G>
               ) : (
                 <G key={`nota-${index}`}>
                   <Rect x={drawing.x} y={drawing.y - 0.25} width={Math.max(1, drawing.text.length * 0.17 + 0.4)} height={0.5} rx={0.08} fill="rgba(20,16,12,0.88)" stroke={drawing.color} strokeWidth={0.04} />

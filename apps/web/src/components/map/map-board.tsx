@@ -14,18 +14,21 @@ import {
   movementCrossesWall,
   visibilityPolygon,
   wallBlocksSight,
+  type FloorTexture,
   type GridRect,
   type MapArea,
   type MapDrawing,
+  type MapIconKind,
   type Point,
   type WallStyle,
 } from '@codexveil/domain';
 import { useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useCampaignColors } from '@/components/dice/campaign-colors';
 import { WallPatterns, WallShape } from './wall-art';
+import { FloorPatterns, MapIconShape, floorPatternId } from './map-decorations';
 
 /** Ferramenta do mestre no tabuleiro. */
-export type MapTool = 'move' | 'image' | 'ruler' | 'area' | 'reveal' | 'hide' | 'wall' | 'erase-wall' | 'draw' | 'note' | 'room' | 'erase-drawing';
+export type MapTool = 'move' | 'image' | 'ruler' | 'area' | 'reveal' | 'hide' | 'wall' | 'erase-wall' | 'draw' | 'note' | 'room' | 'icon' | 'texture' | 'erase-drawing';
 
 export const CELL = 40;
 const CREATURE_COLOR = '#571F2B';
@@ -77,12 +80,15 @@ interface MapBoardProps {
   areaKind?: MapArea['kind'];
   /** Cor dos desenhos e anotações. */
   drawColor?: string;
+  selectedIcon?: MapIconKind;
   /** Áreas só desta tela (prévia do jogador, não gravadas). */
   localAreas?: MapArea[];
   /** Desenhos e anotações só do mestre. */
   secretDrawings?: MapDrawing[];
   onAddArea?: (area: MapArea) => void;
   onAddDrawing?: (drawing: MapDrawing) => void;
+  onPaintTexture?: (area: GridRect, texture: FloorTexture) => void;
+  floorTexture?: FloorTexture;
   /** Mestre clicou com a ferramenta "anotação": abre a janela do texto. */
   onRequestNote?: (point: Point) => void;
   /** Apaga um desenho: índice na lista pública ou na secreta. */
@@ -120,10 +126,13 @@ export function MapBoard({
   onRemoveWall,
   areaKind = 'circle',
   drawColor = '#f3e2b3',
+  selectedIcon = 'chest',
   localAreas = [],
   secretDrawings = [],
   onAddArea,
   onAddDrawing,
+  onPaintTexture,
+  floorTexture = 'stone',
   onRequestNote,
   onRemoveDrawing,
   onMoveDrawing,
@@ -268,6 +277,11 @@ export function MapBoard({
       return;
     }
     if (!isGm) return;
+    if (tool === 'icon') {
+      const cell = toCell(point);
+      onAddDrawing?.({ type: 'icon', x: cell.x, y: cell.y, icon: selectedIcon, color: drawColor });
+      return;
+    }
     if (tool === 'draw') {
       event.currentTarget.setPointerCapture(event.pointerId);
       setStroke([[point.x, point.y]]);
@@ -277,7 +291,7 @@ export function MapBoard({
       onRequestNote?.(point);
       return;
     }
-    if (tool === 'reveal' || tool === 'hide') {
+    if (tool === 'reveal' || tool === 'hide' || tool === 'texture') {
       event.currentTarget.setPointerCapture(event.pointerId);
       const cell = toCell(point);
       setArea({ start: cell, end: cell });
@@ -362,7 +376,9 @@ export function MapBoard({
       setDrag(null);
     }
     if (area) {
-      onPaintFog?.(cellRect(area.start, area.end, map.cols, map.rows), tool === 'reveal');
+      const rect = cellRect(area.start, area.end, map.cols, map.rows);
+      if (tool === 'texture') onPaintTexture?.(rect, floorTexture);
+      else onPaintFog?.(rect, tool === 'reveal');
       setArea(null);
     }
   };
@@ -375,7 +391,7 @@ export function MapBoard({
   const shownAreas = [...map.areas.map((entry) => ({ area: entry, local: false })), ...localAreas.map((entry) => ({ area: entry, local: true }))];
   if (areaDraft) shownAreas.push({ area: draftArea(areaDraft), local: true });
   const drawingItems = [
-    ...map.drawings.map((drawing, index) => ({ drawing, index, secret: false })),
+    ...map.drawings.map((drawing, index) => ({ drawing, index, secret: false })).filter((item) => item.drawing.type !== 'texture'),
     ...(isGm ? secretDrawings.map((drawing, index) => ({ drawing, index, secret: true })) : []),
   ];
 
@@ -399,6 +415,7 @@ export function MapBoard({
           <path d="M1 0H0V1" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth={1.2 / CELL} />
         </pattern>
         <WallPatterns uid={uid} />
+        <FloorPatterns uid={uid} />
         {sightPoints ? (
           <mask id={`visao-${uid}`}>
             <rect x="0" y="0" width={map.cols} height={map.rows} fill="white" />
@@ -457,6 +474,9 @@ export function MapBoard({
           </g>
         );
       })}
+      {map.drawings.map((drawing, index) =>
+        drawing.type === 'texture' ? <rect key={`piso-${index}`} x={drawing.x} y={drawing.y} width={drawing.width} height={drawing.height} fill={`url(#${floorPatternId(uid, drawing.texture)})`} /> : null,
+      )}
       {map.showGrid ? <rect x="0" y="0" width={map.cols} height={map.rows} fill={`url(#grade-${uid})`} /> : null}
 
       {/* Áreas de magia: quadrados atingidos e contorno. */}
@@ -495,6 +515,30 @@ export function MapBoard({
             </g>
           );
         }
+        if (drawing.type === 'icon') {
+          const movable = isGm && tool === 'move' && Boolean(onMoveDrawing);
+          const dragging = noteDrag?.index === index && noteDrag.secret === secret;
+          const iconX = dragging ? noteDrag.x : drawing.x;
+          const iconY = dragging ? noteDrag.y : drawing.y;
+          return (
+            <g
+              key={`icone-${secret ? 's' : 'p'}-${index}`}
+              transform={`translate(${iconX} ${iconY})`}
+              opacity={secret ? 0.72 : 1}
+              style={{ pointerEvents: erasing || movable ? 'auto' : 'none', cursor: erasing ? 'pointer' : movable ? 'move' : 'default' }}
+              onPointerDown={erasing ? onErase : movable ? (event) => {
+                event.stopPropagation();
+                svgRef.current?.setPointerCapture(event.pointerId);
+                const point = toGrid(event);
+                setNoteDrag({ index, secret, offsetX: point.x - drawing.x, offsetY: point.y - drawing.y, x: drawing.x, y: drawing.y });
+              } : undefined}
+            >
+              <rect x=".04" y=".04" width=".92" height=".92" rx=".12" fill="rgba(20,16,12,.72)" stroke={drawing.color} strokeWidth=".035" strokeDasharray={secret ? '.12 .08' : undefined} />
+              <MapIconShape icon={drawing.icon} color={drawing.color} />
+            </g>
+          );
+        }
+        if (drawing.type === 'texture') return null;
         const width = Math.max(1, drawing.text.length * 0.17 + 0.4);
         // Mestre com "Mover": arrasta a anotação.
         const movable = isGm && tool === 'move' && Boolean(onMoveDrawing);

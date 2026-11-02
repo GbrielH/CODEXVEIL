@@ -5,6 +5,15 @@
 
 ## Estado atual
 
+**2026-11-02 (gravações, mapas e próximo APK):** a auditoria de `.upsert()`, `.update()` e
+`.insert()` encontrou e corrigiu o `saveCardDeck`, que repetia chaves sem `GRANT UPDATE`; relatório
+em [`AUDITORIA_GRAVACOES_2026-11-02.md`](AUDITORIA_GRAVACOES_2026-11-02.md). O mapa do site agora
+tem oito ícones SVG (inclusive secretos), cinco texturas compactas e gerador próprio de masmorra
+por semente/tamanho; o app renderiza ícones e texturas. O Tomo do app ganhou ditado com fallback
+seguro para APK antigo. `expo-doctor` passou 21/21 depois de alinhar três patches do SDK; fingerprint
+Android local preparado: `25c309628a10712c7d7e692cb90398c97749e5b6`. **Nenhum `eas build` foi
+executado.** Verificações finais e commit desta rodada serão registrados antes da publicação.
+
 **2026-11-02 (call pronta para Preview):** aplicadas no CODEXVEIL as migrações
 `20261102110000_call_security_hardening.sql` e `20261102120000_highlight_generation_lock.sql`. A
 auditoria restringiu convidados/recusados, protegeu vínculos de sessão e corrigiu o dono real no app.

@@ -288,3 +288,9 @@ uma foto diferente da que está nos metadados da conta. As imagens carregam com
 
 O monte (`card_decks.pile`) revela as próximas cartas, então só o mestre o lê. Os jogadores recebem
 apenas a carta mostrada, por uma função `security definer` que confere a participação na campanha.
+
+Em 2026-11-02, a auditoria de grants de coluna encontrou que o cliente usava `upsert` em
+`card_decks`: o PostgREST incluía `campaign_id` e `deck` no `DO UPDATE`, embora `authenticated`
+só possa atualizar `pile`, `drawn` e `shown`. O cliente agora atualiza apenas essas três colunas e
+insere as chaves somente na criação. O teste PGlite reproduz o 42501 e protege o caminho corrigido.
+O inventário completo está em [`AUDITORIA_GRAVACOES_2026-11-02.md`](AUDITORIA_GRAVACOES_2026-11-02.md).

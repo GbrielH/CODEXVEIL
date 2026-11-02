@@ -263,6 +263,11 @@ Migração `20261021110000_session_maps.sql` (grade da sessão): tabelas `sessio
 campanha, RPC `move_my_token` e leitura de `campaigns/{id}/maps/*` só do mapa ativo para jogadores.
 Névoa (`fog_revealed`) e paredes (`walls`) ficam em JSON no próprio mapa.
 
+Ícones e texturas de chão também usam `session_maps.drawings`: ícones são elementos vetoriais com
+tipo e posição; texturas são retângulos compactos por material. Itens “só eu vejo” continuam em
+`session_map_secrets.drawings`, protegidos pela RLS existente. Não foi necessária coluna nem
+migração nova; a gravação respeita o `GRANT UPDATE (drawings)` já aplicado.
+
 Migração `20261021100000_creature_size.sql` (+ `20261021100100_creature_size_grants.sql`):
 `creatures.size` (`tiny`…`gargantuan`, padrão `medium`), lido pela grade da sessão; o bloco do
 mestre nasce com o porte e, no D&D, mudar `stats.size` atualiza `creatures.size` (gatilho

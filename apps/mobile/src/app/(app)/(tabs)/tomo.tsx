@@ -1,7 +1,7 @@
 import { listMyCampaigns } from '@codexveil/database';
 import { describeTomoAction, extractTomoActions, type TomoAction } from '@codexveil/validation';
-import { Send, Sparkles, Trash2 } from 'lucide-react-native';
-import { useRef, useState } from 'react';
+import { Mic, MicOff, Send, Sparkles, Trash2 } from 'lucide-react-native';
+import { useEffect, useRef, useState } from 'react';
 import {
   FlatList,
   Image,
@@ -19,6 +19,7 @@ import { AppText } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
 import { getSupabase, siteUrl } from '@/lib/supabase';
 import { colors, fonts, radii, spacing } from '@/lib/theme';
+import { createDeviceTranscription } from '@/lib/device-transcription';
 
 const TOMO_HERO = require('../../../../assets/images/tomo-heroi.webp') as ImageSourcePropType;
 
@@ -62,8 +63,30 @@ export default function TomoScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState('');
   const [thinking, setThinking] = useState(false);
+  const [dictating, setDictating] = useState(false);
+  // Criado uma vez: o reconhecimento de voz do aparelho (ausente no APK sem o módulo).
+  const [dictation] = useState(() => createDeviceTranscription());
   const list = useRef<FlatList<Message>>(null);
   const counter = useRef(0);
+
+  useEffect(() => () => dictation.stop(), []);
+
+  const toggleDictation = () => {
+    if (dictating) {
+      dictation.stop();
+      setDictating(false);
+      return;
+    }
+    setDictating(true);
+    dictation.start(
+      ({ text }) =>
+        setDraft((current) => `${current}${current.trim() ? ' ' : ''}${text}`.slice(0, 2000)),
+      (message) => {
+        setDictating(false);
+        toast({ tone: 'danger', title: 'O ditado parou', description: message });
+      },
+    );
+  };
 
   const ask = async (text: string) => {
     const question = text.trim();
@@ -275,6 +298,20 @@ export default function TomoScreen() {
           style={styles.input}
           accessibilityLabel="Pergunta para o Tomo"
         />
+        {dictation.supported ? (
+          <IconButton
+            icon={
+              dictating ? (
+                <MicOff size={20} color={colors.danger} />
+              ) : (
+                <Mic size={20} color={colors.fgAccent} />
+              )
+            }
+            accessibilityLabel={dictating ? 'Parar ditado' : 'Ditar pergunta'}
+            disabled={thinking}
+            onPress={toggleDictation}
+          />
+        ) : null}
         <IconButton
           icon={<Send size={20} color={draft.trim() ? colors.fgAccent : colors.fgMuted} />}
           accessibilityLabel="Enviar"

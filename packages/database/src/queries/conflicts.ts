@@ -155,18 +155,28 @@ export async function saveCardDeck(
   campaignId: string,
   deck: CardDeck,
 ): Promise<void> {
-  const { error } = await client
+  // Não use upsert aqui: o ON CONFLICT tentaria atualizar também campaign_id e deck,
+  // colunas imutáveis que o papel authenticated não tem permissão para alterar.
+  const update = await client
     .from('card_decks')
-    .upsert(
-      {
-        campaign_id: campaignId,
-        deck: deck.deck,
-        pile: deck.pile,
-        drawn: deck.drawn,
-        shown: deck.shown as unknown as Json,
-      },
-      { onConflict: 'campaign_id,deck' },
-    );
+    .update({
+      pile: deck.pile,
+      drawn: deck.drawn,
+      shown: deck.shown as unknown as Json,
+    })
+    .eq('campaign_id', campaignId)
+    .eq('deck', deck.deck)
+    .select('campaign_id');
+  if (update.error) throw toAppError(update.error);
+  if (update.data.length > 0) return;
+
+  const { error } = await client.from('card_decks').insert({
+    campaign_id: campaignId,
+    deck: deck.deck,
+    pile: deck.pile,
+    drawn: deck.drawn,
+    shown: deck.shown as unknown as Json,
+  });
   if (error) throw toAppError(error);
 }
 
