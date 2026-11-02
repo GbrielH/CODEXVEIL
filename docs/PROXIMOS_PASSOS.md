@@ -869,7 +869,7 @@ de segurança).
 - [x] Mensagem da taverna voltava como não lida ao reabrir o app: a marca de leitura usava o
       relógio do celular e a comparação era por texto. Agora marca até a última mensagem vista
       (horário do servidor) e compara como data.
-- [ ] Painel e Personagens do app mostram "Algo deu errado": investigando (falta a mensagem exibida).
+- [ ] Painel e Personagens do app mostram "Algo deu errado": investigando (falta a mensagem exibida); o app agora mostra o código técnico junto com "Algo deu errado".
 
 ### 2026-11-02 (noite) — iniciativa no mapa, condições, luz e escuridão; call
 
