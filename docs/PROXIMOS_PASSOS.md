@@ -864,6 +864,11 @@ de segurança).
 
 ## Histórico
 
+### 2026-11-03 — dados no app
+
+- [x] O aviso com o resultado da rolagem aparecia antes dos dados 3D caírem: agora só aparece quando
+      a animação termina (ou some, se a cena não carregar).
+
 ### 2026-11-02 (noite) — APK novo
 
 - [x] Causa do "Algo deu errado" no Painel/Personagens do app: o APK instalado (build de 01/11,

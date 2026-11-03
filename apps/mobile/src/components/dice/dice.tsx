@@ -16,10 +16,18 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
-import { Platform, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 import { Button } from '@/components/ui/button';
 import { CheckRow, Chip, ChipRow } from '@/components/ui/controls';
@@ -73,7 +81,13 @@ export function DiceProvider({
 }) {
   const toast = useToast();
   const [throwing, setThrowing] = useState<(ShownRoll & { key: number }) | null>(null);
-  const clearThrow = useCallback(() => setThrowing(null), []);
+  // O aviso com o resultado só aparece quando a animação termina (antes ele chegava primeiro).
+  const pendingToast = useRef<(() => void) | null>(null);
+  const clearThrow = useCallback(() => {
+    setThrowing(null);
+    pendingToast.current?.();
+    pendingToast.current = null;
+  }, []);
   // Aparência dos dados (dado do personagem ou o padrão de "Meus dados"), lida uma vez.
   const [look, setLook] = useState<DiceAppearance | null>(null);
   useEffect(() => {
@@ -117,13 +131,15 @@ export function DiceProvider({
         return null;
       }
       // Uma rolagem nova substitui a animação anterior (só uma por vez na tela).
+      pendingToast.current?.();
       setThrowing({ ...shown, key: Date.now() });
       const natural = naturalD20(shown);
-      toast({
-        tone: natural === 20 ? 'success' : natural === 1 ? 'danger' : 'info',
-        title: `${shown.label ? `${shown.label}: ` : ''}${rollHeadline(shown)}${natural === 20 ? ' (20 natural!)' : natural === 1 ? ' (1 natural)' : ''}`,
-        description: `${describeRoll(shown)}${shown.mode !== 'normal' ? ` · ${diceRollModeLabels[shown.mode]}` : ''}${shown.secret ? ' · secreta' : ''}`,
-      });
+      pendingToast.current = () =>
+        toast({
+          tone: natural === 20 ? 'success' : natural === 1 ? 'danger' : 'info',
+          title: `${shown.label ? `${shown.label}: ` : ''}${rollHeadline(shown)}${natural === 20 ? ' (20 natural!)' : natural === 1 ? ' (1 natural)' : ''}`,
+          description: `${describeRoll(shown)}${shown.mode !== 'normal' ? ` · ${diceRollModeLabels[shown.mode]}` : ''}${shown.secret ? ' · secreta' : ''}`,
+        });
       return shown;
     },
     [campaignId, characterId, toast],
@@ -282,7 +298,10 @@ export function DicePanel({
                     }}
                     accessibilityRole="button"
                     accessibilityLabel={`Rolar ${skill.label}`}
-                    style={({ pressed }) => [styles.skillRow, pressed && { backgroundColor: colors.hover }]}
+                    style={({ pressed }) => [
+                      styles.skillRow,
+                      pressed && { backgroundColor: colors.hover },
+                    ]}
                   >
                     <AppText style={{ flex: 1 }}>{skill.label}</AppText>
                     <AppText style={{ color: colors.fgAccent }}>
@@ -367,8 +386,7 @@ export function DicePanel({
 }
 
 /** Comparação sem acento e sem caixa (busca de perícias). */
-const plain = (text: string) =>
-  text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const plain = (text: string) => text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 const styles = StyleSheet.create({
   skills: {
