@@ -23,6 +23,8 @@ automatizados, typechecks e builds passaram (`pnpm check`: 20/20, 699 aprovados 
 pulados; `pnpm build`: 2/2). O dry-run listou somente a nova migração. Status: **falta validar ao
 vivo**, porque ainda não houve uso manual no navegador/aparelho nem aplicação da migração
 `20261103150000_triangle_agency.sql` em produção.
+Em 2026-11-03, a migração foi corrigida para liberar os tipos próprios das entradas do livro; o
+pacote real passou na conferência estrutural e o teste de importação/RLS passou no PGlite.
 
 O código do MVP está completo na web, o app mobile cobre os fluxos prioritários e o banco
 tem RLS testado. Em 2026-10-17, `pnpm check` passou em 20 de 20 tarefas (366 testes) e

@@ -5,7 +5,10 @@
 A migração `20261103150000_triangle_agency.sql` adiciona somente a referência
 `rpg_systems.id = 'triangle-agency'`. Fichas continuam em `characters.sheet` (JSON validado pelo
 módulo) e livros usam `book_packs`/`book_entries`; não há nova tabela, política RLS ou segredo.
-O dry-run de 2026-11-03 listou somente essa migração; ela não foi aplicada em produção.
+A mesma migração amplia `book_entries_kind_check` com os seis tipos próprios do livro e atualiza a
+regra de leitura: ARC, habilidades e requisições podem ser lidos pelos jogadores da campanha;
+`locked_document` continua restrito ao dono e aos mestres. O dry-run de 2026-11-03 listou somente
+essa migração; ela não foi aplicada em produção.
 
 O esquema fica em `supabase/migrations/` (Postgres 17 no Supabase). As regras de acesso estão
 em [`SECURITY.md`](SECURITY.md).

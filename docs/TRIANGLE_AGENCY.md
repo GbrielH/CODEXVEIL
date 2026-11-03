@@ -47,4 +47,6 @@ Requisições na biblioteca.
 - `supabase db push --dry-run`: somente `20261103150000_triangle_agency.sql`, sem aplicar em
   produção;
 - pacote privado: 446 entradas, zero chaves repetidas;
+- importação no banco coberta por teste com todos os tipos próprios; Documentos Bloqueados ficam
+  restritos ao dono e aos mestres;
 - sem teste manual no navegador ou aparelho nesta rodada.

@@ -5,6 +5,14 @@
 
 ## Estado atual
 
+**2026-11-03 (importação do Triangle Agency):** corrigida a migração para permitir no banco os
+tipos próprios do pacote (`arc_anomaly`, `arc_reality`, `arc_competency`, `anomalous_ability`,
+`requisition` e `locked_document`). O arquivo real foi conferido: 446 entradas, zero tipos
+inválidos, zero duplicatas e maior entrada com 5.188 bytes. Database: 241 testes aprovados e 11 ao
+vivo pulados; lint e typecheck do pacote passaram. O dry-run continua listando somente
+`20261103150000_triangle_agency.sql`; nada foi aplicado em produção. Próximo passo exato: aplicar
+a migração quando o responsável pedir a publicação e então importar o pacote novamente.
+
 **2026-11-03 (Triangle Agency):** quarto sistema completo, modelado diretamente do livro e sem
 reaproveitar regras dos demais. Motor próprio de 6d4/GQs/Burnout/Caos/Triscendência/Estabilidade,
 ARC, Méritos, Pontas Soltas, Tempo, conflitos, Requisições, Relatório de Missão e Anomalias do

@@ -215,4 +215,55 @@ describe('livros importados', () => {
       ),
     ).toEqual([]);
   });
+
+  it('importa os tipos do Triangle Agency e mantém documentos bloqueados só para mestres', async () => {
+    const owner = await db.createUser('diretor-triangle@example.com');
+    const player = await db.createUser('agente-triangle@example.com');
+    const campaign = await db.as(owner, (s) =>
+      s.one<{ id: string }>(
+        `insert into public.campaigns (name, system_id)
+         values ('Operação Triangle', 'triangle-agency') returning id`,
+      ),
+    );
+    await addMember(db, campaign.id, player);
+    const pack = await db.as(owner, (s) =>
+      s.one<{ id: string }>(
+        `insert into public.book_packs (system_id, book_key, name, category, edition)
+         values ('triangle-agency', 'triangle-agency', 'Triangle Agency', 'core', 'Primeira edição')
+         returning id`,
+      ),
+    );
+    await db.as(owner, (s) =>
+      s.query(
+        `insert into public.book_entries (pack_id, kind, key, name, data) values
+         ($1, 'arc_anomaly', 'sussurro', 'Sussurro', '{"page":60,"body":""}'::jsonb),
+         ($1, 'arc_reality', 'cuidador', 'Cuidador', '{"page":80,"body":""}'::jsonb),
+         ($1, 'arc_competency', 'rp', 'RP', '{"page":100,"body":""}'::jsonb),
+         ($1, 'anomalous_ability', 'habilidade', 'Habilidade', '{"page":1,"body":""}'::jsonb),
+         ($1, 'requisition', 'pagina-128', 'Requisição', '{"page":128,"body":""}'::jsonb),
+         ($1, 'locked_document', 'documento-198', 'Documento', '{"page":198,"body":""}'::jsonb)`,
+        [pack.id],
+      ),
+    );
+    await db.as(owner, (s) =>
+      s.query(`update public.book_packs set is_ready = true where id = $1`, [pack.id]),
+    );
+    await releaseBooks(owner, campaign.id, ['triangle-agency']);
+
+    const playerKinds = await db.as(player, (s) =>
+      s.query<{ kind: string }>(`select kind from public.book_entries order by kind`),
+    );
+    expect(playerKinds.map(({ kind }) => kind)).toEqual([
+      'anomalous_ability',
+      'arc_anomaly',
+      'arc_competency',
+      'arc_reality',
+      'requisition',
+    ]);
+    expect(
+      await db.as(owner, (s) =>
+        s.query(`select 1 from public.book_entries where kind = 'locked_document'`),
+      ),
+    ).toHaveLength(1);
+  });
 });

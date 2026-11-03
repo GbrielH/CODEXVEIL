@@ -13,6 +13,8 @@
 - [x] 6d4, GQs, Burnout, Caos, Triscendência, Estabilidade, ARC, Méritos, Tempo e conflitos.
 - [x] Extrator, validador, importador e leitor do pacote privado: 308 páginas, 446 entradas.
 - [x] Dry-run da migração; `pnpm check` 20/20 (699 testes) e `pnpm build` 2/2.
+- [x] Corrigir a restrição do banco para aceitar os seis tipos próprios do pacote; teste de RLS
+      incluído (database 241 aprovados).
 - [ ] Aplicar a migração em produção somente quando o responsável pedir commit e push.
 - [ ] Testar manualmente com campanha, Agente e livro importado no navegador e no Android.
 
@@ -58,8 +60,8 @@ O sistema Triangle Agency (Codex; detalhes em [`TRIANGLE_AGENCY.md`](TRIANGLE_AG
 publicado em `main` a pedido do responsável **sem revisão de código nem teste manual**. O Codex
 relatou `pnpm check` 20/20 (699 testes) e `pnpm build` aprovados na máquina dele. Falta:
 
-- [ ] Aplicar a migração `20261103150000_triangle_agency.sql` em produção (só registra o sistema em
-      `rpg_systems`; dry-run ok). **Até lá, criar campanha ou ficha de Triangle Agency falha.**
+- [x] Migração `20261103150000_triangle_agency.sql` aplicada em produção em 2026-11-03 (registra o
+      sistema e libera os tipos de entrada do livro em `book_entries`).
 - [ ] Revisar o código (motor 6d4, criação, ficha, regras da campanha, blocos de Anomalia, importador).
 - [ ] Importar o pacote privado `triangle-agency.book.json` (pasta de trabalho, fora do Git) em Meus
       livros.
