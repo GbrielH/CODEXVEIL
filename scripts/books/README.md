@@ -51,7 +51,7 @@ repositório. Gere tudo numa pasta fora do projeto (por exemplo, `Documents/Code
 
 10. **Ameaças de Arton** (`AMEAÇAS DE ARTON.pdf`): `layout.py` → `layout/AMEACAS.jsonl`, depois
     `python -X utf8 scripts/books/t20_ameacas.py <saída>/layout/AMEACAS.jsonl <saída>/out/t20-ameacas.book.json`
-    (id `t20-ameacas`; 367 ameaças com ficha e descrição em 2026-11-03).
+    (id `t20-ameacas`; 429 ameaças com ficha e descrição em 2026-11-03, uma por bloco "Pontos de Vida" do PDF).
 
 Veja o andamento e o que falta em `docs/PROXIMOS_PASSOS.md` ("Continuidade").
 

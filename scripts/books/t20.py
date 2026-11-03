@@ -585,15 +585,15 @@ STAT_FIELDS = ('Iniciativa', 'Defesa', 'Pontos de Vida', 'Pontos de Mana', 'Desl
                'Perícias', 'Equipamento', 'Tesouro')
 
 
-def threats(book, first_page=288, last_page=329, nd_sizes=(11.0, 16.0)):
+def threats(book, first_page=288, last_page=329, nd_sizes=(11.0, 16.0), titles=None):
     """Fichas de ameaças: título (21) + "ND x" (16) + bloco em SourceSansPro."""
     out = []
     start, end = book.index_of_page(first_page), book.index_of_page(last_page + 1)
     # Cada ficha tem um marcador "ND x" (fonte 16 ou 11) logo depois do nome (título de 21 ou 16).
     markers = [k for k in range(start, end) if book.rows[k]['f'].startswith(TITLE) and round(book.rows[k]['s'], 1) in nd_sizes
                and re.match(r'^ND\s', book.texts[k], re.I)]
-    titles = []
-    for k in markers:
+    found_titles, titles = titles, []
+    for k in markers if found_titles is None else []:
         lines = [j for j in range(max(k - 4, start), k) if book.rows[j]['f'].startswith(TITLE) and book.rows[j]['s'] >= 16 and book.texts[j]
                  and not re.match(r'^ND\s', book.texts[j], re.I) and book.rows[j]['c'] == book.rows[k]['c']]
         if lines:
@@ -604,6 +604,8 @@ def threats(book, first_page=288, last_page=329, nd_sizes=(11.0, 16.0)):
             name = re.sub(r'\s*ND\s*[\d/]+\s*$', '', book.texts[k]).strip()
             if name:
                 titles.append((k, name, k))
+    if found_titles is not None:
+        titles = list(found_titles)  # (última linha antes da ficha, nome, primeira linha do nome)
     titles.sort()
     for n, (last_line, name, first_line) in enumerate(titles):
         stop = titles[n + 1][2] if n + 1 < len(titles) else end
