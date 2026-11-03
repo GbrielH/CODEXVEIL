@@ -864,6 +864,16 @@ de segurança).
 
 ## Histórico
 
+### 2026-11-03 — escolhas de raça do Tormenta20
+
+- [x] Raças com escolhas na criação (site e app): grupos de opções no pacote (`choices` em
+      `t20RaceSchema`), com atributos, atributos à escolha, tamanho e deslocamento por opção; a ficha
+      recebe cada escolha como habilidade de raça. Ameaças de Arton: Golem desperto (chassi, fonte de
+      energia e tamanho), Moreau (12 heranças) e Kallyanach (+2 em um ou +1 em dois; duas de seis
+      bênçãos). Golem desperto de ferro, médio = For +2, Con +1, Car –1 (igual ao Golem do livro
+      básico). Teste `race-choices.test.ts` (3). Restrições de texto (ex.: chassi de carne não usa fonte
+      elemental de água/fogo) não são validadas.
+
 ### 2026-11-03 — Ameaças de Arton
 
 - [x] Pacote `t20-ameacas` (Ameaças de Arton) gerado do PDF do responsável por

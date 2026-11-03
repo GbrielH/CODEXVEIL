@@ -52,6 +52,7 @@ import {
   type T20Draft,
   type T20Skill,
   type T20Step,
+  t20RaceOptionAttributeChoice,
 } from '@codexveil/rpg-systems/tormenta20';
 import { characterCreateSchema } from '@codexveil/validation';
 import { useRouter } from 'expo-router';
@@ -130,6 +131,7 @@ export function T20MobileWizard({
   );
   const klass = findT20Class(content, draft.classId);
   const race = findT20Race(content, draft.raceId);
+  const optionAttributeChoice = race ? t20RaceOptionAttributeChoice(race, draft) : undefined;
   const origin = findT20Origin(content, draft.originId);
   const attrs = t20FinalAttributes(content, draft);
   const powerLevels = klass ? t20PowerLevels(klass, draft.level) : [];
@@ -491,6 +493,8 @@ export function T20MobileWizard({
                   raceId: entry.id,
                   raceAttributeChoices: [],
                   raceVariant: '',
+                  raceChoices: {},
+                  raceOptionAttributeChoices: [],
                   raceSkills: [],
                   raceSkillPower: '',
                 })
@@ -519,6 +523,46 @@ export function T20MobileWizard({
               }))}
             />
           ) : null}
+          {race?.choices.map((group) =>
+            group.pick === 1 ? (
+              <PickerField
+                key={group.name}
+                label={group.name}
+                value={draft.raceChoices[group.name]?.[0] ?? ''}
+                onChange={(name) =>
+                  update({
+                    raceChoices: { ...draft.raceChoices, [group.name]: name ? [name] : [] },
+                    raceOptionAttributeChoices: [],
+                  })
+                }
+                options={group.options.map((option) => ({
+                  value: option.name,
+                  label: option.name,
+                }))}
+              />
+            ) : (
+              <View key={group.name}>
+                {multi(
+                  group.name,
+                  group.pick,
+                  group.options.map((option) => ({ id: option.name, name: option.name })),
+                  draft.raceChoices[group.name] ?? [],
+                  (value) => update({ raceChoices: { ...draft.raceChoices, [group.name]: value } }),
+                )}
+              </View>
+            ),
+          )}
+          {optionAttributeChoice
+            ? multi(
+                `Atributos com +${optionAttributeChoice.value}`,
+                optionAttributeChoice.count,
+                T20_ATTRIBUTES.filter((key) => !optionAttributeChoice.exclude.includes(key)).map(
+                  (key) => ({ id: key, name: t20AttributeLabels[key].name }),
+                ),
+                draft.raceOptionAttributeChoices,
+                (value) => update({ raceOptionAttributeChoices: value as T20Attribute[] }),
+              )
+            : null}
         </View>
       ) : null}
 

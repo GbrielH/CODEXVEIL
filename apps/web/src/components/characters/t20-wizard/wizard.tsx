@@ -51,6 +51,8 @@ import {
   t20PowerLevels,
   t20PowerOptions,
   t20PrerequisiteProblems,
+  t20RaceChoiceOptions,
+  t20RaceOptionAttributeChoice,
   t20SizeLabels,
   t20SpellCount,
   t20StepLabels,
@@ -182,6 +184,8 @@ export function T20CreationWizard({ campaign, sources, remoteDraft = null }: T20
   );
   const klass = findT20Class(content, draft.classId);
   const race = findT20Race(content, draft.raceId);
+  const raceOptions = race ? t20RaceChoiceOptions(race, draft) : [];
+  const optionAttributeChoice = race ? t20RaceOptionAttributeChoice(race, draft) : undefined;
   const origin = findT20Origin(content, draft.originId);
   const finalAttributes = t20FinalAttributes(content, draft);
   const powerLevels = klass ? t20PowerLevels(klass, draft.level) : [];
@@ -407,6 +411,8 @@ export function T20CreationWizard({ campaign, sources, remoteDraft = null }: T20
                     raceId,
                     raceAttributeChoices: [],
                     raceVariant: '',
+                    raceChoices: {},
+                    raceOptionAttributeChoices: [],
                     raceSkills: [],
                     raceSkillPower: '',
                   })
@@ -442,6 +448,81 @@ export function T20CreationWizard({ campaign, sources, remoteDraft = null }: T20
                     </option>
                   ))}
                 </SelectField>
+              ) : null}
+              {race?.choices.map((group) =>
+                group.pick === 1 ? (
+                  <SelectField
+                    key={group.name}
+                    id={`t20-choice-${group.name}`}
+                    label={group.name}
+                    value={draft.raceChoices[group.name]?.[0] ?? ''}
+                    onChange={(event) =>
+                      update({
+                        raceChoices: {
+                          ...draft.raceChoices,
+                          [group.name]: event.target.value ? [event.target.value] : [],
+                        },
+                        raceOptionAttributeChoices: [],
+                      })
+                    }
+                  >
+                    <option value="">Escolha</option>
+                    {group.options.map((option) => (
+                      <option key={option.name} value={option.name}>
+                        {option.name}
+                        {Object.keys(option.attributes).length
+                          ? ` (${attributeText(option.attributes)})`
+                          : ''}
+                        {option.attributeChoice
+                          ? ` (+${option.attributeChoice.value} em ${option.attributeChoice.count} à escolha)`
+                          : ''}
+                      </option>
+                    ))}
+                  </SelectField>
+                ) : (
+                  <MultiPick
+                    key={group.name}
+                    label={`${group.name} (escolha ${group.pick})`}
+                    count={group.pick}
+                    options={group.options.map((option) => ({
+                      id: option.name,
+                      name: option.name,
+                    }))}
+                    value={draft.raceChoices[group.name] ?? []}
+                    onChange={(names) =>
+                      update({ raceChoices: { ...draft.raceChoices, [group.name]: names } })
+                    }
+                  />
+                ),
+              )}
+              {errorFor('raceChoices') ? (
+                <Alert tone="danger">{errorFor('raceChoices')}</Alert>
+              ) : null}
+              {race && optionAttributeChoice ? (
+                <MultiPick
+                  label={`Atributos com +${optionAttributeChoice.value} (escolha ${optionAttributeChoice.count})`}
+                  count={optionAttributeChoice.count}
+                  options={T20_ATTRIBUTES.filter(
+                    (key) => !optionAttributeChoice.exclude.includes(key),
+                  ).map((key) => ({
+                    id: key,
+                    name: t20AttributeLabels[key].name,
+                  }))}
+                  value={draft.raceOptionAttributeChoices}
+                  onChange={(keys) =>
+                    update({ raceOptionAttributeChoices: keys as T20Attribute[] })
+                  }
+                  error={errorFor('raceOptionAttributeChoices')}
+                />
+              ) : null}
+              {race && raceOptions.length ? (
+                <FeatureList
+                  title="Suas escolhas de raça"
+                  items={raceOptions.map((option) => ({
+                    name: `${option.group}: ${option.name}`,
+                    text: option.text,
+                  }))}
+                />
               ) : null}
               {race ? (
                 <FeatureList

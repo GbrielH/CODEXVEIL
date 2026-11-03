@@ -439,6 +439,131 @@ def golem_section(book):
     return [{'name': a['name'], 'text': a['text'][:4000]} for a in out]
 
 
+
+ATTR_WORDS = {'forca': 'for', 'destreza': 'des', 'constituicao': 'con', 'inteligencia': 'int', 'sabedoria': 'sab', 'carisma': 'car'}
+
+
+def attr_mods(text):
+    """Atributos de um texto ("Constituição +2, Força +1, Carisma –1") em {'con': 2, 'for': 1, 'car': -1}."""
+    out = {}
+    for word, value in re.findall(r'(Força|Destreza|Constituição|Inteligência|Sabedoria|Carisma)\s*([+–\-]\s*\d)', text):
+        out[ATTR_WORDS[plain(word)]] = int(value.replace('–', '-').replace(' ', ''))
+    return out
+
+
+def bullets(text):
+    """Opções em lista ("- Barro. Constituição +2. …") de um texto de habilidade: (intro, [(nome, texto)])."""
+    # "… magias. e - Sentidos Dracônicos." (um "e" solto no PDF antes do item) também separa.
+    parts = re.split(r'\s*(?:\n-|(?<=[.:)])\s+(?:e\s+)?-|•)\s*(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇ][^.]{1,40}\.)', text)
+    intro, items = parts[0].strip(), []
+    for part in parts[1:]:
+        name, _, rest = part.partition('.')
+        items.append((name.strip(), rest.strip()))
+    return intro, items
+
+
+def choice_option(name, text, **extra):
+    first = text.split('.')[0]
+    data = {'name': name[:80], 'text': f'{name}. {text}'.strip()[:4000], 'attributes': attr_mods(first)}
+    choice = re.search(r'\+(\d) em (um|dois|três) atributos?', first)
+    if choice:
+        data['attributeChoice'] = {'count': WORD_COUNT[plain(choice.group(2))], 'value': int(choice.group(1)), 'exclude': []}
+    # Só o deslocamento base ("Seu deslocamento é 6m"); voo, escalada etc. ficam no texto.
+    speed = re.search(r'[Ss]eu deslocamento é (\d+(?:,\d)?)m', text)
+    if speed:
+        data['speed'] = float(speed.group(1).replace(',', '.'))
+    data.update(extra)
+    return data
+
+
+def golem_choices(data):
+    """Golem desperto: chassi, fonte de energia e tamanho viram escolhas; o resto continua habilidade."""
+    groups, keep = [], []
+    for ability in data['abilities']:
+        intro, items = bullets(ability['text'])
+        if ability['name'] in ('Chassi', 'Fonte de energia', 'Tamanho') and items:
+            options = []
+            for name, text in items:
+                extra = {}
+                if ability['name'] == 'Tamanho':
+                    extra['size'] = {'pequeno': 'pequeno', 'medio': 'medio', 'grande': 'grande'}[plain(name)]
+                options.append(choice_option(name, text, **extra))
+            groups.append({'name': ability['name'], 'pick': 1, 'options': options})
+            keep.append({'name': ability['name'], 'text': intro})
+        else:
+            keep.append(ability)
+    data['abilities'], data['choices'] = keep, groups
+    data['speed'] = 9  # base; os chassis de ferro, carne, pedra etc. mudam para 6m
+
+
+def kallyanach_choices(data):
+    """Kallyanach: "+2 em um atributo ou +1 em dois" e duas bênçãos de Kallyadranoch."""
+    data.pop('attributeChoice', None)
+    groups = [{'name': 'Bônus de atributo', 'pick': 1, 'options': [
+        {'name': '+2 em um atributo', 'text': '', 'attributes': {}, 'attributeChoice': {'count': 1, 'value': 2, 'exclude': []}},
+        {'name': '+1 em dois atributos', 'text': '', 'attributes': {}, 'attributeChoice': {'count': 2, 'value': 1, 'exclude': []}},
+    ]}]
+    keep = []
+    for ability in data['abilities']:
+        intro, items = bullets(ability['text'])
+        if plain(ability['name']).startswith('bencao') and items:
+            groups.append({'name': ability['name'], 'pick': 2, 'options': [choice_option(n, t) for n, t in items]})
+            keep.append({'name': ability['name'], 'text': intro})
+        else:
+            keep.append(ability)
+    data['abilities'], data['choices'] = keep, groups
+
+
+def moreau_choices(data):
+    """Moreau: cada herança (págs. 306-308) dá +1 num atributo e três habilidades; +1 em dois é da raça."""
+    import pymupdf
+    doc = pymupdf.open(PDF)
+    heritages, current = [], None
+    for page in range(306, 309):
+        pg = doc[page - 1]
+        lines = []
+        for block in pg.get_text('dict')['blocks']:
+            for line in block.get('lines', []):
+                spans = [s for s in line['spans'] if s['text'].strip()]
+                if spans:
+                    lines.append(spans)
+        middle = pg.rect.width / 2
+        lines.sort(key=lambda spans: (spans[0]['bbox'][0] > middle - 10, spans[0]['bbox'][1] // 4, spans[0]['bbox'][0]))
+        for spans in lines:
+            text = ''.join(s['text'] for s in spans).strip()
+            if re.match(r'^Herança d[aoe]s? ', text) and spans[0]['size'] > 9.8:
+                current = {'name': text, 'attrs': '', 'abilities': []}
+                heritages.append(current)
+                continue
+            if current is None or spans[0]['size'] < 8.5 or spans[0]['size'] > 10.5:
+                continue
+            if not current['attrs'] and re.match(r'^(Força|Destreza|Constituição|Inteligência|Sabedoria|Carisma)', text):
+                current['attrs'] = text
+                continue
+            m = re.match(r'^(.{2,70}?[.!])\s*(.*)$', text)
+            head = ''.join(s['text'] for s in spans if 'Black' in s['font'] or 'Bold' in s['font']).strip()
+            if head and m and len(head) >= len(m.group(1)) - 4:
+                current['abilities'].append([m.group(1).rstrip('.'), m.group(2)])
+            elif current['abilities']:
+                current['abilities'][-1][1] = join_lines([current['abilities'][-1][1], text])
+    options = []
+    for h in heritages:
+        text = '\n'.join(f'{name}. {body}' for name, body in h['abilities'])
+        extra = {}
+        speed = re.search(r'[Ss]eu deslocamento é (\d+(?:,\d)?)m', text)
+        if speed:
+            extra['speed'] = float(speed.group(1).replace(',', '.'))  # Raposa e Coelho: 12m
+        if re.search(r'Você é Grande', text):
+            extra['size'] = 'grande'  # Urso
+        options.append({'name': h['name'][:80], 'text': text[:4000], 'attributes': attr_mods(h['attrs']), **extra})
+    data['choices'] = [{'name': 'Herança', 'pick': 1, 'options': options}] if options else []
+    # As habilidades das heranças saem da lista geral (ficam só na herança escolhida).
+    own = {name for h in heritages for name, _ in h['abilities']}
+    data['abilities'] = [a for a in data['abilities'] if a['name'] not in own]
+    data['attributes'] = {}
+    data['attributeChoice'] = {'count': 2, 'value': 1, 'exclude': []}
+
+
 def races(book):
     out = []
     for r in race_table(book):
@@ -480,6 +605,12 @@ def races(book):
             data['summary'] = ('Versão ampliada do golem do livro básico: escolha o material do chassi (barro, bronze, '
                                'carne, espelhos, ferro…), a fonte de energia e o tamanho. O golem do livro básico equivale '
                                'ao chassi de ferro, fonte elemental, tamanho Médio. ' + data['summary'])[:4000]
+        if plain(r['name']) == 'golem':
+            golem_choices(data)
+        elif plain(r['name']) == 'kallyanach':
+            kallyanach_choices(data)
+        elif plain(r['name']) == 'moreau' and PDF:
+            moreau_choices(data)
         out.append(entry('species', name, data))
     return out
 

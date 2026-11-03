@@ -95,6 +95,10 @@ export interface T20Draft {
   /** Atributos escolhidos para o "+1 em três atributos diferentes". */
   raceAttributeChoices: T20Attribute[];
   raceVariant: string;
+  /** Escolhas da raça (grupo → opções escolhidas), como a herança do Moreau ou o chassi do golem. */
+  raceChoices: Record<string, string[]>;
+  /** Atributos da opção escolhida com "+1 em dois atributos" (chassi de bronze, bônus do Kallyanach). */
+  raceOptionAttributeChoices: T20Attribute[];
   /** Humano (Versátil): duas perícias; a segunda pode virar um poder geral. */
   raceSkills: T20Skill[];
   raceSkillPower: string;
@@ -162,6 +166,8 @@ export function createT20Draft(level = 1, method: T20AttributeMethodChoice = 'po
     raceId: '',
     raceAttributeChoices: [],
     raceVariant: '',
+    raceChoices: {},
+    raceOptionAttributeChoices: [],
     raceSkills: [],
     raceSkillPower: '',
     classId: '',
@@ -239,7 +245,34 @@ export function t20RaceModifiers(
   if (race.attributeChoice)
     for (const key of draft.raceAttributeChoices.slice(0, race.attributeChoice.count))
       mods[key] += race.attributeChoice.value;
+  for (const option of t20RaceChoiceOptions(race, draft)) {
+    for (const [key, value] of Object.entries(option.attributes))
+      mods[key as T20Attribute] += value;
+    if (option.attributeChoice)
+      for (const key of draft.raceOptionAttributeChoices.slice(0, option.attributeChoice.count))
+        mods[key] += option.attributeChoice.value;
+  }
   return mods;
+}
+
+type T20RaceItem = NonNullable<ReturnType<typeof findT20Race>>;
+export type T20RaceChoiceOption = T20RaceItem['choices'][number]['options'][number] & {
+  group: string;
+};
+
+/** Opções escolhidas nos grupos da raça (só as que existem e até o limite de cada grupo). */
+export function t20RaceChoiceOptions(race: T20RaceItem, draft: T20Draft): T20RaceChoiceOption[] {
+  return race.choices.flatMap((group) =>
+    (draft.raceChoices[group.name] ?? []).slice(0, group.pick).flatMap((name) => {
+      const option = group.options.find((entry) => entry.name === name);
+      return option ? [{ ...option, group: group.name }] : [];
+    }),
+  );
+}
+
+/** A opção escolhida que pede atributos à escolha (no máximo uma por raça nos livros). */
+export function t20RaceOptionAttributeChoice(race: T20RaceItem, draft: T20Draft) {
+  return t20RaceChoiceOptions(race, draft).find((option) => option.attributeChoice)?.attributeChoice;
 }
 
 /** Atributos finais (base + raça); atributos indefinidos contam como 0. */
@@ -735,6 +768,33 @@ export function t20DraftIssues(
       !race.variants.some((variant) => variant.name === draft.raceVariant)
     )
       add('raca', 'raceVariant', 'Escolha a variante da raça.');
+    for (const group of race.choices) {
+      const chosen = (draft.raceChoices[group.name] ?? []).filter((name) =>
+        group.options.some((option) => option.name === name),
+      );
+      if (new Set(chosen).size !== group.pick)
+        add(
+          'raca',
+          'raceChoices',
+          group.pick === 1
+            ? `Escolha: ${group.name}.`
+            : `Escolha ${group.pick} opções em ${group.name}.`,
+        );
+    }
+    const optionChoice = t20RaceOptionAttributeChoice(race, draft);
+    if (optionChoice) {
+      const picks = new Set(draft.raceOptionAttributeChoices);
+      if (
+        picks.size !== optionChoice.count ||
+        draft.raceOptionAttributeChoices.length !== optionChoice.count ||
+        draft.raceOptionAttributeChoices.some((key) => optionChoice.exclude.includes(key))
+      )
+        add(
+          'raca',
+          'raceOptionAttributeChoices',
+          `Escolha ${optionChoice.count} atributo${optionChoice.count > 1 ? 's diferentes' : ''} para o bônus de +${optionChoice.value}.`,
+        );
+    }
     if (raceIsVersatile(race)) {
       const wanted = draft.raceSkillPower ? 1 : 2;
       if (draft.raceSkills.length !== wanted)
@@ -1084,6 +1144,10 @@ export function buildT20Character(
     .map((id) => content.spells.find((spell) => spell.id === id))
     .filter((spell): spell is T20Item<'spell'> => Boolean(spell));
 
+  // Escolhas da raça podem mudar tamanho e deslocamento (golem Pequeno, chassi de ferro…).
+  const raceOptions = race ? t20RaceChoiceOptions(race, draft) : [];
+  const raceSize = raceOptions.find((option) => option.size)?.size ?? race?.size ?? 'medio';
+  const raceSpeed = raceOptions.find((option) => option.speed)?.speed ?? race?.speed ?? 9;
   const sheet = parseT20Sheet({
     identity: {
       race: race?.name ?? '',
@@ -1094,8 +1158,8 @@ export function buildT20Character(
       deity: deity?.name ?? '',
       deityKey: deity?.id ?? '',
       classes: klass ? [{ key: klass.id, name: klass.name, level: draft.level }] : [],
-      size: race?.size ?? 'medio',
-      speed: Math.max(0, (race?.speed ?? 9) - (heavy ? 3 : 0)),
+      size: raceSize,
+      speed: Math.max(0, raceSpeed - (heavy ? 3 : 0)),
       height: draft.height,
       age: draft.age,
       languages: draft.languages,
@@ -1230,6 +1294,14 @@ export function buildT20Character(
       name: ability.name,
       source: race!.name,
       description: ability.text,
+      data: {},
+    });
+  for (const option of race ? t20RaceChoiceOptions(race, draft) : [])
+    addAbility({
+      kind: 'species_trait',
+      name: `${option.group}: ${option.name}`,
+      source: race!.name,
+      description: option.text,
       data: {},
     });
   for (const ability of klass?.abilities ?? []) {
@@ -1376,6 +1448,8 @@ const t20DraftSchema = z.object({
   raceId: shortText(160),
   raceAttributeChoices: z.array(z.enum(T20_ATTRIBUTES)).max(6).catch([]),
   raceVariant: shortText(80),
+  raceChoices: z.record(z.string().max(80), z.array(z.string().max(80)).max(6)).catch({}),
+  raceOptionAttributeChoices: z.array(z.enum(T20_ATTRIBUTES)).max(6).catch([]),
   raceSkills: z
     .array(z.enum(T20_SKILL_IDS as [T20Skill, ...T20Skill[]]))
     .max(4)

@@ -88,6 +88,40 @@ export const t20RaceSchema = z.object({
   /** Deslocamento em metros. */
   speed: z.number().min(0).max(30).default(9),
   abilities: z.array(named).max(30).default([]),
+  /**
+   * Escolhas da raça feitas na criação (Moreau: herança; Golem desperto: chassi, fonte e tamanho;
+   * Kallyanach: bônus de atributo e bênçãos). Cada opção pode mexer em atributos, tamanho e
+   * deslocamento; o texto vira habilidade de raça na ficha.
+   */
+  choices: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1).max(80),
+        /** Quantas opções escolher (bênçãos do Kallyanach: 2). */
+        pick: z.number().int().min(1).max(6).default(1),
+        options: z
+          .array(
+            z.object({
+              name: z.string().trim().min(1).max(80),
+              text: z.string().trim().max(4000).default(''),
+              attributes: z.partialRecord(attribute, z.number().int().min(-4).max(4)).default({}),
+              attributeChoice: z
+                .object({
+                  count: z.number().int().min(1).max(6),
+                  value: z.number().int().min(1).max(2),
+                  exclude: z.array(attribute).max(5).default([]),
+                })
+                .optional(),
+              size: z.enum(T20_SIZES).optional(),
+              speed: z.number().min(0).max(30).optional(),
+            }),
+          )
+          .min(1)
+          .max(20),
+      }),
+    )
+    .max(6)
+    .default([]),
 });
 
 export const t20ClassSchema = z.object({
