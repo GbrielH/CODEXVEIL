@@ -364,8 +364,25 @@ personagens" quando o dono liga a opção, por `public.set_character_npc_listed(
 - `close_idle_call_rooms()` passa a considerar o último heartbeat e mantém o encerramento
   automático de seis horas. O backfill usa apenas o último `joined_at` conhecido, pois o modelo
   anterior sobrescrevia esse campo a cada reconexão.
-- Em 2026-11-03 a migração passou no `supabase db push --dry-run`, que listou somente esse arquivo;
-  não foi aplicada em produção.
+- Em 2026-11-03 a migração passou primeiro no dry-run. Uma verificação posterior encontrou a versão
+  `20261103100000` já registrada no histórico remoto; esta rodada não executou aplicação.
+
+## Call: retenção das falas (`20261103110000_call_transcript_retention.sql`)
+
+- `purge_expired_call_transcripts()` apaga somente `transcript_segments` quando a sala está
+  encerrada e `ended_at` completou 24 horas. A sala, presenças e `session_highlights` não são
+  removidos. A função não devolve falas nem contagem.
+- `list_recent_ended_calls()` entrega somente metadados das calls ainda dentro da janela para quem
+  satisfaz a mesma regra de leitura da transcrição: dono, participante aprovado ou mestre da
+  campanha. O início usa a primeira `call_presence`, com `created_at` como fallback.
+- `session_transcript_expired(session)` permite ao mestre diferenciar uma sessão nunca transcrita
+  de outra cujas falas já venceram, sem revelar o conteúdo apagado.
+- A função de purge é chamada oportunisticamente pelas consultas e, após a publicação do código de
+  infraestrutura, pela Edge Function agendada de hora em hora.
+- O teste PGlite preserva call recente, call ativa e destaque, apaga a call de 25 h e mantém RLS
+  contra não participante.
+- O dry-run de 2026-11-03 informou que o remoto já estava em dia e `migration list` mostrou esta
+  versão registrada. Nenhum `db push` sem `--dry-run` foi executado nesta rodada.
 
 ## Agenda da campanha (2026-11-02)
 

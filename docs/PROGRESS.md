@@ -5,6 +5,23 @@
 
 ## Estado atual
 
+**2026-11-03 (calls encerradas):** transcrições ficam 24 h para download em "Calls encerradas" e
+são apagadas depois (ao listar/abrir a sala e de hora em hora pelo workflow `cleanup-orphans`).
+Migração `20261103110000_call_transcript_retention` aplicada em produção; Edge Function
+`cleanup-orphans` publicada. `pnpm check` e `pnpm build` passaram. Sem teste manual.
+
+**2026-11-03 (retenção de transcrições):** o site lista calls encerradas nas últimas 24 h e gera o
+`.txt` no navegador; a sala encerrada mostra o mesmo download e aviso. A migração
+`20261103110000_call_transcript_retention.sql` cria a limpeza idempotente das falas, preserva salas
+e Melhores Momentos e distingue sessão sem falas de sessão expirada. A limpeza oportunista roda ao
+listar/abrir calls e ao ler transcrição de sessão; o código da Edge Function/workflow agenda o modo
+de transcrições a cada hora sem executar a limpeza de Storage. PGlite: database 240 aprovados e 11
+ao vivo pulados; typecheck web passou. O dry-run informou remoto em dia, e `migration list`
+confirmou `20261103100000` e `20261103110000` já registradas no remoto, embora esta rodada não tenha
+executado `db push` sem `--dry-run`. O agendamento só entra em vigor após publicar a Edge Function
+e o workflow. App ficou pendente porque exportar/compartilhar arquivo exigiria dependência nativa e
+novo APK. Ainda faltam `pnpm check`, `pnpm build` e teste manual com duas contas.
+
 **2026-11-03 (minutos e duração da call):** criada a migração
 `20261103100000_call_presence_usage.sql` com sessões de presença, heartbeat de 60 s, fechamento
 pelo último sinal/fim da sala/limite de 6 h e a RPC agregada `call_usage_month()` no fuso de São

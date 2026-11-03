@@ -46,6 +46,17 @@ export interface CallParticipant {
   leftAt: string | null;
 }
 
+export interface EndedCallTranscript {
+  id: string;
+  slug: string;
+  title: string;
+  campaignName: string;
+  sessionName: string | null;
+  startedAt: string;
+  endedAt: string;
+  expiresAt: string;
+}
+
 const ROOM_COLUMNS =
   'id, slug, code, title, owner_id, campaign_id, session_id, access_mode, status, transcription_enabled, created_at';
 
@@ -243,6 +254,7 @@ export async function getCallRoom(client: CodexveilClient, slug: string): Promis
 export async function listMyCallRooms(client: CodexveilClient): Promise<CallRoom[]> {
   // Salas esquecidas (6 h sem ninguém entrar ou sair) são encerradas antes de listar.
   await client.rpc('close_idle_call_rooms');
+  await client.rpc('purge_expired_call_transcripts');
   const { data, error } = await client
     .from('call_rooms')
     .select(ROOM_COLUMNS)
@@ -250,6 +262,41 @@ export async function listMyCallRooms(client: CodexveilClient): Promise<CallRoom
     .limit(20);
   if (error) throw toAppError(error);
   return data.map(toRoom);
+}
+
+/** Limpeza oportunista; o workflow agendado usa a mesma RPC quando ninguém abre a interface. */
+export async function purgeExpiredCallTranscripts(client: CodexveilClient): Promise<void> {
+  const { error } = await client.rpc('purge_expired_call_transcripts');
+  if (error) throw toAppError(error);
+}
+
+/** Calls encerradas cuja transcrição ainda está dentro da retenção de 24 horas. */
+export async function listRecentEndedCalls(
+  client: CodexveilClient,
+): Promise<EndedCallTranscript[]> {
+  const { data, error } = await client.rpc('list_recent_ended_calls');
+  if (error) throw toAppError(error);
+  return (
+    data as unknown as {
+      id: string;
+      slug: string;
+      title: string;
+      campaign_name: string;
+      session_name: string | null;
+      started_at: string;
+      ended_at: string;
+      expires_at: string;
+    }[]
+  ).map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    campaignName: row.campaign_name,
+    sessionName: row.session_name,
+    startedAt: row.started_at,
+    endedAt: row.ended_at,
+    expiresAt: row.expires_at,
+  }));
 }
 
 /** Participantes com nome e personagem (para a lista da call). */
@@ -387,6 +434,7 @@ export async function listSessionTranscript(
   client: CodexveilClient,
   sessionId: string,
 ): Promise<TranscriptSegment[]> {
+  await client.rpc('purge_expired_call_transcripts');
   const { data, error } = await client
     .from('transcript_segments')
     .select(SEGMENT_COLUMNS)
@@ -395,6 +443,18 @@ export async function listSessionTranscript(
     .limit(5000);
   if (error) throw toAppError(error);
   return data.map(toSegment);
+}
+
+/** A sessão teve call encerrada há mais de 24 h e já não possui falas retidas. */
+export async function hasSessionTranscriptExpired(
+  client: CodexveilClient,
+  sessionId: string,
+): Promise<boolean> {
+  const { data, error } = await client.rpc('session_transcript_expired', {
+    p_session_id: sessionId,
+  });
+  if (error) throw toAppError(error);
+  return Boolean(data);
 }
 
 /** O mestre corrige o texto de um trecho (erro de reconhecimento). */

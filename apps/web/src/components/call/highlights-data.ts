@@ -1,4 +1,5 @@
 import {
+  hasSessionTranscriptExpired,
   listCampaignCharacters,
   listSessionHighlights,
   listSessionTranscript,
@@ -25,6 +26,10 @@ export async function loadSessionHighlights(
     ...highlights.map((highlight) => highlight.imagePath),
     ...party.map((character) => character.portraitPath),
   ]);
+  const transcriptExpired =
+    isGm && transcript.length === 0
+      ? await hasSessionTranscriptExpired(supabase, sessionId).catch(() => false)
+      : false;
   return {
     highlights: highlights.map((highlight) => ({
       ...highlight,
@@ -36,5 +41,6 @@ export async function loadSessionHighlights(
       portraitUrl: character.portraitPath ? (urls[character.portraitPath] ?? null) : null,
     })),
     transcript,
+    transcriptExpired,
   };
 }

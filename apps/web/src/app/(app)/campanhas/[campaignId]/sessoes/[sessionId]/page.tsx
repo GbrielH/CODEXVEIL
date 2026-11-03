@@ -144,6 +144,7 @@ export default async function SessionReaderPage({
           highlights={moments.highlights}
           characters={moments.characters}
           transcript={moments.transcript}
+          transcriptExpired={moments.transcriptExpired}
           canManage={canManage}
         />
       ) : null}

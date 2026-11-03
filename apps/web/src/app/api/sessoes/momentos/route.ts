@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import {
   createSessionHighlight,
   getCampaign,
+  hasSessionTranscriptExpired,
   listCampaignCharacters,
   listCreatures,
   listSessionBlocks,
@@ -60,11 +61,19 @@ export async function POST(request: Request): Promise<Response> {
     listSessionBlocks(supabase, row.id),
     listCreatures(supabase, campaign.id),
   ]);
-  if (segments.length < 3)
+  if (segments.length < 3) {
+    const expired =
+      segments.length === 0 &&
+      (await hasSessionTranscriptExpired(supabase, row.id).catch(() => false));
     return json(
-      { error: 'A transcrição desta sessão ainda é curta demais para achar momentos.' },
+      {
+        error: expired
+          ? 'As falas desta sessão já foram apagadas (24 h após a call).'
+          : 'A transcrição desta sessão ainda é curta demais para achar momentos.',
+      },
       400,
     );
+  }
 
   // NPCs e monstros citados no roteiro da sessão.
   const cited = new Set(

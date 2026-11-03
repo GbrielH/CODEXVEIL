@@ -208,6 +208,12 @@ expor identidades ou campanhas. A rota Next.js `/api/call/usage` combina esse to
 recebem somente os estados de alerta. Essa é uma estimativa operacional, não a fatura oficial do
 LiveKit; reconciliação final continua sendo feita no painel do provedor.
 
+As falas têm retenção curta: `transcript_segments` é apagada 24 horas depois do fim da call, mas a
+sala e os cartões de Melhores Momentos permanecem. A limpeza combina chamadas oportunistas nas
+consultas com o workflow já autenticado por `CLEANUP_SECRET`, de hora em hora. Foi preferido ao
+`pg_cron` porque o agendamento do provedor não é reproduzível no PGlite; o modo horário da Edge
+Function não executa a varredura de Storage, que continua semanal.
+
 ## Tempo real
 
 Apenas tabelas que mudam durante uma partida são publicadas: participantes, personagens,

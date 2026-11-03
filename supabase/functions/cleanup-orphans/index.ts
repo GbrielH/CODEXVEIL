@@ -1,8 +1,8 @@
 // Edge Function `cleanup-orphans` (Supabase, Deno).
 //
 // Apaga do bucket `campaign-media` os arquivos que nenhuma linha do banco usa mais (lista feita
-// por `public.list_orphan_media`, com 24 h de folga para envios em andamento). Chamada uma vez por
-// semana pelo workflow `.github/workflows/cleanup-orphans.yml`; pode ser chamada à mão.
+// por `public.list_orphan_media`, com 24 h de folga para envios em andamento). O mesmo endpoint
+// chama de hora em hora `purge_expired_call_transcripts`; nesse modo não percorre o Storage.
 //
 // Segurança: só quem tem o segredo CLEANUP_SECRET (cabeçalho `x-cleanup-secret`) chama. A função
 // usa a chave secreta do projeto, que nunca sai do servidor.
@@ -33,36 +33,54 @@ function pickKey(dictionary: string | undefined, legacy: string | undefined): st
 }
 
 function reply(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 /** Comparação em tempo constante (o segredo não vaza pelo tempo de resposta). */
 function sameSecret(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
-  for (let index = 0; index < a.length; index += 1) diff |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  for (let index = 0; index < a.length; index += 1)
+    diff |= a.charCodeAt(index) ^ b.charCodeAt(index);
   return diff === 0;
 }
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const secretKey = pickKey(Deno.env.get('SUPABASE_SECRET_KEYS'), Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
+const secretKey = pickKey(
+  Deno.env.get('SUPABASE_SECRET_KEYS'),
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+);
 const cleanupSecret = Deno.env.get('CLEANUP_SECRET');
 
 Deno.serve(async (request) => {
   if (request.method !== 'POST') return reply({ error: 'Método não permitido.' }, 405);
-  if (!supabaseUrl || !secretKey || !cleanupSecret) return reply({ error: 'Função sem configuração.' }, 500);
+  if (!supabaseUrl || !secretKey || !cleanupSecret)
+    return reply({ error: 'Função sem configuração.' }, 500);
   if (!sameSecret(request.headers.get('x-cleanup-secret') ?? '', cleanupSecret)) {
     return reply({ error: 'Não autorizado.' }, 401);
   }
   // `?dry=1`: só conta o que seria apagado.
   const dry = new URL(request.url).searchParams.get('dry') === '1';
 
-  const admin = createClient(supabaseUrl, secretKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const admin = createClient(supabaseUrl, secretKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  if (new URL(request.url).searchParams.get('transcripts') === '1') {
+    const { error } = await admin.rpc('purge_expired_call_transcripts');
+    if (error) return reply({ error: error.message }, 500);
+    return reply({ transcriptsPurged: true });
+  }
   let removed = 0;
   let found = 0;
   const failures: string[] = [];
   while (found < MAX_PER_RUN) {
-    const { data, error } = await admin.rpc('list_orphan_media', { p_min_age_hours: 24, p_limit: 1000 });
+    const { data, error } = await admin.rpc('list_orphan_media', {
+      p_min_age_hours: 24,
+      p_limit: 1000,
+    });
     if (error) return reply({ error: error.message, removed }, 500);
     const paths = (data ?? []) as string[];
     found += paths.length;
@@ -76,5 +94,8 @@ Deno.serve(async (request) => {
     // Nada saiu nesta volta: para, senão a mesma lista voltaria para sempre.
     if (failures.length > 0) break;
   }
-  return reply({ dry, found, removed, ...(failures.length ? { failures } : {}) }, failures.length ? 500 : 200);
+  return reply(
+    { dry, found, removed, ...(failures.length ? { failures } : {}) },
+    failures.length ? 500 : 200,
+  );
 });

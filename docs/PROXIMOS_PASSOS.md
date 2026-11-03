@@ -864,6 +864,22 @@ de segurança).
 
 ## Histórico
 
+### 2026-11-03 — transcrições apagadas após 24 horas
+
+- [x] Site lista calls encerradas acessíveis nas últimas 24 h, com data, duração, “Apaga em Xh” e
+      download `.txt` no navegador; a rota da sala encerrada mostra o mesmo conteúdo.
+- [x] `purge_expired_call_transcripts()` remove só falas vencidas e preserva salas e Melhores
+      Momentos; chamada oportunista nas telas e leituras de sessão.
+- [x] Workflow existente preparado para chamar de hora em hora um modo leve da Edge Function; a
+      limpeza de Storage continua semanal. Escolha evita `pg_cron`, não reproduzível no PGlite.
+- [x] Teste RLS: 25 h apagada; 1 h e ativa preservadas; estranho não lê; destaque permanece.
+- [ ] Publicar a Edge Function atualizada e o workflow para ativar a garantia horária.
+- [ ] Testar no navegador com duas contas e conferir download, expiração e mensagem nos Momentos.
+- [ ] App: lista/download ficou para APK futuro porque compartilhamento de arquivo exigiria
+      `expo-sharing`; nenhuma dependência nativa foi alterada nesta rodada.
+- [!] O dry-run encontrou o remoto em dia, e o histórico remoto já contém `20261103100000` e
+  `20261103110000`; esta rodada não executou aplicação sem `--dry-run`.
+
 ### 2026-11-03 — minutos e duração da call
 
 - [x] Sessões de conexão em `call_presence`, com início ao conectar, heartbeat de 60 s e término

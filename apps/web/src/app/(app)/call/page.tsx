@@ -1,6 +1,12 @@
 import { callsEnabled } from '@/lib/env';
 import { notFound } from 'next/navigation';
-import { listMyCallInvites, listMyCallRooms, listMyCampaigns } from '@codexveil/database';
+import {
+  listMyCallInvites,
+  listMyCallRooms,
+  listMyCampaigns,
+  listRecentEndedCalls,
+  listTranscript,
+} from '@codexveil/database';
 import { Video } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
@@ -9,6 +15,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { requireSessionUser } from '@/lib/auth';
 import { callPath, routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { EndedCallTranscripts } from '@/components/call/ended-call-transcripts';
 import { CallStart } from './call-start';
 
 export const metadata: Metadata = { title: 'Call' };
@@ -23,6 +30,13 @@ export default async function CallPage() {
     listMyCallRooms(supabase).catch(() => []),
     listMyCallInvites(supabase, user.id).catch(() => []),
   ]);
+  const endedCalls = await listRecentEndedCalls(supabase).catch(() => []);
+  const ended = await Promise.all(
+    endedCalls.map(async (call) => ({
+      call,
+      segments: await listTranscript(supabase, call.id).catch(() => []),
+    })),
+  );
   const active = rooms.filter((room) => room.status === 'active');
   return (
     <div className="flex flex-col gap-8">
@@ -79,6 +93,7 @@ export default async function CallPage() {
           </ul>
         </Card>
       ) : null}
+      <EndedCallTranscripts items={ended} />
     </div>
   );
 }

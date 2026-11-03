@@ -18,13 +18,24 @@ sala está ativa, a transcrição está ligada e `auth.uid()` é participante ap
 retentativa atrasada depois de o dono desligar é recusada com `42501`, mesmo se o cliente ainda não
 tiver recebido o evento Realtime.
 
-A migração ainda não aplicada `20261103100000_call_presence_usage.sql` adiciona
+A migração `20261103100000_call_presence_usage.sql` adiciona
 `call_presence`. O RLS permite que uma pessoa autenticada leia somente as próprias sessões; não há
 escrita direta, e as RPCs de início/heartbeat/fim conferem autoria, aprovação e sala ativa. O teste
 PGlite prova que participante de outra sala não lê essas linhas. `call_usage_month()` expõe somente
 o total global agregado do mês, sem identidade ou campanha. A rota web adiciona o limite do
 servidor e entrega números exatos apenas a mestre/dono; jogadores recebem somente os booleanos de
 95% e 100%. `LIVEKIT_MONTHLY_MINUTES` e as chaves LiveKit não entram em bundle público.
+
+`20261103110000_call_transcript_retention.sql` aplica minimização de dados para LGPD: falas são
+mantidas somente até 24 horas após `call_rooms.ended_at`; salas e Melhores Momentos permanecem. A
+listagem de encerradas repete a autorização da transcrição (dono, participante aprovado ou mestre
+da campanha) e retorna apenas metadados; o arquivo é montado localmente no navegador, sem Storage.
+A RPC de limpeza não devolve dados e só consegue apagar falas que já cumpriram o prazo. O teste
+PGlite confirma a retenção seletiva e que não participante não lê as falas preservadas. O modo
+horário da Edge Function usa `CLEANUP_SECRET` e a chave de servidor, que não chegam aos clientes.
+
+Na verificação de 2026-11-03, o histórico remoto já continha as migrações `20261103100000` e
+`20261103110000`; esta rodada fez somente dry-run e consulta do histórico, sem aplicar ou reverter.
 
 ## Princípios
 

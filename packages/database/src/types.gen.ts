@@ -3307,6 +3307,10 @@ export type Database = {
         };
         Returns: unknown[];
       };
+      list_recent_ended_calls: {
+        Args: never;
+        Returns: unknown[];
+      };
       move_my_token: {
         Args: {
           p_token_id: string;
@@ -3333,6 +3337,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      purge_expired_call_transcripts: {
+        Args: never;
+        Returns: undefined;
       };
       record_money: {
         Args: {
@@ -3399,6 +3407,12 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      session_transcript_expired: {
+        Args: {
+          p_session_id: string;
+        };
+        Returns: boolean;
       };
       set_call_speaker: {
         Args: {

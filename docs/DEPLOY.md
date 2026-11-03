@@ -369,9 +369,15 @@ pnpm exec supabase functions deploy cleanup-orphans --project-ref ityfhobhpjzhlk
   gh secret set CLEANUP_SECRET --body <valor>
   gh secret set SUPABASE_PROJECT_REF --body ityfhobhpjzhlkgvjhfb
   ```n
-  O workflow `.github/workflows/cleanup-orphans.yml` roda toda segunda às 03:00 (Brasília) e
-  pode ser disparado à mão em Actions, com a opção **Só contar** (`?dry=1`) para ver quantos
-  arquivos seriam apagados. Sem os segredos, o workflow só avisa e não faz nada.
+  O workflow `.github/workflows/cleanup-orphans.yml` chama `?transcripts=1` de hora em hora para
+  executar `purge_expired_call_transcripts()` sem percorrer o Storage. Toda segunda às 03:00
+  (Brasília), a chamada normal continua removendo arquivos órfãos. O disparo manual mantém a opção
+  **Só contar** (`?dry=1`) para os arquivos. Sem os segredos, o workflow só avisa e não faz nada.
+
+  Depois da migração `20261103110000_call_transcript_retention.sql`, publique novamente
+  `cleanup-orphans` para habilitar o modo horário. Em 2026-11-03 a migração já apareceu no histórico
+  remoto durante uma consulta, mas a Edge Function e o workflow locais não foram publicados nesta
+  rodada.
 
 ## Login com Google
 

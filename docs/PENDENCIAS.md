@@ -111,9 +111,14 @@ dois aparelhos, inclusive concorrência entre WebRTC e reconhecimento de fala no
 
 Medição de consumo de 2026-11-03 pronta no código: sessões `call_presence`, heartbeat, soma mensal
 agregada, barra exclusiva do mestre, aviso do jogador, câmeras ativas e cronômetro. A migração
-`20261103100000_call_presence_usage.sql` passou apenas no dry-run e ainda não está em produção.
-Pendente: aplicar quando autorizado e validar com duas contas, inclusive fechar aba/app sem Sair e
-comparar a estimativa com o painel LiveKit.
+`20261103100000_call_presence_usage.sql` apareceu depois no histórico remoto, sem aplicação feita
+por esta rodada. Pendente: validar com duas contas, inclusive fechar aba/app sem Sair e comparar a
+estimativa com o painel LiveKit.
+
+Retenção de 24 h pronta no site: lista/download de calls encerradas, purge seletivo e aviso nos
+Melhores Momentos. A migração `20261103110000` também apareceu no histórico remoto durante o
+dry-run. Pendente: publicar Edge Function/workflow, testar com duas contas e fazer a lista/download
+no app em um APK futuro (`expo-sharing` exige dependência nativa; nenhuma foi adicionada agora).
 
 Também em 2026-11-01: app com aba Tomo (no lugar de Sistemas), Taverna com menu lateral, limpar
 conversa do Tomo (site e app), dados 3D caindo pela tela no app (APK novo), painel do app enxuto,

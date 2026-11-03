@@ -83,12 +83,32 @@ Pedido do responsável: parar aqui e **não liberar em produção** enquanto nã
   recebem apenas o aviso a partir de 95%. Nenhuma chave do LiveKit é devolvida.
 - O site mostra a quantidade de câmeras ativas e a dica para desligar vídeo. Site e app exibem a
   duração desde a conexão atual, atualizada a cada minuto sem recarregar a tela.
-- A migração foi apenas conferida com `supabase db push --dry-run`; **não foi aplicada em
-  produção**. Como `call_participants.joined_at` era sobrescrito nas reconexões, o backfill só
-  preserva o último intervalo conhecido; a estimativa completa começa após a nova migração.
+- A migração havia sido apenas conferida com `supabase db push --dry-run`. Na verificação da
+  rodada seguinte, `supabase migration list` já encontrou `20261103100000` registrada no remoto;
+  esta rodada não executou aplicação. Como `call_participants.joined_at` era sobrescrito nas
+  reconexões, o backfill só preserva o último intervalo conhecido.
 - Verificação automatizada: domain 112/112; database 239 aprovados e 11 ao vivo pulados;
   `pnpm check` com 20/20 tarefas e 688 testes; `pnpm build` com Next.js e export Android/Hermes.
   Permanecem 3 avisos de lint preexistentes e falta o teste manual com duas contas/aparelhos.
+
+### Retenção de transcrições por 24 horas (2026-11-03)
+
+- A página `/call` lista as calls encerradas nas últimas 24 horas que a pessoa pode ler, com data,
+  duração, prazo restante e download `.txt` montado no navegador. A sala encerrada mostra o mesmo
+  aviso e download; não há arquivo no Storage.
+- `purge_expired_call_transcripts()` apaga somente `transcript_segments` de salas encerradas há
+  pelo menos 24 horas. Salas e `session_highlights` permanecem. A função também roda ao listar ou
+  abrir calls e antes de ler a transcrição de uma sessão.
+- A Edge Function `cleanup-orphans` ganhou um modo exclusivo para transcrições, chamado de hora em
+  hora pelo workflow existente. Nesse modo ela não percorre o Storage; a limpeza de órfãos segue
+  semanal. Essa opção reutiliza o segredo já existente e evita depender de `pg_cron`, que não é
+  reproduzível no PGlite.
+- A migração `20261103110000_call_transcript_retention.sql` apareceu como aplicada no histórico
+  remoto durante o dry-run, embora esta rodada não tenha executado `db push` sem `--dry-run`. A
+  Edge Function e o workflow ainda dependem de publicação do código para ativar o agendamento.
+- O app permanece sem a lista/download: compartilhar um arquivo exige `expo-sharing`, ausente no
+  APK atual. Para preservar o OTA e a regra de não mudar dependências nativas, ficou para o próximo
+  APK.
 
 ## Roteiro do teste em Preview
 
@@ -119,6 +139,9 @@ registros de teste ainda são gravados no banco real.
 11. Com duas contas, manter as duas conectadas por alguns minutos, fechar uma aba sem usar Sair e
     conferir heartbeat, encerramento pelo último sinal, soma dos minutos, barra do mestre, aviso do
     jogador, câmeras ativas e cronômetro nos dois aparelhos.
+12. Encerrar uma call transcrita, baixar o `.txt` nas duas contas autorizadas, conferir o prazo e
+    confirmar que uma terceira conta não lê. Depois do vencimento, verificar a remoção das falas e
+    a preservação dos Melhores Momentos.
 
 ## Fase 1: call de voz e vídeo
 

@@ -353,6 +353,7 @@ export function SessionHighlights({
   highlights,
   characters,
   transcript,
+  transcriptExpired,
   canManage,
 }: {
   campaignId: string;
@@ -360,6 +361,7 @@ export function SessionHighlights({
   highlights: HighlightCard[];
   characters: HighlightCharacter[];
   transcript: TranscriptSegment[];
+  transcriptExpired: boolean;
   canManage: boolean;
 }) {
   const router = useRouter();
@@ -434,7 +436,10 @@ export function SessionHighlights({
           editou.
         </p>
       ) : null}
-      {canManage && transcript.length < 3 ? (
+      {canManage && transcriptExpired ? (
+        <Alert tone="warning">As falas desta sessão já foram apagadas (24 h após a call).</Alert>
+      ) : null}
+      {canManage && transcript.length < 3 && !transcriptExpired ? (
         <p className="text-sm text-fg-muted">
           Os momentos saem da transcrição da sessão: faça a call vinculada a esta sessão com “Gravar
           transcrição” ligado.

@@ -179,6 +179,73 @@ describe('call', () => {
     expect(changed).toEqual([]);
   });
 
+  it('apaga falas após 24 h e preserva calls recentes e ativas', async () => {
+    const { gm, outsider, campaign } = await createTable(db);
+    const sessionId = await createSession(db, gm, campaign.id);
+    const highlight = await db.as(gm, (s) =>
+      s.one<{ id: string }>(
+        `insert into public.session_highlights (session_id, title, summary)
+         values ($1, 'Cena preservada', 'A limpeza não remove este cartão.') returning id`,
+        [sessionId],
+      ),
+    );
+    const expired = await createRoom(gm, 'open', campaign.id);
+    const recent = await createRoom(gm, 'open', campaign.id);
+    const active = await createRoom(gm, 'open', campaign.id);
+    for (const room of [expired, recent, active]) {
+      await join(gm, room.id);
+      await db.as(gm, (s) =>
+        s.query(`update public.call_rooms set transcription_enabled = true where id = $1`, [
+          room.id,
+        ]),
+      );
+      await db.as(gm, (s) =>
+        s.query(
+          `insert into public.transcript_segments (room_id, text, started_at, ended_at)
+           values ($1, $2, now(), now())`,
+          [room.id, `fala-${room.id}`],
+        ),
+      );
+    }
+    await db.as({ kind: 'admin' }, async (s) => {
+      await s.query(
+        `update public.call_rooms
+         set status = 'ended', ended_at = now() - interval '25 hours'
+         where id = $1`,
+        [expired.id],
+      );
+      await s.query(
+        `update public.call_rooms
+         set status = 'ended', ended_at = now() - interval '1 hour'
+         where id = $1`,
+        [recent.id],
+      );
+    });
+
+    await db.as(outsider, (s) => s.query(`select public.purge_expired_call_transcripts()`));
+    const kept = await db.as({ kind: 'admin' }, (s) =>
+      s.query<{ room_id: string }>(
+        `select room_id from public.transcript_segments
+         where room_id in ($1, $2, $3) order by room_id`,
+        [expired.id, recent.id, active.id],
+      ),
+    );
+    expect(kept.map((row) => row.room_id).sort()).toEqual([active.id, recent.id].sort());
+    const hidden = await db.as(outsider, (s) =>
+      s.query(`select id from public.transcript_segments where room_id in ($1, $2)`, [
+        recent.id,
+        active.id,
+      ]),
+    );
+    expect(hidden).toEqual([]);
+    const keptHighlight = await db.as(gm, (s) =>
+      s.one<{ id: string }>(`select id from public.session_highlights where id = $1`, [
+        highlight.id,
+      ]),
+    );
+    expect(keptHighlight.id).toBe(highlight.id);
+  });
+
   it('soma minutos de participante e fecha intervalo aberto no último sinal de vida', async () => {
     const { gm, player, outsider, campaign } = await createTable(db);
     const room = await createRoom(gm, 'open', campaign.id);
