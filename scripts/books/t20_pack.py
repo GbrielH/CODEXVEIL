@@ -194,7 +194,7 @@ def treasure_tables(layout):
 IMAGE_CHAPTERS = {'8': 'Recompensas'}
 
 
-def text_sections(layout):
+def text_sections(layout, skip=None):
     """Texto corrido do livro (todos os capítulos), do layout do PDF: capítulo → seção, subtítulos em Markdown.
 
     Títulos pelo tamanho da fonte do livro (Tormenta20-Regular): ≥ 60 capítulo, 26–27 seção, 16–21
@@ -203,7 +203,7 @@ def text_sections(layout):
     """
     import sections
     import bookkit
-    rows = bookkit.load(layout)
+    rows = layout if isinstance(layout, list) else bookkit.load(layout)
     merged, carry = [], ''
     for r in rows:
         t = r.get('t', '')
@@ -253,7 +253,7 @@ def text_sections(layout):
             return -1  # números de página e marcadores
         return 0 if r['s'] >= 7.5 else -1
 
-    found = sections.build(merged, classify, skip=lambda r, t: r['p'] <= 11 or r['p'] >= 405)
+    found = sections.build(merged, classify, skip=skip or (lambda r, t: r['p'] <= 11 or r['p'] >= 405))
     out = []
     for e in found:
         out.append({'kind': 'section', 'key': e['key'], 'name': e['name'],

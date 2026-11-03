@@ -433,8 +433,8 @@ def narrow_columns(book, first_page, last_page):
     return ordered
 
 
-def spells(book):
-    order = narrow_columns(book, 184, 217)
+def spells(book, first_page=184, last_page=217):
+    order = narrow_columns(book, first_page, last_page)
     out, current, pending_title = [], None, ""
     for pos, i in enumerate(order):
         r, t = book.rows[i], book.texts[i]

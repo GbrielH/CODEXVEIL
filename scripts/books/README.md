@@ -51,7 +51,7 @@ repositório. Gere tudo numa pasta fora do projeto (por exemplo, `Documents/Code
 
 10. **Ameaças de Arton** (`AMEAÇAS DE ARTON.pdf`): `layout.py` → `layout/AMEACAS.jsonl`, depois
     `python -X utf8 scripts/books/t20_ameacas.py <saída>/layout/AMEACAS.jsonl <saída>/out/t20-ameacas.book.json`
-    (id `t20-ameacas`; 429 ameaças com ficha e descrição em 2026-11-03, uma por bloco "Pontos de Vida" do PDF).
+    (id `t20-ameacas`; livro inteiro em 2026-11-03: 429 ameaças, 74 equipamentos — armas, armaduras, itens gerais, melhorias e materiais —, 8 itens mágicos/artefatos, 7 magias, 29 raças jogáveis e 299 seções de texto por capítulo).
 
 Veja o andamento e o que falta em `docs/PROXIMOS_PASSOS.md` ("Continuidade").
 

@@ -869,8 +869,11 @@ de segurança).
 - [x] Pacote `t20-ameacas` (Ameaças de Arton) gerado do PDF do responsável por
       `scripts/books/t20_ameacas.py`: 429 ameaças (todas as fichas do PDF) com ND, atributos (422) e descrição;
       `parseT20BookPack` sem erros. Fora do Git (pasta de trabalho e Downloads).
-- [ ] O responsável importa em Meus livros e libera na campanha T20. Raças jogáveis, itens e
-      magias novas do livro ainda não foram extraídos.
+- [x] Livro inteiro no pacote (846 entradas, `parseT20BookPack` sem erros): 429 ameaças, 74
+      equipamentos, 8 itens mágicos e artefatos, 7 magias, 29 raças jogáveis (Tabela A-1 + quadros de
+      habilidades; Ogro e alguns quadros que continuam na página seguinte ficaram incompletos) e
+      texto de todos os capítulos e apêndices (sem créditos, apoiadores e índices).
+- [ ] O responsável importa em Meus livros e libera na campanha T20.
 
 ### 2026-11-03 — transcrições apagadas após 24 horas
 
