@@ -2,7 +2,7 @@
 
 Plataforma de gerenciamento de RPG de mesa: campanhas, convites, fichas digitais, sessões com roteiro por blocos, biblioteca de NPCs e monstros e mesa do mestre com combate e segredos protegidos no banco de dados.
 
-O projeto começa com D&D 5e (SRD 5.2.1) e foi projetado para receber outros sistemas sem exigir uma reescrita da aplicação.
+O projeto suporta D&D 5e (SRD 5.2.1), Tormenta20, Assimilação RPG e Triangle Agency, com módulos próprios e sem exigir uma reescrita da aplicação.
 
 ## Aplicações
 
@@ -31,7 +31,7 @@ apps/
   mobile/         Expo SDK 57, React Native 0.86, Expo Router
 packages/
   domain/         Regras de negócio puras (permissões, convites, recursos, iniciativa, blocos)
-  rpg-systems/    Contrato de sistemas de RPG + módulo D&D 5e (SRD 5.2)
+  rpg-systems/    Contrato e regras próprias de D&D 5e, Tormenta20, Assimilação e Triangle Agency
   validation/     Esquemas zod compartilhados (formulários, blocos, uploads)
   database/       Tipos do banco, consultas, autosave, Realtime e testes de RLS (PGlite)
   ui/             Design system: tokens, emblema e glifos (web e mobile)

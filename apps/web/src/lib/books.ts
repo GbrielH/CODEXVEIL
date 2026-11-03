@@ -26,6 +26,11 @@ import {
   ASSIMILACAO_PLAYER_BOOK_KINDS,
   assimilacaoBookEntryKindLabels,
 } from '@codexveil/rpg-systems/assimilacao';
+import {
+  TRIANGLE_BOOK_ENTRY_KINDS,
+  TRIANGLE_PLAYER_BOOK_KINDS,
+  triangleBookEntryKindLabels,
+} from '@codexveil/rpg-systems/triangle-agency';
 import { uuidSchema } from '@codexveil/validation';
 
 /** Livros liberados na campanha (os do dono que ele marcou nas regras de criação). */
@@ -96,6 +101,12 @@ export const BOOK_KIND_SLUGS: Record<string, string> = {
   assimilation: 'assimilacoes',
   artifact: 'artefatos',
   event: 'eventos',
+  arc_anomaly: 'anomalias',
+  arc_reality: 'realidades',
+  arc_competency: 'competencias',
+  anomalous_ability: 'habilidades-anomalas',
+  requisition: 'requisicoes',
+  locked_document: 'documentos-bloqueados',
 };
 
 export function bookKindFromSlug(slug: string): string | undefined {
@@ -113,7 +124,9 @@ export function bookKindLabel(
       ? t20BookEntryKindLabels
       : systemId === 'assimilacao'
         ? assimilacaoBookEntryKindLabels
-        : bookEntryKindLabels;
+        : systemId === 'triangle-agency'
+          ? triangleBookEntryKindLabels
+          : bookEntryKindLabels;
   return labels[kind]?.[form] ?? kind;
 }
 
@@ -159,7 +172,9 @@ export async function loadBookReader(
               ? [...T20_BOOK_ENTRY_KINDS]
               : pack.systemId === 'assimilacao'
                 ? [...ASSIMILACAO_BOOK_ENTRY_KINDS]
-                : [...BOOK_ENTRY_KINDS],
+                : pack.systemId === 'triangle-agency'
+                  ? [...TRIANGLE_BOOK_ENTRY_KINDS]
+                  : [...BOOK_ENTRY_KINDS],
           canCopy: false,
         }
       : null;
@@ -184,6 +199,9 @@ export async function loadBookReader(
   const assimKinds = readAll
     ? [...ASSIMILACAO_BOOK_ENTRY_KINDS]
     : ['section', ...ASSIMILACAO_PLAYER_BOOK_KINDS];
+  const triangleKinds = readAll
+    ? [...TRIANGLE_BOOK_ENTRY_KINDS]
+    : ['section', ...TRIANGLE_PLAYER_BOOK_KINDS];
   return {
     pack,
     kinds:
@@ -191,7 +209,9 @@ export async function loadBookReader(
         ? t20Kinds
         : pack.systemId === 'assimilacao'
           ? assimKinds
-          : visibleBookKinds(pack.category, readAll),
+          : pack.systemId === 'triangle-agency'
+            ? triangleKinds
+            : visibleBookKinds(pack.category, readAll),
     campaignId: campaign.id,
     canCopy: isGm && campaign.status === 'active',
   };

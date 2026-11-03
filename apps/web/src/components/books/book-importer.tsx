@@ -16,6 +16,11 @@ import {
   assimilacaoBookEntryKindLabels,
   parseAssimilacaoBookPack,
 } from '@codexveil/rpg-systems/assimilacao';
+import {
+  TRIANGLE_BOOK_PACK_FORMAT,
+  parseTriangleBookPack,
+  triangleBookEntryKindLabels,
+} from '@codexveil/rpg-systems/triangle-agency';
 import { FileUp, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
@@ -49,12 +54,25 @@ function kindLabel(systemId: string, kind: string): string {
       ? t20BookEntryKindLabels
       : systemId === 'assimilacao'
         ? assimilacaoBookEntryKindLabels
-        : bookEntryKindLabels;
+        : systemId === 'triangle-agency'
+          ? triangleBookEntryKindLabels
+          : bookEntryKindLabels;
   return labels[kind]?.many ?? kind;
 }
 
 /** Lê o pacote conforme o formato: D&D 5e (`codexveil.dnd5e.book`), Tormenta20 ou Assimilação RPG. */
 function readPack(input: unknown): { pack: AnyPack; issues: BookPackIssue[] } {
+  if (
+    input &&
+    typeof input === 'object' &&
+    (input as { format?: unknown }).format === TRIANGLE_BOOK_PACK_FORMAT
+  ) {
+    const parsed = parseTriangleBookPack(input);
+    return {
+      pack: { systemId: 'triangle-agency', book: parsed.pack.book, entries: parsed.pack.entries },
+      issues: parsed.issues,
+    };
+  }
   if (
     input &&
     typeof input === 'object' &&

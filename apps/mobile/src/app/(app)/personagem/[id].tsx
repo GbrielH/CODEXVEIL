@@ -15,7 +15,9 @@ import {
 } from '@codexveil/rpg-systems/dnd5e';
 import { parseT20Sheet } from '@codexveil/rpg-systems/tormenta20';
 import { parseAssimilacaoSheet } from '@codexveil/rpg-systems/assimilacao';
+import { parseTriangleAgencySheet } from '@codexveil/rpg-systems/triangle-agency';
 import { AssimilacaoMobileSheet } from '@/components/assimilacao/sheet';
+import { TriangleAgencyMobileSheet } from '@/components/triangle-agency/sheet';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { SheetScreen } from '@/components/sheet/sheet-screen';
 import { Screen } from '@/components/ui/screen';
@@ -128,6 +130,32 @@ export default function CharacterScreen() {
           }
         />
         <GhostAura active={isDown(data.resources)} />
+      </>
+    );
+  }
+  if (data.character.systemId === 'triangle-agency') {
+    let triangleSheet;
+    try {
+      triangleSheet = parseTriangleAgencySheet(data.character.sheet);
+    } catch {
+      return (
+        <ErrorState message="Os dados desta ficha não seguem o formato do Triangle Agency. Nada foi alterado." />
+      );
+    }
+    const access = characterAccessInput(data.character);
+    return (
+      <>
+        <Stack.Screen options={{ title: data.character.name }} />
+        <TriangleAgencyMobileSheet
+          character={{
+            id: data.character.id,
+            name: data.character.name,
+            version: data.character.version,
+          }}
+          sheet={triangleSheet}
+          canEditSheet={canEditCharacterSheet(access)}
+          canEditPlay={canEditCharacterPlayState(access)}
+        />
       </>
     );
   }

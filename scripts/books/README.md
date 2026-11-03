@@ -54,6 +54,12 @@ repositório. Gere tudo numa pasta fora do projeto (por exemplo, `Documents/Code
     (com o PDF, os quadros de habilidades de raça são lidos pelo retângulo desenhado, inteiros)
     (id `t20-ameacas`; livro inteiro em 2026-11-03: 429 ameaças, 74 equipamentos — armas, armaduras, itens gerais, melhorias e materiais —, 8 itens mágicos/artefatos, 7 magias, 29 raças jogáveis e 299 seções de texto por capítulo).
 
+11. **Triangle Agency** (`Triangle Agency.pdf`): o extrator preserva o livro inteiro página a
+    página e cria índices próprios para ARC, Requisições e Documentos com Bloqueio Lúdico. Use o
+    Python da venv com PyMuPDF:
+    `python -X utf8 -I scripts/books/triangle_agency.py "<pdf>" <saída>/triangle-agency.book.json`.
+    O pacote (`codexveil.triangle-agency.book`) fica fora do Git e é importado em **Meus livros**.
+
 Veja o andamento e o que falta em `docs/PROXIMOS_PASSOS.md` ("Continuidade").
 
 ## Importar na conta do responsável (sem passar pelo site)

@@ -65,6 +65,7 @@ import {
   type AssimilacaoMobileSource,
 } from '@/components/assimilacao/wizard';
 import { parseAssimilacaoCampaignRules } from '@codexveil/rpg-systems/assimilacao';
+import { TriangleAgencyMobileWizard } from '@/components/triangle-agency/wizard';
 import { Button } from '@/components/ui/button';
 import { loadAssimilacaoSources, loadT20Sources } from '@/lib/books';
 import { parseT20CampaignRules, type T20ContentSource } from '@codexveil/rpg-systems/tormenta20';
@@ -207,10 +208,21 @@ async function loadAssimData(userId: string) {
   return { campaigns, own: await loadAssimilacaoSources(client, own) };
 }
 
+async function loadTriangleData(userId: string) {
+  const campaigns = (await listMyCampaigns(getSupabase(), userId)).filter(
+    (campaign) =>
+      campaign.status === 'active' &&
+      campaign.role === 'player' &&
+      campaign.systemId === 'triangle-agency',
+  );
+  return { campaigns };
+}
+
 const systemDescriptions = {
   dnd5e: 'Dungeons & Dragons 5ª edição (SRD e os seus livros).',
   tormenta20: 'O RPG de fantasia brasileiro, com os livros importados.',
   assimilacao: 'Horror e sobrevivência num mundo tomado pela Assimilação.',
+  'triangle-agency': 'Agentes corporativos, Anomalias e alterações retrocausais da Realidade.',
 } as const;
 
 export default function NewCharacterScreen() {
@@ -218,28 +230,39 @@ export default function NewCharacterScreen() {
   const userId = useUserId();
   const data = useAsyncData(() => loadCreationData(userId), userId);
   const t20 = useAsyncData(() => loadT20Data(userId), `t20:${userId}`);
-  const [system, setSystem] = useState<'dnd5e' | 'tormenta20' | 'assimilacao' | null>(null);
+  const [system, setSystem] = useState<
+    'dnd5e' | 'tormenta20' | 'assimilacao' | 'triangle-agency' | null
+  >(null);
   const assim = useAsyncData(() => loadAssimData(userId), `assim:${userId}`);
+  const triangle = useAsyncData(() => loadTriangleData(userId), `triangle:${userId}`);
+  const [triangleCampaign, setTriangleCampaign] = useState('');
   const [assimCampaign, setAssimCampaign] = useState('');
   const [assimSources, setAssimSources] = useState<AssimilacaoMobileSource[] | null>(null);
   const [t20Campaign, setT20Campaign] = useState<string>('');
   const [t20Sources, setT20Sources] = useState<T20ContentSource[] | null>(null);
   const preT20 = t20.data?.campaigns.find((campaign) => campaign.id === params.campanha);
   const preAssim = assim.data?.campaigns.find((campaign) => campaign.id === params.campanha);
+  const preTriangle = triangle.data?.campaigns.find((campaign) => campaign.id === params.campanha);
   // Vindo de uma campanha, o sistema é o dela; senão a pessoa escolhe antes de tudo.
-  const activeSystem = preT20
-    ? 'tormenta20'
-    : preAssim
-      ? 'assimilacao'
-      : (system ?? (params.campanha && !t20.loading && !assim.loading ? 'dnd5e' : null));
+  const activeSystem = preTriangle
+    ? 'triangle-agency'
+    : preT20
+      ? 'tormenta20'
+      : preAssim
+        ? 'assimilacao'
+        : (system ??
+          (params.campanha && !t20.loading && !assim.loading && !triangle.loading
+            ? 'dnd5e'
+            : null));
   const systemOptions = [
     { value: 'dnd5e' as const, label: 'D&D 5e' },
     { value: 'tormenta20' as const, label: 'Tormenta20' },
     { value: 'assimilacao' as const, label: 'Assimilação' },
+    { value: 'triangle-agency' as const, label: 'Triangle Agency' },
   ];
 
   if (activeSystem === null) {
-    if (data.loading || t20.loading || assim.loading)
+    if (data.loading || t20.loading || assim.loading || triangle.loading)
       return <LoadingState label="Carregando suas campanhas e livros…" />;
     return (
       <ScrollView
@@ -258,6 +281,48 @@ export default function NewCharacterScreen() {
           />
         ))}
       </ScrollView>
+    );
+  }
+  if (activeSystem === 'triangle-agency' && triangle.data) {
+    const chosenId = preTriangle?.id ?? triangleCampaign;
+    const chosen = triangle.data.campaigns.find((campaign) => campaign.id === chosenId);
+    if (!chosenId) {
+      return (
+        <ScrollView
+          style={{ flex: 1, backgroundColor: colors.canvas }}
+          contentContainerStyle={styles.content}
+        >
+          <Button
+            label="Trocar o sistema"
+            variant="ghost"
+            compact
+            onPress={() => setSystem(null)}
+          />
+          <AppText variant="title">Onde o Agente vai trabalhar?</AppText>
+          {triangle.data.campaigns.map((campaign) => (
+            <OptionCard
+              key={campaign.id}
+              selected={false}
+              title={campaign.name}
+              description="Filial de Triangle Agency"
+              onPress={() => setTriangleCampaign(campaign.id)}
+            />
+          ))}
+          <OptionCard
+            selected={false}
+            title="Ficha pessoal"
+            description="Agente sem campanha vinculada."
+            onPress={() => setTriangleCampaign('pessoal')}
+          />
+        </ScrollView>
+      );
+    }
+    return (
+      <TriangleAgencyMobileWizard
+        campaign={
+          chosen ? { id: chosen.id, name: chosen.name, questions: chosen.creationQuestions } : null
+        }
+      />
     );
   }
   if (activeSystem === 'assimilacao' && assim.data) {
@@ -328,7 +393,7 @@ export default function NewCharacterScreen() {
       />
     );
   }
-  if (data.loading || t20.loading || assim.loading)
+  if (data.loading || t20.loading || assim.loading || triangle.loading)
     return <LoadingState label="Carregando suas campanhas e livros…" />;
   if (activeSystem === 'tormenta20' && t20.data) {
     const chosenId = preT20?.id ?? t20Campaign;

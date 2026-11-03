@@ -13,6 +13,7 @@ import {
 } from '@codexveil/rpg-systems/dnd5e';
 import { T20_CHARACTER_BOOK_KINDS, type T20ContentSource } from '@codexveil/rpg-systems/tormenta20';
 import { ASSIMILACAO_PLAYER_BOOK_KINDS } from '@codexveil/rpg-systems/assimilacao';
+import { TRIANGLE_PLAYER_BOOK_KINDS } from '@codexveil/rpg-systems/triangle-agency';
 
 /** Livros de um sistema (um usuário pode ter livros de D&D e de Tormenta20). */
 export function packsOfSystem(
@@ -119,6 +120,13 @@ export async function loadAssimilacaoSources(
   }[]
 > {
   return sourcesFor(client, packsOfSystem(packs, 'assimilacao'), ASSIMILACAO_PLAYER_BOOK_KINDS);
+}
+
+export async function loadTriangleSources(
+  client: CodexveilClient,
+  packs: readonly BookPackSummary[],
+) {
+  return sourcesFor(client, packsOfSystem(packs, 'triangle-agency'), TRIANGLE_PLAYER_BOOK_KINDS);
 }
 
 /**

@@ -13,6 +13,7 @@ import {
   type T20AttributeMethod,
 } from '@codexveil/rpg-systems/tormenta20';
 import { parseAssimilacaoCampaignRules } from '@codexveil/rpg-systems/assimilacao';
+import { parseTriangleAgencyCampaignRules } from '@codexveil/rpg-systems/triangle-agency';
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
 import type { FieldErrors } from '@codexveil/validation';
@@ -38,6 +39,14 @@ export function CampaignRulesFields({
   errors,
   books = [],
 }: CampaignRulesFieldsProps) {
+  if (systemId === 'triangle-agency')
+    return (
+      <TriangleAgencyRulesFields
+        initial={initial}
+        errors={errors}
+        books={books.filter((book) => book.systemId === 'triangle-agency')}
+      />
+    );
   if (systemId === 'assimilacao')
     return (
       <AssimilacaoRulesFields
@@ -61,6 +70,107 @@ export function CampaignRulesFields({
       errors={errors}
       books={books.filter((book) => book.systemId === 'dnd5e')}
     />
+  );
+}
+
+function TriangleAgencyRulesFields({
+  initial,
+  errors,
+  books,
+}: {
+  initial: unknown;
+  errors?: FieldErrors | undefined;
+  books: CampaignBookOption[];
+}) {
+  const id = useId();
+  const [rules, setRules] = useState(() => parseTriangleAgencyCampaignRules(initial));
+  return (
+    <fieldset className="flex flex-col gap-5 rounded-md border border-line p-4 sm:p-5">
+      <legend className="eyebrow px-1">Políticas da Filial</legend>
+      <p className="-mt-1 text-sm text-fg-muted">
+        Configurações próprias de Triangle Agency para a carreira dos Agentes e a resolução de
+        conflitos diretos.
+      </p>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <SelectField
+          id={`${id}-time`}
+          name="rules.timePerMission"
+          label="Tempo após cada missão"
+          value={String(rules.timePerMission)}
+          onChange={(event) => setRules({ ...rules, timePerMission: Number(event.target.value) })}
+          error={errors?.['rules.timePerMission']}
+        >
+          {[1, 2, 3, 4, 5].map((value) => (
+            <option key={value} value={value}>
+              {value} {value === 1 ? 'unidade' : 'unidades'}
+              {value === 1
+                ? ' (carreira de 30 missões)'
+                : value === 3
+                  ? ' (carreira de 10 missões)'
+                  : ''}
+            </option>
+          ))}
+        </SelectField>
+        <SelectField
+          id={`${id}-conflict`}
+          name="rules.conflictResolution"
+          label="Resolução de conflitos"
+          value={rules.conflictResolution}
+          onChange={(event) =>
+            setRules({
+              ...rules,
+              conflictResolution: event.target.value as typeof rules.conflictResolution,
+            })
+          }
+        >
+          <option value="dice">6d4 cumulativos</option>
+          <option value="vote">Votação</option>
+          <option value="rotating-judge">Juiz rotativo</option>
+          <option value="gm">Palavra final do Diretor</option>
+          <option value="birthday">Regra do aniversário</option>
+        </SelectField>
+      </div>
+      <CheckboxField
+        id={`${id}-veto`}
+        name="rules.vetoPoints"
+        label="Usar Pontos de Veto"
+        description="Quem perde uma decisão recebe um ponto; 3 pontos garantem um objetivo."
+        checked={rules.vetoPoints}
+        onChange={(event) => setRules({ ...rules, vetoPoints: event.target.checked })}
+      />
+      <div className="flex flex-col gap-3 border-t border-line pt-4">
+        <p className="text-sm font-medium">Livro liberado</p>
+        {books.length ? (
+          books.map((book) => (
+            <CheckboxField
+              key={book.bookKey}
+              id={`${id}-book-${book.bookKey}`}
+              name="rules.sourcebooks"
+              value={book.bookKey}
+              label={book.name}
+              description={book.edition}
+              checked={rules.sourcebooks.includes(book.bookKey)}
+              onChange={(event) =>
+                setRules({
+                  ...rules,
+                  sourcebooks: event.target.checked
+                    ? [...new Set([...rules.sourcebooks, book.bookKey])]
+                    : rules.sourcebooks.filter((key) => key !== book.bookKey),
+                })
+              }
+            />
+          ))
+        ) : (
+          <p className="text-sm text-fg-muted">
+            Importe o pacote privado de Triangle Agency em{' '}
+            <Link href={routes.books} className="text-fg-brand underline-offset-2 hover:underline">
+              Meus livros
+            </Link>
+            .
+          </p>
+        )}
+      </div>
+    </fieldset>
   );
 }
 

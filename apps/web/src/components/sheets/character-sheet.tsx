@@ -14,9 +14,11 @@ import { findSystem } from '@codexveil/rpg-systems';
 import { parseDnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
 import { parseT20Sheet } from '@codexveil/rpg-systems/tormenta20';
 import { parseAssimilacaoSheet } from '@codexveil/rpg-systems/assimilacao';
+import { parseTriangleAgencySheet } from '@codexveil/rpg-systems/triangle-agency';
 import { Dnd5eSheetScreen } from '@/components/sheets/dnd5e/sheet-screen';
 import { T20SheetScreen } from '@/components/sheets/t20/sheet-screen';
 import { AssimilacaoSheetScreen } from '@/components/sheets/assimilacao/sheet-screen';
+import { TriangleAgencySheetScreen } from '@/components/sheets/triangle-agency/sheet-screen';
 import { ErrorState } from '@/components/ui/states';
 import { Card } from '@/components/ui/card';
 import { CreationAnswersView } from '@/components/characters/creation-answers';
@@ -284,6 +286,33 @@ export async function CharacterSheet({
       <ErrorState
         title="Não foi possível abrir a ficha"
         description="Os dados desta ficha não seguem o formato do Assimilação RPG. Nada foi alterado."
+      />
+    );
+  } else if (system?.id === 'triangle-agency') {
+    let sheet;
+    try {
+      sheet = parseTriangleAgencySheet(character.sheet);
+    } catch (error) {
+      console.error('[codexveil] ficha Triangle Agency inválida', character.id, error);
+    }
+    content = sheet ? (
+      <TriangleAgencySheetScreen
+        character={{
+          id: character.id,
+          name: character.name,
+          version: character.version,
+          campaign: character.campaign
+            ? { id: character.campaign.id, name: character.campaign.name }
+            : null,
+        }}
+        sheet={sheet}
+        permissions={permissions}
+        variant={variant}
+      />
+    ) : (
+      <ErrorState
+        title="Não foi possível abrir a ficha"
+        description="Os dados desta ficha não seguem o formato do Triangle Agency. Nada foi alterado."
       />
     );
   } else {

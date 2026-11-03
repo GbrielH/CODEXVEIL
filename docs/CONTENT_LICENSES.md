@@ -1,5 +1,12 @@
 # Licenças de conteúdo
 
+## Triangle Agency
+
+_Triangle Agency: O Jogo de Interpretação_ (primeira edição) declara todos os direitos reservados
+a Haunted Table, LLC. O repositório não inclui o PDF nem o texto integral: guarda apenas regras
+numéricas, estrutura de ficha, nomes curtos necessários à operação e o extrator. O conteúdo do
+exemplar do usuário fica num pacote privado externo, importado sob a conta dele.
+
 O Codexveil só usa conteúdo cuja reprodução é permitida. Nenhum texto, aventura, ilustração ou
 catálogo de livros comerciais foi copiado para o código ou para o banco. As atribuições também
 aparecem para os usuários na página `/licencas` do site.

@@ -30,6 +30,12 @@ const KINDS: Record<string, { kind: string; label: string; icon: ReactNode }[]> 
     },
     { kind: 'characteristic', label: 'Características', icon: <ScrollText className="h-4 w-4" /> },
   ],
+  'triangle-agency': [
+    { kind: 'arc_anomaly', label: 'Anomalias', icon: <Sparkles className="h-4 w-4" /> },
+    { kind: 'arc_reality', label: 'Realidades', icon: <ScrollText className="h-4 w-4" /> },
+    { kind: 'arc_competency', label: 'Competências', icon: <BookOpen className="h-4 w-4" /> },
+    { kind: 'requisition', label: 'Requisições', icon: <Gem className="h-4 w-4" /> },
+  ],
 };
 
 function normalize(text: string): string {

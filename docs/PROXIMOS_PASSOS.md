@@ -12,12 +12,14 @@
 - [x] Módulo próprio, migração, regras de campanha, criação e ficha no site e app.
 - [x] 6d4, GQs, Burnout, Caos, Triscendência, Estabilidade, ARC, Méritos, Tempo e conflitos.
 - [x] Extrator, validador, importador e leitor do pacote privado: 308 páginas, 446 entradas.
-- [x] Testes do pacote de sistemas (275) e typecheck de site/app.
+- [x] Dry-run da migração; `pnpm check` 20/20 (699 testes) e `pnpm build` 2/2.
 - [ ] Aplicar a migração em produção somente quando o responsável pedir commit e push.
 - [ ] Testar manualmente com campanha, Agente e livro importado no navegador e no Android.
 
 Histórico: em 2026-11-03, o sistema foi implantado sem usar mecânicas dos sistemas anteriores; a
 infraestrutura comum do Codexveil foi reutilizada apenas para campanhas, persistência, livros e UI.
+O dry-run listou somente `20261103150000_triangle_agency.sql`; nada foi aplicado em produção.
+`pnpm check` passou com 699 testes e 11 ao vivo pulados, e o build web/Android passou.
 
 | Área        | Situação                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -49,6 +51,19 @@ com várias rolagens, aba Mapa com tela cheia e zoom, camadas giráveis, movimen
 de combate, paredes e quadrados ocupados bloqueando o movimento, áreas de magia compartilhadas,
 anotações arrastáveis, bônus temporários e botão "Usar" nas magias, características por tipo,
 livros só os importados, paginação, exclusão de conta e limpeza de arquivos órfãos.
+
+### Pendente: verificar o Triangle Agency (publicado sem verificação em 2026-11-03)
+
+O sistema Triangle Agency (Codex; detalhes em [`TRIANGLE_AGENCY.md`](TRIANGLE_AGENCY.md)) foi
+publicado em `main` a pedido do responsável **sem revisão de código nem teste manual**. O Codex
+relatou `pnpm check` 20/20 (699 testes) e `pnpm build` aprovados na máquina dele. Falta:
+
+- [ ] Aplicar a migração `20261103150000_triangle_agency.sql` em produção (só registra o sistema em
+      `rpg_systems`; dry-run ok). **Até lá, criar campanha ou ficha de Triangle Agency falha.**
+- [ ] Revisar o código (motor 6d4, criação, ficha, regras da campanha, blocos de Anomalia, importador).
+- [ ] Importar o pacote privado `triangle-agency.book.json` (pasta de trabalho, fora do Git) em Meus
+      livros.
+- [ ] Testar no navegador e no Android: criação, ficha, rolagens, regras da campanha e leitor do livro.
 
 ### Para depois: efeitos das escolhas de raça do Tormenta20 (anotado em 2026-11-03)
 

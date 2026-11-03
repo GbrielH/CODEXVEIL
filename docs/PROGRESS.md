@@ -5,6 +5,20 @@
 
 ## Estado atual
 
+**2026-11-03 (Triangle Agency):** quarto sistema completo, modelado diretamente do livro e sem
+reaproveitar regras dos demais. Motor próprio de 6d4/GQs/Burnout/Caos/Triscendência/Estabilidade,
+ARC, Méritos, Pontas Soltas, Tempo, conflitos, Requisições, Relatório de Missão e Anomalias do
+Diretor; criação e ficha no site e app; regras de campanha; leitor/importador do livro. O pacote
+privado externo foi gerado a partir das 308 páginas: 446 entradas, 1.186.885 bytes e zero chaves
+duplicadas. `pnpm check` passou nas 20/20 tarefas: 699 testes aprovados, 11 testes ao vivo
+pulados e 3 avisos de lint preexistentes. `pnpm build` passou nas 2/2 tarefas (Next.js e export
+Android/Hermes); a primeira tentativa foi bloqueada pelo sandbox ao executar o Hermes e a repetição
+com a permissão necessária passou. O dry-run listou somente a migração
+`20261103150000_triangle_agency.sql`, ainda não aplicada em produção. Sem teste manual. Próximo
+passo exato: testar criação, rolagem, gasto/recarga de GQs e leitura do livro com uma campanha no
+navegador e no Android; depois, quando o responsável pedir a publicação, aplicar a migração e
+fazer commit/push.
+
 **2026-11-03 (calls encerradas):** transcrições ficam 24 h para download em "Calls encerradas" e
 são apagadas depois (ao listar/abrir a sala e de hora em hora pelo workflow `cleanup-orphans`).
 Migração `20261103110000_call_transcript_retention` aplicada em produção; Edge Function

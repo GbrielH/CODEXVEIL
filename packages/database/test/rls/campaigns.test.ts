@@ -120,7 +120,12 @@ describe('acesso anônimo', () => {
     const systems = await db.as(anon, (s) =>
       s.query(`select id from public.rpg_systems order by id`),
     );
-    expect(systems).toEqual([{ id: 'assimilacao' }, { id: 'dnd5e' }, { id: 'tormenta20' }]);
+    expect(systems).toEqual([
+      { id: 'assimilacao' },
+      { id: 'dnd5e' },
+      { id: 'tormenta20' },
+      { id: 'triangle-agency' },
+    ]);
   });
 });
 

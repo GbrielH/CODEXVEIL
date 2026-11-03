@@ -1,5 +1,12 @@
 # Arquitetura e decisões
 
+## Adição de Triangle Agency (2026-11-03)
+
+`packages/rpg-systems/src/triangle-agency` é um módulo isolado: ficha JSON, regras 6d4, ARC,
+validação, cálculos e pacote de livro. Ele só implementa o contrato comum `RpgSystem`; não importa
+regras ou estruturas de D&D, Tormenta20 ou Assimilação. Web e mobile têm assistentes e fichas
+específicos. O texto integral do livro entra em tempo de uso por pacote privado importado.
+
 ## Visão geral
 
 ```

@@ -31,6 +31,15 @@ function rawRules(systemId: string, formData: FormData): Record<string, unknown>
         scarcityCap: Number(formData.get('rules.scarcityCap') ?? 2),
         sourcebooks: formData.getAll('rules.sourcebooks').map(String),
       };
+    case 'triangle-agency': {
+      const conflictResolution = formData.get('rules.conflictResolution');
+      return {
+        timePerMission: Number(formData.get('rules.timePerMission') ?? 1),
+        conflictResolution: typeof conflictResolution === 'string' ? conflictResolution : 'dice',
+        vetoPoints: formData.get('rules.vetoPoints') === 'on',
+        sourcebooks: formData.getAll('rules.sourcebooks').map(String),
+      };
+    }
     default:
       return {};
   }

@@ -17,6 +17,13 @@
 
 ## Resumo
 
+**Atualização de 2026-11-03 — Triangle Agency:** implementação funcional no site e app concluída,
+com motor próprio, ARC, criação, ficha, regras de campanha e pacote privado do livro. Testes
+automatizados, typechecks e builds passaram (`pnpm check`: 20/20, 699 aprovados e 11 ao vivo
+pulados; `pnpm build`: 2/2). O dry-run listou somente a nova migração. Status: **falta validar ao
+vivo**, porque ainda não houve uso manual no navegador/aparelho nem aplicação da migração
+`20261103150000_triangle_agency.sql` em produção.
+
 O código do MVP está completo na web, o app mobile cobre os fluxos prioritários e o banco
 tem RLS testado. Em 2026-10-17, `pnpm check` passou em 20 de 20 tarefas (366 testes) e
 `pnpm build` passou em 2 de 2 tarefas (web e bundle Android).
