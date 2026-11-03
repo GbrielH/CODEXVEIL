@@ -10,8 +10,24 @@ import {
   type CallParticipant,
   type CallRoomSummary,
 } from '@codexveil/database';
-import { LiveKitRoom, RoomAudioRenderer, VideoConference } from '@livekit/components-react';
-import { Check, Copy, Crown, Hourglass, PhoneOff, UserPlus, X } from 'lucide-react';
+import {
+  LiveKitRoom,
+  RoomAudioRenderer,
+  VideoConference,
+  useLocalParticipant,
+} from '@livekit/components-react';
+import { LocalAudioTrack } from 'livekit-client';
+import {
+  Check,
+  Copy,
+  Crown,
+  Hourglass,
+  PhoneOff,
+  UserPlus,
+  Volume2,
+  VolumeX,
+  X,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from '@/components/ui/alert';
@@ -32,6 +48,46 @@ type Entry =
   | { state: 'waiting' }
   | { state: 'ready'; token: string; url: string }
   | { state: 'error'; message: string };
+
+/** Preferência local: reaplica as restrições no microfone publicado sem afetar os demais. */
+function NoiseReductionControl({ onError }: { onError: (message: string) => void }) {
+  const { microphoneTrack } = useLocalParticipant();
+  const [enabled, setEnabled] = useState(true);
+  const [changing, setChanging] = useState(false);
+  const track = microphoneTrack?.audioTrack;
+  if (!(track instanceof LocalAudioTrack)) return null;
+
+  const toggle = async () => {
+    const next = !enabled;
+    setChanging(true);
+    try {
+      await track.applyConstraints({
+        echoCancellation: true,
+        noiseSuppression: next,
+        autoGainControl: true,
+      });
+      setEnabled(next);
+    } catch {
+      onError('O navegador não conseguiu alterar a redução de ruído deste microfone.');
+    } finally {
+      setChanging(false);
+    }
+  };
+
+  return (
+    <div className="absolute top-3 right-3 z-20">
+      <Button
+        size="sm"
+        variant={enabled ? 'secondary' : 'ghost'}
+        icon={enabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+        disabled={changing}
+        onClick={() => void toggle()}
+      >
+        Reduzir ruído: {enabled ? 'ligado' : 'desligado'}
+      </Button>
+    </div>
+  );
+}
 
 /**
  * Sala de call: pede o token ao servidor (que confere as regras da sala), mostra a espera de
@@ -169,7 +225,7 @@ export function CallRoomView({
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
-        <div className="min-h-[60vh] overflow-hidden rounded-xl border border-line bg-black">
+        <div className="relative min-h-[60vh] overflow-hidden rounded-xl border border-line bg-black">
           {entry.state === 'ready' ? (
             <LiveKitRoom
               token={entry.token}
@@ -203,6 +259,11 @@ export function CallRoomView({
             >
               <VideoConference />
               <RoomAudioRenderer />
+              <NoiseReductionControl
+                onError={(message) =>
+                  toast({ tone: 'warning', title: 'Redução de ruído', description: message })
+                }
+              />
             </LiveKitRoom>
           ) : (
             <div className="flex h-[60vh] flex-col items-center justify-center gap-3 p-6 text-center">

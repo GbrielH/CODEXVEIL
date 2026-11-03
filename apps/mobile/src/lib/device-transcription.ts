@@ -1,4 +1,9 @@
-import type { TranscribedSpeech, TranscriptionProvider } from '@codexveil/domain';
+import {
+  isRetryableRecognitionError,
+  recognitionRestartDelay,
+  type TranscribedSpeech,
+  type TranscriptionProvider,
+} from '@codexveil/domain';
 import { Platform } from 'react-native';
 
 interface RecognitionModule {
@@ -6,6 +11,7 @@ interface RecognitionModule {
     lang: string;
     continuous: boolean;
     interimResults: boolean;
+    requiresOnDeviceRecognition: boolean;
     onresult:
       | ((event: {
           resultIndex: number;
@@ -13,7 +19,7 @@ interface RecognitionModule {
         }) => void)
       | null;
     onspeechstart: (() => void) | null;
-    onerror: ((event: { error: string }) => void) | null;
+    onerror: ((event: { error: string; message?: string }) => void) | null;
     onend: (() => void) | null;
     start(): void;
     stop(): void;
@@ -24,7 +30,7 @@ interface RecognitionModule {
 const ERRORS: Record<string, string> = {
   'not-allowed': 'O aparelho não permitiu usar o microfone para a transcrição.',
   'service-not-allowed': 'O reconhecimento de fala está desativado neste aparelho.',
-  network: 'O reconhecimento de fala precisa de internet neste aparelho.',
+  network: 'O serviço de reconhecimento de fala falhou. Tentando reconectar…',
   'audio-capture': 'O microfone está ocupado pela call neste aparelho; a transcrição parou.',
 };
 
@@ -49,11 +55,14 @@ export function createDeviceTranscription(): TranscriptionProvider {
   let recognition: InstanceType<RecognitionModule['ExpoWebSpeechRecognition']> | null = null;
   let running = false;
   let speechStart = new Date();
+  let restartAttempt = 0;
+  let restartTimer: ReturnType<typeof setTimeout> | null = null;
   return {
     supported: Boolean(module),
     start(onFinal: (speech: TranscribedSpeech) => void, onError: (message: string) => void) {
       if (!module || running) return;
       running = true;
+      restartAttempt = 0;
       void module.ExpoSpeechRecognitionModule.requestPermissionsAsync()
         .then(({ granted }) => {
           if (!running) return;
@@ -62,12 +71,22 @@ export function createDeviceTranscription(): TranscriptionProvider {
             onError('Sem permissão de reconhecimento de fala.');
             return;
           }
+          const scheduleRestart = (listen: () => void) => {
+            if (!running || restartTimer !== null) return;
+            const delay = recognitionRestartDelay(restartAttempt++);
+            restartTimer = setTimeout(() => {
+              restartTimer = null;
+              listen();
+            }, delay);
+          };
           const listen = () => {
             if (!running) return;
             const current = new module.ExpoWebSpeechRecognition();
             current.lang = 'pt-BR';
             current.continuous = true;
             current.interimResults = false;
+            // Usa o serviço padrão do Android; não exige pacote de idioma offline instalado.
+            current.requiresOnDeviceRecognition = false;
             current.onspeechstart = () => {
               speechStart = new Date();
             };
@@ -76,28 +95,39 @@ export function createDeviceTranscription(): TranscriptionProvider {
                 const result = event.results[index]!;
                 const text = result[0].transcript.trim();
                 if (result.isFinal && text) {
+                  restartAttempt = 0;
                   onFinal({ text, startedAt: speechStart, endedAt: new Date() });
                   speechStart = new Date();
                 }
               }
             };
             current.onerror = (event) => {
-              if (event.error === 'no-speech' || event.error === 'aborted') return;
+              if (isRetryableRecognitionError(event.error)) {
+                if (event.error === 'network') onError(ERRORS.network!);
+                scheduleRestart(listen);
+                return;
+              }
               running = false;
               onError(
                 ERRORS[event.error] ??
+                  event.message ??
                   'O reconhecimento de fala parou neste aparelho. A call continua normalmente.',
               );
             };
             current.onend = () => {
-              if (running) setTimeout(listen, 300);
+              current.onresult = null;
+              current.onspeechstart = null;
+              current.onerror = null;
+              current.onend = null;
+              if (recognition === current) recognition = null;
+              scheduleRestart(listen);
             };
             recognition = current;
             try {
               current.start();
             } catch {
-              running = false;
-              onError('Não foi possível iniciar o reconhecimento de fala neste aparelho.');
+              onError('O reconhecimento de fala não iniciou. Tentando de novo…');
+              scheduleRestart(listen);
             }
           };
           listen();
@@ -109,7 +139,15 @@ export function createDeviceTranscription(): TranscriptionProvider {
     },
     stop() {
       running = false;
-      recognition?.stop();
+      if (restartTimer !== null) clearTimeout(restartTimer);
+      restartTimer = null;
+      if (recognition) {
+        recognition.onresult = null;
+        recognition.onspeechstart = null;
+        recognition.onerror = null;
+        recognition.onend = null;
+        recognition.stop();
+      }
       recognition = null;
     },
   };

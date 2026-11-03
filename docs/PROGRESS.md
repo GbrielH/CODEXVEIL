@@ -1,9 +1,21 @@
 # Progresso do Codexveil
 
-> Documento de retomada. Última atualização: **2026-11-02**. Para retomar o trabalho em andamento, veja primeiro a seção "Continuidade" de [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md#continuidade-parada-em-2026-10-19-retomar-em-outra-máquina).
+> Documento de retomada. Última atualização: **2026-11-03**. Para retomar o trabalho em andamento, veja primeiro a seção "Continuidade" de [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md#continuidade-parada-em-2026-10-19-retomar-em-outra-máquina).
 > O que falta em relação ao prompt inicial está em [`PENDENCIAS.md`](PENDENCIAS.md).
 
 ## Estado atual
+
+**2026-11-03 (call/transcrição):** o dono continua sendo o único que liga/desliga no site; todos
+os participantes aprovados passam a transcrever automaticamente a própria voz pelo Realtime, com
+pausa individual. Navegador e app reiniciam sessões encerradas/erros temporários com backoff; a
+mensagem Android de `network` deixou de afirmar incorretamente que não há internet. Site e app têm
+**Reduzir ruído** ligado por padrão, via restrições JS WebRTC. Sem migração e sem mudança nativa.
+Teste focado: domain 110/110; database 238 aprovados e 11 ao vivo pulados; typecheck web/mobile
+passou. `pnpm check`: 20/20 tarefas e 685 testes aprovados, com 11 testes ao vivo pulados e 3
+avisos de lint preexistentes; `pnpm build`: 2/2 tarefas (Next.js e export Android) aprovadas. A
+primeira execução de cada comando foi bloqueada pelo sandbox (`EPERM` no resolvedor do ESLint e
+execução negada do Hermes); as repetições fora do sandbox passaram. Próximo passo exato: testar
+com duas contas/aparelhos a captura das duas vozes, pausa, desligamento, retomada e ruído.
 
 **2026-11-02 (noite, taverna):** correção das não lidas da taverna no app (marca pelo horário da
 última mensagem e comparação por data). `pnpm check` passou; sem teste no aparelho. Erro no

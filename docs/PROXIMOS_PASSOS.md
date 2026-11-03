@@ -252,7 +252,7 @@ execução por sessão e preserva cartões ilustrados ou editados. `CALLS_ENABLE
 Preview; Production e app continuam desligados. Próximo: o dono cadastrar as chaves LiveKit somente
 em Preview, publicar uma Preview e executar o roteiro ao vivo; depois gerar o APK autorizado e só
 então ligar em produção. Detalhes em
-[call-transcricao-momentos.md](call-transcricao-momentos.md#onde-parou-atualizado-em-2026-11-02).
+[call-transcricao-momentos.md](call-transcricao-momentos.md#onde-parou-atualizado-em-2026-11-03).
 
 ### B0i. Mapas: ideias do watabou e do RPG Map (2026-11-02)
 
@@ -863,6 +863,21 @@ de segurança).
 | Remetente @gmail na Brevo  | E-mails podem cair no spam                            | Usar um domínio próprio quando possível                                                                                       |
 
 ## Histórico
+
+### 2026-11-03 — transcrição de todos e ruído da call
+
+- [x] Ligar a transcrição pelo dono passa a iniciar automaticamente a captura local de cada
+      participante aprovado no site/app; desligar, pausar ou sair cancela captura e retentativas.
+- [x] Web Speech e `expo-speech-recognition` reiniciam `onend`, `no-speech`, `aborted` e `network`
+      com espera crescente; o app não chama mais toda falha `network` de falta de internet.
+- [x] Opção individual **Reduzir ruído**, ligada por padrão, no site e app, somente com restrições
+      JS WebRTC. Krisp React Native ficou para APK futuro por exigir integração nativa.
+- [x] RLS conferida sem migração nova: só o dono altera a chave; aprovado grava ligada e recebe
+      42501 desligada. Teste PGlite incluído.
+- [x] `pnpm check`: 20/20 tarefas, 685 testes aprovados e 11 ao vivo pulados; `pnpm build`: 2/2
+      tarefas. Permanecem 3 avisos de lint preexistentes, sem erros.
+- [ ] Testar com duas contas/aparelhos: todas as vozes, pausa individual, desligamento pelo dono,
+      recuperação após silêncio/queda e efeito do redutor de ruído Android.
 
 ### 2026-11-03 — dados no app
 

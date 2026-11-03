@@ -10,26 +10,24 @@ preferência de cada um.
 | 2    | Transcrição ao vivo por personagem                     | código feito; migração aplicada; **escondida** |
 | 3    | Melhores Momentos (análise por IA e prompts de imagem) | código feito; migração aplicada; **escondida** |
 
-## Onde parou (atualizado em 2026-11-02)
+## Onde parou (atualizado em 2026-11-03)
 
 Pedido do responsável: parar aqui e **não liberar em produção** enquanto não estiver testado.
 
-- **Escondido por chave**: `CALLS_ENABLED=1` foi ligado **somente em Preview** na Vercel em
-  2026-11-02. Production continua desligada. O app continua desligado até ligar
-  `EXPO_PUBLIC_CALLS_ENABLED=1` num APK novo. Sem as chaves do LiveKit e sem um novo deploy de
-  Preview, ainda não há uma sala utilizável.
+- **Liberação por chave**: o site e o app continuam respeitando `CALLS_ENABLED` e
+  `EXPO_PUBLIC_CALLS_ENABLED`. O APK atual contém a call/transcrição e o responsável já abriu a
+  call no aparelho; antes de nova publicação, ainda é preciso reconfirmar em quais ambientes da
+  Vercel a chave do site está ligada.
 - **Chaves**: em Production tudo fica fora do site e do app até ligar `CALLS_ENABLED=1` (Vercel)
   e `EXPO_PUBLIC_CALLS_ENABLED=1` (app; vai no próximo build/OTA). Desligado, somem a aba Call, o
   aviso de convite, a aba Momentos, a galeria da sessão, a aba Transcrição do editor e as rotas
   `/api/call/token` e `/api/sessoes/momentos` respondem 404.
 - **Banco**: as três migrações das fases e as correções `20261102110000`–`20261102120000` estão
   aplicadas em produção. O `db push` de 2026-11-02 aplicou somente essas duas correções.
-- **APK**: o de 2026-11-01 19:15 UTC (`f6EiER5f…apk`) já tem o LiveKit; **não** tem o módulo de
-  transcrição do celular (`expo-speech-recognition`), que exige o próximo APK.
-  A preparação de 2026-11-02 deixou plugin e permissões conferidos, `expo-doctor` 21/21 e
-  fingerprint Android local `25c309628a10712c7d7e692cb90398c97749e5b6`; **nenhum build foi
-  executado**. Entram nesse fingerprint o módulo de fala, suas permissões e os patches `expo`
-  57.0.31, `expo-notifications` 57.0.24 e `expo-router` 57.0.29.
+- **APK**: o build `5101c342` de 2026-11-03 já contém LiveKit e
+  `expo-speech-recognition`; foi instalado e a call abriu no aparelho. As correções desta rodada
+  são somente JavaScript e podem seguir por OTA; não houve alteração em `app.config.ts`, Expo,
+  React Native, plugins ou dependências nativas.
 - **Revisão antes do teste**: `20261102110000_call_security_hardening.sql` restringe
   participantes/transcrição a quem foi
   aprovado, impede convidados/recusados de convidar terceiros, protege a troca de sessão da sala e
@@ -37,15 +35,38 @@ Pedido do responsável: parar aqui e **não liberar em produção** enquanto nã
   mestre. `20261102120000_highlight_generation_lock.sql` garante uma geração por sessão e libera
   locks abandonados após três minutos. A regeneração preserva cartões anteriores se uma gravação
   falhar e nunca apaga cartões da IA que receberam imagem ou edição do mestre.
-- **Nada foi testado ao vivo** (sem as chaves do LiveKit). Para continuar:
-  1. Criar o projeto grátis no LiveKit Cloud e pôr `LIVEKIT_URL`, `LIVEKIT_API_KEY` e
-     `LIVEKIT_API_SECRET` na Vercel.
+- **Esta correção ainda não foi testada com duas contas/aparelhos.** Para continuar:
+  1. Reconfirmar `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` e a flag da call no ambiente
+     usado para o teste.
   2. ~~Aplicar as duas migrações pendentes~~ (feito; ver acima).
   3. ~~Aplicar as migrações de endurecimento e lock~~ (feito em 2026-11-02).
-  4. Conferir as três chaves do LiveKit em Preview e criar um novo deploy de Preview.
+  4. Criar um novo deploy/OTA no ambiente de teste depois da revisão desta rodada.
   5. Executar o roteiro abaixo.
-  6. Gerar o APK com a transcrição do celular e testar o conflito de microfone com a call.
+  6. ~~Gerar o APK com a transcrição do celular~~ (feito); testar a transcrição simultânea e
+     o conflito de microfone com a call usando duas contas/aparelhos.
   7. Com tudo certo, ligar as chaves em produção.
+
+### Correção de 2026-11-03: todos transcrevem e redução de ruído
+
+- O botão **Gravar transcrição** continua somente no site e somente para
+  `call_rooms.owner_id`. Quando o dono liga/desliga, o Realtime de `call_rooms` faz cada
+  participante aprovado, no site ou app, iniciar/parar automaticamente a captura da própria voz.
+  A pausa continua local e individual.
+- `onend`, `no-speech`, `aborted` e `network` agora reiniciam o motor com espera exponencial de
+  300 ms a 15 s, cancelada ao pausar, sair ou o dono desligar. Um resultado final zera a espera.
+  `network` no Android é uma falha genérica do serviço de fala, não prova falta de internet; a
+  mensagem foi corrigida para informar a reconexão.
+- No app, `lang="pt-BR"`, `continuous=true` e `requiresOnDeviceRecognition=false` ficam explícitos:
+  não se exige que o pacote de português offline esteja instalado.
+- Site e app publicam o microfone com `echoCancellation`, `noiseSuppression` e `autoGainControl`.
+  Cada pessoa ganhou **Reduzir ruído**, ligado por padrão, que reaplica apenas restrições JS da
+  própria faixa. O efeito no Android ainda precisa ser conferido no APK atual.
+- O Krisp foi avaliado. O filtro web existe no LiveKit Cloud, mas o equivalente React Native exige
+  `@livekit/react-native-krisp-noise-filter` e integração nativa, portanto um APK novo. Para não
+  quebrar o OTA nem oferecer qualidades diferentes sem teste, esta rodada fica no filtro WebRTC.
+- Verificação automatizada: teste de domínio do backoff; 15 testes RLS de call; `pnpm check` com
+  685 testes aprovados e 11 ao vivo pulados; `pnpm build` com Next.js e export Android aprovados.
+  Ainda falta o roteiro manual com duas contas/aparelhos.
 
 ## Roteiro do teste em Preview
 
@@ -130,12 +151,13 @@ Sem as variáveis, a sala abre e avisa "A call ainda não foi configurada no ser
 - **Motor plugável**: `TranscriptionProvider` (`packages/domain/src/calls/transcription.ts`).
   Hoje, dois motores grátis:
   - **Site**: Web Speech API do navegador (`apps/web/src/lib/browser-transcription.ts`). Funciona
-    no **Chrome e no Edge** (no Firefox e no Safari, não: a pessoa ainda vê as falas dos outros).
-    Usa o serviço de reconhecimento do próprio navegador, sem custo.
+    no **Chrome e no Edge**. Sem suporte, mostra "Seu navegador não transcreve; use Chrome/Edge ou
+    o app", mas a pessoa continua na call e vendo as falas dos outros. Usa o serviço de
+    reconhecimento do próprio navegador, sem custo.
   - **App**: `expo-speech-recognition` (`apps/mobile/src/lib/device-transcription.ts`), no APK
     com a transcrição. O microfone também está na call (WebRTC): em alguns aparelhos os dois
     disputam o microfone. A alternativa gratuita escolhida preserva a função principal: a call
-    continua e somente a transcrição para, com aviso em português. Alternar automaticamente o
+    continua enquanto o reconhecimento tenta se reconectar, com aviso em português. Alternar automaticamente o
     microfone da call foi descartado porque cortaria a voz enviada aos demais. Precisa ser testado
     e documentado em cada aparelho do grupo.
     O mesmo provedor passou a alimentar o ditado do Tomo. No APK anterior, sem o módulo nativo, o
@@ -153,6 +175,20 @@ Sem as variáveis, a sala abre e avisa "A call ainda não foi configurada no ser
   (todas as calls vinculadas à sessão), onde o mestre corrige trechos (lápis, opcional).
 - **Exportar**: **Copiar**, **.md** e **.txt**, com cabeçalho (campanha, sessão, data e
   personagens) e uma fala por linha: `[00:12:31] Gambiarra: Eu avanço e golpeio o ogro!`.
+
+### Alternativa futura: transcrição no servidor
+
+Captar todos em um único aparelho exigiria um agente LiveKit no servidor. Ele entraria na sala,
+assinaria cada faixa de áudio separadamente, abriria uma sessão STT por participante, preservaria
+o `user_id`/personagem e gravaria os mesmos `transcript_segments`. Também seriam necessários:
+segredo/credenciais do provedor, deploy e monitoramento do agente, consentimento atualizado e
+limites para impedir custo inesperado.
+
+Na tabela pública consultada em 2026-11-03, o plano Build inclui 1.000 minutos mensais de sessão de
+agente e US$ 2,50 de crédito de inferência (aproximadamente 50 minutos no exemplo do site); depois,
+o exemplo cobra US$ 0,01/min de agente e US$ 0,0075/min de STT. O STT multiplica pelos participantes
+simultâneos: quatro pessoas por três horas representam 720 minutos de áudio para transcrever. Os
+valores variam por modelo e devem ser reconferidos em <https://livekit.com/pricing> antes de adotar.
 
 ## Fase 3: Melhores Momentos
 

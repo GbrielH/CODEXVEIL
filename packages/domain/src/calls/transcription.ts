@@ -23,6 +23,16 @@ export interface TranscriptLine {
   startedAt: string;
 }
 
+/** Erros temporários encerram a sessão do motor, mas não a transcrição da call. */
+export function isRetryableRecognitionError(error: string): boolean {
+  return error === 'no-speech' || error === 'network' || error === 'aborted';
+}
+
+/** Espera exponencial limitada para não criar um ciclo apertado quando o serviço de fala cai. */
+export function recognitionRestartDelay(attempt: number): number {
+  return Math.min(15_000, 300 * 2 ** Math.max(0, Math.min(attempt, 10)));
+}
+
 /** Tempo desde o começo da sessão no formato [hh:mm:ss]. */
 export function transcriptTimestamp(startedAt: string, sessionStart: string): string {
   const seconds = Math.max(

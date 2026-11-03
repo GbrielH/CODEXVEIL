@@ -127,7 +127,7 @@ describe('call', () => {
     expect(rows).toEqual([]);
   });
 
-  it('transcrição: só com a gravação ligada, com o rótulo do personagem ou "Mestre"', async () => {
+  it('transcrição: só o dono liga; aprovado grava ligada e é recusado desligada', async () => {
     const { gm, player, outsider, campaign } = await createTable(db);
     await createCharacter(db, player, campaign.id, 'Gambiarra');
     const room = await createRoom(gm, 'open', campaign.id);
@@ -141,6 +141,13 @@ describe('call', () => {
         ),
       );
     await expectSqlError(say(player, 'Antes de ligar'), '42501');
+    const playerToggle = await db.as(player, (s) =>
+      s.query(
+        `update public.call_rooms set transcription_enabled = true where id = $1 returning id`,
+        [room.id],
+      ),
+    );
+    expect(playerToggle).toEqual([]);
     await db.as(gm, (s) =>
       s.query(`update public.call_rooms set transcription_enabled = true where id = $1`, [room.id]),
     );
@@ -157,6 +164,12 @@ describe('call', () => {
       { speaker_label: 'Gambiarra', speaker_type: 'player' },
       { speaker_label: 'Mestre', speaker_type: 'master' },
     ]);
+    await db.as(gm, (s) =>
+      s.query(`update public.call_rooms set transcription_enabled = false where id = $1`, [
+        room.id,
+      ]),
+    );
+    await expectSqlError(say(player, 'Depois de desligar'), '42501');
     // Só o mestre corrige o texto.
     const changed = await db.as(player, (s) =>
       s.query(`update public.transcript_segments set text = 'x' where room_id = $1 returning id`, [

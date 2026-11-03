@@ -1,4 +1,9 @@
-import type { TranscribedSpeech, TranscriptionProvider } from '@codexveil/domain';
+import {
+  isRetryableRecognitionError,
+  recognitionRestartDelay,
+  type TranscribedSpeech,
+  type TranscriptionProvider,
+} from '@codexveil/domain';
 
 /** Partes da Web Speech API usadas aqui (não estão nos tipos padrão do TypeScript). */
 interface RecognitionResult {
@@ -34,7 +39,7 @@ function recognitionConstructor(): RecognitionConstructor | null {
 const ERRORS: Record<string, string> = {
   'not-allowed': 'O navegador bloqueou o microfone para a transcrição.',
   'service-not-allowed': 'Este navegador não libera o reconhecimento de fala.',
-  network: 'O reconhecimento de fala precisa de internet.',
+  network: 'O serviço de reconhecimento de fala falhou. Tentando reconectar…',
   'audio-capture': 'Nenhum microfone encontrado para a transcrição.',
 };
 
@@ -47,13 +52,25 @@ export function createBrowserTranscription(): TranscriptionProvider {
   let recognition: Recognition | null = null;
   let running = false;
   let speechStart = new Date();
+  let restartAttempt = 0;
+  let restartTimer: number | null = null;
 
   return {
     supported: Boolean(Constructor),
     start(onFinal: (speech: TranscribedSpeech) => void, onError: (message: string) => void) {
       if (!Constructor || running) return;
       running = true;
+      restartAttempt = 0;
+      const scheduleRestart = (listen: () => void) => {
+        if (!running || restartTimer !== null) return;
+        const delay = recognitionRestartDelay(restartAttempt++);
+        restartTimer = window.setTimeout(() => {
+          restartTimer = null;
+          listen();
+        }, delay);
+      };
       const listen = () => {
+        if (!running) return;
         const current = new Constructor();
         current.lang = 'pt-BR';
         current.continuous = true;
@@ -66,13 +83,18 @@ export function createBrowserTranscription(): TranscriptionProvider {
             const result = event.results[index]!;
             const text = result[0].transcript.trim();
             if (result.isFinal && text) {
+              restartAttempt = 0;
               onFinal({ text, startedAt: speechStart, endedAt: new Date() });
               speechStart = new Date();
             }
           }
         };
         current.onerror = (event) => {
-          if (event.error === 'no-speech' || event.error === 'aborted') return;
+          if (isRetryableRecognitionError(event.error)) {
+            if (event.error === 'network') onError(ERRORS.network!);
+            scheduleRestart(listen);
+            return;
+          }
           running = false;
           onError(
             ERRORS[event.error] ?? 'O reconhecimento de fala parou. A call continua normalmente.',
@@ -80,21 +102,34 @@ export function createBrowserTranscription(): TranscriptionProvider {
         };
         // O navegador para de ouvir depois de um tempo: volta a ouvir enquanto estiver ligada.
         current.onend = () => {
-          if (running) window.setTimeout(listen, 300);
+          current.onresult = null;
+          current.onspeechstart = null;
+          current.onerror = null;
+          current.onend = null;
+          if (recognition === current) recognition = null;
+          scheduleRestart(listen);
         };
         recognition = current;
         try {
           current.start();
         } catch {
-          running = false;
-          onError('Não foi possível iniciar o reconhecimento de fala neste navegador.');
+          onError('O reconhecimento de fala não iniciou. Tentando de novo…');
+          scheduleRestart(listen);
         }
       };
       listen();
     },
     stop() {
       running = false;
-      recognition?.stop();
+      if (restartTimer !== null) window.clearTimeout(restartTimer);
+      restartTimer = null;
+      if (recognition) {
+        recognition.onresult = null;
+        recognition.onspeechstart = null;
+        recognition.onerror = null;
+        recognition.onend = null;
+        recognition.stop();
+      }
       recognition = null;
     },
   };

@@ -1,6 +1,6 @@
 # Segurança e autorização
 
-## Call (revisão de 2026-11-02)
+## Call (revisão de 2026-11-03)
 
 A migração `20261102110000_call_security_hardening.sql` separa localizar uma sala de
 acessar seu conteúdo. Convites e entradas em espera/recusadas podem ver apenas o necessário para o
@@ -10,6 +10,13 @@ registro de uso dos Momentos deriva a campanha da sessão. Testes PGlite cobrem 
 espera/recusa e sessão/campanha incompatíveis. A migração `20261102120000` usa RPCs
 `SECURITY DEFINER` que conferem o mestre e um índice parcial único para serializar a geração de
 Momentos por sessão. As duas estão aplicadas em produção.
+
+Não houve mudança de permissão em 2026-11-03. A cobertura PGlite passou a provar explicitamente
+que um participante aprovado não consegue atualizar `call_rooms.transcription_enabled`; somente
+`owner_id` o faz. O gatilho `fill_transcript_segment` volta a conferir no momento do `INSERT` que a
+sala está ativa, a transcrição está ligada e `auth.uid()` é participante aprovado. Portanto, uma
+retentativa atrasada depois de o dono desligar é recusada com `42501`, mesmo se o cliente ainda não
+tiver recebido o evento Realtime.
 
 ## Princípios
 

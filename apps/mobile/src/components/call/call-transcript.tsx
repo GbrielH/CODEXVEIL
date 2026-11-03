@@ -1,8 +1,4 @@
-import {
-  listTranscript,
-  saveTranscriptSegment,
-  type TranscriptSegment,
-} from '@codexveil/database';
+import { listTranscript, saveTranscriptSegment, type TranscriptSegment } from '@codexveil/database';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/primitives';
@@ -60,6 +56,7 @@ export function CallTranscript({ roomId }: { roomId: string }) {
     if (!enabled || paused || !provider.supported) return;
     provider.start(
       (speech) => {
+        setProblem(null);
         void saveTranscriptSegment(getSupabase(), roomId, speech).catch(() =>
           setProblem('Um trecho não foi salvo.'),
         );

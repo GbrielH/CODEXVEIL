@@ -98,11 +98,16 @@ em produção** a pedido do responsável: fica atrás de `CALLS_ENABLED` / `EXPO
 (Production e app desligados; Preview do site ligado em 2026-11-02). As migrações de segurança e
 lock da geração (`20261102110000`–`20261102120000`) estão aplicadas. Faltam conferir as chaves do
 LiveKit em Preview, deploy de Preview, teste ao vivo e APK novo autorizado. Onde parou e o roteiro:
-[call-transcricao-momentos.md](call-transcricao-momentos.md#onde-parou-atualizado-em-2026-11-02).
+[call-transcricao-momentos.md](call-transcricao-momentos.md#onde-parou-atualizado-em-2026-11-03).
 
 No app, a call é somente do jogador: entrar por convite/código/link, usar microfone/câmera, sair,
 ver o aviso de transcrição e pausar a própria voz. Criar/encerrar sala, convidar, decidir a sala de
 espera e ligar/desligar a gravação são responsabilidades do mestre no site.
+
+Correção de 2026-11-03 pronta no código: quando o dono liga, cada participante aprovado inicia
+automaticamente a própria captura; erros temporários reiniciam com backoff; site/app têm redução
+de ruído WebRTC individual. Sem migração ou mudança nativa. Pendente: validar com duas contas e
+dois aparelhos, inclusive concorrência entre WebRTC e reconhecimento de fala no Android.
 
 Também em 2026-11-01: app com aba Tomo (no lugar de Sistemas), Taverna com menu lateral, limpar
 conversa do Tomo (site e app), dados 3D caindo pela tela no app (APK novo), painel do app enxuto,

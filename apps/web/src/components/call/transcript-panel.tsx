@@ -252,6 +252,7 @@ export function TranscriptPanel({
     if (!enabled || paused || !inCall || !current.supported) return;
     current.start(
       (speech) => {
+        setProblem(null);
         void saveTranscriptSegment(getSupabaseBrowserClient(), roomId, speech).catch(
           (error: unknown) => setProblem(failureMessage(error, 'Um trecho não foi salvo.')),
         );
@@ -284,7 +285,7 @@ export function TranscriptPanel({
             ? paused
               ? 'A sua voz está pausada.'
               : 'A sua voz está sendo transcrita.'
-            : 'Seu navegador não transcreve (use Chrome ou Edge); as falas dos outros continuam chegando.'}
+            : 'Seu navegador não transcreve; use Chrome/Edge ou o app. As falas dos outros continuam chegando.'}
         </Alert>
       ) : null}
       {problem ? <Alert tone="danger">{problem}</Alert> : null}

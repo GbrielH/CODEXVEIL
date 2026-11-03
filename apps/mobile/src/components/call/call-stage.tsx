@@ -10,8 +10,16 @@ import {
   useTracks,
   type TrackReferenceOrPlaceholder,
 } from '@livekit/react-native';
-import { Track } from 'livekit-client';
-import { Mic, MicOff, PhoneOff, SwitchCamera, Video, VideoOff } from 'lucide-react-native';
+import { LocalAudioTrack, Track } from 'livekit-client';
+import {
+  AudioLines,
+  Mic,
+  MicOff,
+  PhoneOff,
+  SwitchCamera,
+  Video,
+  VideoOff,
+} from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/primitives';
@@ -52,10 +60,18 @@ function Tile({
   );
 }
 
-function Controls({ onLeave }: { onLeave: () => void }) {
+function Controls({
+  onLeave,
+  onError,
+}: {
+  onLeave: () => void;
+  onError: (message: string) => void;
+}) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled } = useLocalParticipant();
   const room = useRoomContext();
   const [front, setFront] = useState(true);
+  const [reduceNoise, setReduceNoise] = useState(true);
+  const [changingNoise, setChangingNoise] = useState(false);
   const button = (active: boolean) => [
     styles.control,
     active ? styles.controlOn : styles.controlOff,
@@ -104,6 +120,36 @@ function Controls({ onLeave }: { onLeave: () => void }) {
         </Pressable>
       ) : null}
       <Pressable
+        accessibilityRole="switch"
+        accessibilityState={{ checked: reduceNoise, disabled: changingNoise }}
+        accessibilityLabel="Reduzir ruído"
+        disabled={changingNoise}
+        style={[styles.noiseControl, reduceNoise ? styles.controlOn : styles.controlOff]}
+        onPress={() => {
+          const next = !reduceNoise;
+          const track = localParticipant.getTrackPublication(Track.Source.Microphone)?.audioTrack;
+          if (!(track instanceof LocalAudioTrack)) {
+            setReduceNoise(next);
+            return;
+          }
+          setChangingNoise(true);
+          void track
+            .restartTrack({
+              echoCancellation: true,
+              noiseSuppression: next,
+              autoGainControl: true,
+            })
+            .then(() => setReduceNoise(next))
+            .catch(() => onError('O aparelho não conseguiu alterar a redução de ruído.'))
+            .finally(() => setChangingNoise(false));
+        }}
+      >
+        <AudioLines size={18} color={colors.fg} />
+        <AppText variant="small" style={{ color: colors.fg }}>
+          Ruído {reduceNoise ? 'on' : 'off'}
+        </AppText>
+      </Pressable>
+      <Pressable
         accessibilityRole="button"
         accessibilityLabel="Sair da call"
         style={[styles.control, { backgroundColor: '#b03a48' }]}
@@ -115,7 +161,15 @@ function Controls({ onLeave }: { onLeave: () => void }) {
   );
 }
 
-function Stage({ people, onLeave }: { people: CallParticipant[]; onLeave: () => void }) {
+function Stage({
+  people,
+  onLeave,
+  onError,
+}: {
+  people: CallParticipant[];
+  onLeave: () => void;
+  onError: (message: string) => void;
+}) {
   const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }], {
     onlySubscribed: false,
   });
@@ -130,7 +184,7 @@ function Stage({ people, onLeave }: { people: CallParticipant[]; onLeave: () => 
         columnWrapperStyle={tracks.length > 1 ? { gap: spacing[2] } : undefined}
         renderItem={({ item }) => <Tile track={item} people={people} />}
       />
-      <Controls onLeave={onLeave} />
+      <Controls onLeave={onLeave} onError={onError} />
     </View>
   );
 }
@@ -181,7 +235,7 @@ export function CallStage({
         publishDefaults: { simulcast: true, red: true, dtx: true },
       }}
     >
-      <Stage people={participants} onLeave={onLeave} />
+      <Stage people={participants} onLeave={onLeave} onError={onError} />
     </LiveKitRoom>
   );
 }
@@ -224,6 +278,15 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  noiseControl: {
+    minHeight: 52,
+    borderRadius: 26,
+    paddingHorizontal: spacing[3],
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: spacing[1],
   },
   controlOn: { backgroundColor: colors.hover },
   controlOff: { backgroundColor: '#3a2228' },
