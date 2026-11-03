@@ -873,7 +873,7 @@ de segurança).
       57.0.31) e disparado `eas build` (perfil preview, Android).
 - [x] APK novo gerado pelo workflow APK (build `5101c342`); os dois builds disparados do Windows falharam
       por fingerprint diferente (node_modules local).
-- [ ] Instalar o APK novo no celular e conferir Painel, Personagens, taverna e call.
+- [x] APK novo instalado e conferido pelo responsável (Painel, Personagens, taverna e call).
 
 ### 2026-11-02 (noite) — biblioteca
 
@@ -893,7 +893,7 @@ de segurança).
 - [x] Mensagem da taverna voltava como não lida ao reabrir o app: a marca de leitura usava o
       relógio do celular e a comparação era por texto. Agora marca até a última mensagem vista
       (horário do servidor) e compara como data.
-- [ ] Painel e Personagens do app mostram "Algo deu errado": investigando (falta a mensagem exibida); o app agora mostra o código técnico junto com "Algo deu errado".
+- [x] Painel e Personagens do app: resolvido com o APK novo; o código técnico de diagnóstico saiu.
 
 ### 2026-11-02 (noite) — iniciativa no mapa, condições, luz e escuridão; call
 
