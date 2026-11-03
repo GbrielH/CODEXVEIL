@@ -50,7 +50,8 @@ repositório. Gere tudo numa pasta fora do projeto (por exemplo, `Documents/Code
    O pacote (`codexveil.tormenta20.book`) é importado em Meus livros como os de D&D.
 
 10. **Ameaças de Arton** (`AMEAÇAS DE ARTON.pdf`): `layout.py` → `layout/AMEACAS.jsonl`, depois
-    `python -X utf8 scripts/books/t20_ameacas.py <saída>/layout/AMEACAS.jsonl <saída>/out/t20-ameacas.book.json`
+    `python -X utf8 scripts/books/t20_ameacas.py <saída>/layout/AMEACAS.jsonl <saída>/out/t20-ameacas.book.json "<pdfs>/AMEAÇAS DE ARTON.pdf"`
+    (com o PDF, os quadros de habilidades de raça são lidos pelo retângulo desenhado, inteiros)
     (id `t20-ameacas`; livro inteiro em 2026-11-03: 429 ameaças, 74 equipamentos — armas, armaduras, itens gerais, melhorias e materiais —, 8 itens mágicos/artefatos, 7 magias, 29 raças jogáveis e 299 seções de texto por capítulo).
 
 Veja o andamento e o que falta em `docs/PROXIMOS_PASSOS.md` ("Continuidade").

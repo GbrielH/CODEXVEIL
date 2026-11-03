@@ -871,7 +871,7 @@ de segurança).
       `parseT20BookPack` sem erros. Fora do Git (pasta de trabalho e Downloads).
 - [x] Livro inteiro no pacote (846 entradas, `parseT20BookPack` sem erros): 429 ameaças, 74
       equipamentos, 8 itens mágicos e artefatos, 7 magias, 29 raças jogáveis (Tabela A-1 + quadros de
-      habilidades; Ogro e alguns quadros que continuam na página seguinte ficaram incompletos) e
+      habilidades lidos pelo retângulo do PDF: 175 habilidades, quadros completos) e
       texto de todos os capítulos e apêndices (sem créditos, apoiadores e índices).
 - [ ] O responsável importa em Meus livros e libera na campanha T20.
 

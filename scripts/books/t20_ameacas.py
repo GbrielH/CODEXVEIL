@@ -1,6 +1,7 @@
 """Ameaças de Arton (Tormenta20) a partir das linhas do layout.py.
 
-Uso: python -X utf8 scripts/books/t20_ameacas.py <layout/AMEACAS.jsonl> <saída.book.json>
+Uso: python -X utf8 scripts/books/t20_ameacas.py <layout/AMEACAS.jsonl> <saída.book.json> [<PDF>]
+(com o PDF, os quadros de habilidades de raça são lidos pelo retângulo desenhado, inteiros)
 
 O livro inteiro vira um pacote `t20-ameacas`:
 - ameaças: cada ficha começa pela linha de tipo em itálico seguida de "Iniciativa"; o nome são as
@@ -306,9 +307,81 @@ def race_boxes(book, name, page):
     return found
 
 
+PDF = None  # caminho do PDF (3º argumento): lê os quadros pelo retângulo desenhado
+
+
+def pdf_box(page, title):
+    """Texto do quadro desenhado em volta do título, com os nomes das habilidades pelo negrito.
+    Funciona quando o quadro contorna uma imagem ou atravessa as duas colunas."""
+    import pymupdf
+    doc = pymupdf.open(PDF)
+    pg = doc[page - 1]
+    hits = pg.search_for(title.split(':')[0] + (':' if ':' in title else ''))
+    for hit in hits:
+        rects = sorted((d['rect'] for d in pg.get_drawings() if d['rect'].contains(hit) and d['rect'].width > 100),
+                       key=lambda r: r.get_area())
+        # Sem retângulo (Kobolds: o quadro é a página inteira): do título até o rodapé.
+        clip = rects[0] if rects else pymupdf.Rect(36, hit.y0 - 2, pg.rect.width - 40, pg.rect.height - 30)
+        lines = []
+        for block in pg.get_text('dict', clip=clip)['blocks']:
+            for line in block.get('lines', []):
+                spans = [s for s in line['spans'] if s['text'].strip()]
+                if spans:
+                    lines.append(spans)
+        # Quadro largo (duas colunas): lê a coluna da esquerda inteira antes da direita.
+        middle = (clip.x0 + clip.x1) / 2
+        two_columns = clip.width > 350
+        lines.sort(key=lambda spans: (two_columns and spans[0]['bbox'][0] > middle - 10, spans[0]['bbox'][1] // 4, spans[0]['bbox'][0]))
+        first, abilities, started = '', [], False
+        for spans in lines:
+            text = ''.join(s['text'] for s in spans).strip()
+            bold = lambda s: 'Black' in s['font'] or 'Bold' in s['font']
+            if not started:
+                if 'Habilidades' in text or plain(text).startswith(plain(title.split(':')[0])):
+                    started = True
+                continue
+            if re.match(r'^\((Continua|Continuação)', text):
+                continue
+            # Opções com marcador ("• Dínamo de Mana. …"): entram no texto da habilidade anterior.
+            if text.startswith('•') and abilities:
+                abilities[-1]['lines'].append('\n- ' + text.lstrip('•\t ').strip())
+                continue
+            if bold(spans[0]):
+                head = ''.join(s['text'] for s in spans if bold(s)).strip()
+                m = re.match(r'^(.{2,70}?[.!…])\s*(.*)$', text)
+                # Linha de atributos e sua continuação em negrito ("(exceto Carisma), Carisma –2.").
+                if not abilities and (re.match(r'^(Força|Destreza|Constituição|Inteligência|Sabedoria|Carisma|\+\d)', head)
+                                      or (head.startswith('(') and first and not first.endswith('.'))):
+                    first = join_lines([first, text]) if first else text
+                    continue
+                # O nome em negrito pode terminar antes do ponto ("Longevidade x5.").
+                if m and len(head) >= len(m.group(1)) - 4:
+                    abilities.append({'name': m.group(1).rstrip('.').strip(), 'lines': [m.group(2)] if m.group(2) else []})
+                    continue
+                if abilities and not abilities[-1]['lines'] and not abilities[-1]['name'].endswith(('.', '!', '…')):
+                    abilities[-1]['name'] += ' ' + head  # nome em duas linhas
+                    continue
+            if abilities:
+                abilities[-1]['lines'].append(text)
+            elif first and not first.endswith('.'):
+                first = join_lines([first, text])
+        if abilities:
+            return first, abilities
+    return '', []
+
+
 def race_box(book, name, page):
     first, abilities = '', []
     for start in race_boxes(book, name, page):
+        if PDF:
+            title_text = book.texts[start]
+            if start + 1 < len(book.rows) and _box_title(book, start + 1):
+                title_text = f'{title_text} {book.texts[start + 1]}'
+            got_first, got = pdf_box(book.rows[start]['p'], title_text)
+            if got:
+                first = first or got_first
+                abilities += got
+                continue
         title = book.rows[start]
         col, pg, last_y = title['c'], title['p'], title['y']
         for k in range(start + 1, len(book.rows)):
@@ -404,6 +477,8 @@ def races(book):
 
 
 def main():
+    global PDF
+    PDF = sys.argv[3] if len(sys.argv) > 3 else None
     rows = [json.loads(line) for line in open(sys.argv[1], encoding='utf-8')]
     book = Book(rows)
     entries, titles = monsters(book)
