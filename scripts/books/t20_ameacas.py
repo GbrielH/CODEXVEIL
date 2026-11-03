@@ -472,7 +472,15 @@ def races(book):
         speed = re.search(r'deslocamento (?:é |de )?(\d+(?:,\d)?)m', joined)
         if speed:
             data['speed'] = float(speed.group(1).replace(',', '.'))
-        out.append(entry('species', r['name'], data))
+        name = r['name']
+        if plain(name) == 'golem':
+            # O livro básico já tem "Golem" (ferro, elemental, médio); esta é a versão ampliada
+            # ("golens despertos"). Nome próprio para as duas aparecerem na criação de personagem.
+            name = 'Golem desperto'
+            data['summary'] = ('Versão ampliada do golem do livro básico: escolha o material do chassi (barro, bronze, '
+                               'carne, espelhos, ferro…), a fonte de energia e o tamanho. O golem do livro básico equivale '
+                               'ao chassi de ferro, fonte elemental, tamanho Médio. ' + data['summary'])[:4000]
+        out.append(entry('species', name, data))
     return out
 
 
