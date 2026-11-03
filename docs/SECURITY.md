@@ -18,6 +18,14 @@ sala está ativa, a transcrição está ligada e `auth.uid()` é participante ap
 retentativa atrasada depois de o dono desligar é recusada com `42501`, mesmo se o cliente ainda não
 tiver recebido o evento Realtime.
 
+A migração ainda não aplicada `20261103100000_call_presence_usage.sql` adiciona
+`call_presence`. O RLS permite que uma pessoa autenticada leia somente as próprias sessões; não há
+escrita direta, e as RPCs de início/heartbeat/fim conferem autoria, aprovação e sala ativa. O teste
+PGlite prova que participante de outra sala não lê essas linhas. `call_usage_month()` expõe somente
+o total global agregado do mês, sem identidade ou campanha. A rota web adiciona o limite do
+servidor e entrega números exatos apenas a mestre/dono; jogadores recebem somente os booleanos de
+95% e 100%. `LIVEKIT_MONTHLY_MINUTES` e as chaves LiveKit não entram em bundle público.
+
 ## Princípios
 
 1. **O banco é a barreira de segurança.** Toda leitura e escrita passa pelo RLS do Postgres.

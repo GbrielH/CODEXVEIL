@@ -288,6 +288,48 @@ export type Database = {
           },
         ];
       };
+      call_presence: {
+        Row: {
+          ended_at: string | null;
+          id: string;
+          last_seen_at: string;
+          room_id: string;
+          started_at: string;
+          user_id: string;
+        };
+        Insert: {
+          ended_at?: string | null;
+          id?: string;
+          last_seen_at?: string;
+          room_id: string;
+          started_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          ended_at?: string | null;
+          id?: string;
+          last_seen_at?: string;
+          room_id?: string;
+          started_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'call_presence_room_id_fkey';
+            columns: ['room_id'];
+            isOneToOne: false;
+            referencedRelation: 'call_rooms';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'call_presence_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       call_rooms: {
         Row: {
           access_mode: string;
@@ -3056,6 +3098,10 @@ export type Database = {
         };
         Returns: undefined;
       };
+      call_usage_month: {
+        Args: never;
+        Returns: unknown[];
+      };
       campaign_session_in_progress: {
         Args: {
           p_campaign_id: string;
@@ -3156,6 +3202,12 @@ export type Database = {
         };
         Returns: string;
       };
+      end_call_presence: {
+        Args: {
+          p_presence_id: string;
+        };
+        Returns: undefined;
+      };
       end_turn: {
         Args: {
           p_encounter_id: string;
@@ -3203,6 +3255,12 @@ export type Database = {
           p_level?: number;
         };
         Returns: number;
+      };
+      heartbeat_call_presence: {
+        Args: {
+          p_presence_id: string;
+        };
+        Returns: undefined;
       };
       invite_friend_to_campaign: {
         Args: {
@@ -3406,6 +3464,12 @@ export type Database = {
           p_color: string;
         };
         Returns: undefined;
+      };
+      start_call_presence: {
+        Args: {
+          p_room_id: string;
+        };
+        Returns: string;
       };
       start_highlight_run: {
         Args: {

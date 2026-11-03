@@ -179,6 +179,66 @@ describe('call', () => {
     expect(changed).toEqual([]);
   });
 
+  it('soma minutos de participante e fecha intervalo aberto no último sinal de vida', async () => {
+    const { gm, player, outsider, campaign } = await createTable(db);
+    const room = await createRoom(gm, 'open', campaign.id);
+    await join(gm, room.id);
+    await join(player, room.id);
+    const playerPresence = await db.as(player, (s) =>
+      s.one<{ id: string }>(`select public.start_call_presence($1) as id`, [room.id]),
+    );
+    const gmPresence = await db.as(gm, (s) =>
+      s.one<{ id: string }>(`select public.start_call_presence($1) as id`, [room.id]),
+    );
+
+    await db.as({ kind: 'admin' }, (s) =>
+      s.exec(`
+        update public.call_presence
+        set started_at = date_trunc('month', now() at time zone 'America/Sao_Paulo')
+                           at time zone 'America/Sao_Paulo' + interval '1 hour',
+            last_seen_at = date_trunc('month', now() at time zone 'America/Sao_Paulo')
+                           at time zone 'America/Sao_Paulo' + interval '10 minutes 1 hour',
+            ended_at = date_trunc('month', now() at time zone 'America/Sao_Paulo')
+                       at time zone 'America/Sao_Paulo' + interval '10 minutes 1 hour'
+        where id = '${playerPresence.id}';
+        update public.call_presence
+        set started_at = date_trunc('month', now() at time zone 'America/Sao_Paulo')
+                           at time zone 'America/Sao_Paulo' + interval '5 minutes 1 hour',
+            last_seen_at = date_trunc('month', now() at time zone 'America/Sao_Paulo')
+                           at time zone 'America/Sao_Paulo' + interval '15 minutes 1 hour',
+            ended_at = date_trunc('month', now() at time zone 'America/Sao_Paulo')
+                       at time zone 'America/Sao_Paulo' + interval '15 minutes 1 hour'
+        where id = '${gmPresence.id}';
+        insert into public.call_presence (room_id, user_id, started_at, last_seen_at)
+        values (
+          '${room.id}',
+          '${player.id}',
+          date_trunc('month', now() at time zone 'America/Sao_Paulo')
+            at time zone 'America/Sao_Paulo' + interval '20 minutes 1 hour',
+          date_trunc('month', now() at time zone 'America/Sao_Paulo')
+            at time zone 'America/Sao_Paulo' + interval '24 minutes 1 hour'
+        );
+      `),
+    );
+
+    const usage = await db.as(gm, (s) =>
+      s.one<{ used_minutes: string }>(`select used_minutes from public.call_usage_month()`),
+    );
+    expect(Number(usage.used_minutes)).toBe(24);
+
+    const own = await db.as(player, (s) =>
+      s.query<{ user_id: string }>(`select user_id from public.call_presence where room_id = $1`, [
+        room.id,
+      ]),
+    );
+    expect(own).toHaveLength(2);
+    expect(own.every((row) => row.user_id === player.id)).toBe(true);
+    const hidden = await db.as(outsider, (s) =>
+      s.query(`select id from public.call_presence where room_id = $1`, [room.id]),
+    );
+    expect(hidden).toEqual([]);
+  });
+
   it('melhores momentos: o mestre cria e edita; a mesa vê; jogador e estranho não mexem', async () => {
     const { gm, player, outsider, campaign } = await createTable(db);
     const sessionId = await createSession(db, gm, campaign.id);

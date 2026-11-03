@@ -47,6 +47,12 @@ export function livekitConfig(): { url: string; apiKey: string; apiSecret: strin
   return url && apiKey && apiSecret ? { url, apiKey, apiSecret } : null;
 }
 
+/** Limite usado somente pela estimativa exibida no site/app; nunca é enviado como segredo. */
+export function livekitMonthlyMinutes(): number {
+  const parsed = Number.parseInt(process.env.LIVEKIT_MONTHLY_MINUTES?.trim() ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 5000;
+}
+
 /**
  * Call, transcrição e Melhores Momentos ainda em teste: ficam escondidos até `CALLS_ENABLED=1`
  * na Vercel (padrão: desligado em produção).

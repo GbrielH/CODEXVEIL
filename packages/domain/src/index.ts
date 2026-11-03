@@ -16,6 +16,7 @@ export * from './combat/map-areas';
 export * from './characters/image-prompt';
 export * from './characters/dice-skin-prompt';
 export * from './calls/transcription';
+export * from './calls/usage';
 export * from './calls/highlights';
 export * from './text/ordinals';
 export * from './combat/dungeon-import';

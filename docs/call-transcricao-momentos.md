@@ -68,6 +68,28 @@ Pedido do responsável: parar aqui e **não liberar em produção** enquanto nã
   685 testes aprovados e 11 ao vivo pulados; `pnpm build` com Next.js e export Android aprovados.
   Ainda falta o roteiro manual com duas contas/aparelhos.
 
+### Medição de minutos da call (2026-11-03)
+
+- A migração `20261103100000_call_presence_usage.sql` cria `call_presence`, uma sessão por
+  conexão aprovada. Site e app iniciam a presença ao conectar ao LiveKit, renovam
+  `last_seen_at` a cada 60 segundos e encerram ao sair. Se a aba ou o app desaparecer sem avisar,
+  o cálculo fecha o intervalo no último sinal de vida, no encerramento da sala ou no limite
+  automático de seis horas, o que ocorrer primeiro.
+- `call_usage_month()` soma minutos de participante no mês corrente de
+  `America/Sao_Paulo`. Intervalos simultâneos de pessoas diferentes são somados separadamente,
+  como na cobrança do LiveKit. O resultado é somente agregado, sem detalhar campanhas ou pessoas.
+- A rota `GET /api/call/usage` acrescenta o limite lido exclusivamente no servidor de
+  `LIVEKIT_MONTHLY_MINUTES` (padrão `5000`). Mestre/dono vê barra, valor e percentual; jogadores
+  recebem apenas o aviso a partir de 95%. Nenhuma chave do LiveKit é devolvida.
+- O site mostra a quantidade de câmeras ativas e a dica para desligar vídeo. Site e app exibem a
+  duração desde a conexão atual, atualizada a cada minuto sem recarregar a tela.
+- A migração foi apenas conferida com `supabase db push --dry-run`; **não foi aplicada em
+  produção**. Como `call_participants.joined_at` era sobrescrito nas reconexões, o backfill só
+  preserva o último intervalo conhecido; a estimativa completa começa após a nova migração.
+- Verificação automatizada: domain 112/112; database 239 aprovados e 11 ao vivo pulados;
+  `pnpm check` com 20/20 tarefas e 688 testes; `pnpm build` com Next.js e export Android/Hermes.
+  Permanecem 3 avisos de lint preexistentes e falta o teste manual com duas contas/aparelhos.
+
 ## Roteiro do teste em Preview
 
 Use duas contas de teste e apague as salas/dados criados ao terminar. A Preview usa o mesmo projeto
@@ -94,6 +116,9 @@ registros de teste ainda são gravados no banco real.
    a segunda captura, a transcrição deve parar com aviso em português e a call deve continuar.
 10. Registrar navegador/aparelho, resultado e evidências; manter Production e a chave do app
     desligadas até a aprovação do dono.
+11. Com duas contas, manter as duas conectadas por alguns minutos, fechar uma aba sem usar Sair e
+    conferir heartbeat, encerramento pelo último sinal, soma dos minutos, barra do mestre, aviso do
+    jogador, câmeras ativas e cronômetro nos dois aparelhos.
 
 ## Fase 1: call de voz e vídeo
 
@@ -215,10 +240,11 @@ valores variam por modelo e devem ser reconferidos em <https://livekit.com/prici
 
 ## Variáveis de ambiente (Vercel)
 
-| Variável                                                | Para quê                                        |
-| ------------------------------------------------------- | ----------------------------------------------- |
-| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`  | Call (LiveKit Cloud grátis ou servidor próprio) |
-| `GEMINI_API_KEY` (já existe), `GEMINI_MODEL` (opcional) | Melhores Momentos (e o Tomo)                    |
+| Variável                                                | Para quê                                              |
+| ------------------------------------------------------- | ----------------------------------------------------- |
+| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`  | Call (LiveKit Cloud grátis ou servidor próprio)       |
+| `LIVEKIT_MONTHLY_MINUTES`                               | Limite mensal estimado, só no servidor; padrão `5000` |
+| `GEMINI_API_KEY` (já existe), `GEMINI_MODEL` (opcional) | Melhores Momentos (e o Tomo)                          |
 
 ## Custos
 

@@ -195,6 +195,19 @@ seguintes (Inconsciente deixa Caído) ficam no código do sistema, e o banco con
   uma a cada 10 minutos) para desfazer perdas acidentais.
 - **Sessões, anotações e encontros** também têm `version` incrementada por gatilho.
 
+## Call: presença e estimativa de consumo
+
+O LiveKit continua responsável somente pela mídia. O Codexveil estima minutos de participante no
+Supabase: cada conexão aprovada abre uma linha em `call_presence`, site e app enviam heartbeat a
+cada 60 segundos e encerram a linha ao sair. Intervalos abandonados terminam no último heartbeat;
+o fim da sala e o encerramento automático de seis horas são limites adicionais.
+
+A RPC `call_usage_month()` agrega todos os intervalos do mês no fuso `America/Sao_Paulo`, sem
+expor identidades ou campanhas. A rota Next.js `/api/call/usage` combina esse total com
+`LIVEKIT_MONTHLY_MINUTES`, que existe apenas no servidor: mestre/dono recebe números e jogadores
+recebem somente os estados de alerta. Essa é uma estimativa operacional, não a fatura oficial do
+LiveKit; reconciliação final continua sendo feita no painel do provedor.
+
 ## Tempo real
 
 Apenas tabelas que mudam durante uma partida são publicadas: participantes, personagens,

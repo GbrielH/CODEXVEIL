@@ -3,10 +3,13 @@
 import '@livekit/components-styles';
 import {
   decideCallParticipant,
+  endCallPresence,
   endCallRoom,
+  heartbeatCallPresence,
   inviteToCall,
   leaveCallRoom,
   listCallParticipants,
+  startCallPresence,
   type CallParticipant,
   type CallRoomSummary,
 } from '@codexveil/database';
@@ -15,8 +18,10 @@ import {
   RoomAudioRenderer,
   VideoConference,
   useLocalParticipant,
+  useTracks,
 } from '@livekit/components-react';
-import { LocalAudioTrack } from 'livekit-client';
+import { formatCallDuration } from '@codexveil/domain';
+import { LocalAudioTrack, Track } from 'livekit-client';
 import {
   Check,
   Copy,
@@ -35,6 +40,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { useToast } from '@/components/ui/toast';
 import { SpeakerBar } from '@/components/call/speaker-bar';
+import { CallUsageMeter, useCallUsage } from '@/components/call/call-usage';
 import { TranscriptPanel } from '@/components/call/transcript-panel';
 import { useConfirm } from '@/components/ui/use-confirm';
 import { cx } from '@/lib/cx';
@@ -89,6 +95,57 @@ function NoiseReductionControl({ onError }: { onError: (message: string) => void
   );
 }
 
+function useCallPresence(roomId: string, connected: boolean): void {
+  useEffect(() => {
+    if (!connected) return;
+    let active = true;
+    let presenceId: string | null = null;
+    let timer: number | null = null;
+    void startCallPresence(getSupabaseBrowserClient(), roomId)
+      .then((id) => {
+        if (!active) {
+          void endCallPresence(getSupabaseBrowserClient(), id).catch(() => undefined);
+          return;
+        }
+        presenceId = id;
+        timer = window.setInterval(
+          () => void heartbeatCallPresence(getSupabaseBrowserClient(), id).catch(() => undefined),
+          60_000,
+        );
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+      if (timer !== null) window.clearInterval(timer);
+      if (presenceId) {
+        void endCallPresence(getSupabaseBrowserClient(), presenceId).catch(() => undefined);
+      }
+    };
+  }, [connected, roomId]);
+}
+
+function CallLiveStatus({ startedAt }: { startedAt: Date | null }) {
+  const [now, setNow] = useState(() => new Date());
+  const cameras = useTracks([{ source: Track.Source.Camera, withPlaceholder: false }], {
+    onlySubscribed: false,
+  }).filter((track) => track.publication && !track.publication.isMuted).length;
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  return (
+    <div className="absolute top-3 left-3 z-20 max-w-[65%] rounded-md bg-black/75 px-3 py-2 text-xs text-white">
+      <p className="font-medium">
+        {startedAt ? formatCallDuration(startedAt, now) : 'Conectando…'}
+      </p>
+      <p>
+        {cameras} {cameras === 1 ? 'pessoa está' : 'pessoas estão'} com a câmera ligada
+      </p>
+      <p className="text-white/70">Vídeo gasta mais; desligue a câmera para economizar.</p>
+    </div>
+  );
+}
+
 /**
  * Sala de call: pede o token ao servidor (que confere as regras da sala), mostra a espera de
  * aprovação e abre a chamada do LiveKit, com a lista de quem está na mesa e o personagem de cada um.
@@ -116,6 +173,10 @@ export function CallRoomView({
   );
   const [participants, setParticipants] = useState<CallParticipant[]>([]);
   const [invited, setInvited] = useState<string[]>([]);
+  const [connected, setConnected] = useState(false);
+  const [connectedAt, setConnectedAt] = useState<Date | null>(null);
+  useCallPresence(room.id, connected);
+  const usage = useCallUsage(room.id, entry.state === 'ready');
 
   const requestToken = useCallback(async () => {
     try {
@@ -235,7 +296,15 @@ export function CallRoomView({
               video={false}
               data-lk-theme="default"
               style={{ height: '70vh' }}
-              onDisconnected={() => void leave()}
+              onConnected={() => {
+                setConnected(true);
+                setConnectedAt(new Date());
+              }}
+              onDisconnected={() => {
+                setConnected(false);
+                setConnectedAt(null);
+                void leave();
+              }}
               onError={(error) =>
                 toast({ tone: 'danger', title: 'Problema na call', description: error.message })
               }
@@ -264,6 +333,7 @@ export function CallRoomView({
                   toast({ tone: 'warning', title: 'Redução de ruído', description: message })
                 }
               />
+              <CallLiveStatus startedAt={connectedAt} />
             </LiveKitRoom>
           ) : (
             <div className="flex h-[60vh] flex-col items-center justify-center gap-3 p-6 text-center">
@@ -288,6 +358,7 @@ export function CallRoomView({
         </div>
 
         <div className="flex flex-col gap-4">
+          <CallUsageMeter usage={usage} />
           {isOwner && waiting.length ? (
             <Card ornate>
               <CardHeader title="Sala de espera" description="Quem quer entrar." />
@@ -378,7 +449,7 @@ export function CallRoomView({
               isOwner ||
               participants.some((person) => person.userId === userId && person.role === 'master')
             }
-            inCall={entry.state === 'ready'}
+            inCall={connected}
             header={{ campaign: room.campaignName, title: room.title || 'Call' }}
           />
 

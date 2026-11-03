@@ -162,6 +162,41 @@ export async function leaveCallRoom(client: CodexveilClient, roomId: string): Pr
   if (error) throw toAppError(error);
 }
 
+/** Abre um intervalo somente depois de o LiveKit confirmar a conexão. */
+export async function startCallPresence(client: CodexveilClient, roomId: string): Promise<string> {
+  const { data, error } = await client.rpc('start_call_presence', { p_room_id: roomId });
+  if (error) throw toAppError(error);
+  return data;
+}
+
+export async function heartbeatCallPresence(
+  client: CodexveilClient,
+  presenceId: string,
+): Promise<void> {
+  const { error } = await client.rpc('heartbeat_call_presence', {
+    p_presence_id: presenceId,
+  });
+  if (error) throw toAppError(error);
+}
+
+export async function endCallPresence(client: CodexveilClient, presenceId: string): Promise<void> {
+  const { error } = await client.rpc('end_call_presence', { p_presence_id: presenceId });
+  if (error) throw toAppError(error);
+}
+
+/** Total global agregado do mês; nunca devolve pessoas, salas ou campanhas. */
+export async function getCallUsageMonth(
+  client: CodexveilClient,
+): Promise<{ usedMinutes: number; monthStart: string }> {
+  const { data, error } = await client.rpc('call_usage_month');
+  if (error) throw toAppError(error);
+  const row = (data as unknown as { used_minutes: number | string; month_start: string }[])[0];
+  return {
+    usedMinutes: Number(row?.used_minutes ?? 0),
+    monthStart: row?.month_start ?? new Date().toISOString(),
+  };
+}
+
 export async function decideCallParticipant(
   client: CodexveilClient,
   roomId: string,

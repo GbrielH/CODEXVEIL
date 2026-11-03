@@ -5,6 +5,19 @@
 
 ## Estado atual
 
+**2026-11-03 (minutos e duração da call):** criada a migração
+`20261103100000_call_presence_usage.sql` com sessões de presença, heartbeat de 60 s, fechamento
+pelo último sinal/fim da sala/limite de 6 h e a RPC agregada `call_usage_month()` no fuso de São
+Paulo. O site mostra ao mestre a barra mensal, câmeras ativas e cronômetro; jogadores do site/app
+veem somente o aviso a partir de 95%, e o app continua sem controles de mestre. O limite vem da
+variável somente de servidor `LIVEKIT_MONTHLY_MINUTES` (padrão 5000), sem expor chaves LiveKit.
+Dry-run listou somente essa migração e nada foi aplicado em produção. Testes focados: domain
+112/112; database 239 aprovados e 11 ao vivo pulados; typecheck web/mobile passou. `pnpm check`
+passou nas 20/20 tarefas, com 688 testes aprovados, 11 ao vivo pulados e 3 avisos de lint
+preexistentes. `pnpm build` passou nas 2/2 tarefas (Next.js e export Android/Hermes). As primeiras
+execuções foram bloqueadas pelo sandbox no resolvedor do ESLint e no Hermes; as repetições com a
+permissão necessária passaram. Ainda falta o teste manual com duas contas/aparelhos.
+
 **2026-11-03 (call/transcrição):** o dono continua sendo o único que liga/desliga no site; todos
 os participantes aprovados passam a transcrever automaticamente a própria voz pelo Realtime, com
 pausa individual. Navegador e app reiniciam sessões encerradas/erros temporários com backoff; a

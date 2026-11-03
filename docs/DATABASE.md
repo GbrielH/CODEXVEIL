@@ -349,6 +349,24 @@ personagens" quando o dono liga a opção, por `public.set_character_npc_listed(
 - `map_tokens.darkvision_radius`, `light_bright_radius`, `light_dim_radius`.
 - `close_idle_call_rooms()`: encerra salas sem entrada/saída há 6 h; chamada ao listar as salas.
 
+## Call: sessões de presença e consumo mensal (`20261103100000_call_presence_usage.sql`)
+
+- `call_presence` registra cada conexão aprovada (`room_id`, `user_id`, `started_at`,
+  `last_seen_at`, `ended_at`). Há no máximo uma sessão aberta por pessoa/sala; o próprio usuário
+  lê apenas as próprias linhas e não escreve diretamente.
+- `start_call_presence`, `heartbeat_call_presence` e `end_call_presence` são RPCs
+  `SECURITY DEFINER` que repetem autenticação, aprovação e estado da sala. `leave_call_room` e o
+  encerramento da sala também fecham sessões abertas.
+- `call_usage_month()` devolve somente `used_minutes` e o início do mês corrente em
+  `America/Sao_Paulo`. A soma recorta cada intervalo à janela do mês e termina sessões abertas no
+  menor valor entre último heartbeat, `call_rooms.ended_at` e agora. Sobreposições entre
+  participantes são somadas, pois representam minutos de participante.
+- `close_idle_call_rooms()` passa a considerar o último heartbeat e mantém o encerramento
+  automático de seis horas. O backfill usa apenas o último `joined_at` conhecido, pois o modelo
+  anterior sobrescrevia esse campo a cada reconexão.
+- Em 2026-11-03 a migração passou no `supabase db push --dry-run`, que listou somente esse arquivo;
+  não foi aplicada em produção.
+
 ## Agenda da campanha (2026-11-02)
 
 - `schedule_polls` (campanha, sessão opcional, título, `open`/`closed`, opção escolhida),

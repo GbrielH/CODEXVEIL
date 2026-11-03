@@ -109,6 +109,12 @@ automaticamente a própria captura; erros temporários reiniciam com backoff; si
 de ruído WebRTC individual. Sem migração ou mudança nativa. Pendente: validar com duas contas e
 dois aparelhos, inclusive concorrência entre WebRTC e reconhecimento de fala no Android.
 
+Medição de consumo de 2026-11-03 pronta no código: sessões `call_presence`, heartbeat, soma mensal
+agregada, barra exclusiva do mestre, aviso do jogador, câmeras ativas e cronômetro. A migração
+`20261103100000_call_presence_usage.sql` passou apenas no dry-run e ainda não está em produção.
+Pendente: aplicar quando autorizado e validar com duas contas, inclusive fechar aba/app sem Sair e
+comparar a estimativa com o painel LiveKit.
+
 Também em 2026-11-01: app com aba Tomo (no lugar de Sistemas), Taverna com menu lateral, limpar
 conversa do Tomo (site e app), dados 3D caindo pela tela no app (APK novo), painel do app enxuto,
 abas só com ícones, montanha no carregamento, imagens das anotações, aba Itens corrigida.

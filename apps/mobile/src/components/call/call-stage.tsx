@@ -1,4 +1,5 @@
 import type { CallParticipant } from '@codexveil/database';
+import { formatCallDuration } from '@codexveil/domain';
 import {
   AudioSession,
   LiveKitRoom,
@@ -163,16 +164,25 @@ function Controls({
 
 function Stage({
   people,
+  connectedAt,
+  usageNearLimit,
   onLeave,
   onError,
 }: {
   people: CallParticipant[];
+  connectedAt: Date | null;
+  usageNearLimit: boolean;
   onLeave: () => void;
   onError: (message: string) => void;
 }) {
+  const [now, setNow] = useState(() => new Date());
   const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }], {
     onlySubscribed: false,
   });
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
       <FlatList
@@ -184,6 +194,16 @@ function Stage({
         columnWrapperStyle={tracks.length > 1 ? { gap: spacing[2] } : undefined}
         renderItem={({ item }) => <Tile track={item} people={people} />}
       />
+      <View style={styles.status} pointerEvents="none">
+        <AppText variant="small" style={{ color: colors.fg }}>
+          {connectedAt ? formatCallDuration(connectedAt, now) : 'Conectando…'}
+        </AppText>
+        {usageNearLimit ? (
+          <AppText variant="small" style={{ color: '#e8c872' }}>
+            Os minutos de call do mês estão quase no fim.
+          </AppText>
+        ) : null}
+      </View>
       <Controls onLeave={onLeave} onError={onError} />
     </View>
   );
@@ -197,12 +217,18 @@ export function CallStage({
   token,
   url,
   participants,
+  connectedAt,
+  usageNearLimit,
+  onConnected,
   onLeave,
   onError,
 }: {
   token: string;
   url: string;
   participants: CallParticipant[];
+  connectedAt: Date | null;
+  usageNearLimit: boolean;
+  onConnected: () => void;
   onLeave: () => void;
   onError: (message: string) => void;
 }) {
@@ -219,6 +245,7 @@ export function CallStage({
       connect
       audio
       video={false}
+      onConnected={onConnected}
       onDisconnected={onLeave}
       onError={(error) => onError(error.message)}
       onMediaDeviceFailure={() =>
@@ -235,12 +262,28 @@ export function CallStage({
         publishDefaults: { simulcast: true, red: true, dtx: true },
       }}
     >
-      <Stage people={participants} onLeave={onLeave} onError={onError} />
+      <Stage
+        people={participants}
+        connectedAt={connectedAt}
+        usageNearLimit={usageNearLimit}
+        onLeave={onLeave}
+        onError={onError}
+      />
     </LiveKitRoom>
   );
 }
 
 const styles = StyleSheet.create({
+  status: {
+    position: 'absolute',
+    top: spacing[2],
+    left: spacing[2],
+    right: spacing[2],
+    gap: 2,
+    padding: spacing[2],
+    borderRadius: radii.md,
+    backgroundColor: 'rgba(0,0,0,0.72)',
+  },
   tile: {
     flex: 1,
     aspectRatio: 3 / 4,

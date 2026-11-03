@@ -12,9 +12,11 @@ import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { CallUsageMeter, useCallUsage } from '@/components/call/call-usage';
 import { Card, CardHeader } from '@/components/ui/card';
 import { SelectField, TextField } from '@/components/ui/field';
 import { useToast } from '@/components/ui/toast';
+import { useConfirm } from '@/components/ui/use-confirm';
 import { failureMessage } from '@/lib/client-errors';
 import { callPath } from '@/lib/routes';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
@@ -23,6 +25,8 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 export function CallStart({ campaigns }: { campaigns: { id: string; name: string }[] }) {
   const router = useRouter();
   const { toast } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
+  const usage = useCallUsage();
   const [mode, setMode] = useState<CallAccessMode>('open');
   const [campaignId, setCampaignId] = useState('');
   const [sessions, setSessions] = useState<{ id: string; label: string }[]>([]);
@@ -54,6 +58,15 @@ export function CallStart({ campaigns }: { campaigns: { id: string; name: string
 
   const create = async () => {
     if (!campaignId) return;
+    if (usage?.exhausted) {
+      const proceed = await confirm({
+        title: 'O limite do mês acabou; a call pode cair',
+        description:
+          'A contagem é uma estimativa. Você ainda pode criar a sala se quiser continuar.',
+        confirmLabel: 'Criar mesmo assim',
+      });
+      if (!proceed) return;
+    }
     setBusy('create');
     try {
       const room = await createCallRoom(getSupabaseBrowserClient(), {
@@ -96,109 +109,117 @@ export function CallStart({ campaigns }: { campaigns: { id: string; name: string
   };
 
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
-      <Card ornate>
-        <CardHeader
-          icon={<Plus className="h-5 w-5" aria-hidden="true" />}
-          title="Criar sala"
-          description="Gera um link e um código para chamar o grupo."
-        />
-        <div className="flex flex-col gap-3">
-          <SelectField
-            id="call-campaign"
-            label="Campanha (nome da sala)"
-            value={campaignId}
-            onChange={(event) => {
-              setCampaignId(event.target.value);
-              if (!event.target.value) {
-                setSessions([]);
-                setSessionId('');
-              }
-            }}
-          >
-            <option value="">Escolha a campanha…</option>
-            {campaigns.map((campaign) => (
-              <option key={campaign.id} value={campaign.id}>
-                {campaign.name}
-              </option>
-            ))}
-          </SelectField>
-          {campaignId && sessions.length ? (
+    <>
+      {confirmDialog}
+      <CallUsageMeter usage={usage} />
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Card ornate>
+          <CardHeader
+            icon={<Plus className="h-5 w-5" aria-hidden="true" />}
+            title="Criar sala"
+            description="Gera um link e um código para chamar o grupo."
+          />
+          <div className="flex flex-col gap-3">
             <SelectField
-              id="call-session"
-              label="Sessão"
-              value={sessionId}
-              onChange={(event) => setSessionId(event.target.value)}
+              id="call-campaign"
+              label="Campanha (nome da sala)"
+              value={campaignId}
+              onChange={(event) => {
+                setCampaignId(event.target.value);
+                if (!event.target.value) {
+                  setSessions([]);
+                  setSessionId('');
+                }
+              }}
             >
-              <option value="">Nenhuma</option>
-              {sessions.map((session) => (
-                <option key={session.id} value={session.id}>
-                  {session.label}
+              <option value="">Escolha a campanha…</option>
+              {campaigns.map((campaign) => (
+                <option key={campaign.id} value={campaign.id}>
+                  {campaign.name}
                 </option>
               ))}
             </SelectField>
-          ) : null}
-          <fieldset className="flex flex-col gap-2">
-            <legend className="mb-1 text-sm font-medium text-fg">Quem entra</legend>
-            {(Object.keys(callAccessModeLabels) as CallAccessMode[]).map((key) => (
-              <label key={key} className="flex items-start gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="call-mode"
-                  checked={mode === key}
-                  onChange={() => setMode(key)}
-                  className="mt-1"
-                />
-                <span>
-                  <span className="font-medium text-fg">{callAccessModeLabels[key].name}</span>
-                  <span className="block text-xs text-fg-muted">
-                    {callAccessModeLabels[key].hint}
+            {campaignId && sessions.length ? (
+              <SelectField
+                id="call-session"
+                label="Sessão"
+                value={sessionId}
+                onChange={(event) => setSessionId(event.target.value)}
+              >
+                <option value="">Nenhuma</option>
+                {sessions.map((session) => (
+                  <option key={session.id} value={session.id}>
+                    {session.label}
+                  </option>
+                ))}
+              </SelectField>
+            ) : null}
+            <fieldset className="flex flex-col gap-2">
+              <legend className="mb-1 text-sm font-medium text-fg">Quem entra</legend>
+              {(Object.keys(callAccessModeLabels) as CallAccessMode[]).map((key) => (
+                <label key={key} className="flex items-start gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="call-mode"
+                    checked={mode === key}
+                    onChange={() => setMode(key)}
+                    className="mt-1"
+                  />
+                  <span>
+                    <span className="font-medium text-fg">{callAccessModeLabels[key].name}</span>
+                    <span className="block text-xs text-fg-muted">
+                      {callAccessModeLabels[key].hint}
+                    </span>
                   </span>
-                </span>
-              </label>
-            ))}
-          </fieldset>
-          {campaigns.length === 0 ? (
-            <p className="text-xs text-fg-muted">
-              A call fica dentro de uma campanha: crie ou entre numa campanha primeiro.
-            </p>
-          ) : null}
-          <Button loading={busy === 'create'} disabled={!campaignId} onClick={() => void create()}>
-            Criar e entrar
-          </Button>
-        </div>
-      </Card>
-      <Card>
-        <CardHeader
-          icon={<DoorOpen className="h-5 w-5" aria-hidden="true" />}
-          title="Entrar numa sala"
-          description="Cole o código (ex.: RUNA-4821) ou o link que receberam."
-        />
-        <form
-          className="flex flex-col gap-3"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void join();
-          }}
-        >
-          <TextField
-            id="call-code"
-            label="Código ou link"
-            value={code}
-            maxLength={200}
-            placeholder="RUNA-4821"
-            onChange={(event) => setCode(event.target.value)}
+                </label>
+              ))}
+            </fieldset>
+            {campaigns.length === 0 ? (
+              <p className="text-xs text-fg-muted">
+                A call fica dentro de uma campanha: crie ou entre numa campanha primeiro.
+              </p>
+            ) : null}
+            <Button
+              loading={busy === 'create'}
+              disabled={!campaignId}
+              onClick={() => void create()}
+            >
+              Criar e entrar
+            </Button>
+          </div>
+        </Card>
+        <Card>
+          <CardHeader
+            icon={<DoorOpen className="h-5 w-5" aria-hidden="true" />}
+            title="Entrar numa sala"
+            description="Cole o código (ex.: RUNA-4821) ou o link que receberam."
           />
-          <Button
-            type="submit"
-            variant="secondary"
-            loading={busy === 'join'}
-            disabled={!code.trim()}
+          <form
+            className="flex flex-col gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void join();
+            }}
           >
-            Entrar
-          </Button>
-        </form>
-      </Card>
-    </div>
+            <TextField
+              id="call-code"
+              label="Código ou link"
+              value={code}
+              maxLength={200}
+              placeholder="RUNA-4821"
+              onChange={(event) => setCode(event.target.value)}
+            />
+            <Button
+              type="submit"
+              variant="secondary"
+              loading={busy === 'join'}
+              disabled={!code.trim()}
+            >
+              Entrar
+            </Button>
+          </form>
+        </Card>
+      </div>
+    </>
   );
 }

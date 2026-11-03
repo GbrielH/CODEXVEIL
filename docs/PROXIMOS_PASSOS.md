@@ -864,6 +864,21 @@ de segurança).
 
 ## Histórico
 
+### 2026-11-03 — minutos e duração da call
+
+- [x] Sessões de conexão em `call_presence`, com início ao conectar, heartbeat de 60 s e término
+      explícito; intervalos abandonados terminam no último sinal, no fim da sala ou em seis horas.
+- [x] Estimativa mensal agregada no fuso de São Paulo por `call_usage_month()`, sem revelar uso por
+      pessoa ou campanha; limite somente no servidor por `LIVEKIT_MONTHLY_MINUTES` (padrão 5000).
+- [x] Mestre/dono vê barra verde/amarela/vermelha, valor e confirmação não bloqueante ao criar call
+      com 100%; jogadores veem apenas o aviso a partir de 95%.
+- [x] Cronômetro no site/app; site mostra câmeras ativas e recomenda desligar vídeo.
+- [x] Migração `20261103100000_call_presence_usage.sql` conferida por dry-run, mas não aplicada em
+      produção. Testes focados: domain 112/112; database 239 aprovados e 11 ao vivo pulados.
+- [x] `pnpm check`: 20/20 tarefas, 688 testes aprovados, 11 ao vivo pulados e 3 avisos antigos;
+      `pnpm build`: 2/2 tarefas (Next.js e export Android/Hermes).
+- [ ] Testar com duas contas o heartbeat, fechamento de aba, soma, limiares, câmeras e cronômetros.
+
 ### 2026-11-03 — transcrição de todos e ruído da call
 
 - [x] Ligar a transcrição pelo dono passa a iniciar automaticamente a captura local de cada

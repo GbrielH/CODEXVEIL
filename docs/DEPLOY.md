@@ -91,7 +91,7 @@ a recuperação de senha iniciada pelo app.
 
 ## 3. Variáveis de ambiente
 
-São todas públicas: só a URL do projeto e a **publishable key** (Project Settings → API Keys).
+As variáveis dos clientes são públicas: só a URL do projeto e a **publishable key** (Project Settings → API Keys).
 **Nunca** use `service_role` ou `sb_secret_…`: os apps recusam iniciar com elas.
 
 | Variável                                                                        | Web | Mobile |
@@ -107,6 +107,13 @@ Depois de alterá-las, gere o build de novo.
 **Segredo do servidor (só web):** `GEMINI_API_KEY` liga o assistente de IA (card no menu). É
 lida só pela rota `/api/assistente` na Vercel (Production); nunca vai para o navegador nem para o
 app. Sem ela, o card não aparece. Basta um novo deploy depois de criá-la.
+
+**Configuração da estimativa LiveKit (só web):** `LIVEKIT_MONTHLY_MINUTES` define o limite usado
+pela barra de consumo; se ausente ou inválido, o servidor usa `5000`. Cadastre na Vercel nos
+ambientes em que a call estiver ligada e faça um novo deploy. Não use prefixo `NEXT_PUBLIC_` ou
+`EXPO_PUBLIC_`: o app recebe apenas o aviso de limite pela rota `/api/call/usage`. As credenciais
+`LIVEKIT_API_KEY` e `LIVEKIT_API_SECRET` continuam exclusivamente no servidor e nunca são
+devolvidas pela rota.
 
 ## 4. Site (Next.js)
 
