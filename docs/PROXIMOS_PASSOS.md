@@ -1,11 +1,23 @@
 # Próximos passos
 
-> Relatório atualizado em **2026-10-26** (veja [Continuidade](#continuidade-parada-em-2026-10-26-retomar-daqui)). Mantenha este arquivo em dia a cada etapa concluída
+> Relatório atualizado em **2026-11-03** (veja [Continuidade](#continuidade-parada-em-2026-10-26-retomar-daqui)). Mantenha este arquivo em dia a cada etapa concluída
 > (veja [Como manter a documentação](#como-manter-a-documentação)). O inventário completo do
 > que falta em relação ao escopo inicial está em [`PENDENCIAS.md`](PENDENCIAS.md), e os
 > procedimentos de publicação em [`DEPLOY.md`](DEPLOY.md).
 
 ## Onde estamos
+
+### Triangle Agency (2026-11-03)
+
+- [x] Módulo próprio, migração, regras de campanha, criação e ficha no site e app.
+- [x] 6d4, GQs, Burnout, Caos, Triscendência, Estabilidade, ARC, Méritos, Tempo e conflitos.
+- [x] Extrator, validador, importador e leitor do pacote privado: 308 páginas, 446 entradas.
+- [x] Testes do pacote de sistemas (275) e typecheck de site/app.
+- [ ] Aplicar a migração em produção somente quando o responsável pedir commit e push.
+- [ ] Testar manualmente com campanha, Agente e livro importado no navegador e no Android.
+
+Histórico: em 2026-11-03, o sistema foi implantado sem usar mecânicas dos sistemas anteriores; a
+infraestrutura comum do Codexveil foi reutilizada apenas para campanhas, persistência, livros e UI.
 
 | Área        | Situação                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -37,6 +49,29 @@ com várias rolagens, aba Mapa com tela cheia e zoom, camadas giráveis, movimen
 de combate, paredes e quadrados ocupados bloqueando o movimento, áreas de magia compartilhadas,
 anotações arrastáveis, bônus temporários e botão "Usar" nas magias, características por tipo,
 livros só os importados, paginação, exclusão de conta e limpeza de arquivos órfãos.
+
+### Para depois: efeitos das escolhas de raça do Tormenta20 (anotado em 2026-11-03)
+
+As escolhas de raça (Golem desperto, Moreau, Kallyanach do Ameaças de Arton) já somam **atributos,
+tamanho e deslocamento** na criação. O resto dos efeitos fica na ficha só como texto da habilidade
+de raça. Automatizar depois, no mesmo molde dos bônus que a ficha já calcula
+(`packages/rpg-systems/src/tormenta20/bonuses.ts` e `grants.ts`):
+
+- **Defesa e penalidade de armadura:** chassi de ferro (+2 na Defesa, penalidade de armadura –2);
+  Escamas Elementais do Kallyanach (+2 na Defesa).
+- **Armas naturais como ataque na ficha:** garras, mordida, chifres, cascos e cauda (dano, crítico,
+  tipo e o ataque extra por 1 PM): heranças do Moreau, Armamento Kallyanach.
+- **Magias concedidas:** fonte de energia sagrada do golem (magia divina de 1º círculo à escolha,
+  atributo-chave Sabedoria), Sapiência da Herança da Coruja, Prática Arcana do Kallyanach (escolha da
+  magia e redução de –1 PM ao aprender de novo).
+- **Perícias e testes:** bônus fixos em perícias (ex.: +2 em Percepção e Vontade, +2 em Furtividade,
+  Esperteza Vulpina com duas perícias à escolha) e penalidades (Camada de Ingenuidade do Ogro).
+- **Sentidos, imunidades e reduções de dano:** visão no escuro/penumbra, faro, imunidades do chassi de
+  carne e da fonte de vapor, reduções do chassi de pedra e de gelo eterno, Herança Dracônica (redução
+  5 contra o tipo escolhido).
+- **Outros deslocamentos:** voo (Asas Dracônicas, Herança do Morcego), escalada (Herança da Serpente).
+- **Restrições entre escolhas:** chassi de carne não pode usar fonte elemental (água ou fogo) nem vapor;
+  gelo eterno não pode usar elemental (fogo) nem vapor. Hoje a criação aceita essas combinações.
 
 ### 0. Aguardando o criador do Behind the Magic (Will Nascimento)
 
