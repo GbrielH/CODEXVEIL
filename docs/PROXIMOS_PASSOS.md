@@ -864,6 +864,14 @@ de segurança).
 
 ## Histórico
 
+### 2026-11-03 — Ameaças de Arton
+
+- [x] Pacote `t20-ameacas` (Ameaças de Arton) gerado do PDF do responsável por
+      `scripts/books/t20_ameacas.py`: 367 ameaças com ficha, atributos (364) e descrição;
+      `parseT20BookPack` sem erros. Fora do Git (pasta de trabalho e Downloads).
+- [ ] O responsável importa em Meus livros e libera na campanha T20. Raças jogáveis, itens e
+      magias novas do livro ainda não foram extraídos.
+
 ### 2026-11-03 — transcrições apagadas após 24 horas
 
 - [x] Site lista calls encerradas acessíveis nas últimas 24 h, com data, duração, “Apaga em Xh” e

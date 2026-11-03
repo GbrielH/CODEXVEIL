@@ -49,6 +49,10 @@ repositório. Gere tudo numa pasta fora do projeto (por exemplo, `Documents/Code
    `python -X utf8 scripts/books/t20_pack.py <saída>/out/t20.json <saída>/out/t20-jda.book.json`.
    O pacote (`codexveil.tormenta20.book`) é importado em Meus livros como os de D&D.
 
+10. **Ameaças de Arton** (`AMEAÇAS DE ARTON.pdf`): `layout.py` → `layout/AMEACAS.jsonl`, depois
+    `python -X utf8 scripts/books/t20_ameacas.py <saída>/layout/AMEACAS.jsonl <saída>/out/t20-ameacas.book.json`
+    (id `t20-ameacas`; 367 ameaças com ficha e descrição em 2026-11-03).
+
 Veja o andamento e o que falta em `docs/PROXIMOS_PASSOS.md` ("Continuidade").
 
 ## Importar na conta do responsável (sem passar pelo site)

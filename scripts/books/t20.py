@@ -49,7 +49,7 @@ class Book:
         return 9.0 <= self.rows[i]['s'] <= 10.0
 
     def index_of_page(self, page):
-        return next(i for i, r in enumerate(self.rows) if r['p'] >= page)
+        return next((i for i, r in enumerate(self.rows) if r['p'] >= page), len(self.rows))
 
     def titles(self, size, first_page, last_page):
         """Títulos (juntando linhas quebradas) num intervalo de páginas: [(índice, texto)]."""
@@ -585,12 +585,12 @@ STAT_FIELDS = ('Iniciativa', 'Defesa', 'Pontos de Vida', 'Pontos de Mana', 'Desl
                'Perícias', 'Equipamento', 'Tesouro')
 
 
-def threats(book, first_page=288, last_page=329):
+def threats(book, first_page=288, last_page=329, nd_sizes=(11.0, 16.0)):
     """Fichas de ameaças: título (21) + "ND x" (16) + bloco em SourceSansPro."""
     out = []
     start, end = book.index_of_page(first_page), book.index_of_page(last_page + 1)
     # Cada ficha tem um marcador "ND x" (fonte 16 ou 11) logo depois do nome (título de 21 ou 16).
-    markers = [k for k in range(start, end) if book.rows[k]['f'].startswith(TITLE) and book.rows[k]['s'] in (11.0, 16.0)
+    markers = [k for k in range(start, end) if book.rows[k]['f'].startswith(TITLE) and round(book.rows[k]['s'], 1) in nd_sizes
                and re.match(r'^ND\s', book.texts[k], re.I)]
     titles = []
     for k in markers:
@@ -618,7 +618,7 @@ def threats(book, first_page=288, last_page=329):
             r, t = book.rows[k], book.texts[k]
             if r['f'].startswith('SourceSansPro-It') and t == kind:
                 continue
-            if re.match(r'^For\s+[–\-+]?\d', t):
+            if re.match(r'^For\s+(?:[–\-+]?\d|—)', t):
                 attrs, current = t, None
                 continue
             lead = clean(r['lead'] or '')
@@ -639,7 +639,7 @@ def threats(book, first_page=288, last_page=329):
         hp = re.match(r'(\d+)', join_lines(fields.get('Pontos de Vida', {}).get('lines', [])))
         first_stat = block[0]
         out.append({
-            'name': name, 'nd': re.search(r'ND\s*(\S+)\s*$', book.texts[nd_row], re.I).group(1) if re.search(r'ND\s*(\S+)\s*$', book.texts[nd_row], re.I) else '', 'type': kind,
+            '_first': first_line, 'name': name, 'nd': re.search(r'ND\s*(\S+)\s*$', book.texts[nd_row], re.I).group(1) if re.search(r'ND\s*(\S+)\s*$', book.texts[nd_row], re.I) else '', 'type': kind,
             'summary': book.paragraphs(nd_row + 1, first_stat),
             'attributes': mods, 'defense': int(dm.group(1)) if dm else 0, 'defenseText': defense,
             'hp': int(hp.group(1)) if hp else 0,
