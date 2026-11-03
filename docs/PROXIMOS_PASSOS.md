@@ -62,6 +62,9 @@ relatou `pnpm check` 20/20 (699 testes) e `pnpm build` aprovados na máquina del
 
 - [x] Migração `20261103150000_triangle_agency.sql` aplicada em produção em 2026-11-03 (registra o
       sistema e libera os tipos de entrada do livro em `book_entries`).
+- [x] Selo e resumo do livro em Meus livros mostravam "D&D 5e" e "Sem conteúdo de regras" (o selo
+      só conhecia D&D, Tormenta20 e Assimilação): agora "Triangle Agency" e a contagem de ARC,
+      requisições e documentos.
 - [ ] Revisar o código (motor 6d4, criação, ficha, regras da campanha, blocos de Anomalia, importador).
 - [ ] Importar o pacote privado `triangle-agency.book.json` (pasta de trabalho, fora do Git) em Meus
       livros.

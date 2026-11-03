@@ -30,13 +30,25 @@ const ASSIMILACAO_COUNT_LABELS: [string, string, string][] = [
   ['event', 'carta de Evento', 'cartas de Evento'],
 ];
 
+const TRIANGLE_COUNT_LABELS: [string, string, string][] = [
+  ['arc_anomaly', 'Anomalia', 'Anomalias'],
+  ['arc_reality', 'Realidade', 'Realidades'],
+  ['arc_competency', 'Competência', 'Competências'],
+  ['anomalous_ability', 'habilidade anômala', 'habilidades anômalas'],
+  ['requisition', 'requisição', 'requisições'],
+  ['locked_document', 'documento bloqueado', 'documentos bloqueados'],
+  ['section', 'página', 'páginas'],
+];
+
 export function describeBookCounts(counts: Record<string, number>, systemId = 'dnd5e'): string {
   const labels =
     systemId === 'tormenta20'
       ? T20_COUNT_LABELS
       : systemId === 'assimilacao'
         ? ASSIMILACAO_COUNT_LABELS
-        : COUNT_LABELS;
+        : systemId === 'triangle-agency'
+          ? TRIANGLE_COUNT_LABELS
+          : COUNT_LABELS;
   return labels
     .filter(([kind]) => (counts[kind] ?? 0) > 0)
     .map(([kind, one, many]) => `${counts[kind]} ${counts[kind] === 1 ? one : many}`)
