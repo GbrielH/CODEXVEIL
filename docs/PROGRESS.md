@@ -912,3 +912,5 @@ celular, nem o áudio da call.
   app. NPCs: imagem só enquanto visíveis num mapa ativo. Ambas aplicadas em produção.
 - Testes novos: `test/rls/token-images.test.ts` (2). `pnpm check` (20 tarefas) passou. Não
   verificado no navegador.
+
+- Fotos do card **Grupo** clicáveis (abrem em tela cheia), a sua e as dos outros jogadores.

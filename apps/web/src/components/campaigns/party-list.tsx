@@ -86,6 +86,7 @@ export function PartyFaces({
             name={face.name}
             url={face.portraitPath ? (portraits[face.portraitPath] ?? null) : null}
             size="sm"
+            zoomable
           />
           <div className="min-w-0">
             <p className="truncate font-medium text-fg">{face.name}</p>

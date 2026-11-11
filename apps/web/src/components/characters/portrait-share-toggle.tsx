@@ -68,7 +68,7 @@ export function OwnPortraitShareRow({
   const { shared, busy, change } = useSharedPortrait(characterId, initial);
   return (
     <div className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-dashed border-line-strong bg-sunken/60 p-3">
-      <Portrait name={name} url={portraitUrl} size="sm" />
+      <Portrait name={name} url={portraitUrl} size="sm" zoomable />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-fg">{name} (você)</p>
         <p className="text-xs text-fg-muted">
