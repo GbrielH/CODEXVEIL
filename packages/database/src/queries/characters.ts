@@ -42,6 +42,8 @@ export interface CharacterDetail {
   portraitPath: string | null;
   /** Imagem do token no mapa (sem ela, o mapa usa o retrato). */
   tokenPath: string | null;
+  /** O retrato aparece para o grupo mesmo com as fichas ocultas. */
+  sharePortrait: boolean;
   /** Dado salvo do dono vinculado ao personagem ("Meus dados"). */
   diceId: string | null;
   /** Ficha bruta; valide com o módulo do sistema (`findSystem(systemId).parseSheet`). */
@@ -353,7 +355,7 @@ export async function getCharacter(
   const { data, error } = await client
     .from('characters')
     .select(
-      'id, owner_id, campaign_id, system_id, name, portrait_path, token_path, dice_id, sheet, version, updated_at, live_updated_at, granted_level, owner:profiles!characters_owner_id_fkey(display_name), campaign:campaigns!characters_campaign_id_fkey(id, name, status, owner_id, party_sheets_visible, players_can_edit_sheets)',
+      'id, owner_id, campaign_id, system_id, name, portrait_path, token_path, share_portrait, dice_id, sheet, version, updated_at, live_updated_at, granted_level, owner:profiles!characters_owner_id_fkey(display_name), campaign:campaigns!characters_campaign_id_fkey(id, name, status, owner_id, party_sheets_visible, players_can_edit_sheets)',
     )
     .eq('id', characterId)
     .maybeSingle();
@@ -380,6 +382,7 @@ export async function getCharacter(
     name: data.name,
     portraitPath: data.portrait_path,
     tokenPath: data.token_path,
+    sharePortrait: data.share_portrait,
     diceId: data.dice_id,
     sheet: data.sheet,
     version: data.version,
@@ -1264,4 +1267,11 @@ export async function setCharacterNpcListed(
     p_listed: listed,
   });
   if (error) throw toAppError(error);
+}
+
+/** O dono decide se o retrato aparece para o grupo quando as fichas estão ocultas. */
+export async function setCharacterPortraitShared(client: CodexveilClient, characterId: string, shared: boolean): Promise<void> {
+  const { data, error } = await client.from('characters').update({ share_portrait: shared }).eq('id', characterId).select('id');
+  if (error) throw toAppError(error);
+  if (data.length === 0) throw new AppError('forbidden');
 }

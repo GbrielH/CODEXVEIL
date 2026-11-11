@@ -105,6 +105,16 @@ export function useBoardViewport({
     return () => scroll.removeEventListener('wheel', onWheel);
   }, [scrollRef, clamp, cols, rows]);
 
+  // Ao abrir um mapa (ou trocar o tamanho da grade), o zoom se ajusta para o mapa ocupar a área
+  // disponível, sem sobrar espaço vazio; depois disso a pessoa controla o zoom.
+  const fittedSize = useRef('');
+  useEffect(() => {
+    const size = `${cols}x${rows}`;
+    if (!cols || !rows || fittedSize.current === size) return;
+    fittedSize.current = size;
+    requestAnimationFrame(fit);
+  }, [cols, rows, fit]);
+
   const toggleFullscreen = useCallback(() => {
     if (document.fullscreenElement) void document.exitFullscreen();
     else void boardAreaRef.current?.requestFullscreen();

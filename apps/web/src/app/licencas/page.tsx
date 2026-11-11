@@ -13,6 +13,7 @@ const thirdParty = [
   { name: 'Lucide (ícones de interface)', license: 'ISC' },
   { name: 'Next.js, React, Expo e React Native', license: 'MIT' },
   { name: 'Supabase JS', license: 'MIT' },
+  { name: 'RNNoise (redução de ruído na call), via web-noise-suppressor', license: 'BSD-3-Clause / MIT' },
 ];
 
 export default function LicensesPage() {

@@ -69,6 +69,7 @@ export function MapBoard({
   myCharacterId,
   zoom,
   selected,
+  movingTokenId = null,
   namedTokenId = null,
   activeTokenId = null,
   freeMovement = false,
@@ -88,6 +89,8 @@ export function MapBoard({
   zoom: number;
   /** Token do jogador selecionado para mover. */
   selected: boolean;
+  /** Mestre: token (de qualquer um) escolhido para mover; tem prioridade sobre `selected`. */
+  movingTokenId?: string | null;
   /** Token tocado: mostra o nome por cima dele. */
   namedTokenId?: string | null;
   /** Token do combatente da vez. */
@@ -120,6 +123,7 @@ export function MapBoard({
     return () => clearTimeout(timer);
   }, [trails]);
   const myToken = tokens.find((token) => token.kind === 'character' && token.characterId === myCharacterId) ?? null;
+  const movingToken = (movingTokenId ? tokens.find((token) => token.id === movingTokenId) : null) ?? (selected ? myToken : null);
 
   const unrevealed = useMemo(() => {
     if (!map.fogEnabled) return '';
@@ -372,12 +376,12 @@ export function MapBoard({
             })()}
             {unrevealed ? <Path d={unrevealed} fill="#050505" /> : null}
             {sight ? <Rect x="0" y="0" width={map.cols} height={map.rows} fill="#050505" opacity={0.92} mask="url(#visao)" /> : null}
-            {myToken && selected ? (
+            {movingToken ? (
               <Rect
-                x={myToken.x}
-                y={myToken.y}
-                width={tokenSizeSquares[myToken.size]}
-                height={tokenSizeSquares[myToken.size]}
+                x={movingToken.x}
+                y={movingToken.y}
+                width={tokenSizeSquares[movingToken.size]}
+                height={tokenSizeSquares[movingToken.size]}
                 fill="none"
                 stroke="#f3e2b3"
                 strokeWidth={0.06}

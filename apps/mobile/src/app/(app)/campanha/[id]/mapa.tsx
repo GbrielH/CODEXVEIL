@@ -1,4 +1,4 @@
-import { getActiveMap, getCampaign, getCampaignTurn, listCampaignCharacters, listMapTokens, moveMyToken, signedMediaUrls, tokenImagePaths, type MapToken } from '@codexveil/database';
+import { getActiveMap, getCampaign, getCampaignTurn, listCampaignCharacters, listMapTokens, moveMyToken, signedMediaUrls, updateMapToken, tokenImagePaths, type MapToken } from '@codexveil/database';
 import { activeTurnTokenId, formatMeters, gridDistance, movementCrossesWall, tokenSizeSquares } from '@codexveil/domain';
 import { characterSpeedMeters } from '@codexveil/rpg-systems';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -29,7 +29,7 @@ export default function CampaignMapScreen() {
   const toast = useToast();
   const palette = useDicePalette(id);
   const [zoom, setZoom] = useState(1);
-  const [selected, setSelected] = useState(false);
+  const [movingId, setMovingId] = useState<string | null>(null);
   const [named, setNamed] = useState<string | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const window = useWindowDimensions();
@@ -109,41 +109,48 @@ export default function CampaignMapScreen() {
   const activeTokenId = activeTurnTokenId(tokens, turn);
   const myTurn = turn?.status === 'active' && turn.mode === 'combat' && turn.activeCharacterId === own?.id;
 
+  // Mestre (no app também): move qualquer token, como no site; o jogador move só o próprio.
+  const isGm = data.campaign.role === 'gm';
+  const movingToken = movingId ? (tokens.find((token) => token.id === movingId) ?? null) : null;
+
   const tap = (x: number, y: number) => {
     if (!map) return;
-    // Tocar num token dos outros (sem estar movendo o seu) mostra o nome dele.
     const touched = tokens.find((token) => {
       const tokenSide = tokenSizeSquares[token.size];
-      return token.id !== myToken?.id && x >= token.x && x < token.x + tokenSide && y >= token.y && y < token.y + tokenSide;
+      return x >= token.x && x < token.x + tokenSide && y >= token.y && y < token.y + tokenSide;
     });
-    if (touched && !selected) {
-      setNamed(touched.id);
+    if (!movingToken) {
+      if (touched && (isGm || touched.id === myToken?.id)) setMovingId(touched.id);
+      else if (touched) setNamed(touched.id);
       return;
     }
-    if (!myToken) return;
-    const side = tokenSizeSquares[myToken.size];
-    const onMine = x >= myToken.x && x < myToken.x + side && y >= myToken.y && y < myToken.y + side;
-    if (onMine) {
-      setSelected((current) => !current);
+    // Tocar de novo no token escolhido cancela; em outro (mestre), troca a escolha.
+    if (touched?.id === movingToken.id) {
+      setMovingId(null);
       return;
     }
-    if (!selected) return;
+    if (touched && isGm) {
+      setMovingId(touched.id);
+      return;
+    }
+    const side = tokenSizeSquares[movingToken.size];
     const nx = Math.max(0, Math.min(map.cols - side, x));
     const ny = Math.max(0, Math.min(map.rows - side, y));
-    setSelected(false);
-    // Mesmas regras do site: outro token no destino ou parede no caminho impedem o movimento.
+    setMovingId(null);
+    // Mesmas regras do site: outro token no destino impede; paredes só barram os jogadores.
     const occupied = tokens.some((other) => {
-      if (other.id === myToken.id) return false;
+      if (other.id === movingToken.id) return false;
       const otherSide = tokenSizeSquares[other.size];
       return nx < other.x + otherSide && other.x < nx + side && ny < other.y + otherSide && other.y < ny + side;
     });
-    const walled = movementCrossesWall(map.walls, { x: myToken.x + side / 2, y: myToken.y + side / 2 }, { x: nx + side / 2, y: ny + side / 2 });
+    const walled = !isGm && movementCrossesWall(map.walls, { x: movingToken.x + side / 2, y: movingToken.y + side / 2 }, { x: nx + side / 2, y: ny + side / 2 });
     if (occupied || walled) {
       toast({ tone: 'warning', title: occupied ? 'Quadrado ocupado' : 'Parede no caminho', description: occupied ? 'Já há outro token ali.' : 'Contorne a parede, em mais de um movimento.' });
       return;
     }
-    if (inCombat) {
-      const walked = gridDistance(myToken, { x: nx, y: ny }, data.campaign.systemId);
+    const mineMoving = movingToken.id === myToken?.id;
+    if (inCombat && mineMoving) {
+      const walked = gridDistance(movingToken, { x: nx, y: ny }, data.campaign.systemId);
       const limit = own ? characterSpeedMeters(data.campaign.systemId, own.sheet) : null;
       const over = limit !== null && walked.meters > limit;
       toast({
@@ -152,8 +159,9 @@ export default function CampaignMapScreen() {
         description: over ? 'Passou do seu deslocamento (o movimento foi feito; combine com o mestre).' : `${walked.squares} ${walked.squares === 1 ? 'quadrado' : 'quadrados'} de 1,5 m.`,
       });
     }
-    mutate((current) => (current ? { ...current, tokens: current.tokens.map((token) => (token.id === myToken.id ? { ...token, x: nx, y: ny } : token)) } : current));
-    moveMyToken(getSupabase(), myToken.id, nx, ny).catch((cause: unknown) => {
+    mutate((current) => (current ? { ...current, tokens: current.tokens.map((token) => (token.id === movingToken.id ? { ...token, x: nx, y: ny } : token)) } : current));
+    const client = getSupabase();
+    (isGm && !mineMoving ? updateMapToken(client, movingToken.id, { x: nx, y: ny }) : moveMyToken(client, movingToken.id, nx, ny)).catch((cause: unknown) => {
       toast({ tone: 'danger', title: 'O token não foi movido', description: failureMessage(cause) });
       reload();
     });
@@ -173,11 +181,13 @@ export default function CampaignMapScreen() {
             </View>
           ) : null}
           <AppText variant="small">
-            {myToken
-              ? selected
-                ? 'Agora toque no quadrado para onde quer ir.'
-                : 'Toque no seu token (borda branca) e depois no quadrado de destino. Toque em outro token para ver o nome. Cada quadrado = 1,5 m.'
-              : 'Cada quadrado = 1,5 m. O mestre ainda não colocou o seu personagem no mapa.'}
+            {movingToken
+              ? `Agora toque no quadrado para onde ${movingToken.id === myToken?.id ? 'quer ir' : `levar ${movingToken.label || 'o token'}`}.`
+              : isGm
+                ? 'Mestre: toque em qualquer token e depois no quadrado de destino. Cada quadrado = 1,5 m.'
+                : myToken
+                  ? 'Toque no seu token (borda branca) e depois no quadrado de destino. Toque em outro token para ver o nome. Cada quadrado = 1,5 m.'
+                  : 'Cada quadrado = 1,5 m. O mestre ainda não colocou o seu personagem no mapa.'}
           </AppText>
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 6 }}>
             <IconButton icon={<Maximize2 size={18} color={colors.fg} />} accessibilityLabel="Mapa em tela cheia" onPress={() => setFullscreen(true)} />
@@ -193,7 +203,8 @@ export default function CampaignMapScreen() {
             systemId={data.campaign.systemId}
             myCharacterId={own?.id ?? null}
             zoom={zoom}
-            selected={selected}
+            selected={movingToken !== null && movingToken.id === myToken?.id}
+            movingTokenId={movingId}
             namedTokenId={named}
             activeTokenId={activeTokenId}
             freeMovement={!inCombat}
@@ -212,7 +223,8 @@ export default function CampaignMapScreen() {
               systemId={data.campaign.systemId}
               myCharacterId={own?.id ?? null}
               zoom={zoom}
-              selected={selected}
+              selected={movingToken !== null && movingToken.id === myToken?.id}
+              movingTokenId={movingId}
               namedTokenId={named}
               activeTokenId={activeTokenId}
               freeMovement={!inCombat}

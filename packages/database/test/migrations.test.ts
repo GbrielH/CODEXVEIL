@@ -80,6 +80,7 @@ describe('migrações', () => {
       'call_invites',
       'call_participants',
       'call_rooms',
+      'campaign_handouts',
       'campaign_members',
       'campaign_turns',
       'card_decks',

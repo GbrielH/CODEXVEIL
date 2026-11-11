@@ -401,3 +401,9 @@ personagens" quando o dono liga a opção, por `public.set_character_npc_listed(
 - Escritas só por funções: `create_schedule_poll` (mestre, 1–10 datas), `vote_schedule` (membro,
   votação aberta) e `confirm_schedule` (mestre; grava `sessions.scheduled_at` quando há sessão).
   O mestre também apaga a votação (política de delete).
+
+Migração `20261110100000_handouts_and_portraits.sql`: tabela `campaign_handouts` (revelações do
+mestre; leitura por `private.can_read_handout_row`, escrita por quem gerencia a campanha;
+Realtime), coluna `characters.share_portrait`, `list_party_faces` respeitando a escolha (cai no
+token), política de leitura dos retratos atualizada, e `can_read/can_write_campaign_media` e
+`list_orphan_media` cobrindo `handouts/`.

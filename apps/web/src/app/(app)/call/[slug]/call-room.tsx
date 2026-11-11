@@ -1,6 +1,7 @@
 'use client';
 
 import '@livekit/components-styles';
+import { RnnoiseProcessor, supportsRnnoise } from '@/lib/rnnoise-processor';
 import {
   decideCallParticipant,
   endCallPresence,
@@ -34,7 +35,7 @@ import {
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -55,23 +56,53 @@ type Entry =
   | { state: 'ready'; token: string; url: string }
   | { state: 'error'; message: string };
 
-/** Preferência local: reaplica as restrições no microfone publicado sem afetar os demais. */
+/**
+ * Redução de ruído do microfone (preferência local, não afeta os outros). Ligada por padrão com o
+ * RNNoise, que remove teclado, ventilador e barulho de fundo. Sem suporte no navegador, usa o
+ * filtro embutido do WebRTC, reabrindo o microfone (`restartTrack`): o `applyConstraints` usado
+ * antes não religava a supressão num microfone já aberto, e o botão não fazia efeito.
+ */
 function NoiseReductionControl({ onError }: { onError: (message: string) => void }) {
   const { microphoneTrack } = useLocalParticipant();
   const [enabled, setEnabled] = useState(true);
   const [changing, setChanging] = useState(false);
   const track = microphoneTrack?.audioTrack;
-  if (!(track instanceof LocalAudioTrack)) return null;
+  const ready = track instanceof LocalAudioTrack;
+  const appliedTo = useRef<LocalAudioTrack | null>(null);
+
+  const apply = useCallback(
+    async (target: LocalAudioTrack, next: boolean) => {
+      if (next && supportsRnnoise()) {
+        try {
+          await target.setProcessor(new RnnoiseProcessor());
+          return;
+        } catch {
+          // Sem o RNNoise (navegador antigo ou bloqueio de áudio): cai para o filtro embutido.
+          await target.stopProcessor().catch(() => undefined);
+        }
+      } else if (!next) {
+        await target.stopProcessor().catch(() => undefined);
+      }
+      await target.restartTrack({ echoCancellation: true, noiseSuppression: next, autoGainControl: true });
+    },
+    [],
+  );
+
+  // Liga a redução forte assim que o microfone é publicado (e de novo se ele for trocado).
+  useEffect(() => {
+    if (!ready || appliedTo.current === track) return;
+    appliedTo.current = track;
+    if (!enabled) return;
+    void apply(track, true).catch(() => onError('Não foi possível ligar a redução de ruído neste navegador.'));
+  }, [apply, enabled, onError, ready, track]);
+
+  if (!ready) return null;
 
   const toggle = async () => {
     const next = !enabled;
     setChanging(true);
     try {
-      await track.applyConstraints({
-        echoCancellation: true,
-        noiseSuppression: next,
-        autoGainControl: true,
-      });
+      await apply(track, next);
       setEnabled(next);
     } catch {
       onError('O navegador não conseguiu alterar a redução de ruído deste microfone.');

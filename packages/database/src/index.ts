@@ -34,6 +34,7 @@ export * from './queries/schedule';
 export * from './queries/assimilacao-master';
 export * from './queries/friends';
 export * from './queries/notes';
+export * from './queries/handouts';
 export * from './queries/tavern';
 export * from './queries/conflicts';
 export * from './queries/items';

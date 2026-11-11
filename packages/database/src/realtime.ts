@@ -29,6 +29,7 @@ import type { CodexveilClient } from './client';
 let topicSequence = 0;
 
 export type RealtimeTable =
+  | 'campaign_handouts'
   | 'campaign_members'
   | 'characters'
   | 'character_resources'

@@ -28,6 +28,7 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
+  ScrollText,
 } from 'lucide-react-native';
 import { Image, Linking, Pressable, StyleSheet, View } from 'react-native';
 import {
@@ -324,6 +325,14 @@ export default function CampaignScreen() {
           hint="NPCs, monstros e itens revelados"
           onPress={() =>
             router.push({ pathname: '/campanha/[id]/biblioteca', params: { id: campaign.id } })
+          }
+        />
+        <NavTile
+          icon={<ScrollText size={20} color={colors.fgAccent} />}
+          label="Revelações"
+          hint="Cartas, pistas e imagens do mestre"
+          onPress={() =>
+            router.push({ pathname: '/campanha/[id]/revelacoes', params: { id: campaign.id } })
           }
         />
         <NavTile

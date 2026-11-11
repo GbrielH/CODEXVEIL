@@ -23,6 +23,7 @@ import { ErrorState } from '@/components/ui/states';
 import { Card } from '@/components/ui/card';
 import { CreationAnswersView } from '@/components/characters/creation-answers';
 import { ShareCharacterCard } from '@/components/friends/share-character-card';
+import { PortraitShareToggle } from '@/components/characters/portrait-share-toggle';
 import { ItemCatalogProvider } from '@/components/sheets/item-catalog';
 import {
   campaignBookPacks,
@@ -134,7 +135,10 @@ export async function CharacterSheet({
         books={books}
         shareCard={
           character.viewer.isOwner ? (
-            <ShareCharacterCard characterId={character.id} ownerId={character.ownerId} />
+            <>
+              <ShareCharacterCard characterId={character.id} ownerId={character.ownerId} />
+              {character.campaign ? <PortraitShareToggle characterId={character.id} initial={character.sharePortrait} /> : null}
+            </>
           ) : null
         }
         campaigns={campaigns
@@ -175,7 +179,10 @@ export async function CharacterSheet({
       <T20SheetScreen
         shareCard={
           character.viewer.isOwner ? (
-            <ShareCharacterCard characterId={character.id} ownerId={character.ownerId} />
+            <>
+              <ShareCharacterCard characterId={character.id} ownerId={character.ownerId} />
+              {character.campaign ? <PortraitShareToggle characterId={character.id} initial={character.sharePortrait} /> : null}
+            </>
           ) : null
         }
         campaigns={campaigns
@@ -244,7 +251,10 @@ export async function CharacterSheet({
       <AssimilacaoSheetScreen
         shareCard={
           character.viewer.isOwner ? (
-            <ShareCharacterCard characterId={character.id} ownerId={character.ownerId} />
+            <>
+              <ShareCharacterCard characterId={character.id} ownerId={character.ownerId} />
+              {character.campaign ? <PortraitShareToggle characterId={character.id} initial={character.sharePortrait} /> : null}
+            </>
           ) : null
         }
         campaigns={campaigns

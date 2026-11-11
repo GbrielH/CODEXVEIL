@@ -445,6 +445,66 @@ export type Database = {
           },
         ];
       };
+      campaign_handouts: {
+        Row: {
+          audience: string;
+          body: string;
+          campaign_id: string;
+          character_ids: string[];
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          image_path: string | null;
+          is_revealed: boolean;
+          revealed_at: string | null;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          audience?: string;
+          body?: string;
+          campaign_id: string;
+          character_ids?: string[];
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          image_path?: string | null;
+          is_revealed?: boolean;
+          revealed_at?: string | null;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          audience?: string;
+          body?: string;
+          campaign_id?: string;
+          character_ids?: string[];
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          image_path?: string | null;
+          is_revealed?: boolean;
+          revealed_at?: string | null;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'campaign_handouts_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'campaign_handouts_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       campaign_invites: {
         Row: {
           campaign_id: string;
@@ -1332,6 +1392,7 @@ export type Database = {
           npc_listed: boolean;
           owner_id: string;
           portrait_path: string | null;
+          share_portrait: boolean;
           sheet: Json;
           system_id: string;
           token_path: string | null;
@@ -1350,6 +1411,7 @@ export type Database = {
           npc_listed?: boolean;
           owner_id?: string;
           portrait_path?: string | null;
+          share_portrait?: boolean;
           sheet?: Json;
           system_id: string;
           token_path?: string | null;
@@ -1368,6 +1430,7 @@ export type Database = {
           npc_listed?: boolean;
           owner_id?: string;
           portrait_path?: string | null;
+          share_portrait?: boolean;
           sheet?: Json;
           system_id?: string;
           token_path?: string | null;

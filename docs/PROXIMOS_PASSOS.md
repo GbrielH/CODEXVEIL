@@ -2250,3 +2250,22 @@ recebe por atualização OTA). Não verificado no celular.
 - Documentação de estado corrigida: APK atual `e02e7079` no README e aqui, deploy automático
   dado como ligado (DEPLOY, PENDENCIAS, PROGRESS), decisões de livros, arte oficial e classes na
   ARCHITECTURE, `sourcebooks` e capa na DATABASE, envio da capa pela Server Action na SECURITY.
+
+### 2026-11-10 — revelações, retrato no grupo, ruído da call e mapa
+
+- **Revelações** (aba nova no site e atalho no app): o mestre entrega textos e imagens fora do
+  roteiro, para todos ou para personagens escolhidos; pode preparar e revelar na hora. Tabela
+  `campaign_handouts` com RLS (jogadores só leem o que foi revelado para eles), imagens em
+  `campaigns/{campanha}/handouts/{id}/` com a mesma regra, tempo real.
+- **Retrato no grupo:** `characters.share_portrait` (ligado por padrão). Card "Retrato no grupo"
+  na ficha (D&D, Tormenta20, Assimilação). Sem retrato, o grupo vê o token do mapa.
+- **Redução de ruído da call (site):** o botão usava `applyConstraints`, que não religava a
+  supressão num microfone aberto; agora usa o RNNoise (AudioWorklet + WASM em
+  `public/audio/rnnoise`, MIT/BSD) e, sem suporte, reabre o microfone com `restartTrack`.
+- **Mapa:** no app o mestre move qualquer token (antes só o próprio, pela função de jogador);
+  no site o mapa ajusta o zoom à área ao abrir e a aba do jogador usa a largura toda.
+
+Migração `20261110100000_handouts_and_portraits.sql` **ainda não aplicada** (CLI do Supabase sem
+login nesta sessão). Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram; testes novos
+`handouts.test.ts` (3) e publicação do Realtime atualizada. Não verificado no navegador, no
+celular, nem o áudio da call.

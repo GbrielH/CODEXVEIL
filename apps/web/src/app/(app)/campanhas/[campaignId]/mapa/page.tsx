@@ -53,7 +53,7 @@ export default async function MapTabPage({ params }: PageProps<'/campanhas/[camp
       />
     )
   ) : current ? (
-    <div className="mx-auto w-full max-w-6xl">
+    <div className="w-full">
       <MapView campaignId={campaign.id} systemId={campaign.systemId} myCharacterId={ownCharacter?.id ?? null} />
     </div>
   ) : (
