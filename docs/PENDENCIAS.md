@@ -784,3 +784,6 @@ Migração `20261110100000_handouts_and_portraits.sql` **ainda não aplicada** (
 login nesta sessão). Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram; testes novos
 `handouts.test.ts` (3) e publicação do Realtime atualizada. Não verificado no navegador, no
 celular, nem o áudio da call.
+
+- Botão do retrato também no card **Grupo** da Visão geral da campanha (o jogador vê o próprio
+  personagem com "Mostrar meu retrato"); `PartyCharacter.sharePortrait` exposto.

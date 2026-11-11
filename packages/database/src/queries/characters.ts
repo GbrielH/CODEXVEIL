@@ -146,6 +146,8 @@ export interface PartyCharacter {
   ownerName: string;
   systemId: string;
   portraitPath: string | null;
+  /** O dono mostra o retrato ao grupo mesmo com as fichas ocultas. */
+  sharePortrait: boolean;
   sheet: unknown;
   liveUpdatedAt: string;
   resources: CharacterResource[];
@@ -586,7 +588,7 @@ export async function listCampaignCharacters(
   const { data, error } = await client
     .from('characters')
     .select(
-      `id, name, owner_id, system_id, portrait_path, sheet, live_updated_at, owner:profiles!characters_owner_id_fkey(display_name), resources:character_resources(${RESOURCE_COLUMNS}), conditions:character_conditions(${CONDITION_COLUMNS})`,
+      `id, name, owner_id, system_id, portrait_path, share_portrait, sheet, live_updated_at, owner:profiles!characters_owner_id_fkey(display_name), resources:character_resources(${RESOURCE_COLUMNS}), conditions:character_conditions(${CONDITION_COLUMNS})`,
     )
     .eq('campaign_id', campaignId)
     .order('name', { ascending: true });
@@ -599,6 +601,7 @@ export async function listCampaignCharacters(
     ownerName: row.owner?.display_name ?? 'Jogador',
     systemId: row.system_id,
     portraitPath: row.portrait_path,
+    sharePortrait: row.share_portrait,
     sheet: row.sheet,
     liveUpdatedAt: row.live_updated_at,
     resources: row.resources.map(toCharacterResource).sort(byResourceOrder),

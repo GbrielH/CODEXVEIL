@@ -1,4 +1,5 @@
 import { getCampaignTurn, listCampaignCharacters, listCampaignMembers, listMyCharacters, listPartyFaces, signedMediaUrls } from '@codexveil/database';
+import { OwnPortraitShareRow } from '@/components/characters/portrait-share-toggle';
 import { findSystem } from '@codexveil/rpg-systems';
 import { Eye, EyeOff, Lock, PenLine, ScrollText, Swords, Users } from 'lucide-react';
 import type { Metadata, Route } from 'next';
@@ -45,6 +46,8 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
   const isGm = campaign.role === 'gm';
   const isActive = campaign.status === 'active';
   const hasOwnCharacter = party.some((character) => character.ownerId === user.id);
+  // O jogador liga ou desliga, aqui mesmo, o retrato que o grupo vê (útil com as fichas ocultas).
+  const ownForPortrait = isGmRole(campaign.role) ? null : (party.find((character) => character.ownerId === user.id) ?? null);
   // O jogador usa a aba "Meu personagem"; aqui aparecem só os outros (se o mestre liberar as fichas).
   const others = isGm ? party : party.filter((character) => character.ownerId !== user.id);
   // Jogador sem personagem aqui: as fichas dele do mesmo sistema (livres ou em outra campanha).
@@ -87,6 +90,14 @@ export default async function CampaignOverviewPage({ params, searchParams }: Pag
             }
           />
           {showLink ? <LinkExistingCharacter campaignId={campaign.id} characters={linkable} /> : null}
+          {ownForPortrait ? (
+            <OwnPortraitShareRow
+              characterId={ownForPortrait.id}
+              name={ownForPortrait.name}
+              portraitUrl={ownForPortrait.portraitPath ? (portraits[ownForPortrait.portraitPath] ?? null) : null}
+              initial={ownForPortrait.sharePortrait}
+            />
+          ) : null}
           {others.length === 0 && (isGm || campaign.settings.partySheetsVisible) ? (
             <p className="text-sm text-fg-muted">
               {isGm
