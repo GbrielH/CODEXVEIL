@@ -334,3 +334,10 @@ O inventário completo está em [`AUDITORIA_GRAVACOES_2026-11-02.md`](AUDITORIA_
 - Leitura das votações, datas e respostas só para membros da campanha (RLS). Sem INSERT/UPDATE
   direto: propor e confirmar exigem `can_manage_campaign`; votar exige ser membro e a votação
   estar aberta. Teste em `packages/database/test/rls/schedule-polls.test.ts`.
+
+## Imagens de personagem (2026-11-11)
+
+Participantes da campanha leem o token de cada personagem do grupo e o retrato quando o dono
+compartilha (`share_portrait`); imagens de NPC só enquanto o NPC está visível num mapa ativo.
+A checagem é feita por `private.can_read_character_image` (security definer), que não expõe a
+ficha: as fichas ocultas continuam inacessíveis.

@@ -407,3 +407,7 @@ mestre; leitura por `private.can_read_handout_row`, escrita por quem gerencia a 
 Realtime), coluna `characters.share_portrait`, `list_party_faces` respeitando a escolha (cai no
 token), política de leitura dos retratos atualizada, e `can_read/can_write_campaign_media` e
 `list_orphan_media` cobrindo `handouts/`.
+
+Migrações de 2026-11-11: `list_character_token_images` (imagem do token sem abrir a ficha) e
+`private.can_read_character_image`, que substitui as políticas de leitura de retrato/token no
+Storage (antes elas dependiam do RLS de `characters` e falhavam com as fichas ocultas).

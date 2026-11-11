@@ -3357,6 +3357,12 @@ export type Database = {
         };
         Returns: undefined;
       };
+      list_character_token_images: {
+        Args: {
+          p_character_ids: string[];
+        };
+        Returns: unknown[];
+      };
       list_orphan_media: {
         Args: {
           p_min_age_hours?: number;

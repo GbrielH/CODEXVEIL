@@ -309,13 +309,19 @@ export async function tokenImagePaths(client: CodexveilClient, tokens: readonly 
   const characterIds = [...new Set(tokens.filter((token) => !token.imagePath && token.characterId).map((token) => token.characterId!))];
   const creatureIds = [...new Set(tokens.filter((token) => !token.imagePath && token.creatureId).map((token) => token.creatureId!))];
   const [characters, creatures] = await Promise.all([
-    characterIds.length ? client.from('characters').select('id, portrait_path, token_path').in('id', characterIds) : Promise.resolve({ data: [] as { id: string; portrait_path: string | null; token_path: string | null }[], error: null }),
+    // Pela função do banco: com as fichas do grupo ocultas, o jogador não lê a linha dos outros
+    // personagens, mas ainda vê a imagem do token (ou o retrato compartilhado).
+    characterIds.length
+      ? client.rpc('list_character_token_images', { p_character_ids: characterIds })
+      : Promise.resolve({ data: [] as { id: string; image_path: string | null }[], error: null }),
     creatureIds.length ? client.from('creatures').select('id, image_path').in('id', creatureIds) : Promise.resolve({ data: [] as { id: string; image_path: string | null }[], error: null }),
   ]);
   if (characters.error) throw toAppError(characters.error);
   if (creatures.error) throw toAppError(creatures.error);
-  // Imagem de token do personagem; sem ela, o retrato.
-  const portraits = new Map((characters.data ?? []).map((row) => [row.id, row.token_path ?? row.portrait_path]));
+  // Imagem de token do personagem; sem ela, o retrato (se o dono compartilhar).
+  // O gerador de tipos não descreve funções RETURNS TABLE: a linha é conferida aqui.
+  const characterRows = (characters.data ?? []) as { id: string; image_path: string | null }[];
+  const portraits = new Map(characterRows.map((row) => [row.id, row.image_path]));
   const images = new Map((creatures.data ?? []).map((row) => [row.id, row.image_path]));
   const result: Record<string, string> = {};
   for (const token of tokens) {

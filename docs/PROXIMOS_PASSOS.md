@@ -2272,3 +2272,17 @@ celular, nem o áudio da call.
 
 - Botão do retrato também no card **Grupo** da Visão geral da campanha (o jogador vê o próprio
   personagem com "Mostrar meu retrato"); `PartyCharacter.sharePortrait` exposto.
+
+### 2026-11-11 — fotos e tokens do grupo com fichas ocultas (correção)
+
+- **Causa:** as políticas de leitura das imagens de personagem no Storage consultavam
+  `public.characters` com as permissões de quem lê; com as fichas do grupo ocultas (e com as
+  fichas de NPC, privadas do mestre) o RLS escondia a linha e a imagem nunca era liberada. O
+  mapa também buscava a imagem lendo `characters`. Resultado: grupo e mapa só com as iniciais.
+- **Correção:** `private.can_read_character_image` (security definer) na política única
+  "Retratos e tokens: participantes da campanha leem" (migração
+  `20261111110000_character_image_read_fix.sql`) e `public.list_character_token_images`
+  (migração `20261111100000_party_token_images.sql`), usada por `tokenImagePaths` no site e no
+  app. NPCs: imagem só enquanto visíveis num mapa ativo. Ambas aplicadas em produção.
+- Testes novos: `test/rls/token-images.test.ts` (2). `pnpm check` (20 tarefas) passou. Não
+  verificado no navegador.
