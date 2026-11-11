@@ -2288,3 +2288,19 @@ celular, nem o áudio da call.
   verificado no navegador.
 
 - Fotos do card **Grupo** clicáveis (abrem em tela cheia), a sua e as dos outros jogadores.
+
+### 2026-11-11 — central Jogo da campanha
+
+- Site: nova aba `Jogo` logo após Visão geral, com destaque de sessão, mapa de mestre/jogador,
+  dados, dado 3D, mural, iniciativa, resumo do personagem, sessão e atalhos recolhíveis do mestre.
+- O layout desktop tem três colunas redimensionáveis; larguras e painéis recolhidos são persistidos
+  no navegador por campanha. Em larguras menores, os blocos passam para uma coluna.
+- App: nova central somente de jogador com turno, ficha resumida, dados e mural, e atalhos para as
+  telas existentes de mapa e ficha. Nenhum recurso de mestre foi adicionado ao app.
+- D&D 5e, Tormenta20 e Triangle Agency usam os blocos comuns; Assimilação também mostra o acesso a
+  cartas/eventos. Blocos inexistentes não ganham substitutos artificiais.
+- Reuso: `MapManager`, `MapView`, `DiceProvider`, `DicePanel`, `DiceTable`, `RollFeed`,
+  `TurnStatus` e as consultas existentes. Sem esquema, dependência ou configuração nativa.
+- Verificações: `pnpm check` 20/20 (Vitest com um worker após OOM do PGlite em paralelo); web 26
+  testes aprovados e banco 246 aprovados/11 ao vivo pulados. `pnpm build` passou nas 2/2 tarefas.
+  Pendem testes manuais com mestre/jogador no navegador e Android.

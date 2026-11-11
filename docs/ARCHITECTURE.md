@@ -1,5 +1,14 @@
 # Arquitetura e decisões
 
+## Composição da central Jogo (2026-11-11)
+
+A rota web `campanhas/[campaignId]/jogo` é uma composição dos componentes já usados por Mapa,
+Dados e Mesa, sem replicar regras de rolagem, mapa ou autorização. Um único `DiceProvider` envolve
+a central. O `GameWorkspace` cuida somente da disposição responsiva e persiste larguras/estado dos
+painéis no `localStorage`, isolado por campanha; dados continuam vindo das consultas existentes e
+passando pelas mesmas políticas RLS. No app, a central é deliberadamente de jogador e mantém o
+mapa na rota dedicada, que já concentra gestos, orientação e tela cheia.
+
 ## Adição de Triangle Agency (2026-11-03)
 
 `packages/rpg-systems/src/triangle-agency` é um módulo isolado: ficha JSON, regras 6d4, ARC,

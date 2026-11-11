@@ -17,6 +17,13 @@
 
 ## Resumo
 
+**Atualização de 2026-11-11 — central Jogo: parcial.** O site ganhou a composição de jogo para os
+dois papéis, e o app ganhou a central de jogador sem controles de mestre. No app, o mapa permanece
+na rota dedicada (aberta por atalho) para conservar a implementação de gestos/tela cheia; no site,
+“Próximo turno” leva ao controle correspondente da Mesa do mestre, ainda não atua diretamente na
+central. Na revisão, a iniciativa do site passou a usar o `TurnStatus` ao vivo (antes era uma foto do carregamento) e o layout salvo deixou de ser sobrescrito pelos valores padrão ao abrir a página. Lint, typecheck, 26 testes web, 246 testes de banco (11 ao vivo pulados) e as 2 tarefas de
+build passaram. Falta validação manual nos dois clientes e quatro sistemas.
+
 **Atualização de 2026-11-03 — Triangle Agency:** implementação funcional no site e app concluída,
 com motor próprio, ARC, criação, ficha, regras de campanha e pacote privado do livro. Testes
 automatizados, typechecks e builds passaram (`pnpm check`: 20/20, 699 aprovados e 11 ao vivo

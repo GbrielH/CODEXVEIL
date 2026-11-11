@@ -30,6 +30,11 @@ export default async function CampaignLayout({
   const coverUrl = campaign.coverPath ? (covers[campaign.coverPath] ?? null) : null;
 
   const tabs: SectionTab[] = [{ href: base as Route, label: 'Visão geral', exact: true }];
+  tabs.push({
+    href: `${base}/jogo` as Route,
+    label: 'Jogo',
+    sessionAlertCampaignId: campaign.id,
+  });
   if (!isGm) tabs.push({ href: `${base}/personagem` as Route, label: 'Meu personagem' });
   if (isGm) tabs.push({ href: `${base}/mesa` as Route, label: 'Mesa do mestre' });
   // WORLD: construção de mundo do Assimilador (Conflitos e Refúgios), só no Assimilação.

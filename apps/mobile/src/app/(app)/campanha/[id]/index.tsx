@@ -29,6 +29,7 @@ import {
   ChevronDown,
   ChevronUp,
   ScrollText,
+  Gamepad2,
 } from 'lucide-react-native';
 import { Image, Linking, Pressable, StyleSheet, View } from 'react-native';
 import {
@@ -303,6 +304,16 @@ export default function CampaignScreen() {
       />
 
       <NavGrid>
+        {!isGm ? (
+          <NavTile
+            icon={<Gamepad2 size={20} color={colors.fgAccent} />}
+            label="Jogo"
+            hint="Mapa, personagem, iniciativa e dados durante a partida"
+            onPress={() =>
+              router.push({ pathname: '/campanha/[id]/jogo', params: { id: campaign.id } })
+            }
+          />
+        ) : null}
         <NavTile
           icon={<MapIcon size={20} color={colors.fgAccent} />}
           label="Mapa"

@@ -5,6 +5,23 @@
 
 ## Estado atual
 
+**2026-11-11 (central Jogo):** criada a aba `Jogo` da campanha no site,
+para mestre e jogadores, compondo o mapa existente, rolador, dado 3D, mural, iniciativa, resumo de
+recursos/condições e painéis recolhíveis de sessão e atalhos do mestre. Larguras e painéis ficam no
+`localStorage` por campanha; em telas menores a grade vira uma coluna sem rolagem horizontal. No
+app, exclusivamente para jogadores, a central reúne turno, resumo do personagem, rolador e mural,
+com atalhos para mapa e ficha; o mapa continua na tela dedicada para preservar gestos, zoom e tela
+cheia. Assimilação recebe atalho para cartas/eventos; os demais sistemas omitem esse bloco. Sem
+migração e sem mudança nativa. `pnpm check` passou nas 20/20 tarefas com o Vitest limitado a um
+worker após o PGlite esgotar memória na primeira execução paralela: banco 246 aprovados e 11 ao vivo
+pulados; web 26 aprovados (5 novos de seleção de blocos). `pnpm build` passou nas
+2/2 tarefas (Next.js e export Android/Hermes); a primeira tentativa foi bloqueada pelo sandbox e a
+repetição autorizada passou. Revisão (Claude): a iniciativa do site passou a usar o `TurnStatus` ao vivo (antes era uma foto do
+carregamento da página) e o `GameWorkspace` só grava larguras depois de ler o layout salvo, com
+`localStorage` protegido por try/catch. Ainda falta teste manual no navegador/Android com mestre e jogador.
+Próximo passo exato: validar redimensionamento/recolhimento, mapa, rolagens secretas, iniciativa e
+visibilidade dos quatro sistemas.
+
 **2026-11-03 (importação do Triangle Agency):** corrigida a migração para permitir no banco os
 tipos próprios do pacote (`arc_anomaly`, `arc_reality`, `arc_competency`, `anomalous_ability`,
 `requisition` e `locked_document`). O arquivo real foi conferido: 446 entradas, zero tipos
