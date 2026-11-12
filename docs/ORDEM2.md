@@ -70,8 +70,9 @@ No leitor da campanha, numa missão, o mestre usa **Usar esta missão na campanh
   pastas Handouts/, Mapas/ e Tokens/ dos zips de extras como entradas `handout` e `map` ligadas à
   missão (imagens reduzidas: handout 1600 px, mapa 3000 px, token 512 px; músicas e wallpapers
   ficam de fora). Pacote Beta regerado com as Missões 1 e 2: 60 handouts/tokens, 8 mapas, 59
-  imagens únicas, 36,2 MB, validado por `parseOrdem2BookPack` sem problemas. **Falta importar** o
-  novo pacote em Meus livros (substitui o anterior).
+  imagens únicas, 36,2 MB, validado por `parseOrdem2BookPack` sem problemas. Importado na conta do
+  responsável em 2026-11-12 (`import_books.mjs`): 119 entradas e 59 imagens em `book-assets`,
+  conferidas no banco.
 - **Fichas prontas do Alpha:** o zip "Elite + Recrutas" traz um PDF e os extras dos Atos I e II do
   Alpha; ainda não processados.
 - **Beta 1.1:** existe um PDF mais novo (79 páginas, 9/11/2026) com Recrutas e Elite. O pacote

@@ -980,3 +980,5 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verifica
   imagens, 36,2 MB) e validado; fica fora do Git e **falta importar** em Meus livros. Pendentes:
   extras do Alpha (zip Elite + Recrutas) e remapear páginas para o PDF Beta 1.1. Detalhes em
   `ORDEM2.md`.
+
+- Ordem 2 Beta com extras **importado** na conta do responsável (119 entradas, 59 imagens; conferido no banco). Alpha segue pendente da senha do PDF e dos extras.
