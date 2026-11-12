@@ -34,7 +34,7 @@ export function GameWorkspace({
   initiative: ReactNode;
   dice: ReactNode;
   feed: ReactNode;
-  /** Mesinha de dados (resultado grande), na coluna da direita. */
+  /** Mural de rolagens, na coluna da direita (abaixo dos dados). */
   table?: ReactNode;
   gm?: ReactNode;
   session: ReactNode;
@@ -118,7 +118,7 @@ export function GameWorkspace({
         {initiative}
         {panel('session', 'Sessão', session)}
       </aside>
-      {/* Mural de rolagens logo abaixo do mapa, na mesma largura: sem espaço vazio embaixo. */}
+      {/* Mesa de dados logo abaixo do mapa, na mesma largura: sem espaço vazio embaixo. */}
       <main data-game-map className="flex min-w-0 flex-col gap-4 overflow-hidden">
         {map}
         {feed}

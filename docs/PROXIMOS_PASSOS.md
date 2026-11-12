@@ -2356,3 +2356,6 @@ celular, nem o áudio da call.
   24 h depois da primeira mensagem, como a Taverna.
 
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verificado no navegador.
+
+- Aba Jogo: embaixo do mapa fica a **mesa de dados** (resultado grande); o mural de rolagens
+  volta para a coluna da direita, abaixo dos dados.

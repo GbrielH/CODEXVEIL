@@ -178,7 +178,8 @@ export default async function GamePage({ params }: PageProps<'/campanhas/[campai
             </p>
           )
         }
-        feed={
+        feed={<DiceTable campaignId={campaign.id} />}
+        table={
           <Card>
               <h3 className="mb-3 font-display">Mural de rolagens</h3>
               <RollFeed
@@ -190,7 +191,6 @@ export default async function GamePage({ params }: PageProps<'/campanhas/[campai
               />
           </Card>
         }
-        table={<DiceTable campaignId={campaign.id} />}
         gm={
           blocks.includes('gm-tools') ? (
             <div className="flex flex-wrap gap-2">
