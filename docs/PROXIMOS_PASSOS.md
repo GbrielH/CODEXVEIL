@@ -2363,3 +2363,11 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verifica
 - Painel de dados: perícia + outro atributo troca o atributo padrão da perícia pelo escolhido
   (ex.: Conhecimento com Constituição = bônus da perícia − Int + Con); o rótulo da rolagem mostra
   "Conhecimento (Constituição)". `characterSkillBonuses` agora informa o atributo de cada perícia.
+
+### 2026-11-12 — extras do Ordem 2 (Beta)
+
+- `scripts/books/ordem2.py` ganhou `--extras "<pasta>=<missão>"`: handouts, mapas e tokens dos
+  zips de extras entram no pacote privado. Pacote Beta regerado (60 handouts/tokens, 8 mapas, 59
+  imagens, 36,2 MB) e validado; fica fora do Git e **falta importar** em Meus livros. Pendentes:
+  extras do Alpha (zip Elite + Recrutas) e remapear páginas para o PDF Beta 1.1. Detalhes em
+  `ORDEM2.md`.

@@ -3,6 +3,12 @@
 Uso:
   <venv-com-pymupdf>/python -X utf8 -I scripts/books/ordem2.py alpha "<Alpha.pdf>" "<saida.book.json>" [senha]
   <venv-com-pymupdf>/python -X utf8 -I scripts/books/ordem2.py beta  "<Beta.pdf>"  "<saida.book.json>"
+  ... beta "<Beta.pdf>" "<saida>" --extras "<pasta Extras da Missão 1>=pantano-dos-afogados" \
+                                   --extras "<pasta Extras da Missão 2>=caverna-de-cruachan"
+
+`--extras`: pastas de extras que o livro distribui à parte (Handouts/, Mapas/, Tokens/), ligadas
+a uma missão. Handouts e tokens viram entradas `handout`; mapas, entradas `map`. As imagens são
+reduzidas para caber no pacote; músicas e outros arquivos ficam de fora.
 
 O PDF e o JSON gerado ficam fora do Git. O pacote traz:
 - `section`: capítulos do jogador (introdução, cartas, ficha, regras), página a página;
@@ -443,6 +449,56 @@ class Assets:
         return self.add(pix.tobytes('jpeg', jpg_quality=82))
 
 
+# ---------------------------------------------------------------------------- extras
+
+EXTRA_FOLDERS = {
+    'handouts': ('handout', 1600, 'Handout'),
+    'mapas': ('map', 3000, 'Mapa'),
+    'tokens': ('handout', 512, 'Token'),
+}
+
+
+def shrink(path: Path, max_side: int) -> tuple[bytes, str]:
+    """Reduz a imagem para o maior lado caber em `max_side`. Com transparência, PNG; senão, JPEG."""
+    pix = fitz.Pixmap(str(path))
+    factor = 1
+    while max(pix.width, pix.height) / factor > max_side:
+        factor *= 2
+    if factor > 1:
+        pix = fitz.Pixmap(pix, pix.width // factor, pix.height // factor, None)
+    if pix.alpha:
+        return pix.tobytes('png'), 'image/png'
+    if pix.n > 3:
+        pix = fitz.Pixmap(fitz.csRGB, pix)
+    return pix.tobytes('jpeg', jpg_quality=82), 'image/jpeg'
+
+
+def add_extras(entries: list[dict], assets: 'Assets', folder: Path, mission: str) -> int:
+    """Inclui handouts, mapas e tokens de uma pasta de extras, ligados à missão."""
+    added = 0
+    taken = {(e['kind'], e['key']) for e in entries}
+    for sub in sorted(folder.rglob('*')):
+        if not sub.is_dir() or plain(sub.name) not in EXTRA_FOLDERS:
+            continue
+        kind, max_side, label = EXTRA_FOLDERS[plain(sub.name)]
+        for image in sorted(sub.iterdir()):
+            if image.suffix.lower() not in ('.png', '.jpg', '.jpeg', '.webp'):
+                continue
+            data, mime = shrink(image, max_side)
+            key_asset = assets.add(data, mime)
+            title = re.sub(r'^(handout|mapa)\s+', '', image.stem, flags=re.I).strip() or image.stem
+            name = f'{label}: {title}'[:120]
+            key = slug(f'{mission}-{label}-{image.stem}')[:80]
+            if (kind, key) in taken:
+                continue
+            taken.add((kind, key))
+            data_entry = {'page': 0, 'mission': mission, 'image': key_asset}
+            data_entry.update({'legend': ''} if kind == 'map' else {'caption': f'{label} da missão (extras).'})
+            entries.append(entry(kind, key, name, data_entry))
+            added += 1
+    return added
+
+
 # ---------------------------------------------------------------------------- montagem
 
 
@@ -457,8 +513,15 @@ def entry(kind: str, key: str, name: str, data: dict) -> dict:
 
 
 def main() -> None:
-    which, source, destination = sys.argv[1], Path(sys.argv[2]), Path(sys.argv[3])
-    password = sys.argv[4] if len(sys.argv) > 4 else None
+    args = sys.argv[1:]
+    extras: list[tuple[Path, str]] = []
+    while '--extras' in args:
+        at = args.index('--extras')
+        folder, _, mission_key = args[at + 1].rpartition('=')
+        extras.append((Path(folder), mission_key))
+        del args[at:at + 2]
+    which, source, destination = args[0], Path(args[1]), Path(args[2])
+    password = args[3] if len(args) > 3 else None
     book = BOOKS[which]
     doc = fitz.open(source)
     if doc.needs_pass and not doc.authenticate(password or ''):
@@ -569,6 +632,9 @@ def main() -> None:
             'summary': to_markdown(summary_lines)[:20000], 'body': to_markdown(body_lines)[:60000],
             'scenes': scene_keys,
         }))
+
+    for folder, mission_key in extras:
+        print(f'extras {folder.name} → {mission_key}: {add_extras(entries, assets, folder, mission_key)} imagens')
 
     pack = {
         'format': 'codexveil.ordem2.book',

@@ -66,8 +66,17 @@ No leitor da campanha, numa missão, o mestre usa **Usar esta missão na campanh
 
 ## Limitações conhecidas
 
-- **Fichas prontas, tokens e handouts** não estão nos dois PDFs, porque o livro os distribui em
-  arquivos à parte. Se o responsável tiver esses arquivos, eles podem entrar no pacote depois.
+- **Extras do Beta (2026-11-12):** `scripts/books/ordem2.py ... --extras "<pasta>=<missão>"` inclui as
+  pastas Handouts/, Mapas/ e Tokens/ dos zips de extras como entradas `handout` e `map` ligadas à
+  missão (imagens reduzidas: handout 1600 px, mapa 3000 px, token 512 px; músicas e wallpapers
+  ficam de fora). Pacote Beta regerado com as Missões 1 e 2: 60 handouts/tokens, 8 mapas, 59
+  imagens únicas, 36,2 MB, validado por `parseOrdem2BookPack` sem problemas. **Falta importar** o
+  novo pacote em Meus livros (substitui o anterior).
+- **Fichas prontas do Alpha:** o zip "Elite + Recrutas" traz um PDF e os extras dos Atos I e II do
+  Alpha; ainda não processados.
+- **Beta 1.1:** existe um PDF mais novo (79 páginas, 9/11/2026) com Recrutas e Elite. O pacote
+  continua gerado do PDF de 76 páginas, porque o script localiza missões e cenas por página;
+  usar o 1.1 exige remapear as páginas em `BOOKS['beta']`.
 - **Criação de personagem:** o playtest não traz regras de criação, só personagens prontos. A
   criação é livre: o jogador copia a ficha pronta, e PV/PD vêm dela.
 - **Mural de rolagens:** a ficha rola os dados no servidor (mural da mesa) e calcula o resultado
