@@ -87,3 +87,20 @@ No leitor da campanha, numa missão, o mestre usa **Usar esta missão na campanh
 - **Desafios de acesso:** as regras (fechaduras, equilíbrio) estão no motor, mas sem tela própria.
 - **Extração:** heurística sobre o layout do PDF. Números de mapa podem faltar em alguns pontos de
   interesse, e textos com caixas laterais podem sair fora de ordem.
+
+## Auditoria do pacote (2026-11-12)
+
+`scripts/books/ordem2_audit.py` compara o PDF com o pacote e mostra só métricas. Resultado do Beta
+(PDF de 76 páginas, com os extras das duas missões):
+
+- **Cobertura de palavras:** 18.495 de 18.535 palavras do PDF estão no pacote (99,8%); nenhuma
+  página com cobertura abaixo de 60%.
+- **Entradas:** 24 seções, 2 missões, 6 cenas, 16 pontos de interesse, 3 criaturas, 8 mapas e 60
+  imagens (handouts e tokens); zero chaves repetidas.
+- **Completude:** todas as cenas com roteiro e narração, todas as missões com resumo, todos os
+  pontos de interesse com perícia/DT e número no mapa, todas as criaturas com ficha e arte, e todas
+  as imagens citadas presentes no pacote.
+- **Ligações:** nenhuma referência quebrada entre cenas, pontos de interesse, criaturas e mapas;
+  nenhuma entrada ligada a missão inexistente.
+- **Não conferido:** o texto corrido linha a linha (só as verificações automáticas) e o pacote
+  Alpha, cujo PDF e extras pedem senha.
