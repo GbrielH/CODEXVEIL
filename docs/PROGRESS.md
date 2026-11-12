@@ -5,6 +5,8 @@
 
 ## Estado atual
 
+**2026-11-12 (mesinha de dados):** a caixinha flutuante "Dados da mesa" não aparece mais nas abas Jogo e Dados do site, que já têm a mesa grande e o mural (`DiceProvider` ganhou `tray={false}`). Nas demais telas (ficha, mapa, Mesa do mestre) ela continua. Verificado com `pnpm check` e `pnpm build`; falta conferir no navegador.
+
 **2026-11-11 (central Jogo):** criada a aba `Jogo` da campanha no site,
 para mestre e jogadores, compondo o mapa existente, rolador, dado 3D, mural, iniciativa, resumo de
 recursos/condições e painéis recolhíveis de sessão e atalhos do mestre. Larguras e painéis ficam no

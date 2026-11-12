@@ -149,6 +149,7 @@ export default async function GamePage({ params }: PageProps<'/campanhas/[campai
 
   return (
     <DiceProvider
+      tray={false}
       campaignId={campaign.id}
       characterId={own?.id ?? null}
       sessionGate={!isGm}

@@ -17,6 +17,8 @@
 
 ## Resumo
 
+**2026-11-12 (mesinha de dados):** a caixinha flutuante "Dados da mesa" não aparece mais nas abas Jogo e Dados do site, que já têm a mesa grande e o mural (`DiceProvider` ganhou `tray={false}`). Nas demais telas (ficha, mapa, Mesa do mestre) ela continua. Verificado com `pnpm check` e `pnpm build`; falta conferir no navegador.
+
 **Atualização de 2026-11-11 — central Jogo: parcial.** O site ganhou a composição de jogo para os
 dois papéis, e o app ganhou a central de jogador sem controles de mestre. No app, o mapa permanece
 na rota dedicada (aberta por atalho) para conservar a implementação de gestos/tela cheia; no site,

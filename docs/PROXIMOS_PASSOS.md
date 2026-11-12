@@ -2304,3 +2304,9 @@ celular, nem o áudio da call.
 - Verificações: `pnpm check` 20/20 (Vitest com um worker após OOM do PGlite em paralelo); web 26
   testes aprovados e banco 246 aprovados/11 ao vivo pulados. `pnpm build` passou nas 2/2 tarefas.
   Pendem testes manuais com mestre/jogador no navegador e Android.
+
+### 2026-11-12 — mesinha de dados oculta nas abas Jogo e Dados
+
+- Concluído: a caixinha flutuante "Dados da mesa" não aparece nas abas Jogo e Dados do site, que já
+  mostram a mesa grande e o mural. Opção `tray` no `DiceProvider`; as outras telas não mudam.
+- Pendente: conferir no navegador.

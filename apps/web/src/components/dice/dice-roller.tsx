@@ -83,6 +83,8 @@ export function DiceProvider(props: DiceProviderProps) {
 
 interface DiceProviderProps {
   campaignId: string | null;
+  /** Caixinha flutuante de dados; desligada nas telas que já têm a mesa grande e o mural. */
+  tray?: boolean;
   characterId?: string | null;
   /** Desligado: os botões de rolar somem (ex.: ficha de outro jogador). */
   enabled?: boolean;
@@ -99,6 +101,7 @@ function DiceProviderInner({
   characterId = null,
   enabled = true,
   sessionGate = false,
+  tray = true,
   children,
 }: DiceProviderProps) {
   const { toast } = useToast();
@@ -207,7 +210,7 @@ function DiceProviderInner({
   return (
     <DiceContext.Provider value={value}>
       {children}
-      {enabled ? <DiceTray campaignId={campaignId} pending={pending} /> : null}
+      {enabled && tray ? <DiceTray campaignId={campaignId} pending={pending} /> : null}
     </DiceContext.Provider>
   );
 }

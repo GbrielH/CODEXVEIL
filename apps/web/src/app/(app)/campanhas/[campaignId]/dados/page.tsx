@@ -12,7 +12,6 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Dados' };
 
-
 /** Rolagens da campanha: o dado é rolado no servidor e aparece no mural de todos (e do mestre). */
 export default async function DicePage({ params }: PageProps<'/campanhas/[campaignId]/dados'>) {
   const { campaignId } = await params;
@@ -51,7 +50,11 @@ export default async function DicePage({ params }: PageProps<'/campanhas/[campai
                 ficam registradas no mural, com o resultado que você anotar.
               </Alert>
             ) : isGm || session.playing ? (
-              <DiceProvider campaignId={campaign.id} characterId={ownCharacter?.id ?? null}>
+              <DiceProvider
+                tray={false}
+                campaignId={campaign.id}
+                characterId={ownCharacter?.id ?? null}
+              >
                 <DicePanel isGm={isGm} characterName={ownCharacter?.name ?? null} skills={skills} />
               </DiceProvider>
             ) : (
