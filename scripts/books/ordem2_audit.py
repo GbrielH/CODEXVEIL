@@ -1,6 +1,6 @@
 """Auditoria do pacote Ordem 2: só métricas, sem texto do livro.
 
-Uso: <venv-com-pymupdf>/python -X utf8 -I scripts/books/ordem2_audit.py "<PDF>" "<pacote.book.json>"
+Uso: <venv-com-pymupdf>/python -X utf8 -I scripts/books/ordem2_audit.py "<PDF>" "<pacote.book.json>" [senha do PDF]
 """
 import json
 import re
@@ -18,6 +18,8 @@ def words(text: str) -> list[str]:
 
 pdf_path, pack_path = sys.argv[1], sys.argv[2]
 doc = pymupdf.open(pdf_path)
+if doc.needs_pass and not doc.authenticate(sys.argv[3] if len(sys.argv) > 3 else ''):
+    raise SystemExit('Senha do PDF incorreta.')
 pack = json.load(open(pack_path, encoding='utf-8'))
 entries = pack['entries']
 assets = {asset['key'] for asset in pack['assets']}

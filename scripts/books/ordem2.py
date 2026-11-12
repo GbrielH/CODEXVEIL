@@ -455,6 +455,10 @@ EXTRA_FOLDERS = {
     'handouts': ('handout', 1600, 'Handout'),
     'mapas': ('map', 3000, 'Mapa'),
     'tokens': ('handout', 512, 'Token'),
+    'mapa': ('map', 3000, 'Mapa'),
+    'fichas de personagem': ('handout', 1600, 'Ficha'),
+    'historicos de personagem': ('handout', 1600, 'Histórico'),
+    'fichas e historicos de personagem': ('handout', 1600, 'Ficha'),
 }
 
 

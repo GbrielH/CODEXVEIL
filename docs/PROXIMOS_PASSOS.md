@@ -2373,3 +2373,5 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verifica
   `ORDEM2.md`.
 
 - Ordem 2 Beta com extras **importado** na conta do responsável (119 entradas, 59 imagens; conferido no banco). Alpha segue pendente da senha do PDF e dos extras.
+
+- Ordem 2 Alpha com extras (Atos I e II, fichas e históricos) gerado, auditado e **importado** (166 entradas, 76 imagens; conferido no banco).

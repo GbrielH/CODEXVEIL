@@ -73,8 +73,11 @@ No leitor da campanha, numa missão, o mestre usa **Usar esta missão na campanh
   imagens únicas, 36,2 MB, validado por `parseOrdem2BookPack` sem problemas. Importado na conta do
   responsável em 2026-11-12 (`import_books.mjs`): 119 entradas e 59 imagens em `book-assets`,
   conferidas no banco.
-- **Fichas prontas do Alpha:** o zip "Elite + Recrutas" traz um PDF e os extras dos Atos I e II do
-  Alpha; ainda não processados.
+- **Extras do Alpha (2026-11-12):** zip "Elite + Recrutas" (PDF e extras dos Atos I e II, protegidos
+  por senha e com criptografia AES; a senha não vai para arquivos). O script passou a reconhecer
+  também as pastas Mapa, Fichas de personagem e Históricos de personagem. Pacote Alpha regerado:
+  64 imagens de extras (handouts, tokens, fichas e históricos), 6 mapas, 76 imagens únicas, 27 MB;
+  importado na conta do responsável (166 entradas e 76 imagens, conferidas no banco).
 - **Beta 1.1:** existe um PDF mais novo (79 páginas, 9/11/2026) com Recrutas e Elite. O pacote
   continua gerado do PDF de 76 páginas, porque o script localiza missões e cenas por página;
   usar o 1.1 exige remapear as páginas em `BOOKS['beta']`.
@@ -105,3 +108,9 @@ No leitor da campanha, numa missão, o mestre usa **Usar esta missão na campanh
   nenhuma entrada ligada a missão inexistente.
 - **Não conferido:** o texto corrido linha a linha (só as verificações automáticas) e o pacote
   Alpha, cujo PDF e extras pedem senha.
+
+Auditoria do Alpha (mesmo script, com a senha como argumento): 99,2% das palavras do PDF no pacote
+(21.266 de 21.429); só a última página (1 palavra) abaixo de 60%. Zero chaves repetidas,
+referências quebradas ou imagens ausentes. 10 pontos de interesse sem tabela de perícia/DT e 7 sem
+número no mapa: são pontos narrativos ou fora do mapa no próprio livro; o pacote anterior, da
+outra máquina, tinha 11 e 6 (sem piora com os extras).
