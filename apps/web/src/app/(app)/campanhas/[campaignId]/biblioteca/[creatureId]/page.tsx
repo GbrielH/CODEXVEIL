@@ -1,3 +1,5 @@
+import { parseOrdem2CampaignRules, parseOrdem2StatBlock } from '@codexveil/rpg-systems/ordem2';
+import { Ordem2CreatureView } from '@/components/library/ordem2-creature';
 import {
   getCreature,
   getCreatureRevealedStats,
@@ -163,7 +165,14 @@ export default async function CreaturePage({ params }: Props) {
       ) : null}
 
       {!isGm && revealedKeys.size > 0 ? (
-        campaign.systemId === 'assimilacao' ? (
+        campaign.systemId === 'ordem2' ? (
+          <Ordem2CreatureView
+            name={creature.name}
+            stats={parseOrdem2StatBlock(revealed)}
+            setting={parseOrdem2CampaignRules(campaign.characterRules).setting}
+            only={revealedKeys}
+          />
+        ) : campaign.systemId === 'assimilacao' ? (
           <AssimilacaoThreatView name={creature.name} stats={parseAssimilacaoStatBlock(revealed)} />
         ) : campaign.systemId === 'tormenta20' ? (
           <T20ThreatView
@@ -204,6 +213,14 @@ export default async function CreaturePage({ params }: Props) {
         ) : statBlock ? (
           <StatBlockView name={creature.name} statBlock={statBlock} />
         ) : null
+      ) : null}
+
+      {isGm && creature.gm && campaign.systemId === 'ordem2' ? (
+        <Ordem2CreatureView
+          name={creature.name}
+          stats={parseOrdem2StatBlock(creature.gm.stats)}
+          setting={parseOrdem2CampaignRules(campaign.characterRules).setting}
+        />
       ) : null}
 
       {isGm && creature.gm && campaign.systemId === 'assimilacao' ? (

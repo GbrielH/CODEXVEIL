@@ -15,10 +15,12 @@ import { parseDnd5eSheet } from '@codexveil/rpg-systems/dnd5e';
 import { parseT20Sheet } from '@codexveil/rpg-systems/tormenta20';
 import { parseAssimilacaoSheet } from '@codexveil/rpg-systems/assimilacao';
 import { parseTriangleAgencySheet } from '@codexveil/rpg-systems/triangle-agency';
+import { parseOrdem2Sheet } from '@codexveil/rpg-systems/ordem2';
 import { Dnd5eSheetScreen } from '@/components/sheets/dnd5e/sheet-screen';
 import { T20SheetScreen } from '@/components/sheets/t20/sheet-screen';
 import { AssimilacaoSheetScreen } from '@/components/sheets/assimilacao/sheet-screen';
 import { TriangleAgencySheetScreen } from '@/components/sheets/triangle-agency/sheet-screen';
+import { Ordem2SheetScreen } from '@/components/sheets/ordem2/sheet-screen';
 import { ErrorState } from '@/components/ui/states';
 import { Card } from '@/components/ui/card';
 import { CreationAnswersView } from '@/components/characters/creation-answers';
@@ -296,6 +298,34 @@ export async function CharacterSheet({
       <ErrorState
         title="Não foi possível abrir a ficha"
         description="Os dados desta ficha não seguem o formato do Assimilação RPG. Nada foi alterado."
+      />
+    );
+  } else if (system?.id === 'ordem2') {
+    let sheet;
+    try {
+      sheet = parseOrdem2Sheet(character.sheet);
+    } catch (error) {
+      console.error('[codexveil] ficha Ordem Paranormal 2 inválida', character.id, error);
+    }
+    content = sheet ? (
+      <Ordem2SheetScreen
+        character={{
+          id: character.id,
+          name: character.name,
+          version: character.version,
+          campaign: character.campaign
+            ? { id: character.campaign.id, name: character.campaign.name }
+            : null,
+        }}
+        sheet={sheet}
+        resources={resources}
+        permissions={permissions}
+        variant={variant}
+      />
+    ) : (
+      <ErrorState
+        title="Não foi possível abrir a ficha"
+        description="Os dados desta ficha não seguem o formato do Ordem Paranormal 2. Nada foi alterado."
       />
     );
   } else if (system?.id === 'triangle-agency') {

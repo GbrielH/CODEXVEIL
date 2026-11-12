@@ -319,6 +319,32 @@ export async function createSessionBlock(
   return toStoredBlock(data);
 }
 
+/** Vários blocos de uma vez, em ordem, ao fim do roteiro (ex.: missão pronta de um livro). */
+export async function createSessionBlocks(
+  client: CodexveilClient,
+  params: {
+    sessionId: string;
+    campaignId: string;
+    startPosition: number;
+    blocks: readonly { visibility: SharedVisibility; content: SessionBlockContent }[];
+  },
+): Promise<number> {
+  const rows = params.blocks.map((block, index) => ({
+    session_id: params.sessionId,
+    campaign_id: params.campaignId,
+    type: block.content.type,
+    position: params.startPosition + index,
+    visibility: block.visibility,
+    data: block.content.data as Json,
+    schema_version: BLOCK_SCHEMA_VERSION,
+  }));
+  for (let start = 0; start < rows.length; start += 200) {
+    const { error } = await client.from('session_blocks').insert(rows.slice(start, start + 200));
+    if (error) throw toAppError(error);
+  }
+  return rows.length;
+}
+
 export async function updateSessionBlock(
   client: CodexveilClient,
   blockId: string,

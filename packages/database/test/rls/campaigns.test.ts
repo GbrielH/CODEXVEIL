@@ -123,6 +123,7 @@ describe('acesso anônimo', () => {
     expect(systems).toEqual([
       { id: 'assimilacao' },
       { id: 'dnd5e' },
+      { id: 'ordem2' },
       { id: 'tormenta20' },
       { id: 'triangle-agency' },
     ]);

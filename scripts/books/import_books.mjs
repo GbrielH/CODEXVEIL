@@ -2,6 +2,7 @@
 // Usa a chave administrativa só para abrir uma sessão da própria conta (link mágico verificado
 // aqui); a importação roda com essa sessão, sob as regras de acesso (RLS) de sempre.
 // Uso: SUPABASE_URL=... SERVICE_KEY=... ANON_KEY=... node import-books.mjs <email> <pasta> <arquivo...>
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
@@ -36,7 +37,9 @@ for (const file of files) {
         ? 'assimilacao'
         : pack.format === 'codexveil.triangle-agency.book'
           ? 'triangle-agency'
-          : 'dnd5e';
+          : pack.format === 'codexveil.ordem2.book'
+            ? 'ordem2'
+            : 'dnd5e';
   const { error: removeError } = await user
     .from('book_packs')
     .delete()
@@ -86,5 +89,26 @@ for (const file of files) {
     p_entry_counts: counts,
   });
   if (finishError) throw finishError;
-  console.log('importado', pack.book.name, JSON.stringify(counts));
+  // Imagens (Ordem Paranormal 2): bucket privado `book-assets`, nome = hash do conteúdo.
+  let images = 0;
+  for (const asset of pack.assets ?? []) {
+    const match = /^([0-9a-f]{32,64})-(jpg|png|webp)$/.exec(asset.key);
+    const bytes = Buffer.from(asset.data, 'base64');
+    if (!match || !createHash('sha256').update(bytes).digest('hex').startsWith(match[1]))
+      throw new Error(`imagem ${asset.key} não confere com o conteúdo`);
+    const { error: uploadError } = await user.storage
+      .from('book-assets')
+      .upload(`${systemId}/${pack.book.id}/${asset.key}`, bytes, {
+        contentType: asset.mime,
+        upsert: false,
+      });
+    if (uploadError && !/exist|duplicate/i.test(uploadError.message)) throw uploadError;
+    images += 1;
+  }
+  console.log(
+    'importado',
+    pack.book.name,
+    JSON.stringify(counts),
+    images ? `${images} imagens` : '',
+  );
 }

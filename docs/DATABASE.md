@@ -1,5 +1,17 @@
 # Modelo de dados e migrações
 
+## Ordem Paranormal RPG 2 (2026-11-12)
+
+A migração `20261112120000_ordem2.sql` adiciona o sistema `ordem2`, amplia
+`book_entries_kind_check` com `tool`, `mission`, `scene`, `point_of_interest`, `creature`, `map` e
+`handout` e atualiza `private.can_read_book_entry`: jogadores leem `tool`; as missões e o resto
+ficam com o dono e os mestres. Cria o bucket privado `book-assets` (10 MB, PNG/JPEG/WebP) com
+`private.book_asset_parts`, `private.can_write_book_asset` e `private.can_read_book_asset`. O
+caminho é `{sistema}/{livro}/{hash}-{ext}`. Envia quem tem um exemplar do livro (dono de um
+`book_packs` com o mesmo sistema e livro); leem o dono e os mestres das campanhas desse dono que
+liberaram o livro. Não há política de UPDATE nem DELETE: a imagem não é sobrescrita. Testes em
+`packages/database/test/rls/ordem2.test.ts`. Aplicada em produção em 2026-11-12, depois do dry-run.
+
 ## Triangle Agency (2026-11-03)
 
 A migração `20261103150000_triangle_agency.sql` adiciona somente a referência

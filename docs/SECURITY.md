@@ -144,6 +144,14 @@ apaga (`private.owns_book_pack`). Testado em `packages/database/test/rls/books.t
 - **Escrita:** quem pode editar o registro de destino. As colunas `cover_path`, `image_path` e
   `portrait_path` têm `CHECK` exigindo que o caminho esteja na pasta do próprio registro.
 
+**Imagens de livros (2026-11-12):** bucket privado `book-assets`, caminho
+`{sistema}/{livro}/{hash}-{ext}` validado por expressão regular. Só envia quem tem um exemplar do
+livro; leem o dono e os mestres das campanhas dele que liberaram o livro. Jogadores não leem o
+bucket: o mestre copia as imagens para `campaign-media` ao usar uma missão, e lá valem as regras
+de sempre. Sem UPDATE nem DELETE: o nome é o hash SHA-256 do conteúdo, conferido no navegador antes
+do envio, então uma imagem não troca de lugar com outra. O caso de alguém enviar primeiro um
+conteúdo falso com o nome do hash exigiria conhecer o hash, ou seja, ter o livro.
+
 ## Autenticação
 
 - Supabase Auth com confirmação de e-mail obrigatória (`enable_confirmations = true`), senha

@@ -1,6 +1,6 @@
 'use client';
 
-import { importBookPack } from '@codexveil/database';
+import { importBookPack, uploadBookAssets, type BookAssetInput } from '@codexveil/database';
 import {
   bookEntryKindLabels,
   parseBookPack,
@@ -21,6 +21,11 @@ import {
   parseTriangleBookPack,
   triangleBookEntryKindLabels,
 } from '@codexveil/rpg-systems/triangle-agency';
+import {
+  ORDEM2_BOOK_PACK_FORMAT,
+  ordem2BookEntryKindLabels,
+  parseOrdem2BookPack,
+} from '@codexveil/rpg-systems/ordem2';
 import { FileUp, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
@@ -34,6 +39,8 @@ interface AnyPack {
   systemId: string;
   book: { id: string; name: string; category: string; edition: string; origin: string };
   entries: readonly { kind: string; key: string; name: string; data: unknown }[];
+  /** Imagens do livro (Ordem Paranormal 2): vão para o bucket privado `book-assets`. */
+  assets?: readonly BookAssetInput[];
 }
 
 type State =
@@ -56,12 +63,30 @@ function kindLabel(systemId: string, kind: string): string {
         ? assimilacaoBookEntryKindLabels
         : systemId === 'triangle-agency'
           ? triangleBookEntryKindLabels
-          : bookEntryKindLabels;
+          : systemId === 'ordem2'
+            ? ordem2BookEntryKindLabels
+            : bookEntryKindLabels;
   return labels[kind]?.many ?? kind;
 }
 
 /** Lê o pacote conforme o formato: D&D 5e (`codexveil.dnd5e.book`), Tormenta20 ou Assimilação RPG. */
 function readPack(input: unknown): { pack: AnyPack; issues: BookPackIssue[] } {
+  if (
+    input &&
+    typeof input === 'object' &&
+    (input as { format?: unknown }).format === ORDEM2_BOOK_PACK_FORMAT
+  ) {
+    const parsed = parseOrdem2BookPack(input);
+    return {
+      pack: {
+        systemId: 'ordem2',
+        book: parsed.pack.book,
+        entries: parsed.pack.entries,
+        assets: parsed.pack.assets,
+      },
+      issues: parsed.issues,
+    };
+  }
   if (
     input &&
     typeof input === 'object' &&
@@ -146,6 +171,17 @@ export function BookImporter({ userId, existingKeys }: { userId: string; existin
         { systemId: pack.systemId, book: pack.book, entries: pack.entries },
         (done, total) => setState({ step: 'importing', fileName, done, total }),
       );
+      if (pack.assets?.length) {
+        const entries = pack.entries.length;
+        await uploadBookAssets(
+          getSupabaseBrowserClient(),
+          pack.systemId,
+          pack.book.id,
+          pack.assets,
+          (done, total) =>
+            setState({ step: 'importing', fileName, done: entries + done, total: entries + total }),
+        );
+      }
       setState({ step: 'idle' });
       router.refresh();
     } catch (error) {
@@ -209,6 +245,11 @@ export function BookImporter({ userId, existingKeys }: { userId: string; existin
                 {kindLabel(state.pack.systemId, kind)}: <strong className="text-fg">{total}</strong>
               </li>
             ))}
+            {state.pack.assets?.length ? (
+              <li>
+                Imagens: <strong className="text-fg">{state.pack.assets.length}</strong>
+              </li>
+            ) : null}
           </ul>
           {state.issues.length > 0 ? (
             <Alert

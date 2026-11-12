@@ -5,6 +5,7 @@ import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { BookDeleteButton } from '@/components/books/book-delete';
 import { BookImporter } from '@/components/books/book-importer';
+import { BookDownloadButton } from '@/components/books/book-download';
 import { SystemBadge } from '@/components/books/system-badge';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -62,7 +63,10 @@ export default async function MyBooksPage() {
                   <Link href={bookPath(pack.id) as Route} className="text-sm text-fg-brand underline-offset-2 hover:underline">
                     Abrir o livro
                   </Link>
-                  <BookDeleteButton packId={pack.id} name={pack.name} />
+                  <div className="flex flex-wrap gap-1">
+                    <BookDownloadButton pack={pack} />
+                    <BookDeleteButton packId={pack.id} name={pack.name} />
+                  </div>
                 </div>
               </Card>
             </li>

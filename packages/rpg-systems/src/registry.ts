@@ -4,11 +4,12 @@
  */
 import { assimilacaoSystem } from './assimilacao';
 import { dnd5eSystem } from './dnd5e';
+import { ordem2System } from './ordem2';
 import { tormenta20System } from './tormenta20';
 import { triangleAgencySystem } from './triangle-agency';
 import type { CharacterSummary, RpgSystem } from './types';
 
-export const SYSTEM_IDS = ['dnd5e', 'tormenta20', 'assimilacao', 'triangle-agency'] as const;
+export const SYSTEM_IDS = ['dnd5e', 'tormenta20', 'assimilacao', 'triangle-agency', 'ordem2'] as const;
 export type SystemId = (typeof SYSTEM_IDS)[number];
 
 export const DEFAULT_SYSTEM_ID: SystemId = 'dnd5e';
@@ -18,6 +19,7 @@ const systems: Record<SystemId, RpgSystem> = {
   tormenta20: tormenta20System,
   assimilacao: assimilacaoSystem,
   'triangle-agency': triangleAgencySystem,
+  ordem2: ordem2System,
 };
 
 export function isSystemId(value: string): value is SystemId {

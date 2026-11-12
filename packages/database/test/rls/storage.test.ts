@@ -51,6 +51,12 @@ describe('buckets', () => {
         allowed_mime_types: ['image/png', 'image/jpeg', 'image/webp'],
       },
       {
+        id: 'book-assets',
+        public: false,
+        file_size_limit: '10485760',
+        allowed_mime_types: ['image/png', 'image/jpeg', 'image/webp'],
+      },
+      {
         id: 'campaign-media',
         public: false,
         file_size_limit: '2097152',

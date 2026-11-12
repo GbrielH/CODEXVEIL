@@ -9,6 +9,21 @@ painéis no `localStorage`, isolado por campanha; dados continuam vindo das cons
 passando pelas mesmas políticas RLS. No app, a central é deliberadamente de jogador e mantém o
 mapa na rota dedicada, que já concentra gestos, orientação e tela cheia.
 
+## Adição de Ordem Paranormal RPG 2 (2026-11-12)
+
+`packages/rpg-systems/src/ordem2` é um módulo isolado: ficha de dados por passo, motor de testes,
+tabelas, bloco de criatura e o pacote de livro. Veja [`ORDEM2.md`](ORDEM2.md). Duas peças novas
+podem servir a outros sistemas:
+
+- **Imagens de livro** no bucket `book-assets` (por hash, conferido no navegador), enviadas pelo
+  importador do site.
+- **Missão pronta → campanha** (`startOrdem2MissionAction`): uma função pura
+  (`ordem2MissionBlocks`) converte o pacote em blocos de roteiro, e a ação cria a sessão
+  (`createSessionBlocks`, em lote), as criaturas e os mapas, copiando as imagens para
+  `campaign-media`.
+
+`BookText` passou a mostrar citações (`> `) como caixas de "leia em voz alta".
+
 ## Adição de Triangle Agency (2026-11-03)
 
 `packages/rpg-systems/src/triangle-agency` é um módulo isolado: ficha JSON, regras 6d4, ARC,

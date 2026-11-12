@@ -39,6 +39,8 @@ export * from './queries/tavern';
 export * from './queries/conflicts';
 export * from './queries/items';
 export * from './queries/books';
+export * from './queries/book-assets';
+export * from './queries/book-export';
 export * from './queries/drafts';
 export * from './queries/dice';
 export * from './queries/maps';

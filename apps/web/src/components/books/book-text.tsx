@@ -3,7 +3,7 @@ import { withAssimSymbols } from '@/components/assimilacao/symbols';
 
 /**
  * Texto dos livros em Markdown simples: títulos (#), parágrafos, listas ("- "), tabelas ("|"),
- * **negrito** e *itálico*. Nada vira HTML: o texto do pacote é exibido como texto.
+ * citações ("> ", textos para ler em voz alta), **negrito** e *itálico*. Nada vira HTML: o texto do pacote é exibido como texto.
  */
 export function BookText({ body, className }: { body: string; className?: string }) {
   return (
@@ -21,6 +21,7 @@ export function BookParagraphs({ paragraphs }: { paragraphs: readonly string[] }
 type Block =
   | { type: 'heading'; level: number; text: string }
   | { type: 'paragraph'; text: string }
+  | { type: 'quote'; text: string }
   | { type: 'list'; items: string[] }
   | { type: 'table'; rows: string[][] };
 
@@ -42,6 +43,14 @@ function parse(body: string): Block[] {
     if (heading) {
       flush();
       result.push({ type: 'heading', level: heading[1]!.length, text: heading[2]! });
+      continue;
+    }
+    const quote = /^>\s?(.*)$/.exec(line);
+    if (quote) {
+      flush();
+      const tail = last();
+      if (tail?.type === 'quote') tail.text += ` ${quote[1]!}`;
+      else result.push({ type: 'quote', text: quote[1]! });
       continue;
     }
     const item = /^(?:[-*•]|\d+[.)])\s+(.*)$/.exec(line);
@@ -83,6 +92,15 @@ function blocks(body: string): ReactNode[] {
           <h4 key={index} className="mt-1 font-display text-base text-fg-accent">
             {inline(block.text)}
           </h4>
+        );
+      case 'quote':
+        return (
+          <blockquote
+            key={index}
+            className="rounded-md border-l-4 border-parchment-300/60 bg-sunken px-4 py-3 italic text-fg"
+          >
+            {inline(block.text)}
+          </blockquote>
         );
       case 'list':
         return (

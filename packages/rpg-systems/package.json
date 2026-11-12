@@ -9,7 +9,8 @@
     "./dnd5e": "./src/dnd5e/index.ts",
     "./tormenta20": "./src/tormenta20/index.ts",
     "./assimilacao": "./src/assimilacao/index.ts",
-    "./triangle-agency": "./src/triangle-agency/index.ts"
+    "./triangle-agency": "./src/triangle-agency/index.ts",
+    "./ordem2": "./src/ordem2/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

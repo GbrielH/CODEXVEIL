@@ -2310,3 +2310,34 @@ celular, nem o áudio da call.
 - Concluído: a caixinha flutuante "Dados da mesa" não aparece nas abas Jogo e Dados do site, que já
   mostram a mesa grande e o mural. Opção `tray` no `DiceProvider`; as outras telas não mudam.
 - Pendente: conferir no navegador.
+
+### 2026-11-12 — Ordem Paranormal RPG 2 (sistema novo)
+
+- Concluído:
+  - módulo `ordem2` (ficha, regras e tabelas), migração e bucket `book-assets`;
+  - ficha e criação no site e no app;
+  - importador com imagens e leitor com missões, cenas, pontos de interesse, criaturas e mapas;
+  - "Usar esta missão na campanha";
+  - extrator `scripts/books/ordem2.py`.
+    Veja [`ORDEM2.md`](ORDEM2.md).
+- Próximo:
+  1. aplicar a migração em produção (`supabase db push --dry-run` antes);
+  2. importar `ordem2-alpha.book.json` e `ordem2-beta.book.json` (pasta `livros-trabalho/ordem/out`) em Meus livros;
+  3. testar a montagem de uma missão, a ficha e as rolagens no navegador e no Android.
+- Depois:
+  - controle de turnos por fases na Mesa do mestre;
+  - telas para os desafios de acesso (fechaduras, equilíbrio);
+  - fichas prontas, tokens e handouts, se o responsável tiver os arquivos à parte;
+  - mural mostrando o resultado do Ordem (3 maiores e pavor) em vez da soma.
+
+### 2026-11-12 — Ordem 2 em produção (banco) e "Baixar JSON"
+
+- Migração `20261112120000_ordem2.sql` aplicada em produção depois do dry-run, que listou só ela.
+- Livros `ordem2-alpha` e `ordem2-beta` importados na conta do responsável, com 8 e 5 imagens. A
+  edição foi encurtada para caber no limite de 40 caracteres do banco.
+- `scripts/books/import_books.mjs` envia também as imagens (`assets`) para o `book-assets`.
+- Meus livros ganhou **Baixar JSON** (`exportBookPack`): o livro volta ao formato `.book.json`, e
+  no Ordem as imagens vão junto.
+- Pedido em aberto: tela de escolha de personagem pronto, com fotos, ao criar ficha numa campanha
+  do Ordem. Depende das fichas prontas e das fotos, que não estão nos PDFs; o responsável vai
+  enviar os arquivos.

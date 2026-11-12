@@ -40,6 +40,16 @@ const TRIANGLE_COUNT_LABELS: [string, string, string][] = [
   ['section', 'página', 'páginas'],
 ];
 
+const ORDEM2_COUNT_LABELS: [string, string, string][] = [
+  ['mission', 'missão', 'missões'],
+  ['scene', 'cena', 'cenas'],
+  ['point_of_interest', 'ponto de interesse', 'pontos de interesse'],
+  ['creature', 'criatura', 'criaturas'],
+  ['map', 'mapa', 'mapas'],
+  ['tool', 'ferramenta', 'ferramentas'],
+  ['section', 'página', 'páginas'],
+];
+
 export function describeBookCounts(counts: Record<string, number>, systemId = 'dnd5e'): string {
   const labels =
     systemId === 'tormenta20'
@@ -48,7 +58,9 @@ export function describeBookCounts(counts: Record<string, number>, systemId = 'd
         ? ASSIMILACAO_COUNT_LABELS
         : systemId === 'triangle-agency'
           ? TRIANGLE_COUNT_LABELS
-          : COUNT_LABELS;
+          : systemId === 'ordem2'
+            ? ORDEM2_COUNT_LABELS
+            : COUNT_LABELS;
   return labels
     .filter(([kind]) => (counts[kind] ?? 0) > 0)
     .map(([kind, one, many]) => `${counts[kind]} ${counts[kind] === 1 ? one : many}`)

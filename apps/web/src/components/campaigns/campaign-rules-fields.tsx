@@ -14,6 +14,7 @@ import {
 } from '@codexveil/rpg-systems/tormenta20';
 import { parseAssimilacaoCampaignRules } from '@codexveil/rpg-systems/assimilacao';
 import { parseTriangleAgencyCampaignRules } from '@codexveil/rpg-systems/triangle-agency';
+import { ORDEM2_SETTINGS, ordem2SettingLabels, parseOrdem2CampaignRules } from '@codexveil/rpg-systems/ordem2';
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
 import type { FieldErrors } from '@codexveil/validation';
@@ -39,6 +40,14 @@ export function CampaignRulesFields({
   errors,
   books = [],
 }: CampaignRulesFieldsProps) {
+  if (systemId === 'ordem2')
+    return (
+      <Ordem2RulesFields
+        initial={initial}
+        errors={errors}
+        books={books.filter((book) => book.systemId === 'ordem2')}
+      />
+    );
   if (systemId === 'triangle-agency')
     return (
       <TriangleAgencyRulesFields
@@ -167,6 +176,94 @@ function TriangleAgencyRulesFields({
               Meus livros
             </Link>
             .
+          </p>
+        )}
+      </div>
+    </fieldset>
+  );
+}
+
+/** Ordem Paranormal 2: cenário (perícias modernas ou medievais), DT padrão e os playtests liberados. */
+function Ordem2RulesFields({
+  initial,
+  errors,
+  books,
+}: {
+  initial: unknown;
+  errors?: FieldErrors | undefined;
+  books: CampaignBookOption[];
+}) {
+  const id = useId();
+  const [rules, setRules] = useState(() => parseOrdem2CampaignRules(initial));
+  return (
+    <fieldset className="flex flex-col gap-5 rounded-md border border-line p-4 sm:p-5">
+      <legend className="eyebrow px-1">Regras da mesa</legend>
+      <p className="-mt-1 text-sm text-fg-muted">
+        O playtest Alpha se passa no mundo moderno e o Beta na Idade Média. O cenário define a
+        lista de perícias das fichas (Tecnologia e Máquinas ou Animais e Ofício).
+      </p>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <SelectField
+          id={`${id}-setting`}
+          name="rules.setting"
+          label="Cenário"
+          value={rules.setting}
+          onChange={(event) =>
+            setRules({ ...rules, setting: event.target.value as typeof rules.setting })
+          }
+          error={errors?.['rules.setting']}
+        >
+          {ORDEM2_SETTINGS.map((setting) => (
+            <option key={setting} value={setting}>
+              {ordem2SettingLabels[setting]}
+            </option>
+          ))}
+        </SelectField>
+        <SelectField
+          id={`${id}-dc`}
+          name="rules.defaultDc"
+          label="DT padrão dos testes"
+          value={String(rules.defaultDc)}
+          onChange={(event) => setRules({ ...rules, defaultDc: Number(event.target.value) })}
+          error={errors?.['rules.defaultDc']}
+        >
+          {[5, 6, 7, 8, 9, 10].map((value) => (
+            <option key={value} value={value}>
+              DT {value}
+              {value === 7 ? ' (playtest)' : ''}
+            </option>
+          ))}
+        </SelectField>
+      </div>
+      <div className="flex flex-col gap-3 border-t border-line pt-4">
+        <p className="text-sm font-medium">Livros liberados</p>
+        {books.length ? (
+          books.map((book) => (
+            <CheckboxField
+              key={book.bookKey}
+              id={`${id}-book-${book.bookKey}`}
+              name="rules.sourcebooks"
+              value={book.bookKey}
+              label={book.name}
+              description={book.edition}
+              checked={rules.sourcebooks.includes(book.bookKey)}
+              onChange={(event) =>
+                setRules({
+                  ...rules,
+                  sourcebooks: event.target.checked
+                    ? [...new Set([...rules.sourcebooks, book.bookKey])]
+                    : rules.sourcebooks.filter((key) => key !== book.bookKey),
+                })
+              }
+            />
+          ))
+        ) : (
+          <p className="text-sm text-fg-muted">
+            Importe os pacotes privados do Ordem Paranormal 2 em{' '}
+            <Link href={routes.books} className="text-fg-brand underline-offset-2 hover:underline">
+              Meus livros
+            </Link>
+            . Liberar o livro dá ao mestre as missões prontas e aos jogadores as regras.
           </p>
         )}
       </div>

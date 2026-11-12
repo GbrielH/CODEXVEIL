@@ -1,5 +1,14 @@
 # Licenças de conteúdo
 
+## Ordem Paranormal RPG 2 (playtests)
+
+Os playtests Alpha e Beta do Ordem Paranormal RPG 2 (Arquivos Secretos, Jambô Editora; Cellbit)
+declaram todos os direitos reservados. O repositório guarda só as regras como mecânica (números,
+estrutura da ficha, nomes curtos), resumos próprios das tabelas e o extrator
+(`scripts/books/ordem2.py`). O texto, os mapas, as artes e as missões ficam em pacotes privados
+gerados do exemplar do responsável e importados sob a conta dele. As imagens ficam num bucket
+privado, lido só por quem tem o livro e pelos mestres das campanhas dele.
+
 ## Triangle Agency
 
 _Triangle Agency: O Jogo de Interpretação_ (primeira edição) declara todos os direitos reservados

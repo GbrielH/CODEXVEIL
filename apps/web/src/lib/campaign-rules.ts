@@ -31,6 +31,12 @@ function rawRules(systemId: string, formData: FormData): Record<string, unknown>
         scarcityCap: Number(formData.get('rules.scarcityCap') ?? 2),
         sourcebooks: formData.getAll('rules.sourcebooks').map(String),
       };
+    case 'ordem2':
+      return {
+        setting: formData.get('rules.setting') === 'medieval' ? 'medieval' : 'moderno',
+        defaultDc: Number(formData.get('rules.defaultDc') ?? 7),
+        sourcebooks: formData.getAll('rules.sourcebooks').map(String),
+      };
     case 'triangle-agency': {
       const conflictResolution = formData.get('rules.conflictResolution');
       return {

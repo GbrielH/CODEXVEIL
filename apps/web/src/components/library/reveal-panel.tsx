@@ -71,7 +71,19 @@ const ASSIMILACAO_REVEAL_GROUPS: RevealGroup[] = [
   { id: 'notes', label: 'Anotações', keys: ['notes'] },
 ];
 
+/** Ordem Paranormal 2: partes do quadro da criatura. */
+const ORDEM2_REVEAL_GROUPS: RevealGroup[] = [
+  { id: 'description', label: 'Descrição', keys: ['description'] },
+  { id: 'hp', label: 'Pontos de vida e armadura', keys: ['hitPoints', 'armor'] },
+  { id: 'attributes', label: 'Atributos', keys: ['attributes'] },
+  { id: 'skills', label: 'Perícias', keys: ['skills'] },
+  { id: 'actions', label: 'Ações', keys: ['actions'] },
+  { id: 'abilities', label: 'Habilidades', keys: ['abilities'] },
+  { id: 'strategy', label: 'Estratégia', keys: ['strategy'] },
+];
+
 export function revealGroupsFor(systemId: string): RevealGroup[] {
+  if (systemId === 'ordem2') return ORDEM2_REVEAL_GROUPS;
   if (systemId === 'assimilacao') return ASSIMILACAO_REVEAL_GROUPS;
   return systemId === 'tormenta20' ? T20_REVEAL_GROUPS : DND5E_REVEAL_GROUPS;
 }

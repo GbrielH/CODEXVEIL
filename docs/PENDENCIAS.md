@@ -17,6 +17,23 @@
 
 ## Resumo
 
+**2026-11-12 (Ordem Paranormal RPG 2):** novo sistema `ordem2`, a partir dos dois PDFs dos playtests (Alpha e Beta). O que foi feito:
+
+- **Regras no código:** motor de testes (dois dados, passos, críticos, pavor, RA/RB, dano, lesões, traumas, equilíbrio, fechaduras, relações e armadura).
+- **Ficha e criação:** no site e no app, com PV, PD e armadura em trilhas e rolagens no mural da mesa.
+- **Livros:** dois pacotes privados com tudo que há nos PDFs: regras, 10 ferramentas, 4 missões em 10 cenas, 70 pontos de interesse estruturados, 3 criaturas com ficha e arte, 4 mapas e 13 imagens.
+- **Banco:** bucket privado `book-assets` para as imagens do livro.
+- **Missões:** o botão "Usar esta missão na campanha" monta a sessão com o roteiro, as criaturas e os mapas.
+
+Verificações: `pnpm check` passou nas 20 tarefas (rpg-systems com 295 testes, sendo 19 novos do Ordem; banco com 251 aprovados e 11 ao vivo pulados, incluindo 5 novos de RLS do Ordem; web com 26). `pnpm build` passou nas 2 tarefas. Os pacotes validam sem nenhum problema.
+
+Falta:
+
+- a migração `20261112120000_ordem2.sql` já foi aplicada em produção e os dois livros já estão na conta do responsável, com as 13 imagens; Meus livros ganhou o botão **Baixar JSON**;
+- testar no navegador e no Android a ficha, a criação, a importação com imagens e a montagem de uma missão.
+
+Detalhes e limitações em [`ORDEM2.md`](ORDEM2.md).
+
 **2026-11-12 (mesinha de dados):** a caixinha flutuante "Dados da mesa" não aparece mais nas abas Jogo e Dados do site, que já têm a mesa grande e o mural (`DiceProvider` ganhou `tray={false}`). Nas demais telas (ficha, mapa, Mesa do mestre) ela continua. Verificado com `pnpm check` e `pnpm build`; falta conferir no navegador.
 
 **Atualização de 2026-11-11 — central Jogo: parcial.** O site ganhou a composição de jogo para os

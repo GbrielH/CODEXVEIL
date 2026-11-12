@@ -3,6 +3,7 @@ import { findSystem } from '@codexveil/rpg-systems';
 import { parseDnd5eCampaignRules } from '@codexveil/rpg-systems/dnd5e';
 import { parseT20CampaignRules } from '@codexveil/rpg-systems/tormenta20';
 import { parseAssimilacaoCampaignRules } from '@codexveil/rpg-systems/assimilacao';
+import { parseOrdem2CampaignRules } from '@codexveil/rpg-systems/ordem2';
 import { ScrollText, UserRound } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
@@ -10,6 +11,7 @@ import { Dnd5eCreationWizard } from '@/components/characters/dnd5e-wizard/wizard
 import { T20CreationWizard } from '@/components/characters/t20-wizard/wizard';
 import { AssimilacaoCreationWizard } from '@/components/characters/assimilacao-wizard/wizard';
 import { TriangleAgencyCreationWizard } from '@/components/characters/triangle-agency-wizard/wizard';
+import { Ordem2CreationWizard } from '@/components/characters/ordem2-wizard/wizard';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
@@ -27,7 +29,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Novo personagem' };
 
-const SYSTEMS_WITH_WIZARD = ['dnd5e', 'tormenta20', 'assimilacao', 'triangle-agency'] as const;
+const SYSTEMS_WITH_WIZARD = ['dnd5e', 'tormenta20', 'assimilacao', 'triangle-agency', 'ordem2'] as const;
 type WizardSystem = (typeof SYSTEMS_WITH_WIZARD)[number];
 const isWizardSystem = (value: string): value is WizardSystem =>
   (SYSTEMS_WITH_WIZARD as readonly string[]).includes(value);
@@ -113,7 +115,20 @@ export default async function NewCharacterPage({ searchParams }: PageProps<'/per
         }
       />
       <Card ornate>
-        {systemId === 'triangle-agency' ? (
+        {systemId === 'ordem2' ? (
+          <Ordem2CreationWizard
+            campaign={
+              campaign
+                ? {
+                    id: campaign.id,
+                    name: campaign.name,
+                    setting: parseOrdem2CampaignRules(campaign.characterRules).setting,
+                    questions: campaign.creationQuestions,
+                  }
+                : null
+            }
+          />
+        ) : systemId === 'triangle-agency' ? (
           <TriangleAgencyCreationWizard
             campaign={
               campaign

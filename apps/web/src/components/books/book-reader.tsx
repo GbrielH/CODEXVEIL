@@ -31,6 +31,8 @@ import { BookEntryView } from './book-entry-view';
 import { AssimilacaoEntryView } from './assimilacao-entry-view';
 import { T20BookEntryView } from './t20-entry-view';
 import { TriangleEntryView } from './triangle-entry-view';
+import { Ordem2EntryView } from './ordem2-entry-view';
+import { Ordem2MissionStart } from './ordem2-mission-start';
 
 function normalize(text: string): string {
   return text
@@ -290,6 +292,9 @@ export async function BookEntryScreen({
     (kind === 'monster' || (kind === 'magic_item' && reader.pack.systemId === 'dnd5e'))
       ? kind
       : null;
+  // Ordem Paranormal 2: o mestre monta a missão pronta na campanha.
+  const missionStart =
+    reader.canCopy && reader.campaignId && reader.pack.systemId === 'ordem2' && kind === 'mission';
 
   return (
     <div className="flex flex-col gap-6">
@@ -302,9 +307,16 @@ export async function BookEntryScreen({
         </p>
         <h2 className="mt-1 text-3xl leading-tight">{entry.name}</h2>
       </header>
-      <div className={cx('grid gap-6', copyKind && 'lg:grid-cols-[1fr_22rem]')}>
+      <div className={cx('grid gap-6', (copyKind || missionStart) && 'lg:grid-cols-[1fr_22rem]')}>
         <article className="min-w-0 max-w-3xl">
-          {reader.pack.systemId === 'triangle-agency' ? (
+          {reader.pack.systemId === 'ordem2' ? (
+            <Ordem2EntryView
+              kind={kind}
+              data={entry.data}
+              pack={{ id: reader.pack.id, bookKey: reader.pack.bookKey }}
+              campaignId={reader.campaignId}
+            />
+          ) : reader.pack.systemId === 'triangle-agency' ? (
             <TriangleEntryView kind={kind} data={entry.data} />
           ) : reader.pack.systemId === 'assimilacao' ? (
             <AssimilacaoEntryView kind={kind} data={entry.data} />
@@ -314,6 +326,18 @@ export async function BookEntryScreen({
             <BookEntryView kind={kind as BookEntryKind} name={entry.name} data={entry.data} />
           )}
         </article>
+        {missionStart && reader.campaignId ? (
+          <aside>
+            <Card ornate>
+              <CardHeader title="Mestrar esta missão" />
+              <Ordem2MissionStart
+                campaignId={reader.campaignId}
+                packId={reader.pack.id}
+                missionKey={entry.key}
+              />
+            </Card>
+          </aside>
+        ) : null}
         {copyKind && reader.campaignId ? (
           <aside>
             <Card ornate>

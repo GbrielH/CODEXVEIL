@@ -31,6 +31,11 @@ import {
   TRIANGLE_PLAYER_BOOK_KINDS,
   triangleBookEntryKindLabels,
 } from '@codexveil/rpg-systems/triangle-agency';
+import {
+  ORDEM2_BOOK_ENTRY_KINDS,
+  ORDEM2_PLAYER_BOOK_KINDS,
+  ordem2BookEntryKindLabels,
+} from '@codexveil/rpg-systems/ordem2';
 import { uuidSchema } from '@codexveil/validation';
 
 /** Livros liberados na campanha (os do dono que ele marcou nas regras de criação). */
@@ -107,6 +112,13 @@ export const BOOK_KIND_SLUGS: Record<string, string> = {
   anomalous_ability: 'habilidades-anomalas',
   requisition: 'requisicoes',
   locked_document: 'documentos-bloqueados',
+  tool: 'ferramentas',
+  mission: 'missoes',
+  scene: 'cenas',
+  point_of_interest: 'pontos-de-interesse',
+  creature: 'criaturas',
+  map: 'mapas',
+  handout: 'imagens',
 };
 
 export function bookKindFromSlug(slug: string): string | undefined {
@@ -126,7 +138,9 @@ export function bookKindLabel(
         ? assimilacaoBookEntryKindLabels
         : systemId === 'triangle-agency'
           ? triangleBookEntryKindLabels
-          : bookEntryKindLabels;
+          : systemId === 'ordem2'
+            ? ordem2BookEntryKindLabels
+            : bookEntryKindLabels;
   return labels[kind]?.[form] ?? kind;
 }
 
@@ -174,7 +188,9 @@ export async function loadBookReader(
                 ? [...ASSIMILACAO_BOOK_ENTRY_KINDS]
                 : pack.systemId === 'triangle-agency'
                   ? [...TRIANGLE_BOOK_ENTRY_KINDS]
-                  : [...BOOK_ENTRY_KINDS],
+                  : pack.systemId === 'ordem2'
+                    ? [...ORDEM2_BOOK_ENTRY_KINDS]
+                    : [...BOOK_ENTRY_KINDS],
           canCopy: false,
         }
       : null;
@@ -202,6 +218,10 @@ export async function loadBookReader(
   const triangleKinds = readAll
     ? [...TRIANGLE_BOOK_ENTRY_KINDS]
     : ['section', ...TRIANGLE_PLAYER_BOOK_KINDS];
+  // Ordem Paranormal 2: jogadores leem as regras e as ferramentas; as missões são do mestre.
+  const ordemKinds = readAll
+    ? [...ORDEM2_BOOK_ENTRY_KINDS]
+    : ['section', ...ORDEM2_PLAYER_BOOK_KINDS];
   return {
     pack,
     kinds:
@@ -211,7 +231,9 @@ export async function loadBookReader(
           ? assimKinds
           : pack.systemId === 'triangle-agency'
             ? triangleKinds
-            : visibleBookKinds(pack.category, readAll),
+            : pack.systemId === 'ordem2'
+              ? ordemKinds
+              : visibleBookKinds(pack.category, readAll),
     campaignId: campaign.id,
     canCopy: isGm && campaign.status === 'active',
   };

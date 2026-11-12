@@ -16,8 +16,12 @@ import {
 import { parseT20Sheet } from '@codexveil/rpg-systems/tormenta20';
 import { parseAssimilacaoSheet } from '@codexveil/rpg-systems/assimilacao';
 import { parseTriangleAgencySheet } from '@codexveil/rpg-systems/triangle-agency';
+import { parseOrdem2Sheet } from '@codexveil/rpg-systems/ordem2';
 import { AssimilacaoMobileSheet } from '@/components/assimilacao/sheet';
 import { TriangleAgencyMobileSheet } from '@/components/triangle-agency/sheet';
+import { Ordem2MobileSheet } from '@/components/ordem2/sheet';
+import { ScrollView } from 'react-native';
+import { colors, spacing } from '@/lib/theme';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { SheetScreen } from '@/components/sheet/sheet-screen';
 import { Screen } from '@/components/ui/screen';
@@ -129,6 +133,34 @@ export default function CharacterScreen() {
             />
           }
         />
+        <GhostAura active={isDown(data.resources)} />
+      </>
+    );
+  }
+  if (data.character.systemId === 'ordem2') {
+    let ordemSheet;
+    try {
+      ordemSheet = parseOrdem2Sheet(data.character.sheet);
+    } catch {
+      return (
+        <ErrorState message="Os dados desta ficha não seguem o formato do Ordem Paranormal 2. Nada foi alterado." />
+      );
+    }
+    const access = characterAccessInput(data.character);
+    return (
+      <>
+        <Stack.Screen options={{ title: data.character.name }} />
+        <ScrollView style={{ flex: 1, backgroundColor: colors.canvas }} contentContainerStyle={{ padding: spacing[4] }}>
+          <Ordem2MobileSheet
+            key={data.character.id}
+            character={{ id: data.character.id, name: data.character.name, version: data.character.version }}
+            campaignId={data.character.campaign?.id ?? null}
+            sheet={ordemSheet}
+            resources={data.resources}
+            canEditSheet={canEditCharacterSheet(access)}
+            canEditPlay={canEditCharacterPlayState(access)}
+          />
+        </ScrollView>
         <GhostAura active={isDown(data.resources)} />
       </>
     );

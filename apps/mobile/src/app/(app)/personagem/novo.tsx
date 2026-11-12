@@ -66,6 +66,8 @@ import {
 } from '@/components/assimilacao/wizard';
 import { parseAssimilacaoCampaignRules } from '@codexveil/rpg-systems/assimilacao';
 import { TriangleAgencyMobileWizard } from '@/components/triangle-agency/wizard';
+import { Ordem2MobileWizard } from '@/components/ordem2/wizard';
+import { parseOrdem2CampaignRules } from '@codexveil/rpg-systems/ordem2';
 import { Button } from '@/components/ui/button';
 import { loadAssimilacaoSources, loadT20Sources } from '@/lib/books';
 import { parseT20CampaignRules, type T20ContentSource } from '@codexveil/rpg-systems/tormenta20';
@@ -218,11 +220,20 @@ async function loadTriangleData(userId: string) {
   return { campaigns };
 }
 
+async function loadOrdemData(userId: string) {
+  const campaigns = (await listMyCampaigns(getSupabase(), userId)).filter(
+    (campaign) =>
+      campaign.status === 'active' && campaign.role === 'player' && campaign.systemId === 'ordem2',
+  );
+  return { campaigns };
+}
+
 const systemDescriptions = {
   dnd5e: 'Dungeons & Dragons 5ª edição (SRD e os seus livros).',
   tormenta20: 'O RPG de fantasia brasileiro, com os livros importados.',
   assimilacao: 'Horror e sobrevivência num mundo tomado pela Assimilação.',
   'triangle-agency': 'Agentes corporativos, Anomalias e alterações retrocausais da Realidade.',
+  ordem2: 'Agentes da Ordo Realitas contra o paranormal (playtests do Ordem Paranormal 2).',
 } as const;
 
 export default function NewCharacterScreen() {
@@ -231,11 +242,14 @@ export default function NewCharacterScreen() {
   const data = useAsyncData(() => loadCreationData(userId), userId);
   const t20 = useAsyncData(() => loadT20Data(userId), `t20:${userId}`);
   const [system, setSystem] = useState<
-    'dnd5e' | 'tormenta20' | 'assimilacao' | 'triangle-agency' | null
+    'dnd5e' | 'tormenta20' | 'assimilacao' | 'triangle-agency' | 'ordem2' | null
   >(null);
   const assim = useAsyncData(() => loadAssimData(userId), `assim:${userId}`);
   const triangle = useAsyncData(() => loadTriangleData(userId), `triangle:${userId}`);
   const [triangleCampaign, setTriangleCampaign] = useState('');
+  const ordem = useAsyncData(() => loadOrdemData(userId), `ordem2:${userId}`);
+  const [ordemCampaign, setOrdemCampaign] = useState('');
+  const preOrdem = ordem.data?.campaigns.find((campaign) => campaign.id === params.campanha);
   const [assimCampaign, setAssimCampaign] = useState('');
   const [assimSources, setAssimSources] = useState<AssimilacaoMobileSource[] | null>(null);
   const [t20Campaign, setT20Campaign] = useState<string>('');
@@ -244,14 +258,16 @@ export default function NewCharacterScreen() {
   const preAssim = assim.data?.campaigns.find((campaign) => campaign.id === params.campanha);
   const preTriangle = triangle.data?.campaigns.find((campaign) => campaign.id === params.campanha);
   // Vindo de uma campanha, o sistema é o dela; senão a pessoa escolhe antes de tudo.
-  const activeSystem = preTriangle
+  const activeSystem = preOrdem
+    ? 'ordem2'
+    : preTriangle
     ? 'triangle-agency'
     : preT20
       ? 'tormenta20'
       : preAssim
         ? 'assimilacao'
         : (system ??
-          (params.campanha && !t20.loading && !assim.loading && !triangle.loading
+          (params.campanha && !t20.loading && !assim.loading && !triangle.loading && !ordem.loading
             ? 'dnd5e'
             : null));
   const systemOptions = [
@@ -259,10 +275,11 @@ export default function NewCharacterScreen() {
     { value: 'tormenta20' as const, label: 'Tormenta20' },
     { value: 'assimilacao' as const, label: 'Assimilação' },
     { value: 'triangle-agency' as const, label: 'Triangle Agency' },
+    { value: 'ordem2' as const, label: 'Ordem Paranormal 2' },
   ];
 
   if (activeSystem === null) {
-    if (data.loading || t20.loading || assim.loading || triangle.loading)
+    if (data.loading || t20.loading || assim.loading || triangle.loading || ordem.loading)
       return <LoadingState label="Carregando suas campanhas e livros…" />;
     return (
       <ScrollView
@@ -281,6 +298,50 @@ export default function NewCharacterScreen() {
           />
         ))}
       </ScrollView>
+    );
+  }
+  if (activeSystem === 'ordem2' && ordem.data) {
+    const chosenId = preOrdem?.id ?? ordemCampaign;
+    const chosen = ordem.data.campaigns.find((campaign) => campaign.id === chosenId);
+    if (!chosenId) {
+      return (
+        <ScrollView
+          style={{ flex: 1, backgroundColor: colors.canvas }}
+          contentContainerStyle={styles.content}
+        >
+          <Button label="Trocar o sistema" variant="ghost" compact onPress={() => setSystem(null)} />
+          <AppText variant="title">Para qual campanha?</AppText>
+          {ordem.data.campaigns.map((campaign) => (
+            <OptionCard
+              key={campaign.id}
+              selected={false}
+              title={campaign.name}
+              description="Ordem Paranormal 2"
+              onPress={() => setOrdemCampaign(campaign.id)}
+            />
+          ))}
+          <OptionCard
+            selected={false}
+            title="Ficha pessoal"
+            description="Agente sem campanha vinculada."
+            onPress={() => setOrdemCampaign('pessoal')}
+          />
+        </ScrollView>
+      );
+    }
+    return (
+      <Ordem2MobileWizard
+        campaign={
+          chosen
+            ? {
+                id: chosen.id,
+                name: chosen.name,
+                setting: parseOrdem2CampaignRules(chosen.characterRules).setting,
+                questions: chosen.creationQuestions,
+              }
+            : null
+        }
+      />
     );
   }
   if (activeSystem === 'triangle-agency' && triangle.data) {
