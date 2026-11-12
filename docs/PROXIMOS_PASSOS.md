@@ -2341,3 +2341,18 @@ celular, nem o áudio da call.
 - Pedido em aberto: tela de escolha de personagem pronto, com fotos, ao criar ficha numa campanha
   do Ordem. Depende das fichas prontas e das fotos, que não estão nos PDFs; o responsável vai
   enviar os arquivos.
+
+### 2026-11-12 — aba Jogo: vida/mana, painel de dados, layout e chat do Tomo
+
+- Card Personagem: − e + de 1 em 1 na vida e na mana (`ResourceStepper`, operação atômica
+  `adjust_character_resource`; a vida desce como dano). Moedas continuam só leitura.
+- Painel de dados: clicar no dado só escolhe o dado (não rola); seleção de **atributo**
+  (`characterAttributeBonuses`, D&D e Tormenta20) e perícia montam a expressão, que continua
+  editável; modos na ordem Desvantagem · Normal · Vantagem.
+- Layout: mural de rolagens abaixo do mapa, na mesma largura; Sessão abaixo do Combate; a
+  mesinha de dados fica à direita. Cabeçalho dos cards quebra linha (o título "Combate" não fica
+  mais coberto pelos selos).
+- Chat avulso do Tomo: nunca foi para o banco (fica no `sessionStorage` da aba); agora some
+  24 h depois da primeira mensagem, como a Taverna.
+
+Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verificado no navegador.

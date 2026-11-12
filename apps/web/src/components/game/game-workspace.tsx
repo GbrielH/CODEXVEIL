@@ -24,6 +24,7 @@ export function GameWorkspace({
   initiative,
   dice,
   feed,
+  table,
   gm,
   session,
 }: {
@@ -33,6 +34,8 @@ export function GameWorkspace({
   initiative: ReactNode;
   dice: ReactNode;
   feed: ReactNode;
+  /** Mesinha de dados (resultado grande), na coluna da direita. */
+  table?: ReactNode;
   gm?: ReactNode;
   session: ReactNode;
 }) {
@@ -113,9 +116,12 @@ export function GameWorkspace({
       >
         {panel('character', 'Personagem', character)}
         {initiative}
+        {panel('session', 'Sessão', session)}
       </aside>
-      <main data-game-map className="min-w-0 overflow-hidden">
+      {/* Mural de rolagens logo abaixo do mapa, na mesma largura: sem espaço vazio embaixo. */}
+      <main data-game-map className="flex min-w-0 flex-col gap-4 overflow-hidden">
         {map}
+        {feed}
       </main>
       <aside
         data-game-panel
@@ -123,9 +129,8 @@ export function GameWorkspace({
         className="flex min-w-0 max-w-[48vw] resize-x flex-col gap-4 overflow-auto xl:w-[var(--game-right)]"
       >
         {panel('dice', 'Dados', dice)}
-        {feed}
+        {table}
         {gm ? panel('gm', 'Atalhos do mestre', gm) : null}
-        {panel('session', 'Sessão', session)}
       </aside>
       <style>{`@media (max-width: 1279px){[data-game-panel]{max-width:none!important;width:100%!important;resize:none}[data-game-workspace]{grid-template-columns:minmax(0,1fr)!important}[data-game-map]{order:-1}}`}</style>
     </div>

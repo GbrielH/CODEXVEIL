@@ -30,8 +30,9 @@ interface CardHeaderProps {
 
 export function CardHeader({ title, description, action, icon }: CardHeaderProps) {
   return (
-    <div className="mb-4 flex items-start justify-between gap-4">
-      <div className="flex min-w-0 items-start gap-3">
+    // `flex-wrap`: em colunas estreitas a ação desce para a linha de baixo em vez de cobrir o título.
+    <div className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+      <div className="flex min-w-0 flex-1 basis-40 items-start gap-3">
         {icon ? <span className="mt-0.5 text-fg-brand">{icon}</span> : null}
         <div className="min-w-0">
           <h2 className="text-lg leading-tight">{title}</h2>

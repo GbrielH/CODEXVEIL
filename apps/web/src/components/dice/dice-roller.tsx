@@ -3,7 +3,6 @@
 import { getSessionState, rollDice, type DiceRoll } from '@codexveil/database';
 import {
   COMMON_DICE,
-  DICE_ROLL_MODES,
   describeDiceRoll,
   diceRollModeLabels,
   naturalD20,
@@ -289,11 +288,14 @@ export function DicePanel({
   isGm,
   characterName,
   skills = [],
+  attributes = [],
 }: {
   isGm: boolean;
   characterName?: string | null;
   /** Perícias da ficha com o bônus somado: escolher uma monta "1d20+bônus" sozinho. */
   skills?: { label: string; bonus: number }[];
+  /** Atributos da ficha com o modificador da rolagem (escolha um). */
+  attributes?: { label: string; bonus: number }[];
 }) {
   const dice = useDice();
   const id = useId();
@@ -303,13 +305,25 @@ export function DicePanel({
   const [secret, setSecret] = useState(false);
   const [busy, setBusy] = useState(false);
   const [last, setLast] = useState<ShownRoll | null>(null);
+  const [die, setDie] = useState(20);
+  const [attribute, setAttribute] = useState('');
   const valid = parseDiceExpression(expression) !== null;
+
+  // Monta a expressão com o dado, o atributo e a perícia escolhidos (a perícia já inclui o
+  // atributo na ficha; sem perícia, vale o modificador do atributo). Dá para editar depois.
+  const compose = (sides: number, attributeLabel: string, skillLabel: string) => {
+    const skill = skills.find((entry) => entry.label === skillLabel);
+    const chosen = attributes.find((entry) => entry.label === attributeLabel);
+    const bonus = skill ? skill.bonus : (chosen?.bonus ?? 0);
+    setExpression(`1d${sides}${bonus === 0 ? '' : bonus > 0 ? `+${bonus}` : bonus}`);
+  };
   const inCampaign = Boolean(dice?.campaignId);
 
   const go = async (text: string) => {
     if (!dice) return;
     setBusy(true);
-    const shown = await dice.roll({ expression: text, label: label.trim(), mode, secret });
+    const rollLabel = label.trim() || attribute;
+    const shown = await dice.roll({ expression: text, label: rollLabel, mode, secret });
     if (shown) setLast(shown);
     setBusy(false);
   };
@@ -324,9 +338,16 @@ export function DicePanel({
             key={sides}
             type="button"
             disabled={busy}
-            onClick={() => void go(`1d${sides}`)}
-            title={`Rolar 1d${sides}`}
-            className="tabular flex h-11 items-center justify-center rounded-lg border border-line bg-raised font-display text-sm text-fg transition-colors hover:border-parchment-300/60 hover:bg-hover hover:text-fg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-parchment-300 disabled:opacity-60"
+            aria-pressed={die === sides}
+            onClick={() => {
+              setDie(sides);
+              compose(sides, attribute, label);
+            }}
+            title={`Usar 1d${sides} na expressão`}
+            className={cx(
+              'tabular flex h-11 items-center justify-center rounded-lg border font-display text-sm transition-colors hover:border-parchment-300/60 hover:bg-hover hover:text-fg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-parchment-300 disabled:opacity-60',
+              die === sides ? 'border-parchment-300/70 bg-parchment-200/15 text-fg-accent' : 'border-line bg-raised text-fg',
+            )}
           >
             d{sides}
           </button>
@@ -340,26 +361,55 @@ export function DicePanel({
         }}
       >
         <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${id}-expression`} className="text-sm font-medium">
-              Expressão
-            </label>
-            <input
-              id={`${id}-expression`}
-              value={expression}
-              onChange={(event) => setExpression(event.target.value)}
-              placeholder="Ex.: 2d6+3"
-              autoComplete="off"
-              aria-invalid={valid ? undefined : true}
-              aria-describedby={`${id}-expression-hint`}
-              className={controlClasses(!valid, 'h-11 font-mono text-sm')}
-            />
-            <p id={`${id}-expression-hint`} className="text-xs text-fg-muted">
-              {valid
-                ? 'Some dados e bônus: 1d20+5, 2d6+1d4+3, d100.'
-                : 'Use dados como 1d20+5 (até 100 dados).'}
-            </p>
-          </div>
+          {attributes.length ? (
+            <div className="flex flex-col gap-1.5">
+              <span id={`${id}-attribute`} className="flex items-baseline justify-between text-sm font-medium">
+                <span>
+                  Atributo <span className="font-normal text-fg-muted">(opcional)</span>
+                </span>
+                {attribute ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAttribute('');
+                      compose(die, '', label);
+                    }}
+                    className="text-xs font-normal text-fg-muted underline-offset-2 hover:text-fg hover:underline"
+                  >
+                    Limpar
+                  </button>
+                ) : null}
+              </span>
+              <div role="radiogroup" aria-labelledby={`${id}-attribute`} className="grid grid-cols-3 gap-1 rounded-lg border border-line p-1">
+                {attributes.map((entry) => {
+                  const selected = entry.label === attribute;
+                  return (
+                    <button
+                      key={entry.label}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => {
+                        const next = selected ? '' : entry.label;
+                        setAttribute(next);
+                        compose(die, next, label);
+                      }}
+                      className={cx(
+                        'flex min-w-0 items-center justify-between gap-1 rounded-md px-2 py-1.5 text-left text-xs transition-colors',
+                        selected ? 'bg-parchment-200/10 text-fg-accent ring-1 ring-parchment-300/60' : 'text-fg-secondary hover:bg-hover hover:text-fg',
+                      )}
+                    >
+                      <span className="truncate">{entry.label}</span>
+                      <span className="tabular shrink-0 font-mono">
+                        {entry.bonus >= 0 ? '+' : ''}
+                        {entry.bonus}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
           <div className="flex flex-col gap-1.5">
             {skills.length ? (
               <span
@@ -372,7 +422,10 @@ export function DicePanel({
                 {skills.some((skill) => skill.label === label) ? (
                   <button
                     type="button"
-                    onClick={() => setLabel('')}
+                    onClick={() => {
+                      setLabel('');
+                      compose(die, attribute, '');
+                    }}
                     className="text-xs font-normal text-fg-muted underline-offset-2 hover:text-fg hover:underline"
                   >
                     Limpar
@@ -399,13 +452,10 @@ export function DicePanel({
                       role="radio"
                       aria-checked={selected}
                       onClick={() => {
-                        if (selected) {
-                          setLabel('');
-                          return;
-                        }
-                        setLabel(skill.label);
-                        // A perícia já soma o bônus da ficha: 1d20 + atributo + treino/proficiência.
-                        setExpression(`1d20${skill.bonus >= 0 ? '+' : ''}${skill.bonus}`);
+                        // A perícia já soma o bônus da ficha (atributo + treino/proficiência).
+                        const next = selected ? '' : skill.label;
+                        setLabel(next);
+                        compose(die, attribute, next);
                       }}
                       className={cx(
                         'flex min-w-0 items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors',
@@ -446,7 +496,7 @@ export function DicePanel({
           role="radiogroup"
           aria-label="Vantagem"
         >
-          {DICE_ROLL_MODES.map((option) => (
+          {(['disadvantage', 'normal', 'advantage'] as const).map((option) => (
             <button
               key={option}
               type="button"
@@ -464,6 +514,26 @@ export function DicePanel({
             </button>
           ))}
         </div>
+        <div className="flex flex-col gap-1.5">
+            <label htmlFor={`${id}-expression`} className="text-sm font-medium">
+              Expressão
+            </label>
+            <input
+              id={`${id}-expression`}
+              value={expression}
+              onChange={(event) => setExpression(event.target.value)}
+              placeholder="Ex.: 2d6+3"
+              autoComplete="off"
+              aria-invalid={valid ? undefined : true}
+              aria-describedby={`${id}-expression-hint`}
+              className={controlClasses(!valid, 'h-11 font-mono text-sm')}
+            />
+            <p id={`${id}-expression-hint`} className="text-xs text-fg-muted">
+              {valid
+                ? 'Some dados e bônus: 1d20+5, 2d6+1d4+3, d100.'
+                : 'Use dados como 1d20+5 (até 100 dados).'}
+            </p>
+          </div>
         <div className="flex flex-col gap-3">
           {inCampaign ? (
             <label className="flex items-center gap-2 text-sm text-fg-secondary">

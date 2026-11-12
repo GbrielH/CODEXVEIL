@@ -7,13 +7,14 @@ import {
   listNpcCharacterCandidates,
   listSessions,
 } from '@codexveil/database';
-import { characterSkillBonuses, conditionLabel, summarizeSheet } from '@codexveil/rpg-systems';
+import { characterAttributeBonuses, characterSkillBonuses, conditionLabel, summarizeSheet } from '@codexveil/rpg-systems';
 import type { Metadata, Route } from 'next';
 import { DicePanel, DiceProvider } from '@/components/dice/dice-roller';
 import { DiceTable } from '@/components/dice/dice-table';
 import { RollFeed } from '@/components/dice/roll-feed';
 import { TurnStatus } from '@/components/campaigns/turn-status';
 import { GameWorkspace } from '@/components/game/game-workspace';
+import { ResourceStepper } from '@/components/game/resource-stepper';
 import { MapManager } from '@/components/map/map-manager';
 import { MapView } from '@/components/map/map-view';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +50,7 @@ export default async function GamePage({ params }: PageProps<'/campanhas/[campai
   const mapSession = current ?? [...sessions].sort((a, b) => b.number - a.number)[0] ?? null;
   const own = isGm ? null : (party.find((entry) => entry.ownerId === user.id) ?? null);
   const skills = own ? characterSkillBonuses(campaign.systemId, own.sheet) : [];
+  const attributes = own ? characterAttributeBonuses(campaign.systemId, own.sheet) : [];
   const blocks = gameBlocks(campaign.systemId, isGm ? 'gm' : 'player');
 
   const map = isGm ? (
@@ -94,7 +96,11 @@ export default async function GamePage({ params }: PageProps<'/campanhas/[campai
         <strong>{own.name}</strong>
         <p className="text-fg-muted">{summarizeSheet(campaign.systemId, own.sheet).subtitle}</p>
       </div>
-      {own.resources.map((resource) => (
+      {own.resources.map((resource) =>
+        // Trilhas com máximo (vida, mana…) ganham − e +; moedas e afins ficam só para leitura.
+        resource.max !== null && campaign.status === 'active' ? (
+          <ResourceStepper key={resource.id} resource={resource} />
+        ) : (
         <div key={resource.id} className="flex justify-between gap-2">
           <span>{resource.label}</span>
           <strong>
@@ -103,7 +109,8 @@ export default async function GamePage({ params }: PageProps<'/campanhas/[campai
             {resource.max === null ? '' : ` / ${resource.max}`}
           </strong>
         </div>
-      ))}
+        ),
+      )}
       {own.conditions.length ? (
         <div className="flex flex-wrap gap-1">
           {own.conditions.map((condition) => (
@@ -162,7 +169,7 @@ export default async function GamePage({ params }: PageProps<'/campanhas/[campai
         initiative={initiative}
         dice={
           isGm || (sessionState.playing && !sessionState.physicalDice) ? (
-            <DicePanel isGm={isGm} characterName={own?.name ?? null} skills={skills} />
+            <DicePanel isGm={isGm} characterName={own?.name ?? null} skills={skills} attributes={attributes} />
           ) : (
             <p className="text-sm text-fg-muted">
               {sessionState.physicalDice
@@ -172,8 +179,7 @@ export default async function GamePage({ params }: PageProps<'/campanhas/[campai
           )
         }
         feed={
-          <>
-            <Card>
+          <Card>
               <h3 className="mb-3 font-display">Mural de rolagens</h3>
               <RollFeed
                 campaignId={campaign.id}
@@ -182,10 +188,9 @@ export default async function GamePage({ params }: PageProps<'/campanhas/[campai
                 compact
                 limit={30}
               />
-            </Card>
-            <DiceTable campaignId={campaign.id} />
-          </>
+          </Card>
         }
+        table={<DiceTable campaignId={campaign.id} />}
         gm={
           blocks.includes('gm-tools') ? (
             <div className="flex flex-wrap gap-2">

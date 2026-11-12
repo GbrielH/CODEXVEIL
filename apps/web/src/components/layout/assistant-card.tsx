@@ -57,7 +57,8 @@ const MASCOT_NAME = 'Tomo';
  * Estado do chat fora dos componentes: mudar de aba ou de página não fecha o painel nem apaga a
  * conversa. O texto fica também no sessionStorage desta aba, então recarregar a página (ex.: ao
  * criar uma campanha) não apaga; fechar a aba apaga. Nada vai para o servidor. As imagens
- * anexadas não são guardadas (só o texto).
+ * anexadas não são guardadas (só o texto). Como as conversas da Taverna, a conversa some 24 h
+ * depois da primeira mensagem.
  */
 interface AssistantState {
   open: boolean;
@@ -65,6 +66,9 @@ interface AssistantState {
 }
 const EMPTY: AssistantState = { open: false, messages: [] };
 const STORAGE_KEY = 'codexveil:tomo-chat';
+const MAX_AGE_MS = 24 * 60 * 60 * 1000;
+/** Quando a conversa guardada começou (para apagar depois de 24 h). */
+let startedAt: number | null = null;
 let state: AssistantState = EMPTY;
 let restored = false;
 const listeners = new Set<() => void>();
@@ -74,7 +78,14 @@ function readState(): AssistantState {
     restored = true;
     try {
       const saved = window.sessionStorage.getItem(STORAGE_KEY);
-      if (saved) state = { ...EMPTY, ...(JSON.parse(saved) as Partial<AssistantState>) };
+      if (saved) {
+        const parsed = JSON.parse(saved) as Partial<AssistantState> & { startedAt?: number };
+        const fresh = typeof parsed.startedAt === 'number' && Date.now() - parsed.startedAt < MAX_AGE_MS;
+        if (fresh) {
+          state = { ...EMPTY, ...parsed };
+          startedAt = parsed.startedAt ?? null;
+        } else window.sessionStorage.removeItem(STORAGE_KEY);
+      }
     } catch {
       // Sem armazenamento: começa do zero.
     }
@@ -94,7 +105,9 @@ function setState(update: (current: AssistantState) => AssistantState) {
         characterId,
         done,
       }));
-    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ open: state.open, messages }));
+    if (messages.length === 0) startedAt = null;
+    else startedAt ??= Date.now();
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ open: state.open, messages, startedAt }));
   } catch {
     // Sem armazenamento (ou cheio): vale só nesta página.
   }
