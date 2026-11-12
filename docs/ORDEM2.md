@@ -78,9 +78,19 @@ No leitor da campanha, numa missão, o mestre usa **Usar esta missão na campanh
   também as pastas Mapa, Fichas de personagem e Históricos de personagem. Pacote Alpha regerado:
   64 imagens de extras (handouts, tokens, fichas e históricos), 6 mapas, 76 imagens únicas, 27 MB;
   importado na conta do responsável (166 entradas e 76 imagens, conferidas no banco).
-- **Beta 1.1:** existe um PDF mais novo (79 páginas, 9/11/2026) com Recrutas e Elite. O pacote
-  continua gerado do PDF de 76 páginas, porque o script localiza missões e cenas por página;
-  usar o 1.1 exige remapear as páginas em `BOOKS['beta']`.
+- **Beta 1.1 (79 páginas, 9/11/2026): não processado.** Investigado em 2026-11-12:
+  - **Páginas:** alinhamento página a página com o PDF de 76 páginas. Missão 1: Cena 1 = 31–32,
+    Cena 2 = 33–45 (as fichas do Afogado e do Aughisk passaram para 43–45, depois do resumo da
+    cena), mapa na 35, fechamento 46–47. Missão 2: resumo 50–53, Cena 1 = 54–59, Cena 2 = 60–68
+    (mapa 61), Cena 3 = 69–72, Cena 4 = 73–75, fechamento 76. Novas: 77 (nota dos autores) e 79
+    (registro de atualizações). Arte: Afogado p. 43, Aughisk p. 44, Cria da Floresta p. 72.
+  - **Bloqueio:** a diagramação foi refeita. Narração em AusterVar 11 (antes fonte mono), título de
+    ponto de interesse em Wak Bold 12–13 (antes negrito 9), descrição em Wak Book 9 sem itálico
+    (antes itálico 9), fichas de criatura em Barlow/Wak. Com o leitor atual o pacote sai com 99,7%
+    do texto, mas sem narração, sem pontos de interesse e sem criaturas.
+  - **Próximo passo:** um perfil de estilo por livro em `ordem2.py` (fontes de narração, título e
+    descrição de ponto de interesse, ficha de criatura), validado com `ordem2_audit.py` até zerar
+    os avisos. Até lá, o pacote Beta continua o do PDF de 76 páginas (importado e auditado).
 - **Criação de personagem:** o playtest não traz regras de criação, só personagens prontos. A
   criação é livre: o jogador copia a ficha pronta, e PV/PD vêm dela.
 - **Mural de rolagens:** a ficha rola os dados no servidor (mural da mesa) e calcula o resultado

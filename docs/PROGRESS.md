@@ -984,3 +984,5 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verifica
 - Ordem 2 Beta com extras **importado** na conta do responsável (119 entradas, 59 imagens; conferido no banco). Alpha segue pendente da senha do PDF e dos extras.
 
 - Ordem 2 Alpha com extras (Atos I e II, fichas e históricos) gerado, auditado e **importado** (166 entradas, 76 imagens; conferido no banco).
+
+- Beta 1.1 do Ordem 2 investigado e **não processado**: páginas mapeadas, mas a diagramação nova (fontes) quebra a leitura de narração, pontos de interesse e criaturas. Detalhes e próximo passo em `ORDEM2.md`.
