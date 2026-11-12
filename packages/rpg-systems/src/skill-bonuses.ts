@@ -13,20 +13,22 @@ import { T20_ATTRIBUTES, t20AttributeLabels } from './tormenta20/attributes';
 export function characterSkillBonuses(
   systemId: string,
   sheet: unknown,
-): { label: string; bonus: number }[] {
+): { label: string; bonus: number; attribute?: string }[] {
   try {
     if (systemId === 'dnd5e') {
       const derived = computeDnd5eDerived(parseDnd5eSheet(sheet));
       return SKILLS.map((skill) => ({
         label: skillDefinitions[skill].label,
         bonus: derived.skills[skill].bonus,
+        // Atributo padrão da perícia (o painel troca por outro quando o mestre pede).
+        attribute: abilityLabels[skillDefinitions[skill].ability].name,
       }));
     }
     if (systemId === 'tormenta20') {
       const derived = computeT20Derived(parseT20Sheet(sheet));
       return Object.values(derived.skills)
         .filter((value) => value.usable)
-        .map((value) => ({ label: value.label, bonus: value.total }));
+        .map((value) => ({ label: value.label, bonus: value.total, attribute: t20AttributeLabels[value.attribute].name }));
     }
   } catch {
     return [];

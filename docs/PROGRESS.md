@@ -968,3 +968,7 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verifica
 
 - Aba Jogo: embaixo do mapa fica a **mesa de dados** (resultado grande); o mural de rolagens
   volta para a coluna da direita, abaixo dos dados.
+
+- Painel de dados: perícia + outro atributo troca o atributo padrão da perícia pelo escolhido
+  (ex.: Conhecimento com Constituição = bônus da perícia − Int + Con); o rótulo da rolagem mostra
+  "Conhecimento (Constituição)". `characterSkillBonuses` agora informa o atributo de cada perícia.

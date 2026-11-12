@@ -293,7 +293,7 @@ export function DicePanel({
   isGm: boolean;
   characterName?: string | null;
   /** Perícias da ficha com o bônus somado: escolher uma monta "1d20+bônus" sozinho. */
-  skills?: { label: string; bonus: number }[];
+  skills?: { label: string; bonus: number; attribute?: string }[];
   /** Atributos da ficha com o modificador da rolagem (escolha um). */
   attributes?: { label: string; bonus: number }[];
 }) {
@@ -309,12 +309,18 @@ export function DicePanel({
   const [attribute, setAttribute] = useState('');
   const valid = parseDiceExpression(expression) !== null;
 
-  // Monta a expressão com o dado, o atributo e a perícia escolhidos (a perícia já inclui o
-  // atributo na ficha; sem perícia, vale o modificador do atributo). Dá para editar depois.
+  // Monta a expressão com o dado, o atributo e a perícia escolhidos. A perícia já inclui o
+  // atributo padrão dela; escolher outro atributo troca um pelo outro (quando o mestre pede
+  // "Conhecimento com Constituição"). Sem perícia, vale só o atributo. Dá para editar depois.
   const compose = (sides: number, attributeLabel: string, skillLabel: string) => {
     const skill = skills.find((entry) => entry.label === skillLabel);
     const chosen = attributes.find((entry) => entry.label === attributeLabel);
-    const bonus = skill ? skill.bonus : (chosen?.bonus ?? 0);
+    const standard = skill?.attribute ? attributes.find((entry) => entry.label === skill.attribute) : undefined;
+    const bonus = skill
+      ? chosen && standard && chosen.label !== standard.label
+        ? skill.bonus - standard.bonus + chosen.bonus
+        : skill.bonus
+      : (chosen?.bonus ?? 0);
     setExpression(`1d${sides}${bonus === 0 ? '' : bonus > 0 ? `+${bonus}` : bonus}`);
   };
   const inCampaign = Boolean(dice?.campaignId);
@@ -322,7 +328,12 @@ export function DicePanel({
   const go = async (text: string) => {
     if (!dice) return;
     setBusy(true);
-    const rollLabel = label.trim() || attribute;
+    const skillAttribute = skills.find((entry) => entry.label === label)?.attribute;
+    const rollLabel = label.trim()
+      ? attribute && skillAttribute && attribute !== skillAttribute
+        ? `${label.trim()} (${attribute})`
+        : label.trim()
+      : attribute;
     const shown = await dice.roll({ expression: text, label: rollLabel, mode, secret });
     if (shown) setLast(shown);
     setBusy(false);
