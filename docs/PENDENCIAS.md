@@ -865,3 +865,5 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verifica
 - Ordem 2 Alpha com extras (Atos I e II, fichas e históricos) gerado, auditado e **importado** (166 entradas, 76 imagens; conferido no banco).
 
 - Beta 1.1 do Ordem 2 investigado e **não processado**: páginas mapeadas, mas a diagramação nova (fontes) quebra a leitura de narração, pontos de interesse e criaturas. Detalhes e próximo passo em `ORDEM2.md`.
+
+- **Retomar:** auras dos dados só para o criador — plano e mapa do código em `PROXIMOS_PASSOS.md` ("Continuidade: auras dos dados"). Nada implementado ainda.

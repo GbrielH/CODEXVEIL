@@ -2377,3 +2377,35 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verifica
 - Ordem 2 Alpha com extras (Atos I e II, fichas e históricos) gerado, auditado e **importado** (166 entradas, 76 imagens; conferido no banco).
 
 - Beta 1.1 do Ordem 2 investigado e **não processado**: páginas mapeadas, mas a diagramação nova (fontes) quebra a leitura de narração, pontos de interesse e criaturas. Detalhes e próximo passo em `ORDEM2.md`.
+
+## Continuidade: auras dos dados (parada em 2026-11-12, retomar daqui)
+
+**Pedido do responsável:** em "Meus dados", poder escolher uma **aura** para o dado (ex.: aura
+vermelha emanando, aura elétrica, entre outras), **somente na conta do responsável**, como criador.
+
+**Estado:** só levantamento; nenhum código ou migração ainda. O que foi mapeado:
+
+- Esquema: `public.user_dice` (migração `20261031150000_user_dice.sql`) guarda `name`,
+  `image_path`, `number_color`, `font`, `color`; o visual vira `DiceLook`
+  (`packages/validation/src/profile.ts`, `diceLookSchema`). Consultas em
+  `packages/database/src/queries/dice.ts` (`listMyDice`, `saveDice`, `toSavedDice`).
+- Editor: `apps/web/src/app/(app)/meus-dados/dice-editor.tsx` (476 linhas) e página `page.tsx`.
+- Onde o dado aparece rolando: `components/dice/dice-table.tsx` (mesa grande, aplica o visual com
+  `applyDiceLook` de `dice-look.ts`) e `components/dice/dice-3d-overlay.tsx` (overlay em tela cheia).
+  O 3D é a biblioteca `@3d-dice/dice-box-threejs`.
+
+**Plano proposto:**
+
+1. **Migração nova:** coluna `user_dice.aura text` com `check (aura in ('blood','storm','frost',
+'arcane','shadow','holy'))` (nomes a confirmar) e `profiles.creator_features boolean not null
+default false` **sem grant de update** para `authenticated`. Gatilho em `user_dice` que recusa
+   `aura` não nula quando o dono não tem `creator_features`.
+2. **Ativar só para o responsável:** rodar uma vez, fora do Git, `update public.profiles set
+creator_features = true where id = <id do responsável>` (o e-mail **não** entra em migração
+   nem em arquivo, porque o repositório é público).
+3. **Validação e consultas:** `aura` em `diceLookSchema` e em `toSavedDice`/`saveDice`.
+4. **Editor:** seletor de aura visível só quando o perfil tem `creator_features`, com prévia.
+5. **Efeito:** camada CSS/canvas atrás do dado na mesa (`dice-table.tsx`) e no overlay 3D,
+   com cor e partículas por tipo (brilho pulsante vermelho, faíscas elétricas etc.); desligada com
+   movimento reduzido.
+6. Testes de RLS: dono sem a flag não grava aura; com a flag grava; ninguém liga a própria flag.
