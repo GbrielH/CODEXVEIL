@@ -26,6 +26,13 @@ export function blockPreview(block: StoredSessionBlock, references: BlockReferen
       return [references.characters[content.data.characterId]?.name, content.data.note].filter(Boolean).join(': ');
     case 'content_ref':
       return [content.data.kind === 'session' ? references.sessions[content.data.targetId]?.title : references.notes[content.data.targetId]?.title, content.data.note].filter(Boolean).join(': ');
+    case 'check':
+      return [
+        [content.data.skill, content.data.dc !== null ? `DT ${content.data.dc}` : null].filter(Boolean).join(' · '),
+        content.data.result,
+      ]
+        .filter(Boolean)
+        .join(': ');
     default:
       return '';
   }

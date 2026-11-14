@@ -27,6 +27,7 @@ export const SESSION_BLOCK_TYPES = [
   'monster_ref',
   'character_ref',
   'content_ref',
+  'check',
 ] as const;
 export type SessionBlockType = (typeof SESSION_BLOCK_TYPES)[number];
 
@@ -57,6 +58,12 @@ export interface SessionBlockDataMap {
   monster_ref: { creatureId: string; note: string | null };
   character_ref: { characterId: string; note: string | null };
   content_ref: { kind: ContentRefKind; targetId: string; note: string | null };
+  /**
+   * Teste do roteiro: o mestre rola (se houver `expression`) e libera o que se descobre
+   * (`result`) ao passar. Sem nota: liberado, o bloco inteiro vai aos jogadores; observações do
+   * mestre ficam em blocos `gm_note`.
+   */
+  check: { skill: string; dc: number | null; expression: string | null; result: string };
 }
 
 export type SessionBlockContent = {
@@ -85,6 +92,7 @@ export const blockTypeLabels: Record<SessionBlockType, string> = {
   monster_ref: 'Referência a monstro',
   character_ref: 'Referência a personagem',
   content_ref: 'Referência a conteúdo',
+  check: 'Teste (perícia e achado)',
 };
 
 /** Notas privadas do mestre nunca podem ser públicas (garantido também por CHECK no banco). */
@@ -123,6 +131,8 @@ export function createBlockContent(type: SessionBlockType): SessionBlockContent 
       return { type, data: { characterId: '', note: null } };
     case 'content_ref':
       return { type, data: { kind: 'session', targetId: '', note: null } };
+    case 'check':
+      return { type, data: { skill: '', dc: null, expression: null, result: '' } };
   }
 }
 

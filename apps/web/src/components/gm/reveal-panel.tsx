@@ -2,8 +2,9 @@
 
 import { publishSession, updateSessionBlock } from '@codexveil/database';
 import type { SharedVisibility } from '@codexveil/domain';
-import { Eye, EyeOff, Megaphone } from 'lucide-react';
+import { Dices, Eye, EyeOff, Megaphone, Search } from 'lucide-react';
 import { useState } from 'react';
+import { useDice } from '@/components/dice/dice-roller';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { useToast } from '@/components/ui/toast';
@@ -17,6 +18,8 @@ export interface RevealBlock {
   preview: string;
   imageUrl: string | null;
   visibility: SharedVisibility;
+  /** Bloco de Teste: perícia, DT e rolagem do botão do mestre. */
+  check?: { skill: string; dc: number | null; expression: string | null };
 }
 
 interface RevealPanelProps {
@@ -40,6 +43,21 @@ export function RevealPanel({
   const [blocks, setBlocks] = useState(initial);
   const [published, setPublished] = useState(isPublished);
   const [busy, setBusy] = useState<string | null>(null);
+  const dice = useDice();
+  const [rolls, setRolls] = useState<Record<string, { total: number; passed: boolean | null }>>({});
+
+  // Rola o teste em segredo (só os mestres veem no mural) e compara com a DT.
+  const rollCheck = async (block: RevealBlock) => {
+    const check = block.check;
+    if (!dice || !check?.expression) return;
+    const label = `Teste: ${check.skill || 'sem perícia'}${check.dc !== null ? ` (DT ${check.dc})` : ''}`;
+    const shown = await dice.roll({ expression: check.expression, label, mode: 'normal', secret: true });
+    if (!shown) return;
+    setRolls((current) => ({
+      ...current,
+      [block.id]: { total: shown.total, passed: check.dc === null ? null : shown.total >= check.dc },
+    }));
+  };
 
   const toggle = async (block: RevealBlock) => {
     const next: SharedVisibility = block.visibility === 'gm' ? 'members' : 'gm';
@@ -105,9 +123,35 @@ export function RevealPanel({
                   />
                 ) : null}
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-fg-muted">{block.label}</p>
+                  <p className="flex items-center gap-1 text-xs text-fg-muted">
+                    {block.check ? <Search className="h-3.5 w-3.5" aria-hidden="true" /> : null}
+                    {block.label}
+                  </p>
                   <p className="line-clamp-2 text-sm">{block.preview || '—'}</p>
+                  {rolls[block.id] ? (
+                    <p
+                      className={cx(
+                        'mt-1 text-xs font-semibold',
+                        rolls[block.id]!.passed === null ? 'text-fg-secondary' : rolls[block.id]!.passed ? 'text-verdigris-300' : 'text-ember-300',
+                      )}
+                    >
+                      Rolou {rolls[block.id]!.total}
+                      {rolls[block.id]!.passed === null ? '' : rolls[block.id]!.passed ? ' · passou' : ' · não passou'}
+                    </p>
+                  ) : null}
                 </div>
+                {block.check?.expression && dice ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={!isActive}
+                    icon={<Dices className="h-4 w-4" aria-hidden="true" />}
+                    onClick={() => void rollCheck(block)}
+                    title={`Rolar ${block.check.expression} em segredo`}
+                  >
+                    Rolar
+                  </Button>
+                ) : null}
                 <Button
                   size="sm"
                   variant={open ? 'ghost' : 'secondary'}
@@ -122,7 +166,7 @@ export function RevealPanel({
                   }
                   onClick={() => void toggle(block)}
                 >
-                  {open ? 'Ocultar' : 'Liberar'}
+                  {open ? 'Ocultar' : block.check ? 'Liberar achado' : 'Liberar'}
                 </Button>
               </li>
             );

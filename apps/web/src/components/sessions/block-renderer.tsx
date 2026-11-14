@@ -7,6 +7,7 @@ import {
   Info,
   Lock,
   ScrollText,
+  Search,
   Skull,
   TriangleAlert,
   UserRound,
@@ -105,6 +106,27 @@ export function BlockRenderer({
           </div>
         );
         break;
+      case 'check': {
+        const test = [content.data.skill || 'Teste', content.data.dc !== null ? `DT ${content.data.dc}` : null]
+          .filter(Boolean)
+          .join(' · ');
+        body = (
+          <aside className="rounded-md border border-parchment-400/40 bg-parchment-200/5 px-4 py-3" aria-label={`Achado: ${test}`}>
+            <div className="flex gap-3">
+              <span className="mt-0.5 shrink-0 text-fg-accent">
+                <Search className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wider text-fg-muted">Achado · {test}</p>
+                <p className="mt-1 whitespace-pre-line font-serif leading-relaxed text-fg">
+                  {content.data.result || 'Sem texto do achado.'}
+                </p>
+              </div>
+            </div>
+          </aside>
+        );
+        break;
+      }
       case 'callout': {
         const style = calloutStyles[content.data.tone];
         body = (

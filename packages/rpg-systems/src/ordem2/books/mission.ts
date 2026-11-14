@@ -1,7 +1,9 @@
 /**
- * Converte uma missão pronta do pacote do livro em blocos de roteiro de sessão. Todos os blocos
- * ficam com o mestre (`gm`): a narração vira caixa "Leia em voz alta", os pontos de interesse
- * viram a lista de perícias e DTs com a descrição contextual em nota privada.
+ * Converte uma missão pronta do pacote do livro em blocos de roteiro de sessão, pronta para mestrar:
+ * tudo nasce oculto (`gm`), mas o que é dos jogadores sai marcado "para liberar na mesa"
+ * (`revealable`): narração ("Leia em voz alta"), descrição básica de cada ponto de interesse,
+ * mapas e cada achado. Cada linha "perícia · DT" vira um bloco de Teste (o mestre libera o achado
+ * de quem passar). A descrição contextual e os bastidores ficam em notas privadas.
  */
 import type { SessionBlockContent, SharedVisibility } from '@codexveil/domain';
 import type { Ordem2BookEntry } from './pack';
@@ -9,11 +11,13 @@ import type { Ordem2BookEntry } from './pack';
 export interface Ordem2MissionBlock {
   visibility: SharedVisibility;
   content: SessionBlockContent;
+  /** Aparece no painel "Liberar" da aba Sessão. */
+  revealable?: boolean;
 }
 
 const TEXT_MAX = 19_000;
-const ITEM_MAX = 1_900;
 const TITLE_MAX = 200;
+const SKILL_MAX = 80;
 
 function clip(text: string, max: number): string {
   return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
@@ -39,6 +43,8 @@ function chunks(text: string): string[] {
 }
 
 const gm = (content: SessionBlockContent): Ordem2MissionBlock => ({ visibility: 'gm', content });
+/** Oculto até o mestre liberar na mesa. */
+const toReveal = (content: SessionBlockContent): Ordem2MissionBlock => ({ visibility: 'gm', content, revealable: true });
 
 /** Texto em Markdown simples (títulos `#`, citações `>`) em blocos de roteiro. */
 export function ordem2MarkdownBlocks(markdown: string): Ordem2MissionBlock[] {
@@ -69,7 +75,7 @@ export function ordem2MarkdownBlocks(markdown: string): Ordem2MissionBlock[] {
       const text = part.replace(/^>\s?/gm, '');
       for (const piece of chunks(text))
         blocks.push(
-          gm({ type: 'callout', data: { tone: 'lore', title: 'Leia em voz alta', text: piece } }),
+          toReveal({ type: 'callout', data: { tone: 'lore', title: 'Leia em voz alta', text: piece } }),
         );
       continue;
     }
@@ -96,23 +102,22 @@ export function ordem2PoiBlocks(entry: Ordem2BookEntry<'point_of_interest'>): Or
   ];
   if (data.description)
     blocks.push(
-      gm({
+      toReveal({
         type: 'callout',
-        data: { tone: 'info', title: 'Descrição básica', text: clip(data.description, TEXT_MAX) },
+        data: { tone: 'info', title: entry.name, text: clip(data.description, TEXT_MAX) },
       }),
     );
-  if (data.rows.length)
+  // Cada linha vira um Teste: o mestre vê perícia e DT e libera o achado para quem passar. A
+  // restrição ("apenas Victor") entra junto da perícia, para o mestre lembrar na hora.
+  for (const row of data.rows)
     blocks.push(
-      gm({
-        type: 'list',
+      toReveal({
+        type: 'check',
         data: {
-          style: 'bulleted',
-          items: data.rows.map((row) =>
-            clip(
-              `${row.skill} · DT ${row.dc}: ${row.text}${row.requirement ? ` (${row.requirement})` : ''}`,
-              ITEM_MAX,
-            ),
-          ),
+          skill: clip(row.requirement ? `${row.skill} (${row.requirement})` : row.skill, SKILL_MAX),
+          dc: row.dc,
+          expression: null,
+          result: clip(row.text, TEXT_MAX),
         },
       }),
     );
@@ -149,7 +154,7 @@ export function ordem2MissionBlocks(input: Ordem2MissionInput): Ordem2MissionBlo
       const map = find('map', mapKey);
       if (path)
         blocks.push(
-          gm({
+          toReveal({
             type: 'image',
             data: { path, alt: map?.name ?? 'Mapa', caption: map ? clip(map.name, 500) : null },
           }),

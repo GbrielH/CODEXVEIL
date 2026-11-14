@@ -423,3 +423,7 @@ token), política de leitura dos retratos atualizada, e `can_read/can_write_camp
 Migrações de 2026-11-11: `list_character_token_images` (imagem do token sem abrir a ficha) e
 `private.can_read_character_image`, que substitui as políticas de leitura de retrato/token no
 Storage (antes elas dependiam do RLS de `characters` e falhavam com as fichas ocultas).
+
+Migração `20261114100000_session_check_block.sql`: valor `check` em `session_block_type`, validação
+em `private.is_valid_block_data` (`skill`, `dc`, `expression`, `result`; recusa `note`) e
+`grant insert (revealable)` em `session_blocks`.

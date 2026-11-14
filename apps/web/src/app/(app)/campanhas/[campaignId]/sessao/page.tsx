@@ -8,6 +8,7 @@ import {
   type StoredSessionBlock,
 } from '@codexveil/database';
 import type { Metadata, Route } from 'next';
+import { DiceProvider } from '@/components/dice/dice-roller';
 import { RevealPanel } from '@/components/gm/reveal-panel';
 import { BlockRenderer } from '@/components/sessions/block-renderer';
 import { ButtonLink } from '@/components/ui/button';
@@ -104,12 +105,14 @@ export default async function SessionTabPage({
       ) : null}
 
       {isGm && current ? (
-        <RevealPanel
-          sessionId={current.id}
-          isPublished={current.isPublished}
-          isActive={campaign.status === 'active'}
-          blocks={reveal}
-        />
+        <DiceProvider campaignId={campaign.id} characterId={null} enabled={campaign.status === 'active'}>
+          <RevealPanel
+            sessionId={current.id}
+            isPublished={current.isPublished}
+            isActive={campaign.status === 'active'}
+            blocks={reveal}
+          />
+        </DiceProvider>
       ) : null}
 
       {current ? (

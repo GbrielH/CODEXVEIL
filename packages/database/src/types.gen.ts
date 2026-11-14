@@ -3624,7 +3624,7 @@ export type Database = {
       friendship_status: 'pending' | 'accepted';
       item_category: 'weapon' | 'armor' | 'gear' | 'consumable' | 'tool' | 'treasure' | 'other';
       resource_recovery: 'manual' | 'short_rest' | 'long_rest';
-      session_block_type: 'paragraph' | 'heading' | 'subheading' | 'callout' | 'gm_note' | 'image' | 'divider' | 'list' | 'checklist' | 'npc_ref' | 'monster_ref' | 'character_ref' | 'content_ref';
+      session_block_type: 'paragraph' | 'heading' | 'subheading' | 'callout' | 'gm_note' | 'image' | 'divider' | 'list' | 'checklist' | 'npc_ref' | 'monster_ref' | 'character_ref' | 'content_ref' | 'check';
       session_status: 'planned' | 'in_progress' | 'completed';
     };
     CompositeTypes: {
@@ -3654,7 +3654,7 @@ export const Constants = {
       friendship_status: ['pending', 'accepted'],
       item_category: ['weapon', 'armor', 'gear', 'consumable', 'tool', 'treasure', 'other'],
       resource_recovery: ['manual', 'short_rest', 'long_rest'],
-      session_block_type: ['paragraph', 'heading', 'subheading', 'callout', 'gm_note', 'image', 'divider', 'list', 'checklist', 'npc_ref', 'monster_ref', 'character_ref', 'content_ref'],
+      session_block_type: ['paragraph', 'heading', 'subheading', 'callout', 'gm_note', 'image', 'divider', 'list', 'checklist', 'npc_ref', 'monster_ref', 'character_ref', 'content_ref', 'check'],
       session_status: ['planned', 'in_progress', 'completed'],
     },
   },

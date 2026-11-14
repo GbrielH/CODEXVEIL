@@ -9,6 +9,7 @@ import { ZoomableImage } from '@/components/ui/zoomable-image';
 import { CalendarClock, EyeOff } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
+import { CreatureSheet } from '@/components/library/creature-sheet';
 import { BlockRenderer } from '@/components/sessions/block-renderer';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -125,16 +126,37 @@ export default async function SessionReaderPage({
       ) : (
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
           <Divider label="Roteiro" />
-          {blocks.map((block) => (
-            <BlockRenderer
-              key={block.id}
-              block={block}
-              campaignId={campaign.id}
-              references={references}
-              imageUrls={imageUrls}
-              showVisibility={isGm}
-            />
-          ))}
+          {blocks.map((block) => {
+            const rendered = (
+              <BlockRenderer
+                key={block.id}
+                block={block}
+                campaignId={campaign.id}
+                references={references}
+                imageUrls={imageUrls}
+                showVisibility={isGm}
+              />
+            );
+            // Mestre: onde o roteiro cita um inimigo ou NPC, a ficha completa vem logo abaixo.
+            const creatureId =
+              isGm && (block.content?.type === 'monster_ref' || block.content?.type === 'npc_ref')
+                ? block.content.data.creatureId
+                : '';
+            if (!creatureId) return rendered;
+            return (
+              <div key={block.id} className="flex flex-col gap-2">
+                {rendered}
+                <details open className="rounded-md border border-line bg-raised/60 px-3 py-2">
+                  <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-fg-muted">
+                    Ficha
+                  </summary>
+                  <div className="mt-2">
+                    <CreatureSheet client={supabase} campaign={campaign} creatureId={creatureId} />
+                  </div>
+                </details>
+              </div>
+            );
+          })}
         </div>
       )}
       {moments ? (

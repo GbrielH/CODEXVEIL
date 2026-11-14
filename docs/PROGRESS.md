@@ -988,3 +988,24 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verifica
 - Beta 1.1 do Ordem 2 investigado e **não processado**: páginas mapeadas, mas a diagramação nova (fontes) quebra a leitura de narração, pontos de interesse e criaturas. Detalhes e próximo passo em `ORDEM2.md`.
 
 - **Retomar:** auras dos dados só para o criador — plano e mapa do código em `PROXIMOS_PASSOS.md` ("Continuidade: auras dos dados"). Nada implementado ainda.
+
+### 2026-11-14 — mestrar a sessão: testes com achado, liberação e fichas no roteiro
+
+Pedido do QA (Ordem Paranormal 2), feito para **todos os sistemas**:
+
+- **Bloco novo "Teste"** (`check`: perícia, DT, rolagem do mestre, achado). No editor do roteiro
+  entra como qualquer bloco. Na aba **Sessão**, o painel de liberação mostra **Rolar** (rola em
+  segredo, só os mestres veem no mural, e diz se passou da DT) e **Liberar achado**. O jogador vê
+  um quadro "Achado · Perícia · DT" com o que descobriu (site e app). Sem campo de nota: liberado,
+  o bloco inteiro vai ao jogador; observações do mestre ficam em notas privadas.
+- **Missão do Ordem pronta para mestrar:** narração ("Leia em voz alta"), descrição de cada ponto
+  de interesse, mapas e cada achado saem marcados "para liberar na mesa"; cada linha "perícia ·
+  DT" vira um bloco de Teste; o contexto continua em nota privada. Missões já montadas antes
+  continuam no formato antigo: para o novo, usar "Usar esta missão na campanha" de novo.
+- **Fichas no roteiro:** na leitura do roteiro, o mestre vê a ficha completa logo abaixo de cada
+  NPC ou monstro (`CreatureSheet`: D&D, Tormenta20, Assimilação e Ordem 2).
+- Migração `20261114100000_session_check_block.sql` (tipo `check`, validação no banco e
+  `grant insert (revealable)` — a criação de blocos já marcados era recusada). Aplicada.
+
+Verificações: `pnpm check` (20 tarefas; banco 252 testes, incluindo `check-block.test.ts`;
+rpg-systems 295) e `pnpm build` passaram. Não verificado no navegador nem no celular.

@@ -326,7 +326,7 @@ export async function createSessionBlocks(
     sessionId: string;
     campaignId: string;
     startPosition: number;
-    blocks: readonly { visibility: SharedVisibility; content: SessionBlockContent }[];
+    blocks: readonly { visibility: SharedVisibility; content: SessionBlockContent; revealable?: boolean }[];
   },
 ): Promise<number> {
   const rows = params.blocks.map((block, index) => ({
@@ -337,6 +337,7 @@ export async function createSessionBlocks(
     visibility: block.visibility,
     data: block.content.data as Json,
     schema_version: BLOCK_SCHEMA_VERSION,
+    revealable: block.revealable ?? false,
   }));
   for (let start = 0; start < rows.length; start += 200) {
     const { error } = await client.from('session_blocks').insert(rows.slice(start, start + 200));

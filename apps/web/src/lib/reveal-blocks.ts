@@ -19,5 +19,8 @@ export async function loadRevealBlocks(client: CodexveilClient, blocks: readonly
     preview: blockPreview(block, references),
     imageUrl: block.content?.type === 'image' ? (imageUrls[block.content.data.path] ?? null) : null,
     visibility: block.visibility,
+    ...(block.content?.type === 'check'
+      ? { check: { skill: block.content.data.skill, dc: block.content.data.dc, expression: block.content.data.expression } }
+      : {}),
   }));
 }

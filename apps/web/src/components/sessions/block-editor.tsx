@@ -650,6 +650,61 @@ function ContentFields(props: ContentFieldsProps) {
         </div>
       );
     }
+    case 'check': {
+      const set = (patch: Partial<typeof content.data>) =>
+        onChange({ type: 'check', data: { ...content.data, ...patch } });
+      return (
+        <div className="flex flex-col gap-3">
+          <div className="grid gap-3 sm:grid-cols-[1fr_6rem_9rem]">
+            <Labeled label="Perícia ou atributo" htmlFor={`${id}-skill`}>
+              <input
+                id={`${id}-skill`}
+                autoFocus={autoFocus}
+                value={content.data.skill}
+                maxLength={80}
+                placeholder="Ex.: Percepção"
+                onChange={(event) => set({ skill: event.target.value })}
+                className={cx(inputClass, 'h-11')}
+              />
+            </Labeled>
+            <Labeled label="DT" htmlFor={`${id}-dc`}>
+              <input
+                id={`${id}-dc`}
+                inputMode="numeric"
+                value={content.data.dc ?? ''}
+                placeholder="—"
+                onChange={(event) => {
+                  const digits = event.target.value.replace(/\D/g, '').slice(0, 3);
+                  set({ dc: digits ? Math.min(100, Number(digits)) : null });
+                }}
+                className={cx(inputClass, 'h-11')}
+              />
+            </Labeled>
+            <Labeled label="Rolagem do mestre" htmlFor={`${id}-expression`}>
+              <input
+                id={`${id}-expression`}
+                value={content.data.expression ?? ''}
+                maxLength={60}
+                placeholder="Ex.: 1d20"
+                onChange={(event) => set({ expression: event.target.value.trim() ? event.target.value : null })}
+                className={cx(inputClass, 'h-11 font-mono')}
+              />
+            </Labeled>
+          </div>
+          <Labeled label="O que os jogadores descobrem ao passar" htmlFor={`${id}-result`}>
+            <textarea
+              id={`${id}-result`}
+              value={content.data.result}
+              rows={4}
+              maxLength={20000}
+              placeholder="Aparece num quadro para os jogadores quando você liberar o achado. Observações só suas: use uma nota privada."
+              onChange={(event) => set({ result: event.target.value })}
+              className={inputClass}
+            />
+          </Labeled>
+        </div>
+      );
+    }
   }
 }
 

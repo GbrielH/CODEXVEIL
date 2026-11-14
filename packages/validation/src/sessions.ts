@@ -96,6 +96,15 @@ const blockSchemas = [
       note: shortNote,
     }),
   }),
+  z.object({
+    type: z.literal('check'),
+    data: z.object({
+      skill: z.string().trim().max(80),
+      dc: z.number().int().min(0).max(100).nullable(),
+      expression: z.string().trim().max(60).nullable(),
+      result: blockText,
+    }),
+  }),
 ] as const;
 
 export const sessionBlockContentSchema = z.discriminatedUnion('type', blockSchemas);

@@ -226,7 +226,13 @@ describe('Ordem Paranormal 2: missão pronta em roteiro', () => {
     expect(types).toContain('callout');
     expect(types).toContain('monster_ref');
     expect(types).toContain('image');
-    expect(types).toContain('list');
+    expect(types).toContain('check');
     expect(types).toContain('gm_note');
+    // Pronto para mestrar: narração, descrição, mapa e achados saem marcados para liberar.
+    const revealable = blocks.filter((block) => block.revealable).map((block) => block.content.type);
+    expect(revealable).toEqual(expect.arrayContaining(['callout', 'image', 'check']));
+    expect(blocks.filter((block) => block.content.type === 'gm_note').every((block) => !block.revealable)).toBe(true);
+    const check = blocks.find((block) => block.content.type === 'check');
+    expect(check?.content).toEqual({ type: 'check', data: { skill: 'Percepção', dc: 6, expression: null, result: 'Há mercadorias.' } });
   });
 });

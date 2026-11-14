@@ -2409,3 +2409,24 @@ creator_features = true where id = <id do responsável>` (o e-mail **não** entr
    com cor e partículas por tipo (brilho pulsante vermelho, faíscas elétricas etc.); desligada com
    movimento reduzido.
 6. Testes de RLS: dono sem a flag não grava aura; com a flag grava; ninguém liga a própria flag.
+
+### 2026-11-14 — mestrar a sessão: testes com achado, liberação e fichas no roteiro
+
+Pedido do QA (Ordem Paranormal 2), feito para **todos os sistemas**:
+
+- **Bloco novo "Teste"** (`check`: perícia, DT, rolagem do mestre, achado). No editor do roteiro
+  entra como qualquer bloco. Na aba **Sessão**, o painel de liberação mostra **Rolar** (rola em
+  segredo, só os mestres veem no mural, e diz se passou da DT) e **Liberar achado**. O jogador vê
+  um quadro "Achado · Perícia · DT" com o que descobriu (site e app). Sem campo de nota: liberado,
+  o bloco inteiro vai ao jogador; observações do mestre ficam em notas privadas.
+- **Missão do Ordem pronta para mestrar:** narração ("Leia em voz alta"), descrição de cada ponto
+  de interesse, mapas e cada achado saem marcados "para liberar na mesa"; cada linha "perícia ·
+  DT" vira um bloco de Teste; o contexto continua em nota privada. Missões já montadas antes
+  continuam no formato antigo: para o novo, usar "Usar esta missão na campanha" de novo.
+- **Fichas no roteiro:** na leitura do roteiro, o mestre vê a ficha completa logo abaixo de cada
+  NPC ou monstro (`CreatureSheet`: D&D, Tormenta20, Assimilação e Ordem 2).
+- Migração `20261114100000_session_check_block.sql` (tipo `check`, validação no banco e
+  `grant insert (revealable)` — a criação de blocos já marcados era recusada). Aplicada.
+
+Verificações: `pnpm check` (20 tarefas; banco 252 testes, incluindo `check-block.test.ts`;
+rpg-systems 295) e `pnpm build` passaram. Não verificado no navegador nem no celular.

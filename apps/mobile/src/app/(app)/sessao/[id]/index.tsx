@@ -64,6 +64,16 @@ function BlockView({
           <AppText variant="serif">{content.data.text}</AppText>
         </View>
       );
+    case 'check': {
+      // Achado de um teste, liberado pelo mestre.
+      const test = [content.data.skill || 'Teste', content.data.dc !== null ? `DT ${content.data.dc}` : null].filter(Boolean).join(' · ');
+      return (
+        <View style={{ backgroundColor: colors.raised, borderRadius: radii.md, padding: 14, gap: 4, borderWidth: 1, borderColor: colors.parchmentEdge }}>
+          <AppText variant="eyebrow">Achado · {test}</AppText>
+          <AppText variant="serif">{content.data.result || 'Sem texto do achado.'}</AppText>
+        </View>
+      );
+    }
     case 'callout':
       return (
         <View
