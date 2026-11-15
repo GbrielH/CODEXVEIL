@@ -418,6 +418,219 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
       });
     tone(kit, 0, { type: 'sawtooth', freq: 65, attack: 0.4, decay: 2.2, peak: 0.15, filter: 250 });
   },
+  cosmic: (kit) => {
+    // Vidro rachando, zumbido grave do vazio e brilho distante.
+    for (const at of [0, 0.05, 0.12])
+      noiseBurst(kit, at, { type: 'highpass', freq: 3000, attack: 0.002, decay: 0.12, peak: 0.6 });
+    tone(kit, 0, { type: 'sine', freq: 40, attack: 0.8, decay: 2.6, peak: 0.45 });
+    tone(kit, 0, { type: 'sine', freq: 61, attack: 0.8, decay: 2.6, peak: 0.3, detune: 8 });
+    noiseBurst(kit, 0.1, {
+      type: 'bandpass',
+      freq: 400,
+      toFreq: 3000,
+      q: 2,
+      attack: 1.2,
+      decay: 0.3,
+      peak: 0.25,
+    });
+    for (let i = 0; i < 6; i++)
+      tone(kit, 0.4 + i * 0.3, {
+        type: 'sine',
+        freq: 1500 + Math.random() * 1500,
+        attack: 0.3,
+        decay: 1.2,
+        peak: 0.05,
+      });
+  },
+  tarot: (kit) => {
+    // Cartas embaralhando, três viradas e um sino.
+    for (let i = 0; i < 20; i++)
+      noiseBurst(kit, i * 0.03, {
+        type: 'bandpass',
+        freq: 2500,
+        q: 3,
+        attack: 0.002,
+        decay: 0.025,
+        peak: 0.35,
+      });
+    for (const at of [0.9, 1.2, 1.5])
+      noiseBurst(kit, at, {
+        type: 'bandpass',
+        freq: 1200,
+        toFreq: 3000,
+        q: 1.5,
+        attack: 0.01,
+        decay: 0.12,
+        peak: 0.45,
+      });
+    for (const [freq, peak] of [
+      [1318.5, 0.25],
+      [2637, 0.1],
+      [3951, 0.05],
+    ] as const)
+      tone(kit, 1.6, { type: 'sine', freq, attack: 0.005, decay: 2, peak });
+  },
+  glitch: (kit) => {
+    // Bipes digitais aleatórios, chiado e uma queda de energia.
+    for (let i = 0; i < 14; i++)
+      tone(kit, i * 0.06, {
+        type: 'square',
+        freq: 200 + Math.random() * 1800,
+        attack: 0.003,
+        decay: 0.05,
+        peak: 0.12,
+      });
+    for (const at of [0.3, 0.9, 1.6])
+      noiseBurst(kit, at, { type: 'highpass', freq: 1500, attack: 0.005, decay: 0.15, peak: 0.35 });
+    for (let i = 0; i < 8; i++)
+      tone(kit, 0.6 + i * 0.05, {
+        type: 'square',
+        freq: i % 2 ? 1200 : 2400,
+        attack: 0.002,
+        decay: 0.04,
+        peak: 0.08,
+      });
+    tone(kit, 1.2, {
+      type: 'sawtooth',
+      freq: 1200,
+      toFreq: 60,
+      attack: 0.01,
+      decay: 0.5,
+      peak: 0.25,
+      filter: 3000,
+    });
+  },
+  ink: (kit) => {
+    // Gongo, pincelada e respingos.
+    for (const [freq, decay, peak] of [
+      [98, 3, 0.45],
+      [148.5, 2.6, 0.2],
+      [223, 2, 0.12],
+      [311, 1.5, 0.08],
+    ] as const)
+      tone(kit, 0, { type: 'sine', freq, attack: 0.01, decay, peak });
+    noiseBurst(kit, 0.15, {
+      type: 'bandpass',
+      freq: 800,
+      toFreq: 2500,
+      q: 1.5,
+      attack: 0.3,
+      decay: 0.7,
+      peak: 0.35,
+    });
+    for (const at of [1.25, 1.32, 1.4])
+      noiseBurst(kit, at, { type: 'lowpass', freq: 500, attack: 0.005, decay: 0.08, peak: 0.5 });
+  },
+  abyss: (kit) => {
+    // Mergulho, bolhas e canto de baleia.
+    noiseBurst(kit, 0, {
+      type: 'lowpass',
+      freq: 600,
+      toFreq: 150,
+      attack: 0.02,
+      decay: 0.9,
+      peak: 0.8,
+    });
+    for (let i = 0; i < 14; i++) {
+      const freq = 300 + Math.random() * 400;
+      tone(kit, 0.2 + Math.random() * 2.2, {
+        type: 'sine',
+        freq,
+        toFreq: freq * 2,
+        attack: 0.005,
+        decay: 0.06,
+        peak: 0.15,
+      });
+    }
+    tone(kit, 0.6, { type: 'sine', freq: 280, toFreq: 520, attack: 0.6, decay: 1.2, peak: 0.25 });
+    tone(kit, 1.7, { type: 'sine', freq: 520, toFreq: 240, attack: 0.4, decay: 1.2, peak: 0.22 });
+  },
+  time: (kit) => {
+    // Tique-taque acelerando, o tempo voltando e uma badalada.
+    let at = 0;
+    for (let gap = 0.28; at < 2.6; gap = Math.max(0.05, gap * 0.85)) {
+      noiseBurst(kit, at, { type: 'highpass', freq: 4000, attack: 0.001, decay: 0.02, peak: 0.5 });
+      at += gap;
+    }
+    noiseBurst(kit, 0.4, {
+      type: 'bandpass',
+      freq: 600,
+      toFreq: 2400,
+      q: 1,
+      attack: 1.8,
+      decay: 0.2,
+      peak: 0.25,
+    });
+    for (const [freq, peak] of [
+      [523.25, 0.3],
+      [1046.5, 0.12],
+      [1568, 0.06],
+    ] as const)
+      tone(kit, 3.1, { type: 'sine', freq, attack: 0.005, decay: 2, peak });
+  },
+  gold: (kit) => {
+    // Arpejo de prêmio e moedas tilintando.
+    [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((freq, i) =>
+      tone(kit, i * 0.07, {
+        type: 'square',
+        freq,
+        attack: 0.005,
+        decay: 0.15,
+        peak: 0.12,
+        filter: 4000,
+      }),
+    );
+    for (let i = 0; i < 30; i++)
+      tone(kit, 0.3 + Math.random() * 2.5, {
+        type: 'sine',
+        freq: 2500 + Math.random() * 3000,
+        attack: 0.002,
+        decay: 0.12,
+        peak: 0.12,
+      });
+  },
+  frog: (kit) => {
+    // Coaxar, língua (fiu), volta e "gulp".
+    const croak = (at: number) => {
+      for (let i = 0; i < 6; i++)
+        tone(kit, at + i * 0.05, {
+          type: 'sawtooth',
+          freq: 110,
+          toFreq: 85,
+          attack: 0.005,
+          decay: 0.04,
+          peak: 0.35,
+          filter: 800,
+        });
+    };
+    croak(0.5);
+    tone(kit, 1.1, {
+      type: 'sine',
+      freq: 400,
+      toFreq: 1600,
+      attack: 0.005,
+      decay: 0.12,
+      peak: 0.3,
+    });
+    tone(kit, 1.25, {
+      type: 'sine',
+      freq: 1600,
+      toFreq: 300,
+      attack: 0.005,
+      decay: 0.3,
+      peak: 0.25,
+    });
+    tone(kit, 1.7, {
+      type: 'sine',
+      freq: 220,
+      toFreq: 70,
+      attack: 0.01,
+      decay: 0.25,
+      peak: 0.5,
+      filter: 600,
+    });
+    croak(2.3);
+  },
   fire: (kit) => {
     // Labareda subindo e estalos.
     noiseBurst(kit, 0, {

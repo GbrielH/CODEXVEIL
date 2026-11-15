@@ -10,6 +10,7 @@ import {
   type DiceLook,
 } from '@codexveil/validation';
 import { criticalAuraBurst, startDiceAura } from '@/components/dice/aura-fx';
+import { AuraIcon } from '@/components/dice/aura-icons';
 import { useAuraSound } from '@/components/dice/aura-sound';
 import { Brush, Eraser, ImagePlus, PaintBucket, Trash2, Undo2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -543,15 +544,7 @@ export function DiceEditor({
                         : 'border-line text-fg-secondary hover:bg-hover',
                     )}
                   >
-                    {key ? (
-                      <span
-                        className="h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{
-                          backgroundColor: diceAuraLabels[key].color,
-                          boxShadow: `0 0 8px ${diceAuraLabels[key].color}`,
-                        }}
-                      />
-                    ) : null}
+                    {key ? <AuraIcon aura={key} /> : null}
                     <span className="truncate">{key ? diceAuraLabels[key].name : 'Sem aura'}</span>
                   </button>
                 ))}

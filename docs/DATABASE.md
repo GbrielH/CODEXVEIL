@@ -435,3 +435,5 @@ Migração `20261115110000_dice_auras_more.sql`: auras novas em `user_dice.aura`
 Migração `20261115120000_dice_aura_no_dragon.sql`: remove a aura `dragon` (dados, preferências e liberações que a usavam ficam sem aura; as listas aceitas em `user_dice` e `dice_aura_grants` deixam de incluí-la).
 
 Migração `20261115130000_dice_aura_skeleton.sql`: aura `skeleton` aceita em `user_dice.aura` e `dice_aura_grants.aura`.
+
+Migração `20261115140000_dice_auras_eight.sql`: auras `cosmic`, `tarot`, `glitch`, `ink`, `abyss`, `time`, `gold` e `frog` aceitas em `user_dice.aura` e `dice_aura_grants.aura`.

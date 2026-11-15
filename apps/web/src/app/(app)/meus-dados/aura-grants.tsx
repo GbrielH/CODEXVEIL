@@ -4,6 +4,7 @@ import { DICE_AURAS, diceAuraLabels, type AvatarIcon, type DiceAura } from '@cod
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { useOptimistic, useState, useTransition } from 'react';
 import { Alert } from '@/components/ui/alert';
+import { AuraIcon } from '@/components/dice/aura-icons';
 import { Avatar } from '@/components/ui/avatar';
 import { cx } from '@/lib/cx';
 import { setAuraGrantAction } from './actions';
@@ -87,12 +88,7 @@ export function AuraGrants({ friends }: { friends: FriendGrants[] }) {
                       ? 'Nenhuma aura liberada'
                       : `${mine.length} de ${DICE_AURAS.length} auras`}
                     {mine.map((aura) => (
-                      <span
-                        key={aura}
-                        title={diceAuraLabels[aura].name}
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: diceAuraLabels[aura].color }}
-                      />
+                      <AuraIcon key={aura} aura={aura} className="h-3 w-3" />
                     ))}
                   </span>
                 </span>
@@ -129,13 +125,7 @@ export function AuraGrants({ friends }: { friends: FriendGrants[] }) {
                           >
                             {allowed ? <Check className="h-3 w-3" aria-hidden="true" /> : null}
                           </span>
-                          <span
-                            className="h-2.5 w-2.5 shrink-0 rounded-full"
-                            style={{
-                              backgroundColor: diceAuraLabels[aura].color,
-                              boxShadow: `0 0 8px ${diceAuraLabels[aura].color}`,
-                            }}
-                          />
+                          <AuraIcon aura={aura} />
                           <span className="truncate">{diceAuraLabels[aura].name}</span>
                         </button>
                       );

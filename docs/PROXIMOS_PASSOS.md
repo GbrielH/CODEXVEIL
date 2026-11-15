@@ -2522,3 +2522,18 @@ Verificações: `pnpm check` (20 tarefas; banco 255 testes) e `pnpm build` passa
 - Migração `20261115130000_dice_aura_skeleton.sql` (aplicada); teste de auras cobre a nova.
 
 Verificações: `pnpm check` (20 tarefas; banco 255 testes) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.
+
+### 2026-11-15 — oito auras novas e ícones das auras
+
+- **Olho Cósmico:** estrelas sugadas em espiral e disco girando no dado; no crítico a tela racha e um olho gigante abre, olha em volta e pisca.
+- **Cartas do Destino:** cartas de tarô girando no dado; no crítico três cartas caem e viram (A Lua, O Crítico, O Sol).
+- **Glitch:** pixels e 0/1 saindo do dado; no crítico a página "buga" (filtros rápidos), chuva de caracteres, faixas e chiado.
+- **Tinta:** pinceladas girando e respingos; no crítico um pincel pinta um ensō que respinga e escorre.
+- **Abissal:** bolhas e peixinhos luminosos; no crítico a tela enche de água, um tentáculo passa e a água esvazia.
+- **Tempo:** mostrador com ponteiro em volta do dado; no crítico tudo fica sépia, um relógio gigante gira para trás e a cor volta num clarão.
+- **Ouro:** moedas saltando; no crítico chove ouro e as moedas quicam e se empilham.
+- **Sapo Rei:** moscas zumbindo; no crítico um sapo de coroa sobe, pega o "CRÍTICO!" com a língua e engole.
+- Cada aura tem som próprio sintetizado e um **ícone** (`aura-icons.tsx`) usado no seletor e na liberação para amigos.
+- Migração `20261115140000_dice_auras_eight.sql` (aplicada).
+
+Verificações: `pnpm check` (20 tarefas; banco 255 testes) e `pnpm build` passaram. Efeitos e sons não vistos no navegador por mim.

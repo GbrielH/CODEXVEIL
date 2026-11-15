@@ -86,6 +86,14 @@ export const DICE_AURAS = [
   'forest',
   'fire',
   'skeleton',
+  'cosmic',
+  'tarot',
+  'glitch',
+  'ink',
+  'abyss',
+  'time',
+  'gold',
+  'frog',
 ] as const;
 export type DiceAura = (typeof DICE_AURAS)[number];
 export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> = {
@@ -99,6 +107,14 @@ export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> =
   forest: { name: 'Floresta', color: '#5fbf4a' },
   fire: { name: 'Fogo', color: '#ff7a1a' },
   skeleton: { name: 'Esqueleto', color: '#b8f0a0' },
+  cosmic: { name: 'Olho Cósmico', color: '#8f7bff' },
+  tarot: { name: 'Cartas do Destino', color: '#c38bd9' },
+  glitch: { name: 'Glitch', color: '#22ff99' },
+  ink: { name: 'Tinta', color: '#b9b2a6' },
+  abyss: { name: 'Abissal', color: '#2aa7e0' },
+  time: { name: 'Tempo', color: '#e6d3a3' },
+  gold: { name: 'Ouro', color: '#ffc83c' },
+  frog: { name: 'Sapo Rei', color: '#7ccf3c' },
 };
 
 export const diceFontLabels: Record<DiceFont, { name: string; family: string }> = {
