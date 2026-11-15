@@ -368,6 +368,56 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
       });
     }
   },
+  skeleton: (kit) => {
+    // Gargalhada ("ha-ha-ha" com vogal "a" pelos formantes) e ossos chacoalhando.
+    const { ctx, out } = kit;
+    const laughs = 7;
+    for (let i = 0; i < laughs; i++) {
+      const t = kit.now + 0.15 + i * 0.17;
+      const pitch = 210 - i * 12;
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(pitch * 1.15, t);
+      osc.frequency.exponentialRampToValueAtTime(pitch * 0.85, t + 0.14);
+      const gain = ctx.createGain();
+      envelope(gain, t, 0.015, 0.5, 0.13);
+      for (const [freq, q, level] of [
+        [800, 6, 1],
+        [1150, 8, 0.7],
+        [2600, 10, 0.25],
+      ] as const) {
+        const formant = ctx.createBiquadFilter();
+        formant.type = 'bandpass';
+        formant.frequency.value = freq;
+        formant.Q.value = q;
+        const mix = ctx.createGain();
+        mix.gain.value = level;
+        osc.connect(formant).connect(mix).connect(gain);
+      }
+      gain.connect(out);
+      osc.start(t);
+      osc.stop(t + 0.2);
+      // "H" do riso: sopro antes de cada sílaba.
+      noiseBurst(kit, 0.13 + i * 0.17, {
+        type: 'bandpass',
+        freq: 1500,
+        q: 1,
+        attack: 0.01,
+        decay: 0.05,
+        peak: 0.12,
+      });
+    }
+    for (let i = 0; i < 30; i++)
+      noiseBurst(kit, Math.random() * 1.8, {
+        type: 'bandpass',
+        freq: 1800 + Math.random() * 1500,
+        q: 6,
+        attack: 0.001,
+        decay: 0.04,
+        peak: 0.3,
+      });
+    tone(kit, 0, { type: 'sawtooth', freq: 65, attack: 0.4, decay: 2.2, peak: 0.15, filter: 250 });
+  },
   fire: (kit) => {
     // Labareda subindo e estalos.
     noiseBurst(kit, 0, {

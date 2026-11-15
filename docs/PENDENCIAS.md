@@ -973,3 +973,10 @@ navegador por mim.
 - **Dragão removido** a pedido (efeito ruim): migração `20261115120000_dice_aura_no_dragon.sql` (aplicada) limpa quem a usava.
 
 Verificações: `pnpm check` (20 tarefas; banco 255 testes) e `pnpm build` passaram. Desempenho e efeitos não medidos no navegador por mim.
+
+### 2026-11-15 — aura Esqueleto
+
+- Nova aura **Esqueleto**: no dado, chamas fantasmagóricas verde-pálidas, ossos girando para fora e caveirinhas-espírito subindo. No crítico, uma **caveira gigante gargalhando** no centro (o queixo bate, olhos verdes acesos), ossos chovendo e névoa verde; o "CRÍTICO!" desce para baixo da caveira. Som: gargalhada sintetizada ("ha-ha-ha" por formantes) com ossos chacoalhando.
+- Migração `20261115130000_dice_aura_skeleton.sql` (aplicada); teste de auras cobre a nova.
+
+Verificações: `pnpm check` (20 tarefas; banco 255 testes) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.

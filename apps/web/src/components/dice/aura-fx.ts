@@ -31,7 +31,9 @@ type Kind =
   | 'flame'
   | 'ember'
   | 'scale'
-  | 'feather';
+  | 'feather'
+  | 'bone'
+  | 'skull';
 
 interface Particle {
   kind: Kind;
@@ -169,6 +171,7 @@ const RGB: Record<DiceAura, string> = {
   gears: '230, 160, 60',
   forest: '110, 200, 80',
   fire: '255, 120, 30',
+  skeleton: '150, 255, 160',
 };
 
 /** Auras escuras (desenhadas por cima, sem somar luz). */
@@ -421,6 +424,38 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
       ctx.fill();
       break;
     }
+    case 'bone': {
+      // Osso girando.
+      ctx.globalAlpha = Math.min(1, fade * 2);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = 'rgba(236, 228, 205, 1)';
+      ctx.strokeStyle = 'rgba(70, 60, 45, 0.8)';
+      ctx.lineWidth = Math.max(0.8, p.size / 8);
+      const knob = p.size * 0.32;
+      ctx.beginPath();
+      ctx.rect(-p.size, -knob * 0.55, p.size * 2, knob * 1.1);
+      for (const [x, y] of [
+        [-p.size, -knob * 0.6],
+        [-p.size, knob * 0.6],
+        [p.size, -knob * 0.6],
+        [p.size, knob * 0.6],
+      ] as const) {
+        ctx.moveTo(x + knob, y);
+        ctx.arc(x, y, knob, 0, Math.PI * 2);
+      }
+      ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'skull': {
+      // Caveirinha-espírito subindo e sumindo.
+      ctx.globalAlpha = Math.sin(Math.PI * t) * 0.85;
+      ctx.translate(p.x + Math.sin(p.life * 0.08 + p.rot) * p.size * 0.6, p.y);
+      ctx.scale(p.size / 100, p.size / 100);
+      drawSkull(ctx, 0, false);
+      break;
+    }
     case 'feather': {
       // Pena de anjo caindo e balançando.
       ctx.globalAlpha = Math.min(1, fade * 2.5);
@@ -469,7 +504,9 @@ function stepParticles(ctx: CanvasRenderingContext2D, particles: Particle[], hei
       p.kind === 'splat' ||
       p.kind === 'gear' ||
       p.kind === 'leaf' ||
-      p.kind === 'feather';
+      p.kind === 'feather' ||
+      p.kind === 'bone' ||
+      p.kind === 'skull';
     ctx.globalCompositeOperation = dark ? 'source-over' : 'lighter';
     drawParticle(ctx, p);
   }
@@ -679,6 +716,27 @@ function emitAround(aura: DiceAura, o: AuraPoint, out: Particle[], power: number
             max: rand(50, 80),
             size: rand(1.2, 2) * s,
             color: '210, 255, 120',
+          }),
+        );
+      break;
+    case 'skeleton':
+      if (chance(0.22))
+        out.push(
+          particle('bone', from.x, from.y, {
+            vx: Math.cos(a) * rand(1, 2.2) * s,
+            vy: (Math.sin(a) - 1) * rand(1, 2) * s,
+            gravity: 0.08 * s,
+            vr: rand(-0.25, 0.25),
+            max: rand(35, 55),
+            size: rand(4, 6.5) * s,
+          }),
+        );
+      if (chance(0.08))
+        out.push(
+          particle('skull', from.x, from.y - o.r * 0.3, {
+            vy: -rand(0.8, 1.4) * s,
+            max: rand(55, 80),
+            size: rand(9, 14) * s,
           }),
         );
       break;
@@ -918,6 +976,98 @@ function grow(
 }
 
 /**
+ * Caveira (centro na origem, cerca de 200 unidades de altura). `jaw` abre a boca; `glow` acende
+ * os olhos verdes (na caveira grande do crítico).
+ */
+function drawSkull(ctx: CanvasRenderingContext2D, jaw: number, glow: boolean) {
+  const bone = 'rgba(236, 228, 205, 1)';
+  const dark = 'rgba(26, 21, 16, 1)';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(60, 50, 38, 0.9)';
+  ctx.lineWidth = 4;
+  // Boca aberta por trás do queixo.
+  if (jaw > 0) {
+    ctx.fillStyle = dark;
+    ctx.fillRect(-40, 84, 80, jaw + 10);
+  }
+  // Queixo (desce com a risada).
+  ctx.save();
+  ctx.translate(0, jaw);
+  ctx.fillStyle = bone;
+  ctx.beginPath();
+  ctx.moveTo(-56, 88);
+  ctx.quadraticCurveTo(-62, 140, 0, 146);
+  ctx.quadraticCurveTo(62, 140, 56, 88);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillRect(-40, 92, 80, 16);
+  ctx.beginPath();
+  for (let x = -40; x <= 40; x += 13.3) {
+    ctx.moveTo(x, 92);
+    ctx.lineTo(x, 108);
+  }
+  ctx.moveTo(-40, 92);
+  ctx.lineTo(40, 92);
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+  // Crânio e maçãs do rosto.
+  ctx.lineWidth = 4;
+  ctx.fillStyle = bone;
+  ctx.beginPath();
+  ctx.ellipse(0, -18, 96, 90, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-78, 8);
+  ctx.quadraticCurveTo(-74, 70, -46, 84);
+  ctx.lineTo(46, 84);
+  ctx.quadraticCurveTo(74, 70, 78, 8);
+  ctx.closePath();
+  ctx.fill();
+  // Dentes de cima.
+  ctx.fillRect(-42, 70, 84, 18);
+  ctx.beginPath();
+  for (let x = -42; x <= 42; x += 14) {
+    ctx.moveTo(x, 70);
+    ctx.lineTo(x, 88);
+  }
+  ctx.moveTo(-42, 88);
+  ctx.lineTo(42, 88);
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  // Órbitas e nariz.
+  ctx.fillStyle = dark;
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(side * 38, 6, 27, 31, side * 0.15, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.moveTo(0, 32);
+  ctx.lineTo(-12, 58);
+  ctx.quadraticCurveTo(0, 52, 12, 58);
+  ctx.closePath();
+  ctx.fill();
+  // Rachadura.
+  ctx.strokeStyle = 'rgba(60, 50, 38, 0.8)';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(18, -106);
+  ctx.lineTo(10, -84);
+  ctx.lineTo(24, -70);
+  ctx.lineTo(14, -52);
+  ctx.stroke();
+  // Olhos verdes acesos.
+  const eye = glowSprite(RGB.skeleton);
+  ctx.globalCompositeOperation = 'lighter';
+  const flicker = glow ? 0.8 + Math.random() * 0.2 : 0.7;
+  for (const side of [-1, 1]) blit(ctx, eye, side * 38, 8, glow ? 30 : 18, flicker);
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+/**
  * Camada onde os galhos são desenhados uma vez só, à medida que crescem (redesenhar milhares de
  * traços com brilho a cada quadro travava o PC).
  */
@@ -1043,7 +1193,7 @@ function magicCircle(
 }
 
 /** "CRÍTICO!" no centro da tela, no estilo do tema. */
-function criticalText(aura: DiceAura, durationMs: number) {
+function criticalText(aura: DiceAura, durationMs: number, top = '50%') {
   const color = diceAuraLabels[aura].color;
   const element = document.createElement('div');
   element.setAttribute('aria-hidden', 'true');
@@ -1052,7 +1202,7 @@ function criticalText(aura: DiceAura, durationMs: number) {
   Object.assign(element.style, {
     position: 'fixed',
     left: '50%',
-    top: '50%',
+    top,
     transform: 'translate(-50%, -50%)',
     zIndex: '121',
     pointerEvents: 'none',
@@ -1172,7 +1322,8 @@ export function criticalAuraBurst(
 ): void {
   if (reducedMotion()) return;
   const durationMs = options.durationMs ?? 3600;
-  if (options.text !== false) criticalText(aura, durationMs - 400);
+  if (options.text !== false)
+    criticalText(aura, durationMs - 400, aura === 'skeleton' ? '80%' : '50%');
   if (options.sound !== false) playCriticalSound(aura);
   if (aura === 'frost') frozenGlass(durationMs);
   const canvas = overlay(null);
@@ -1511,6 +1662,38 @@ export function criticalAuraBurst(
               }),
             );
           break;
+        case 'skeleton':
+          // Ossos chovendo e névoa verde subindo.
+          if (Math.random() < 0.35)
+            particles.push(
+              particle('bone', rand(0, width), -30, {
+                vx: rand(-1, 1),
+                vy: rand(3, 6),
+                gravity: 0.12,
+                vr: rand(-0.2, 0.2),
+                max: 220,
+                size: rand(10, 20),
+              }),
+            );
+          for (let i = 0; i < 2; i++)
+            particles.push(
+              particle('wisp', rand(0, width), height + 20, {
+                vx: rand(-0.4, 0.4),
+                vy: -rand(1.5, 3.5),
+                max: rand(80, 130),
+                size: rand(40, 80),
+                color,
+              }),
+            );
+          if (Math.random() < 0.06)
+            particles.push(
+              particle('skull', rand(width * 0.05, width * 0.95), height + 30, {
+                vy: -rand(2, 3.5),
+                max: 160,
+                size: rand(40, 70),
+              }),
+            );
+          break;
         case 'fire': {
           // Fogo subindo pela parte de baixo da tela.
           const count = 9;
@@ -1583,6 +1766,20 @@ export function criticalAuraBurst(
       if (local < 0) continue;
       const grow = Math.min(1, local / 0.5);
       magicCircle(ctx, c.layers, c.x, c.y, 0.6 + 0.4 * grow, time, presence * grow);
+    }
+    if (aura === 'skeleton') {
+      // Caveira gigante no centro, gargalhando (o queixo bate) com olhos verdes.
+      const size = Math.min(width, height) * 0.0026;
+      const pop = Math.min(1, elapsed / 250);
+      const laugh = time > 0.25 && time < durationMs / 1000 - 0.6;
+      const jaw = laugh ? Math.abs(Math.sin(time * 15)) * 22 : 0;
+      ctx.save();
+      ctx.globalAlpha = presence;
+      ctx.translate(width / 2, height * 0.4 + (laugh ? Math.sin(time * 15) * 4 : 0));
+      ctx.rotate(laugh ? Math.sin(time * 7.5) * 0.07 : 0);
+      ctx.scale(size * (0.5 + 0.5 * pop), size * (0.5 + 0.5 * pop));
+      drawSkull(ctx, jaw, true);
+      ctx.restore();
     }
     for (const g of bigGears) {
       ctx.save();
