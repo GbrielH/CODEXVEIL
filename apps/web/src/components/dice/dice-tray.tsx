@@ -195,7 +195,13 @@ export function DiceTray({
           look?.color ?? (own ? myColor : palette?.colorOfUser(next.userId)) ?? DEFAULT_COLOR;
         try {
           await applyDiceLook(box, 'cv', color, textColorFor(color), look);
-          await throwDice(box, text);
+          // Aura (contas de criador). Com a mesa grande aberta, o efeito do crítico sai de lá.
+          const natural = naturalD20(next.roll);
+          const tableShows = !next.secret && document.documentElement.dataset.diceTable === 'on';
+          await throwDice(box, text, undefined, {
+            aura: look?.aura ?? null,
+            critical: !tableShows && natural !== null && natural >= (next.critRange ?? 20),
+          });
         } catch (error) {
           console.error('[codexveil] falha ao rolar os dados 3D', error);
         }

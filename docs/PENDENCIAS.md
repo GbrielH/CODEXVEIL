@@ -916,3 +916,20 @@ navegador.
 
 Verificações: `pnpm check` (20 tarefas; banco 254 testes) e `pnpm build` passaram. Não verificado no
 navegador.
+
+### 2026-11-15 — auras dos dados viram efeitos de partículas
+
+- A aura em CSS atrás do dado (que não aparecia na caixinha de dados) foi trocada por partículas
+  num canvas 2D (`components/dice/aura-fx.ts`) que **saem do próprio dado enquanto ele rola**,
+  seguindo a posição dele na tela: mini raios (Tempestade), gotas (Sangue), flocos (Gelo),
+  faíscas violeta (Arcana), fumaça (Sombra) e brilhos dourados (Sagrada).
+- **Crítico (20 natural ou margem do ataque):** o tema toma a tela inteira por ~3 s — chuva de
+  raios com clarões, chuva de sangue, nevasca, chuva arcana, sombra fechando pelas bordas e feixes
+  de luz. Com a mesa grande aberta, o efeito sai só de lá (sem duplicar com a caixinha).
+- Funciona na caixinha de dados e na mesa da aba Dados (`throwDice` recebe `aura` e `critical`).
+  Com movimento reduzido, nada é desenhado.
+- "Meus dados": layout refeito (área de desenho mais estreita, configurações ocupando o resto),
+  prévia com as partículas ao vivo e botão "Testar crítico"; botões de aura sem sobreposição.
+- Removidos `dice-aura.tsx` e as regras `.dice-aura` do `globals.css`. Sem migração.
+
+Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verificado no navegador.

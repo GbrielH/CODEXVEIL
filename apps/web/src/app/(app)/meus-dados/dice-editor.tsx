@@ -1,11 +1,26 @@
 'use client';
 
 import { CAMPAIGN_MEDIA_BUCKET, saveDice } from '@codexveil/database';
-import { DICE_AURAS, DICE_FONTS, diceAuraLabels, diceFontLabels, type DiceLook } from '@codexveil/validation';
-import { DiceAuraLayer } from '@/components/dice/dice-aura';
+import {
+  DICE_AURAS,
+  DICE_FONTS,
+  diceAuraLabels,
+  diceFontLabels,
+  type DiceAura,
+  type DiceLook,
+} from '@codexveil/validation';
+import { criticalAuraBurst, startDiceAura } from '@/components/dice/aura-fx';
 import { Brush, Eraser, ImagePlus, PaintBucket, Trash2, Undo2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState, useTransition, type PointerEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type PointerEvent,
+  type ReactNode,
+} from 'react';
 import { diceFontFamily } from '@/components/dice/dice-look';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -316,7 +331,7 @@ export function DiceEditor({
   return (
     <div className="flex flex-col gap-5">
       {result ? <Alert tone={result.ok ? 'success' : 'danger'}>{result.message}</Alert> : null}
-      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_14rem]">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,30rem)_minmax(0,1fr)]">
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
             {tools.map(({ key, label, icon: Icon }) => (
@@ -399,46 +414,71 @@ export function DiceEditor({
           </p>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col items-center gap-2">
-            <div className="relative flex h-56 w-56 items-center justify-center">
-              <DiceAuraLayer aura={aura} />
-              <canvas ref={previewRef} width={160} height={160} aria-label="Prévia da face do dado" className="relative" />
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-3 rounded-lg border border-line bg-sunken p-4 sm:flex-row sm:items-center">
+            <AuraPreview aura={creator ? aura : null}>
+              <canvas
+                ref={previewRef}
+                width={160}
+                height={160}
+                aria-label="Prévia da face do dado"
+                className="relative"
+              />
+            </AuraPreview>
+            <div className="flex flex-1 flex-col gap-2 text-sm text-fg-secondary">
+              <p className="font-medium text-fg">Prévia</p>
+              <p className="text-xs text-fg-muted">
+                Assim fica uma face do dado na mesa.
+                {creator && aura
+                  ? ' A aura solta partículas enquanto o dado rola; no 20 natural, toma a tela.'
+                  : null}
+              </p>
+              {creator && aura ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="self-start"
+                  onClick={() => criticalAuraBurst(aura)}
+                >
+                  Testar crítico
+                </Button>
+              ) : null}
             </div>
-            <span className="text-xs text-fg-muted">Prévia</span>
           </div>
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium text-fg">Cor do dado</p>
-            <input
-              type="color"
-              aria-label="Cor do dado"
-              value={dieColor ?? DEFAULT_DIE}
-              onChange={(event) => setDieColor(event.target.value)}
-              className="h-9 w-12 cursor-pointer rounded border border-line bg-transparent"
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium text-fg">Cor dos números</p>
-            <div className="flex items-center gap-2">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-medium text-fg">Cor do dado</p>
               <input
                 type="color"
-                value={numberColor ?? '#ffffff'}
-                onChange={(event) => setNumberColor(event.target.value)}
+                aria-label="Cor do dado"
+                value={dieColor ?? DEFAULT_DIE}
+                onChange={(event) => setDieColor(event.target.value)}
                 className="h-9 w-12 cursor-pointer rounded border border-line bg-transparent"
               />
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={numberColor === null}
-                onClick={() => setNumberColor(null)}
-              >
-                Automática
-              </Button>
+            </div>
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-medium text-fg">Cor dos números</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={numberColor ?? '#ffffff'}
+                  onChange={(event) => setNumberColor(event.target.value)}
+                  className="h-9 w-12 cursor-pointer rounded border border-line bg-transparent"
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={numberColor === null}
+                  onClick={() => setNumberColor(null)}
+                >
+                  Automática
+                </Button>
+              </div>
             </div>
           </div>
           <div className="flex flex-col gap-2">
             <p className="text-sm font-medium text-fg">Fonte dos números</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {[null, ...DICE_FONTS].map((key) => (
                 <button
                   key={key ?? 'padrao'}
@@ -447,7 +487,7 @@ export function DiceEditor({
                   onClick={() => setFont(key)}
                   style={key ? { fontFamily: diceFontLabels[key].family } : undefined}
                   className={cx(
-                    'h-9 rounded-md border px-2 text-sm transition-colors',
+                    'h-9 truncate rounded-md border px-2 text-sm transition-colors',
                     font === key
                       ? 'border-fg-brand bg-hover text-fg'
                       : 'border-line text-fg-secondary hover:bg-hover',
@@ -461,7 +501,8 @@ export function DiceEditor({
           {creator ? (
             <div className="flex flex-col gap-2">
               <p className="text-sm font-medium text-fg">
-                Aura <span className="text-xs font-normal text-fg-muted">(exclusivo de criador)</span>
+                Aura{' '}
+                <span className="text-xs font-normal text-fg-muted">(exclusivo de criador)</span>
               </p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {[null, ...DICE_AURAS].map((key) => (
@@ -471,14 +512,22 @@ export function DiceEditor({
                     aria-pressed={aura === key}
                     onClick={() => setAura(key)}
                     className={cx(
-                      'flex h-9 items-center justify-center gap-1.5 rounded-md border px-2 text-sm transition-colors',
-                      aura === key ? 'border-fg-brand bg-hover text-fg' : 'border-line text-fg-secondary hover:bg-hover',
+                      'flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-md border px-2 text-sm transition-colors',
+                      aura === key
+                        ? 'border-fg-brand bg-hover text-fg'
+                        : 'border-line text-fg-secondary hover:bg-hover',
                     )}
                   >
                     {key ? (
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: diceAuraLabels[key].color, boxShadow: `0 0 8px ${diceAuraLabels[key].color}` }} />
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{
+                          backgroundColor: diceAuraLabels[key].color,
+                          boxShadow: `0 0 8px ${diceAuraLabels[key].color}`,
+                        }}
+                      />
                     ) : null}
-                    {key ? diceAuraLabels[key].name : 'Sem aura'}
+                    <span className="truncate">{key ? diceAuraLabels[key].name : 'Sem aura'}</span>
                   </button>
                 ))}
               </div>
@@ -505,6 +554,39 @@ export function DiceEditor({
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Prévia da aura: partículas saindo do centro, como na mesa (o dado "balança" um pouco). */
+function AuraPreview({ aura, children }: { aura: DiceAura | null; children: ReactNode }) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host || !aura) return;
+    const started = performance.now();
+    const stop = startDiceAura(
+      host,
+      aura,
+      () => {
+        const t = (performance.now() - started) / 1000;
+        return [
+          {
+            x: host.clientWidth / 2 + Math.sin(t * 2.1) * 14,
+            y: host.clientHeight / 2 + Math.cos(t * 1.7) * 10,
+          },
+        ];
+      },
+      0.9,
+    );
+    return stop;
+  }, [aura]);
+  return (
+    <div
+      ref={hostRef}
+      className="relative flex h-52 w-52 shrink-0 items-center justify-center self-center overflow-hidden rounded-md"
+    >
+      {children}
     </div>
   );
 }

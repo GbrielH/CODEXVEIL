@@ -1,4 +1,6 @@
 import type DiceBox from '@3d-dice/dice-box-threejs';
+import type { DiceAura } from '@codexveil/validation';
+import { criticalAuraBurst, diceScreenPositions, startDiceAura } from './aura-fx';
 
 /** Quanto tempo os dados de uma rolagem ficam na mesa antes de sumir. */
 export const DICE_LIFETIME_MS = 12_000;
@@ -14,7 +16,7 @@ interface DiceBoxInternals {
   diceList: { body?: unknown }[];
   scene: { remove(object: unknown): void };
   world: { removeBody(body: unknown): void };
-  renderer: { render(scene: unknown, camera: unknown): void };
+  renderer: { render(scene: unknown, camera: unknown): void; domElement?: HTMLCanvasElement };
   camera: unknown;
 }
 
@@ -26,9 +28,21 @@ export async function throwDice(
   box: DiceBox,
   notation: string,
   lifetimeMs = DICE_LIFETIME_MS,
+  options: { aura?: DiceAura | null; critical?: boolean } = {},
 ): Promise<void> {
   const internals = box as unknown as DiceBoxInternals;
   const before = new Set(internals.diceList ?? []);
+  // Aura (contas de criador): partículas saindo dos dados desta rolagem enquanto rolam.
+  const host = internals.renderer?.domElement?.parentElement ?? null;
+  const stopAura =
+    options.aura && host
+      ? startDiceAura(host, options.aura, () =>
+          diceScreenPositions(
+            box,
+            (internals.diceList ?? []).filter((die) => !before.has(die)),
+          ),
+        )
+      : null;
   let timer = 0;
   await Promise.race([
     (box as unknown as { add(text: string): Promise<unknown> }).add(notation),
@@ -37,6 +51,8 @@ export async function throwDice(
     }),
   ]).finally(() => window.clearTimeout(timer));
   const mine = (internals.diceList ?? []).filter((die) => !before.has(die));
+  if (stopAura) window.setTimeout(stopAura, 1_500);
+  if (options.aura && options.critical) criticalAuraBurst(options.aura);
   window.setTimeout(() => {
     for (const die of mine) {
       const index = internals.diceList.indexOf(die);

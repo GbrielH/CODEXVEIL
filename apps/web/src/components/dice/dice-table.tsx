@@ -2,13 +2,11 @@
 
 import type { DiceRoll } from '@codexveil/database';
 import type DiceBox from '@3d-dice/dice-box-threejs';
-import { describeDiceRoll } from '@codexveil/domain';
+import { describeDiceRoll, naturalD20 } from '@codexveil/domain';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
-import type { DiceAura } from '@codexveil/validation';
 import { DICE_COLORS, useCampaignColors } from './campaign-colors';
-import { DiceAuraLayer } from './dice-aura';
 import { TABLE_SETTLED_EVENT, throwDice } from './dice-scene';
 import { applyDiceLook, loadCharacterLook } from './dice-look';
 import { diceNotation, textColorFor, type TrayRoll } from './dice-tray';
@@ -31,7 +29,6 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
   const [current, setCurrent] = useState<TrayRoll | null>(null);
   const [last, setLast] = useState<TrayRoll | null>(null);
   const [unavailable, setUnavailable] = useState(false);
-  const [aura, setAura] = useState<DiceAura | null>(null);
 
   // Marca a página: a caixinha de dados espera esta mesa antes de mostrar o resultado.
   useEffect(() => {
@@ -93,17 +90,19 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
           colors?.lookOfUser(next.userId) ??
           null;
         const color = look?.color ?? colors?.colorOfUser(next.userId) ?? DEFAULT_COLOR;
-        // Aura (contas de criador): emana na mesa enquanto o dado está nela.
-        setAura(look?.aura ?? null);
         try {
           await applyDiceLook(box, 'mesa', color, textColorFor(color), look);
           // Fica na mesa até completar os 10 s desde a rolagem (mínimo de 4 s para dar para ver).
-          await throwDice(box, text, Math.max(4000, next.expiresAt - Date.now()));
+          // Aura (contas de criador): partículas saindo do dado e, no crítico, a tela toda.
+          const natural = naturalD20(next.roll);
+          await throwDice(box, text, Math.max(4000, next.expiresAt - Date.now()), {
+            aura: look?.aura ?? null,
+            critical: natural !== null && natural >= (next.critRange ?? 20),
+          });
         } catch (error) {
           console.error('[codexveil] falha ao rolar na mesa', error);
         }
       }
-      setAura(null);
       setCurrent(null);
       setLast(next);
       document.dispatchEvent(new CustomEvent(TABLE_SETTLED_EVENT, { detail: next.key }));
@@ -159,7 +158,6 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
   const shown = current ?? last;
   return (
     <div className="relative h-[28rem] overflow-hidden rounded-xl border border-parchment-400/25 bg-[radial-gradient(ellipse_at_center,rgb(60_30_90/0.55),rgb(11_11_15/0.95))] shadow-inner">
-      <DiceAuraLayer aura={aura} className="inset-[8%_22%]" />
       <div
         id={containerId}
         aria-hidden="true"
