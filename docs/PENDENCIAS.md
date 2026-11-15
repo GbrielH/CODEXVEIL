@@ -995,3 +995,10 @@ Verificações: `pnpm check` (20 tarefas; banco 255 testes) e `pnpm build` passa
 - Migração `20261115140000_dice_auras_eight.sql` (aplicada).
 
 Verificações: `pnpm check` (20 tarefas; banco 255 testes) e `pnpm build` passaram. Efeitos e sons não vistos no navegador por mim.
+
+### 2026-11-15 — mesa de teste em "Meus dados" e auras mais leves
+
+- "Testar rolagem" agora rola um **d20 de verdade numa mesa 3D** (`dice-test-table.tsx`) com o dado como está no editor (desenho, cores, fonte e aura, mesmo sem salvar). "Rolar um 20" tira 20 e mostra o crítico completo da aura. O antigo "Testar crítico" (só o efeito) saiu.
+- Auras em volta do dado com metade das partículas e do brilho (`AURA_INTENSITY`); os críticos seguem iguais.
+
+Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto no navegador por mim.

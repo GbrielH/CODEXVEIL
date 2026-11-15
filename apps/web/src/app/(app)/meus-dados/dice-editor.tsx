@@ -9,9 +9,10 @@ import {
   type DiceAura,
   type DiceLook,
 } from '@codexveil/validation';
-import { criticalAuraBurst, startDiceAura } from '@/components/dice/aura-fx';
+import { startDiceAura } from '@/components/dice/aura-fx';
 import { AuraIcon } from '@/components/dice/aura-icons';
 import { useAuraSound } from '@/components/dice/aura-sound';
+import { DiceTestTable, type TestRoll } from './dice-test-table';
 import { Brush, Eraser, ImagePlus, PaintBucket, Trash2, Undo2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
@@ -128,7 +129,7 @@ export function DiceEditor({
   const [aura, setAura] = useState(
     initial.aura && auras.includes(initial.aura) ? initial.aura : null,
   );
-  const [rollTest, setRollTest] = useState(0);
+  const [testRoll, setTestRoll] = useState<TestRoll | null>(null);
   const [sound, setSound] = useAuraSound();
   const canAura = auras.length > 0;
   const [diceName, setDiceName] = useState(target?.name ?? '');
@@ -288,6 +289,31 @@ export function DiceEditor({
     image.src = url;
   };
 
+  /** Rola um d20 de verdade na mesa de teste, com o dado como está no editor (sem salvar). */
+  const rollTest = (natural: number) => {
+    let imageUrl: string | null = null;
+    if (!blank && canvasRef.current) {
+      try {
+        imageUrl = canvasRef.current.toDataURL('image/png');
+      } catch {
+        imageUrl = initialImageUrl;
+      }
+    }
+    setTestRoll({
+      key: Date.now(),
+      color: dieColor ?? DEFAULT_DIE,
+      natural,
+      look: {
+        image: null,
+        numberColor,
+        font,
+        color: dieColor,
+        aura: canAura ? aura : null,
+        imageUrl,
+      },
+    });
+  };
+
   const save = () =>
     startTransition(async () => {
       setResult(null);
@@ -426,7 +452,7 @@ export function DiceEditor({
 
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-3 rounded-lg border border-line bg-sunken p-4 sm:flex-row sm:items-center">
-            <AuraPreview aura={canAura ? aura : null} rollTest={rollTest}>
+            <AuraPreview aura={canAura ? aura : null}>
               <canvas
                 ref={previewRef}
                 width={160}
@@ -443,20 +469,20 @@ export function DiceEditor({
                   ? ' A aura emana do dado enquanto ele rola; no crítico, toma a tela de todos.'
                   : null}
               </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => rollTest(1 + Math.floor(Math.random() * 20))}
+                >
+                  Testar rolagem
+                </Button>
+                <Button size="sm" variant="secondary" onClick={() => rollTest(20)}>
+                  Rolar um 20
+                </Button>
+              </div>
               {canAura && aura ? (
                 <>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => setRollTest((count) => count + 1)}
-                    >
-                      Testar rolagem
-                    </Button>
-                    <Button size="sm" variant="secondary" onClick={() => criticalAuraBurst(aura)}>
-                      Testar crítico
-                    </Button>
-                  </div>
                   <label className="flex items-center gap-2 text-xs text-fg-secondary">
                     <input
                       type="checkbox"
@@ -469,6 +495,7 @@ export function DiceEditor({
               ) : null}
             </div>
           </div>
+          <DiceTestTable request={testRoll} />
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <p className="text-sm font-medium text-fg">Cor do dado</p>
@@ -576,22 +603,10 @@ export function DiceEditor({
   );
 }
 
-/**
- * Prévia da aura emanando da borda do dado. "Testar rolagem" (`rollTest` muda) faz o dado
- * tombar pela prévia com a aura forte, como na mesa.
- */
-function AuraPreview({
-  aura,
-  rollTest,
-  children,
-}: {
-  aura: DiceAura | null;
-  rollTest: number;
-  children: ReactNode;
-}) {
+/** Prévia da aura emanando da borda do dado (a rolagem de verdade fica na mesa de teste). */
+function AuraPreview({ aura, children }: { aura: DiceAura | null; children: ReactNode }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const dieRef = useRef<HTMLDivElement>(null);
-  const boostUntil = useRef(0);
   useEffect(() => {
     const host = hostRef.current;
     const die = dieRef.current;
@@ -610,24 +625,9 @@ function AuraPreview({
           },
         ];
       },
-      () => (performance.now() < boostUntil.current ? 1 : 0.5),
+      () => 0.5,
     );
   }, [aura]);
-  useEffect(() => {
-    const die = dieRef.current;
-    if (!rollTest || !die) return;
-    boostUntil.current = performance.now() + 2200;
-    die.animate(
-      [
-        { transform: 'translate(-70px, -60px) rotate(0deg) scale(0.8)' },
-        { transform: 'translate(40px, 10px) rotate(260deg) scale(0.9)', offset: 0.3 },
-        { transform: 'translate(-25px, 30px) rotate(470deg) scale(0.95)', offset: 0.55 },
-        { transform: 'translate(12px, -8px) rotate(640deg)', offset: 0.8 },
-        { transform: 'translate(0, 0) rotate(720deg) scale(1)' },
-      ],
-      { duration: 1700, easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)' },
-    );
-  }, [rollTest]);
   return (
     <div
       ref={hostRef}

@@ -59,6 +59,9 @@ interface Particle {
   path?: Point[];
 }
 
+/** Intensidade da aura em volta do dado (0 a 1). */
+const AURA_INTENSITY = 0.5;
+
 /** Limite de partículas vivas (por efeito). */
 const MAX_PARTICLES = 450;
 
@@ -1330,7 +1333,8 @@ export function startDiceAura(
     fit(canvas, ctx, host.clientWidth, host.clientHeight);
     const time = (now - started) / 1000;
     if (emitting) {
-      const strength = Math.max(0, Math.min(1, power()));
+      // Aura discreta no dado (o crítico é que toma a tela): metade das partículas e do brilho.
+      const strength = Math.max(0, Math.min(1, power())) * AURA_INTENSITY;
       for (const origin of positions()) {
         drawHalo(ctx, aura, origin, time, strength);
         emitAround(aura, origin, particles, strength);
