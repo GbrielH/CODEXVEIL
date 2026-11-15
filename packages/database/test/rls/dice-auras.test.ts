@@ -15,21 +15,47 @@ describe('auras dos dados (somente criadores)', () => {
   it('só a conta de criador grava aura; ninguém liga a própria flag', async () => {
     const creator = await db.createUser('Criador');
     const player = await db.createUser('Jogador');
-    await db.as(admin, (s) => s.query(`update public.profiles set creator_features = true where id = $1`, [creator.id]));
+    await db.as(admin, (s) =>
+      s.query(`update public.profiles set creator_features = true where id = $1`, [creator.id]),
+    );
 
     // Ninguém liga a própria flag (a coluna não está entre as que o usuário pode alterar).
     await expectSqlError(
-      db.as(player, (s) => s.query(`update public.profiles set creator_features = true where id = $1`, [player.id])),
+      db.as(player, (s) =>
+        s.query(`update public.profiles set creator_features = true where id = $1`, [player.id]),
+      ),
       '42501',
     );
 
     // Dados salvos: criador grava; jogador recebe recusa; aura inválida também é recusada.
     const saved = await db.as(creator, (s) =>
-      s.one<{ aura: string }>(`insert into public.user_dice (name, aura) values ('Rubro', 'blood') returning aura`),
+      s.one<{ aura: string }>(
+        `insert into public.user_dice (name, aura) values ('Rubro', 'blood') returning aura`,
+      ),
     );
     expect(saved.aura).toBe('blood');
-    await expectSqlError(db.as(player, (s) => s.query(`insert into public.user_dice (name, aura) values ('X', 'storm')`)), '42501');
-    await expectSqlError(db.as(creator, (s) => s.query(`insert into public.user_dice (name, aura) values ('X', 'fogo')`)), '23514');
+    await expectSqlError(
+      db.as(player, (s) =>
+        s.query(`insert into public.user_dice (name, aura) values ('X', 'storm')`),
+      ),
+      '42501',
+    );
+    await expectSqlError(
+      db.as(creator, (s) =>
+        s.query(`insert into public.user_dice (name, aura) values ('X', 'fogo')`),
+      ),
+      '23514',
+    );
+    // Auras novas (engrenagens, floresta, fogo, dragão) também valem para o criador.
+    for (const aura of ['gears', 'forest', 'fire', 'dragon']) {
+      const row = await db.as(creator, (s) =>
+        s.one<{ aura: string }>(
+          `insert into public.user_dice (name, aura) values ('Novo', $1) returning aura`,
+          [aura],
+        ),
+      );
+      expect(row.aura).toBe(aura);
+    }
 
     // Preferências: a aura some para quem não é criador e fica para o criador.
     const prefs = JSON.stringify({ dice: { color: '#112233', aura: 'holy' } });

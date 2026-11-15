@@ -9,7 +9,13 @@ import {
   type RolledDiceGroup,
   type SharedVisibility,
 } from '@codexveil/domain';
-import { diceLookSchema, preferencesSchema, type DiceLook } from '@codexveil/validation';
+import {
+  DICE_AURAS,
+  diceLookSchema,
+  preferencesSchema,
+  type DiceAura,
+  type DiceLook,
+} from '@codexveil/validation';
 import { signedMediaUrls } from './storage';
 import type { CodexveilClient } from '../client';
 import { toAppError } from '../errors';
@@ -202,7 +208,11 @@ export async function getCampaignDicePalette(
       },
     ]),
   );
-  const faces = (characters.data ?? []) as { id: string; owner_id: string; dice_id: string | null }[];
+  const faces = (characters.data ?? []) as {
+    id: string;
+    owner_id: string;
+    dice_id: string | null;
+  }[];
   const diceIds = [...new Set(faces.flatMap((face) => (face.dice_id ? [face.dice_id] : [])))];
   const saved = diceIds.length
     ? await client.from('user_dice').select(SAVED_DICE_COLUMNS).in('id', diceIds)
@@ -336,5 +346,51 @@ export async function setCharacterDice(
     p_character_id: characterId,
     p_dice_id: diceId as string,
   });
+  if (error) throw toAppError(error);
+}
+
+const isAura = (value: string): value is DiceAura =>
+  (DICE_AURAS as readonly string[]).includes(value);
+
+/** Auras liberadas para a conta por um criador (o criador usa todas pela flag do perfil). */
+export async function listMyAuraGrants(
+  client: CodexveilClient,
+  userId: string,
+): Promise<DiceAura[]> {
+  const { data, error } = await client
+    .from('dice_aura_grants')
+    .select('aura')
+    .eq('user_id', userId);
+  if (error) throw toAppError(error);
+  return data.map((row) => row.aura).filter(isAura);
+}
+
+/** Auras que o criador liberou, por amigo. */
+export async function listAuraGrantsGiven(
+  client: CodexveilClient,
+  creatorId: string,
+): Promise<Record<string, DiceAura[]>> {
+  const { data, error } = await client
+    .from('dice_aura_grants')
+    .select('user_id, aura')
+    .eq('granted_by', creatorId);
+  if (error) throw toAppError(error);
+  const out: Record<string, DiceAura[]> = {};
+  for (const row of data) if (isAura(row.aura)) (out[row.user_id] ??= []).push(row.aura);
+  return out;
+}
+
+/** Libera (ou retira) uma aura para um amigo. Só contas de criador (RLS). */
+export async function setAuraGrant(
+  client: CodexveilClient,
+  friendId: string,
+  aura: DiceAura,
+  allowed: boolean,
+): Promise<void> {
+  const { error } = allowed
+    ? await client
+        .from('dice_aura_grants')
+        .upsert({ user_id: friendId, aura }, { onConflict: 'user_id,aura', ignoreDuplicates: true })
+    : await client.from('dice_aura_grants').delete().eq('user_id', friendId).eq('aura', aura);
   if (error) throw toAppError(error);
 }

@@ -1054,3 +1054,35 @@ navegador.
 - Removidos `dice-aura.tsx` e as regras `.dice-aura` do `globals.css`. Sem migração.
 
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verificado no navegador.
+
+### 2026-11-15 — auras 2: emanando do dado, críticos com som, 4 temas novos e liberação para amigos
+
+- A aura agora **emana da borda do dado**, como chakra: labaredas do tema sobem da borda e um
+  halo acompanha o dado. A Arcana mostra um **anel de runas girando** em volta do dado; a Sagrada,
+  uma auréola. Forte enquanto rola; mais fraca enquanto o dado fica na mesa.
+- **Críticos refeitos**, com **"CRÍTICO!" no centro da tela**:
+  - Tempestade: chuva de raios com clarões.
+  - Sangue: jatos jorrando das bordas e respingos escorrendo na tela.
+  - Gelo: a tela congela (vidro embaçado e gelo crescendo das bordas).
+  - Arcana: círculos mágicos de runas girando.
+  - Sombra: a sombra fecha a tela.
+  - Sagrada: o céu se abre em raios de luz, com auréola e penas caindo.
+- **Auras novas:** Engrenagens (engrenagens, faíscas e arcos elétricos; no crítico, engrenagens
+  gigantes girando nos cantos), Floresta (folhas e vaga-lumes; cipós crescendo), Fogo (chamas e
+  brasas; a tela pega fogo) e Dragão (chamas, escamas e fumaça; um dragão cruza a tela cuspindo
+  fogo).
+- **Som nos críticos**, sintetizado no navegador (`aura-sound.ts`, sem arquivos): trovão,
+  coração e jorro, gelo trincando, arpejo arcano, grave sombrio, coro, engrenagens, vento e
+  pássaros, labareda e rugido. Dá para desligar em "Meus dados" (vale para o navegador).
+- Efeitos e som aparecem **para todos da mesa**: cada um desenha a rolagem dos outros com o dado
+  de quem rolou. O "Crítico!" padrão some quando o dado tem aura (o efeito do tema substitui).
+- "Meus dados": cartões sem limite de largura (a tela não fica mais cortada), botões **"Testar
+  rolagem"** (o dado tomba pela prévia com a aura) e "Testar crítico".
+- **Auras dos amigos** (só na conta de criador): lista de amigos; ao clicar em um, aparecem
+  todas as auras para marcar as liberadas. O amigo passa a ver e usar só as liberadas.
+- Banco: migração `20261115110000_dice_auras_more.sql` (aplicada), teste
+  `test/rls/dice-aura-grants.test.ts`.
+
+Verificações: `pnpm check` (20 tarefas; banco 255 testes) e `pnpm build` passaram;
+`supabase db push --dry-run` conferido antes de aplicar. Os efeitos e sons não foram vistos no
+navegador por mim.

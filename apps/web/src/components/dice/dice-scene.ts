@@ -32,15 +32,22 @@ export async function throwDice(
 ): Promise<void> {
   const internals = box as unknown as DiceBoxInternals;
   const before = new Set(internals.diceList ?? []);
-  // Aura (contas de criador): partículas saindo dos dados desta rolagem enquanto rolam.
+  // Aura (contas de criador): emana dos dados desta rolagem; forte rolando, mais fraca parada.
   const host = internals.renderer?.domElement?.parentElement ?? null;
+  let settled: unknown[] | null = null;
   const stopAura =
     options.aura && host
-      ? startDiceAura(host, options.aura, () =>
-          diceScreenPositions(
-            box,
-            (internals.diceList ?? []).filter((die) => !before.has(die)),
-          ),
+      ? startDiceAura(
+          host,
+          options.aura,
+          () =>
+            diceScreenPositions(
+              box,
+              (settled ?? (internals.diceList ?? []).filter((die) => !before.has(die))).filter(
+                (die) => internals.diceList.includes(die as never),
+              ),
+            ),
+          () => (settled ? 0.45 : 1),
         )
       : null;
   let timer = 0;
@@ -51,9 +58,10 @@ export async function throwDice(
     }),
   ]).finally(() => window.clearTimeout(timer));
   const mine = (internals.diceList ?? []).filter((die) => !before.has(die));
-  if (stopAura) window.setTimeout(stopAura, 1_500);
+  settled = mine;
   if (options.aura && options.critical) criticalAuraBurst(options.aura);
   window.setTimeout(() => {
+    stopAura?.();
     for (const die of mine) {
       const index = internals.diceList.indexOf(die);
       if (index < 0) continue;

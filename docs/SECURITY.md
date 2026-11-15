@@ -353,3 +353,5 @@ ficha: as fichas ocultas continuam inacessíveis.
 ## Recursos de criador (2026-11-15)
 
 `profiles.creator_features` libera as auras dos dados. A coluna não está entre as que o usuário pode alterar no próprio perfil; só a administração do banco a liga, por comando avulso (sem e-mail em arquivo). Gatilhos recusam a aura em dados salvos e a removem das preferências de quem não é criador.
+
+`dice_aura_grants`: só uma conta de criador libera auras, só para amigos aceitos (`private.are_friends`), e só quem liberou retira. O amigo lê apenas as próprias liberações. Os gatilhos de aura passam a aceitar a aura liberada (`private.can_use_aura`); ao retirar a liberação, a aura sai dos dados salvos e do dado padrão do amigo.

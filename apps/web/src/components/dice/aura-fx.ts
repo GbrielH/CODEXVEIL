@@ -1,15 +1,40 @@
 /**
- * Efeitos das auras dos dados (contas de criador), desenhados num canvas 2D por cima da cena:
- *   * enquanto o dado rola, partículas saem dele (raios, gotas, cristais, faíscas, fumaça, luz),
- *     acompanhando a posição do dado na tela;
- *   * no crítico, um efeito na tela inteira por alguns segundos (chuva de raios, de sangue…).
- * Respeita "movimento reduzido": nesse caso não desenha nada.
+ * Efeitos das auras dos dados, desenhados num canvas 2D por cima da cena:
+ *   * em volta do dado, uma aura "emanando" da borda (como chakra) no elemento escolhido, com
+ *     detalhes do tema (raios, jatos de sangue, flocos, runas girando, fumaça, luz, engrenagens,
+ *     folhas, chamas, escamas), acompanhando o dado na tela;
+ *   * no crítico, o tema toma a tela inteira por alguns segundos, com "CRÍTICO!" no centro e som.
+ * Respeita "movimento reduzido": nesse caso não desenha nada (o som também não toca).
  */
-import type { DiceAura } from '@codexveil/validation';
+import { diceAuraLabels, type DiceAura } from '@codexveil/validation';
+import { playCriticalSound } from './aura-sound';
 
 type Point = { x: number; y: number };
+/** Dado na tela: centro e raio aproximado (em pixels). */
+export type AuraPoint = Point & { r: number };
+
+type Kind =
+  | 'wisp'
+  | 'bolt'
+  | 'drop'
+  | 'splat'
+  | 'flake'
+  | 'mote'
+  | 'rune'
+  | 'smoke'
+  | 'spark'
+  | 'ray'
+  | 'beam'
+  | 'gear'
+  | 'leaf'
+  | 'firefly'
+  | 'flame'
+  | 'ember'
+  | 'scale'
+  | 'feather';
 
 interface Particle {
+  kind: Kind;
   x: number;
   y: number;
   vx: number;
@@ -17,19 +42,35 @@ interface Particle {
   life: number;
   max: number;
   size: number;
-  hue?: number;
-  /** Raio: lista de pontos do zigue-zague. */
+  rot: number;
+  vr: number;
+  gravity: number;
+  drag: number;
+  color: string;
+  glyph?: string;
   path?: Point[];
 }
 
-const COLORS: Record<DiceAura, string> = {
-  blood: '214, 40, 60',
+const MAX_PARTICLES = 1100;
+
+const RUNES = 'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ';
+
+/** Cor principal (r, g, b) de cada aura. */
+const RGB: Record<DiceAura, string> = {
+  blood: '200, 16, 40',
   storm: '140, 220, 255',
-  frost: '200, 240, 255',
+  frost: '190, 238, 255',
   arcane: '176, 108, 255',
-  shadow: '30, 18, 46',
+  shadow: '40, 22, 62',
   holy: '255, 215, 106',
+  gears: '230, 160, 60',
+  forest: '110, 200, 80',
+  fire: '255, 120, 30',
+  dragon: '220, 50, 25',
 };
+
+/** Auras escuras (desenhadas por cima, sem somar luz). */
+const DARK: ReadonlySet<DiceAura> = new Set(['shadow', 'blood']);
 
 function reducedMotion(): boolean {
   if (typeof window === 'undefined') return true;
@@ -37,8 +78,27 @@ function reducedMotion(): boolean {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 }
 
-function rand(min: number, max: number): number {
-  return min + Math.random() * (max - min);
+const rand = (min: number, max: number) => min + Math.random() * (max - min);
+const pick = <T>(list: readonly T[]): T => list[Math.floor(Math.random() * list.length)]!;
+const rune = () => pick([...RUNES]);
+
+function particle(kind: Kind, x: number, y: number, extra: Partial<Particle> = {}): Particle {
+  return {
+    kind,
+    x,
+    y,
+    vx: 0,
+    vy: 0,
+    life: 0,
+    max: 60,
+    size: 3,
+    rot: rand(0, Math.PI * 2),
+    vr: 0,
+    gravity: 0,
+    drag: 1,
+    color: '255, 255, 255',
+    ...extra,
+  };
 }
 
 /** Zigue-zague de um raio entre dois pontos. */
@@ -55,219 +115,614 @@ function bolt(from: Point, to: Point, jitter: number, steps = 7): Point[] {
   return points;
 }
 
-/** Cria uma partícula do tema, saindo de `origin` (dado) ou caindo do alto (crítico). */
-function spawn(
-  aura: DiceAura,
-  origin: Point,
-  scale: number,
-  fromSky: boolean,
-  width: number,
-  height: number,
-): Particle {
-  if (fromSky) {
-    const x = rand(0, width);
-    switch (aura) {
-      case 'storm': {
-        const to = { x: x + rand(-80, 80), y: rand(height * 0.4, height) };
-        return {
-          x,
-          y: 0,
-          vx: 0,
-          vy: 0,
-          life: 0,
-          max: rand(10, 20),
-          size: rand(2, 4),
-          path: bolt({ x, y: 0 }, to, 30, 10),
-        };
+/** Contorno de uma engrenagem (centro na origem). */
+function gearPath(ctx: CanvasRenderingContext2D, radius: number, teeth: number) {
+  const step = (Math.PI * 2) / teeth;
+  const inner = radius * 0.8;
+  ctx.beginPath();
+  for (let i = 0; i < teeth; i++) {
+    const a = i * step;
+    ctx.lineTo(Math.cos(a) * inner, Math.sin(a) * inner);
+    ctx.lineTo(Math.cos(a + step * 0.15) * radius, Math.sin(a + step * 0.15) * radius);
+    ctx.lineTo(Math.cos(a + step * 0.45) * radius, Math.sin(a + step * 0.45) * radius);
+    ctx.lineTo(Math.cos(a + step * 0.6) * inner, Math.sin(a + step * 0.6) * inner);
+  }
+  ctx.closePath();
+  ctx.moveTo(radius * 0.32, 0);
+  ctx.arc(0, 0, radius * 0.32, 0, Math.PI * 2, true);
+}
+
+function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
+  const t = p.life / p.max;
+  const fade = 1 - t;
+  ctx.save();
+  switch (p.kind) {
+    case 'wisp': {
+      // Labareda da aura: bolha suave que sobe e encolhe.
+      const radius = p.size * (1 - t * 0.6);
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
+      g.addColorStop(0, `rgba(${p.color}, ${0.55 * fade})`);
+      g.addColorStop(1, `rgba(${p.color}, 0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(p.x - radius, p.y - radius, radius * 2, radius * 2);
+      break;
+    }
+    case 'bolt': {
+      if (!p.path) break;
+      ctx.globalAlpha = Math.random() < 0.25 ? 0.25 : fade;
+      ctx.strokeStyle = 'rgba(245, 252, 255, 1)';
+      ctx.shadowColor = `rgba(${p.color}, 1)`;
+      ctx.shadowBlur = p.size > 2.5 ? 30 : 12;
+      ctx.lineWidth = p.size;
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(p.path[0]!.x, p.path[0]!.y);
+      for (const point of p.path.slice(1)) ctx.lineTo(point.x, point.y);
+      ctx.stroke();
+      break;
+    }
+    case 'drop': {
+      // Gota alongada no sentido do movimento.
+      ctx.globalAlpha = Math.min(1, fade * 1.5);
+      ctx.fillStyle = `rgba(${p.color}, 1)`;
+      const speed = Math.hypot(p.vx, p.vy);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(Math.atan2(p.vy, p.vx));
+      ctx.beginPath();
+      ctx.ellipse(
+        0,
+        0,
+        p.size * (1 + Math.min(speed, 20) * 0.18),
+        p.size * 0.75,
+        0,
+        0,
+        Math.PI * 2,
+      );
+      ctx.fill();
+      break;
+    }
+    case 'splat': {
+      // Respingo grudado na tela, escorrendo.
+      ctx.globalAlpha = Math.min(1, fade * 3);
+      ctx.fillStyle = `rgba(${p.color}, 0.92)`;
+      ctx.translate(p.x, p.y);
+      ctx.beginPath();
+      for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2 + p.rot;
+        const r = p.size * (0.7 + ((i * 37) % 10) / 22);
+        ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
       }
-      case 'blood':
-        return {
-          x,
-          y: rand(-40, 0),
-          vx: rand(-0.3, 0.3),
-          vy: rand(9, 15),
-          life: 0,
-          max: 140,
-          size: rand(2, 4),
-        };
-      case 'frost':
-        return {
-          x,
-          y: rand(-40, 0),
-          vx: rand(-1.5, 1.5),
-          vy: rand(2, 5),
-          life: 0,
-          max: 220,
-          size: rand(2, 5),
-        };
-      case 'arcane':
-        return {
-          x,
-          y: rand(-40, 0),
-          vx: rand(-0.6, 0.6),
-          vy: rand(2.5, 5),
-          life: 0,
-          max: 200,
-          size: rand(2, 4),
-          hue: rand(260, 300),
-        };
-      case 'shadow': {
-        const side = Math.floor(rand(0, 4));
-        const sx = side === 0 ? 0 : side === 1 ? width : rand(0, width);
-        const sy = side === 2 ? 0 : side === 3 ? height : rand(0, height);
-        return {
-          x: sx,
-          y: sy,
-          vx: (width / 2 - sx) * 0.004,
-          vy: (height / 2 - sy) * 0.004,
-          life: 0,
-          max: 160,
-          size: rand(40, 90),
-        };
+      ctx.closePath();
+      ctx.fill();
+      const drip = Math.min(p.life * 0.6, p.size * 4);
+      ctx.fillRect(-p.size * 0.15, 0, p.size * 0.3, p.size * 0.6 + drip);
+      ctx.beginPath();
+      ctx.arc(0, p.size * 0.6 + drip, p.size * 0.25, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+    case 'flake': {
+      ctx.globalAlpha = fade;
+      ctx.strokeStyle = `rgba(${p.color}, 1)`;
+      ctx.shadowColor = `rgba(${p.color}, 0.9)`;
+      ctx.shadowBlur = 6;
+      ctx.lineWidth = Math.max(1, p.size / 4);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      for (let i = 0; i < 3; i++) {
+        ctx.rotate(Math.PI / 3);
+        ctx.beginPath();
+        ctx.moveTo(-p.size, 0);
+        ctx.lineTo(p.size, 0);
+        ctx.moveTo(p.size * 0.55, 0);
+        ctx.lineTo(p.size * 0.8, p.size * 0.25);
+        ctx.moveTo(p.size * 0.55, 0);
+        ctx.lineTo(p.size * 0.8, -p.size * 0.25);
+        ctx.stroke();
       }
-      case 'holy':
-        return { x, y: 0, vx: 0, vy: 0, life: 0, max: rand(40, 70), size: rand(30, 90) };
+      break;
+    }
+    case 'rune': {
+      ctx.globalAlpha = Math.sin(Math.PI * t);
+      ctx.fillStyle = `rgba(${p.color}, 1)`;
+      ctx.shadowColor = `rgba(${p.color}, 1)`;
+      ctx.shadowBlur = 12;
+      ctx.font = `${p.size}px "Segoe UI Symbol", "Noto Sans Runic", serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * 0.2);
+      ctx.fillText(p.glyph ?? 'ᚠ', 0, 0);
+      break;
+    }
+    case 'smoke': {
+      const radius = p.size * (0.6 + t);
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
+      g.addColorStop(0, `rgba(8, 4, 14, ${0.65 * fade})`);
+      g.addColorStop(0.6, `rgba(${p.color}, ${0.3 * fade})`);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(p.x - radius, p.y - radius, radius * 2, radius * 2);
+      break;
+    }
+    case 'ray': {
+      // Raio de luz saindo da borda do dado.
+      ctx.globalAlpha = Math.sin(Math.PI * t) * 0.9;
+      const length = p.size * 6;
+      const g = ctx.createLinearGradient(
+        p.x,
+        p.y,
+        p.x + Math.cos(p.rot) * length,
+        p.y + Math.sin(p.rot) * length,
+      );
+      g.addColorStop(0, `rgba(${p.color}, 0.9)`);
+      g.addColorStop(1, `rgba(${p.color}, 0)`);
+      ctx.strokeStyle = g;
+      ctx.lineWidth = p.size / 3;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x + Math.cos(p.rot) * length, p.y + Math.sin(p.rot) * length);
+      ctx.stroke();
+      break;
+    }
+    case 'beam': {
+      // Feixe de luz descendo do alto (crítico sagrado).
+      const height = ctx.canvas.height;
+      const g = ctx.createLinearGradient(p.x, 0, p.x, height);
+      const alpha = Math.sin(Math.PI * t) * 0.45;
+      g.addColorStop(0, `rgba(${p.color}, ${alpha})`);
+      g.addColorStop(1, `rgba(${p.color}, 0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(p.x - p.size / 2, 0, p.size, height);
+      break;
+    }
+    case 'gear': {
+      ctx.globalAlpha = Math.min(1, fade * 2);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      gearPath(ctx, p.size, p.size > 40 ? 14 : 8);
+      ctx.fillStyle = `rgba(${p.color}, 0.85)`;
+      ctx.strokeStyle = 'rgba(60, 35, 10, 0.9)';
+      ctx.lineWidth = Math.max(1, p.size / 12);
+      ctx.fill('evenodd');
+      ctx.stroke();
+      break;
+    }
+    case 'leaf': {
+      ctx.globalAlpha = Math.min(1, fade * 2);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.scale(1, Math.abs(Math.cos(p.life * 0.08)) * 0.7 + 0.3);
+      ctx.fillStyle = `rgba(${p.color}, 1)`;
+      ctx.beginPath();
+      ctx.moveTo(-p.size, 0);
+      ctx.quadraticCurveTo(0, -p.size * 0.7, p.size, 0);
+      ctx.quadraticCurveTo(0, p.size * 0.7, -p.size, 0);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(30, 60, 20, 0.7)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-p.size, 0);
+      ctx.lineTo(p.size, 0);
+      ctx.stroke();
+      break;
+    }
+    case 'flame': {
+      // Chama: amarela no começo, vermelha no fim, encolhendo.
+      const hue = 52 - t * 50;
+      const radius = p.size * (1 - t * 0.7);
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
+      g.addColorStop(0, `hsla(${hue}, 100%, ${70 - t * 25}%, ${0.9 * fade})`);
+      g.addColorStop(1, `hsla(${hue - 10}, 100%, 40%, 0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(p.x - radius, p.y - radius, radius * 2, radius * 2);
+      break;
+    }
+    case 'scale': {
+      // Escama dourada girando (brilho do dragão).
+      ctx.globalAlpha = fade;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.scale(Math.cos(p.life * 0.15), 1);
+      ctx.fillStyle = `rgba(${p.color}, 1)`;
+      ctx.shadowColor = `rgba(${p.color}, 1)`;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.moveTo(0, -p.size);
+      ctx.quadraticCurveTo(p.size, 0, 0, p.size);
+      ctx.quadraticCurveTo(-p.size, 0, 0, -p.size);
+      ctx.fill();
+      break;
+    }
+    case 'feather': {
+      // Pena de anjo caindo e balançando.
+      ctx.globalAlpha = Math.min(1, fade * 2.5);
+      ctx.translate(p.x + Math.sin(p.life * 0.05 + p.rot) * p.size, p.y);
+      ctx.rotate(Math.sin(p.life * 0.04 + p.rot) * 0.6 + 0.4);
+      ctx.shadowColor = 'rgba(255, 225, 140, 0.9)';
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = 'rgba(255, 252, 240, 0.95)';
+      ctx.beginPath();
+      ctx.moveTo(0, -p.size);
+      ctx.quadraticCurveTo(p.size * 0.45, -p.size * 0.2, p.size * 0.1, p.size);
+      ctx.quadraticCurveTo(-p.size * 0.4, 0, 0, -p.size);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(220, 180, 90, 0.9)';
+      ctx.lineWidth = Math.max(0.8, p.size / 14);
+      ctx.beginPath();
+      ctx.moveTo(0, -p.size * 0.9);
+      ctx.quadraticCurveTo(p.size * 0.08, 0, p.size * 0.1, p.size * 1.25);
+      ctx.stroke();
+      break;
+    }
+    default: {
+      // mote, spark, firefly, ember: ponto brilhante.
+      const blink = p.kind === 'firefly' ? 0.5 + 0.5 * Math.sin(p.life * 0.25 + p.rot) : 1;
+      ctx.globalAlpha = fade * blink;
+      ctx.fillStyle = `rgba(${p.color}, 1)`;
+      ctx.shadowColor = `rgba(${p.color}, 1)`;
+      ctx.shadowBlur = p.kind === 'spark' ? 6 : 12;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
-  const angle = rand(0, Math.PI * 2);
-  const speed = rand(0.6, 2.2) * scale;
+  ctx.restore();
+}
+
+/** Atualiza e desenha as partículas (as claras somam luz; as escuras cobrem). */
+function stepParticles(ctx: CanvasRenderingContext2D, particles: Particle[], height: number) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i]!;
+    p.life += 1;
+    p.vy += p.gravity;
+    p.vx *= p.drag;
+    p.vy *= p.drag;
+    p.x += p.vx;
+    p.y += p.vy;
+    p.rot += p.vr;
+    if (p.life >= p.max || p.y > height + 80) particles.splice(i, 1);
+  }
+  for (const p of particles) {
+    const dark =
+      p.kind === 'smoke' ||
+      p.kind === 'drop' ||
+      p.kind === 'splat' ||
+      p.kind === 'gear' ||
+      p.kind === 'leaf' ||
+      p.kind === 'feather';
+    ctx.globalCompositeOperation = dark ? 'source-over' : 'lighter';
+    drawParticle(ctx, p);
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+/** Ponto na borda do dado, no ângulo `a` (k > 1 = um pouco para fora). */
+function edge(o: AuraPoint, a: number, k = 1): Point {
+  return { x: o.x + Math.cos(a) * o.r * k, y: o.y + Math.sin(a) * o.r * k };
+}
+
+/** Partículas emanando da borda de um dado. `power` de 0 a 1 (rolando = 1; parado, menos). */
+function emitAround(aura: DiceAura, o: AuraPoint, out: Particle[], power: number) {
+  if (out.length > MAX_PARTICLES) return;
+  const s = o.r / 40;
+  const chance = (p: number) => Math.random() < p * power;
+  const color = RGB[aura];
+  // Camada "chakra": labaredas que nascem na borda e sobem, em todos os temas.
+  const wisps = Math.round(3 * power + Math.random());
+  for (let i = 0; i < wisps; i++) {
+    const a = rand(0, Math.PI * 2);
+    const from = edge(o, a, 0.85);
+    out.push(
+      particle(DARK.has(aura) && aura === 'shadow' ? 'smoke' : 'wisp', from.x, from.y, {
+        vx: Math.cos(a) * 0.5 * s,
+        vy: (Math.sin(a) * 0.4 - rand(0.8, 1.8)) * s,
+        max: rand(28, 46),
+        size: rand(10, 18) * s,
+        color: aura === 'blood' ? '150, 0, 20' : color,
+      }),
+    );
+  }
+  const a = rand(0, Math.PI * 2);
+  const from = edge(o, a);
   switch (aura) {
-    case 'storm': {
-      const length = rand(18, 42) * scale;
-      const to = { x: origin.x + Math.cos(angle) * length, y: origin.y + Math.sin(angle) * length };
-      return {
-        x: origin.x,
-        y: origin.y,
-        vx: 0,
-        vy: 0,
-        life: 0,
-        max: rand(5, 10),
-        size: rand(1, 2.2),
-        path: bolt(origin, to, 6 * scale, 5),
-      };
-    }
+    case 'storm':
+      if (chance(0.55)) {
+        const to = edge(o, a + rand(-0.3, 0.3), rand(1.5, 2.3));
+        out.push(
+          particle('bolt', 0, 0, {
+            path: bolt(from, to, 5 * s, 5),
+            max: rand(4, 9),
+            size: rand(1, 2),
+            color,
+          }),
+        );
+      }
+      if (chance(0.25)) {
+        const to = edge(o, a + rand(0.6, 1.4), 1.05);
+        out.push(
+          particle('bolt', 0, 0, {
+            path: bolt(from, to, 7 * s, 6),
+            max: rand(3, 6),
+            size: 1.2,
+            color,
+          }),
+        );
+      }
+      break;
     case 'blood':
-      return {
-        x: origin.x + rand(-8, 8),
-        y: origin.y,
-        vx: Math.cos(angle) * speed,
-        vy: -rand(1, 3) * scale,
-        life: 0,
-        max: rand(30, 50),
-        size: rand(1.5, 3.5) * scale,
-      };
+      // Jatinhos: gotas espirradas para fora e para cima, caindo com a gravidade.
+      for (let i = 0; i < 2; i++)
+        if (chance(0.8))
+          out.push(
+            particle('drop', from.x, from.y, {
+              vx: Math.cos(a) * rand(1, 2.6) * s,
+              vy: (Math.sin(a) - rand(1.5, 3)) * s,
+              gravity: 0.14 * s,
+              max: rand(35, 55),
+              size: rand(1.4, 2.6) * s,
+              color,
+            }),
+          );
+      break;
     case 'frost':
-      return {
-        x: origin.x,
-        y: origin.y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        life: 0,
-        max: rand(35, 60),
-        size: rand(2, 4) * scale,
-      };
+      if (chance(0.7))
+        out.push(
+          particle('flake', from.x, from.y, {
+            vx: Math.cos(a) * rand(0.4, 1.2) * s,
+            vy: Math.sin(a) * rand(0.4, 1.2) * s,
+            vr: rand(-0.05, 0.05),
+            max: rand(40, 70),
+            size: rand(2.5, 5) * s,
+            color,
+          }),
+        );
+      break;
     case 'arcane':
-      return {
-        x: origin.x,
-        y: origin.y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        life: 0,
-        max: rand(40, 70),
-        size: rand(1.5, 3) * scale,
-        hue: rand(260, 300),
-      };
+      if (chance(0.35))
+        out.push(
+          particle('rune', from.x, from.y, {
+            vx: Math.cos(a) * 0.4 * s,
+            vy: -rand(0.6, 1.2) * s,
+            max: rand(40, 60),
+            size: rand(10, 16) * s,
+            glyph: rune(),
+            color,
+          }),
+        );
+      if (chance(0.6))
+        out.push(
+          particle('mote', from.x, from.y, {
+            vx: -Math.sin(a) * 1.4 * s,
+            vy: Math.cos(a) * 1.4 * s - 0.4,
+            drag: 0.97,
+            max: rand(30, 50),
+            size: rand(1.2, 2.2) * s,
+            color: '220, 180, 255',
+          }),
+        );
+      break;
     case 'shadow':
-      return {
-        x: origin.x + rand(-10, 10),
-        y: origin.y,
-        vx: rand(-0.4, 0.4),
-        vy: -rand(0.5, 1.5) * scale,
-        life: 0,
-        max: rand(40, 70),
-        size: rand(10, 20) * scale,
-      };
+      if (chance(0.4))
+        out.push(
+          particle('mote', from.x, from.y, {
+            vx: Math.cos(a) * 0.6,
+            vy: -rand(0.5, 1.2),
+            max: rand(30, 50),
+            size: rand(1, 1.8) * s,
+            color: '150, 90, 220',
+          }),
+        );
+      break;
     case 'holy':
-      return {
-        x: origin.x + rand(-12, 12),
-        y: origin.y,
-        vx: rand(-0.3, 0.3),
-        vy: -rand(0.8, 2) * scale,
-        life: 0,
-        max: rand(40, 70),
-        size: rand(1.5, 3) * scale,
-      };
+      if (chance(0.3))
+        out.push(
+          particle('ray', from.x, from.y, {
+            rot: a,
+            max: rand(18, 30),
+            size: rand(5, 9) * s,
+            color,
+          }),
+        );
+      if (chance(0.06))
+        out.push(
+          particle('feather', from.x, from.y, {
+            vx: rand(-0.4, 0.4),
+            vy: rand(0.2, 0.6),
+            max: rand(60, 90),
+            size: rand(5, 8) * s,
+          }),
+        );
+      if (chance(0.7))
+        out.push(
+          particle('spark', from.x, from.y, {
+            vx: rand(-0.3, 0.3),
+            vy: -rand(0.8, 2) * s,
+            max: rand(30, 50),
+            size: rand(1.2, 2.2) * s,
+            color: '255, 240, 180',
+          }),
+        );
+      break;
+    case 'gears':
+      if (chance(0.18))
+        out.push(
+          particle('gear', from.x, from.y, {
+            vx: Math.cos(a) * rand(0.4, 1) * s,
+            vy: Math.sin(a) * rand(0.4, 1) * s - 0.3,
+            vr: rand(-0.12, 0.12),
+            max: rand(40, 60),
+            size: rand(4, 8) * s,
+            color: pick(['205, 150, 60', '170, 120, 70', '190, 190, 200']),
+          }),
+        );
+      for (let i = 0; i < 2; i++)
+        if (chance(0.6))
+          out.push(
+            particle('spark', from.x, from.y, {
+              vx: Math.cos(a) * rand(1, 3) * s,
+              vy: (Math.sin(a) - 1.5) * rand(1, 2) * s,
+              gravity: 0.18 * s,
+              max: rand(18, 30),
+              size: rand(0.8, 1.5) * s,
+              color: '255, 190, 80',
+            }),
+          );
+      if (chance(0.12)) {
+        const to = edge(o, a, 1.6);
+        out.push(
+          particle('bolt', 0, 0, {
+            path: bolt(from, to, 4 * s, 4),
+            max: 5,
+            size: 1,
+            color: '80, 230, 255',
+          }),
+        );
+      }
+      break;
+    case 'forest':
+      if (chance(0.4))
+        out.push(
+          particle('leaf', from.x, from.y, {
+            vx: Math.cos(a + 1.2) * rand(0.8, 1.6) * s,
+            vy: Math.sin(a + 1.2) * rand(0.8, 1.6) * s - 0.3,
+            vr: rand(-0.08, 0.08),
+            max: rand(45, 70),
+            size: rand(3, 5.5) * s,
+            color: pick(['90, 170, 60', '130, 190, 70', '60, 140, 50', '170, 200, 80']),
+          }),
+        );
+      if (chance(0.25))
+        out.push(
+          particle('firefly', from.x, from.y, {
+            vx: rand(-0.5, 0.5),
+            vy: -rand(0.3, 0.9),
+            max: rand(50, 80),
+            size: rand(1.2, 2) * s,
+            color: '210, 255, 120',
+          }),
+        );
+      break;
+    case 'fire':
+    case 'dragon':
+      for (let i = 0; i < 3; i++) {
+        const b = rand(0, Math.PI * 2);
+        const at = edge(o, b, 0.8);
+        if (chance(0.9))
+          out.push(
+            particle('flame', at.x, at.y, {
+              vx: Math.cos(b) * 0.4 * s,
+              vy: -rand(1.2, 2.4) * s,
+              max: rand(22, 36),
+              size: rand(7, 12) * s,
+            }),
+          );
+      }
+      if (chance(0.4))
+        out.push(
+          particle('ember', from.x, from.y, {
+            vx: rand(-1, 1) * s,
+            vy: -rand(1.5, 3) * s,
+            max: rand(35, 60),
+            size: rand(0.8, 1.5) * s,
+            color: '255, 170, 60',
+          }),
+        );
+      if (aura === 'dragon') {
+        if (chance(0.3))
+          out.push(
+            particle('scale', from.x, from.y, {
+              vx: Math.cos(a) * rand(0.6, 1.4) * s,
+              vy: Math.sin(a) * rand(0.6, 1.4) * s,
+              vr: rand(-0.1, 0.1),
+              max: rand(35, 55),
+              size: rand(2.5, 4) * s,
+              color: '255, 190, 70',
+            }),
+          );
+        if (chance(0.25))
+          out.push(
+            particle('smoke', from.x, from.y, {
+              vy: -rand(0.5, 1.2) * s,
+              max: rand(40, 60),
+              size: rand(8, 14) * s,
+              color: '60, 20, 10',
+            }),
+          );
+      }
+      break;
   }
 }
 
-function draw(
+/** Halo desenhado a cada quadro em volta do dado (brilho e, na arcana, o anel de runas). */
+function drawHalo(
   ctx: CanvasRenderingContext2D,
   aura: DiceAura,
-  p: Particle,
-  fromSky: boolean,
-  height: number,
+  o: AuraPoint,
+  time: number,
+  power: number,
 ) {
-  const fade = 1 - p.life / p.max;
-  const rgb = COLORS[aura];
+  const color = RGB[aura];
   ctx.save();
-  if (p.path) {
-    // Raio: traço branco com brilho azul, piscando.
-    ctx.globalAlpha = Math.random() < 0.25 ? 0.2 : fade;
-    ctx.strokeStyle = 'rgba(240, 250, 255, 1)';
-    ctx.shadowColor = `rgba(${rgb}, 1)`;
-    ctx.shadowBlur = fromSky ? 30 : 12;
-    ctx.lineWidth = p.size;
-    ctx.beginPath();
-    ctx.moveTo(p.path[0]!.x, p.path[0]!.y);
-    for (const point of p.path.slice(1)) ctx.lineTo(point.x, point.y);
-    ctx.stroke();
-  } else if (aura === 'holy' && fromSky) {
-    // Feixe de luz descendo.
-    const gradient = ctx.createLinearGradient(p.x, 0, p.x, height);
-    gradient.addColorStop(0, `rgba(${rgb}, ${0.5 * fade})`);
-    gradient.addColorStop(1, `rgba(${rgb}, 0)`);
-    ctx.fillStyle = gradient;
-    ctx.fillRect(p.x - p.size / 2, 0, p.size, height);
-  } else if (aura === 'shadow') {
-    const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
-    gradient.addColorStop(0, `rgba(10, 6, 18, ${0.7 * fade})`);
-    gradient.addColorStop(0.6, `rgba(${rgb}, ${0.35 * fade})`);
-    gradient.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fill();
-  } else if (aura === 'blood') {
-    ctx.globalAlpha = fade;
-    ctx.fillStyle = `rgba(${rgb}, 1)`;
-    ctx.beginPath();
-    // Gota alongada no sentido da queda.
-    ctx.ellipse(p.x, p.y, p.size * 0.7, p.size * (fromSky ? 3 : 1.4), 0, 0, Math.PI * 2);
-    ctx.fill();
-  } else if (aura === 'frost') {
-    ctx.globalAlpha = fade;
-    ctx.strokeStyle = `rgba(${rgb}, 1)`;
-    ctx.shadowColor = `rgba(${rgb}, 0.9)`;
-    ctx.shadowBlur = 6;
-    ctx.lineWidth = 1;
-    // Floco de seis pontas.
-    for (let i = 0; i < 3; i++) {
-      const a = (i * Math.PI) / 3 + p.life * 0.02;
-      ctx.beginPath();
-      ctx.moveTo(p.x - Math.cos(a) * p.size, p.y - Math.sin(a) * p.size);
-      ctx.lineTo(p.x + Math.cos(a) * p.size, p.y + Math.sin(a) * p.size);
-      ctx.stroke();
-    }
+  const flicker = 0.85 + Math.sin(time * 9) * 0.08 + Math.random() * 0.07;
+  const g = ctx.createRadialGradient(o.x, o.y, o.r * 0.7, o.x, o.y, o.r * 1.9);
+  if (aura === 'shadow') {
+    g.addColorStop(0, `rgba(10, 4, 18, ${0.55 * power})`);
+    g.addColorStop(1, 'rgba(10, 4, 18, 0)');
   } else {
-    // Arcana e sagrada: faísca brilhante.
-    ctx.globalAlpha = fade;
-    const color = aura === 'arcane' ? `hsla(${p.hue ?? 280}, 90%, 70%, 1)` : `rgba(${rgb}, 1)`;
-    ctx.fillStyle = color;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 10;
+    ctx.globalCompositeOperation = 'lighter';
+    g.addColorStop(0, `rgba(${color}, ${0.35 * power * flicker})`);
+    g.addColorStop(1, `rgba(${color}, 0)`);
+  }
+  ctx.fillStyle = g;
+  ctx.fillRect(o.x - o.r * 2, o.y - o.r * 2, o.r * 4, o.r * 4);
+  if (aura === 'holy') {
+    // Auréola flutuando sobre o dado.
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = power;
+    ctx.strokeStyle = 'rgba(255, 230, 150, 0.95)';
+    ctx.shadowColor = `rgba(${color}, 1)`;
+    ctx.shadowBlur = 16;
+    ctx.lineWidth = Math.max(2, o.r * 0.09);
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.ellipse(
+      o.x,
+      o.y - o.r * 1.3 + Math.sin(time * 2.5) * o.r * 0.06,
+      o.r * 0.62,
+      o.r * 0.17,
+      0,
+      0,
+      Math.PI * 2,
+    );
+    ctx.stroke();
+  }
+  if (aura === 'arcane') {
+    // Anel de runas girando em volta do dado.
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.85 * power;
+    ctx.strokeStyle = `rgba(${color}, 0.8)`;
+    ctx.shadowColor = `rgba(${color}, 1)`;
+    ctx.shadowBlur = 10;
+    ctx.lineWidth = 1.2;
+    const ring = o.r * 1.45;
+    ctx.beginPath();
+    ctx.arc(o.x, o.y, ring + o.r * 0.18, 0, Math.PI * 2);
+    ctx.arc(o.x, o.y, ring - o.r * 0.18, 0, Math.PI * 2, true);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(225, 195, 255, 1)';
+    ctx.font = `${Math.max(9, o.r * 0.3)}px "Segoe UI Symbol", "Noto Sans Runic", serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const count = 10;
+    for (let i = 0; i < count; i++) {
+      const a = time * 1.2 + (i / count) * Math.PI * 2;
+      ctx.save();
+      ctx.translate(o.x + Math.cos(a) * ring, o.y + Math.sin(a) * ring);
+      ctx.rotate(a + Math.PI / 2);
+      ctx.fillText(RUNES[(i * 7) % RUNES.length]!, 0, 0);
+      ctx.restore();
+    }
   }
   ctx.restore();
 }
@@ -288,59 +743,59 @@ function overlay(host: HTMLElement | null): HTMLCanvasElement {
   return canvas;
 }
 
+function fit(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+) {
+  const ratio = window.devicePixelRatio || 1;
+  if (canvas.width !== Math.round(width * ratio) || canvas.height !== Math.round(height * ratio)) {
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+  }
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+}
+
 /**
- * Partículas saindo dos dados enquanto rolam. `positions` devolve, a cada quadro, onde estão os
- * dados (em pixels, relativos a `host`). Devolve a função que encerra o efeito (com esmaecimento).
+ * Aura emanando dos dados. `positions` devolve, a cada quadro, onde estão os dados (pixels
+ * relativos a `host`, com o raio); `power` (0 a 1) controla a intensidade (rolando = 1).
+ * Devolve a função que encerra o efeito (com esmaecimento).
  */
 export function startDiceAura(
   host: HTMLElement,
   aura: DiceAura,
-  positions: () => Point[],
-  scale = 1,
+  positions: () => AuraPoint[],
+  power: () => number = () => 1,
 ): () => void {
   if (reducedMotion()) return () => undefined;
   if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
   const canvas = overlay(host);
   const ctx = canvas.getContext('2d');
   const particles: Particle[] = [];
+  const started = performance.now();
   let emitting = true;
   let frame = 0;
-  const tick = () => {
+  const tick = (now: number) => {
     if (!ctx) return;
-    const ratio = window.devicePixelRatio || 1;
-    const width = host.clientWidth;
-    const height = host.clientHeight;
-    if (canvas.width !== Math.round(width * ratio)) {
-      canvas.width = Math.round(width * ratio);
-      canvas.height = Math.round(height * ratio);
-    }
-    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    ctx.clearRect(0, 0, width, height);
+    fit(canvas, ctx, host.clientWidth, host.clientHeight);
+    const time = (now - started) / 1000;
     if (emitting) {
-      const rate = aura === 'storm' ? 2 : 3;
-      for (const origin of positions())
-        for (let i = 0; i < rate; i++)
-          particles.push(spawn(aura, origin, scale, false, width, height));
-    }
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i]!;
-      p.life += 1;
-      p.x += p.vx;
-      p.y += p.vy;
-      if (aura === 'blood') p.vy += 0.12 * scale;
-      if (p.life >= p.max) {
-        particles.splice(i, 1);
-        continue;
+      const strength = Math.max(0, Math.min(1, power()));
+      for (const origin of positions()) {
+        drawHalo(ctx, aura, origin, time, strength);
+        emitAround(aura, origin, particles, strength);
       }
-      draw(ctx, aura, p, false, height);
     }
+    stepParticles(ctx, particles, host.clientHeight);
     if (emitting || particles.length) frame = requestAnimationFrame(tick);
     else canvas.remove();
   };
   frame = requestAnimationFrame(tick);
   return () => {
     emitting = false;
-    // Se a aba estiver em segundo plano, a animação para: garante a limpeza.
+    // Com a aba em segundo plano a animação para: garante a limpeza.
     window.setTimeout(() => {
       cancelAnimationFrame(frame);
       canvas.remove();
@@ -348,106 +803,776 @@ export function startDiceAura(
   };
 }
 
-/** Crítico: o tema toma a tela inteira por alguns segundos (raios caindo, chuva de sangue…). */
-export function criticalAuraBurst(aura: DiceAura, durationMs = 3200): void {
+// --------------------------------------------------------------------------------------------
+// Crítico: tela inteira
+// --------------------------------------------------------------------------------------------
+
+interface Segment {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  /** Momento (s) em que o trecho começa a crescer. */
+  t: number;
+  w: number;
+}
+
+/** Galhos crescendo a partir das sementes (gelo cobrindo a tela, cipós da floresta). */
+function grow(
+  seeds: { x: number; y: number; a: number }[],
+  options: {
+    length: number;
+    depth: number;
+    spread: number;
+    speed: number;
+    jitter: number;
+    max: number;
+  },
+): Segment[] {
+  const segments: Segment[] = [];
+  const branch = (x: number, y: number, a: number, depth: number, t: number, w: number) => {
+    if (depth <= 0 || segments.length >= options.max) return;
+    const length = options.length * rand(0.6, 1.1);
+    const x2 = x + Math.cos(a) * length;
+    const y2 = y + Math.sin(a) * length;
+    segments.push({ x1: x, y1: y, x2, y2, t, w });
+    const next = t + length / options.speed;
+    branch(x2, y2, a + rand(-options.jitter, options.jitter), depth - 1, next, w * 0.86);
+    if (Math.random() < 0.65)
+      branch(
+        x2,
+        y2,
+        a + (Math.random() < 0.5 ? -1 : 1) * options.spread * rand(0.6, 1.2),
+        depth - 2,
+        next,
+        w * 0.6,
+      );
+  };
+  for (const seed of seeds) branch(seed.x, seed.y, seed.a, options.depth, rand(0, 0.25), 2.4);
+  return segments;
+}
+
+function drawSegments(
+  ctx: CanvasRenderingContext2D,
+  segments: Segment[],
+  time: number,
+  style: (segment: Segment, progress: number) => void,
+) {
+  for (const segment of segments) {
+    if (time < segment.t) continue;
+    const progress = Math.min(1, (time - segment.t) * 6);
+    style(segment, progress);
+    ctx.beginPath();
+    ctx.moveTo(segment.x1, segment.y1);
+    ctx.lineTo(
+      segment.x1 + (segment.x2 - segment.x1) * progress,
+      segment.y1 + (segment.y2 - segment.y1) * progress,
+    );
+    ctx.stroke();
+  }
+}
+
+/** Sementes nas bordas da tela, apontando para dentro. */
+function edgeSeeds(
+  width: number,
+  height: number,
+  count: number,
+  sides: ('top' | 'bottom' | 'left' | 'right')[],
+) {
+  const seeds: { x: number; y: number; a: number }[] = [];
+  for (let i = 0; i < count; i++) {
+    const side = pick(sides);
+    const jitter = rand(-0.5, 0.5);
+    if (side === 'top') seeds.push({ x: rand(0, width), y: 0, a: Math.PI / 2 + jitter });
+    else if (side === 'bottom')
+      seeds.push({ x: rand(0, width), y: height, a: -Math.PI / 2 + jitter });
+    else if (side === 'left') seeds.push({ x: 0, y: rand(0, height), a: jitter });
+    else seeds.push({ x: width, y: rand(0, height), a: Math.PI + jitter });
+  }
+  return seeds;
+}
+
+/** Círculo mágico com runas (arcana). */
+function magicCircle(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  time: number,
+  alpha: number,
+) {
+  const color = RGB.arcane;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y);
+  ctx.strokeStyle = `rgba(${color}, 0.9)`;
+  ctx.fillStyle = 'rgba(230, 205, 255, 1)';
+  ctx.shadowColor = `rgba(${color}, 1)`;
+  ctx.shadowBlur = 18;
+  ctx.lineWidth = Math.max(1.5, radius / 140);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  // Anéis externos e runas girando.
+  for (const [k, speed, count] of [
+    [1, 0.35, 24],
+    [0.72, -0.55, 16],
+  ] as const) {
+    ctx.save();
+    ctx.rotate(time * speed);
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * k, 0, Math.PI * 2);
+    ctx.arc(0, 0, radius * (k - 0.13), 0, Math.PI * 2, true);
+    ctx.stroke();
+    ctx.font = `${radius * 0.085}px "Segoe UI Symbol", "Noto Sans Runic", serif`;
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * Math.PI * 2;
+      ctx.save();
+      ctx.rotate(a);
+      ctx.translate(0, -radius * (k - 0.065));
+      ctx.fillText(RUNES[(i * 5 + (k === 1 ? 0 : 3)) % RUNES.length]!, 0, 0);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+  // Hexagrama no centro, girando ao contrário.
+  ctx.save();
+  ctx.rotate(-time * 0.8);
+  for (const offset of [0, Math.PI / 3]) {
+    ctx.beginPath();
+    for (let i = 0; i < 3; i++) {
+      const a = offset + (i / 3) * Math.PI * 2 - Math.PI / 2;
+      ctx.lineTo(Math.cos(a) * radius * 0.55, Math.sin(a) * radius * 0.55);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.arc(0, 0, radius * 0.27, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+  ctx.restore();
+}
+
+/** Silhueta de dragão voando (asas batendo). */
+function dragon(ctx: CanvasRenderingContext2D, x: number, y: number, scale: number, flap: number) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  ctx.fillStyle = 'rgba(18, 4, 4, 0.92)';
+  ctx.shadowColor = 'rgba(255, 60, 20, 0.9)';
+  ctx.shadowBlur = 25;
+  const wing = (lift: number) => {
+    ctx.beginPath();
+    ctx.moveTo(25, -6);
+    ctx.quadraticCurveTo(10, -70 * lift, -40, -125 * lift);
+    ctx.lineTo(-48, -75 * lift);
+    ctx.lineTo(-72, -88 * lift);
+    ctx.lineTo(-70, -45 * lift);
+    ctx.lineTo(-95, -48 * lift);
+    ctx.lineTo(-25, -4);
+    ctx.closePath();
+    ctx.fill();
+  };
+  wing(flap * 0.8);
+  // Corpo, pescoço, cabeça e cauda.
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 62, 17, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(48, -8);
+  ctx.quadraticCurveTo(85, -30, 112, -24);
+  ctx.lineTo(140, -16);
+  ctx.lineTo(118, -8);
+  ctx.lineTo(126, -2);
+  ctx.quadraticCurveTo(90, -4, 55, 10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-55, -4);
+  ctx.quadraticCurveTo(-120, 10, -175, -14);
+  ctx.lineTo(-190, -8);
+  ctx.lineTo(-174, -4);
+  ctx.quadraticCurveTo(-120, 24, -55, 9);
+  ctx.closePath();
+  ctx.fill();
+  wing(flap);
+  ctx.restore();
+}
+
+/** "CRÍTICO!" no centro da tela, no estilo do tema. */
+function criticalText(aura: DiceAura, durationMs: number) {
+  const color = diceAuraLabels[aura].color;
+  const element = document.createElement('div');
+  element.setAttribute('aria-hidden', 'true');
+  element.textContent = 'Crítico!';
+  const font = getComputedStyle(document.body).getPropertyValue('--font-display').trim();
+  Object.assign(element.style, {
+    position: 'fixed',
+    left: '50%',
+    top: '50%',
+    transform: 'translate(-50%, -50%)',
+    zIndex: '121',
+    pointerEvents: 'none',
+    fontFamily: font || 'serif',
+    fontSize: 'clamp(3.5rem, 11vw, 9rem)',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    whiteSpace: 'nowrap',
+    color: aura === 'shadow' ? '#d9c8ff' : '#fff',
+    textShadow: `0 0 12px ${color}, 0 0 32px ${color}, 0 0 64px ${color}, 0 4px 0 rgba(0,0,0,0.6)`,
+    WebkitTextStroke: `2px ${color}`,
+  });
+  document.body.appendChild(element);
+  const shake = aura === 'storm' || aura === 'dragon' || aura === 'blood';
+  element.animate(
+    [
+      { opacity: 0, transform: 'translate(-50%, -50%) scale(2.2)', filter: 'blur(8px)' },
+      {
+        opacity: 1,
+        transform: 'translate(-50%, -50%) scale(0.95)',
+        filter: 'blur(0)',
+        offset: 0.12,
+      },
+      {
+        opacity: 1,
+        transform: shake ? 'translate(-51%, -49%) scale(1)' : 'translate(-50%, -50%) scale(1)',
+        offset: 0.2,
+      },
+      { opacity: 1, transform: 'translate(-50%, -50%) scale(1.04)', offset: 0.75 },
+      { opacity: 0, transform: 'translate(-50%, -50%) scale(1.15)', filter: 'blur(4px)' },
+    ],
+    { duration: durationMs, easing: 'ease-out', fill: 'forwards' },
+  );
+  window.setTimeout(() => element.remove(), durationMs + 100);
+}
+
+/** Vidro congelado: borda da tela embaçada e azulada (gelo). */
+function frozenGlass(durationMs: number) {
+  const element = document.createElement('div');
+  element.setAttribute('aria-hidden', 'true');
+  const mask = 'radial-gradient(ellipse at center, transparent 30%, black 80%)';
+  Object.assign(element.style, {
+    position: 'fixed',
+    inset: '0',
+    zIndex: '119',
+    pointerEvents: 'none',
+    backdropFilter: 'blur(5px) saturate(0.4) brightness(1.15)',
+    background:
+      'radial-gradient(ellipse at center, transparent 35%, rgba(190, 230, 255, 0.35) 75%, rgba(235, 248, 255, 0.6) 100%)',
+    maskImage: mask,
+    WebkitMaskImage: mask,
+  });
+  document.body.appendChild(element);
+  element.animate(
+    [{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }],
+    { duration: durationMs, fill: 'forwards' },
+  );
+  window.setTimeout(() => element.remove(), durationMs + 100);
+}
+
+/**
+ * Crítico: o tema toma a tela inteira por alguns segundos, com "CRÍTICO!" no centro e o som do
+ * tema (raio, jorro de sangue, gelo trincando, runas, rugido…).
+ */
+export function criticalAuraBurst(
+  aura: DiceAura,
+  options: { durationMs?: number; sound?: boolean; text?: boolean } = {},
+): void {
   if (reducedMotion()) return;
+  const durationMs = options.durationMs ?? 3600;
+  if (options.text !== false) criticalText(aura, durationMs - 400);
+  if (options.sound !== false) playCriticalSound(aura);
+  if (aura === 'frost') frozenGlass(durationMs);
   const canvas = overlay(null);
   const ctx = canvas.getContext('2d');
   const particles: Particle[] = [];
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const color = RGB[aura];
   const started = performance.now();
   let flash = 0;
+  // Elementos fixos de cada tema.
+  const ferns =
+    aura === 'frost'
+      ? grow(edgeSeeds(width, height, 34, ['top', 'bottom', 'left', 'right']), {
+          length: 26,
+          depth: 9,
+          spread: 0.75,
+          speed: 260,
+          jitter: 0.35,
+          max: 2600,
+        })
+      : [];
+  const vines =
+    aura === 'forest'
+      ? grow(edgeSeeds(width, height, 14, ['bottom', 'left', 'right']), {
+          length: 34,
+          depth: 10,
+          spread: 0.9,
+          speed: 220,
+          jitter: 0.5,
+          max: 1400,
+        })
+      : [];
+  const fountains =
+    aura === 'blood'
+      ? Array.from({ length: 7 }, (_, i) =>
+          i < 4
+            ? {
+                x: rand(width * 0.1, width * 0.9),
+                y: height + 10,
+                a: -Math.PI / 2 + rand(-0.35, 0.35),
+              }
+            : i === 4
+              ? { x: -10, y: rand(height * 0.4, height * 0.8), a: -0.7 }
+              : i === 5
+                ? { x: width + 10, y: rand(height * 0.4, height * 0.8), a: Math.PI + 0.7 }
+                : { x: width / 2 + rand(-80, 80), y: height + 10, a: -Math.PI / 2 },
+        )
+      : [];
+  const circles =
+    aura === 'arcane'
+      ? [
+          { x: width / 2, y: height / 2, r: Math.min(width, height) * 0.36, delay: 0 },
+          { x: width * 0.15, y: height * 0.25, r: Math.min(width, height) * 0.13, delay: 0.4 },
+          { x: width * 0.85, y: height * 0.72, r: Math.min(width, height) * 0.15, delay: 0.6 },
+          { x: width * 0.82, y: height * 0.18, r: Math.min(width, height) * 0.09, delay: 0.9 },
+          { x: width * 0.2, y: height * 0.8, r: Math.min(width, height) * 0.1, delay: 1.1 },
+        ]
+      : [];
+  const bigGears =
+    aura === 'gears'
+      ? [
+          { x: 0, y: 0, r: 170, dir: 1 },
+          { x: 215, y: 120, r: 80, dir: -2.1 },
+          { x: width, y: height, r: 200, dir: -1 },
+          { x: width - 250, y: height - 110, r: 90, dir: 2.2 },
+          { x: width, y: 0, r: 120, dir: 1.3 },
+          { x: 0, y: height, r: 130, dir: -1.2 },
+        ]
+      : [];
+
   const tick = (now: number) => {
     if (!ctx) return;
-    const ratio = window.devicePixelRatio || 1;
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    if (canvas.width !== Math.round(width * ratio)) {
-      canvas.width = Math.round(width * ratio);
-      canvas.height = Math.round(height * ratio);
-    }
-    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    ctx.clearRect(0, 0, width, height);
+    fit(canvas, ctx, width, height);
     const elapsed = now - started;
-    const emitting = elapsed < durationMs - 600;
-    if (emitting) {
-      const rate =
-        aura === 'storm'
-          ? Math.random() < 0.18
-            ? 2
-            : 0
-          : aura === 'holy'
-            ? Math.random() < 0.25
-              ? 1
-              : 0
-            : aura === 'shadow'
-              ? 2
-              : 6;
-      for (let i = 0; i < rate; i++) {
-        particles.push(spawn(aura, { x: 0, y: 0 }, 1, true, width, height));
-        if (aura === 'storm') flash = 0.35;
+    const time = elapsed / 1000;
+    const emitting = elapsed < durationMs - 700;
+    // Entrada e saída suaves dos elementos fixos.
+    const presence =
+      Math.min(1, elapsed / 400) * Math.min(1, Math.max(0, (durationMs - elapsed) / 700));
+
+    // Fundo do tema (vinheta).
+    const vignette = ctx.createRadialGradient(
+      width / 2,
+      height / 2,
+      Math.min(width, height) * 0.25,
+      width / 2,
+      height / 2,
+      Math.max(width, height) * 0.75,
+    );
+    const tint =
+      aura === 'shadow'
+        ? `rgba(6, 2, 12, ${0.8 * presence})`
+        : aura === 'blood'
+          ? `rgba(90, 0, 10, ${(0.45 + Math.max(0, Math.sin(time * 7)) * 0.2) * presence})`
+          : `rgba(${color}, ${0.28 * presence})`;
+    vignette.addColorStop(0, 'rgba(0,0,0,0)');
+    vignette.addColorStop(1, tint);
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, width, height);
+
+    if (emitting && particles.length < MAX_PARTICLES) {
+      switch (aura) {
+        case 'storm':
+          if (Math.random() < 0.2) {
+            const x = rand(0, width);
+            const to = { x: x + rand(-120, 120), y: rand(height * 0.5, height) };
+            particles.push(
+              particle('bolt', 0, 0, {
+                path: bolt({ x, y: 0 }, to, 40, 12),
+                max: rand(8, 16),
+                size: rand(2.5, 4.5),
+                color,
+              }),
+            );
+            flash = 0.4;
+          }
+          for (let i = 0; i < 3; i++)
+            particles.push(
+              particle('drop', rand(0, width), -10, {
+                vx: -2,
+                vy: rand(16, 22),
+                max: 80,
+                size: 1,
+                color: '170, 210, 255',
+              }),
+            );
+          break;
+        case 'blood':
+          // Jorros: jatos fortes saindo das bordas, caindo em arco e respingando na tela.
+          for (const f of fountains) {
+            const pulse = Math.max(0, Math.sin(time * 7 + f.x)) > 0.3 ? 4 : 1;
+            for (let i = 0; i < pulse; i++) {
+              const a = f.a + rand(-0.12, 0.12);
+              const speed = rand(14, 24) * Math.min(1.3, height / 700);
+              particles.push(
+                particle('drop', f.x, f.y, {
+                  vx: Math.cos(a) * speed,
+                  vy: Math.sin(a) * speed,
+                  gravity: 0.45,
+                  max: 160,
+                  size: rand(2.5, 5),
+                  color,
+                }),
+              );
+            }
+          }
+          if (Math.random() < 0.12)
+            particles.push(
+              particle('splat', rand(0, width), rand(0, height * 0.7), {
+                max: (durationMs - elapsed) / 16,
+                size: rand(14, 34),
+                color: '150, 0, 18',
+              }),
+            );
+          break;
+        case 'frost':
+          for (let i = 0; i < 3; i++)
+            particles.push(
+              particle('flake', rand(-100, width), -10, {
+                vx: rand(2, 4),
+                vy: rand(2, 4),
+                vr: rand(-0.05, 0.05),
+                max: 260,
+                size: rand(3, 7),
+                color,
+              }),
+            );
+          break;
+        case 'arcane':
+          if (Math.random() < 0.5)
+            particles.push(
+              particle('rune', rand(0, width), height + 20, {
+                vy: -rand(1.5, 3),
+                vx: rand(-0.3, 0.3),
+                max: rand(120, 200),
+                size: rand(18, 34),
+                glyph: rune(),
+                color,
+              }),
+            );
+          for (let i = 0; i < 2; i++)
+            particles.push(
+              particle('mote', rand(0, width), rand(0, height), {
+                vy: -rand(0.3, 1),
+                max: rand(40, 80),
+                size: rand(1, 2.5),
+                color: '220, 180, 255',
+              }),
+            );
+          break;
+        case 'shadow':
+          for (let i = 0; i < 2; i++) {
+            const seed = pick(edgeSeeds(width, height, 1, ['top', 'bottom', 'left', 'right']));
+            particles.push(
+              particle('smoke', seed.x, seed.y, {
+                vx: (width / 2 - seed.x) * 0.004,
+                vy: (height / 2 - seed.y) * 0.004,
+                max: 160,
+                size: rand(50, 100),
+                color,
+              }),
+            );
+          }
+          break;
+        case 'holy':
+          if (Math.random() < 0.18)
+            particles.push(
+              particle('feather', rand(0, width), -30, {
+                vx: rand(-0.5, 0.5),
+                vy: rand(0.8, 1.6),
+                max: 400,
+                size: rand(12, 22),
+              }),
+            );
+          for (let i = 0; i < 2; i++)
+            particles.push(
+              particle('spark', rand(0, width), -10, {
+                vy: rand(1.5, 3.5),
+                vx: rand(-0.4, 0.4),
+                max: 260,
+                size: rand(1.5, 3),
+                color: '255, 240, 180',
+              }),
+            );
+          break;
+        case 'gears':
+          if (Math.random() < 0.25)
+            particles.push(
+              particle('gear', rand(0, width), -40, {
+                vy: rand(3, 6),
+                vr: rand(-0.1, 0.1),
+                gravity: 0.08,
+                max: 240,
+                size: rand(12, 30),
+                color: pick(['205, 150, 60', '170, 120, 70', '190, 190, 200']),
+              }),
+            );
+          for (const g of bigGears.slice(0, 4)) {
+            if (Math.random() < 0.5) continue;
+            const a = rand(0, Math.PI * 2);
+            particles.push(
+              particle('spark', g.x + Math.cos(a) * g.r, g.y + Math.sin(a) * g.r, {
+                vx: rand(-4, 4),
+                vy: rand(-6, -1),
+                gravity: 0.3,
+                max: 50,
+                size: rand(1, 2),
+                color: '255, 190, 80',
+              }),
+            );
+          }
+          break;
+        case 'forest':
+          for (let i = 0; i < 2; i++)
+            particles.push(
+              particle('leaf', rand(-200, width), -20, {
+                vx: rand(2, 4),
+                vy: rand(1.5, 3),
+                vr: rand(-0.08, 0.08),
+                max: 300,
+                size: rand(6, 12),
+                color: pick([
+                  '90, 170, 60',
+                  '130, 190, 70',
+                  '60, 140, 50',
+                  '170, 200, 80',
+                  '200, 160, 60',
+                ]),
+              }),
+            );
+          if (Math.random() < 0.4)
+            particles.push(
+              particle('firefly', rand(0, width), rand(0, height), {
+                vx: rand(-0.6, 0.6),
+                vy: rand(-0.6, 0.3),
+                max: 120,
+                size: rand(2, 3.5),
+                color: '210, 255, 120',
+              }),
+            );
+          break;
+        case 'fire':
+        case 'dragon': {
+          // Fogo subindo pela parte de baixo da tela.
+          const count = aura === 'fire' ? 9 : 4;
+          for (let i = 0; i < count; i++)
+            particles.push(
+              particle('flame', rand(0, width), height + 20, {
+                vx: rand(-0.6, 0.6),
+                vy: -rand(4, 9),
+                max: rand(40, 70),
+                size: rand(30, 70),
+              }),
+            );
+          for (let i = 0; i < 2; i++)
+            particles.push(
+              particle('ember', rand(0, width), height, {
+                vx: rand(-1.5, 1.5),
+                vy: -rand(3, 7),
+                max: 140,
+                size: rand(1.2, 2.5),
+                color: '255, 170, 60',
+              }),
+            );
+          break;
+        }
       }
     }
-    // Clarão do raio e escurecimento da sombra.
+
+    // Elementos fixos de cada tema.
+    if (aura === 'holy') {
+      // O céu se abre: leque de raios de luz girando a partir do alto, auréola atrás do texto.
+      const sx = width / 2;
+      const sy = -height * 0.15;
+      const reach = Math.hypot(width, height) * 1.2;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const opening = elapsed < 250 ? 1 - elapsed / 250 : 0;
+      if (opening > 0) {
+        ctx.fillStyle = `rgba(255, 250, 230, ${opening * 0.85})`;
+        ctx.fillRect(0, 0, width, height);
+      }
+      const rays = 18;
+      for (let i = 0; i < rays; i++) {
+        const a =
+          Math.PI / 2 + (i / rays - 0.5) * 2.4 + Math.sin(time * 0.6 + i) * 0.04 + time * 0.05;
+        const spread = 0.045 + (i % 3) * 0.015;
+        const g = ctx.createLinearGradient(
+          sx,
+          sy,
+          sx + Math.cos(a) * reach,
+          sy + Math.sin(a) * reach,
+        );
+        const strength = (0.18 + 0.12 * Math.sin(time * 2 + i * 1.7)) * presence;
+        g.addColorStop(0, `rgba(255, 245, 200, ${strength})`);
+        g.addColorStop(0.7, `rgba(${color}, ${strength * 0.4})`);
+        g.addColorStop(1, `rgba(${color}, 0)`);
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx + Math.cos(a - spread) * reach, sy + Math.sin(a - spread) * reach);
+        ctx.lineTo(sx + Math.cos(a + spread) * reach, sy + Math.sin(a + spread) * reach);
+        ctx.closePath();
+        ctx.fill();
+      }
+      const halo = Math.min(width, height) * 0.3 * (0.8 + 0.2 * Math.min(1, elapsed / 500));
+      ctx.globalAlpha = presence;
+      ctx.strokeStyle = 'rgba(255, 235, 170, 0.9)';
+      ctx.shadowColor = `rgba(${color}, 1)`;
+      ctx.shadowBlur = 40;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(width / 2, height / 2, halo, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(width / 2, height / 2, halo * 1.12, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
     if (flash > 0) {
       ctx.fillStyle = `rgba(200, 235, 255, ${flash})`;
       ctx.fillRect(0, 0, width, height);
       flash = Math.max(0, flash - 0.05);
     }
-    if (aura === 'shadow') {
-      const strength =
-        Math.min(1, elapsed / 800) * (emitting ? 1 : Math.max(0, (durationMs - elapsed) / 600));
-      const vignette = ctx.createRadialGradient(
-        width / 2,
-        height / 2,
-        Math.min(width, height) * 0.2,
-        width / 2,
-        height / 2,
-        Math.max(width, height) * 0.7,
-      );
-      vignette.addColorStop(0, 'rgba(0,0,0,0)');
-      vignette.addColorStop(1, `rgba(8, 4, 16, ${0.75 * strength})`);
-      ctx.fillStyle = vignette;
-      ctx.fillRect(0, 0, width, height);
+    if (ferns.length) {
+      ctx.save();
+      ctx.globalAlpha = presence;
+      ctx.shadowColor = 'rgba(200, 240, 255, 1)';
+      ctx.shadowBlur = 8;
+      ctx.lineCap = 'round';
+      drawSegments(ctx, ferns, time, (segment) => {
+        ctx.strokeStyle = 'rgba(230, 248, 255, 0.85)';
+        ctx.lineWidth = segment.w;
+      });
+      ctx.restore();
     }
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i]!;
-      p.life += 1;
-      p.x += p.vx;
-      p.y += p.vy;
-      if (p.life >= p.max || p.y > height + 60) {
-        particles.splice(i, 1);
-        continue;
-      }
-      draw(ctx, aura, p, true, height);
+    if (vines.length) {
+      ctx.save();
+      ctx.globalAlpha = presence;
+      ctx.lineCap = 'round';
+      drawSegments(ctx, vines, time, (segment) => {
+        ctx.strokeStyle = 'rgba(60, 120, 40, 0.95)';
+        ctx.lineWidth = segment.w * 2.2;
+      });
+      // Folhas nas pontas dos cipós já crescidos.
+      ctx.fillStyle = 'rgba(100, 180, 60, 0.95)';
+      vines.forEach((segment, index) => {
+        if (index % 3 !== 0 || time < segment.t + 0.2) return;
+        ctx.save();
+        ctx.translate(segment.x2, segment.y2);
+        ctx.rotate(index);
+        ctx.beginPath();
+        ctx.ellipse(6, 0, 7, 3.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+      ctx.restore();
     }
+    for (const c of circles) {
+      const local = time - c.delay;
+      if (local < 0) continue;
+      const grow = Math.min(1, local / 0.5);
+      magicCircle(ctx, c.x, c.y, c.r * (0.6 + 0.4 * grow), time, presence * grow);
+    }
+    for (const g of bigGears) {
+      ctx.save();
+      ctx.globalAlpha = presence;
+      ctx.translate(g.x, g.y);
+      ctx.rotate(time * 0.9 * g.dir);
+      gearPath(ctx, g.r, Math.round(g.r / 9));
+      ctx.fillStyle = 'rgba(150, 105, 50, 0.92)';
+      ctx.strokeStyle = 'rgba(255, 200, 110, 0.8)';
+      ctx.shadowColor = 'rgba(255, 170, 60, 0.8)';
+      ctx.shadowBlur = 16;
+      ctx.lineWidth = 3;
+      ctx.fill('evenodd');
+      ctx.stroke();
+      ctx.restore();
+    }
+    if (aura === 'dragon') {
+      // Dragão cruzando a tela e cuspindo fogo.
+      const progress = elapsed / (durationMs - 300);
+      const x = -260 + (width + 520) * progress;
+      const y = height * 0.28 + Math.sin(time * 3) * 30;
+      const scale = Math.max(1.2, width / 900);
+      dragon(ctx, x, y, scale, Math.sin(time * 9));
+      if (emitting && progress > 0.1 && progress < 0.9)
+        for (let i = 0; i < 6; i++)
+          particles.push(
+            particle('flame', x + 136 * scale, y - 12 * scale, {
+              vx: rand(6, 11),
+              vy: rand(3, 8),
+              drag: 0.98,
+              max: rand(30, 50),
+              size: rand(20, 45),
+            }),
+          );
+    }
+
+    stepParticles(ctx, particles, height);
     if (elapsed < durationMs || particles.length) requestAnimationFrame(tick);
     else canvas.remove();
   };
   requestAnimationFrame(tick);
-  window.setTimeout(() => canvas.remove(), durationMs + 4000);
+  window.setTimeout(() => canvas.remove(), durationMs + 5000);
 }
 
 /** Partes internas da biblioteca 3D usadas para achar os dados na tela. */
+interface ProjectedVector {
+  x: number;
+  y: number;
+  project(camera: unknown): ProjectedVector;
+}
 interface DiceBoxProjection {
-  diceList?: { position?: { clone(): { project(camera: unknown): { x: number; y: number } } } }[];
   camera?: unknown;
   renderer?: { domElement?: HTMLCanvasElement };
 }
+interface DieMesh {
+  position?: { clone(): ProjectedVector };
+  scale?: { x: number };
+  geometry?: { boundingSphere?: { radius: number } | null; computeBoundingSphere?: () => void };
+}
 
-/** Posições dos dados indicados, em pixels relativos ao elemento da cena 3D. */
-export function diceScreenPositions(box: unknown, dice: readonly unknown[]): Point[] {
+/** Posições (e raio aproximado) dos dados indicados, em pixels relativos à cena 3D. */
+export function diceScreenPositions(box: unknown, dice: readonly unknown[]): AuraPoint[] {
   const internals = box as DiceBoxProjection;
   const canvas = internals.renderer?.domElement;
   if (!canvas || !internals.camera) return [];
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
-  const out: Point[] = [];
-  type Die = NonNullable<DiceBoxProjection['diceList']>[number];
-  for (const die of dice as Die[]) {
-    const position = die.position;
-    if (!position) continue;
-    const projected = position.clone().project(internals.camera);
-    out.push({ x: ((projected.x + 1) / 2) * width, y: ((1 - projected.y) / 2) * height });
+  const out: AuraPoint[] = [];
+  for (const die of dice as DieMesh[]) {
+    if (!die.position) continue;
+    const center = die.position.clone().project(internals.camera);
+    const x = ((center.x + 1) / 2) * width;
+    const y = ((1 - center.y) / 2) * height;
+    let r = 28;
+    const geometry = die.geometry;
+    if (geometry) {
+      if (!geometry.boundingSphere) geometry.computeBoundingSphere?.();
+      const world = (geometry.boundingSphere?.radius ?? 0) * (die.scale?.x ?? 1);
+      if (world > 0) {
+        const side = die.position.clone();
+        side.x += world;
+        const projected = side.project(internals.camera);
+        r = Math.abs(((projected.x + 1) / 2) * width - x) * 0.8;
+      }
+    }
+    out.push({ x, y, r: Math.max(10, Math.min(140, r)) });
   }
   return out;
 }

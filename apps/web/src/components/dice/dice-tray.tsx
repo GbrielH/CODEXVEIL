@@ -5,6 +5,7 @@ import { describeRoll, rollHeadline } from '@/lib/roll-display';
 import type { DiceRoll } from '@codexveil/database';
 import type DiceBox from '@3d-dice/dice-box-threejs';
 import { naturalD20 } from '@codexveil/domain';
+import type { DiceAura } from '@codexveil/validation';
 import { ChevronDown, ChevronUp, Dices, Lock } from 'lucide-react';
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
@@ -58,6 +59,8 @@ export interface TrayRoll {
   secret: boolean;
   /** Margem de crítico do ataque (19 = 19–20); sem ela, só o 20 natural. */
   critRange?: number;
+  /** Aura do dado que rolou (preenchida ao rolar): no crítico, o efeito do tema substitui o padrão. */
+  aura?: DiceAura | null;
 }
 
 /** Quanto tempo o balão com o resultado fica acima da caixinha. */
@@ -173,6 +176,7 @@ export function DiceTray({
       const next = queue.current.shift()!;
       const box = boxRef.current;
       const text = diceNotation(next.roll);
+      let aura: DiceAura | null = null;
       if (box && text) {
         // O resultado (balão, cabeçalho e animação de crítico) só aparece quando os dados param.
         setRolling(next);
@@ -193,6 +197,7 @@ export function DiceTray({
           null;
         const color =
           look?.color ?? (own ? myColor : palette?.colorOfUser(next.userId)) ?? DEFAULT_COLOR;
+        aura = look?.aura ?? null;
         try {
           await applyDiceLook(box, 'cv', color, textColorFor(color), look);
           // Aura (contas de criador). Com a mesa grande aberta, o efeito do crítico sai de lá.
@@ -211,7 +216,7 @@ export function DiceTray({
       // pararem; sem ela, saem quando os desta caixinha param.
       if (!next.secret && document.documentElement.dataset.diceTable === 'on')
         await tableSettled(next.key);
-      setLast(next);
+      setLast({ ...next, aura });
     }
     running.current = false;
   }, [palette, myColor, myLook]);
@@ -311,7 +316,7 @@ export function DiceTray({
   return createPortal(
     <>
       {/* Crítico (20 natural) ou falha (1 natural): explosão na tela, sem bloquear cliques. */}
-      {last && bubbleKey === last.key && (natural === 20 || natural === 1) ? (
+      {last && bubbleKey === last.key && ((natural === 20 && !last.aura) || natural === 1) ? (
         <div
           key={last.key}
           aria-hidden="true"

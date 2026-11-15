@@ -1620,6 +1620,42 @@ export type Database = {
           },
         ];
       };
+      dice_aura_grants: {
+        Row: {
+          aura: string;
+          created_at: string;
+          granted_by: string;
+          user_id: string;
+        };
+        Insert: {
+          aura: string;
+          created_at?: string;
+          granted_by?: string;
+          user_id: string;
+        };
+        Update: {
+          aura?: string;
+          created_at?: string;
+          granted_by?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'dice_aura_grants_granted_by_fkey';
+            columns: ['granted_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'dice_aura_grants_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       dice_rolls: {
         Row: {
           campaign_id: string;

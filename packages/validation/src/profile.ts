@@ -75,7 +75,18 @@ export const DICE_FONTS = ['classic', 'modern', 'machine', 'display'] as const;
 export type DiceFont = (typeof DICE_FONTS)[number];
 
 /** Auras dos dados (somente contas de criador; o banco recusa as demais). */
-export const DICE_AURAS = ['blood', 'storm', 'frost', 'arcane', 'shadow', 'holy'] as const;
+export const DICE_AURAS = [
+  'blood',
+  'storm',
+  'frost',
+  'arcane',
+  'shadow',
+  'holy',
+  'gears',
+  'forest',
+  'fire',
+  'dragon',
+] as const;
 export type DiceAura = (typeof DICE_AURAS)[number];
 export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> = {
   blood: { name: 'Sangue', color: '#d6283c' },
@@ -84,6 +95,10 @@ export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> =
   arcane: { name: 'Arcana', color: '#b06cff' },
   shadow: { name: 'Sombra', color: '#3b2a52' },
   holy: { name: 'Sagrada', color: '#ffd76a' },
+  gears: { name: 'Engrenagens', color: '#d9a441' },
+  forest: { name: 'Floresta', color: '#5fbf4a' },
+  fire: { name: 'Fogo', color: '#ff7a1a' },
+  dragon: { name: 'Dragão', color: '#c2361b' },
 };
 
 export const diceFontLabels: Record<DiceFont, { name: string; family: string }> = {

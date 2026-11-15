@@ -82,6 +82,7 @@ export async function updateDiceLookAction(input: {
   numberColor: string | null;
   font: string | null;
   color: string | null;
+  aura?: string | null;
 }): Promise<ActionResult> {
   const user = await requireSessionUser(routes.myDice);
   const look = diceLookSchema.parse(input);

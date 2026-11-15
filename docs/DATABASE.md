@@ -429,3 +429,5 @@ em `private.is_valid_block_data` (`skill`, `dc`, `expression`, `result`; recusa 
 `grant insert (revealable)` em `session_blocks`.
 
 Migração `20261115100000_dice_auras.sql`: `profiles.creator_features` (sem grant de update ao usuário), `user_dice.aura` (sangue, tempestade, gelo, arcana, sombra, sagrada) e gatilhos `user_dice_aura_guard` e `profiles_dice_aura_guard`.
+
+Migração `20261115110000_dice_auras_more.sql`: auras novas em `user_dice.aura` (engrenagens `gears`, floresta `forest`, fogo `fire`, dragão `dragon`) e tabela `dice_aura_grants` (`user_id`, `aura`, `granted_by`), com a função `private.can_use_aura` (criador usa todas; os demais, as liberadas) usada pelos gatilhos de aura, e o gatilho `dice_aura_grant_revoked`, que tira a aura dos dados do amigo quando a liberação é retirada.

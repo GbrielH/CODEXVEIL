@@ -1,5 +1,14 @@
-import { getProfile, listMyDice, signedMediaUrls } from '@codexveil/database';
-import { Dices, Plus, Sparkles } from 'lucide-react';
+import {
+  getProfile,
+  listAuraGrantsGiven,
+  listFriends,
+  listMyAuraGrants,
+  listMyDice,
+  signedMediaUrls,
+  type Friend,
+} from '@codexveil/database';
+import { DICE_AURAS, type DiceAura } from '@codexveil/validation';
+import { Dices, Plus, Sparkles, Users } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { DiceSwatch } from '@/components/dice/character-dice-card';
@@ -11,6 +20,7 @@ import { requireSessionUser } from '@/lib/auth';
 import { cx } from '@/lib/cx';
 import { routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { AuraGrants } from './aura-grants';
 import { DeleteDiceButton } from './delete-dice-button';
 import { DiceEditor } from './dice-editor';
 
@@ -34,6 +44,16 @@ export default async function MyDicePage({ searchParams }: PageProps<'/meus-dado
   if (!profile) {
     return <ErrorState description="Não encontramos o seu perfil. Saia e entre novamente." />;
   }
+  // Auras: o criador usa todas e libera para amigos; os demais usam as liberadas.
+  const creator = profile.creatorFeatures;
+  const empty: Record<string, DiceAura[]> = {};
+  const [auras, friends, given]: [DiceAura[], Friend[], Record<string, DiceAura[]>] = creator
+    ? await Promise.all([
+        Promise.resolve([...DICE_AURAS]),
+        listFriends(supabase, user.id),
+        listAuraGrantsGiven(supabase, user.id),
+      ])
+    : [await listMyAuraGrants(supabase, user.id), [], empty];
   const defaultLook = profile.preferences.dice;
   const urls = await signedMediaUrls(supabase, [
     defaultLook.image,
@@ -61,7 +81,7 @@ export default async function MyDicePage({ searchParams }: PageProps<'/meus-dado
         title="Meus dados"
         description="Como os seus dados 3D aparecem na mesa, para você e para o grupo."
       />
-      <Card className="max-w-5xl">
+      <Card>
         <CardHeader
           icon={<Dices className="h-5 w-5" aria-hidden="true" />}
           title="Seus dados"
@@ -107,7 +127,7 @@ export default async function MyDicePage({ searchParams }: PageProps<'/meus-dado
           ) : null}
         </ul>
       </Card>
-      <Card ornate className="max-w-5xl">
+      <Card ornate>
         <CardHeader
           icon={<Dices className="h-5 w-5" aria-hidden="true" />}
           title={
@@ -125,10 +145,30 @@ export default async function MyDicePage({ searchParams }: PageProps<'/meus-dado
           initial={look}
           initialImageUrl={look.image ? (urls[look.image] ?? null) : null}
           target={target}
-          creator={profile.creatorFeatures}
+          auras={auras}
+          creator={creator}
         />
       </Card>
-      <Card className="max-w-5xl">
+      {creator ? (
+        <Card>
+          <CardHeader
+            icon={<Users className="h-5 w-5" aria-hidden="true" />}
+            title="Auras dos amigos"
+            description="Clique num amigo e marque as auras que ele pode usar nos dados dele."
+          />
+          <AuraGrants
+            friends={friends
+              .filter((friend) => friend.status === 'accepted')
+              .map((friend) => ({
+                userId: friend.userId,
+                displayName: friend.displayName,
+                avatarIcon: friend.avatarIcon,
+                auras: given[friend.userId] ?? [],
+              }))}
+          />
+        </Card>
+      ) : null}
+      <Card>
         <CardHeader
           icon={<Sparkles className="h-5 w-5" aria-hidden="true" />}
           title="Gerar a skin com IA"

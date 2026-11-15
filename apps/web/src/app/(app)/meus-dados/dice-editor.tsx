@@ -10,6 +10,7 @@ import {
   type DiceLook,
 } from '@codexveil/validation';
 import { criticalAuraBurst, startDiceAura } from '@/components/dice/aura-fx';
+import { useAuraSound } from '@/components/dice/aura-sound';
 import { Brush, Eraser, ImagePlus, PaintBucket, Trash2, Undo2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
@@ -98,11 +99,14 @@ export function DiceEditor({
   initial,
   initialImageUrl,
   target,
+  auras = [],
   creator = false,
 }: {
   /** Dado da coleção em edição (`id` nulo = novo); sem ele, edita o dado padrão. */
   target?: { id: string | null; name: string };
-  /** Conta de criador: mostra a escolha de aura (o banco recusa para as demais). */
+  /** Auras que a conta pode usar (criador: todas; amigos: as liberadas). O banco confere. */
+  auras?: readonly DiceAura[];
+  /** Conta de criador (só muda o texto do seletor). */
   creator?: boolean;
   userId: string;
   initial: DiceLook;
@@ -120,7 +124,12 @@ export function DiceEditor({
   const [numberColor, setNumberColor] = useState(initial.numberColor);
   const [font, setFont] = useState(initial.font);
   const [dieColor, setDieColor] = useState(initial.color);
-  const [aura, setAura] = useState(creator ? initial.aura : null);
+  const [aura, setAura] = useState(
+    initial.aura && auras.includes(initial.aura) ? initial.aura : null,
+  );
+  const [rollTest, setRollTest] = useState(0);
+  const [sound, setSound] = useAuraSound();
+  const canAura = auras.length > 0;
   const [diceName, setDiceName] = useState(target?.name ?? '');
   const [blank, setBlank] = useState(!initialImageUrl);
   const [version, setVersion] = useState(0);
@@ -302,7 +311,7 @@ export function DiceEditor({
           return;
         }
       }
-      const look = { image, numberColor, font, color: dieColor, aura: creator ? aura : null };
+      const look = { image, numberColor, font, color: dieColor, aura: canAura ? aura : null };
       let response: { ok: boolean; message?: string };
       let savedId: string | null = null;
       if (target) {
@@ -416,7 +425,7 @@ export function DiceEditor({
 
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-3 rounded-lg border border-line bg-sunken p-4 sm:flex-row sm:items-center">
-            <AuraPreview aura={creator ? aura : null}>
+            <AuraPreview aura={canAura ? aura : null} rollTest={rollTest}>
               <canvas
                 ref={previewRef}
                 width={160}
@@ -429,19 +438,33 @@ export function DiceEditor({
               <p className="font-medium text-fg">Prévia</p>
               <p className="text-xs text-fg-muted">
                 Assim fica uma face do dado na mesa.
-                {creator && aura
-                  ? ' A aura solta partículas enquanto o dado rola; no 20 natural, toma a tela.'
+                {canAura && aura
+                  ? ' A aura emana do dado enquanto ele rola; no crítico, toma a tela de todos.'
                   : null}
               </p>
-              {creator && aura ? (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="self-start"
-                  onClick={() => criticalAuraBurst(aura)}
-                >
-                  Testar crítico
-                </Button>
+              {canAura && aura ? (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setRollTest((count) => count + 1)}
+                    >
+                      Testar rolagem
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => criticalAuraBurst(aura)}>
+                      Testar crítico
+                    </Button>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs text-fg-secondary">
+                    <input
+                      type="checkbox"
+                      checked={sound}
+                      onChange={(event) => setSound(event.target.checked)}
+                    />
+                    Som dos críticos neste navegador
+                  </label>
+                </>
               ) : null}
             </div>
           </div>
@@ -498,14 +521,16 @@ export function DiceEditor({
               ))}
             </div>
           </div>
-          {creator ? (
+          {canAura ? (
             <div className="flex flex-col gap-2">
               <p className="text-sm font-medium text-fg">
                 Aura{' '}
-                <span className="text-xs font-normal text-fg-muted">(exclusivo de criador)</span>
+                <span className="text-xs font-normal text-fg-muted">
+                  {creator ? '(exclusivo de criador)' : '(liberada pelo criador)'}
+                </span>
               </p>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {[null, ...DICE_AURAS].map((key) => (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 2xl:grid-cols-6">
+                {[null, ...DICE_AURAS.filter((key) => auras.includes(key))].map((key) => (
                   <button
                     key={key ?? 'sem'}
                     type="button"
@@ -558,35 +583,64 @@ export function DiceEditor({
   );
 }
 
-/** Prévia da aura: partículas saindo do centro, como na mesa (o dado "balança" um pouco). */
-function AuraPreview({ aura, children }: { aura: DiceAura | null; children: ReactNode }) {
+/**
+ * Prévia da aura emanando da borda do dado. "Testar rolagem" (`rollTest` muda) faz o dado
+ * tombar pela prévia com a aura forte, como na mesa.
+ */
+function AuraPreview({
+  aura,
+  rollTest,
+  children,
+}: {
+  aura: DiceAura | null;
+  rollTest: number;
+  children: ReactNode;
+}) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const dieRef = useRef<HTMLDivElement>(null);
+  const boostUntil = useRef(0);
   useEffect(() => {
     const host = hostRef.current;
-    if (!host || !aura) return;
-    const started = performance.now();
-    const stop = startDiceAura(
+    const die = dieRef.current;
+    if (!host || !die || !aura) return;
+    return startDiceAura(
       host,
       aura,
       () => {
-        const t = (performance.now() - started) / 1000;
+        const box = host.getBoundingClientRect();
+        const rect = die.getBoundingClientRect();
         return [
           {
-            x: host.clientWidth / 2 + Math.sin(t * 2.1) * 14,
-            y: host.clientHeight / 2 + Math.cos(t * 1.7) * 10,
+            x: rect.left - box.left + rect.width / 2,
+            y: rect.top - box.top + rect.height / 2,
+            r: Math.min(rect.width, rect.height) * 0.36,
           },
         ];
       },
-      0.9,
+      () => (performance.now() < boostUntil.current ? 1 : 0.5),
     );
-    return stop;
   }, [aura]);
+  useEffect(() => {
+    const die = dieRef.current;
+    if (!rollTest || !die) return;
+    boostUntil.current = performance.now() + 2200;
+    die.animate(
+      [
+        { transform: 'translate(-70px, -60px) rotate(0deg) scale(0.8)' },
+        { transform: 'translate(40px, 10px) rotate(260deg) scale(0.9)', offset: 0.3 },
+        { transform: 'translate(-25px, 30px) rotate(470deg) scale(0.95)', offset: 0.55 },
+        { transform: 'translate(12px, -8px) rotate(640deg)', offset: 0.8 },
+        { transform: 'translate(0, 0) rotate(720deg) scale(1)' },
+      ],
+      { duration: 1700, easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)' },
+    );
+  }, [rollTest]);
   return (
     <div
       ref={hostRef}
-      className="relative flex h-52 w-52 shrink-0 items-center justify-center self-center overflow-hidden rounded-md"
+      className="relative flex h-60 w-60 shrink-0 items-center justify-center self-center overflow-hidden rounded-md"
     >
-      {children}
+      <div ref={dieRef}>{children}</div>
     </div>
   );
 }
