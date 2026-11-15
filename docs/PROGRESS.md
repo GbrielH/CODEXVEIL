@@ -1022,3 +1022,18 @@ rpg-systems 295) e `pnpm build` passaram. Não verificado no navegador nem no ce
 
 Verificações: `pnpm check` (20 tarefas; banco 253 testes) e `pnpm build` passaram. Não verificado no
 navegador.
+
+### 2026-11-15 — auras dos dados (somente criador)
+
+- Seis auras em "Meus dados": Sangue, Tempestade, Gelo, Arcana, Sombra e Sagrada. O seletor só
+  aparece para contas de criador; a prévia mostra a aura atrás do dado e, na mesa de dados, ela
+  emana enquanto o dado de quem rolou está na mesa (CSS; parada com movimento reduzido).
+- Banco (migração `20261115100000_dice_auras.sql`): `profiles.creator_features` (o usuário não
+  altera; só a administração liga), `user_dice.aura` com gatilho que recusa para quem não é
+  criador, e gatilho que remove `preferences.dice.aura` de quem não é criador.
+- Flag ligada só na conta do responsável por comando avulso no banco (o e-mail não fica em
+  arquivo). Conferido: 1 criador.
+- Teste `test/rls/dice-auras.test.ts`. A seção "Continuidade: auras dos dados" foi concluída.
+
+Verificações: `pnpm check` (20 tarefas; banco 254 testes) e `pnpm build` passaram. Não verificado no
+navegador.

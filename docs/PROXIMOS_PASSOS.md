@@ -2378,7 +2378,7 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verifica
 
 - Beta 1.1 do Ordem 2 investigado e **não processado**: páginas mapeadas, mas a diagramação nova (fontes) quebra a leitura de narração, pontos de interesse e criaturas. Detalhes e próximo passo em `ORDEM2.md`.
 
-## Continuidade: auras dos dados (parada em 2026-11-12, retomar daqui)
+## Continuidade: auras dos dados (concluída em 2026-11-15)
 
 **Pedido do responsável:** em "Meus dados", poder escolher uma **aura** para o dado (ex.: aura
 vermelha emanando, aura elétrica, entre outras), **somente na conta do responsável**, como criador.
@@ -2442,4 +2442,19 @@ rpg-systems 295) e `pnpm build` passaram. Não verificado no navegador nem no ce
   aos jogadores. Teste `test/rls/mission-map-block.test.ts`. Sem migração.
 
 Verificações: `pnpm check` (20 tarefas; banco 253 testes) e `pnpm build` passaram. Não verificado no
+navegador.
+
+### 2026-11-15 — auras dos dados (somente criador)
+
+- Seis auras em "Meus dados": Sangue, Tempestade, Gelo, Arcana, Sombra e Sagrada. O seletor só
+  aparece para contas de criador; a prévia mostra a aura atrás do dado e, na mesa de dados, ela
+  emana enquanto o dado de quem rolou está na mesa (CSS; parada com movimento reduzido).
+- Banco (migração `20261115100000_dice_auras.sql`): `profiles.creator_features` (o usuário não
+  altera; só a administração liga), `user_dice.aura` com gatilho que recusa para quem não é
+  criador, e gatilho que remove `preferences.dice.aura` de quem não é criador.
+- Flag ligada só na conta do responsável por comando avulso no banco (o e-mail não fica em
+  arquivo). Conferido: 1 criador.
+- Teste `test/rls/dice-auras.test.ts`. A seção "Continuidade: auras dos dados" foi concluída.
+
+Verificações: `pnpm check` (20 tarefas; banco 254 testes) e `pnpm build` passaram. Não verificado no
 navegador.

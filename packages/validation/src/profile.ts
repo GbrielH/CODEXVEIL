@@ -74,6 +74,18 @@ const avatarSchema = z.union([
 export const DICE_FONTS = ['classic', 'modern', 'machine', 'display'] as const;
 export type DiceFont = (typeof DICE_FONTS)[number];
 
+/** Auras dos dados (somente contas de criador; o banco recusa as demais). */
+export const DICE_AURAS = ['blood', 'storm', 'frost', 'arcane', 'shadow', 'holy'] as const;
+export type DiceAura = (typeof DICE_AURAS)[number];
+export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> = {
+  blood: { name: 'Sangue', color: '#d6283c' },
+  storm: { name: 'Tempestade', color: '#7fd4ff' },
+  frost: { name: 'Gelo', color: '#bfefff' },
+  arcane: { name: 'Arcana', color: '#b06cff' },
+  shadow: { name: 'Sombra', color: '#3b2a52' },
+  holy: { name: 'Sagrada', color: '#ffd76a' },
+};
+
 export const diceFontLabels: Record<DiceFont, { name: string; family: string }> = {
   classic: { name: 'Clássica', family: '"Times New Roman", serif' },
   modern: { name: 'Moderna', family: 'Arial, sans-serif' },
@@ -106,6 +118,8 @@ export const diceLookSchema = z
       .nullable()
       .default(null)
       .catch(null),
+    /** Aura ao redor do dado na mesa (somente criadores). */
+    aura: z.enum(DICE_AURAS).nullable().default(null).catch(null),
   })
   .prefault({});
 export type DiceLook = z.output<typeof diceLookSchema>;

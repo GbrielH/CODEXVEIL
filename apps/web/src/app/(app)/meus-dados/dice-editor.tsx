@@ -1,7 +1,8 @@
 'use client';
 
 import { CAMPAIGN_MEDIA_BUCKET, saveDice } from '@codexveil/database';
-import { DICE_FONTS, diceFontLabels, type DiceLook } from '@codexveil/validation';
+import { DICE_AURAS, DICE_FONTS, diceAuraLabels, diceFontLabels, type DiceLook } from '@codexveil/validation';
+import { DiceAuraLayer } from '@/components/dice/dice-aura';
 import { Brush, Eraser, ImagePlus, PaintBucket, Trash2, Undo2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, useTransition, type PointerEvent } from 'react';
@@ -82,9 +83,12 @@ export function DiceEditor({
   initial,
   initialImageUrl,
   target,
+  creator = false,
 }: {
   /** Dado da coleção em edição (`id` nulo = novo); sem ele, edita o dado padrão. */
   target?: { id: string | null; name: string };
+  /** Conta de criador: mostra a escolha de aura (o banco recusa para as demais). */
+  creator?: boolean;
   userId: string;
   initial: DiceLook;
   initialImageUrl: string | null;
@@ -101,6 +105,7 @@ export function DiceEditor({
   const [numberColor, setNumberColor] = useState(initial.numberColor);
   const [font, setFont] = useState(initial.font);
   const [dieColor, setDieColor] = useState(initial.color);
+  const [aura, setAura] = useState(creator ? initial.aura : null);
   const [diceName, setDiceName] = useState(target?.name ?? '');
   const [blank, setBlank] = useState(!initialImageUrl);
   const [version, setVersion] = useState(0);
@@ -282,7 +287,7 @@ export function DiceEditor({
           return;
         }
       }
-      const look = { image, numberColor, font, color: dieColor };
+      const look = { image, numberColor, font, color: dieColor, aura: creator ? aura : null };
       let response: { ok: boolean; message?: string };
       let savedId: string | null = null;
       if (target) {
@@ -396,7 +401,10 @@ export function DiceEditor({
 
         <div className="flex flex-col gap-4">
           <div className="flex flex-col items-center gap-2">
-            <canvas ref={previewRef} width={160} height={160} aria-label="Prévia da face do dado" />
+            <div className="relative flex h-56 w-56 items-center justify-center">
+              <DiceAuraLayer aura={aura} />
+              <canvas ref={previewRef} width={160} height={160} aria-label="Prévia da face do dado" className="relative" />
+            </div>
             <span className="text-xs text-fg-muted">Prévia</span>
           </div>
           <div className="flex flex-col gap-2">
@@ -450,6 +458,32 @@ export function DiceEditor({
               ))}
             </div>
           </div>
+          {creator ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-medium text-fg">
+                Aura <span className="text-xs font-normal text-fg-muted">(exclusivo de criador)</span>
+              </p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {[null, ...DICE_AURAS].map((key) => (
+                  <button
+                    key={key ?? 'sem'}
+                    type="button"
+                    aria-pressed={aura === key}
+                    onClick={() => setAura(key)}
+                    className={cx(
+                      'flex h-9 items-center justify-center gap-1.5 rounded-md border px-2 text-sm transition-colors',
+                      aura === key ? 'border-fg-brand bg-hover text-fg' : 'border-line text-fg-secondary hover:bg-hover',
+                    )}
+                  >
+                    {key ? (
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: diceAuraLabels[key].color, boxShadow: `0 0 8px ${diceAuraLabels[key].color}` }} />
+                    ) : null}
+                    {key ? diceAuraLabels[key].name : 'Sem aura'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
           {target ? (
             <label className="flex flex-col gap-1.5 text-sm font-medium text-fg">
               Nome do dado

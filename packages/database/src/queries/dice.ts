@@ -198,6 +198,7 @@ export async function getCampaignDicePalette(
         numberColor: null,
         font: null,
         color: null,
+        aura: null,
       },
     ]),
   );
@@ -262,7 +263,7 @@ export interface SavedDice {
   look: DiceLook;
 }
 
-const SAVED_DICE_COLUMNS = 'id, owner_id, name, image_path, number_color, font, color';
+const SAVED_DICE_COLUMNS = 'id, owner_id, name, image_path, number_color, font, color, aura';
 
 function toSavedDice(row: {
   id: string;
@@ -272,6 +273,7 @@ function toSavedDice(row: {
   number_color: string | null;
   font: string | null;
   color: string | null;
+  aura: string | null;
 }): SavedDice {
   return {
     id: row.id,
@@ -282,6 +284,7 @@ function toSavedDice(row: {
       numberColor: row.number_color,
       font: row.font,
       color: row.color,
+      aura: row.aura,
     }),
   };
 }
@@ -307,6 +310,7 @@ export async function saveDice(
     number_color: dice.look.numberColor,
     font: dice.look.font,
     color: dice.look.color,
+    aura: dice.look.aura,
   };
   const query = dice.id
     ? client.from('user_dice').update(values).eq('id', dice.id)

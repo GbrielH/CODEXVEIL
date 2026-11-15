@@ -427,3 +427,5 @@ Storage (antes elas dependiam do RLS de `characters` e falhavam com as fichas oc
 Migração `20261114100000_session_check_block.sql`: valor `check` em `session_block_type`, validação
 em `private.is_valid_block_data` (`skill`, `dc`, `expression`, `result`; recusa `note`) e
 `grant insert (revealable)` em `session_blocks`.
+
+Migração `20261115100000_dice_auras.sql`: `profiles.creator_features` (sem grant de update ao usuário), `user_dice.aura` (sangue, tempestade, gelo, arcana, sombra, sagrada) e gatilhos `user_dice_aura_guard` e `profiles_dice_aura_guard`.

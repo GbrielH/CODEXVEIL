@@ -8,14 +8,16 @@ export interface Profile {
   displayName: string;
   bio: string;
   preferences: Preferences;
+  /** Conta de criador: libera as auras dos dados. */
+  creatorFeatures: boolean;
   createdAt: string;
 }
 
-export const PROFILE_COLUMNS = 'id, display_name, bio, preferences, created_at' as const;
+export const PROFILE_COLUMNS = 'id, display_name, bio, preferences, creator_features, created_at' as const;
 
 type ProfileRow = Pick<
   Tables<'profiles'>,
-  'id' | 'display_name' | 'bio' | 'preferences' | 'created_at'
+  'id' | 'display_name' | 'bio' | 'preferences' | 'creator_features' | 'created_at'
 >;
 
 export function toProfile(row: ProfileRow): Profile {
@@ -25,6 +27,7 @@ export function toProfile(row: ProfileRow): Profile {
     displayName: row.display_name,
     bio: row.bio,
     preferences: preferences.success ? preferences.data : preferencesSchema.parse({}),
+    creatorFeatures: row.creator_features,
     createdAt: row.created_at,
   };
 }

@@ -2036,6 +2036,7 @@ export type Database = {
           avatar_path: string | null;
           bio: string;
           created_at: string;
+          creator_features: boolean;
           display_name: string;
           friend_code: string;
           id: string;
@@ -2046,6 +2047,7 @@ export type Database = {
           avatar_path?: string | null;
           bio?: string;
           created_at?: string;
+          creator_features?: boolean;
           display_name: string;
           friend_code?: string;
           id: string;
@@ -2056,6 +2058,7 @@ export type Database = {
           avatar_path?: string | null;
           bio?: string;
           created_at?: string;
+          creator_features?: boolean;
           display_name?: string;
           friend_code?: string;
           id?: string;
@@ -3022,6 +3025,7 @@ export type Database = {
       };
       user_dice: {
         Row: {
+          aura: string | null;
           color: string | null;
           created_at: string;
           font: string | null;
@@ -3033,6 +3037,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          aura?: string | null;
           color?: string | null;
           created_at?: string;
           font?: string | null;
@@ -3044,6 +3049,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          aura?: string | null;
           color?: string | null;
           created_at?: string;
           font?: string | null;

@@ -16,7 +16,7 @@ import { DiceEditor } from './dice-editor';
 
 export const metadata: Metadata = { title: 'Meus dados' };
 
-const EMPTY_LOOK = { image: null, numberColor: null, font: null, color: null };
+const EMPTY_LOOK = { image: null, numberColor: null, font: null, color: null, aura: null };
 
 /**
  * "Meus dados": o dado padrão (usado em todas as rolagens) e a coleção de dados salvos, que podem
@@ -125,6 +125,7 @@ export default async function MyDicePage({ searchParams }: PageProps<'/meus-dado
           initial={look}
           initialImageUrl={look.image ? (urls[look.image] ?? null) : null}
           target={target}
+          creator={profile.creatorFeatures}
         />
       </Card>
       <Card className="max-w-5xl">

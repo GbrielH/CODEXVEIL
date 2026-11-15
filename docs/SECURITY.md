@@ -349,3 +349,7 @@ Participantes da campanha leem o token de cada personagem do grupo e o retrato q
 compartilha (`share_portrait`); imagens de NPC só enquanto o NPC está visível num mapa ativo.
 A checagem é feita por `private.can_read_character_image` (security definer), que não expõe a
 ficha: as fichas ocultas continuam inacessíveis.
+
+## Recursos de criador (2026-11-15)
+
+`profiles.creator_features` libera as auras dos dados. A coluna não está entre as que o usuário pode alterar no próprio perfil; só a administração do banco a liga, por comando avulso (sem e-mail em arquivo). Gatilhos recusam a aura em dados salvos e a removem das preferências de quem não é criador.
