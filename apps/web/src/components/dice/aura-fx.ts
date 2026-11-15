@@ -39,7 +39,11 @@ type Kind =
   | 'bubble'
   | 'fish'
   | 'coin'
-  | 'fly';
+  | 'fly'
+  | 'bat'
+  | 'paw'
+  | 'confetti'
+  | 'rock';
 
 interface Particle {
   kind: Kind;
@@ -284,6 +288,13 @@ const RGB: Record<DiceAura, string> = {
   time: '230, 200, 140',
   gold: '255, 200, 60',
   frog: '120, 200, 60',
+  vampire: '196, 24, 58',
+  bard: '255, 180, 80',
+  rainbow: '255, 150, 220',
+  poison: '150, 255, 60',
+  cat: '255, 180, 210',
+  meteor: '255, 140, 66',
+  party: '255, 106, 213',
 };
 
 function reducedMotion(): boolean {
@@ -654,6 +665,73 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
       ctx.fill();
       break;
     }
+    case 'bat': {
+      // Morcego batendo as asas.
+      ctx.globalAlpha = Math.min(1, fade * 2);
+      ctx.translate(p.x, p.y);
+      const flap = Math.sin(p.life * 0.6);
+      const z = p.size;
+      ctx.fillStyle = 'rgba(18, 6, 10, 0.95)';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, z * 0.35, z * 0.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(side * z * 0.2, -z * 0.1);
+        ctx.quadraticCurveTo(
+          side * z * 0.9,
+          -z * (0.2 + flap * 0.8),
+          side * z * 1.6,
+          -z * flap * 0.6,
+        );
+        ctx.lineTo(side * z * 1.25, z * 0.1);
+        ctx.lineTo(side * z * 0.95, -z * 0.05);
+        ctx.lineTo(side * z * 0.7, z * 0.25);
+        ctx.lineTo(side * z * 0.2, z * 0.15);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(side * z * 0.25, -z * 0.35);
+        ctx.lineTo(side * z * 0.15, -z * 0.7);
+        ctx.lineTo(side * z * 0.05, -z * 0.4);
+        ctx.fill();
+      }
+      ctx.fillStyle = 'rgba(255, 40, 60, 1)';
+      ctx.fillRect(-z * 0.16, -z * 0.25, z * 0.09, z * 0.07);
+      ctx.fillRect(z * 0.07, -z * 0.25, z * 0.09, z * 0.07);
+      break;
+    }
+    case 'paw':
+      ctx.globalAlpha = Math.sin(Math.PI * t) * 0.85;
+      drawPaw(ctx, p.x, p.y, p.size, p.rot, `rgba(${p.color}, 1)`, null);
+      break;
+    case 'confetti': {
+      ctx.globalAlpha = Math.min(1, fade * 3);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.scale(1, Math.cos(p.life * 0.3));
+      ctx.fillStyle = `rgba(${p.color}, 1)`;
+      ctx.fillRect(-p.size, -p.size * 0.5, p.size * 2, p.size);
+      break;
+    }
+    case 'rock': {
+      ctx.globalAlpha = Math.min(1, fade * 2);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = 'rgba(70, 50, 40, 1)';
+      ctx.strokeStyle = 'rgba(255, 140, 60, 0.9)';
+      ctx.lineWidth = Math.max(1, p.size / 4);
+      ctx.beginPath();
+      for (let i = 0; i < 7; i++) {
+        const a = (i / 7) * Math.PI * 2;
+        const r = p.size * (0.75 + ((i * 53) % 10) / 30);
+        ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      break;
+    }
     case 'feather': {
       // Pena de anjo caindo e balançando.
       ctx.globalAlpha = Math.min(1, fade * 2.5);
@@ -693,6 +771,7 @@ function stepParticles(ctx: CanvasRenderingContext2D, particles: Particle[], hei
     p.x += p.vx;
     p.y += p.vy;
     p.rot += p.vr;
+    if (p.kind === 'bat') p.vy += Math.sin(p.life * 0.3) * 0.3;
     if (p.kind === 'fly') {
       // Voo errático.
       p.vx += rand(-0.7, 0.7);
@@ -712,7 +791,11 @@ function stepParticles(ctx: CanvasRenderingContext2D, particles: Particle[], hei
       p.kind === 'skull' ||
       p.kind === 'card' ||
       p.kind === 'coin' ||
-      p.kind === 'fly';
+      p.kind === 'fly' ||
+      p.kind === 'bat' ||
+      p.kind === 'paw' ||
+      p.kind === 'confetti' ||
+      p.kind === 'rock';
     ctx.globalCompositeOperation = dark ? 'source-over' : 'lighter';
     drawParticle(ctx, p);
   }
@@ -741,7 +824,14 @@ function emitAround(aura: DiceAura, o: AuraPoint, out: Particle[], power: number
         vy: (Math.sin(a) * 0.4 - rand(0.8, 1.8)) * s,
         max: rand(28, 46),
         size: rand(10, 18) * s,
-        color: aura === 'blood' ? '150, 0, 20' : color,
+        color:
+          aura === 'blood'
+            ? '150, 0, 20'
+            : aura === 'rainbow'
+              ? pick(RAINBOW)
+              : aura === 'party'
+                ? pick(CONFETTI)
+                : color,
       }),
     );
   }
@@ -1096,6 +1186,134 @@ function emitAround(aura: DiceAura, o: AuraPoint, out: Particle[], power: number
           }),
         );
       }
+      break;
+    case 'vampire':
+      if (chance(0.08))
+        out.push(
+          particle('bat', from.x, from.y, {
+            vx: Math.cos(a) * 1.5 * s,
+            vy: (Math.sin(a) - 0.8) * 1.2 * s,
+            max: rand(50, 70),
+            size: rand(5, 7) * s,
+          }),
+        );
+      if (chance(0.3))
+        out.push(
+          particle('mote', from.x, from.y, {
+            vy: -rand(0.4, 1) * s,
+            max: rand(30, 45),
+            size: rand(1, 1.6) * s,
+            color: '255, 60, 80',
+          }),
+        );
+      break;
+    case 'bard':
+      if (chance(0.15))
+        out.push(
+          particle('rune', from.x, from.y, {
+            vx: rand(-0.4, 0.4),
+            vy: -rand(0.7, 1.1) * s,
+            max: rand(40, 55),
+            size: rand(12, 15) * s,
+            glyph: pick(['♪', '♫', '♬', '♩']),
+            color: pick(['255, 190, 90', '255, 140, 200', '140, 220, 255']),
+          }),
+        );
+      break;
+    case 'rainbow':
+      for (let i = 0; i < 2; i++)
+        if (chance(0.9))
+          out.push(
+            particle('mote', from.x, from.y, {
+              vx: Math.cos(a + i) * 0.8 * s,
+              vy: (Math.sin(a + i) * 0.8 - 0.5) * s,
+              max: rand(30, 45),
+              size: rand(1, 1.8) * s,
+              color: pick(RAINBOW),
+            }),
+          );
+      break;
+    case 'poison':
+      if (chance(0.3))
+        out.push(
+          particle('bubble', from.x, from.y, {
+            vy: -rand(0.5, 1.1) * s,
+            max: rand(30, 50),
+            size: rand(2, 4) * s,
+            color: '170, 255, 120',
+          }),
+        );
+      if (chance(0.3))
+        out.push(
+          particle('drop', from.x, from.y, {
+            vx: Math.cos(a) * 0.6 * s,
+            vy: 0.5 * s,
+            gravity: 0.12 * s,
+            max: rand(30, 45),
+            size: rand(1.2, 2) * s,
+            color: '120, 230, 50',
+          }),
+        );
+      break;
+    case 'cat':
+      if (chance(0.04)) {
+        const at = edge(o, a, 1.6);
+        out.push(
+          particle('paw', at.x, at.y, {
+            rot: a + Math.PI / 2,
+            max: 50,
+            size: 5 * s,
+            color: '255, 190, 215',
+          }),
+        );
+      }
+      if (chance(0.3))
+        out.push(
+          particle('spark', from.x, from.y, {
+            vy: -rand(0.4, 1) * s,
+            max: rand(25, 40),
+            size: rand(1, 1.6) * s,
+            color: '255, 190, 215',
+          }),
+        );
+      break;
+    case 'meteor':
+      if (chance(0.6))
+        out.push(
+          particle('ember', from.x, from.y, {
+            vx: -Math.sin(a) * 2 * s,
+            vy: Math.cos(a) * 2 * s,
+            drag: 0.95,
+            max: rand(18, 28),
+            size: rand(0.8, 1.5) * s,
+            color: '255, 150, 70',
+          }),
+        );
+      if (chance(0.06))
+        out.push(
+          particle('rock', from.x, from.y, {
+            vx: -Math.sin(a) * 1.2 * s,
+            vy: Math.cos(a) * 1.2 * s,
+            vr: 0.1,
+            max: 40,
+            size: 2.5 * s,
+          }),
+        );
+      break;
+    case 'party':
+      if (chance(0.5))
+        out.push(
+          particle('confetti', from.x, from.y, {
+            vx: Math.cos(a) * 2 * s,
+            vy: -rand(1.5, 3) * s,
+            gravity: 0.1 * s,
+            drag: 0.98,
+            vr: 0.2,
+            max: rand(40, 60),
+            size: rand(2, 3) * s,
+            color: pick(CONFETTI),
+          }),
+        );
       break;
     case 'skeleton':
       if (chance(0.22))
@@ -2271,12 +2489,15 @@ const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 const easeOut = (value: number) => 1 - (1 - clamp01(value)) ** 3;
 
 /** Aplica um filtro rápido na página inteira (sustos do glitch). */
+let joltTimer = 0;
 function pageJolt(filter: string, ms: number) {
+  // Sempre volta ao normal (sem filtro): guardar o filtro "anterior" prendia a página bugada
+  // quando dois sustos se sobrepunham.
   const root = document.documentElement;
-  const previous = root.style.filter;
   root.style.filter = filter;
-  window.setTimeout(() => {
-    root.style.filter = previous;
+  window.clearTimeout(joltTimer);
+  joltTimer = window.setTimeout(() => {
+    root.style.filter = '';
   }, ms);
 }
 
@@ -2304,6 +2525,91 @@ function sepiaGlass(durationMs: number) {
     { duration: durationMs, fill: 'forwards' },
   );
   window.setTimeout(() => element.remove(), durationMs + 100);
+}
+
+/** Cores do arco-íris e dos confetes. */
+const RAINBOW = [
+  '255, 70, 70',
+  '255, 160, 50',
+  '255, 230, 60',
+  '90, 220, 90',
+  '70, 170, 255',
+  '110, 90, 255',
+  '200, 90, 255',
+];
+const CONFETTI = [
+  '255, 80, 120',
+  '255, 200, 60',
+  '80, 220, 255',
+  '140, 255, 120',
+  '200, 120, 255',
+  '255, 140, 60',
+];
+
+/** Pata de gato (`beans` = cor das almofadinhas, na pata grande). */
+function drawPaw(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number,
+  rot: number,
+  color: string,
+  beans: string | null,
+) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.ellipse(0, size * 0.35, size * 0.55, size * 0.45, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const toes = [
+    [-0.55, -0.25],
+    [-0.2, -0.6],
+    [0.2, -0.6],
+    [0.55, -0.25],
+  ] as const;
+  for (const [tx, ty] of toes) {
+    ctx.beginPath();
+    ctx.ellipse(tx * size, ty * size, size * 0.2, size * 0.26, tx * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (beans) {
+    ctx.fillStyle = beans;
+    ctx.beginPath();
+    ctx.ellipse(0, size * 0.38, size * 0.32, size * 0.25, 0, 0, Math.PI * 2);
+    ctx.fill();
+    for (const [tx, ty] of toes) {
+      ctx.beginPath();
+      ctx.ellipse(tx * size, ty * size, size * 0.11, size * 0.14, tx * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+/** Tremor da página (impacto do meteoro, patada do gato). */
+function screenShake(ms: number, strength = 8) {
+  const frames = Array.from({ length: 8 }, (_, i) => ({
+    transform:
+      i === 7
+        ? 'translate(0, 0)'
+        : `translate(${rand(-strength, strength)}px, ${rand(-strength, strength)}px)`,
+  }));
+  document.body.animate(frames, { duration: ms });
+}
+
+/** Símbolo grande com brilho (o ☣ do veneno). */
+function bigGlyphSprite(glyph: string, rgb: string) {
+  return sprite(`big-glyph:${glyph}:${rgb}`, 256, (ctx, size) => {
+    ctx.font = `${size * 0.7}px "Segoe UI Symbol", serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = `rgba(${rgb}, 1)`;
+    ctx.shadowBlur = size * 0.08;
+    ctx.fillStyle = `rgba(${rgb}, 1)`;
+    ctx.fillText(glyph, size / 2, size / 2);
+  });
 }
 
 const SCENES: Partial<
@@ -2488,6 +2794,10 @@ const SCENES: Partial<
           ),
         rand(100, durationMs - 800),
       );
+    // Garantia: no fim do crítico a página volta ao normal de qualquer jeito.
+    window.setTimeout(() => {
+      document.documentElement.style.filter = '';
+    }, durationMs);
     const scan = document.createElement('canvas');
     scan.width = 1;
     scan.height = 4;
@@ -2853,6 +3163,448 @@ const SCENES: Partial<
           ctx.scale(Math.max(0.12, Math.abs(Math.cos(coin.rot))), 1);
           ctx.drawImage(image, -coin.size, -coin.size, coin.size * 2, coin.size * 2);
           ctx.restore();
+        }
+        ctx.restore();
+      },
+    };
+  },
+  vampire: (width, height) => {
+    // Lua de sangue nascendo e revoadas de morcegos cruzando a tela.
+    const moon = { x: width * 0.78, y: height * 0.24, r: Math.min(width, height) * 0.16 };
+    const moonImage = sprite(
+      `blood-moon:${Math.round(moon.r)}`,
+      Math.ceil(moon.r * 3),
+      (c, size) => {
+        c.translate(size / 2, size / 2);
+        const glow = c.createRadialGradient(0, 0, moon.r * 0.9, 0, 0, moon.r * 1.5);
+        glow.addColorStop(0, 'rgba(255, 40, 40, 0.5)');
+        glow.addColorStop(1, 'rgba(255, 0, 0, 0)');
+        c.fillStyle = glow;
+        c.fillRect(-size / 2, -size / 2, size, size);
+        const g = c.createRadialGradient(-moon.r * 0.3, -moon.r * 0.3, moon.r * 0.1, 0, 0, moon.r);
+        g.addColorStop(0, '#ff6a4a');
+        g.addColorStop(0.6, '#c01822');
+        g.addColorStop(1, '#5a0610');
+        c.fillStyle = g;
+        c.beginPath();
+        c.arc(0, 0, moon.r, 0, Math.PI * 2);
+        c.fill();
+        c.fillStyle = 'rgba(90, 0, 10, 0.35)';
+        for (const [x, y, r] of [
+          [-0.3, -0.2, 0.18],
+          [0.25, 0.15, 0.12],
+          [0.1, -0.4, 0.08],
+          [-0.1, 0.35, 0.1],
+        ] as const) {
+          c.beginPath();
+          c.arc(x * moon.r, y * moon.r, r * moon.r, 0, Math.PI * 2);
+          c.fill();
+        }
+      },
+    );
+    return {
+      frame(ctx, f) {
+        const rise = easeOut(f.time / 0.8);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.drawImage(
+          moonImage,
+          moon.x - moonImage.width / 2,
+          moon.y + (1 - rise) * height * 0.3 - moonImage.height / 2,
+        );
+        ctx.restore();
+        if (f.emitting && f.particles.length < MAX_PARTICLES)
+          for (let i = 0; i < 3; i++) {
+            const fromLeft = Math.random() < 0.5;
+            f.particles.push(
+              particle('bat', fromLeft ? -30 : width + 30, rand(height * 0.05, height * 0.8), {
+                vx: (fromLeft ? 1 : -1) * rand(5, 9),
+                vy: rand(-1.5, 1.5),
+                max: 200,
+                size: rand(10, 22),
+              }),
+            );
+          }
+      },
+    };
+  },
+  bard: (width, height) => {
+    // Show: holofotes varrendo, equalizador pulsando e notas subindo.
+    const bars = 32;
+    return {
+      frame(ctx, f) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = f.presence * 0.5;
+        const length = Math.hypot(width, height);
+        for (const [x, phase, rgb] of [
+          [0, 0, '255, 200, 120'],
+          [width, 2, '255, 120, 200'],
+        ] as const) {
+          const a = Math.PI / 2 + Math.sin(f.time * 1.5 + phase) * 0.5 + (x === 0 ? -0.5 : 0.5);
+          const g = ctx.createLinearGradient(x, 0, x + Math.cos(a) * length, Math.sin(a) * length);
+          g.addColorStop(0, `rgba(${rgb}, 0.6)`);
+          g.addColorStop(1, `rgba(${rgb}, 0)`);
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x + Math.cos(a - 0.12) * length, Math.sin(a - 0.12) * length);
+          ctx.lineTo(x + Math.cos(a + 0.12) * length, Math.sin(a + 0.12) * length);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.restore();
+        const barWidth = width / bars;
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        for (let i = 0; i < bars; i++) {
+          const level =
+            0.25 +
+            0.75 *
+              Math.abs(
+                Math.sin(f.time * (3 + (i % 5)) + i * 0.7) * Math.sin(f.time * 1.7 + i * 0.3),
+              );
+          const barHeight = level * height * 0.3 * Math.min(1, f.time / 0.4);
+          ctx.fillStyle = `hsla(${(i / bars) * 300 + f.time * 60}, 90%, 60%, 0.75)`;
+          ctx.fillRect(i * barWidth + 2, height - barHeight, barWidth - 4, barHeight);
+        }
+        ctx.restore();
+        if (f.emitting && f.particles.length < MAX_PARTICLES && Math.random() < 0.4)
+          f.particles.push(
+            particle('rune', rand(0, width), height - rand(0, height * 0.3), {
+              vy: -rand(2, 4),
+              vx: rand(-0.5, 0.5),
+              max: 120,
+              size: rand(28, 48),
+              glyph: pick(['♪', '♫', '♬', '♩']),
+              color: pick(['255, 190, 90', '255, 140, 200', '140, 220, 255']),
+            }),
+          );
+      },
+    };
+  },
+  rainbow: (width, height) => {
+    // Um arco-íris cresce de ponta a ponta, com nuvens e brilhos coloridos caindo.
+    const cx = width / 2;
+    const cy = height * 0.95;
+    const radius = Math.min(width * 0.48, height * 0.85);
+    const band = radius * 0.035;
+    return {
+      frame(ctx, f) {
+        const grow = easeOut(f.time / 0.9);
+        ctx.save();
+        ctx.globalAlpha = f.presence * 0.75;
+        RAINBOW.forEach((rgb, i) => {
+          ctx.strokeStyle = `rgba(${rgb}, 0.85)`;
+          ctx.lineWidth = band;
+          ctx.beginPath();
+          ctx.arc(cx, cy, radius - i * band, Math.PI, Math.PI + Math.PI * grow);
+          ctx.stroke();
+        });
+        ctx.restore();
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (const [x, show] of [
+          [cx - radius + band * 3, 1],
+          [cx + radius - band * 3, grow > 0.95 ? 1 : 0],
+        ] as const)
+          for (let k = 0; k < 4; k++)
+            blit(
+              ctx,
+              softSprite('255, 255, 255'),
+              x + (k - 1.5) * band * 2.2,
+              cy - band * 2 + (k % 2) * band,
+              band * 4,
+              0.35 * f.presence * show,
+            );
+        ctx.restore();
+        if (f.emitting && f.particles.length < MAX_PARTICLES)
+          for (let i = 0; i < 3; i++)
+            f.particles.push(
+              particle('mote', rand(0, width), -10, {
+                vy: rand(1.5, 3),
+                vx: rand(-0.5, 0.5),
+                max: 240,
+                size: rand(1.5, 3),
+                color: pick(RAINBOW),
+              }),
+            );
+      },
+    };
+  },
+  poison: (width, height) => {
+    // Nuvens tóxicas entrando pelos lados, bolhas e um ☣ pulsando.
+    const symbol = bigGlyphSprite('☣', '150, 255, 60');
+    return {
+      frame(ctx, f) {
+        if (f.emitting && f.particles.length < MAX_PARTICLES) {
+          for (let i = 0; i < 2; i++) {
+            const left = Math.random() < 0.5;
+            f.particles.push(
+              particle('wisp', left ? -40 : width + 40, rand(0, height), {
+                vx: (left ? 1 : -1) * rand(1.5, 3),
+                vy: rand(-0.3, 0.3),
+                max: 180,
+                size: rand(90, 160),
+                color: pick(['120, 220, 60', '90, 180, 40', '160, 255, 90']),
+              }),
+            );
+          }
+          for (let i = 0; i < 2; i++)
+            f.particles.push(
+              particle('bubble', rand(0, width), height + 10, {
+                vy: -rand(1.5, 3.5),
+                max: 200,
+                size: rand(4, 12),
+                color: '170, 255, 120',
+              }),
+            );
+        }
+        const radius =
+          Math.min(width, height) * 0.3 * (1 + Math.sin(f.time * 6) * 0.06) * easeOut(f.time / 0.5);
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        blit(ctx, symbol, width / 2, height * 0.45, radius, 0.45 * f.presence);
+        ctx.restore();
+      },
+    };
+  },
+  cat: (width, height) => {
+    // Uma patada rasga a tela com três arranhões; depois pegadas atravessam o rodapé.
+    const slashes = [0, 1, 2].map((i) => ({
+      x1: width * 0.15 + i * width * 0.08,
+      y1: height * 0.1 + i * height * 0.04,
+      x2: width * 0.62 + i * width * 0.08,
+      y2: height * 0.9 + i * height * 0.02,
+    }));
+    let shaken = false;
+    let printed = 0;
+    const pawSize = Math.min(width, height) * 0.16;
+    return {
+      frame(ctx, f) {
+        const swipe = clamp01((f.time - 0.35) / 0.25);
+        if (swipe > 0 && !shaken) {
+          shaken = true;
+          screenShake(300);
+        }
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.lineCap = 'round';
+        for (const slash of slashes) {
+          const x2 = slash.x1 + (slash.x2 - slash.x1) * swipe;
+          const y2 = slash.y1 + (slash.y2 - slash.y1) * swipe;
+          if (swipe <= 0) continue;
+          ctx.strokeStyle = 'rgba(255, 200, 220, 0.9)';
+          ctx.lineWidth = 18;
+          ctx.beginPath();
+          ctx.moveTo(slash.x1, slash.y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+          ctx.strokeStyle = 'rgba(20, 5, 15, 1)';
+          ctx.lineWidth = 8;
+          ctx.stroke();
+        }
+        if (swipe > 0 && swipe < 1) {
+          const x = slashes[1]!.x1 + (slashes[1]!.x2 - slashes[1]!.x1) * swipe;
+          const y = slashes[1]!.y1 + (slashes[1]!.y2 - slashes[1]!.y1) * swipe;
+          drawPaw(ctx, x, y, pawSize, -0.6, 'rgba(250, 232, 222, 1)', 'rgba(255, 150, 185, 1)');
+        }
+        ctx.restore();
+        const steps = Math.floor((f.time - 1.2) / 0.18);
+        while (f.emitting && printed < steps && printed < 14) {
+          f.particles.push(
+            particle(
+              'paw',
+              width * 0.08 + printed * width * 0.065,
+              height * 0.88 + (printed % 2 ? -24 : 24),
+              {
+                rot: Math.PI / 2,
+                max: 140,
+                size: 18,
+                color: '255, 190, 215',
+              },
+            ),
+          );
+          printed += 1;
+        }
+      },
+    };
+  },
+  meteor: (width, height) => {
+    // Chuva de meteoros; o último, gigante, acerta o centro com clarão e onda de choque.
+    const meteors: { x: number; y: number; vx: number; vy: number; size: number; big: boolean }[] =
+      [];
+    const target = { x: width / 2, y: height * 0.5 };
+    let launched = false;
+    let impact = -1;
+    return {
+      frame(ctx, f) {
+        if (f.emitting && f.time < 1.4 && Math.random() < 0.25)
+          meteors.push({
+            x: rand(width * 0.3, width * 1.2),
+            y: -40,
+            vx: -rand(7, 11),
+            vy: rand(9, 13),
+            size: rand(6, 14),
+            big: false,
+          });
+        if (!launched && f.time >= 1.3) {
+          launched = true;
+          const sx = width * 1.05;
+          const sy = -80;
+          const frames = 0.55 * 60;
+          meteors.push({
+            x: sx,
+            y: sy,
+            vx: (target.x - sx) / frames,
+            vy: (target.y - sy) / frames,
+            size: 34,
+            big: true,
+          });
+        }
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineCap = 'round';
+        for (let i = meteors.length - 1; i >= 0; i--) {
+          const m = meteors[i]!;
+          m.x += m.vx;
+          m.y += m.vy;
+          const speed = Math.hypot(m.vx, m.vy);
+          const length = m.size * 14;
+          const tx = m.x - (m.vx / speed) * length;
+          const ty = m.y - (m.vy / speed) * length;
+          const g = ctx.createLinearGradient(m.x, m.y, tx, ty);
+          g.addColorStop(0, 'rgba(255, 220, 150, 0.9)');
+          g.addColorStop(0.3, 'rgba(255, 120, 40, 0.5)');
+          g.addColorStop(1, 'rgba(255, 60, 20, 0)');
+          ctx.strokeStyle = g;
+          ctx.lineWidth = m.size * 1.2;
+          ctx.beginPath();
+          ctx.moveTo(m.x, m.y);
+          ctx.lineTo(tx, ty);
+          ctx.stroke();
+          blit(ctx, glowSprite('255, 160, 60'), m.x, m.y, m.size * 3, 1);
+          if (m.big && m.y >= target.y) {
+            meteors.splice(i, 1);
+            impact = f.time;
+            screenShake(500, 14);
+            for (let k = 0; k < 40; k++) {
+              const a = rand(0, Math.PI * 2);
+              f.particles.push(
+                particle(k % 3 ? 'ember' : 'rock', target.x, target.y, {
+                  vx: Math.cos(a) * rand(4, 14),
+                  vy: Math.sin(a) * rand(4, 14) - 3,
+                  gravity: 0.3,
+                  vr: 0.2,
+                  max: 70,
+                  size: k % 3 ? rand(1.5, 3) : rand(5, 10),
+                  color: '255, 170, 60',
+                }),
+              );
+            }
+            continue;
+          }
+          if (m.y > height + 60 || m.x < -60) meteors.splice(i, 1);
+        }
+        ctx.restore();
+        if (impact >= 0) {
+          const since = f.time - impact;
+          const flash = Math.max(0, 1 - since / 0.35);
+          if (flash > 0) {
+            ctx.fillStyle = `rgba(255, 235, 200, ${flash * 0.8})`;
+            ctx.fillRect(0, 0, width, height);
+          }
+          const alpha = Math.max(0, 1 - since / 0.9) * f.presence;
+          if (alpha > 0) {
+            ctx.save();
+            ctx.strokeStyle = `rgba(255, 180, 90, ${alpha})`;
+            ctx.lineWidth = 10 * (1 - since / 0.9) + 2;
+            ctx.beginPath();
+            ctx.arc(target.x, target.y, since * Math.max(width, height) * 0.9, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+          }
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          blit(ctx, softSprite('255, 120, 40'), target.x, target.y, 160, 0.6 * f.presence);
+          ctx.restore();
+        }
+      },
+    };
+  },
+  party: (width, height) => {
+    // Canhões de confete nos cantos e balões subindo.
+    let bursts = 0;
+    const balloons = Array.from({ length: 9 }, () => ({
+      x: rand(0, width),
+      y: height + rand(40, 400),
+      vy: rand(2.2, 3.5),
+      r: rand(26, 42),
+      color: pick(CONFETTI),
+      phase: rand(0, 6),
+    }));
+    const fire = (particles: Particle[]) => {
+      for (const side of [-1, 1])
+        for (let i = 0; i < 70; i++) {
+          const a =
+            side < 0 ? -Math.PI / 3 + rand(-0.35, 0.35) : (-Math.PI * 2) / 3 + rand(-0.35, 0.35);
+          const speed = rand(10, 22);
+          particles.push(
+            particle('confetti', side < 0 ? 0 : width, height, {
+              vx: Math.cos(a) * speed,
+              vy: Math.sin(a) * speed,
+              gravity: 0.25,
+              drag: 0.975,
+              vr: rand(-0.3, 0.3),
+              max: 200,
+              size: rand(4, 7),
+              color: pick(CONFETTI),
+            }),
+          );
+        }
+    };
+    return {
+      frame(ctx, f) {
+        if (bursts === 0 && f.time >= 0.05) {
+          bursts = 1;
+          fire(f.particles);
+        }
+        if (bursts === 1 && f.time >= 0.6) {
+          bursts = 2;
+          fire(f.particles);
+        }
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        for (const b of balloons) {
+          b.y -= b.vy;
+          const x = b.x + Math.sin(f.time * 1.5 + b.phase) * 12;
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(x, b.y + b.r);
+          ctx.quadraticCurveTo(x + 10, b.y + b.r * 2, x, b.y + b.r * 3);
+          ctx.stroke();
+          ctx.fillStyle = `rgba(${b.color}, 0.95)`;
+          ctx.beginPath();
+          ctx.ellipse(x, b.y, b.r * 0.85, b.r, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(x - 5, b.y + b.r + 6);
+          ctx.lineTo(x + 5, b.y + b.r + 6);
+          ctx.lineTo(x, b.y + b.r - 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+          ctx.beginPath();
+          ctx.ellipse(
+            x - b.r * 0.3,
+            b.y - b.r * 0.35,
+            b.r * 0.18,
+            b.r * 0.28,
+            -0.4,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
         }
         ctx.restore();
       },

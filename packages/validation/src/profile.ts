@@ -94,6 +94,13 @@ export const DICE_AURAS = [
   'time',
   'gold',
   'frog',
+  'vampire',
+  'bard',
+  'rainbow',
+  'poison',
+  'cat',
+  'meteor',
+  'party',
 ] as const;
 export type DiceAura = (typeof DICE_AURAS)[number];
 export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> = {
@@ -115,6 +122,13 @@ export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> =
   time: { name: 'Tempo', color: '#e6d3a3' },
   gold: { name: 'Ouro', color: '#ffc83c' },
   frog: { name: 'Sapo Rei', color: '#7ccf3c' },
+  vampire: { name: 'Vampiro', color: '#c4183a' },
+  bard: { name: 'Bardo', color: '#ffb347' },
+  rainbow: { name: 'Arco-íris', color: '#7cc8ff' },
+  poison: { name: 'Veneno', color: '#9bff3a' },
+  cat: { name: 'Gato', color: '#ffb3cf' },
+  meteor: { name: 'Meteoro', color: '#ff8c42' },
+  party: { name: 'Festa', color: '#ff6ad5' },
 };
 
 export const diceFontLabels: Record<DiceFont, { name: string; family: string }> = {

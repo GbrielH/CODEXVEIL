@@ -631,6 +631,174 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
     });
     croak(2.3);
   },
+  vampire: (kit) => {
+    // Guinchos de morcego e acorde de órgão em ré menor.
+    for (let i = 0; i < 10; i++) {
+      const freq = 6000 + Math.random() * 3000;
+      tone(kit, Math.random() * 2, {
+        type: 'sine',
+        freq,
+        toFreq: freq * 1.2,
+        attack: 0.003,
+        decay: 0.04,
+        peak: 0.08,
+      });
+    }
+    for (const freq of [146.83, 174.61, 220, 293.66]) {
+      tone(kit, 0, {
+        type: 'sawtooth',
+        freq,
+        attack: 0.3,
+        decay: 2.5,
+        peak: 0.07,
+        filter: 1200,
+        detune: -5,
+      });
+      tone(kit, 0, {
+        type: 'sawtooth',
+        freq,
+        attack: 0.3,
+        decay: 2.5,
+        peak: 0.07,
+        filter: 1200,
+        detune: 5,
+      });
+    }
+  },
+  bard: (kit) => {
+    // Fanfarra: dó, fá, sol e dó (oitava acima).
+    const chords: [number, number[], number][] = [
+      [0, [261.63, 329.63, 392], 0.35],
+      [0.25, [349.23, 440, 523.25], 0.35],
+      [0.5, [392, 493.88, 587.33], 0.35],
+      [0.8, [523.25, 659.25, 783.99], 1.2],
+    ];
+    for (const [at, notes, decay] of chords)
+      notes.forEach((freq, i) => {
+        tone(kit, at + i * 0.02, { type: 'triangle', freq, attack: 0.01, decay, peak: 0.12 });
+        tone(kit, at + i * 0.02, {
+          type: 'sine',
+          freq: freq * 2,
+          attack: 0.005,
+          decay: decay * 0.6,
+          peak: 0.04,
+        });
+      });
+  },
+  rainbow: (kit) => {
+    // Glissando de harpa (pentatônica) e brilho.
+    const scale = [261.63, 293.66, 329.63, 392, 440];
+    for (let i = 0; i < 15; i++)
+      tone(kit, i * 0.05, {
+        type: 'triangle',
+        freq: scale[i % 5]! * 2 ** Math.floor(i / 5),
+        attack: 0.005,
+        decay: 1,
+        peak: 0.08,
+      });
+    for (const freq of [2093, 2637])
+      tone(kit, 0.4, { type: 'sine', freq, attack: 0.5, decay: 1.5, peak: 0.04 });
+  },
+  poison: (kit) => {
+    // Borbulhar, "gloop" grave e chiado de gás.
+    tone(kit, 0, { type: 'sine', freq: 120, toFreq: 60, attack: 0.01, decay: 0.4, peak: 0.4 });
+    for (let i = 0; i < 25; i++) {
+      const freq = 150 + Math.random() * 250;
+      tone(kit, Math.random() * 2.5, {
+        type: 'sine',
+        freq,
+        toFreq: freq * 1.8,
+        attack: 0.005,
+        decay: 0.08,
+        peak: 0.15,
+      });
+    }
+    noiseBurst(kit, 0.2, { type: 'highpass', freq: 5000, attack: 0.4, decay: 2, peak: 0.15 });
+  },
+  cat: (kit) => {
+    // Arranhões e um miau.
+    for (const at of [0.35, 0.4, 0.45])
+      noiseBurst(kit, at, {
+        type: 'bandpass',
+        freq: 3000,
+        toFreq: 1200,
+        q: 3,
+        attack: 0.01,
+        decay: 0.18,
+        peak: 0.5,
+      });
+    const { ctx, out } = kit;
+    const t = kit.now + 0.9;
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(450, t);
+    osc.frequency.exponentialRampToValueAtTime(750, t + 0.15);
+    osc.frequency.exponentialRampToValueAtTime(520, t + 0.55);
+    const formant = ctx.createBiquadFilter();
+    formant.type = 'bandpass';
+    formant.Q.value = 4;
+    formant.frequency.setValueAtTime(900, t);
+    formant.frequency.exponentialRampToValueAtTime(2200, t + 0.15);
+    formant.frequency.exponentialRampToValueAtTime(1000, t + 0.55);
+    const gain = ctx.createGain();
+    envelope(gain, t, 0.05, 0.5, 0.5);
+    osc.connect(formant).connect(gain).connect(out);
+    osc.start(t);
+    osc.stop(t + 0.6);
+  },
+  meteor: (kit) => {
+    // Rasantes e um impacto enorme.
+    for (const at of [0, 0.4, 0.8, 1.3])
+      noiseBurst(kit, at, {
+        type: 'bandpass',
+        freq: 2000,
+        toFreq: 300,
+        q: 1.5,
+        attack: 0.2,
+        decay: 0.6,
+        peak: 0.3,
+      });
+    tone(kit, 1.85, { type: 'sine', freq: 70, toFreq: 30, attack: 0.005, decay: 1.2, peak: 0.9 });
+    noiseBurst(kit, 1.85, {
+      type: 'lowpass',
+      freq: 800,
+      toFreq: 100,
+      attack: 0.005,
+      decay: 1.5,
+      peak: 0.8,
+    });
+  },
+  party: (kit) => {
+    // Lança-confetes, língua-de-sogra e a galera.
+    for (const at of [0.05, 0.6]) {
+      noiseBurst(kit, at, { type: 'highpass', freq: 1500, attack: 0.002, decay: 0.1, peak: 0.7 });
+      tone(kit, at, {
+        type: 'sine',
+        freq: 900,
+        toFreq: 200,
+        attack: 0.002,
+        decay: 0.08,
+        peak: 0.3,
+      });
+    }
+    tone(kit, 0.2, {
+      type: 'sawtooth',
+      freq: 300,
+      toFreq: 420,
+      attack: 0.02,
+      decay: 0.6,
+      peak: 0.2,
+      filter: 1800,
+    });
+    noiseBurst(kit, 0.3, {
+      type: 'bandpass',
+      freq: 1200,
+      q: 0.7,
+      attack: 0.3,
+      decay: 1.8,
+      peak: 0.2,
+    });
+  },
   fire: (kit) => {
     // Labareda subindo e estalos.
     noiseBurst(kit, 0, {

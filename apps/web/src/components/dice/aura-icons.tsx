@@ -1,6 +1,11 @@
 import { diceAuraLabels, type DiceAura } from '@codexveil/validation';
 import {
   Binary,
+  Cat,
+  FlaskConical,
+  Music,
+  PartyPopper,
+  Rainbow,
   Brush,
   CloudLightning,
   Coins,
@@ -44,6 +49,43 @@ function FrogIcon({ className, ...props }: LucideProps) {
   );
 }
 
+/** Morcego (a biblioteca de ícones não tem). */
+function BatIcon({ className, ...props }: LucideProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      {...props}
+    >
+      <path d="M12 9.5 10.5 7.5 10 10c-2-2.5-5-3.5-8-3 1.5 1 2 2.5 2 4 1.5-.5 3 0 4 1 .8-.7 2-.6 2.5.3L12 14l1.5-1.7c.5-.9 1.7-1 2.5-.3 1-1 2.5-1.5 4-1 0-1.5.5-3 2-4-3-.5-6 .5-8 3l-.5-2.5z" />
+    </svg>
+  );
+}
+
+/** Meteoro com rastro. */
+function MeteorIcon({ className, ...props }: LucideProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      {...props}
+    >
+      <circle cx="15.5" cy="15.5" r="4.5" />
+      <path d="M12.3 12.3 4 4M11 15 6 10M15 11l-5-5" />
+    </svg>
+  );
+}
+
 const ICONS: Record<DiceAura, ComponentType<LucideProps>> = {
   blood: Droplet,
   storm: CloudLightning,
@@ -63,6 +105,13 @@ const ICONS: Record<DiceAura, ComponentType<LucideProps>> = {
   time: Hourglass,
   gold: Coins,
   frog: FrogIcon,
+  vampire: BatIcon,
+  bard: Music,
+  rainbow: Rainbow,
+  poison: FlaskConical,
+  cat: Cat,
+  meteor: MeteorIcon,
+  party: PartyPopper,
 };
 
 /** Ícone da aura, na cor dela e com um leve brilho. */

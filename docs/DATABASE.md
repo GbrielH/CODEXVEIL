@@ -437,3 +437,5 @@ Migração `20261115120000_dice_aura_no_dragon.sql`: remove a aura `dragon` (dad
 Migração `20261115130000_dice_aura_skeleton.sql`: aura `skeleton` aceita em `user_dice.aura` e `dice_aura_grants.aura`.
 
 Migração `20261115140000_dice_auras_eight.sql`: auras `cosmic`, `tarot`, `glitch`, `ink`, `abyss`, `time`, `gold` e `frog` aceitas em `user_dice.aura` e `dice_aura_grants.aura`.
+
+Migração `20261115150000_dice_auras_seven.sql`: auras `vampire`, `bard`, `rainbow`, `poison`, `cat`, `meteor` e `party` aceitas em `user_dice.aura` e `dice_aura_grants.aura`.

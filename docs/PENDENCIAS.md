@@ -1008,3 +1008,11 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto no
 - A mesa de teste de "Meus dados" monta a rolagem: d4, d6, d8, d10, d12 e d20 (até 10 dados), com botão para voltar a 1d20. Mostra a soma e o valor de cada dado; o crítico (efeito da aura) dispara com 20 natural em qualquer d20, e "Rolar um 20" garante um.
 
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto no navegador por mim.
+
+### 2026-11-15 — sete auras novas e correção do Glitch
+
+- **Vampiro** (morcegos; lua de sangue e revoadas), **Bardo** (notas; holofotes, equalizador e fanfarra), **Arco-íris** (brilhos coloridos; arco-íris crescendo com nuvens), **Veneno** (bolhas e gotas; nuvens tóxicas e ☣), **Gato** (pegadas; patada que rasga a tela, pegadas e miau), **Meteoro** (brasas e pedras; chuva de meteoros e impacto com onda de choque) e **Festa** (confetes; canhões de confete e balões). Cada uma com som e ícone.
+- **Glitch preso:** dois "sustos" sobrepostos guardavam o filtro bugado como "anterior" e a página ficava com cores invertidas. Agora o filtro sempre volta a vazio, com uma limpeza garantida no fim do crítico.
+- Migração `20261115150000_dice_auras_seven.sql` (aplicada).
+
+Verificações: `pnpm check` (20 tarefas; banco 255 testes) e `pnpm build` passaram. Não visto no navegador por mim.
