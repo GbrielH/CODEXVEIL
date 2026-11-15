@@ -2507,3 +2507,11 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não verifica
 Verificações: `pnpm check` (20 tarefas; banco 255 testes) e `pnpm build` passaram;
 `supabase db push --dry-run` conferido antes de aplicar. Os efeitos e sons não foram vistos no
 navegador por mim.
+
+### 2026-11-15 — auras: desempenho, aura na caixinha e na mesa, Dragão removido
+
+- **Travava o PC ao testar a rolagem:** cada partícula recriava degradês e `shadowBlur` a cada quadro. Agora brilhos, chamas, fumaça e runas são desenhados uma vez em pequenos canvases e só copiados; o gelo e os cipós crescem numa camada desenhada uma vez por galho; os círculos de runas, as engrenagens gigantes e os raios da Sagrada viram camadas prontas. Também: no máximo ~60 quadros/s, resolução limitada (1x no crítico, 1,5x na aura) e menos partículas (limite 450).
+- **Aura não aparecia na caixinha nem na mesa** com dado vinculado ao personagem: o carregamento do dado do personagem não lia a coluna `aura`. Corrigido em `dice-look.ts`.
+- **Dragão removido** a pedido (efeito ruim): migração `20261115120000_dice_aura_no_dragon.sql` (aplicada) limpa quem a usava.
+
+Verificações: `pnpm check` (20 tarefas; banco 255 testes) e `pnpm build` passaram. Desempenho e efeitos não medidos no navegador por mim.

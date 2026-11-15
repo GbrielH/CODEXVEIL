@@ -388,57 +388,6 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
         peak: 0.25 + Math.random() * 0.3,
       });
   },
-  dragon: (kit) => {
-    // Rugido: graves serrilhados com tremor, seguido de baforada de fogo.
-    const { ctx, out } = kit;
-    const t = kit.now;
-    const shaper = ctx.createWaveShaper();
-    const curve = new Float32Array(1024);
-    for (let i = 0; i < curve.length; i++) {
-      const x = (i / curve.length) * 2 - 1;
-      curve[i] = Math.tanh(x * 4);
-    }
-    shaper.curve = curve;
-    const growl = ctx.createGain();
-    const lfo = ctx.createOscillator();
-    const lfoGain = ctx.createGain();
-    lfo.frequency.value = 28;
-    lfoGain.gain.value = 0.4;
-    lfo.connect(lfoGain).connect(growl.gain);
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(400, t);
-    filter.frequency.linearRampToValueAtTime(1400, t + 0.5);
-    filter.frequency.exponentialRampToValueAtTime(250, t + 2.2);
-    const gain = ctx.createGain();
-    envelope(gain, t, 0.25, 0.5, 2);
-    for (const [freq, detune] of [
-      [90, 0],
-      [92, 15],
-      [45, 0],
-    ] as const) {
-      const osc = ctx.createOscillator();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(freq * 1.3, t);
-      osc.frequency.exponentialRampToValueAtTime(freq * 0.7, t + 2.2);
-      osc.detune.value = detune;
-      osc.connect(growl);
-      osc.start(t);
-      osc.stop(t + 2.4);
-    }
-    growl.connect(shaper).connect(filter).connect(gain).connect(out);
-    lfo.start(t);
-    lfo.stop(t + 2.4);
-    noiseBurst(kit, 0.9, {
-      type: 'lowpass',
-      freq: 400,
-      toFreq: 3000,
-      attack: 0.3,
-      decay: 1.6,
-      peak: 0.5,
-      rate: 0.7,
-    });
-  },
 };
 
 /** Toca o som do crítico da aura (se o navegador permitir e o som estiver ligado). */

@@ -51,7 +51,110 @@ interface Particle {
   path?: Point[];
 }
 
-const MAX_PARTICLES = 1100;
+/** Limite de partículas vivas (por efeito). */
+const MAX_PARTICLES = 450;
+
+// ---------------------------------------------------------------------------------------------
+// Desempenho: brilhos e degradês são desenhados uma vez em canvases pequenos ("sprites") e só
+// copiados a cada quadro. Desenhar `shadowBlur` ou criar degradês por partícula travava o PC.
+// ---------------------------------------------------------------------------------------------
+
+const spriteCache = new Map<string, HTMLCanvasElement>();
+
+function sprite(
+  key: string,
+  size: number,
+  paint: (ctx: CanvasRenderingContext2D, size: number) => void,
+) {
+  let canvas = spriteCache.get(key);
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (ctx) paint(ctx, size);
+    spriteCache.set(key, canvas);
+  }
+  return canvas;
+}
+
+/** Bolha suave de uma cor (labaredas, chamas, brilho de pontos). */
+function softSprite(rgb: string) {
+  return sprite(`soft:${rgb}`, 64, (ctx, size) => {
+    const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    g.addColorStop(0, `rgba(${rgb}, 1)`);
+    g.addColorStop(0.4, `rgba(${rgb}, 0.45)`);
+    g.addColorStop(1, `rgba(${rgb}, 0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+  });
+}
+
+/** Ponto brilhante: miolo claro e halo na cor. */
+function glowSprite(rgb: string) {
+  return sprite(`glow:${rgb}`, 32, (ctx, size) => {
+    const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    g.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    g.addColorStop(0.18, `rgba(${rgb}, 1)`);
+    g.addColorStop(0.45, `rgba(${rgb}, 0.35)`);
+    g.addColorStop(1, `rgba(${rgb}, 0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+  });
+}
+
+/** Fumaça escura. */
+function smokeSprite(rgb: string) {
+  return sprite(`smoke:${rgb}`, 64, (ctx, size) => {
+    const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    g.addColorStop(0, 'rgba(8, 4, 14, 0.75)');
+    g.addColorStop(0.6, `rgba(${rgb}, 0.35)`);
+    g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+  });
+}
+
+/** Chama em 8 tons (amarela no começo da vida, vermelha no fim). */
+function flameSprite(step: number) {
+  return sprite(`flame:${step}`, 64, (ctx, size) => {
+    const t = step / 7;
+    const hue = 52 - t * 50;
+    const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    g.addColorStop(0, `hsla(${hue}, 100%, ${72 - t * 25}%, 1)`);
+    g.addColorStop(0.5, `hsla(${hue - 5}, 100%, 50%, 0.4)`);
+    g.addColorStop(1, `hsla(${hue - 10}, 100%, 40%, 0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+  });
+}
+
+/** Runa já com brilho. */
+function runeSprite(glyph: string, rgb: string) {
+  return sprite(`rune:${glyph}:${rgb}`, 64, (ctx, size) => {
+    ctx.font = `${size * 0.55}px "Segoe UI Symbol", "Noto Sans Runic", serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = `rgba(${rgb}, 1)`;
+    ctx.shadowBlur = size * 0.18;
+    ctx.fillStyle = 'rgba(235, 215, 255, 1)';
+    ctx.fillText(glyph, size / 2, size / 2);
+    ctx.fillText(glyph, size / 2, size / 2);
+  });
+}
+
+function blit(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLCanvasElement,
+  x: number,
+  y: number,
+  radius: number,
+  alpha: number,
+) {
+  if (alpha <= 0.01 || radius <= 0.5) return;
+  ctx.globalAlpha = Math.min(1, alpha);
+  ctx.drawImage(image, x - radius, y - radius, radius * 2, radius * 2);
+}
 
 const RUNES = 'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ';
 
@@ -66,7 +169,6 @@ const RGB: Record<DiceAura, string> = {
   gears: '230, 160, 60',
   forest: '110, 200, 80',
   fire: '255, 120, 30',
-  dragon: '220, 50, 25',
 };
 
 /** Auras escuras (desenhadas por cima, sem somar luz). */
@@ -137,22 +239,27 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
   const fade = 1 - t;
   ctx.save();
   switch (p.kind) {
-    case 'wisp': {
+    case 'wisp':
       // Labareda da aura: bolha suave que sobe e encolhe.
-      const radius = p.size * (1 - t * 0.6);
-      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
-      g.addColorStop(0, `rgba(${p.color}, ${0.55 * fade})`);
-      g.addColorStop(1, `rgba(${p.color}, 0)`);
-      ctx.fillStyle = g;
-      ctx.fillRect(p.x - radius, p.y - radius, radius * 2, radius * 2);
+      blit(ctx, softSprite(p.color), p.x, p.y, p.size * (1 - t * 0.6), 0.5 * fade);
       break;
-    }
     case 'bolt': {
       if (!p.path) break;
       ctx.globalAlpha = Math.random() < 0.25 ? 0.25 : fade;
       ctx.strokeStyle = 'rgba(245, 252, 255, 1)';
-      ctx.shadowColor = `rgba(${p.color}, 1)`;
-      ctx.shadowBlur = p.size > 2.5 ? 30 : 12;
+      // Brilho só nos raios grandes (poucos por vez); nos pequenos, um traço mais grosso por baixo.
+      if (p.size > 2.5) {
+        ctx.shadowColor = `rgba(${p.color}, 1)`;
+        ctx.shadowBlur = 24;
+      }
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(p.path[0]!.x, p.path[0]!.y);
+      for (const point of p.path.slice(1)) ctx.lineTo(point.x, point.y);
+      ctx.strokeStyle = `rgba(${p.color}, 0.45)`;
+      ctx.lineWidth = p.size * 3.5;
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(245, 252, 255, 1)';
       ctx.lineWidth = p.size;
       ctx.lineJoin = 'round';
       ctx.beginPath();
@@ -204,8 +311,6 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
     case 'flake': {
       ctx.globalAlpha = fade;
       ctx.strokeStyle = `rgba(${p.color}, 1)`;
-      ctx.shadowColor = `rgba(${p.color}, 0.9)`;
-      ctx.shadowBlur = 6;
       ctx.lineWidth = Math.max(1, p.size / 4);
       ctx.translate(p.x, p.y);
       ctx.rotate(p.rot);
@@ -222,29 +327,12 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
       }
       break;
     }
-    case 'rune': {
-      ctx.globalAlpha = Math.sin(Math.PI * t);
-      ctx.fillStyle = `rgba(${p.color}, 1)`;
-      ctx.shadowColor = `rgba(${p.color}, 1)`;
-      ctx.shadowBlur = 12;
-      ctx.font = `${p.size}px "Segoe UI Symbol", "Noto Sans Runic", serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot * 0.2);
-      ctx.fillText(p.glyph ?? 'ᚠ', 0, 0);
+    case 'rune':
+      blit(ctx, runeSprite(p.glyph ?? 'ᚠ', p.color), p.x, p.y, p.size, Math.sin(Math.PI * t));
       break;
-    }
-    case 'smoke': {
-      const radius = p.size * (0.6 + t);
-      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
-      g.addColorStop(0, `rgba(8, 4, 14, ${0.65 * fade})`);
-      g.addColorStop(0.6, `rgba(${p.color}, ${0.3 * fade})`);
-      g.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = g;
-      ctx.fillRect(p.x - radius, p.y - radius, radius * 2, radius * 2);
+    case 'smoke':
+      blit(ctx, smokeSprite(p.color), p.x, p.y, p.size * (0.6 + t), fade);
       break;
-    }
     case 'ray': {
       // Raio de luz saindo da borda do dado.
       ctx.globalAlpha = Math.sin(Math.PI * t) * 0.9;
@@ -308,17 +396,17 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
       ctx.stroke();
       break;
     }
-    case 'flame': {
+    case 'flame':
       // Chama: amarela no começo, vermelha no fim, encolhendo.
-      const hue = 52 - t * 50;
-      const radius = p.size * (1 - t * 0.7);
-      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
-      g.addColorStop(0, `hsla(${hue}, 100%, ${70 - t * 25}%, ${0.9 * fade})`);
-      g.addColorStop(1, `hsla(${hue - 10}, 100%, 40%, 0)`);
-      ctx.fillStyle = g;
-      ctx.fillRect(p.x - radius, p.y - radius, radius * 2, radius * 2);
+      blit(
+        ctx,
+        flameSprite(Math.min(7, Math.floor(t * 8))),
+        p.x,
+        p.y,
+        p.size * (1 - t * 0.7),
+        0.95 * fade,
+      );
       break;
-    }
     case 'scale': {
       // Escama dourada girando (brilho do dragão).
       ctx.globalAlpha = fade;
@@ -326,8 +414,6 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
       ctx.rotate(p.rot);
       ctx.scale(Math.cos(p.life * 0.15), 1);
       ctx.fillStyle = `rgba(${p.color}, 1)`;
-      ctx.shadowColor = `rgba(${p.color}, 1)`;
-      ctx.shadowBlur = 8;
       ctx.beginPath();
       ctx.moveTo(0, -p.size);
       ctx.quadraticCurveTo(p.size, 0, 0, p.size);
@@ -340,8 +426,6 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
       ctx.globalAlpha = Math.min(1, fade * 2.5);
       ctx.translate(p.x + Math.sin(p.life * 0.05 + p.rot) * p.size, p.y);
       ctx.rotate(Math.sin(p.life * 0.04 + p.rot) * 0.6 + 0.4);
-      ctx.shadowColor = 'rgba(255, 225, 140, 0.9)';
-      ctx.shadowBlur = 10;
       ctx.fillStyle = 'rgba(255, 252, 240, 0.95)';
       ctx.beginPath();
       ctx.moveTo(0, -p.size);
@@ -359,13 +443,7 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
     default: {
       // mote, spark, firefly, ember: ponto brilhante.
       const blink = p.kind === 'firefly' ? 0.5 + 0.5 * Math.sin(p.life * 0.25 + p.rot) : 1;
-      ctx.globalAlpha = fade * blink;
-      ctx.fillStyle = `rgba(${p.color}, 1)`;
-      ctx.shadowColor = `rgba(${p.color}, 1)`;
-      ctx.shadowBlur = p.kind === 'spark' ? 6 : 12;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fill();
+      blit(ctx, glowSprite(p.color), p.x, p.y, p.size * 3, fade * blink);
     }
   }
   ctx.restore();
@@ -410,7 +488,7 @@ function emitAround(aura: DiceAura, o: AuraPoint, out: Particle[], power: number
   const chance = (p: number) => Math.random() < p * power;
   const color = RGB[aura];
   // Camada "chakra": labaredas que nascem na borda e sobem, em todos os temas.
-  const wisps = Math.round(3 * power + Math.random());
+  const wisps = Math.round(1.6 * power + Math.random() * 0.8);
   for (let i = 0; i < wisps; i++) {
     const a = rand(0, Math.PI * 2);
     const from = edge(o, a, 0.85);
@@ -605,7 +683,6 @@ function emitAround(aura: DiceAura, o: AuraPoint, out: Particle[], power: number
         );
       break;
     case 'fire':
-    case 'dragon':
       for (let i = 0; i < 3; i++) {
         const b = rand(0, Math.PI * 2);
         const at = edge(o, b, 0.8);
@@ -629,28 +706,6 @@ function emitAround(aura: DiceAura, o: AuraPoint, out: Particle[], power: number
             color: '255, 170, 60',
           }),
         );
-      if (aura === 'dragon') {
-        if (chance(0.3))
-          out.push(
-            particle('scale', from.x, from.y, {
-              vx: Math.cos(a) * rand(0.6, 1.4) * s,
-              vy: Math.sin(a) * rand(0.6, 1.4) * s,
-              vr: rand(-0.1, 0.1),
-              max: rand(35, 55),
-              size: rand(2.5, 4) * s,
-              color: '255, 190, 70',
-            }),
-          );
-        if (chance(0.25))
-          out.push(
-            particle('smoke', from.x, from.y, {
-              vy: -rand(0.5, 1.2) * s,
-              max: rand(40, 60),
-              size: rand(8, 14) * s,
-              color: '60, 20, 10',
-            }),
-          );
-      }
       break;
   }
 }
@@ -710,6 +765,7 @@ function drawHalo(
     ctx.arc(o.x, o.y, ring + o.r * 0.18, 0, Math.PI * 2);
     ctx.arc(o.x, o.y, ring - o.r * 0.18, 0, Math.PI * 2, true);
     ctx.stroke();
+    ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(225, 195, 255, 1)';
     ctx.font = `${Math.max(9, o.r * 0.3)}px "Segoe UI Symbol", "Noto Sans Runic", serif`;
     ctx.textAlign = 'center';
@@ -748,8 +804,10 @@ function fit(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
+  maxRatio = 1.5,
 ) {
-  const ratio = window.devicePixelRatio || 1;
+  // Resolução limitada: em telas 4K/150% o canvas cheio custava 4x mais para desenhar.
+  const ratio = Math.min(maxRatio, window.devicePixelRatio || 1);
   if (canvas.width !== Math.round(width * ratio) || canvas.height !== Math.round(height * ratio)) {
     canvas.width = Math.round(width * ratio);
     canvas.height = Math.round(height * ratio);
@@ -777,8 +835,15 @@ export function startDiceAura(
   const started = performance.now();
   let emitting = true;
   let frame = 0;
+  let last = 0;
   const tick = (now: number) => {
     if (!ctx) return;
+    // No máximo ~60 quadros/s (monitores de 144 Hz dobravam o trabalho).
+    if (now - last < 15) {
+      frame = requestAnimationFrame(tick);
+      return;
+    }
+    last = now;
     fit(canvas, ctx, host.clientWidth, host.clientHeight);
     const time = (now - started) / 1000;
     if (emitting) {
@@ -852,24 +917,32 @@ function grow(
   return segments;
 }
 
-function drawSegments(
-  ctx: CanvasRenderingContext2D,
+/**
+ * Camada onde os galhos são desenhados uma vez só, à medida que crescem (redesenhar milhares de
+ * traços com brilho a cada quadro travava o PC).
+ */
+function growthLayer(
+  width: number,
+  height: number,
   segments: Segment[],
-  time: number,
-  style: (segment: Segment, progress: number) => void,
+  paint: (ctx: CanvasRenderingContext2D, segment: Segment, index: number) => void,
 ) {
-  for (const segment of segments) {
-    if (time < segment.t) continue;
-    const progress = Math.min(1, (time - segment.t) * 6);
-    style(segment, progress);
-    ctx.beginPath();
-    ctx.moveTo(segment.x1, segment.y1);
-    ctx.lineTo(
-      segment.x1 + (segment.x2 - segment.x1) * progress,
-      segment.y1 + (segment.y2 - segment.y1) * progress,
-    );
-    ctx.stroke();
-  }
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const layer = canvas.getContext('2d');
+  const sorted = [...segments].sort((a, b) => a.t - b.t);
+  let next = 0;
+  return {
+    canvas,
+    advance(time: number) {
+      if (!layer) return;
+      while (next < sorted.length && sorted[next]!.t <= time) {
+        paint(layer, sorted[next]!, next);
+        next += 1;
+      }
+    },
+  };
 }
 
 /** Sementes nas bordas da tela, apontando para dentro. */
@@ -893,110 +966,79 @@ function edgeSeeds(
 }
 
 /** Círculo mágico com runas (arcana). */
+function magicCircleLayers(radius: number) {
+  const color = RGB.arcane;
+  const size = Math.ceil(radius * 2.2);
+  const prepare = (ctx: CanvasRenderingContext2D) => {
+    ctx.translate(size / 2, size / 2);
+    ctx.strokeStyle = `rgba(${color}, 0.9)`;
+    ctx.fillStyle = 'rgba(230, 205, 255, 1)';
+    ctx.shadowColor = `rgba(${color}, 1)`;
+    ctx.shadowBlur = 14;
+    ctx.lineWidth = Math.max(1.5, radius / 140);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+  };
+  const ring = (k: number, count: number, offset: number) =>
+    sprite(`circle:${Math.round(radius)}:${k}`, size, (ctx) => {
+      prepare(ctx);
+      ctx.beginPath();
+      ctx.arc(0, 0, radius * k, 0, Math.PI * 2);
+      ctx.arc(0, 0, radius * (k - 0.13), 0, Math.PI * 2, true);
+      ctx.stroke();
+      ctx.font = `${radius * 0.085}px "Segoe UI Symbol", "Noto Sans Runic", serif`;
+      for (let i = 0; i < count; i++) {
+        ctx.save();
+        ctx.rotate((i / count) * Math.PI * 2);
+        ctx.translate(0, -radius * (k - 0.065));
+        ctx.fillText(RUNES[(i * 5 + offset) % RUNES.length]!, 0, 0);
+        ctx.restore();
+      }
+    });
+  const star = sprite(`circle:${Math.round(radius)}:star`, size, (ctx) => {
+    prepare(ctx);
+    for (const offset of [0, Math.PI / 3]) {
+      ctx.beginPath();
+      for (let i = 0; i < 3; i++) {
+        const a = offset + (i / 3) * Math.PI * 2 - Math.PI / 2;
+        ctx.lineTo(Math.cos(a) * radius * 0.55, Math.sin(a) * radius * 0.55);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.27, 0, Math.PI * 2);
+    ctx.stroke();
+  });
+  return { size, outer: ring(1, 24, 0), inner: ring(0.72, 16, 3), star };
+}
+
+/** Círculo mágico com runas (arcana): camadas prontas, só giradas a cada quadro. */
 function magicCircle(
   ctx: CanvasRenderingContext2D,
+  layers: ReturnType<typeof magicCircleLayers>,
   x: number,
   y: number,
-  radius: number,
+  scale: number,
   time: number,
   alpha: number,
 ) {
-  const color = RGB.arcane;
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   ctx.globalAlpha = alpha;
   ctx.translate(x, y);
-  ctx.strokeStyle = `rgba(${color}, 0.9)`;
-  ctx.fillStyle = 'rgba(230, 205, 255, 1)';
-  ctx.shadowColor = `rgba(${color}, 1)`;
-  ctx.shadowBlur = 18;
-  ctx.lineWidth = Math.max(1.5, radius / 140);
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  // Anéis externos e runas girando.
-  for (const [k, speed, count] of [
-    [1, 0.35, 24],
-    [0.72, -0.55, 16],
+  ctx.scale(scale, scale);
+  const half = layers.size / 2;
+  for (const [image, speed] of [
+    [layers.outer, 0.35],
+    [layers.inner, -0.55],
+    [layers.star, -0.8],
   ] as const) {
     ctx.save();
     ctx.rotate(time * speed);
-    ctx.beginPath();
-    ctx.arc(0, 0, radius * k, 0, Math.PI * 2);
-    ctx.arc(0, 0, radius * (k - 0.13), 0, Math.PI * 2, true);
-    ctx.stroke();
-    ctx.font = `${radius * 0.085}px "Segoe UI Symbol", "Noto Sans Runic", serif`;
-    for (let i = 0; i < count; i++) {
-      const a = (i / count) * Math.PI * 2;
-      ctx.save();
-      ctx.rotate(a);
-      ctx.translate(0, -radius * (k - 0.065));
-      ctx.fillText(RUNES[(i * 5 + (k === 1 ? 0 : 3)) % RUNES.length]!, 0, 0);
-      ctx.restore();
-    }
+    ctx.drawImage(image, -half, -half);
     ctx.restore();
   }
-  // Hexagrama no centro, girando ao contrário.
-  ctx.save();
-  ctx.rotate(-time * 0.8);
-  for (const offset of [0, Math.PI / 3]) {
-    ctx.beginPath();
-    for (let i = 0; i < 3; i++) {
-      const a = offset + (i / 3) * Math.PI * 2 - Math.PI / 2;
-      ctx.lineTo(Math.cos(a) * radius * 0.55, Math.sin(a) * radius * 0.55);
-    }
-    ctx.closePath();
-    ctx.stroke();
-  }
-  ctx.beginPath();
-  ctx.arc(0, 0, radius * 0.27, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.restore();
-  ctx.restore();
-}
-
-/** Silhueta de dragão voando (asas batendo). */
-function dragon(ctx: CanvasRenderingContext2D, x: number, y: number, scale: number, flap: number) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(scale, scale);
-  ctx.fillStyle = 'rgba(18, 4, 4, 0.92)';
-  ctx.shadowColor = 'rgba(255, 60, 20, 0.9)';
-  ctx.shadowBlur = 25;
-  const wing = (lift: number) => {
-    ctx.beginPath();
-    ctx.moveTo(25, -6);
-    ctx.quadraticCurveTo(10, -70 * lift, -40, -125 * lift);
-    ctx.lineTo(-48, -75 * lift);
-    ctx.lineTo(-72, -88 * lift);
-    ctx.lineTo(-70, -45 * lift);
-    ctx.lineTo(-95, -48 * lift);
-    ctx.lineTo(-25, -4);
-    ctx.closePath();
-    ctx.fill();
-  };
-  wing(flap * 0.8);
-  // Corpo, pescoço, cabeça e cauda.
-  ctx.beginPath();
-  ctx.ellipse(0, 0, 62, 17, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(48, -8);
-  ctx.quadraticCurveTo(85, -30, 112, -24);
-  ctx.lineTo(140, -16);
-  ctx.lineTo(118, -8);
-  ctx.lineTo(126, -2);
-  ctx.quadraticCurveTo(90, -4, 55, 10);
-  ctx.closePath();
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(-55, -4);
-  ctx.quadraticCurveTo(-120, 10, -175, -14);
-  ctx.lineTo(-190, -8);
-  ctx.lineTo(-174, -4);
-  ctx.quadraticCurveTo(-120, 24, -55, 9);
-  ctx.closePath();
-  ctx.fill();
-  wing(flap);
   ctx.restore();
 }
 
@@ -1024,7 +1066,7 @@ function criticalText(aura: DiceAura, durationMs: number) {
     WebkitTextStroke: `2px ${color}`,
   });
   document.body.appendChild(element);
-  const shake = aura === 'storm' || aura === 'dragon' || aura === 'blood';
+  const shake = aura === 'storm' || aura === 'blood';
   element.animate(
     [
       { opacity: 0, transform: 'translate(-50%, -50%) scale(2.2)', filter: 'blur(8px)' },
@@ -1045,6 +1087,55 @@ function criticalText(aura: DiceAura, durationMs: number) {
     { duration: durationMs, easing: 'ease-out', fill: 'forwards' },
   );
   window.setTimeout(() => element.remove(), durationMs + 100);
+}
+
+/** Leque de raios de luz e auréola da Sagrada, desenhados uma vez. */
+function holyLayers(width: number, height: number) {
+  const color = RGB.holy;
+  const rays = document.createElement('canvas');
+  rays.width = Math.ceil(width / 2);
+  rays.height = Math.ceil(height / 2);
+  const r = rays.getContext('2d');
+  if (r) {
+    r.scale(0.5, 0.5);
+    r.globalCompositeOperation = 'lighter';
+    const sx = width / 2;
+    const sy = -height * 0.15;
+    const reach = Math.hypot(width, height) * 1.2;
+    const count = 18;
+    for (let i = 0; i < count; i++) {
+      const a = Math.PI / 2 + (i / count - 0.5) * 2.4;
+      const spread = 0.045 + (i % 3) * 0.015;
+      const strength = 0.16 + (0.12 * ((i * 7) % 5)) / 4;
+      const g = r.createLinearGradient(sx, sy, sx + Math.cos(a) * reach, sy + Math.sin(a) * reach);
+      g.addColorStop(0, `rgba(255, 245, 200, ${strength})`);
+      g.addColorStop(0.7, `rgba(${color}, ${strength * 0.4})`);
+      g.addColorStop(1, `rgba(${color}, 0)`);
+      r.fillStyle = g;
+      r.beginPath();
+      r.moveTo(sx, sy);
+      r.lineTo(sx + Math.cos(a - spread) * reach, sy + Math.sin(a - spread) * reach);
+      r.lineTo(sx + Math.cos(a + spread) * reach, sy + Math.sin(a + spread) * reach);
+      r.closePath();
+      r.fill();
+    }
+  }
+  const radius = Math.min(width, height) * 0.3;
+  const halo = sprite(`holy-halo:${Math.round(radius)}`, Math.ceil(radius * 2.6), (h, size) => {
+    h.translate(size / 2, size / 2);
+    h.strokeStyle = 'rgba(255, 235, 170, 0.9)';
+    h.shadowColor = `rgba(${color}, 1)`;
+    h.shadowBlur = 40;
+    h.lineWidth = 6;
+    h.beginPath();
+    h.arc(0, 0, radius, 0, Math.PI * 2);
+    h.stroke();
+    h.lineWidth = 2;
+    h.beginPath();
+    h.arc(0, 0, radius * 1.12, 0, Math.PI * 2);
+    h.stroke();
+  });
+  return { rays, halo };
 }
 
 /** Vidro congelado: borda da tela embaçada e azulada (gelo). */
@@ -1093,7 +1184,7 @@ export function criticalAuraBurst(
   const started = performance.now();
   let flash = 0;
   // Elementos fixos de cada tema.
-  const ferns =
+  const fernSegments =
     aura === 'frost'
       ? grow(edgeSeeds(width, height, 34, ['top', 'bottom', 'left', 'right']), {
           length: 26,
@@ -1104,7 +1195,7 @@ export function criticalAuraBurst(
           max: 2600,
         })
       : [];
-  const vines =
+  const vineSegments =
     aura === 'forest'
       ? grow(edgeSeeds(width, height, 14, ['bottom', 'left', 'right']), {
           length: 34,
@@ -1115,6 +1206,41 @@ export function criticalAuraBurst(
           max: 1400,
         })
       : [];
+  const ferns = fernSegments.length
+    ? growthLayer(width, height, fernSegments, (layer, segment) => {
+        layer.lineCap = 'round';
+        layer.shadowColor = 'rgba(200, 240, 255, 1)';
+        layer.shadowBlur = 6;
+        layer.strokeStyle = 'rgba(230, 248, 255, 0.85)';
+        layer.lineWidth = segment.w;
+        layer.beginPath();
+        layer.moveTo(segment.x1, segment.y1);
+        layer.lineTo(segment.x2, segment.y2);
+        layer.stroke();
+      })
+    : null;
+  const vines = vineSegments.length
+    ? growthLayer(width, height, vineSegments, (layer, segment, index) => {
+        layer.lineCap = 'round';
+        layer.strokeStyle = 'rgba(60, 120, 40, 0.95)';
+        layer.lineWidth = segment.w * 2.2;
+        layer.beginPath();
+        layer.moveTo(segment.x1, segment.y1);
+        layer.lineTo(segment.x2, segment.y2);
+        layer.stroke();
+        if (index % 3 === 0) {
+          // Folha na ponta do cipó.
+          layer.save();
+          layer.fillStyle = 'rgba(100, 180, 60, 0.95)';
+          layer.translate(segment.x2, segment.y2);
+          layer.rotate(index);
+          layer.beginPath();
+          layer.ellipse(6, 0, 7, 3.5, 0, 0, Math.PI * 2);
+          layer.fill();
+          layer.restore();
+        }
+      })
+    : null;
   const fountains =
     aura === 'blood'
       ? Array.from({ length: 7 }, (_, i) =>
@@ -1139,7 +1265,7 @@ export function criticalAuraBurst(
           { x: width * 0.85, y: height * 0.72, r: Math.min(width, height) * 0.15, delay: 0.6 },
           { x: width * 0.82, y: height * 0.18, r: Math.min(width, height) * 0.09, delay: 0.9 },
           { x: width * 0.2, y: height * 0.8, r: Math.min(width, height) * 0.1, delay: 1.1 },
-        ]
+        ].map((c) => ({ ...c, layers: magicCircleLayers(c.r) }))
       : [];
   const bigGears =
     aura === 'gears'
@@ -1150,12 +1276,33 @@ export function criticalAuraBurst(
           { x: width - 250, y: height - 110, r: 90, dir: 2.2 },
           { x: width, y: 0, r: 120, dir: 1.3 },
           { x: 0, y: height, r: 130, dir: -1.2 },
-        ]
+        ].map((g) => ({
+          ...g,
+          image: sprite(`big-gear:${g.r}`, g.r * 2 + 40, (layer, size) => {
+            layer.translate(size / 2, size / 2);
+            gearPath(layer, g.r, Math.round(g.r / 9));
+            layer.fillStyle = 'rgba(150, 105, 50, 0.92)';
+            layer.strokeStyle = 'rgba(255, 200, 110, 0.8)';
+            layer.shadowColor = 'rgba(255, 170, 60, 0.8)';
+            layer.shadowBlur = 16;
+            layer.lineWidth = 3;
+            layer.fill('evenodd');
+            layer.stroke();
+          }),
+        }))
       : [];
+  // Sagrada: leque de raios e auréola desenhados uma vez (em meia resolução).
+  const holy = aura === 'holy' ? holyLayers(width, height) : null;
+  let last = 0;
 
   const tick = (now: number) => {
     if (!ctx) return;
-    fit(canvas, ctx, width, height);
+    if (now - last < 15) {
+      requestAnimationFrame(tick);
+      return;
+    }
+    last = now;
+    fit(canvas, ctx, width, height, 1);
     const elapsed = now - started;
     const time = elapsed / 1000;
     const emitting = elapsed < durationMs - 700;
@@ -1364,10 +1511,9 @@ export function criticalAuraBurst(
               }),
             );
           break;
-        case 'fire':
-        case 'dragon': {
+        case 'fire': {
           // Fogo subindo pela parte de baixo da tela.
-          const count = aura === 'fire' ? 9 : 4;
+          const count = 9;
           for (let i = 0; i < count; i++)
             particles.push(
               particle('flame', rand(0, width), height + 20, {
@@ -1393,11 +1539,8 @@ export function criticalAuraBurst(
     }
 
     // Elementos fixos de cada tema.
-    if (aura === 'holy') {
-      // O céu se abre: leque de raios de luz girando a partir do alto, auréola atrás do texto.
-      const sx = width / 2;
-      const sy = -height * 0.15;
-      const reach = Math.hypot(width, height) * 1.2;
+    if (holy) {
+      // O céu se abre: clarão, leque de raios balançando e auréola atrás do texto.
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       const opening = elapsed < 250 ? 1 - elapsed / 250 : 0;
@@ -1405,42 +1548,17 @@ export function criticalAuraBurst(
         ctx.fillStyle = `rgba(255, 250, 230, ${opening * 0.85})`;
         ctx.fillRect(0, 0, width, height);
       }
-      const rays = 18;
-      for (let i = 0; i < rays; i++) {
-        const a =
-          Math.PI / 2 + (i / rays - 0.5) * 2.4 + Math.sin(time * 0.6 + i) * 0.04 + time * 0.05;
-        const spread = 0.045 + (i % 3) * 0.015;
-        const g = ctx.createLinearGradient(
-          sx,
-          sy,
-          sx + Math.cos(a) * reach,
-          sy + Math.sin(a) * reach,
-        );
-        const strength = (0.18 + 0.12 * Math.sin(time * 2 + i * 1.7)) * presence;
-        g.addColorStop(0, `rgba(255, 245, 200, ${strength})`);
-        g.addColorStop(0.7, `rgba(${color}, ${strength * 0.4})`);
-        g.addColorStop(1, `rgba(${color}, 0)`);
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.moveTo(sx, sy);
-        ctx.lineTo(sx + Math.cos(a - spread) * reach, sy + Math.sin(a - spread) * reach);
-        ctx.lineTo(sx + Math.cos(a + spread) * reach, sy + Math.sin(a + spread) * reach);
-        ctx.closePath();
-        ctx.fill();
-      }
-      const halo = Math.min(width, height) * 0.3 * (0.8 + 0.2 * Math.min(1, elapsed / 500));
+      ctx.save();
+      ctx.globalAlpha = presence * (0.8 + 0.2 * Math.sin(time * 2.2));
+      ctx.translate(width / 2, -height * 0.15);
+      ctx.rotate(Math.sin(time * 0.7) * 0.04);
+      ctx.translate(-width / 2, height * 0.15);
+      ctx.drawImage(holy.rays, 0, 0, width, height);
+      ctx.restore();
+      const grow = 0.8 + 0.2 * Math.min(1, elapsed / 500);
+      const half = (holy.halo.width / 2) * grow;
       ctx.globalAlpha = presence;
-      ctx.strokeStyle = 'rgba(255, 235, 170, 0.9)';
-      ctx.shadowColor = `rgba(${color}, 1)`;
-      ctx.shadowBlur = 40;
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.arc(width / 2, height / 2, halo, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(width / 2, height / 2, halo * 1.12, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.drawImage(holy.halo, width / 2 - half, height / 2 - half, half * 2, half * 2);
       ctx.restore();
     }
     if (flash > 0) {
@@ -1448,79 +1566,31 @@ export function criticalAuraBurst(
       ctx.fillRect(0, 0, width, height);
       flash = Math.max(0, flash - 0.05);
     }
-    if (ferns.length) {
-      ctx.save();
+    if (ferns) {
+      ferns.advance(time);
       ctx.globalAlpha = presence;
-      ctx.shadowColor = 'rgba(200, 240, 255, 1)';
-      ctx.shadowBlur = 8;
-      ctx.lineCap = 'round';
-      drawSegments(ctx, ferns, time, (segment) => {
-        ctx.strokeStyle = 'rgba(230, 248, 255, 0.85)';
-        ctx.lineWidth = segment.w;
-      });
-      ctx.restore();
+      ctx.drawImage(ferns.canvas, 0, 0, width, height);
+      ctx.globalAlpha = 1;
     }
-    if (vines.length) {
-      ctx.save();
+    if (vines) {
+      vines.advance(time);
       ctx.globalAlpha = presence;
-      ctx.lineCap = 'round';
-      drawSegments(ctx, vines, time, (segment) => {
-        ctx.strokeStyle = 'rgba(60, 120, 40, 0.95)';
-        ctx.lineWidth = segment.w * 2.2;
-      });
-      // Folhas nas pontas dos cipós já crescidos.
-      ctx.fillStyle = 'rgba(100, 180, 60, 0.95)';
-      vines.forEach((segment, index) => {
-        if (index % 3 !== 0 || time < segment.t + 0.2) return;
-        ctx.save();
-        ctx.translate(segment.x2, segment.y2);
-        ctx.rotate(index);
-        ctx.beginPath();
-        ctx.ellipse(6, 0, 7, 3.5, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      });
-      ctx.restore();
+      ctx.drawImage(vines.canvas, 0, 0, width, height);
+      ctx.globalAlpha = 1;
     }
     for (const c of circles) {
       const local = time - c.delay;
       if (local < 0) continue;
       const grow = Math.min(1, local / 0.5);
-      magicCircle(ctx, c.x, c.y, c.r * (0.6 + 0.4 * grow), time, presence * grow);
+      magicCircle(ctx, c.layers, c.x, c.y, 0.6 + 0.4 * grow, time, presence * grow);
     }
     for (const g of bigGears) {
       ctx.save();
       ctx.globalAlpha = presence;
       ctx.translate(g.x, g.y);
       ctx.rotate(time * 0.9 * g.dir);
-      gearPath(ctx, g.r, Math.round(g.r / 9));
-      ctx.fillStyle = 'rgba(150, 105, 50, 0.92)';
-      ctx.strokeStyle = 'rgba(255, 200, 110, 0.8)';
-      ctx.shadowColor = 'rgba(255, 170, 60, 0.8)';
-      ctx.shadowBlur = 16;
-      ctx.lineWidth = 3;
-      ctx.fill('evenodd');
-      ctx.stroke();
+      ctx.drawImage(g.image, -g.image.width / 2, -g.image.height / 2);
       ctx.restore();
-    }
-    if (aura === 'dragon') {
-      // Dragão cruzando a tela e cuspindo fogo.
-      const progress = elapsed / (durationMs - 300);
-      const x = -260 + (width + 520) * progress;
-      const y = height * 0.28 + Math.sin(time * 3) * 30;
-      const scale = Math.max(1.2, width / 900);
-      dragon(ctx, x, y, scale, Math.sin(time * 9));
-      if (emitting && progress > 0.1 && progress < 0.9)
-        for (let i = 0; i < 6; i++)
-          particles.push(
-            particle('flame', x + 136 * scale, y - 12 * scale, {
-              vx: rand(6, 11),
-              vy: rand(3, 8),
-              drag: 0.98,
-              max: rand(30, 50),
-              size: rand(20, 45),
-            }),
-          );
     }
 
     stepParticles(ctx, particles, height);

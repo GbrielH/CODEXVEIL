@@ -173,7 +173,7 @@ export function loadCharacterLook(characterId: string): Promise<DiceAppearance |
     if (!character?.dice_id) return null;
     const { data: row } = await client
       .from('user_dice')
-      .select('image_path, number_color, font, color')
+      .select('image_path, number_color, font, color, aura')
       .eq('id', character.dice_id)
       .maybeSingle();
     if (!row) return null;
@@ -182,6 +182,7 @@ export function loadCharacterLook(characterId: string): Promise<DiceAppearance |
       numberColor: row.number_color,
       font: row.font,
       color: row.color,
+      aura: row.aura,
     });
     const urls = look.image ? await signedMediaUrls(client, [look.image]) : {};
     return { ...look, imageUrl: look.image ? (urls[look.image] ?? null) : null };

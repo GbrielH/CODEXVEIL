@@ -47,7 +47,7 @@ describe('auras dos dados (somente criadores)', () => {
       '23514',
     );
     // Auras novas (engrenagens, floresta, fogo, dragão) também valem para o criador.
-    for (const aura of ['gears', 'forest', 'fire', 'dragon']) {
+    for (const aura of ['gears', 'forest', 'fire']) {
       const row = await db.as(creator, (s) =>
         s.one<{ aura: string }>(
           `insert into public.user_dice (name, aura) values ('Novo', $1) returning aura`,
