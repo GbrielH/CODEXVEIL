@@ -3,6 +3,7 @@
 import {
   CAMPAIGN_MEDIA_BUCKET,
   campaignMapPath,
+  sessionImagePath,
   createCampaignItem,
   createCreature,
   createSession,
@@ -185,9 +186,17 @@ export async function startOrdem2MissionAction(campaignId: string, packId: strin
         if (!map) continue;
         const path = await copyBookImage(supabase, pack.bookKey, map.data.image, (file) => campaignMapPath(campaignId, file));
         if (!path) continue;
-        mapImages[key] = path;
         const mapId = await createSessionMap(supabase, { campaignId, sessionId, name: map.name.slice(0, 80) });
         await updateSessionMap(supabase, mapId, { imagePath: path, showGrid: false });
+        // O roteiro só aceita imagens da pasta da sessão (é a que o "Liberar" mostra aos
+        // jogadores); a imagem em maps/ só fica visível com o mapa ativo na mesa. Por isso o bloco
+        // do roteiro usa uma cópia na pasta da sessão. Antes, o banco recusava o bloco e a missão
+        // inteira falhava com "Alguns dados não são válidos".
+        const currentSession = sessionId;
+        const scriptPath = await copyBookImage(supabase, pack.bookKey, map.data.image, (file) =>
+          sessionImagePath(campaignId, currentSession, file),
+        );
+        if (scriptPath) mapImages[key] = scriptPath;
       }
     }
 

@@ -1009,3 +1009,16 @@ Pedido do QA (Ordem Paranormal 2), feito para **todos os sistemas**:
 
 Verificações: `pnpm check` (20 tarefas; banco 252 testes, incluindo `check-block.test.ts`;
 rpg-systems 295) e `pnpm build` passaram. Não verificado no navegador nem no celular.
+
+### 2026-11-15 — correção: "Usar esta missão na campanha" falhava
+
+- **Sintoma (QA):** "Alguns dados não são válidos" ao montar uma missão do Ordem 2.
+- **Causa:** o bloco de imagem do mapa no roteiro apontava para `campaigns/<id>/maps/...`, mas
+  `session_blocks` só aceita imagens de roteiro na pasta da sessão (`session_blocks_image_path`);
+  o banco recusava e a montagem inteira falhava. Reproduzido em teste.
+- **Correção:** o mapa da mesa continua em `maps/`; o bloco do roteiro usa uma cópia em
+  `campaigns/<id>/sessions/<sessão>/` (`sessionImagePath`), que é a pasta que o "Liberar" mostra
+  aos jogadores. Teste `test/rls/mission-map-block.test.ts`. Sem migração.
+
+Verificações: `pnpm check` (20 tarefas; banco 253 testes) e `pnpm build` passaram. Não verificado no
+navegador.
