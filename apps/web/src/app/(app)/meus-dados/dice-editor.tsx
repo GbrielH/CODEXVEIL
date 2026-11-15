@@ -12,7 +12,7 @@ import {
 import { startDiceAura } from '@/components/dice/aura-fx';
 import { AuraIcon } from '@/components/dice/aura-icons';
 import { useAuraSound } from '@/components/dice/aura-sound';
-import { DiceTestTable, type TestRoll } from './dice-test-table';
+import { DiceTestTable } from './dice-test-table';
 import { Brush, Eraser, ImagePlus, PaintBucket, Trash2, Undo2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
@@ -129,7 +129,6 @@ export function DiceEditor({
   const [aura, setAura] = useState(
     initial.aura && auras.includes(initial.aura) ? initial.aura : null,
   );
-  const [testRoll, setTestRoll] = useState<TestRoll | null>(null);
   const [sound, setSound] = useAuraSound();
   const canAura = auras.length > 0;
   const [diceName, setDiceName] = useState(target?.name ?? '');
@@ -289,8 +288,8 @@ export function DiceEditor({
     image.src = url;
   };
 
-  /** Rola um d20 de verdade na mesa de teste, com o dado como está no editor (sem salvar). */
-  const rollTest = (natural: number) => {
+  /** O dado como está no editor (mesmo sem salvar), para a mesa de teste. */
+  const testLook = () => {
     let imageUrl: string | null = null;
     if (!blank && canvasRef.current) {
       try {
@@ -299,10 +298,8 @@ export function DiceEditor({
         imageUrl = initialImageUrl;
       }
     }
-    setTestRoll({
-      key: Date.now(),
+    return {
       color: dieColor ?? DEFAULT_DIE,
-      natural,
       look: {
         image: null,
         numberColor,
@@ -311,7 +308,7 @@ export function DiceEditor({
         aura: canAura ? aura : null,
         imageUrl,
       },
-    });
+    };
   };
 
   const save = () =>
@@ -469,18 +466,6 @@ export function DiceEditor({
                   ? ' A aura emana do dado enquanto ele rola; no crítico, toma a tela de todos.'
                   : null}
               </p>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => rollTest(1 + Math.floor(Math.random() * 20))}
-                >
-                  Testar rolagem
-                </Button>
-                <Button size="sm" variant="secondary" onClick={() => rollTest(20)}>
-                  Rolar um 20
-                </Button>
-              </div>
               {canAura && aura ? (
                 <>
                   <label className="flex items-center gap-2 text-xs text-fg-secondary">
@@ -495,7 +480,7 @@ export function DiceEditor({
               ) : null}
             </div>
           </div>
-          <DiceTestTable request={testRoll} />
+          <DiceTestTable getLook={testLook} />
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <p className="text-sm font-medium text-fg">Cor do dado</p>

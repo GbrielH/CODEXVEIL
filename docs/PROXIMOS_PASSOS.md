@@ -2544,3 +2544,9 @@ Verificações: `pnpm check` (20 tarefas; banco 255 testes) e `pnpm build` passa
 - Auras em volta do dado com metade das partículas e do brilho (`AURA_INTENSITY`); os críticos seguem iguais.
 
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto no navegador por mim.
+
+### 2026-11-15 — mesa de teste com vários dados
+
+- A mesa de teste de "Meus dados" monta a rolagem: d4, d6, d8, d10, d12 e d20 (até 10 dados), com botão para voltar a 1d20. Mostra a soma e o valor de cada dado; o crítico (efeito da aura) dispara com 20 natural em qualquer d20, e "Rolar um 20" garante um.
+
+Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto no navegador por mim.
