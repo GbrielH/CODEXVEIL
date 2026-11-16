@@ -7,7 +7,7 @@
  * Respeita "movimento reduzido": nesse caso não desenha nada (o som também não toca).
  */
 import { diceAuraLabels, type DiceAura } from '@codexveil/validation';
-import { AURA_TIMINGS, playCriticalSound } from './aura-sound';
+import { AURA_TIMINGS, playCriticalSound, playFailSound } from './aura-sound';
 
 type Point = { x: number; y: number };
 /** Dado na tela: centro e raio aproximado (em pixels). */
@@ -5013,6 +5013,1121 @@ const SCENES: Partial<
     };
   },
 };
+
+// --------------------------------------------------------------------------------------------
+// Falha crítica (1 natural): a versão fracassada de cada aura. "FALHA CRÍTICA" aparece no centro,
+// balança e despenca da tela; trombone triste.
+// --------------------------------------------------------------------------------------------
+
+interface FailText {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  rot: number;
+  vr: number;
+  falling: boolean;
+  /** Cor do texto (o veneno deixa o texto verde de enjoo). */
+  tint: string | null;
+}
+
+type FailScene = (width: number, height: number, durationMs: number, text: FailText) => Scene;
+
+function drawCloud(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number,
+  color: string,
+) {
+  ctx.fillStyle = color;
+  for (const [dx, dy, r] of [
+    [-1, 0, 0.6],
+    [-0.4, -0.35, 0.75],
+    [0.35, -0.3, 0.7],
+    [0.95, 0, 0.55],
+    [0, 0.15, 0.7],
+  ] as const) {
+    ctx.beginPath();
+    ctx.arc(x + dx * size, y + dy * size, r * size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+const rainOn = (particles: Particle[], x: number, y: number) =>
+  particles.push(
+    particle('drop', x + rand(-60, 60), y, { vy: 6, max: 22, size: 1.6, color: '150, 190, 255' }),
+  );
+
+const FAILS: Record<DiceAura, FailScene> = {
+  blood: (width, height, durationMs, text) => {
+    // Uma gotinha cai do alto e pinga no texto.
+    const frames = Math.sqrt((2 * (text.y + 10)) / 0.45);
+    let dropped = false;
+    let splatted = false;
+    return {
+      frame(_ctx, f) {
+        if (!dropped && f.time > 0.3) {
+          dropped = true;
+          f.particles.push(
+            particle('drop', text.x + 20, -10, {
+              gravity: 0.45,
+              max: frames,
+              size: 4,
+              color: RGB.blood,
+            }),
+          );
+        }
+        if (!splatted && f.time > 0.3 + frames / 60) {
+          splatted = true;
+          f.particles.push(
+            particle('splat', text.x + 20, text.y - 20, {
+              max: 150,
+              size: 12,
+              color: '150, 0, 18',
+            }),
+          );
+        }
+      },
+    };
+  },
+  storm: (_width, _height, _durationMs, text) => ({
+    // Uma nuvenzinha chove em cima do texto e solta um raio de nada.
+    frame(ctx, f) {
+      const x = text.x;
+      const y = text.y - 150 - (1 - easeOut(f.time / 0.5)) * 200;
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      drawCloud(ctx, x, y, 60, 'rgba(110, 115, 130, 0.95)');
+      ctx.restore();
+      if (f.emitting && Math.random() < 0.6) rainOn(f.particles, x, y + 30);
+      if (f.time > 0.7 && f.time < 0.76)
+        f.particles.push(
+          particle('bolt', 0, 0, {
+            path: bolt({ x, y: y + 30 }, { x: x + 10, y: y + 70 }, 6, 3),
+            max: 4,
+            size: 1.2,
+            color: RGB.storm,
+          }),
+        );
+    },
+  }),
+  frost: (_width, _height, _durationMs, text) => ({
+    // Alguns flocos caem... e derretem.
+    frame(_ctx, f) {
+      if (!f.emitting) return;
+      if (f.time < 1.2 && Math.random() < 0.3)
+        f.particles.push(
+          particle('flake', text.x + rand(-200, 200), -10, {
+            vy: rand(1, 2),
+            vr: 0.03,
+            max: 200,
+            size: rand(4, 7),
+            color: RGB.frost,
+          }),
+        );
+      if (f.time > 1.2 && Math.random() < 0.3)
+        f.particles.push(
+          particle('drop', text.x + rand(-180, 180), text.y + 30, {
+            vy: 1,
+            gravity: 0.2,
+            max: 60,
+            size: 2,
+            color: '190, 230, 255',
+          }),
+        );
+    },
+  }),
+  arcane: (width, height, _durationMs, text) => {
+    // O círculo mágico falha, pisca e explode numa nuvem de fumaça.
+    const layers = magicCircleLayers(Math.min(width, height) * 0.22);
+    let poof = false;
+    return {
+      frame(ctx, f) {
+        if (f.time < 1)
+          magicCircle(
+            ctx,
+            layers,
+            text.x,
+            text.y,
+            0.8,
+            f.time * 0.4,
+            (Math.random() < 0.35 ? 0.15 : 0.8) * f.presence,
+          );
+        if (!poof && f.time >= 1) {
+          poof = true;
+          screenShake(150, 4);
+          for (let i = 0; i < 18; i++) {
+            const a = rand(0, Math.PI * 2);
+            f.particles.push(
+              particle('smoke', text.x + Math.cos(a) * 40, text.y + Math.sin(a) * 40, {
+                vx: Math.cos(a) * rand(1, 3),
+                vy: Math.sin(a) * rand(1, 3) - 0.5,
+                max: 90,
+                size: rand(30, 60),
+                color: '110, 110, 120',
+              }),
+            );
+          }
+        }
+      },
+    };
+  },
+  shadow: (width, height) => ({
+    // A escuridão tenta fechar mas pisca como lâmpada com mau contato e desiste.
+    frame(ctx, f) {
+      if (f.time > 1.6 || Math.sin(f.time * 40) * Math.sin(f.time * 13) < 0.2) return;
+      ctx.fillStyle = `rgba(3, 1, 8, ${0.75 * f.presence})`;
+      ctx.fillRect(0, 0, width, height);
+    },
+  }),
+  holy: (_width, _height, _durationMs, text) => {
+    // A auréola desce no texto, fica torta e cai; uma pena solitária.
+    const halo = { x: text.x, y: -40, vy: 0, rot: 0 };
+    let feather = false;
+    return {
+      frame(ctx, f) {
+        if (f.time < 1.2) {
+          halo.y += (text.y - 70 - halo.y) * 0.08;
+          halo.rot = Math.sin(f.time * 6) * 0.15;
+        } else {
+          halo.vy += 0.5;
+          halo.y += halo.vy;
+          halo.rot += 0.05;
+          halo.x += 1;
+        }
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.translate(halo.x, halo.y);
+        ctx.rotate(halo.rot);
+        ctx.strokeStyle = 'rgba(255, 230, 150, 0.9)';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 80, 18, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+        if (!feather && f.time > 0.3) {
+          feather = true;
+          f.particles.push(particle('feather', text.x - 120, -20, { vy: 0.8, max: 300, size: 16 }));
+        }
+      },
+    };
+  },
+  gears: (_width, _height, _durationMs, text) => {
+    // Uma engrenagem cai quicando no texto e uma mola salta com fumacinha.
+    const gear = { x: text.x + 60, y: -40, vy: 0, rot: 0 };
+    let bounces = 0;
+    let puff = false;
+    return {
+      frame(ctx, f) {
+        gear.vy += 0.5;
+        gear.y += gear.vy;
+        gear.rot += 0.08;
+        if (gear.y > text.y - 40 && bounces < 2 && gear.vy > 0) {
+          gear.vy *= -0.5;
+          bounces += 1;
+          text.vy += 3;
+        }
+        const image = gearSprite(26, false);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.translate(gear.x, gear.y);
+        ctx.rotate(gear.rot);
+        ctx.drawImage(image, -image.width / 2, -image.height / 2);
+        ctx.restore();
+        const spring = clamp01((f.time - 1.1) / 0.2);
+        if (spring <= 0) return;
+        const bx = text.x - 120;
+        const by = text.y - 20;
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.strokeStyle = '#b8bcc6';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        for (let i = 0; i <= 12; i++)
+          ctx.lineTo(
+            bx + (i % 2 ? 10 : -10),
+            by - i * 8 * spring * (1 + 0.2 * Math.sin(f.time * 20)),
+          );
+        ctx.stroke();
+        ctx.restore();
+        if (!puff) {
+          puff = true;
+          for (let i = 0; i < 8; i++)
+            f.particles.push(
+              particle('smoke', bx, by, {
+                vx: rand(-1, 1),
+                vy: -rand(0.5, 1.5),
+                max: 70,
+                size: rand(20, 35),
+                color: '120, 120, 120',
+              }),
+            );
+        }
+      },
+    };
+  },
+  forest: (width, height, _durationMs, text) => {
+    // Uma folha seca cai e uma mudinha nasce... e murcha.
+    let leaf = false;
+    return {
+      frame(ctx, f) {
+        if (!leaf) {
+          leaf = true;
+          f.particles.push(
+            particle('leaf', text.x + 100, -10, {
+              vy: 1,
+              vx: 0.3,
+              vr: 0.05,
+              max: 400,
+              size: 10,
+              color: '150, 110, 50',
+            }),
+          );
+        }
+        const length = 140 * easeOut(f.time / 0.8);
+        const wilt = clamp01((f.time - 1) / 0.8);
+        const bx = width / 2;
+        const tipX = bx + 90 * wilt;
+        const tipY = height - length * (1 - 0.6 * wilt);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.strokeStyle = '#5a8a2a';
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(bx, height);
+        ctx.quadraticCurveTo(bx + 60 * wilt, height - length * 0.7, tipX, tipY);
+        ctx.stroke();
+        ctx.fillStyle = wilt > 0.5 ? '#8a7a3a' : '#6fae45';
+        ctx.beginPath();
+        ctx.ellipse(tipX, tipY, 18, 8, 0.5 + wilt * 1.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      },
+    };
+  },
+  fire: (_width, _height, _durationMs, text) => ({
+    // Um fósforo acende... e apaga numa fumacinha.
+    frame(ctx, f) {
+      const x = text.x;
+      const y = text.y + 90;
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.strokeStyle = '#d9b98a';
+      ctx.lineWidth = 8;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x, y + 90);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.fillStyle = f.time > 0.9 ? '#2a2420' : '#c0392b';
+      ctx.beginPath();
+      ctx.arc(x, y - 4, 9, 0, Math.PI * 2);
+      ctx.fill();
+      if (f.time < 0.9) {
+        ctx.globalCompositeOperation = 'lighter';
+        blit(
+          ctx,
+          flameSprite(Math.floor(rand(0, 3))),
+          x,
+          y - 22,
+          16 + Math.random() * 6 * (1 - f.time),
+          1,
+        );
+      }
+      ctx.restore();
+      if (f.time > 0.9 && f.emitting && Math.random() < 0.4)
+        f.particles.push(
+          particle('smoke', x, y - 10, {
+            vx: rand(-0.3, 0.3),
+            vy: -rand(0.5, 1.2),
+            max: 80,
+            size: rand(10, 20),
+            color: '100, 100, 100',
+          }),
+        );
+    },
+  }),
+  skeleton: (_width, _height, _durationMs, text) => {
+    // A caveira cai na cabeça do texto, desmonta e os ossos se espalham.
+    const skull = { y: -120, vy: 0, rot: 0 };
+    let hit = false;
+    return {
+      frame(ctx, f) {
+        skull.vy += 0.6;
+        skull.y += skull.vy;
+        if (!hit && skull.y > text.y - 90) {
+          hit = true;
+          skull.vy = -7;
+          screenShake(150, 5);
+          for (let i = 0; i < 6; i++)
+            f.particles.push(
+              particle('bone', text.x, text.y - 60, {
+                vx: rand(-4, 4),
+                vy: -rand(3, 7),
+                gravity: 0.4,
+                vr: rand(-0.3, 0.3),
+                max: 90,
+                size: rand(10, 16),
+              }),
+            );
+        }
+        if (hit) skull.rot += 0.08;
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.translate(text.x + 40, skull.y);
+        ctx.rotate(skull.rot);
+        ctx.scale(0.45, 0.45);
+        drawSkull(ctx, hit ? 40 : 0, false);
+        ctx.restore();
+      },
+    };
+  },
+  cosmic: (width, height, _durationMs, text) => ({
+    // O olho cósmico abre com sono, boceja e dorme (Zzz).
+    frame(ctx, f) {
+      const open = Math.max(0, Math.sin(Math.min(1, f.time / 1.6) * Math.PI)) * 0.35;
+      const eyeW = Math.min(width, height) * 0.22;
+      const eyeH = eyeW * 0.42 * open;
+      const cx = text.x;
+      const cy = text.y - 150;
+      if (eyeH > 1) {
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.translate(cx, cy);
+        ctx.beginPath();
+        ctx.moveTo(-eyeW, 0);
+        ctx.quadraticCurveTo(0, -eyeH * 2, eyeW, 0);
+        ctx.quadraticCurveTo(0, eyeH * 2, -eyeW, 0);
+        ctx.closePath();
+        ctx.fillStyle = '#e8dff5';
+        ctx.fill();
+        ctx.save();
+        ctx.clip();
+        ctx.fillStyle = '#6a5ab0';
+        ctx.beginPath();
+        ctx.arc(0, eyeH * 0.3, eyeW * 0.25, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#14041c';
+        ctx.fillRect(-eyeW, -eyeH * 2, eyeW * 2, eyeH * 1.3);
+        ctx.restore();
+        ctx.strokeStyle = '#9a8ad0';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+      }
+      if (f.emitting && f.time > 1.2 && Math.random() < 0.05)
+        f.particles.push(
+          particle('rune', cx + eyeW * 0.8, cy - 20, {
+            vx: 0.6,
+            vy: -1,
+            max: 90,
+            size: 26,
+            glyph: pick(['z', 'Z']),
+            color: '200, 190, 255',
+          }),
+        );
+    },
+  }),
+  tarot: (width, height) => {
+    // As cartas caem esparramadas e a única virada é O Louco.
+    const fool = cardFaceSprite(MAJOR_ARCANA[0]);
+    let fell = false;
+    return {
+      frame(ctx, f) {
+        if (!fell) {
+          fell = true;
+          for (let i = 0; i < 8; i++)
+            f.particles.push(
+              particle('card', rand(0, width), -40 - rand(0, 200), {
+                vy: rand(2, 4),
+                vx: rand(-1, 1),
+                vr: rand(-0.08, 0.08),
+                gravity: 0.1,
+                max: 200,
+                size: rand(18, 28),
+              }),
+            );
+        }
+        const p = easeOut((f.time - 0.6) / 0.6);
+        if (p <= 0) return;
+        const size = Math.min(height * 0.35, 240);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.translate(width * 0.78, -size + (height * 0.62 + size) * p);
+        ctx.rotate(0.35 * p);
+        ctx.drawImage(fool, -size / 2, -size / 2, size, size);
+        ctx.restore();
+      },
+    };
+  },
+  glitch: (width, height) => ({
+    // Tela azul: "Seu dado encontrou um problema".
+    frame(ctx, f) {
+      if (f.time < 0.15 && Math.random() < 0.5) return;
+      const pw = Math.min(width * 0.7, 720);
+      const ph = Math.min(height * 0.5, 360);
+      const x = (width - pw) / 2;
+      const y = height * 0.12;
+      ctx.save();
+      ctx.globalAlpha = f.presence * 0.95;
+      ctx.fillStyle = '#1e5bd6';
+      ctx.fillRect(x, y, pw, ph);
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.font = `${ph * 0.3}px "Segoe UI", sans-serif`;
+      ctx.fillText(':(', x + pw * 0.08, y + ph * 0.06);
+      ctx.font = `${ph * 0.075}px "Segoe UI", sans-serif`;
+      ctx.fillText('Seu dado encontrou um problema e', x + pw * 0.08, y + ph * 0.5);
+      ctx.fillText('precisa ser reiniciado.', x + pw * 0.08, y + ph * 0.6);
+      ctx.fillText(
+        `${Math.min(100, Math.floor(f.time * 12))}% concluído`,
+        x + pw * 0.08,
+        y + ph * 0.78,
+      );
+      ctx.restore();
+    },
+  }),
+  ink: (width, height, _durationMs, text) => {
+    // O tinteiro vira: um borrão enorme e escorrido.
+    const shape = Array.from({ length: 24 }, () => rand(0.75, 1.25));
+    let drips = false;
+    return {
+      frame(ctx, f) {
+        const r = Math.min(width, height) * 0.22 * easeOut(f.time / 0.5);
+        ctx.save();
+        ctx.globalAlpha = f.presence * 0.95;
+        ctx.fillStyle = '#0c0c10';
+        ctx.beginPath();
+        shape.forEach((k, i) => {
+          const a = (i / shape.length) * Math.PI * 2;
+          const x = text.x + Math.cos(a) * r * k;
+          const y = text.y + Math.sin(a) * r * k;
+          if (i) ctx.lineTo(x, y);
+          else ctx.moveTo(x, y);
+        });
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        if (!drips && f.time > 0.6) {
+          drips = true;
+          for (let i = 0; i < 6; i++)
+            f.particles.push(
+              particle('drop', text.x + rand(-r * 0.7, r * 0.7), text.y + r * 0.6, {
+                vy: 0.5,
+                gravity: 0.08,
+                max: 160,
+                size: rand(3, 6),
+                color: '12, 12, 16',
+              }),
+            );
+        }
+      },
+    };
+  },
+  abyss: (width, height) => ({
+    // Em vez do kraken, um patinho de borracha atravessa uma poça.
+    frame(ctx, f) {
+      const level = height - 70 * easeOut(f.time / 0.5);
+      ctx.save();
+      ctx.globalAlpha = f.presence * 0.8;
+      ctx.fillStyle = 'rgba(40, 120, 190, 0.55)';
+      ctx.beginPath();
+      ctx.moveTo(0, height);
+      for (let x = 0; x <= width + 24; x += 24)
+        ctx.lineTo(x, level + Math.sin(x * 0.03 + f.time * 3) * 5);
+      ctx.lineTo(width, height);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.translate(-60 + (width + 120) * (f.time / 2.8), level - 18 + Math.sin(f.time * 4) * 4);
+      ctx.rotate(Math.sin(f.time * 4) * 0.1);
+      ctx.fillStyle = '#ffd23a';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 30, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(20, -20, 13, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ff8a1a';
+      ctx.beginPath();
+      ctx.moveTo(31, -20);
+      ctx.lineTo(44, -16);
+      ctx.lineTo(31, -12);
+      ctx.fill();
+      ctx.fillStyle = '#111';
+      ctx.beginPath();
+      ctx.arc(24, -23, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    },
+  }),
+  time: (_width, _height, _durationMs, text) => {
+    // O relógio dispara, quebra (peças voando) e cai.
+    const clock = { y: text.y - 170, vy: 0, rot: 0 };
+    let broke = false;
+    return {
+      frame(ctx, f) {
+        const R = 70;
+        if (f.time > 1.2) {
+          if (!broke) {
+            broke = true;
+            for (let i = 0; i < 6; i++)
+              f.particles.push(
+                particle('gear', text.x, clock.y, {
+                  vx: rand(-4, 4),
+                  vy: -rand(3, 7),
+                  gravity: 0.4,
+                  vr: 0.3,
+                  max: 80,
+                  size: rand(5, 9),
+                  color: '205, 150, 60',
+                }),
+              );
+          }
+          clock.vy += 0.5;
+          clock.y += clock.vy;
+          clock.rot += 0.04;
+        }
+        const spin = f.time < 1.2 ? f.time * f.time * 25 : 2.3;
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.translate(text.x, clock.y);
+        ctx.rotate(clock.rot);
+        ctx.fillStyle = 'rgba(245, 230, 195, 0.9)';
+        ctx.strokeStyle = '#8a6a2a';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(0, 0, R, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.strokeStyle = '#3b2a12';
+        ctx.lineCap = 'round';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(spin) * R * 0.6, Math.sin(spin) * R * 0.6);
+        ctx.stroke();
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(-spin * 0.3) * R * 0.8, Math.sin(-spin * 0.3) * R * 0.8);
+        ctx.stroke();
+        ctx.restore();
+      },
+    };
+  },
+  gold: (_width, height, _durationMs, text) => {
+    // Uma moeda só: cai na cabeça do texto e sai rolando.
+    const coin = { x: text.x - 40, y: -30, vx: 0, vy: 0, rot: 0, hit: false };
+    return {
+      frame(ctx, f) {
+        coin.vy += 0.5;
+        coin.x += coin.vx;
+        coin.y += coin.vy;
+        coin.rot += 0.3;
+        if (!coin.hit && coin.y > text.y - 50) {
+          coin.hit = true;
+          coin.vy = -8;
+          coin.vx = 5;
+          text.vr -= 0.03;
+        }
+        if (coin.hit && coin.y > height - 20) {
+          coin.y = height - 20;
+          coin.vy *= -0.4;
+        }
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.translate(coin.x, coin.y);
+        ctx.scale(Math.max(0.15, Math.abs(Math.cos(coin.rot))), 1);
+        ctx.drawImage(coinSprite(), -16, -16, 32, 32);
+        ctx.restore();
+      },
+    };
+  },
+  frog: (width, height, _durationMs, text) => {
+    // O sapo pula, a língua erra o alvo e ele cai de costas.
+    const R = Math.min(width, height) * 0.08;
+    return {
+      frame(ctx, f) {
+        const t = f.time;
+        const fx = width * 0.25;
+        let fy =
+          height +
+          R -
+          Math.sin(Math.min(1, t / 0.9) * Math.PI * 0.5) * (height - text.y + R * 0.5) * 0.55;
+        let rot = 0;
+        if (t > 1.5) {
+          fy += (t - 1.5) ** 2 * 900;
+          rot = (t - 1.5) * 4;
+        }
+        const out = clamp01((t - 0.9) / 0.15) * (1 - clamp01((t - 1.15) / 0.2));
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.translate(fx, fy);
+        ctx.rotate(rot);
+        ctx.fillStyle = '#4f9a2c';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, R, R * 0.65, 0, 0, Math.PI * 2);
+        ctx.fill();
+        for (const side of [-1, 1]) {
+          ctx.fillStyle = '#4f9a2c';
+          ctx.beginPath();
+          ctx.arc(side * R * 0.5, -R * 0.55, R * 0.3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#fff';
+          ctx.beginPath();
+          ctx.arc(side * R * 0.5, -R * 0.58, R * 0.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#111';
+          ctx.beginPath();
+          ctx.arc(side * R * 0.5, -R * 0.58, R * 0.08, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        if (out > 0) {
+          // Língua por cima, passando longe do texto.
+          ctx.rotate(-rot);
+          ctx.strokeStyle = '#e86a8a';
+          ctx.lineWidth = R * 0.18;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(0, R * 0.1);
+          ctx.lineTo((width * 0.9 - fx) * out, (text.y - 160 - fy) * out);
+          ctx.stroke();
+        }
+        ctx.restore();
+      },
+    };
+  },
+  vampire: (width, height) => {
+    // Um morcego vem voando direto e se esborracha na tela, escorregando.
+    let hit = false;
+    return {
+      frame(ctx, f) {
+        const p = clamp01(f.time / 0.7);
+        const slide = clamp01((f.time - 0.7) / 1.5);
+        if (p >= 1 && !hit) {
+          hit = true;
+          screenShake(150, 6);
+        }
+        const size = 10 + p * p * 110;
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.translate(width * 0.3 + p * width * 0.2, height * 0.3 + slide * slide * height * 0.5);
+        ctx.scale((size / 20) * (hit ? 1.3 : 1), (size / 20) * (hit ? 0.75 : 1));
+        drawParticle(ctx, {
+          ...particle('bat', 0, 0, { size: 20, max: 10_000 }),
+          life: hit ? 0 : Math.floor(f.time * 60),
+        });
+        ctx.restore();
+      },
+    };
+  },
+  bard: (width, _height, _durationMs, text) => {
+    // A partitura arrebenta no meio e as notas despencam.
+    let snapped = false;
+    return {
+      frame(ctx, f) {
+        const top = text.y - 140;
+        const snap = clamp01((f.time - 0.8) / 0.6);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.strokeStyle = 'rgba(255, 225, 170, 0.8)';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 5; i++) {
+          const y = top + i * 14;
+          const droop = snap * snap * (80 + i * 20);
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.quadraticCurveTo(width * 0.25, y, width / 2 - 10, y + droop);
+          ctx.moveTo(width, y);
+          ctx.quadraticCurveTo(width * 0.75, y, width / 2 + 10, y + droop);
+          ctx.stroke();
+        }
+        ctx.restore();
+        if (!snapped && f.time > 0.8) {
+          snapped = true;
+          for (let i = 0; i < 10; i++)
+            f.particles.push(
+              particle('rune', rand(width * 0.2, width * 0.8), top + rand(0, 60), {
+                vy: -rand(1, 3),
+                vx: rand(-1, 1),
+                gravity: 0.35,
+                max: 120,
+                size: rand(24, 34),
+                glyph: pick(['♪', '♫', '♩']),
+                color: '255, 210, 120',
+              }),
+            );
+        }
+      },
+    };
+  },
+  rainbow: (width, height, _durationMs, text) => ({
+    // Um arco-íris cinza, pela metade, e uma nuvem chovendo.
+    frame(ctx, f) {
+      const grow = easeOut(f.time / 0.8) * 0.55;
+      const radius = Math.min(width * 0.4, height * 0.7);
+      ctx.save();
+      ctx.globalAlpha = f.presence * 0.7;
+      ['150, 150, 155', '130, 130, 135', '115, 115, 120', '100, 100, 105'].forEach((rgb, i) => {
+        ctx.strokeStyle = `rgba(${rgb}, 0.9)`;
+        ctx.lineWidth = radius * 0.035;
+        ctx.beginPath();
+        ctx.arc(
+          width / 2,
+          height * 0.95,
+          radius - i * radius * 0.035,
+          Math.PI,
+          Math.PI + Math.PI * grow,
+        );
+        ctx.stroke();
+      });
+      drawCloud(ctx, text.x, text.y - 160, 55, 'rgba(110, 115, 130, 0.95)');
+      ctx.restore();
+      if (f.emitting && Math.random() < 0.5) rainOn(f.particles, text.x, text.y - 130);
+    },
+  }),
+  poison: (_width, height, _durationMs, text) => {
+    // A bolha de veneno estoura na cara: o texto fica verde e enjoado.
+    let popped = false;
+    return {
+      frame(ctx, f) {
+        if (popped) {
+          text.vr += Math.sin(f.time * 8) * 0.002;
+          return;
+        }
+        const p = clamp01(f.time / 0.8);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.strokeStyle = 'rgba(170, 255, 120, 0.9)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(text.x, height - (height - text.y) * easeOut(p), 30 + p * 20, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+        if (p < 1) return;
+        popped = true;
+        text.tint = '150, 230, 80';
+        for (let i = 0; i < 14; i++) {
+          const a = rand(0, Math.PI * 2);
+          f.particles.push(
+            particle('wisp', text.x + Math.cos(a) * 20, text.y + Math.sin(a) * 20, {
+              vx: Math.cos(a) * rand(1, 3),
+              vy: Math.sin(a) * rand(1, 3),
+              max: 90,
+              size: rand(40, 70),
+              color: '120, 220, 60',
+            }),
+          );
+        }
+      },
+    };
+  },
+  cat: (width, height, _durationMs, text) => {
+    // Uma pata empurra o texto devagar para fora da "mesa".
+    const size = Math.min(width, height) * 0.1;
+    let pushed = false;
+    return {
+      frame(ctx, f) {
+        const p = clamp01((f.time - 0.4) / 0.6);
+        const back = clamp01((f.time - 1.1) / 0.4);
+        const x =
+          width +
+          size * 2 -
+          (width + size * 2 - (text.x + size * 3)) * Math.sin((p * Math.PI) / 2) * (1 - back);
+        if (p > 0.95 && !pushed) {
+          pushed = true;
+          text.vx = -6;
+          text.vr = -0.04;
+          text.falling = true;
+        }
+        if (p <= 0 || back >= 1) return;
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.fillStyle = '#231a2c';
+        ctx.fillRect(x, text.y - size * 0.4, width - x + size, size * 0.8);
+        drawPaw(
+          ctx,
+          x,
+          text.y,
+          size,
+          -Math.PI / 2,
+          'rgba(250, 232, 222, 1)',
+          'rgba(255, 150, 185, 1)',
+        );
+        ctx.restore();
+      },
+    };
+  },
+  meteor: (_width, _height, _durationMs, text) => {
+    // Em vez de um meteoro, uma pedrinha: bate no texto (pléc) e quica.
+    const rock = { x: text.x + 30, y: -20, vx: 0, vy: 4, hit: false };
+    return {
+      frame(ctx, f) {
+        rock.vy += 0.3;
+        rock.x += rock.vx;
+        rock.y += rock.vy;
+        if (!rock.hit && rock.y > text.y - 40) {
+          rock.hit = true;
+          rock.vy = -5;
+          rock.vx = 3;
+          text.vr += 0.04;
+          text.vy += 4;
+        }
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        if (!rock.hit) {
+          ctx.globalCompositeOperation = 'lighter';
+          blit(ctx, glowSprite('255, 160, 60'), rock.x, rock.y, 10, 0.8);
+          ctx.globalCompositeOperation = 'source-over';
+        }
+        ctx.fillStyle = '#6b625a';
+        ctx.beginPath();
+        ctx.arc(rock.x, rock.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      },
+    };
+  },
+  party: (width, height, _durationMs, text) => {
+    // Um balão murcha voando para todo lado; um confete solitário.
+    const balloon = { x: width * 0.5, y: height * 0.7, vx: 0, vy: 0, r: 40 };
+    const color = pick(CONFETTI);
+    let confetti = false;
+    return {
+      frame(ctx, f) {
+        if (f.time < 2.2) {
+          const a = rand(0, Math.PI * 2);
+          balloon.vx = (balloon.vx + Math.cos(a) * 2.2) * 0.9;
+          balloon.vy = (balloon.vy + Math.sin(a) * 2.2 - 0.3) * 0.9;
+          balloon.r = Math.max(8, 40 - f.time * 14);
+        } else balloon.vy += 0.5;
+        balloon.x = Math.max(20, Math.min(width - 20, balloon.x + balloon.vx));
+        balloon.y += balloon.vy;
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.fillStyle = `rgba(${color}, 0.95)`;
+        ctx.beginPath();
+        ctx.ellipse(
+          balloon.x,
+          balloon.y,
+          balloon.r * 0.85,
+          balloon.r,
+          Math.atan2(balloon.vy, balloon.vx) + Math.PI / 2,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+        ctx.restore();
+        if (!confetti) {
+          confetti = true;
+          f.particles.push(
+            particle('confetti', text.x, -10, { vy: 1, vr: 0.1, max: 300, size: 5, color }),
+          );
+        }
+      },
+    };
+  },
+  wind: (_width, height, _durationMs, text) => ({
+    // Um redemoinho de poeira minúsculo, que desmancha.
+    frame(ctx, f) {
+      const life = clamp01(f.time / 0.6) * (1 - clamp01((f.time - 1.2) / 0.6));
+      if (life <= 0) return;
+      const base = height - 10;
+      const top = base - 160 * life;
+      ctx.save();
+      ctx.globalAlpha = f.presence * life;
+      ctx.strokeStyle = 'rgba(200, 190, 170, 0.7)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([10, 8]);
+      ctx.lineDashOffset = -f.time * 200;
+      for (let y = base; y > top; y -= 14) {
+        const r = 6 + (base - y) * 0.25;
+        ctx.beginPath();
+        ctx.ellipse(
+          text.x + Math.sin(y * 0.05 + f.time * 6) * 6,
+          y,
+          r,
+          r * 0.25,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        ctx.stroke();
+      }
+      ctx.restore();
+    },
+  }),
+  ritual: (width, height, _durationMs, text) => {
+    // O pentagrama sai torto, as velas apagam e só sobra fumaça.
+    const R = Math.min(width, height) * 0.25;
+    const points = [0, 1, 2, 3, 4].map((i) => {
+      const a = -Math.PI / 2 + (i * Math.PI * 2) / 5 + rand(-0.25, 0.25);
+      const r = R * rand(0.7, 1.15);
+      return { x: text.x + Math.cos(a) * r, y: text.y + Math.sin(a) * r };
+    });
+    const star = [0, 2, 4, 1, 3, 0].map((i) => points[i]!);
+    let out = false;
+    return {
+      frame(ctx, f) {
+        const lines = clamp01(f.time / 0.8) * 5;
+        ctx.save();
+        ctx.globalAlpha = f.presence * (1 - clamp01((f.time - 1.3) / 0.6));
+        ctx.strokeStyle = 'rgba(200, 60, 50, 0.8)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(star[0]!.x, star[0]!.y);
+        for (let i = 1; i <= 5; i++) {
+          const part = Math.min(1, lines - (i - 1));
+          if (part <= 0) break;
+          const a = star[i - 1]!;
+          const b = star[i]!;
+          ctx.lineTo(a.x + (b.x - a.x) * part, a.y + (b.y - a.y) * part);
+        }
+        ctx.stroke();
+        for (const p of points) {
+          ctx.fillStyle = '#e8dcc0';
+          ctx.fillRect(p.x - 6, p.y - 4, 12, 24);
+          if (f.time < 1.1) {
+            ctx.globalCompositeOperation = 'lighter';
+            blit(ctx, flameSprite(1), p.x, p.y - 12, 10, 1);
+            ctx.globalCompositeOperation = 'source-over';
+          }
+        }
+        ctx.restore();
+        if (!out && f.time >= 1.1) {
+          out = true;
+          for (const p of points)
+            for (let k = 0; k < 3; k++)
+              f.particles.push(
+                particle('smoke', p.x, p.y - 14, {
+                  vx: rand(-0.3, 0.3),
+                  vy: -rand(0.6, 1.4),
+                  max: 80,
+                  size: rand(10, 18),
+                  color: '110, 110, 110',
+                }),
+              );
+        }
+      },
+    };
+  },
+  claw: (_width, _height, _durationMs, text) => {
+    // Um arranhão fraquinho e uma unha quebrada caindo.
+    let done = false;
+    return {
+      frame(_ctx, f) {
+        if (done || f.time < 0.4) return;
+        done = true;
+        f.particles.push(
+          particle('scratch', text.x, text.y, { rot: 0.4, max: 90, size: 30, color: RGB.claw }),
+        );
+        f.particles.push(
+          particle('shard', text.x + 30, text.y - 10, {
+            vy: -2,
+            vx: 1,
+            gravity: 0.4,
+            vr: 0.3,
+            max: 100,
+            size: 8,
+          }),
+        );
+      },
+    };
+  },
+};
+
+/** Falha crítica (1 natural) com aura: a versão fracassada do efeito, para todos da mesa. */
+export function criticalFailBurst(
+  aura: DiceAura,
+  options: { durationMs?: number; sound?: boolean } = {},
+): void {
+  if (reducedMotion()) return;
+  const durationMs = options.durationMs ?? 3200;
+  if (options.sound !== false) playFailSound();
+  const canvas = overlay(null);
+  shakeTargets.add(canvas);
+  window.setTimeout(() => shakeTargets.delete(canvas), durationMs + 5000);
+  const ctx = canvas.getContext('2d');
+  const particles: Particle[] = [];
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const home = { x: width / 2, y: height * 0.42 };
+  const text: FailText = { ...home, vx: 0, vy: 0, rot: 0, vr: 0, falling: false, tint: null };
+  const scene = FAILS[aura](width, height, durationMs, text);
+  const font = getComputedStyle(document.body).getPropertyValue('--font-display').trim() || 'serif';
+  const size = Math.min(width * 0.085, 104);
+  const started = performance.now();
+  let last = 0;
+  const tick = (now: number) => {
+    if (!ctx) return;
+    if (now - last < 15) {
+      requestAnimationFrame(tick);
+      return;
+    }
+    last = now;
+    fit(canvas, ctx, width, height, 1);
+    const elapsed = now - started;
+    const time = elapsed / 1000;
+    const emitting = elapsed < durationMs - 700;
+    const presence =
+      Math.min(1, elapsed / 300) * Math.min(1, Math.max(0, (durationMs - elapsed) / 600));
+    const vignette = ctx.createRadialGradient(
+      width / 2,
+      height / 2,
+      Math.min(width, height) * 0.25,
+      width / 2,
+      height / 2,
+      Math.max(width, height) * 0.75,
+    );
+    vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    vignette.addColorStop(1, `rgba(20, 20, 28, ${0.55 * presence})`);
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, width, height);
+    scene.frame(ctx, { time, elapsed, presence, emitting, particles });
+    // O texto balança e, aos 1,9 s, despenca.
+    if (!text.falling && time > 1.9) {
+      text.falling = true;
+      text.vr += rand(-0.03, 0.03);
+    }
+    if (text.falling) text.vy += 0.5;
+    else {
+      text.vx = (text.vx + (home.x - text.x) * 0.03) * 0.9;
+      text.vy = (text.vy + (home.y - text.y) * 0.03) * 0.9;
+      text.vr = (text.vr - text.rot * 0.05) * 0.9;
+    }
+    text.x += text.vx;
+    text.y += text.vy;
+    text.rot += text.vr;
+    if (text.y < height + 200) {
+      const pop = 2 - easeOut(time / 0.2);
+      ctx.save();
+      ctx.globalAlpha = presence;
+      ctx.translate(text.x, text.y);
+      ctx.rotate(text.rot + Math.sin(time * 2.5) * 0.03);
+      ctx.scale(pop, pop);
+      ctx.font = `${size}px ${font}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = `rgba(${RGB[aura]}, 0.55)`;
+      ctx.fillStyle = text.tint ? `rgb(${text.tint})` : '#cfc9d6';
+      ctx.strokeText('FALHA CRÍTICA', 0, 0);
+      ctx.fillText('FALHA CRÍTICA', 0, 0);
+      ctx.restore();
+    }
+    stepParticles(ctx, particles, height);
+    if (elapsed < durationMs || particles.length) requestAnimationFrame(tick);
+    else canvas.remove();
+  };
+  requestAnimationFrame(tick);
+  window.setTimeout(() => canvas.remove(), durationMs + 5000);
+}
 
 /** Partes internas da biblioteca 3D usadas para achar os dados na tela. */
 interface ProjectedVector {

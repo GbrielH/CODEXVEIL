@@ -1039,6 +1039,46 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
   },
 };
 
+/** Falha crítica: trombone triste ("uón, uón, uón, uóóóón"). */
+export function playFailSound() {
+  if (!auraSoundEnabled()) return;
+  const ctx = audio();
+  if (!ctx) return;
+  try {
+    const master = ctx.createGain();
+    master.gain.value = VOLUME;
+    master.connect(ctx.destination);
+    const kit = { ctx, out: master, now: ctx.currentTime + 0.02 };
+    const notes: [number, number, number][] = [
+      [0.25, 293.66, 0.35],
+      [0.7, 277.18, 0.35],
+      [1.15, 261.63, 0.35],
+      [1.6, 246.94, 1.1],
+    ];
+    for (const [at, freq, decay] of notes) {
+      tone(kit, at, {
+        type: 'sawtooth',
+        freq,
+        toFreq: freq * 0.97,
+        attack: 0.04,
+        decay,
+        peak: 0.16,
+        filter: 1100,
+      });
+      tone(kit, at, {
+        type: 'square',
+        freq: freq / 2,
+        attack: 0.04,
+        decay,
+        peak: 0.05,
+        filter: 700,
+      });
+    }
+  } catch (error) {
+    console.error('[codexveil] som da falha indisponível', error);
+  }
+}
+
 /** Toca o som do crítico da aura (se o navegador permitir e o som estiver ligado). */
 export function playCriticalSound(aura: DiceAura) {
   if (!auraSoundEnabled()) return;

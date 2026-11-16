@@ -21,6 +21,7 @@ interface TestRoll {
   look: DiceAppearance;
   notation: string;
   critical: boolean;
+  fumble: boolean;
   results: { sides: Sides; value: number }[];
 }
 
@@ -86,6 +87,7 @@ export function DiceTestTable({
         await throwDice(box, request.notation, 8000, {
           aura: request.look.aura,
           critical: request.critical,
+          fumble: request.fumble,
         });
         if (active) setDoneKey(request.key);
       } catch (error) {
@@ -104,17 +106,17 @@ export function DiceTestTable({
       return { ...current, [sides]: next };
     });
 
-  /** Sorteia os valores e manda a rolagem para a mesa. `crit` garante um 20 natural num d20. */
-  const roll = (crit: boolean) => {
+  /** Sorteia os valores e manda a rolagem para a mesa. `force` garante esse valor num d20. */
+  const roll = (force: 20 | 1 | null) => {
     const chosen = { ...counts };
-    if (crit && chosen[20] === 0) chosen[20] = 1;
+    if (force && chosen[20] === 0) chosen[20] = 1;
     if (SIDES.every((sides) => chosen[sides] === 0)) chosen[20] = 1;
     const results: TestRoll['results'] = [];
     for (const sides of SIDES)
       for (let i = 0; i < chosen[sides]; i++)
         results.push({ sides, value: 1 + Math.floor(Math.random() * sides) });
     const firstD20 = results.find((die) => die.sides === 20);
-    if (crit && firstD20) firstD20.value = 20;
+    if (force && firstD20) firstD20.value = force;
     const groups = SIDES.filter((sides) => chosen[sides] > 0).map(
       (sides) => `${chosen[sides]}d${sides}`,
     );
@@ -123,6 +125,9 @@ export function DiceTestTable({
       ...getLook(),
       notation: `${groups.join('+')}@${results.map((die) => die.value).join(',')}`,
       critical: results.some((die) => die.sides === 20 && die.value === 20),
+      fumble:
+        !results.some((die) => die.sides === 20 && die.value === 20) &&
+        results.some((die) => die.sides === 20 && die.value === 1),
       results,
     });
   };
@@ -172,11 +177,14 @@ export function DiceTestTable({
         </button>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="secondary" onClick={() => roll(false)} disabled={unavailable}>
+        <Button size="sm" variant="secondary" onClick={() => roll(null)} disabled={unavailable}>
           Testar rolagem
         </Button>
-        <Button size="sm" variant="secondary" onClick={() => roll(true)} disabled={unavailable}>
+        <Button size="sm" variant="secondary" onClick={() => roll(20)} disabled={unavailable}>
           Rolar um 20
+        </Button>
+        <Button size="sm" variant="secondary" onClick={() => roll(1)} disabled={unavailable}>
+          Rolar um 1
         </Button>
       </div>
       {unavailable ? (

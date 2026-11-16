@@ -98,6 +98,7 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
           await throwDice(box, text, Math.max(4000, next.expiresAt - Date.now()), {
             aura: look?.aura ?? null,
             critical: natural !== null && natural >= (next.critRange ?? 20),
+            fumble: natural === 1,
           });
         } catch (error) {
           console.error('[codexveil] falha ao rolar na mesa', error);

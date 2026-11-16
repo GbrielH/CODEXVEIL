@@ -2597,3 +2597,10 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto no
 - Migrações `20261115170000_transcript_server_clock.sql` e `20261115180000_dice_aura_claw.sql` (aplicadas).
 
 Verificações: `pnpm check` (20 tarefas; banco 256 testes) e `pnpm build` passaram. A call e a transcrição não foram testadas ao vivo por mim (precisam de mais de uma pessoa).
+
+### 2026-11-15 — falhas críticas das auras
+
+- **1 natural com aura:** `criticalFailBurst` (em `aura-fx.ts`) mostra a versão fracassada da aura, para todos da mesa: "FALHA CRÍTICA" no centro, que balança e despenca, vinheta cinza e trombone triste (`playFailSound`). Uma cena para cada uma das 29 auras: gotinha de sangue, nuvenzinha chovendo, flocos derretendo, círculo arcano que explode em fumaça, escuridão piscando como lâmpada ruim, auréola torta que cai, engrenagem quicando e mola, mudinha que murcha, fósforo que apaga, caveira que desmonta, olho com sono (Zzz), cartas esparramadas com O Louco, tela azul do glitch, borrão de tinta, patinho de borracha, relógio que quebra, uma moeda só rolando, sapo que erra a língua e cai, morcego que se esborracha na tela, partitura que arrebenta, arco-íris cinza, bolha de veneno que deixa o texto verde, pata que empurra o texto para fora, pedrinha que bate no texto, balão murchando, redemoinho minúsculo, pentagrama torto com velas apagando e arranhão fraquinho com unha quebrada.
+- `throwDice` recebe `fumble`; caixinha e mesa disparam no 1 natural (o aviso padrão de falha some quando há aura). Mesa de teste ganhou "Rolar um 1".
+
+Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.

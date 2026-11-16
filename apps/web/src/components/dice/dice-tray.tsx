@@ -215,6 +215,7 @@ export function DiceTray({
           await throwDice(box, text, undefined, {
             aura: look?.aura ?? null,
             critical: !tableShows && natural !== null && natural >= (next.critRange ?? 20),
+            fumble: !tableShows && natural === 1,
           });
         } catch (error) {
           console.error('[codexveil] falha ao rolar os dados 3D', error);
@@ -327,7 +328,7 @@ export function DiceTray({
   return createPortal(
     <>
       {/* Crítico (20 natural) ou falha (1 natural): explosão na tela, sem bloquear cliques. */}
-      {last && bubbleKey === last.key && ((natural === 20 && !last.aura) || natural === 1) ? (
+      {last && bubbleKey === last.key && (natural === 20 || natural === 1) && !last.aura ? (
         <div
           key={last.key}
           aria-hidden="true"

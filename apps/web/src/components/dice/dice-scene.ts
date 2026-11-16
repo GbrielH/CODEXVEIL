@@ -1,6 +1,11 @@
 import type DiceBox from '@3d-dice/dice-box-threejs';
 import type { DiceAura } from '@codexveil/validation';
-import { criticalAuraBurst, diceScreenPositions, startDiceAura } from './aura-fx';
+import {
+  criticalAuraBurst,
+  criticalFailBurst,
+  diceScreenPositions,
+  startDiceAura,
+} from './aura-fx';
 
 /** Quanto tempo os dados de uma rolagem ficam na mesa antes de sumir. */
 export const DICE_LIFETIME_MS = 12_000;
@@ -28,7 +33,7 @@ export async function throwDice(
   box: DiceBox,
   notation: string,
   lifetimeMs = DICE_LIFETIME_MS,
-  options: { aura?: DiceAura | null; critical?: boolean } = {},
+  options: { aura?: DiceAura | null; critical?: boolean; fumble?: boolean } = {},
 ): Promise<void> {
   const internals = box as unknown as DiceBoxInternals;
   const before = new Set(internals.diceList ?? []);
@@ -60,6 +65,7 @@ export async function throwDice(
   const mine = (internals.diceList ?? []).filter((die) => !before.has(die));
   settled = mine;
   if (options.aura && options.critical) criticalAuraBurst(options.aura);
+  else if (options.aura && options.fumble) criticalFailBurst(options.aura);
   window.setTimeout(() => {
     stopAura?.();
     for (const die of mine) {
