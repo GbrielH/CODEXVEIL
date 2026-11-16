@@ -2,6 +2,7 @@ import { diceAuraLabels, type DiceAura } from '@codexveil/validation';
 import {
   Anchor,
   Binary,
+  Crown,
   Cpu,
   FlaskRound,
   Footprints,
@@ -153,8 +154,8 @@ function WolfIcon({ className, ...props }: LucideProps) {
   );
 }
 
-/** Abelha. */
-function BeeIcon({ className, ...props }: LucideProps) {
+/** Cabeça de polvo com tentáculos (Cthulhu). */
+function TentaclesIcon({ className, ...props }: LucideProps) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -166,8 +167,10 @@ function BeeIcon({ className, ...props }: LucideProps) {
       className={className}
       {...props}
     >
-      <ellipse cx="12" cy="14" rx="5" ry="6" />
-      <path d="M7.5 12h9M7.5 16h9M10 8.5C8 5 5 5 4 7s1 4 4 3M14 8.5C16 5 19 5 20 7s-1 4-4 3" />
+      <path d="M6 11a6 6 0 0 1 12 0" />
+      <circle cx="9.5" cy="9.5" r="0.8" />
+      <circle cx="14.5" cy="9.5" r="0.8" />
+      <path d="M7 11c0 4-3 5-3 8M10 11c0 4-1 6 0 9M14 11c0 4 1 6 0 9M17 11c0 4 3 5 3 8" />
     </svg>
   );
 }
@@ -210,7 +213,8 @@ const ICONS: Record<DiceAura, ComponentType<LucideProps>> = {
   siren: Shell,
   alchemy: FlaskRound,
   ghost: GhostIcon,
-  bees: BeeIcon,
+  haki: Crown,
+  cthulhu: TentaclesIcon,
 };
 
 /** Ícone da aura, na cor dela e com um leve brilho. */

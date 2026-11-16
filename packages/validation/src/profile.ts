@@ -113,7 +113,8 @@ export const DICE_AURAS = [
   'siren',
   'alchemy',
   'ghost',
-  'bees',
+  'haki',
+  'cthulhu',
 ] as const;
 export type DiceAura = (typeof DICE_AURAS)[number];
 export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> = {
@@ -154,7 +155,8 @@ export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> =
   siren: { name: 'Sereia', color: '#4fe0c8' },
   alchemy: { name: 'Alquimia', color: '#e8c46a' },
   ghost: { name: 'Fantasma', color: '#dfe9ff' },
-  bees: { name: 'Abelhas', color: '#ffd000' },
+  haki: { name: 'Haki do Rei', color: '#e0102e' },
+  cthulhu: { name: 'Cthulhu', color: '#3fbf8a' },
 };
 
 export const diceFontLabels: Record<DiceFont, { name: string; family: string }> = {

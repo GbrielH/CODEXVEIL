@@ -1085,3 +1085,16 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto ne
 - **Falhas novas:** Sombra = flashbang (granada quica e estoura num clarão com zumbido); Sagrada = diabinho que ri e cutuca o texto com o tridente; Olho Cósmico = dedo no olho (fecha, fica vermelho e lacrimeja). Sons extras de falha em `FAIL_EXTRAS` (`aura-sound.ts`).
 
 Verificações: `pnpm check` (20 tarefas; rpg-systems 295 testes) e `pnpm build` passaram. Não visto no navegador por mim.
+
+### 2026-11-16 — efeitos em qualquer página, Haki do Rei, Cthulhu e ajustes
+
+- **Efeitos de crítico/falha em toda a campanha:** `CampaignRollEffects` (no layout da campanha) dispara o efeito da aura de quem rolou em páginas sem a caixinha de dados (Anotações, Biblioteca, Quadros…); onde há caixinha, ela continua disparando (sem duplicar).
+- **Haki do Rei** (nova): raios pretos com brilho vermelho no dado; no crítico, ondas de pressão a cada batida, a página perde a cor por um instante e raios pretos rasgam a tela; falha com pressão fraquinha e uma mosca desmaiando.
+- **Cthulhu** (nova): céu verde-podre, mar subindo, tentáculos esmagando e rachando a tela, o Grande Antigo surgindo do mar e abrindo os olhos, e a tela se estilhaçando no fim; falha com um polvinho que espirra tinta no texto.
+- **Abelhas** removida a pedido (migração limpa quem usava).
+- **Necromante:** os braços afundam de volta no círculo antes de ele apagar (antes ficavam sozinhos).
+- **Bardo:** crítico virou cordas de alaúde gigantes vibrando cada vez mais forte até estourarem uma a uma, com notas e faíscas.
+- **Lobisomem:** refeito com lua gigante e o lobo uivando no penhasco (silhueta com curvas), pulso da lua e clarão prateado; uivo mais natural.
+- Migração `20261116100000_dice_aura_haki.sql` (aplicada).
+
+Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.

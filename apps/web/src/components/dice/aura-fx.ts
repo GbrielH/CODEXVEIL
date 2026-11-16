@@ -337,7 +337,8 @@ const RGB: Record<DiceAura, string> = {
   siren: '80, 225, 200',
   alchemy: '235, 200, 110',
   ghost: '225, 235, 255',
-  bees: '255, 210, 0',
+  haki: '224, 16, 46',
+  cthulhu: '60, 190, 140',
 };
 
 function reducedMotion(): boolean {
@@ -411,6 +412,21 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
       break;
     case 'bolt': {
       if (!p.path) break;
+      if (p.color === 'haki') {
+        // Raio preto com brilho vermelho (haki do rei).
+        ctx.globalAlpha = Math.random() < 0.2 ? 0.3 : fade;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(p.path[0]!.x, p.path[0]!.y);
+        for (const point of p.path.slice(1)) ctx.lineTo(point.x, point.y);
+        ctx.strokeStyle = 'rgba(255, 30, 50, 0.6)';
+        ctx.lineWidth = p.size * 4;
+        ctx.stroke();
+        ctx.strokeStyle = 'rgba(8, 0, 4, 1)';
+        ctx.lineWidth = p.size * 1.6;
+        ctx.stroke();
+        break;
+      }
       ctx.globalAlpha = Math.random() < 0.25 ? 0.25 : fade;
       ctx.strokeStyle = 'rgba(245, 252, 255, 1)';
       // Brilho só nos raios grandes (poucos por vez); nos pequenos, um traço mais grosso por baixo.
@@ -894,6 +910,7 @@ function stepParticles(ctx: CanvasRenderingContext2D, particles: Particle[], hei
       p.kind === 'confetti' ||
       p.kind === 'rock' ||
       p.kind === 'shard' ||
+      (p.kind === 'bolt' && p.color === 'haki') ||
       p.kind === 'bee' ||
       p.kind === 'ghost';
     ctx.globalCompositeOperation = dark ? 'source-over' : 'lighter';
@@ -1583,17 +1600,40 @@ function emitAround(aura: DiceAura, o: AuraPoint, out: Particle[], power: number
           }),
         );
       break;
-    case 'bees':
-      if (chance(0.12))
+    case 'cthulhu':
+      if (chance(0.4))
         out.push(
-          particle('bee', from.x, from.y, {
-            vx: rand(-1.5, 1.5) * s,
-            vy: rand(-1.5, 1.5) * s,
-            drag: 0.92,
-            max: rand(60, 90),
-            size: rand(3, 4) * s,
+          particle('smoke', from.x, from.y, {
+            vy: -rand(0.4, 1) * s,
+            max: rand(30, 45),
+            size: rand(7, 11) * s,
+            color: '20, 70, 50',
           }),
         );
+      if (chance(0.08))
+        out.push(
+          particle('rune', from.x, from.y, {
+            vy: -rand(0.5, 1) * s,
+            max: 45,
+            size: rand(10, 13) * s,
+            glyph: pick(['ᛟ', 'ᛉ', 'ᛞ', '⍟', '☉']),
+            color: '60, 190, 140',
+          }),
+        );
+      break;
+    case 'haki':
+      // Raios pretos com contorno vermelho estalando em volta do dado.
+      if (chance(0.5)) {
+        const to = edge(o, a + rand(-0.4, 0.4), rand(1.4, 2.1));
+        out.push(
+          particle('bolt', 0, 0, {
+            path: bolt(from, to, 6 * s, 5),
+            max: rand(4, 8),
+            size: rand(1.4, 2.4),
+            color: 'haki',
+          }),
+        );
+      }
       break;
     case 'claw':
       if (chance(0.05)) {
@@ -1721,6 +1761,20 @@ function drawHalo(
   }
   ctx.fillStyle = g;
   ctx.fillRect(o.x - o.r * 2, o.y - o.r * 2, o.r * 4, o.r * 4);
+  if (aura === 'haki') {
+    // Pulsação escura em volta do dado.
+    const pulse = (time * 1.8) % 1;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = (1 - pulse) * 0.6 * power;
+    ctx.strokeStyle = 'rgba(20, 0, 6, 1)';
+    ctx.lineWidth = Math.max(2, o.r * 0.12);
+    ctx.beginPath();
+    ctx.arc(o.x, o.y, o.r * (1 + pulse * 1.2), 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255, 30, 50, 0.7)';
+    ctx.lineWidth = Math.max(1, o.r * 0.03);
+    ctx.stroke();
+  }
   if (aura === 'ritual') {
     // Pentagrama girando por baixo do dado.
     ctx.globalCompositeOperation = 'lighter';
@@ -2243,6 +2297,18 @@ function criticalText(aura: DiceAura, durationMs: number, top = '50%') {
       textShadow: '-5px 0 rgba(0, 255, 255, 0.9), 5px 0 rgba(255, 0, 200, 0.9), 0 0 24px #22ff99',
       WebkitTextStroke: '0',
     });
+  if (aura === 'cthulhu')
+    Object.assign(element.style, {
+      color: '#c8ffe4',
+      textShadow: '0 0 12px #3fbf8a, 0 0 32px #0d5a3c, 0 4px 0 rgba(0, 0, 0, 0.8)',
+      WebkitTextStroke: '2px #145a40',
+    });
+  if (aura === 'haki')
+    Object.assign(element.style, {
+      color: '#0a0004',
+      textShadow: '0 0 10px #ff1e32, 0 0 28px #b0001a, 0 0 60px #6a0010',
+      WebkitTextStroke: '2px #ff2a40',
+    });
   if (aura === 'alchemy')
     Object.assign(element.style, {
       color: '#ffe9a8',
@@ -2258,7 +2324,12 @@ function criticalText(aura: DiceAura, durationMs: number, top = '50%') {
   document.body.appendChild(element);
   shakeTargets.add(element);
   window.setTimeout(() => shakeTargets.delete(element), durationMs + 100);
-  const shake = aura === 'storm' || aura === 'blood' || aura === 'glitch';
+  const shake =
+    aura === 'storm' ||
+    aura === 'blood' ||
+    aura === 'glitch' ||
+    aura === 'haki' ||
+    aura === 'cthulhu';
   element.animate(
     [
       { opacity: 0, transform: 'translate(-50%, -50%) scale(2.2)', filter: 'blur(8px)' },
@@ -2375,7 +2446,6 @@ export function criticalAuraBurst(
     aura !== 'frog' &&
     aura !== 'cat' &&
     aura !== 'ghost' &&
-    aura !== 'bees' &&
     aura !== 'cyber'
   )
     criticalText(aura, durationMs - 400, TEXT_TOP[aura] ?? '50%');
@@ -2476,7 +2546,7 @@ export function criticalAuraBurst(
         ? `rgba(6, 2, 12, ${(aura === 'cosmic' ? 0.7 : 0.8) * presence})`
         : aura === 'ink'
           ? `rgba(235, 225, 200, ${0.35 * presence})`
-          : aura === 'ritual'
+          : aura === 'ritual' || aura === 'haki' || aura === 'cthulhu'
             ? `rgba(40, 0, 0, ${0.75 * presence})`
             : aura === 'blood'
               ? `rgba(90, 0, 10, ${(0.45 + Math.max(0, Math.sin(time * 7)) * 0.2) * presence})`
@@ -3668,7 +3738,7 @@ const SCENES: Partial<
       },
     };
   },
-  necro: (width, height) => {
+  necro: (width, height, durationMs) => {
     // Um círculo necromântico se acende no chão, braços de esqueleto rompem dele agarrando o ar e
     // almas sobem em espiral até sumir acima do texto.
     const cx = width / 2;
@@ -3732,7 +3802,9 @@ const SCENES: Partial<
         // Braços rompendo do círculo (os de trás primeiro).
         const order = [...arms].sort((a, b) => Math.sin(a.angle) - Math.sin(b.angle));
         for (const arm of order) {
-          const rise = easeOut((f.time - arm.delay) / 0.45);
+          // Sobem do círculo e afundam de volta antes de ele apagar.
+          const sink = easeOut((f.time - (durationMs / 1000 - 1.1)) / 0.5);
+          const rise = easeOut((f.time - arm.delay) / 0.45) * (1 - sink);
           if (rise <= 0) continue;
           const x = cx + Math.cos(arm.angle) * rx * arm.k;
           const y = cy + Math.sin(arm.angle) * ry * arm.k;
@@ -4182,114 +4254,127 @@ const SCENES: Partial<
     };
   },
   werewolf: (width, height, durationMs) => {
-    // Noite fria: a lua cheia nasce enorme, olhos vermelhos de uma matilha acendem em volta e se
-    // aproximam; o uivo sai da lua em ondas e, no fim, os olhos do alfa se abrem no centro.
-    const moonR = Math.min(width, height) * 0.24;
-    const moon = sprite(`full-moon:${Math.round(moonR)}`, Math.ceil(moonR * 3), (c, size) => {
+    // Lua cheia gigante e, no penhasco à frente dela, o lobo uiva; no uivo a lua pulsa, um clarão
+    // prateado varre a tela e a noite se enche de brilho.
+    const moonR = Math.min(width, height) * 0.36;
+    const moon = sprite(`big-moon:${Math.round(moonR)}`, Math.ceil(moonR * 2.8), (c, size) => {
       c.translate(size / 2, size / 2);
-      const glow = c.createRadialGradient(0, 0, moonR * 0.9, 0, 0, moonR * 1.5);
-      glow.addColorStop(0, 'rgba(220, 230, 255, 0.45)');
-      glow.addColorStop(1, 'rgba(220, 230, 255, 0)');
+      const glow = c.createRadialGradient(0, 0, moonR * 0.95, 0, 0, moonR * 1.4);
+      glow.addColorStop(0, 'rgba(225, 235, 255, 0.5)');
+      glow.addColorStop(1, 'rgba(225, 235, 255, 0)');
       c.fillStyle = glow;
       c.fillRect(-size / 2, -size / 2, size, size);
-      const g = c.createRadialGradient(-moonR * 0.3, -moonR * 0.3, moonR * 0.1, 0, 0, moonR);
+      const g = c.createRadialGradient(-moonR * 0.25, -moonR * 0.25, moonR * 0.1, 0, 0, moonR);
       g.addColorStop(0, '#ffffff');
-      g.addColorStop(1, '#b8c2dc');
+      g.addColorStop(0.7, '#e3e8f4');
+      g.addColorStop(1, '#aeb8d2');
       c.fillStyle = g;
       c.beginPath();
       c.arc(0, 0, moonR, 0, Math.PI * 2);
       c.fill();
-      c.fillStyle = 'rgba(140, 150, 175, 0.4)';
+      c.fillStyle = 'rgba(140, 152, 180, 0.35)';
       for (const [x, y, r] of [
-        [-0.3, -0.2, 0.18],
-        [0.25, 0.15, 0.12],
-        [0.1, -0.4, 0.08],
-        [-0.1, 0.35, 0.1],
+        [-0.35, -0.15, 0.2],
+        [0.3, 0.2, 0.14],
+        [0.05, -0.45, 0.1],
+        [-0.05, 0.4, 0.12],
+        [0.45, -0.3, 0.07],
       ] as const) {
         c.beginPath();
         c.arc(x * moonR, y * moonR, r * moonR, 0, Math.PI * 2);
         c.fill();
       }
     });
+    // Lobo sentado uivando (caixa 200 × 200, chão em y = 200), com curvas suaves.
+    const wolf = new Path2D(
+      'M120 200 C150 200 170 190 176 174 C182 157 171 149 160 157 C151 164 148 174 140 177 L139 140 ' +
+        'C137 115 128 95 112 80 L104 58 L98 40 L94 33 L98 14 L86 25 C80 20 72 14 64 6 L57 2 L53 8 ' +
+        'C58 13 61 19 63 25 L57 27 C63 34 69 41 71 52 C73 70 70 90 65 110 C61 130 62 150 66 170 ' +
+        'L60 200 L74 200 L80 162 C84 176 88 190 86 200 Z',
+    );
+    const cliff = new Path2D(
+      'M-40 210 L-40 196 C20 190 60 184 100 186 C150 188 200 178 260 186 L300 196 L300 210 Z',
+    );
     const mx = width / 2;
-    const my = height * 0.32;
-    const pack = Array.from({ length: 12 }, (_, i) => {
-      const side = i % 2 ? 1 : -1;
-      return {
-        x: side > 0 ? rand(width * 0.72, width * 0.96) : rand(width * 0.04, width * 0.28),
-        y: rand(height * 0.35, height * 0.92),
-        delay: 0.5 + i * 0.09,
-        phase: rand(0, 6),
-        size: rand(6, 11),
-      };
-    });
+    const my = height * 0.4;
+    const howlAt = 0.75;
+    let howled = false;
     return {
       frame(ctx, f) {
         const end = durationMs / 1000;
-        const rise = easeOut(f.time / 0.9);
+        const rise = easeOut(f.time / 0.7);
+        if (!howled && f.time >= howlAt) {
+          howled = true;
+          screenShake(200, 4);
+        }
+        const howl = f.time > howlAt ? Math.max(0, 1 - (f.time - howlAt) / 1.6) : 0;
         ctx.save();
         ctx.globalAlpha = f.presence;
-        ctx.fillStyle = `rgba(4, 6, 16, ${0.78 * clamp01(f.time / 0.4)})`;
+        ctx.fillStyle = `rgba(4, 6, 18, ${0.8 * clamp01(f.time / 0.4)})`;
         ctx.fillRect(0, 0, width, height);
-        ctx.drawImage(moon, mx - moon.width / 2, my + (1 - rise) * height * 0.5 - moon.height / 2);
-        // Nuvens cruzando a lua.
-        ctx.globalAlpha = f.presence * 0.8;
-        drawCloud(ctx, -240 + f.time * 170, my + moonR * 0.4, 75, 'rgba(14, 16, 28, 0.9)');
-        drawCloud(ctx, width + 160 - f.time * 130, my - moonR * 0.5, 60, 'rgba(14, 16, 28, 0.85)');
+        // Lua (pulsa no uivo).
+        const pulse = 1 + howl * 0.05 * Math.sin(f.time * 18);
+        const moonY = my + (1 - rise) * height * 0.35;
+        ctx.save();
+        ctx.translate(mx, moonY);
+        ctx.scale(pulse, pulse);
+        ctx.drawImage(moon, -moon.width / 2, -moon.height / 2);
+        ctx.restore();
+        if (howl > 0) {
+          ctx.globalCompositeOperation = 'lighter';
+          blit(
+            ctx,
+            softSprite('210, 225, 255'),
+            mx,
+            moonY,
+            moonR * (1.6 + (1 - howl) * 1.2),
+            howl * 0.5,
+          );
+          ctx.globalCompositeOperation = 'source-over';
+        }
+        // Nuvens finas passando.
+        ctx.globalAlpha = f.presence * 0.7;
+        drawCloud(ctx, -260 + f.time * 150, moonY + moonR * 0.55, 70, 'rgba(10, 12, 24, 0.9)');
+        drawCloud(
+          ctx,
+          width + 200 - f.time * 110,
+          moonY - moonR * 0.7,
+          55,
+          'rgba(10, 12, 24, 0.85)',
+        );
         ctx.globalAlpha = f.presence;
-        // Uivo: ondas prateadas saindo da lua.
-        ctx.globalCompositeOperation = 'lighter';
-        for (let k = 0; k < 4; k++) {
-          const age = f.time - 0.8 - k * 0.35;
-          if (age <= 0 || age > 1.6) continue;
-          ctx.strokeStyle = `rgba(210, 220, 255, ${(1 - age / 1.6) * 0.45})`;
-          ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.arc(mx, my, moonR * 1.1 + age * Math.max(width, height) * 0.5, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-        // Matilha: olhos acendendo e se aproximando.
-        for (const wolf of pack) {
-          const on = clamp01((f.time - wolf.delay) / 0.15);
-          if (on <= 0 || Math.sin(f.time * 1.7 + wolf.phase) < -0.85) continue;
-          const near = 1 + Math.max(0, f.time - wolf.delay) * 0.15;
-          const glow = glowSprite('255, 40, 30');
-          blit(
-            ctx,
-            glow,
-            wolf.x - wolf.size * 1.4 * near,
-            wolf.y,
-            wolf.size * near,
-            on * f.presence,
-          );
-          blit(
-            ctx,
-            glow,
-            wolf.x + wolf.size * 1.4 * near,
-            wolf.y,
-            wolf.size * near,
-            on * f.presence,
-          );
-        }
-        ctx.globalCompositeOperation = 'source-over';
-        // O alfa: olhos grandes e inclinados no centro.
-        const alpha = easeOut((f.time - 1.9) / 0.35) * clamp01((end - 0.3 - f.time) / 0.4);
-        if (alpha > 0) {
-          const w = Math.min(width, height) * 0.08;
-          for (const side of [-1, 1]) {
-            ctx.save();
-            ctx.translate(width / 2 + side * w * 1.8, height * 0.62);
-            drawBeastEye(ctx, w, alpha, side * 0.3, ['#fff0c0', '#ffb020', '#8a2a00'], 0.08);
-            ctx.restore();
-          }
+        // Penhasco e lobo, em silhueta na frente da lua (o lobo sobe junto com o uivo).
+        const scale = (moonR * 1.15) / 200;
+        ctx.save();
+        ctx.translate(mx - 130 * scale, moonY + moonR * 1.05 - 200 * scale);
+        ctx.scale(scale, scale);
+        ctx.fillStyle = '#05060c';
+        ctx.fill(cliff);
+        ctx.translate(40, -12 - howl * 4);
+        ctx.fill(wolf);
+        ctx.restore();
+        // Clarão prateado varrendo a tela no uivo.
+        const sweep = clamp01((f.time - howlAt) / 0.5);
+        if (sweep > 0 && sweep < 1) {
+          const x = -width * 0.3 + sweep * width * 1.6;
+          const g = ctx.createLinearGradient(x - 160, 0, x + 160, 0);
+          g.addColorStop(0, 'rgba(220, 230, 255, 0)');
+          g.addColorStop(0.5, 'rgba(220, 230, 255, 0.35)');
+          g.addColorStop(1, 'rgba(220, 230, 255, 0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(x - 160, 0, 320, height);
         }
         ctx.restore();
-        if (f.emitting && f.particles.length < MAX_PARTICLES && Math.random() < 0.3)
+        if (
+          f.emitting &&
+          f.particles.length < MAX_PARTICLES &&
+          f.time < end - 0.6 &&
+          Math.random() < 0.4
+        )
           f.particles.push(
-            particle('mote', rand(0, width), -10, {
-              vy: rand(0.5, 1.5),
-              vx: rand(-0.3, 0.3),
-              max: 200,
+            particle('mote', rand(0, width), rand(0, height), {
+              vy: -rand(0.2, 0.8),
+              max: rand(60, 100),
               size: rand(1, 2),
               color: '220, 230, 255',
             }),
@@ -4638,73 +4723,332 @@ const SCENES: Partial<
       },
     };
   },
-  bees: (width, height) => {
-    // Um enxame chega de todos os lados e forma a palavra "CRÍTICO!" no ar; no fim, dispersa.
-    const font =
-      getComputedStyle(document.body).getPropertyValue('--font-display').trim() || 'serif';
-    const size = Math.min(width * 0.11, 140);
-    const off = document.createElement('canvas');
-    off.width = Math.ceil(width);
-    off.height = Math.ceil(size * 1.6);
-    const octx = off.getContext('2d', { willReadFrequently: true });
-    const targets: Point[] = [];
-    if (octx) {
-      octx.font = `${size}px ${font}`;
-      octx.textAlign = 'center';
-      octx.textBaseline = 'middle';
-      octx.fillText('CRÍTICO!', off.width / 2, off.height / 2);
-      const data = octx.getImageData(0, 0, off.width, off.height).data;
-      for (let y = 0; y < off.height; y += 7)
-        for (let x = 0; x < off.width; x += 7)
-          if ((data[(y * off.width + x) * 4 + 3] ?? 0) > 128)
-            targets.push({ x, y: y - off.height / 2 + height * 0.42 });
-    }
-    const chosen = targets.sort(() => Math.random() - 0.5).slice(0, 420);
-    const bees = chosen.map((target) => {
-      const side = Math.floor(rand(0, 4));
-      return {
-        x: side === 0 ? -20 : side === 1 ? width + 20 : rand(0, width),
-        y: side === 2 ? -20 : side === 3 ? height + 20 : rand(0, height),
-        tx: target.x,
-        ty: target.y,
-        delay: rand(0, 0.6),
-        out: rand(0, Math.PI * 2),
-      };
-    });
-    const image = beeSprite();
+  cthulhu: (width, height, durationMs) => {
+    // Ele chega destruindo tudo: céu verde-podre com relâmpagos, o mar sobe, tentáculos gigantes
+    // rompem e esmagam a tela, o Grande Antigo surge do mar e abre os olhos, e no fim a própria
+    // tela se estilhaça.
+    const sea = height * 0.78;
+    const headR = Math.min(width * 0.2, height * 0.3);
+    const cx = width / 2;
+    const arms = [
+      { x: width * 0.06, angle: -Math.PI / 2 + 0.35, side: 1, delay: 0.5, slam: 0.7, thick: 56 },
+      { x: width * 0.94, angle: -Math.PI / 2 - 0.35, side: -1, delay: 0.6, slam: 0.95, thick: 60 },
+      { x: width * 0.24, angle: -Math.PI / 2 + 0.15, side: 1, delay: 0.75, slam: 1.2, thick: 46 },
+      { x: width * 0.76, angle: -Math.PI / 2 - 0.15, side: -1, delay: 0.85, slam: 1.45, thick: 48 },
+    ];
+    const slammed = new Set<number>();
+    const cracks: Point[][] = [];
+    let shattered = false;
+    const beard = Array.from({ length: 9 }, (_, i) => ({
+      x: (i - 4) * headR * 0.16,
+      phase: rand(0, 6),
+      length: headR * rand(0.9, 1.4),
+    }));
+    const tentacle = (
+      ctx: CanvasRenderingContext2D,
+      x0: number,
+      y0: number,
+      angle: number,
+      length: number,
+      thick: number,
+      bend: number,
+      t: number,
+      phase: number,
+    ) => {
+      let x = x0;
+      let y = y0;
+      for (let i = 0; i <= 24; i++) {
+        const u = i / 24;
+        const a = angle + bend * u * u + Math.sin(u * 4 + t * 3 + phase) * 0.35 * u;
+        const r = thick * (1 - u) + 4;
+        ctx.fillStyle = '#16382a';
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+        if (i % 2 === 0) {
+          ctx.fillStyle = '#5fa080';
+          ctx.beginPath();
+          ctx.arc(
+            x + Math.cos(a + Math.PI / 2) * r * 0.55,
+            y + Math.sin(a + Math.PI / 2) * r * 0.55,
+            r * 0.22,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+        }
+        x += Math.cos(a) * (length / 24);
+        y += Math.sin(a) * (length / 24);
+      }
+      return { x, y };
+    };
     return {
       frame(ctx, f) {
+        const end = durationMs / 1000;
         ctx.save();
-        ctx.globalAlpha = f.presence * 0.25;
-        ctx.strokeStyle = '#ffd000';
-        ctx.lineWidth = 1.5;
-        const hex = 40;
-        for (let y = 0; y < height + hex; y += hex * 0.86)
-          for (let x = 0; x < width + hex; x += hex * 1.5) {
-            const ox = (Math.round(y / (hex * 0.86)) % 2) * hex * 0.75;
+        ctx.globalAlpha = f.presence;
+        // Céu podre e relâmpagos verdes.
+        const sky = ctx.createLinearGradient(0, 0, 0, height);
+        sky.addColorStop(0, `rgba(10, 30, 22, ${0.85 * clamp01(f.time / 0.4)})`);
+        sky.addColorStop(1, `rgba(2, 8, 6, ${0.9 * clamp01(f.time / 0.4)})`);
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, width, height);
+        if (Math.random() < 0.06) {
+          f.particles.push(
+            particle('bolt', 0, 0, {
+              path: bolt(
+                { x: rand(0, width), y: 0 },
+                { x: rand(0, width), y: sea * rand(0.4, 0.9) },
+                40,
+                12,
+              ),
+              max: rand(6, 12),
+              size: 3,
+              color: '120, 255, 180',
+            }),
+          );
+          ctx.fillStyle = 'rgba(120, 255, 180, 0.15)';
+          ctx.fillRect(0, 0, width, height);
+        }
+        // O Grande Antigo surgindo do mar: asas, cabeça, barba de tentáculos e os olhos.
+        const rise = easeOut((f.time - 0.6) / 1.1);
+        const headY = sea + headR * 1.2 - rise * headR * 1.9;
+        if (rise > 0) {
+          ctx.fillStyle = '#0c1f17';
+          for (const side of [-1, 1]) {
             ctx.beginPath();
-            for (let k = 0; k < 6; k++)
-              ctx.lineTo(
-                x + ox + Math.cos((k * Math.PI) / 3) * hex * 0.5,
-                y + Math.sin((k * Math.PI) / 3) * hex * 0.5,
+            ctx.moveTo(cx + side * headR * 0.6, headY);
+            ctx.lineTo(cx + side * headR * 2.6, headY - headR * 1.5);
+            for (let k = 0; k < 4; k++)
+              ctx.quadraticCurveTo(
+                cx + side * headR * (2.3 - k * 0.45),
+                headY - headR * (0.9 - k * 0.1),
+                cx + side * headR * (2.1 - k * 0.45),
+                headY - headR * (1.1 - k * 0.25),
               );
             ctx.closePath();
+            ctx.fill();
+          }
+          ctx.fillStyle = '#16382a';
+          ctx.beginPath();
+          ctx.ellipse(cx, headY - headR * 0.3, headR * 0.85, headR * 1.05, 0, 0, Math.PI * 2);
+          ctx.fill();
+          for (const b of beard)
+            tentacle(
+              ctx,
+              cx + b.x,
+              headY + headR * 0.3,
+              Math.PI / 2,
+              b.length,
+              headR * 0.09,
+              Math.sin(f.time * 2 + b.phase) * 0.8,
+              f.time,
+              b.phase,
+            );
+          const open = easeOut((f.time - 1.2) / 0.4);
+          for (const side of [-1, 1]) {
+            ctx.save();
+            ctx.translate(cx + side * headR * 0.38, headY - headR * 0.25);
+            ctx.globalCompositeOperation = 'lighter';
+            blit(ctx, softSprite('255, 210, 60'), 0, 0, headR * 0.5, 0.6 * open);
+            ctx.globalCompositeOperation = 'source-over';
+            drawBeastEye(
+              ctx,
+              headR * 0.22,
+              open,
+              side * 0.25,
+              ['#fff6b0', '#ffcc33', '#7a2a00'],
+              0.08,
+            );
+            ctx.restore();
+          }
+        }
+        // Mar subindo.
+        ctx.fillStyle = 'rgba(6, 28, 22, 0.92)';
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+        for (let x = 0; x <= width + 30; x += 30)
+          ctx.lineTo(
+            x,
+            sea +
+              Math.sin(x * 0.015 + f.time * 2.5) * 16 +
+              (1 - clamp01(f.time / 0.6)) * height * 0.3,
+          );
+        ctx.lineTo(width, height);
+        ctx.closePath();
+        ctx.fill();
+        // Tentáculos esmagando a tela.
+        arms.forEach((arm, index) => {
+          const grow = easeOut((f.time - arm.delay) / 0.5);
+          if (grow <= 0) return;
+          const slam = clamp01((f.time - arm.slam) / 0.2);
+          const bend = -0.5 * arm.side + slam * 2.4 * arm.side;
+          const tip = tentacle(
+            ctx,
+            arm.x,
+            height + 60,
+            arm.angle,
+            height * 0.95 * grow,
+            arm.thick,
+            bend,
+            f.time,
+            index,
+          );
+          if (slam >= 1 && !slammed.has(index)) {
+            slammed.add(index);
+            screenShake(380, 16);
+            pageJolt('grayscale(1) contrast(1.6) brightness(0.7)', 120);
+            for (let k = 0; k < 8; k++) {
+              const a = rand(0, Math.PI * 2);
+              const l = rand(100, 320);
+              cracks.push(
+                bolt(tip, { x: tip.x + Math.cos(a) * l, y: tip.y + Math.sin(a) * l }, 18, 8),
+              );
+            }
+            for (let k = 0; k < 16; k++) {
+              const a = rand(0, Math.PI * 2);
+              f.particles.push(
+                particle('rock', tip.x, tip.y, {
+                  vx: Math.cos(a) * rand(3, 10),
+                  vy: Math.sin(a) * rand(3, 10) - 3,
+                  gravity: 0.35,
+                  vr: 0.2,
+                  max: 70,
+                  size: rand(4, 10),
+                }),
+              );
+            }
+          }
+        });
+        // Rachaduras por toda a tela.
+        ctx.lineJoin = 'round';
+        for (const crack of cracks)
+          for (const [w, style] of [
+            [6, 'rgba(0, 0, 0, 0.7)'],
+            [1.6, 'rgba(150, 255, 200, 0.85)'],
+          ] as const) {
+            ctx.lineWidth = w;
+            ctx.strokeStyle = style;
+            ctx.beginPath();
+            crack.forEach((point, i) =>
+              i ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y),
+            );
             ctx.stroke();
           }
         ctx.restore();
-        const leaving = f.time > 2.6;
+        // No fim, a tela inteira se estilhaça e os pedaços despencam.
+        if (!shattered && f.time >= end - 1.5) {
+          shattered = true;
+          screenShake(600, 20);
+          pageJolt('invert(1) hue-rotate(120deg)', 160);
+          for (let k = 0; k < 60; k++)
+            f.particles.push(
+              particle('shard', rand(0, width), rand(0, height), {
+                vx: rand(-3, 3),
+                vy: rand(-3, 1),
+                gravity: 0.45,
+                vr: rand(-0.2, 0.2),
+                max: 110,
+                size: rand(18, 48),
+              }),
+            );
+        }
+      },
+    };
+  },
+  haki: (width, height) => {
+    // Haki do Rei: a cada batida, uma onda de pressão sai do centro, a tela escurece, a página
+    // perde a cor por um instante (todo mundo "desmaia") e raios pretos rasgam a tela inteira.
+    const cx = width / 2;
+    const cy = height * 0.45;
+    const beats = [0, 0.55, 1.1, 1.65].map((at) => ({ at, done: false }));
+    const reach = Math.hypot(width, height);
+    return {
+      frame(ctx, f) {
+        for (const beat of beats) {
+          if (beat.done || f.time < beat.at) continue;
+          beat.done = true;
+          screenShake(260, 12);
+          pageJolt('grayscale(1) brightness(0.6) contrast(1.4)', 140);
+          for (let k = 0; k < 7; k++) {
+            const a = rand(0, Math.PI * 2);
+            const from = { x: cx + Math.cos(a) * 30, y: cy + Math.sin(a) * 30 };
+            const to = {
+              x: cx + Math.cos(a) * reach * rand(0.4, 0.7),
+              y: cy + Math.sin(a) * reach * rand(0.4, 0.7),
+            };
+            f.particles.push(
+              particle('bolt', 0, 0, {
+                path: bolt(from, to, 40, 14),
+                max: rand(10, 18),
+                size: rand(2.5, 4),
+                color: 'haki',
+              }),
+            );
+          }
+          for (let k = 0; k < 16; k++) {
+            const a = rand(0, Math.PI * 2);
+            f.particles.push(
+              particle('smoke', cx + Math.cos(a) * 60, cy + Math.sin(a) * 60, {
+                vx: Math.cos(a) * rand(6, 12),
+                vy: Math.sin(a) * rand(6, 12),
+                drag: 0.95,
+                max: 60,
+                size: rand(30, 60),
+                color: '40, 0, 10',
+              }),
+            );
+          }
+        }
         ctx.save();
         ctx.globalAlpha = f.presence;
-        for (const bee of bees) {
-          if (leaving) {
-            bee.x += Math.cos(bee.out) * 12;
-            bee.y += Math.sin(bee.out) * 12;
-          } else if (f.time > bee.delay) {
-            bee.x += (bee.tx - bee.x) * 0.08 + rand(-1.5, 1.5);
-            bee.y += (bee.ty - bee.y) * 0.08 + rand(-1.5, 1.5);
-          }
-          ctx.drawImage(image, bee.x - 5, bee.y - 5, 10, 10);
+        // Escurece a cada batida.
+        const lastBeat = Math.max(...beats.filter((b) => f.time >= b.at).map((b) => b.at), -1);
+        const dark = lastBeat >= 0 ? Math.max(0, 1 - (f.time - lastBeat) / 0.4) : 0;
+        ctx.fillStyle = `rgba(10, 0, 4, ${0.35 + dark * 0.4})`;
+        ctx.fillRect(0, 0, width, height);
+        // Ondas de pressão.
+        for (const beat of beats) {
+          const age = f.time - beat.at;
+          if (age <= 0 || age > 1) continue;
+          const r = age * reach * 0.8;
+          ctx.strokeStyle = `rgba(10, 0, 4, ${(1 - age) * 0.85})`;
+          ctx.lineWidth = 22 * (1 - age) + 2;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.strokeStyle = `rgba(255, 30, 50, ${(1 - age) * 0.7})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r + 12, 0, Math.PI * 2);
+          ctx.stroke();
         }
+        // Raios contínuos estalando perto do centro.
+        if (f.emitting && Math.random() < 0.5) {
+          const a = rand(0, Math.PI * 2);
+          f.particles.push(
+            particle('bolt', 0, 0, {
+              path: bolt(
+                { x: cx, y: cy },
+                { x: cx + Math.cos(a) * rand(120, 300), y: cy + Math.sin(a) * rand(120, 300) },
+                20,
+                8,
+              ),
+              max: rand(5, 9),
+              size: rand(1.8, 3),
+              color: 'haki',
+            }),
+          );
+        }
+        ctx.globalCompositeOperation = 'lighter';
+        blit(
+          ctx,
+          softSprite('255, 20, 40'),
+          cx,
+          cy,
+          Math.min(width, height) * 0.35,
+          (0.25 + dark * 0.3) * f.presence,
+        );
         ctx.restore();
       },
     };
@@ -5811,78 +6155,121 @@ const SCENES: Partial<
     };
   },
   bard: (width, height) => {
-    // Partituras ondulando pela tela com as notas correndo nelas, clave de sol e uma explosão de
-    // notas saindo do centro.
-    const gap = 16;
-    const staffs = [
-      { y: height * 0.22, phase: 0 },
-      { y: height * 0.72, phase: 2 },
-    ];
+    // Cordas de alaúde gigantes atravessam a tela vibrando cada vez mais forte; no auge, estouram
+    // uma a uma, chicoteando, com uma explosão de notas e faíscas.
+    const strings = Array.from({ length: 6 }, (_, i) => ({
+      y: height * (0.22 + i * 0.1),
+      snapAt: 1.6 + i * 0.12,
+      done: false,
+      width: 1.5 + i * 0.6,
+    }));
     const glyphs = ['♪', '♫', '♬', '♩'];
-    const notes = staffs.map(() =>
-      Array.from({ length: 14 }, () => ({
-        x: rand(0, width + 200),
-        step: Math.floor(rand(-2, 11)),
-        glyph: pick(glyphs),
-        color: pick(['255, 210, 120', '255, 150, 200', '150, 220, 255']),
-      })),
-    );
-    const clef = bigGlyphSprite('𝄞', '255, 220, 160');
-    const lineY = (staff: { y: number; phase: number }, x: number, t: number, i: number) =>
-      staff.y + i * gap + Math.sin(x * 0.006 + t * 2 + staff.phase) * 28;
-    let burst = false;
+    const noteColors = ['255, 210, 120', '255, 150, 200', '150, 220, 255'];
     return {
       frame(ctx, f) {
-        const show = easeOut(f.time / 0.5);
-        if (!burst) {
-          burst = true;
-          for (let i = 0; i < 26; i++) {
-            const a = (i / 26) * Math.PI * 2;
-            f.particles.push(
-              particle('rune', width / 2, height / 2, {
-                vx: Math.cos(a) * rand(4, 8),
-                vy: Math.sin(a) * rand(4, 8),
-                drag: 0.97,
-                max: rand(70, 100),
-                size: rand(26, 40),
-                glyph: pick(glyphs),
-                color: pick(['255, 210, 120', '255, 150, 200', '150, 220, 255']),
-              }),
-            );
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        // Ponte e cravelhas (as pontas onde as cordas se prendem).
+        ctx.fillStyle = '#3a2412';
+        ctx.fillRect(width * 0.04 - 10, height * 0.18, 20, height * 0.56);
+        ctx.fillRect(width * 0.96 - 10, height * 0.18, 20, height * 0.56);
+        const intensity = clamp01(f.time / 1.5);
+        ctx.lineCap = 'round';
+        for (const [i, str] of strings.entries()) {
+          const x1 = width * 0.04;
+          const x2 = width * 0.96;
+          const amp = 4 + intensity * intensity * 26;
+          if (f.time < str.snapAt) {
+            // Corda inteira vibrando (onda estacionária) e brilhando mais com a intensidade.
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.strokeStyle = `rgba(255, 210, 120, ${0.2 + intensity * 0.35})`;
+            ctx.lineWidth = str.width * 4;
+            const path = () => {
+              ctx.beginPath();
+              for (let k = 0; k <= 40; k++) {
+                const u = k / 40;
+                const y = str.y + Math.sin(u * Math.PI) * Math.sin(f.time * (40 + i * 6)) * amp;
+                if (k) ctx.lineTo(x1 + (x2 - x1) * u, y);
+                else ctx.moveTo(x1, y);
+              }
+            };
+            path();
+            ctx.stroke();
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = '#f3e2b0';
+            ctx.lineWidth = str.width;
+            path();
+            ctx.stroke();
+            if (f.emitting && Math.random() < 0.05 + intensity * 0.15)
+              f.particles.push(
+                particle('rune', rand(x1, x2), str.y, {
+                  vy: -rand(1, 3),
+                  vx: rand(-1, 1),
+                  max: 80,
+                  size: rand(20, 32),
+                  glyph: pick(glyphs),
+                  color: pick(noteColors),
+                }),
+              );
+          } else {
+            if (!str.done) {
+              str.done = true;
+              screenShake(140, 6);
+              const mid = { x: width / 2 + rand(-width * 0.15, width * 0.15), y: str.y };
+              for (let k = 0; k < 14; k++) {
+                const a = rand(0, Math.PI * 2);
+                f.particles.push(
+                  particle('spark', mid.x, mid.y, {
+                    vx: Math.cos(a) * rand(3, 8),
+                    vy: Math.sin(a) * rand(3, 8),
+                    gravity: 0.15,
+                    max: 40,
+                    size: rand(1.5, 2.5),
+                    color: '255, 220, 140',
+                  }),
+                );
+              }
+              for (let k = 0; k < 6; k++)
+                f.particles.push(
+                  particle('rune', mid.x, mid.y, {
+                    vx: rand(-6, 6),
+                    vy: rand(-7, -2),
+                    gravity: 0.2,
+                    max: 90,
+                    size: rand(26, 40),
+                    glyph: pick(glyphs),
+                    color: pick(noteColors),
+                  }),
+                );
+            }
+            // As duas metades chicoteiam e enrolam em direção às pontas.
+            const age = f.time - str.snapAt;
+            const curl = clamp01(age / 0.4);
+            ctx.strokeStyle = '#f3e2b0';
+            ctx.lineWidth = str.width;
+            for (const side of [-1, 1]) {
+              const anchor = side < 0 ? x1 : x2;
+              const length = ((x2 - x1) / 2) * (1 - curl * 0.7);
+              ctx.beginPath();
+              ctx.moveTo(anchor, str.y);
+              for (let k = 1; k <= 20; k++) {
+                const u = k / 20;
+                const bend = u * u * curl * 2.4;
+                const x = anchor - side * Math.cos(bend) * length * u;
+                const y = str.y + Math.sin(bend) * length * u * 0.5 * (i % 2 ? 1 : -1);
+                ctx.lineTo(x, y);
+              }
+              ctx.stroke();
+            }
           }
         }
-        ctx.save();
-        ctx.globalAlpha = f.presence * show;
-        staffs.forEach((staff, s) => {
-          ctx.strokeStyle = 'rgba(255, 225, 170, 0.75)';
-          ctx.lineWidth = 2;
-          for (let i = 0; i < 5; i++) {
-            ctx.beginPath();
-            for (let x = 0; x <= width + 24; x += 24) {
-              const y = lineY(staff, x, f.time, i);
-              if (x) ctx.lineTo(x, y);
-              else ctx.moveTo(x, y);
-            }
-            ctx.stroke();
-          }
-          ctx.save();
-          ctx.globalCompositeOperation = 'lighter';
-          blit(ctx, clef, 46, lineY(staff, 46, f.time, 2), gap * 4.2, f.presence * show);
-          for (const note of notes[s]!) {
-            const x =
-              ((((note.x - f.time * 260) % (width + 200)) + width + 200) % (width + 200)) - 100;
-            const y = lineY(staff, x, f.time, 0) + (note.step * gap) / 2;
-            blit(
-              ctx,
-              runeSprite(note.glyph, note.color),
-              x,
-              y - gap * 0.6,
-              gap * 2.2,
-              f.presence * show,
-            );
-          }
-          ctx.restore();
-        });
+        // Clarão dourado quando a última corda estoura.
+        const last = strings[strings.length - 1]!;
+        const flash = 1 - Math.abs(f.time - last.snapAt) / 0.15;
+        if (flash > 0) {
+          ctx.fillStyle = `rgba(255, 230, 170, ${flash * 0.5})`;
+          ctx.fillRect(0, 0, width, height);
+        }
         ctx.restore();
       },
     };
@@ -7965,28 +8352,102 @@ const FAILS: Record<DiceAura, FailScene> = {
       },
     };
   },
-  bees: (_width, _height, _durationMs, text) => {
-    // Uma abelha só pica o texto: ele incha e fica vermelho.
-    const bee = { x: -20, y: text.y - 100 };
-    let stung = false;
+  cthulhu: (width, height, _durationMs, text) => {
+    // Em vez do Grande Antigo, um polvinho fofo sai de uma poça, acena e espirra tinta no texto.
+    let inked = false;
     return {
       frame(ctx, f) {
-        if (!stung) {
-          bee.x += (text.x - bee.x) * 0.06 + rand(-2, 2);
-          bee.y += (text.y - 30 - bee.y) * 0.06 + rand(-2, 2);
-          if (Math.abs(bee.x - text.x) < 20) {
-            stung = true;
-            text.tint = '255, 120, 110';
-            text.scale = 1.35;
-            screenShake(120, 4);
-          }
-        } else {
-          bee.x += 6;
-          bee.y -= 3;
-        }
+        const level = height - 50;
+        const rise = easeOut((f.time - 0.3) / 0.5);
+        const x = width * 0.32;
         ctx.save();
         ctx.globalAlpha = f.presence;
-        ctx.drawImage(beeSprite(), bee.x - 12, bee.y - 12, 24, 24);
+        ctx.fillStyle = 'rgba(30, 90, 120, 0.7)';
+        ctx.beginPath();
+        ctx.ellipse(x, level + 20, 90, 18, 0, 0, Math.PI * 2);
+        ctx.fill();
+        if (rise > 0) {
+          const y = level + 30 - rise * 60;
+          ctx.fillStyle = '#ff8aa8';
+          ctx.beginPath();
+          ctx.ellipse(x, y, 30, 26, 0, Math.PI, 0);
+          ctx.lineTo(x + 30, y + 10);
+          ctx.lineTo(x - 30, y + 10);
+          ctx.fill();
+          ctx.strokeStyle = '#ff8aa8';
+          ctx.lineWidth = 6;
+          ctx.lineCap = 'round';
+          for (let k = 0; k < 4; k++) {
+            ctx.beginPath();
+            ctx.moveTo(x - 22 + k * 15, y + 8);
+            ctx.lineTo(x - 22 + k * 15 + Math.sin(f.time * 8 + k) * 6, y + 26);
+            ctx.stroke();
+          }
+          // Um tentáculo acenando.
+          ctx.beginPath();
+          ctx.moveTo(x + 28, y);
+          ctx.quadraticCurveTo(x + 50, y - 20, x + 46 + Math.sin(f.time * 10) * 10, y - 42);
+          ctx.stroke();
+          ctx.fillStyle = '#1a1020';
+          for (const side of [-1, 1]) {
+            ctx.beginPath();
+            ctx.arc(x + side * 10, y - 8, 4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        ctx.restore();
+        if (!inked && f.time > 1.1) {
+          inked = true;
+          text.tint = '40, 30, 50';
+          for (let k = 0; k < 14; k++)
+            f.particles.push(
+              particle('drop', x, level - 20, {
+                vx: (text.x - x) / 30 + rand(-1, 1),
+                vy: (text.y - level) / 30 + rand(-1, 1),
+                gravity: 0.05,
+                max: 40,
+                size: rand(3, 6),
+                color: '20, 15, 30',
+              }),
+            );
+        }
+      },
+    };
+  },
+  haki: (_width, _height, _durationMs, text) => {
+    // Pressão fraquinha: um anelzinho, um raiozinho preto... e só uma mosca desmaia.
+    let fired = false;
+    return {
+      frame(ctx, f) {
+        if (!fired && f.time > 0.3) {
+          fired = true;
+          f.particles.push(
+            particle('bolt', 0, 0, {
+              path: bolt({ x: text.x, y: text.y - 60 }, { x: text.x + 40, y: text.y - 90 }, 6, 4),
+              max: 8,
+              size: 1.5,
+              color: 'haki',
+            }),
+          );
+          f.particles.push(
+            particle('fly', text.x + 80, text.y - 140, {
+              vy: 0,
+              gravity: 0.25,
+              vr: 0.3,
+              max: 120,
+              size: 3,
+            }),
+          );
+        }
+        const age = f.time - 0.3;
+        if (age <= 0 || age > 0.6) return;
+        ctx.save();
+        ctx.globalAlpha = f.presence * (1 - age / 0.6);
+        ctx.strokeStyle = 'rgba(20, 0, 6, 0.8)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(text.x, text.y, 30 + age * 60, 0, Math.PI * 2);
+        ctx.stroke();
         ctx.restore();
       },
     };

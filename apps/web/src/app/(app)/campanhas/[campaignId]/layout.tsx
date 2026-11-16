@@ -7,6 +7,7 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { CampaignCover } from '@/components/campaigns/campaign-cover';
 import { CampaignColorsProvider } from '@/components/dice/campaign-colors';
+import { CampaignRollEffects } from '@/components/dice/campaign-roll-effects';
 import { SectionTabs, type SectionTab } from '@/components/layout/section-tabs';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -65,6 +66,7 @@ export default async function CampaignLayout({
 
   return (
     <CampaignColorsProvider campaignId={campaign.id}>
+      <CampaignRollEffects campaignId={campaign.id} />
       <div className="flex flex-col gap-6">
         {/* Banner da campanha: capa (ou a paisagem arcana dela) com o título por cima. */}
         {/* Com capa enviada, a altura segue a proporção da imagem (até 28rem); capa e texto
