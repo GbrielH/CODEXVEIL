@@ -17,6 +17,8 @@
 
 ## Resumo
 
+**2026-11-16 (auras):** Tarrasque e Deus do Sol (Gear 5) refeitos no crítico; corrigida a falha do Vazio Roxo, que mostrava dois "CRÍTICO!" em vez de um cortado ao meio. Typecheck e lint passaram; falta conferir no navegador.
+
 **2026-11-12 (Ordem Paranormal RPG 2):** novo sistema `ordem2`, a partir dos dois PDFs dos playtests (Alpha e Beta). O que foi feito:
 
 - **Regras no código:** motor de testes (dois dados, passos, críticos, pavor, RA/RB, dano, lesões, traumas, equilíbrio, fechaduras, relações e armadura).

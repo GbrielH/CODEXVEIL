@@ -5247,105 +5247,215 @@ const SCENES: Partial<
     };
   },
   sungod: (width, height) => {
-    // Tudo vira desenho animado em preto e branco: um sol gigante gargalha, nuvens de borracha
-    // quicam e o "CRÍTICO!" pula como borracha ao som dos tambores.
+    // Desenho animado antigo em preto e branco (tinta, retícula e linhas de ação): um sol de
+    // borracha gargalha dentro de um anel de nuvens fofas, os tambores batem ("DUM DUM!") e o
+    // "CRÍTICO!" estica e quica como borracha.
     const font = displayFont();
     const size = Math.min(width * 0.12, 150);
     const cx = width / 2;
-    const cy = height * 0.55;
-    const clouds = Array.from({ length: 6 }, () => ({
-      x: rand(0, width),
-      y: rand(height * 0.35, height * 0.95),
-      s: rand(36, 70),
-      v: rand(0.5, 1.2),
-      phase: rand(0, 6),
+    const cy = height * 0.6;
+    const sx = width / 2;
+    const sy = height * 0.27;
+    const beats = [0.5, 0.85, 1.4, 1.75, 2.3, 2.65].map((at, i) => ({
+      at,
+      x: i % 2 ? rand(width * 0.68, width * 0.85) : rand(width * 0.15, width * 0.32),
+      y: rand(height * 0.15, height * 0.45),
+      rot: rand(-0.3, 0.3),
+      done: false,
     }));
+    const puffs = Array.from({ length: 10 }, (_, i) => ({
+      a: (i / 10) * Math.PI * 2,
+      r: rand(0.95, 1.15),
+    }));
+    const steam = Array.from({ length: 10 }, () => ({
+      x: rand(0, width),
+      y: rand(height * 0.7, height * 1.2),
+      s: rand(20, 45),
+      v: rand(0.8, 1.6),
+    }));
+    const ink = '#111';
+    const paper = '#fbf7ea';
+    const outlinedText = (
+      ctx: CanvasRenderingContext2D,
+      text: string,
+      px: number,
+      py: number,
+      line: number,
+    ) => {
+      ctx.lineWidth = line;
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = ink;
+      ctx.fillStyle = ink;
+      ctx.fillText(text, px + line * 0.5, py + line * 0.6); // sombra chapada de mangá
+      ctx.strokeText(text, px, py);
+      ctx.fillStyle = '#fff';
+      ctx.fillText(text, px, py);
+    };
     return {
       frame(ctx, f) {
         const t = f.time;
+        for (const b of beats)
+          if (!b.done && t >= b.at) {
+            b.done = true;
+            screenShake(140, 6);
+          }
         ctx.save();
         ctx.globalAlpha = f.presence;
-        ctx.fillStyle = `rgba(250, 246, 235, ${0.9 * clamp01(t / 0.3)})`;
+        // Papel com linhas de ação girando.
+        ctx.fillStyle = paper;
+        ctx.globalAlpha = f.presence * clamp01(t / 0.25);
         ctx.fillRect(0, 0, width, height);
-        const sx = cx;
-        const sy = height * 0.22;
-        const R = Math.min(width, height) * 0.17 * (1 + 0.06 * Math.sin(t * 9));
         ctx.save();
         ctx.translate(sx, sy);
-        ctx.rotate(t * 0.5);
-        ctx.fillStyle = 'rgba(20, 20, 20, 0.08)';
-        for (let k = 0; k < 16; k += 2) {
+        ctx.rotate(t * 0.35);
+        ctx.fillStyle = 'rgba(17, 17, 17, 0.07)';
+        const reach = Math.hypot(width, height);
+        for (let k = 0; k < 36; k += 2) {
           ctx.beginPath();
           ctx.moveTo(0, 0);
-          ctx.arc(
-            0,
-            0,
-            Math.hypot(width, height),
-            (k / 16) * Math.PI * 2,
-            ((k + 1) / 16) * Math.PI * 2,
-          );
+          ctx.arc(0, 0, reach, (k / 36) * Math.PI * 2, ((k + 1) / 36) * Math.PI * 2);
           ctx.closePath();
           ctx.fill();
         }
         ctx.restore();
-        // Sol gargalhando.
-        const laugh = t > 1.85 ? Math.abs(Math.sin(t * 20)) : 0;
+        // Retícula nas bordas.
+        ctx.fillStyle = 'rgba(17, 17, 17, 0.12)';
+        for (let y = 8; y < height; y += 16)
+          for (let x = 8; x < width; x += 16) {
+            const d = Math.hypot((x - width / 2) / width, (y - height / 2) / height);
+            if (d < 0.42) continue;
+            ctx.beginPath();
+            ctx.arc(x, y, Math.min(4, (d - 0.42) * 14), 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+        // Sol de borracha (estica com a risada).
+        const laughing = t > 0.4;
+        const bounce = laughing ? Math.abs(Math.sin(t * 14)) : 0;
+        const R = Math.min(width, height) * 0.15;
         ctx.save();
-        ctx.translate(sx + (laugh ? rand(-2, 2) : 0), sy);
+        ctx.translate(sx, sy);
+        ctx.scale(1 + bounce * 0.06, 1 - bounce * 0.07);
+        // Anel de nuvens fofas.
+        for (const p of puffs) {
+          const a = p.a + t * 0.6;
+          const px = Math.cos(a) * R * 1.45 * p.r;
+          const py = Math.sin(a) * R * 1.45 * p.r;
+          const ps = R * 0.42 * (1 + 0.08 * Math.sin(t * 6 + p.a * 3));
+          ctx.fillStyle = paper;
+          ctx.strokeStyle = ink;
+          ctx.lineWidth = 5;
+          ctx.beginPath();
+          ctx.arc(px, py, ps, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+        // Rosto.
         ctx.fillStyle = '#fffdf5';
-        ctx.strokeStyle = '#111';
-        ctx.lineWidth = 6;
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = 7;
         ctx.beginPath();
         ctx.arc(0, 0, R, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
-        ctx.lineWidth = 5;
         ctx.lineCap = 'round';
+        ctx.lineWidth = 6;
+        // Olhos fechados de tanto rir, com lágrimas.
         for (const side of [-1, 1]) {
           ctx.beginPath();
-          ctx.arc(side * R * 0.35, -R * 0.15, R * 0.14, Math.PI * 1.1, Math.PI * 1.9);
+          ctx.moveTo(side * R * 0.55, -R * 0.22);
+          ctx.quadraticCurveTo(side * R * 0.35, -R * 0.42, side * R * 0.15, -R * 0.22);
           ctx.stroke();
+          if (laughing) {
+            ctx.fillStyle = '#9fd3ff';
+            const drop = (t * 2 + (side > 0 ? 0.5 : 0)) % 1;
+            ctx.beginPath();
+            ctx.ellipse(
+              side * R * 0.62,
+              -R * 0.15 + drop * R * 0.5,
+              R * 0.05,
+              R * 0.08,
+              0,
+              0,
+              Math.PI * 2,
+            );
+            ctx.fill();
+            ctx.stroke();
+          }
         }
-        ctx.fillStyle = '#111';
+        // Bochechas.
+        ctx.fillStyle = 'rgba(17, 17, 17, 0.18)';
+        for (const side of [-1, 1]) {
+          ctx.beginPath();
+          ctx.arc(side * R * 0.62, R * 0.12, R * 0.12, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // Boca enorme gargalhando, com dentes.
+        const open = 0.35 + bounce * 0.2;
+        ctx.fillStyle = ink;
         ctx.beginPath();
-        ctx.ellipse(0, R * 0.25, R * 0.45, R * (0.22 + laugh * 0.12), 0, 0, Math.PI);
+        ctx.moveTo(-R * 0.6, R * 0.05);
+        ctx.quadraticCurveTo(0, R * (0.05 + open * 1.6), R * 0.6, R * 0.05);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.moveTo(-R * 0.55, R * 0.06);
+        ctx.lineTo(R * 0.55, R * 0.06);
+        ctx.lineTo(R * 0.45, R * 0.17);
+        ctx.lineTo(-R * 0.45, R * 0.17);
+        ctx.closePath();
         ctx.fill();
         ctx.fillStyle = '#e04040';
         ctx.beginPath();
-        ctx.ellipse(0, R * 0.38 + laugh * R * 0.06, R * 0.2, R * 0.08, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, R * (0.12 + open * 0.75), R * 0.22, R * 0.09, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
-        // Nuvens de borracha quicando.
-        for (const c of clouds) {
-          c.x = (c.x + c.v + width + 200) % (width + 200);
-          const y = c.y - Math.abs(Math.sin(t * 4 + c.phase)) * 20;
-          drawCloud(ctx, c.x - 100, y, c.s + 4, '#111');
-          drawCloud(ctx, c.x - 100, y, c.s, '#fffdf5');
+
+        // Fumaça branca de desenho subindo.
+        for (const c of steam) {
+          c.y -= c.v;
+          if (c.y < -60) c.y = height + 40;
+          drawCloud(ctx, c.x - 50, c.y, c.s + 4, ink);
+          drawCloud(ctx, c.x - 50, c.y, c.s, paper);
         }
-        // "CRÍTICO!" de borracha.
-        const pop = easeOut(t / 0.25);
-        const squash = 1 + Math.sin(t * 12) * 0.2 * Math.max(0, 1 - t / 2.6);
-        ctx.translate(cx, cy - Math.abs(Math.sin(t * 6)) * 40 * Math.max(0, 1 - t / 2.6));
-        ctx.scale((pop * 1) / squash, pop * squash);
-        ctx.font = `${size}px ${font}`;
+
+        // Batidas do tambor.
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.lineWidth = 12;
-        ctx.lineJoin = 'round';
-        ctx.strokeStyle = '#111';
-        ctx.fillStyle = '#fff';
-        ctx.strokeText('CRÍTICO!', 0, 0);
-        ctx.fillText('CRÍTICO!', 0, 0);
+        for (const b of beats) {
+          const age = t - b.at;
+          if (age < 0 || age > 0.7) continue;
+          const pop = age < 0.1 ? age / 0.1 : 1 + (age - 0.1) * 0.2;
+          ctx.save();
+          ctx.globalAlpha = f.presence * (1 - Math.max(0, age - 0.45) / 0.25);
+          ctx.translate(b.x, b.y);
+          ctx.rotate(b.rot);
+          ctx.scale(pop, pop);
+          ctx.font = `${Math.round(size * 0.45)}px ${font}`;
+          outlinedText(ctx, 'DUM!', 0, 0, 8);
+          // Risquinhos de impacto.
+          ctx.strokeStyle = ink;
+          ctx.lineWidth = 4;
+          for (let k = 0; k < 6; k++) {
+            const a = (k / 6) * Math.PI * 2;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(a) * size * 0.55, Math.sin(a) * size * 0.3);
+            ctx.lineTo(Math.cos(a) * size * 0.75, Math.sin(a) * size * 0.42);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        // "CRÍTICO!" de borracha: estica para os lados e volta quicando.
+        const pop = easeOut(t / 0.25);
+        const wobble = Math.max(0, 1 - t / 2.8);
+        const stretch = 1 + Math.sin(t * 10) * 0.28 * wobble;
+        ctx.translate(cx, cy - Math.abs(Math.sin(t * 6)) * 50 * wobble);
+        ctx.scale(pop * stretch, pop / stretch);
+        ctx.font = `${size}px ${font}`;
+        outlinedText(ctx, 'CRÍTICO!', 0, 0, 14);
         ctx.restore();
-        if (f.emitting && f.particles.length < MAX_PARTICLES && Math.random() < 0.3)
-          f.particles.push(
-            particle('smoke', rand(0, width), height + 20, {
-              vy: -rand(1, 2),
-              max: 90,
-              size: rand(20, 40),
-              color: '40, 40, 40',
-            }),
-          );
       },
     };
   },
@@ -5452,113 +5562,302 @@ const SCENES: Partial<
     };
   },
   tarrasque: (width, height) => {
-    // A terra treme, uma fenda de lava se abre e um dorso de espinhos do tamanho de uma
-    // cordilheira sobe; os chifres e o olho aparecem e o urro sacode tudo.
-    const ground = height * 0.8;
-    const H = height * 0.5;
-    const spikes = Array.from({ length: 16 }, (_, i) => {
-      const u = i / 15;
+    // A terra treme e racha em lava; atrás das montanhas sobe uma carapaça de espinhos do tamanho
+    // de uma cordilheira e, à esquerda, a cabeça: crânio de réptil, chifres curvos, olho em brasa.
+    // A mandíbula se abre e o urro sai em ondas de choque.
+    const ground = height * 0.86;
+    const unit = Math.min(width * 0.55, height * 0.75);
+    const peaks = Array.from({ length: 9 }, (_, i) => ({
+      x: (i / 8) * width,
+      h: rand(height * 0.05, height * 0.16),
+    }));
+    const plates = Array.from({ length: 11 }, (_, i) => {
+      const u = i / 10;
       return {
-        x: width * (0.18 + u * 0.72),
-        h: H * Math.sin(Math.PI * (0.1 + u * 0.85)) ** 0.8 * rand(0.75, 1.1),
-        lean: rand(-12, 12),
+        u,
+        h: Math.sin(Math.PI * (0.08 + u * 0.84)) * rand(0.85, 1.1),
+        lean: rand(-0.25, 0.1),
       };
     });
-    const crack = bolt({ x: -20, y: ground + 24 }, { x: width + 20, y: ground + 18 }, 26, 18);
-    const quakes = [0.1, 0.4, 0.7].map((at) => ({ at, done: false }));
+    const crack = bolt({ x: -20, y: ground + 10 }, { x: width + 20, y: ground + 6 }, 22, 20);
+    const quakes = [0.1, 0.45, 0.8, 1.15].map((at) => ({ at, done: false }));
+    const waves: number[] = [];
     let roared = false;
+
+    /** Cabeça de perfil (para a direita), origem na nuca; 1 unidade ≈ comprimento do crânio. */
+    const headPath = (ctx: CanvasRenderingContext2D) => {
+      ctx.beginPath();
+      ctx.moveTo(0, -0.02);
+      ctx.bezierCurveTo(0.04, -0.34, 0.28, -0.46, 0.46, -0.39);
+      ctx.quadraticCurveTo(0.56, -0.44, 0.63, -0.33);
+      ctx.bezierCurveTo(0.76, -0.31, 0.92, -0.28, 1.0, -0.19);
+      ctx.quadraticCurveTo(1.05, -0.12, 0.98, -0.09);
+      ctx.lineTo(0.34, -0.06);
+      ctx.lineTo(0.08, 0.08);
+      ctx.closePath();
+    };
+    const jawPath = (ctx: CanvasRenderingContext2D) => {
+      ctx.beginPath();
+      ctx.moveTo(0.34, -0.06);
+      ctx.lineTo(0.95, -0.08);
+      ctx.quadraticCurveTo(0.93, 0.02, 0.8, 0.05);
+      ctx.bezierCurveTo(0.6, 0.1, 0.42, 0.12, 0.28, 0.05);
+      ctx.closePath();
+    };
+    const teeth = (ctx: CanvasRenderingContext2D, y: number, dir: number) => {
+      ctx.fillStyle = '#e9dcc0';
+      for (let k = 0; k < 9; k++) {
+        const x = 0.42 + k * 0.06;
+        const len = (k % 2 ? 0.035 : 0.055) * (k === 1 || k === 6 ? 1.6 : 1);
+        ctx.beginPath();
+        ctx.moveTo(x - 0.015, y);
+        ctx.lineTo(x, y + dir * len);
+        ctx.lineTo(x + 0.015, y);
+        ctx.closePath();
+        ctx.fill();
+      }
+    };
+    const horn = (
+      ctx: CanvasRenderingContext2D,
+      x: number,
+      y: number,
+      sx: number,
+      sy: number,
+      w: number,
+    ) => {
+      const g = ctx.createLinearGradient(x, y, x + sx, y + sy);
+      g.addColorStop(0, '#5a4630');
+      g.addColorStop(0.6, '#c9b48c');
+      g.addColorStop(1, '#f1e6c8');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(x - w, y);
+      ctx.quadraticCurveTo(x + sx * 0.2, y + sy * 0.9, x + sx, y + sy);
+      ctx.quadraticCurveTo(x + sx * 0.35, y + sy * 0.6, x + w, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(40, 25, 10, 0.6)';
+      ctx.lineWidth = 0.006;
+      for (let k = 1; k < 5; k++) {
+        const u = k / 5;
+        ctx.beginPath();
+        ctx.moveTo(x - w * (1 - u) + sx * u * 0.3, y + sy * u * 0.75);
+        ctx.lineTo(x + w * (1 - u) + sx * u * 0.42, y + sy * u * 0.68);
+        ctx.stroke();
+      }
+    };
+
     return {
       frame(ctx, f) {
+        const t = f.time;
         for (const q of quakes) {
-          if (q.done || f.time < q.at) continue;
+          if (q.done || t < q.at) continue;
           q.done = true;
-          screenShake(260, 10);
+          screenShake(260, 8 + q.at * 6);
         }
-        if (!roared && f.time >= 1.6) {
+        const rise = easeOut((t - 0.5) / 1.1);
+        const jaw = t < 1.7 ? 0 : easeOut((t - 1.7) / 0.25) * (0.42 + Math.sin(t * 30) * 0.03);
+        if (!roared && t >= 1.75) {
           roared = true;
-          screenShake(900, 20);
-          for (let k = 0; k < 30; k++) {
-            const a = -rand(0.2, Math.PI - 0.2);
+          screenShake(1000, 22);
+          for (let k = 0; k < 40; k++) {
+            const a = -rand(0.1, Math.PI - 0.1);
             f.particles.push(
-              particle(k % 2 ? 'rock' : 'smoke', width * 0.16, ground - H * 0.3, {
-                vx: Math.cos(a) * rand(4, 12),
+              particle(k % 3 ? 'rock' : 'smoke', rand(0, width), ground - rand(0, 40), {
+                vx: Math.cos(a) * rand(2, 9),
                 vy: Math.sin(a) * rand(4, 12),
-                gravity: 0.25,
+                gravity: 0.3,
                 vr: 0.2,
-                max: 90,
-                size: k % 2 ? rand(4, 10) : rand(30, 60),
-                color: '120, 90, 60',
+                max: 100,
+                size: k % 3 ? rand(4, 12) : rand(30, 70),
+                color: '110, 80, 55',
               }),
             );
           }
         }
-        const rise = easeOut((f.time - 0.6) / 1);
+        if (roared && t < 3 && waves.length < 6 && t - 1.75 > waves.length * 0.18) waves.push(t);
+
         ctx.save();
         ctx.globalAlpha = f.presence;
-        ctx.fillStyle = `rgba(20, 8, 2, ${0.7 * clamp01(f.time / 0.4)})`;
+        // Céu de fim de mundo.
+        const sky = ctx.createLinearGradient(0, 0, 0, height);
+        sky.addColorStop(0, `rgba(25, 6, 2, ${0.85 * clamp01(t / 0.4)})`);
+        sky.addColorStop(0.7, `rgba(90, 25, 6, ${0.8 * clamp01(t / 0.4)})`);
+        sky.addColorStop(1, `rgba(160, 50, 10, ${0.75 * clamp01(t / 0.4)})`);
+        ctx.fillStyle = sky;
         ctx.fillRect(0, 0, width, height);
-        // Dorso e espinhos.
-        ctx.fillStyle = '#2b1d14';
+
+        // Carapaça de espinhos atrás das montanhas.
+        const backX = width * 0.62;
+        const backW = width * 0.46;
+        const backH = unit * 0.55 * rise;
+        const shell = ctx.createLinearGradient(0, ground - backH, 0, ground);
+        shell.addColorStop(0, '#3b2a1c');
+        shell.addColorStop(1, '#120b06');
+        ctx.fillStyle = shell;
         ctx.beginPath();
-        ctx.ellipse(width * 0.55, ground, width * 0.42, H * 0.38 * rise, 0, Math.PI, 0);
+        ctx.ellipse(backX, ground, backW, backH, 0, Math.PI, 0);
         ctx.fill();
-        ctx.strokeStyle = '#7a5434';
-        ctx.lineWidth = 3;
-        for (const sp of spikes) {
-          const tipY = ground - sp.h * rise;
+        for (const p of plates) {
+          const px = backX - backW * 0.92 + p.u * backW * 1.84;
+          const base = ground - Math.sqrt(Math.max(0, 1 - ((px - backX) / backW) ** 2)) * backH;
+          const len = unit * 0.28 * p.h * rise;
+          const g = ctx.createLinearGradient(px, base, px, base - len);
+          g.addColorStop(0, '#2a1d12');
+          g.addColorStop(1, '#d9c8a2');
+          ctx.fillStyle = g;
           ctx.beginPath();
-          ctx.moveTo(sp.x - width * 0.028, ground - sp.h * rise * 0.45);
-          ctx.lineTo(sp.x + sp.lean, tipY);
-          ctx.lineTo(sp.x + width * 0.028, ground - sp.h * rise * 0.45);
+          ctx.moveTo(px - unit * 0.035, base + 6);
+          ctx.quadraticCurveTo(
+            px + len * p.lean,
+            base - len * 0.6,
+            px + len * (p.lean - 0.15),
+            base - len,
+          );
+          ctx.quadraticCurveTo(px + unit * 0.01, base - len * 0.4, px + unit * 0.035, base + 6);
           ctx.closePath();
           ctx.fill();
-          ctx.stroke();
         }
-        // Cabeça com chifres e o olho.
-        const head = rise * clamp01((f.time - 1) / 0.5);
+
+        // Pescoço e cabeça.
+        const head = easeOut((t - 0.85) / 0.9);
         if (head > 0) {
-          const hx = width * 0.14;
-          const hy = ground - H * 0.28 * head;
-          ctx.fillStyle = '#2b1d14';
+          const s = unit * 0.62;
+          const hx = width * 0.08;
+          const hy = ground - unit * 0.72 * head + Math.sin(t * 3) * 4;
+          // Pescoço grosso descendo para fora da tela.
+          ctx.fillStyle = '#1d140c';
           ctx.beginPath();
-          ctx.ellipse(hx, hy, width * 0.09, H * 0.2, -0.3, 0, Math.PI * 2);
+          ctx.moveTo(hx - s * 0.05, hy - s * 0.1);
+          ctx.quadraticCurveTo(hx - s * 0.3, hy + s * 0.4, hx - s * 0.25, ground + 40);
+          ctx.lineTo(hx + s * 0.55, ground + 40);
+          ctx.quadraticCurveTo(hx + s * 0.35, hy + s * 0.3, hx + s * 0.3, hy + s * 0.02);
+          ctx.closePath();
           ctx.fill();
-          ctx.strokeStyle = '#d8c8a8';
-          ctx.lineWidth = 10;
-          ctx.lineCap = 'round';
-          for (const side of [-1, 1]) {
+          ctx.save();
+          ctx.translate(hx, hy);
+          ctx.scale(s, s);
+          ctx.rotate(-0.12 - jaw * 0.25);
+          horn(ctx, 0.3, -0.36, -0.55, -0.4, 0.07);
+          // Boca por dentro (brasa) quando abre.
+          if (jaw > 0) {
+            const inner = ctx.createRadialGradient(0.6, 0, 0, 0.6, 0, 0.5);
+            inner.addColorStop(0, `rgba(255, 170, 60, ${jaw * 2})`);
+            inner.addColorStop(1, 'rgba(90, 10, 0, 1)');
+            ctx.fillStyle = inner;
             ctx.beginPath();
-            ctx.moveTo(hx + side * 20, hy - H * 0.12);
-            ctx.quadraticCurveTo(hx + side * 60, hy - H * 0.4, hx + side * 20, hy - H * 0.5);
+            ctx.moveTo(0.3, -0.06);
+            ctx.lineTo(0.98, -0.1);
+            ctx.lineTo(0.95, 0.35);
+            ctx.closePath();
+            ctx.fill();
+          }
+          // Mandíbula (gira na articulação).
+          ctx.save();
+          ctx.translate(0.34, -0.06);
+          ctx.rotate(jaw);
+          ctx.translate(-0.34, 0.06);
+          const jg = ctx.createLinearGradient(0, -0.1, 0, 0.15);
+          jg.addColorStop(0, '#3a2818');
+          jg.addColorStop(1, '#140c06');
+          ctx.fillStyle = jg;
+          jawPath(ctx);
+          ctx.fill();
+          teeth(ctx, -0.07, -1);
+          ctx.restore();
+          // Crânio.
+          const hg = ctx.createLinearGradient(0, -0.45, 0, 0.05);
+          hg.addColorStop(0, '#4a3420');
+          hg.addColorStop(0.55, '#2b1d12');
+          hg.addColorStop(1, '#140c06');
+          ctx.fillStyle = hg;
+          headPath(ctx);
+          ctx.fill();
+          // Luz da lava por baixo.
+          ctx.strokeStyle = 'rgba(255, 120, 40, 0.55)';
+          ctx.lineWidth = 0.02;
+          ctx.beginPath();
+          ctx.moveTo(0.36, -0.05);
+          ctx.lineTo(0.98, -0.09);
+          ctx.stroke();
+          teeth(ctx, -0.06, 1);
+          // Escamas e sulcos.
+          ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+          ctx.lineWidth = 0.008;
+          for (let k = 0; k < 6; k++) {
+            ctx.beginPath();
+            ctx.arc(0.18 + k * 0.08, -0.22 + (k % 2) * 0.04, 0.05, Math.PI * 0.1, Math.PI * 0.9);
             ctx.stroke();
           }
-          ctx.save();
-          ctx.translate(hx + 30, hy - 10);
-          drawBeastEye(ctx, 34, head, -0.3, ['#fff6b0', '#ff7a1a', '#5a1000'], 0.07);
+          // Chifre do focinho e chifre da frente.
+          horn(ctx, 0.88, -0.27, 0.05, -0.16, 0.03);
+          horn(ctx, 0.42, -0.4, -0.3, -0.48, 0.05);
+          // Sobrancelha óssea e olho em brasa.
+          ctx.fillStyle = '#5a422a';
+          ctx.beginPath();
+          ctx.ellipse(0.55, -0.35, 0.09, 0.03, -0.2, 0, Math.PI * 2);
+          ctx.fill();
           ctx.restore();
+          ctx.save();
+          const ex = hx + (0.55 * Math.cos(-0.12) + 0.28 * Math.sin(-0.12)) * s;
+          const ey = hy + (-0.28 * Math.cos(-0.12) + 0.55 * Math.sin(-0.12)) * s;
+          ctx.translate(ex, ey);
+          drawBeastEye(
+            ctx,
+            s * 0.06,
+            clamp01((t - 1.1) / 0.3),
+            -0.2,
+            ['#fff6b0', '#ff7a1a', '#5a1000'],
+            0.06,
+          );
+          ctx.restore();
+          // Ondas do urro saindo da boca.
+          ctx.globalCompositeOperation = 'lighter';
+          for (const at of waves) {
+            const age = t - at;
+            const r = age * width * 0.7;
+            const alpha = Math.max(0, 0.5 - age * 0.35);
+            if (alpha <= 0) continue;
+            ctx.strokeStyle = `rgba(255, 190, 120, ${alpha})`;
+            ctx.lineWidth = 10 * (1 - age * 0.4);
+            ctx.beginPath();
+            ctx.arc(hx + s * 0.9, hy, r, -0.7, 0.7);
+            ctx.stroke();
+          }
+          ctx.globalCompositeOperation = 'source-over';
         }
+
+        // Montanhas na frente (dão a escala do monstro).
+        ctx.fillStyle = '#0b0603';
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+        for (const p of peaks) ctx.lineTo(p.x, ground - p.h * 0.5);
+        ctx.lineTo(width, height);
+        ctx.closePath();
+        ctx.fill();
+
         // Fenda de lava.
-        const gap = 18 * clamp01((f.time - 0.3) / 0.8);
+        const gap = 16 * clamp01((t - 0.3) / 0.8);
         if (gap > 0) {
           ctx.globalCompositeOperation = 'lighter';
-          ctx.strokeStyle = 'rgba(255, 120, 30, 0.9)';
+          ctx.strokeStyle = 'rgba(255, 110, 25, 0.9)';
           ctx.lineWidth = gap;
           ctx.lineJoin = 'round';
           ctx.beginPath();
           crack.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
           ctx.stroke();
-          ctx.strokeStyle = 'rgba(255, 230, 150, 0.9)';
+          ctx.strokeStyle = 'rgba(255, 235, 160, 0.9)';
           ctx.lineWidth = gap * 0.3;
           ctx.stroke();
         }
         ctx.restore();
-        if (f.emitting && f.particles.length < MAX_PARTICLES && Math.random() < 0.3)
+        if (f.emitting && f.particles.length < MAX_PARTICLES && Math.random() < 0.4)
           f.particles.push(
-            particle('ember', rand(0, width), ground + 20, {
-              vy: -rand(2, 5),
+            particle('ember', rand(0, width), ground + 10, {
+              vy: -rand(2, 6),
               vx: rand(-1, 1),
-              max: 80,
-              size: rand(1.2, 2.4),
+              max: 90,
+              size: rand(1.2, 2.6),
               color: '255, 150, 60',
             }),
           );
@@ -9784,15 +10083,18 @@ const FAILS: Record<DiceAura, FailScene> = {
         ctx.textBaseline = 'middle';
         for (const half of cut ? [-1, 1] : [0]) {
           ctx.save();
-          ctx.beginPath();
-          if (half === -1) ctx.rect(0, 0, width, y0);
-          else if (half === 1) ctx.rect(0, y0, width, size * 2);
-          else ctx.rect(0, 0, width, y0 + size);
-          ctx.clip();
+          // Cada metade se move com o próprio recorte (antes o recorte ficava parado e o texto
+          // inteiro entrava nele ao cair, parecendo dois "CRÍTICO!").
           if (half === -1) {
-            ctx.translate(-slide * 160, -slide * 40 + slide * slide * 400);
+            ctx.translate(width / 2 - slide * 160, y0 - slide * 40 + slide * slide * 400);
             ctx.rotate(-slide * 0.4);
+            ctx.translate(-width / 2, -y0);
           } else if (half === 1) ctx.translate(slide * 30, slide * slide * 200);
+          ctx.beginPath();
+          if (half === -1) ctx.rect(0, y0 - size, width, size);
+          else if (half === 1) ctx.rect(0, y0, width, size);
+          else ctx.rect(0, y0 - size, width, size * 2);
+          ctx.clip();
           ctx.fillStyle = '#f3e6ff';
           ctx.shadowColor = '#a24bff';
           ctx.shadowBlur = 18;

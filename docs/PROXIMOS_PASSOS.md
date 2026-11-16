@@ -2648,3 +2648,20 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto ne
 - Migração `20261116110000_dice_auras_nine.sql` (aplicada).
 
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.
+
+### 2026-11-16 — Auras: Tarrasque e Deus do Sol refeitos, falha do Vazio Roxo corrigida
+
+- **Tarrasque (crítico):**
+  - céu de fim de mundo e montanhas na frente, para dar escala;
+  - carapaça de placas e espinhos curvos subindo;
+  - cabeça de réptil em perfil, com crânio, chifres e dentes, e um olho em brasa;
+  - a mandíbula se abre no urro, com ondas de choque saindo da boca.
+- **Deus do Sol / Gear 5 (crítico):** desenho animado em tinta, com:
+  - linhas de ação e retícula;
+  - um sol de borracha gargalhando (olhos fechados, lágrimas, boca com dentes) dentro de um anel
+    de nuvens;
+  - "DUM!" a cada batida do tambor;
+  - o "CRÍTICO!" esticando como borracha, com sombra chapada.
+- **Vazio Roxo (falha):** o recorte de cada metade do "CRÍTICO!" agora se move junto com ela.
+  Antes o recorte ficava parado e o texto inteiro entrava nele ao cair (apareciam dois).
+- Verificado só com typecheck e lint; falta ver no navegador (Meus dados → mesa de teste).

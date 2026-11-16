@@ -1,6 +1,9 @@
 # Progresso do Codexveil
 
-> Documento de retomada. Última atualização: **2026-11-03**. Para retomar o trabalho em andamento, veja primeiro a seção "Continuidade" de [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md#continuidade-parada-em-2026-10-19-retomar-em-outra-máquina).
+> Documento de retomada. Última atualização: **2026-11-16 (auras):** Tarrasque e Deus do Sol (Gear 5) refeitos no crítico; corrigida a falha do Vazio Roxo, que mostrava dois "CRÍTICO!" em vez de um cortado ao meio. Typecheck e lint passaram; falta conferir no navegador.
+
+**2026-11-03**. Para retomar o trabalho em andamento, veja primeiro a seção "Continuidade" de [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md#continuidade-parada-em-2026-10-19-retomar-em-outra-máquina).
+
 > O que falta em relação ao prompt inicial está em [`PENDENCIAS.md`](PENDENCIAS.md).
 
 ## Estado atual
