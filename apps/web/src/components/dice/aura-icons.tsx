@@ -1,6 +1,7 @@
 import { diceAuraLabels, type DiceAura } from '@codexveil/validation';
 import {
   Binary,
+  Wind,
   Cat,
   FlaskConical,
   Music,
@@ -86,6 +87,25 @@ function MeteorIcon({ className, ...props }: LucideProps) {
   );
 }
 
+/** Pentagrama no círculo. */
+function PentagramIcon({ className, ...props }: LucideProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      {...props}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 3.5 17 19 4 9.5h16L7 19z" />
+    </svg>
+  );
+}
+
 const ICONS: Record<DiceAura, ComponentType<LucideProps>> = {
   blood: Droplet,
   storm: CloudLightning,
@@ -112,6 +132,8 @@ const ICONS: Record<DiceAura, ComponentType<LucideProps>> = {
   cat: Cat,
   meteor: MeteorIcon,
   party: PartyPopper,
+  wind: Wind,
+  ritual: PentagramIcon,
 };
 
 /** Ícone da aura, na cor dela e com um leve brilho. */

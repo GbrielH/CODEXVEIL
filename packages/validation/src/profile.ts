@@ -101,6 +101,8 @@ export const DICE_AURAS = [
   'cat',
   'meteor',
   'party',
+  'wind',
+  'ritual',
 ] as const;
 export type DiceAura = (typeof DICE_AURAS)[number];
 export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> = {
@@ -129,6 +131,8 @@ export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> =
   cat: { name: 'Gato', color: '#ffb3cf' },
   meteor: { name: 'Meteoro', color: '#ff8c42' },
   party: { name: 'Festa', color: '#ff6ad5' },
+  wind: { name: 'Vento', color: '#bfe8f0' },
+  ritual: { name: 'Ritual', color: '#ff2a2a' },
 };
 
 export const diceFontLabels: Record<DiceFont, { name: string; family: string }> = {

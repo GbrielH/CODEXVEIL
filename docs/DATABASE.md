@@ -439,3 +439,5 @@ Migração `20261115130000_dice_aura_skeleton.sql`: aura `skeleton` aceita em `u
 Migração `20261115140000_dice_auras_eight.sql`: auras `cosmic`, `tarot`, `glitch`, `ink`, `abyss`, `time`, `gold` e `frog` aceitas em `user_dice.aura` e `dice_aura_grants.aura`.
 
 Migração `20261115150000_dice_auras_seven.sql`: auras `vampire`, `bard`, `rainbow`, `poison`, `cat`, `meteor` e `party` aceitas em `user_dice.aura` e `dice_aura_grants.aura`.
+
+Migração `20261115160000_dice_aura_wind.sql`: auras `wind` (vento) e `ritual` aceitas em `user_dice.aura` e `dice_aura_grants.aura`.

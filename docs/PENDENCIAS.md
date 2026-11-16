@@ -1016,3 +1016,24 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto no
 - Migração `20261115150000_dice_auras_seven.sql` (aplicada).
 
 Verificações: `pnpm check` (20 tarefas; banco 255 testes) e `pnpm build` passaram. Não visto no navegador por mim.
+
+### 2026-11-15 — críticos refeitos, Vento e Ritual
+
+- **Sombra:** a escuridão fecha a tela até sobrar um círculo de luz no texto, com tentáculos de sombra e olhos no escuro; depois recua.
+- **Abissal:** kraken — a água sobe, um olho gigante surge e quatro tentáculos esmagam a tela, rachando onde batem (tremor e destroços).
+- **Bardo:** partituras ondulando com notas correndo, clave de sol e explosão de notas; som virou melodia de alaúde.
+- **Gato:** um gato espia do rodapé e dá tapas no "CRÍTICO!" até jogá-lo para fora da tela; mia no fim.
+- **Festa:** bola de espelhos com luzes varrendo a tela, fogos de artifício sincronizados com o som e confete.
+- **Engrenagens:** trens de engrenagens engatadas no alto e embaixo, engrenagem enorme atrás do texto, vapor, faíscas e arcos elétricos.
+- **Floresta:** árvores crescendo do chão com folhas e flores, pétalas caindo.
+- **Veneno:** a fumaça tóxica sobe de baixo.
+- **Tinta:** papel de arroz por trás, pincelada mais grossa e carimbo vermelho.
+- **Esqueleto:** lápides sobem do chão e mãos de esqueleto saem da terra.
+- **Gelo:** cobre a tela inteira e, no fim, se estilhaça em cacos (com som).
+- **Sapo Rei:** a língua agora sai da boca (era desenhada por trás do sapo).
+- **Glitch:** 10% de chance de a página ficar em negativo até recarregar (de propósito).
+- **Olho Cósmico:** mais hostil (veias, íris em brasa, pupila em fenda, pálpebra franzida e olhar fixo).
+- **Novas:** **Vento** (redemoinho no dado; tornado com detritos e uma vaca no crítico) e **Ritual** (pentagrama girando no dado; pentagrama demoníaco traçado com velas, runas e chamas no crítico).
+- Momentos compartilhados entre cena e som em `AURA_TIMINGS` (`aura-sound.ts`). Migração `20261115160000_dice_aura_wind.sql` (aplicada).
+
+Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.
