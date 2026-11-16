@@ -348,6 +348,12 @@ const RGB: Record<DiceAura, string> = {
   darklord: '255, 36, 36',
   notebook: '190, 190, 205',
   orbs: '255, 163, 26',
+  sakura: '255, 179, 207',
+  phoenix: '255, 138, 42',
+  kitsune: '124, 200, 255',
+  mirror: '216, 236, 248',
+  aurora: '92, 255, 176',
+  zombie: '143, 191, 106',
 };
 
 function reducedMotion(): boolean {
@@ -1756,6 +1762,84 @@ function emitAround(aura: DiceAura, o: AuraPoint, out: Particle[], power: number
             max: 40,
             size: rand(6, 10) * s,
             color: '15, 15, 20',
+          }),
+        );
+      break;
+    case 'sakura':
+      if (chance(0.3))
+        out.push(
+          particle('leaf', from.x, from.y, {
+            vx: rand(-0.6, 0.6) * s,
+            vy: rand(0.2, 0.8) * s,
+            max: 50,
+            size: rand(3, 5) * s,
+            color: '255, 190, 215',
+          }),
+        );
+      break;
+    case 'phoenix':
+      if (chance(0.5))
+        out.push(
+          particle('ember', from.x, from.y, {
+            vy: -rand(0.6, 1.4) * s,
+            max: rand(25, 40),
+            size: rand(1.2, 2.2) * s,
+            color: '255, 150, 50',
+          }),
+        );
+      if (chance(0.06))
+        out.push(
+          particle('feather', from.x, from.y, {
+            vy: -rand(0.3, 0.8) * s,
+            max: 50,
+            size: rand(5, 8) * s,
+            color: '255, 120, 40',
+          }),
+        );
+      break;
+    case 'kitsune':
+      if (chance(0.25))
+        out.push(
+          particle('wisp', from.x, from.y, {
+            vy: -rand(0.4, 1) * s,
+            max: rand(30, 45),
+            size: rand(3, 5) * s,
+            color: '110, 190, 255',
+          }),
+        );
+      break;
+    case 'mirror':
+      if (chance(0.12))
+        out.push(
+          particle('shard', from.x, from.y, {
+            vx: rand(-1, 1) * s,
+            vy: rand(-1, 0) * s,
+            gravity: 0.1,
+            vr: 0.1,
+            max: 40,
+            size: rand(3, 6) * s,
+          }),
+        );
+      break;
+    case 'aurora':
+      if (chance(0.4))
+        out.push(
+          particle('mote', from.x, from.y, {
+            vy: -rand(0.4, 1) * s,
+            max: rand(30, 45),
+            size: rand(1.2, 2) * s,
+            color: pick(['92, 255, 176', '120, 200, 255', '200, 120, 255']),
+          }),
+        );
+      break;
+    case 'zombie':
+      if (chance(0.3))
+        out.push(
+          particle('smoke', from.x, from.y, {
+            vy: -rand(0.3, 0.7) * s,
+            max: 40,
+            size: rand(6, 10) * s,
+            color: '90, 150, 70',
           }),
         );
       break;
@@ -8401,6 +8485,512 @@ const SCENES: Partial<
       },
     };
   },
+  sakura: (width, height) => {
+    // Um galho cresce pelo canto, as flores abrem e uma ventania de pétalas atravessa a tela.
+    const branch = bolt({ x: -20, y: height * 0.15 }, { x: width * 0.55, y: height * 0.3 }, 40, 12);
+    const blossoms = branch.slice(2).map((p, i) => ({ ...p, at: 0.4 + i * 0.08, r: rand(10, 18) }));
+    const petals = Array.from({ length: 140 }, () => ({
+      x: rand(-width * 0.5, width),
+      y: rand(-height * 0.2, height),
+      v: rand(3, 7),
+      s: rand(5, 10),
+      spin: rand(0, 6),
+    }));
+    const petal = (ctx: CanvasRenderingContext2D, x: number, y: number, s: number, a: number) => {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(a);
+      ctx.fillStyle = '#ffc4da';
+      ctx.beginPath();
+      ctx.moveTo(0, -s);
+      ctx.quadraticCurveTo(s * 0.9, -s * 0.2, 0, s);
+      ctx.quadraticCurveTo(-s * 0.9, -s * 0.2, 0, -s);
+      ctx.fill();
+      ctx.restore();
+    };
+    return {
+      frame(ctx, f) {
+        const t = f.time;
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        const sky = ctx.createLinearGradient(0, 0, 0, height);
+        sky.addColorStop(0, `rgba(255, 210, 225, ${0.55 * clamp01(t / 0.4)})`);
+        sky.addColorStop(1, `rgba(120, 60, 110, ${0.6 * clamp01(t / 0.4)})`);
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, width, height);
+        // Lua cheia rosada.
+        ctx.globalCompositeOperation = 'lighter';
+        blit(ctx, softSprite('255, 220, 235'), width * 0.78, height * 0.22, 120, 0.7);
+        ctx.globalCompositeOperation = 'source-over';
+        // Galho crescendo.
+        const grown = clamp01(t / 0.8) * (branch.length - 1);
+        ctx.strokeStyle = '#3a2228';
+        ctx.lineCap = 'round';
+        for (let i = 0; i < Math.floor(grown); i++) {
+          ctx.lineWidth = 14 - i * 0.9;
+          ctx.beginPath();
+          ctx.moveTo(branch[i]!.x, branch[i]!.y);
+          ctx.lineTo(branch[i + 1]!.x, branch[i + 1]!.y);
+          ctx.stroke();
+        }
+        for (const b of blossoms) {
+          const open = easeOut((t - b.at) / 0.3);
+          if (open <= 0) continue;
+          for (let k = 0; k < 5; k++)
+            petal(
+              ctx,
+              b.x + Math.cos((k / 5) * 6.28) * b.r * 0.5 * open,
+              b.y + Math.sin((k / 5) * 6.28) * b.r * 0.5 * open,
+              b.r * 0.6 * open,
+              (k / 5) * 6.28 + Math.PI / 2,
+            );
+          ctx.fillStyle = '#ffef9a';
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.r * 0.18 * open, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // Ventania de pétalas.
+        const gust = clamp01((t - 0.9) / 0.5);
+        if (gust > 0)
+          for (const p of petals) {
+            p.x += p.v * gust * 1.6;
+            p.y += Math.sin(t * 3 + p.spin) * 1.2 + 0.8;
+            if (p.x > width + 20) p.x = -20;
+            if (p.y > height + 20) p.y = -20;
+            petal(ctx, p.x, p.y, p.s, t * 4 + p.spin);
+          }
+        ctx.restore();
+      },
+    };
+  },
+  phoenix: (width, height) => {
+    // Cinzas no chão; uma brasa acende, vira chama e a fênix ergue as asas de fogo, subindo.
+    const cx = width / 2;
+    const ground = height * 0.85;
+    let burst = false;
+    const wing = (ctx: CanvasRenderingContext2D, side: number, open: number, flap: number) => {
+      ctx.save();
+      ctx.scale(side, 1);
+      for (let k = 0; k < 7; k++) {
+        const a = -0.2 - k * 0.18 * open + flap * 0.3;
+        const len = (180 + k * 22) * open;
+        const g = ctx.createLinearGradient(0, 0, Math.cos(a) * len, Math.sin(a) * len);
+        g.addColorStop(0, 'rgba(255, 240, 160, 0.95)');
+        g.addColorStop(0.5, 'rgba(255, 120, 30, 0.85)');
+        g.addColorStop(1, 'rgba(200, 20, 10, 0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(
+          Math.cos(a - 0.2) * len * 0.6,
+          Math.sin(a - 0.2) * len * 0.6,
+          Math.cos(a) * len,
+          Math.sin(a) * len,
+        );
+        ctx.quadraticCurveTo(Math.cos(a + 0.15) * len * 0.5, Math.sin(a + 0.15) * len * 0.5, 0, 12);
+        ctx.fill();
+      }
+      ctx.restore();
+    };
+    return {
+      frame(ctx, f) {
+        const t = f.time;
+        const rise = easeOut((t - 0.9) / 1.6);
+        if (!burst && t > 0.9) {
+          burst = true;
+          screenShake(400, 10);
+          for (let k = 0; k < 60; k++) {
+            const a = rand(0, Math.PI * 2);
+            f.particles.push(
+              particle('ember', cx, ground - 20, {
+                vx: Math.cos(a) * rand(2, 9),
+                vy: Math.sin(a) * rand(2, 9) - 3,
+                max: 70,
+                size: rand(1.5, 3),
+                color: '255, 170, 60',
+              }),
+            );
+          }
+        }
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.fillStyle = `rgba(20, 4, 2, ${0.7 * clamp01(t / 0.4)})`;
+        ctx.fillRect(0, 0, width, height);
+        // Monte de cinzas com a brasa.
+        ctx.fillStyle = '#2c2522';
+        ctx.beginPath();
+        ctx.ellipse(cx, ground, 160, 40, 0, Math.PI, 0);
+        ctx.fill();
+        ctx.globalCompositeOperation = 'lighter';
+        const ember = t < 0.9 ? clamp01(t / 0.8) : 1 - rise * 0.6;
+        blit(ctx, softSprite('255, 120, 30'), cx, ground - 20, 40 + ember * 80, ember);
+        if (t > 0.9) {
+          const y = ground - 80 - rise * height * 0.4;
+          const flap = Math.sin(t * 7);
+          blit(ctx, softSprite('255, 150, 40'), cx, y, 260, 0.5);
+          ctx.save();
+          ctx.translate(cx, y);
+          wing(ctx, 1, rise, flap);
+          wing(ctx, -1, rise, flap);
+          // Corpo e cabeça.
+          ctx.fillStyle = 'rgba(255, 220, 120, 0.95)';
+          ctx.beginPath();
+          ctx.ellipse(0, 10, 22, 50, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(0, -48, 16, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255, 250, 220, 1)';
+          ctx.beginPath();
+          ctx.moveTo(10, -50);
+          ctx.lineTo(30, -44);
+          ctx.lineTo(10, -40);
+          ctx.fill();
+          // Cauda de fogo.
+          for (let k = 0; k < 3; k++) {
+            ctx.strokeStyle = `rgba(255, ${140 - k * 40}, 40, 0.7)`;
+            ctx.lineWidth = 10 - k * 2;
+            ctx.beginPath();
+            ctx.moveTo(0, 55);
+            ctx.quadraticCurveTo((k - 1) * 60 + flap * 20, 140, (k - 1) * 40, 220 * rise);
+            ctx.stroke();
+          }
+          ctx.restore();
+          if (f.emitting && f.particles.length < MAX_PARTICLES)
+            f.particles.push(
+              particle('flame', cx + rand(-40, 40), y + 60, {
+                vy: rand(1, 3),
+                max: 40,
+                size: rand(8, 16),
+                color: '255, 140, 40',
+              }),
+            );
+        }
+        ctx.restore();
+      },
+    };
+  },
+  kitsune: (width, height) => {
+    // Fogos-fátuos azuis acendem um a um; atrás deles, a sombra de uma raposa com nove caudas
+    // abre as caudas em leque e os olhos brilham.
+    const cx = width / 2;
+    const cy = height * 0.52;
+    const lights = Array.from({ length: 9 }, (_, i) => ({
+      a: -Math.PI + (i / 8) * Math.PI,
+      at: 0.2 + i * 0.1,
+    }));
+    return {
+      frame(ctx, f) {
+        const t = f.time;
+        const fan = easeOut((t - 1) / 0.8);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.fillStyle = `rgba(4, 6, 24, ${0.8 * clamp01(t / 0.4)})`;
+        ctx.fillRect(0, 0, width, height);
+        const R = Math.min(width, height) * 0.38;
+        // Caudas.
+        if (fan > 0)
+          for (let k = 0; k < 9; k++) {
+            const a = -Math.PI / 2 + (k - 4) * 0.28 * fan + Math.sin(t * 2 + k) * 0.05;
+            const tipX = cx + Math.cos(a) * R;
+            const tipY = cy + Math.sin(a) * R;
+            const g = ctx.createLinearGradient(cx, cy, tipX, tipY);
+            g.addColorStop(0, '#1a1a3a');
+            g.addColorStop(0.85, '#2a2a5a');
+            g.addColorStop(1, '#bfe6ff');
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.moveTo(cx - 14, cy);
+            ctx.quadraticCurveTo(
+              cx + Math.cos(a - 0.3) * R * 0.6,
+              cy + Math.sin(a - 0.3) * R * 0.6,
+              tipX,
+              tipY,
+            );
+            ctx.quadraticCurveTo(
+              cx + Math.cos(a + 0.3) * R * 0.6,
+              cy + Math.sin(a + 0.3) * R * 0.6,
+              cx + 14,
+              cy,
+            );
+            ctx.closePath();
+            ctx.fill();
+          }
+        // Corpo e cabeça (silhueta).
+        ctx.fillStyle = '#0e0e24';
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 40, 60, 80, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(cx - 45, cy - 40);
+        ctx.lineTo(cx - 50, cy - 110);
+        ctx.lineTo(cx - 15, cy - 70);
+        ctx.lineTo(cx + 15, cy - 70);
+        ctx.lineTo(cx + 50, cy - 110);
+        ctx.lineTo(cx + 45, cy - 40);
+        ctx.lineTo(cx, cy + 5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalCompositeOperation = 'lighter';
+        const eyes = clamp01((t - 1.4) / 0.3);
+        for (const side of [-1, 1])
+          blit(ctx, glowSprite('120, 220, 255'), cx + side * 18, cy - 40, 12, eyes);
+        // Fogos-fátuos em arco.
+        for (const l of lights) {
+          const on = clamp01((t - l.at) / 0.2);
+          if (on <= 0) continue;
+          const x = cx + Math.cos(l.a) * R * 1.1;
+          const y = cy + 60 + Math.sin(l.a) * R * 0.9 + Math.sin(t * 3 + l.a * 4) * 8;
+          blit(ctx, softSprite('80, 170, 255'), x, y, 40, on * 0.8);
+          blit(ctx, glowSprite('200, 240, 255'), x, y, 12, on);
+        }
+        ctx.restore();
+      },
+    };
+  },
+  mirror: (width, height) => {
+    // Um estalo: rachaduras correm a partir do centro, a tela vira um espelho partido e os cacos
+    // caem, cada um refletindo um brilho.
+    const cx = width / 2;
+    const cy = height * 0.45;
+    const cracks = Array.from({ length: 14 }, (_, i) => {
+      const a = (i / 14) * Math.PI * 2 + rand(-0.1, 0.1);
+      return bolt(
+        { x: cx, y: cy },
+        { x: cx + Math.cos(a) * width, y: cy + Math.sin(a) * width },
+        30,
+        9,
+      );
+    });
+    const shards = Array.from({ length: 24 }, () => {
+      const a = rand(0, Math.PI * 2);
+      const d = rand(40, Math.min(width, height) * 0.45);
+      return {
+        x: cx + Math.cos(a) * d,
+        y: cy + Math.sin(a) * d,
+        vx: rand(-2, 2),
+        vy: rand(-2, 1),
+        r: rand(14, 34),
+        rot: rand(0, 6),
+        vr: rand(-0.1, 0.1),
+      };
+    });
+    let snapped = false;
+    return {
+      frame(ctx, f) {
+        const t = f.time;
+        if (!snapped && t > 0.35) {
+          snapped = true;
+          screenShake(250, 9);
+        }
+        const run = clamp01((t - 0.35) / 0.35);
+        const fall = Math.max(0, t - 1.3);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        const glass = ctx.createLinearGradient(0, 0, width, height);
+        glass.addColorStop(0, 'rgba(180, 210, 230, 0.35)');
+        glass.addColorStop(0.5, 'rgba(240, 250, 255, 0.15)');
+        glass.addColorStop(1, 'rgba(120, 150, 180, 0.35)');
+        ctx.fillStyle = glass;
+        ctx.fillRect(0, 0, width, height);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.lineWidth = 2;
+        for (const c of cracks) {
+          const n = Math.max(1, Math.floor(c.length * run));
+          ctx.beginPath();
+          ctx.moveTo(c[0]!.x, c[0]!.y);
+          for (let i = 1; i < n; i++) ctx.lineTo(c[i]!.x, c[i]!.y);
+          ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.arc(cx, cy, 30 * run, 0, Math.PI * 2);
+        ctx.stroke();
+        if (fall > 0)
+          for (const s of shards) {
+            s.vy += 0.35;
+            s.x += s.vx;
+            s.y += s.vy;
+            s.rot += s.vr;
+            ctx.save();
+            ctx.translate(s.x, s.y);
+            ctx.rotate(s.rot);
+            ctx.fillStyle = 'rgba(200, 225, 245, 0.55)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.beginPath();
+            ctx.moveTo(0, -s.r);
+            ctx.lineTo(s.r * 0.7, s.r * 0.4);
+            ctx.lineTo(-s.r * 0.6, s.r * 0.6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.globalCompositeOperation = 'lighter';
+            blit(
+              ctx,
+              glowSprite('255, 255, 255'),
+              s.r * 0.1,
+              -s.r * 0.3,
+              6,
+              0.5 + 0.5 * Math.sin(t * 9 + s.rot),
+            );
+            ctx.restore();
+          }
+        ctx.restore();
+      },
+    };
+  },
+  aurora: (width, height) => {
+    // Noite polar: estrelas, montanhas nevadas e cortinas verdes e roxas ondulando no céu.
+    const stars = Array.from({ length: 90 }, () => ({
+      x: rand(0, width),
+      y: rand(0, height * 0.6),
+      r: rand(0.5, 1.6),
+    }));
+    const curtains = [
+      { y: 0.18, rgb: '80, 255, 160', speed: 1.1 },
+      { y: 0.28, rgb: '120, 200, 255', speed: 0.8 },
+      { y: 0.36, rgb: '200, 110, 255', speed: 1.4 },
+    ];
+    return {
+      frame(ctx, f) {
+        const t = f.time;
+        const on = clamp01((t - 0.3) / 0.8);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        const sky = ctx.createLinearGradient(0, 0, 0, height);
+        sky.addColorStop(0, `rgba(2, 6, 20, ${0.85 * clamp01(t / 0.4)})`);
+        sky.addColorStop(1, `rgba(10, 30, 50, ${0.85 * clamp01(t / 0.4)})`);
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = '#fff';
+        for (const s of stars) {
+          ctx.globalAlpha = f.presence * (0.5 + 0.5 * Math.sin(t * 3 + s.x));
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = f.presence;
+        ctx.globalCompositeOperation = 'lighter';
+        for (const c of curtains) {
+          for (let x = 0; x < width; x += 6) {
+            const wave =
+              Math.sin(x * 0.006 + t * c.speed) * 40 + Math.sin(x * 0.017 - t * c.speed * 1.7) * 18;
+            const top = height * c.y + wave;
+            const len = 120 + Math.sin(x * 0.01 + t * 2) * 50;
+            const g = ctx.createLinearGradient(0, top, 0, top + len);
+            g.addColorStop(0, `rgba(${c.rgb}, 0)`);
+            g.addColorStop(0.3, `rgba(${c.rgb}, ${0.22 * on})`);
+            g.addColorStop(1, `rgba(${c.rgb}, 0)`);
+            ctx.fillStyle = g;
+            ctx.fillRect(x, top, 7, len);
+          }
+        }
+        ctx.globalCompositeOperation = 'source-over';
+        // Montanhas nevadas.
+        ctx.fillStyle = '#0a1420';
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+        for (let k = 0; k <= 8; k++)
+          ctx.lineTo((k / 8) * width, height * (0.78 + ((k * 37) % 7) * 0.025));
+        ctx.lineTo(width, height);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      },
+    };
+  },
+  zombie: (width, height) => {
+    // O chão racha e mãos podres saem da terra, uma após a outra, se debatendo; névoa verde.
+    const ground = height * 0.88;
+    const hands = Array.from({ length: 9 }, (_, i) => ({
+      x: width * (0.08 + i * 0.105) + rand(-20, 20),
+      at: 0.3 + rand(0, 1.2),
+      s: rand(0.8, 1.3),
+      phase: rand(0, 6),
+    }));
+    const hand = (ctx: CanvasRenderingContext2D, up: number, wave: number) => {
+      ctx.fillStyle = '#6f8a5a';
+      ctx.strokeStyle = '#2a3520';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.rect(-14, -up, 28, up);
+      ctx.fill();
+      ctx.stroke();
+      ctx.save();
+      ctx.translate(0, -up);
+      ctx.rotate(wave * 0.3);
+      ctx.beginPath();
+      ctx.ellipse(0, -14, 20, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      for (let k = 0; k < 4; k++) {
+        ctx.save();
+        ctx.translate(-14 + k * 9.5, -26);
+        ctx.rotate((k - 1.5) * 0.15 + Math.sin(wave * 3 + k) * 0.2);
+        ctx.beginPath();
+        ctx.rect(-3.5, -24, 7, 26);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.restore();
+    };
+    return {
+      frame(ctx, f) {
+        const t = f.time;
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.fillStyle = `rgba(8, 14, 6, ${0.75 * clamp01(t / 0.4)})`;
+        ctx.fillRect(0, 0, width, height);
+        ctx.globalCompositeOperation = 'lighter';
+        blit(ctx, softSprite('140, 220, 120'), width * 0.8, height * 0.2, 90, 0.5);
+        ctx.globalCompositeOperation = 'source-over';
+        for (const h of hands) {
+          const up = easeOut((t - h.at) / 0.5) * 110 * h.s;
+          if (up <= 0) continue;
+          ctx.save();
+          ctx.translate(h.x, ground);
+          ctx.scale(h.s, h.s);
+          hand(ctx, up / h.s, Math.sin(t * 5 + h.phase));
+          ctx.restore();
+          if (f.emitting && Math.random() < 0.1)
+            f.particles.push(
+              particle('rock', h.x, ground, {
+                vx: rand(-3, 3),
+                vy: -rand(2, 5),
+                gravity: 0.3,
+                max: 40,
+                size: rand(3, 6),
+                color: '70, 50, 30',
+              }),
+            );
+        }
+        // Terra e lápides.
+        ctx.fillStyle = '#1a1208';
+        ctx.fillRect(0, ground, width, height - ground);
+        ctx.fillStyle = '#3a3a40';
+        for (let k = 0; k < 4; k++) {
+          const x = width * (0.15 + k * 0.24);
+          ctx.beginPath();
+          ctx.moveTo(x - 24, ground);
+          ctx.lineTo(x - 24, ground - 40);
+          ctx.arc(x, ground - 40, 24, Math.PI, 0);
+          ctx.lineTo(x + 24, ground);
+          ctx.fill();
+        }
+        if (f.emitting && f.particles.length < MAX_PARTICLES && Math.random() < 0.35)
+          f.particles.push(
+            particle('smoke', rand(0, width), ground, {
+              vy: -rand(0.3, 0.8),
+              vx: rand(-0.5, 0.5),
+              max: 90,
+              size: rand(30, 60),
+              color: '90, 160, 80',
+            }),
+          );
+        ctx.restore();
+      },
+    };
+  },
 };
 
 // --------------------------------------------------------------------------------------------
@@ -10438,6 +11028,149 @@ const FAILS: Record<DiceAura, FailScene> = {
       },
     };
   },
+  sakura: (_width, _height, _durationMs, text) => ({
+    // Uma única pétala cai devagar... e pousa no texto, que espirra.
+    frame(ctx, f) {
+      const y = Math.min(text.y - 30, -40 + f.time * 120);
+      const x = text.x + Math.sin(f.time * 3) * 40;
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.translate(x, y);
+      ctx.rotate(f.time * 2);
+      ctx.fillStyle = '#ffc4da';
+      ctx.beginPath();
+      ctx.moveTo(0, -10);
+      ctx.quadraticCurveTo(9, -2, 0, 10);
+      ctx.quadraticCurveTo(-9, -2, 0, -10);
+      ctx.fill();
+      ctx.restore();
+    },
+  }),
+  phoenix: (_width, _height, _durationMs, text) => {
+    // A fênix tenta renascer, sai uma galinha chamuscada tossindo fumaça.
+    let done = false;
+    return {
+      frame(ctx, f) {
+        if (!done && f.time > 0.6) {
+          done = true;
+          for (let k = 0; k < 8; k++)
+            f.particles.push(
+              particle('smoke', text.x, text.y - 60, {
+                vx: rand(-1, 1),
+                vy: -rand(0.5, 1.5),
+                max: 60,
+                size: rand(14, 26),
+                color: '60, 60, 60',
+              }),
+            );
+        }
+        if (f.time < 0.6) return;
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.translate(text.x, text.y - 90 + Math.abs(Math.sin(f.time * 8)) * -6);
+        ctx.fillStyle = '#3a2a22';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 26, 20, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(18, -18, 11, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#e8a020';
+        ctx.beginPath();
+        ctx.moveTo(27, -18);
+        ctx.lineTo(37, -15);
+        ctx.lineTo(27, -12);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(20, -20, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      },
+    };
+  },
+  kitsune: (_width, _height, _durationMs, text) => ({
+    // Em vez da raposa de nove caudas, aparece um filhote com uma cauda só, que boceja.
+    frame(ctx, f) {
+      const show = easeOut((f.time - 0.3) / 0.4);
+      if (show <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = f.presence * show;
+      ctx.translate(text.x, text.y - 100);
+      ctx.fillStyle = '#e8873a';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 24, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-14, -12);
+      ctx.lineTo(-18, -30);
+      ctx.lineTo(-4, -16);
+      ctx.moveTo(14, -12);
+      ctx.lineTo(18, -30);
+      ctx.lineTo(4, -16);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(34, 6 + Math.sin(f.time * 4) * 4, 16, 8, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#222';
+      const yawn = f.time > 1.2 ? Math.abs(Math.sin((f.time - 1.2) * 2)) * 6 : 1;
+      ctx.beginPath();
+      ctx.ellipse(0, 6, 4, yawn, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    },
+  }),
+  mirror: (_width, _height, _durationMs, text) => ({
+    // O espelho racha... só um cantinho, com um "tic" triste.
+    frame(ctx, f) {
+      const run = clamp01((f.time - 0.4) / 0.3);
+      if (run <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(text.x + 140, text.y - 40);
+      ctx.lineTo(text.x + 140 - 20 * run, text.y - 40 + 14 * run);
+      ctx.lineTo(text.x + 140 - 32 * run, text.y - 40 + 10 * run);
+      ctx.stroke();
+      ctx.restore();
+    },
+  }),
+  aurora: (width, _height, _durationMs, text) => ({
+    // A aurora tenta acender, pisca e apaga como uma lâmpada queimada.
+    frame(ctx, f) {
+      const flicker = f.time < 1.4 && Math.sin(f.time * 40) > 0.3 ? 0.25 : 0;
+      if (!flicker) return;
+      ctx.save();
+      ctx.globalAlpha = f.presence * flicker;
+      const g = ctx.createLinearGradient(0, text.y - 260, 0, text.y - 120);
+      g.addColorStop(0, 'rgba(80, 255, 160, 0)');
+      g.addColorStop(0.5, 'rgba(80, 255, 160, 1)');
+      g.addColorStop(1, 'rgba(80, 255, 160, 0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, text.y - 260, width, 140);
+      ctx.restore();
+    },
+  }),
+  zombie: (_width, _height, _durationMs, text) => ({
+    // Uma mão sai da terra, acena... e cai um dedo.
+    frame(ctx, f) {
+      const up = easeOut((f.time - 0.2) / 0.5) * 60;
+      if (up <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.translate(text.x - 120, text.y + 60);
+      ctx.fillStyle = '#6f8a5a';
+      ctx.fillRect(-8, -up, 16, up);
+      ctx.beginPath();
+      ctx.ellipse(0, -up - 8, 12, 10, Math.sin(f.time * 6) * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      const drop = Math.max(0, f.time - 1.2);
+      ctx.fillRect(10, -up - 22 + drop * drop * 300, 5, 14);
+      ctx.restore();
+    },
+  }),
 };
 
 /** Falha crítica (1 natural) com aura: a versão fracassada do efeito, para todos da mesa. */

@@ -2045,6 +2045,106 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
     }
     tone(hall, 0, { type: 'sawtooth', freq: 41, attack: 0.4, decay: 2.4, peak: 0.2, filter: 200 });
   },
+  sakura: (kit) => {
+    // Koto: notas pentatônicas dedilhadas e o vento das pétalas.
+    const hall = withReverb(kit, 3, 0.45);
+    [523, 587, 698, 784, 880, 1047].forEach((freq, i) =>
+      tone(hall, 0.2 + i * 0.16, { type: 'triangle', freq, attack: 0.003, decay: 0.9, peak: 0.12 }),
+    );
+    noiseBurst(hall, 0.9, {
+      type: 'bandpass',
+      freq: 1200,
+      toFreq: 600,
+      q: 0.8,
+      attack: 0.4,
+      decay: 1.6,
+      peak: 0.25,
+    });
+  },
+  phoenix: (kit) => {
+    // Brasa acendendo, labareda e o grito agudo da ave.
+    const hall = withReverb(kit, 3, 0.4);
+    noiseBurst(hall, 0.1, {
+      type: 'lowpass',
+      freq: 400,
+      toFreq: 2500,
+      attack: 0.6,
+      decay: 0.5,
+      peak: 0.4,
+    });
+    noiseBurst(hall, 0.9, {
+      type: 'bandpass',
+      freq: 900,
+      q: 0.7,
+      attack: 0.05,
+      decay: 1.4,
+      peak: 0.6,
+    });
+    sung(
+      hall,
+      1.1,
+      [
+        [0, 1400],
+        [0.3, 2200],
+        [1, 1600],
+      ],
+      { type: 'sawtooth', peak: 0.07, attack: 0.05, decay: 1, vibrato: 9, depth: 40, filter: 3000 },
+    );
+  },
+  kitsune: (kit) => {
+    // Sinos de templo distantes e um uivo etéreo.
+    const hall = withReverb(kit, 4, 0.55);
+    for (let i = 0; i < 9; i++)
+      tone(hall, 0.2 + i * 0.1, {
+        type: 'sine',
+        freq: 1320 + (i % 3) * 220,
+        attack: 0.002,
+        decay: 1.2,
+        peak: 0.06,
+      });
+    sung(
+      hall,
+      1.2,
+      [
+        [0, 500],
+        [0.6, 800],
+        [1.6, 450],
+      ],
+      { type: 'sine', peak: 0.08, attack: 0.3, decay: 1.4, vibrato: 5, depth: 12 },
+    );
+  },
+  mirror: (kit) => {
+    // Estalo, vidro trincando e cacos tilintando ao cair.
+    noiseBurst(kit, 0.35, { type: 'highpass', freq: 3000, attack: 0.001, decay: 0.25, peak: 0.6 });
+    for (let i = 0; i < 12; i++)
+      tone(kit, 1.3 + i * 0.09 + Math.random() * 0.05, {
+        type: 'sine',
+        freq: 2500 + Math.random() * 2500,
+        attack: 0.001,
+        decay: 0.15,
+        peak: 0.07,
+      });
+  },
+  aurora: (kit) => {
+    // Coro suave que cresce, como luz cantando.
+    const hall = withReverb(kit, 5, 0.6);
+    [262, 330, 392, 494].forEach((freq, i) =>
+      tone(hall, 0.3 + i * 0.25, { type: 'sine', freq, attack: 0.8, decay: 2.2, peak: 0.06 }),
+    );
+  },
+  zombie: (kit) => {
+    // Terra remexida e gemidos da horda.
+    noiseBurst(kit, 0.3, {
+      type: 'lowpass',
+      freq: 300,
+      attack: 0.1,
+      decay: 1.2,
+      peak: 0.5,
+      rate: 0.6,
+    });
+    growl(kit, 0.6, 70, 1.4);
+    growl(kit, 1.2, 85, 1.2);
+  },
 };
 
 /** Falha crítica: trombone triste ("uón, uón, uón, uóóóón"). */
@@ -2265,6 +2365,32 @@ const FAIL_EXTRAS: Partial<Record<DiceAura, (kit: Kit) => void>> = {
       decay: 0.8,
       peak: 0.12,
       filter: 3000,
+    });
+  },
+  phoenix: (kit) => {
+    // Cocoricó rouco.
+    sung(
+      kit,
+      0.7,
+      [
+        [0, 700],
+        [0.15, 1100],
+        [0.4, 600],
+      ],
+      { type: 'square', peak: 0.05, attack: 0.02, decay: 0.4, filter: 1800 },
+    );
+  },
+  mirror: (kit) => {
+    tone(kit, 0.45, { type: 'sine', freq: 3200, attack: 0.001, decay: 0.08, peak: 0.12 });
+  },
+  zombie: (kit) => {
+    tone(kit, 1.25, {
+      type: 'sine',
+      freq: 180,
+      toFreq: 120,
+      attack: 0.005,
+      decay: 0.15,
+      peak: 0.2,
     });
   },
 };

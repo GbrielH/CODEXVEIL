@@ -1,6 +1,10 @@
 import { diceAuraLabels, type DiceAura } from '@codexveil/validation';
 import {
   Anchor,
+  Bird,
+  Flower2,
+  Gem,
+  Waves,
   Binary,
   CircleDot,
   FastForward,
@@ -252,6 +256,12 @@ const ICONS: Record<DiceAura, ComponentType<LucideProps>> = {
   darklord: SaberIcon,
   notebook: NotebookPen,
   orbs: Sparkle,
+  sakura: Flower2,
+  phoenix: Bird,
+  kitsune: Flame,
+  mirror: Gem,
+  aurora: Waves,
+  zombie: Hand,
 };
 
 /** Ícone da aura, na cor dela e com um leve brilho. */

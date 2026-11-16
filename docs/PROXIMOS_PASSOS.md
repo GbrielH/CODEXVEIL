@@ -2665,3 +2665,9 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto ne
 - **Vazio Roxo (falha):** o recorte de cada metade do "CRÍTICO!" agora se move junto com ela.
   Antes o recorte ficava parado e o texto inteiro entrava nele ao cair (apareciam dois).
 - Verificado só com typecheck e lint; falta ver no navegador (Meus dados → mesa de teste).
+
+### 2026-11-16 — Seis auras novas
+
+- Cerejeira, Fênix, Kitsune, Espelho Partido, Aurora Boreal e Horda Zumbi.
+- Migração `20261116130000_dice_auras_six.sql`: aplicada em produção depois do dry-run.
+- Pendente: conferir no navegador (Meus dados → mesa de teste).

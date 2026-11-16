@@ -124,6 +124,12 @@ export const DICE_AURAS = [
   'darklord',
   'notebook',
   'orbs',
+  'sakura',
+  'phoenix',
+  'kitsune',
+  'mirror',
+  'aurora',
+  'zombie',
 ] as const;
 export type DiceAura = (typeof DICE_AURAS)[number];
 export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> = {
@@ -175,6 +181,12 @@ export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> =
   darklord: { name: 'Lorde Sombrio', color: '#ff2424' },
   notebook: { name: 'Caderno Sombrio', color: '#b8b8c8' },
   orbs: { name: 'Sete Esferas', color: '#ffa31a' },
+  sakura: { name: 'Cerejeira', color: '#ffb3cf' },
+  phoenix: { name: 'Fênix', color: '#ff8a2a' },
+  kitsune: { name: 'Kitsune', color: '#7cc8ff' },
+  mirror: { name: 'Espelho Partido', color: '#d8ecf8' },
+  aurora: { name: 'Aurora Boreal', color: '#5cffb0' },
+  zombie: { name: 'Horda Zumbi', color: '#8fbf6a' },
 };
 
 export const diceFontLabels: Record<DiceFont, { name: string; family: string }> = {

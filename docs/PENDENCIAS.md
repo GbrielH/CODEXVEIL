@@ -17,6 +17,8 @@
 
 ## Resumo
 
+**2026-11-16 (auras novas):** seis temas: Cerejeira, Fênix, Kitsune, Espelho Partido, Aurora Boreal e Horda Zumbi. Cada um tem partículas no dado, cena de crítico, falha cômica, som e ícone. A migração `20261116130000_dice_auras_six.sql` foi aplicada em produção depois do dry-run. `pnpm check` passou nas 20 tarefas; falta ver no navegador.
+
 **2026-11-16 (auras):** Tarrasque e Deus do Sol (Gear 5) refeitos no crítico; corrigida a falha do Vazio Roxo, que mostrava dois "CRÍTICO!" em vez de um cortado ao meio. Typecheck e lint passaram; falta conferir no navegador.
 
 **2026-11-12 (Ordem Paranormal RPG 2):** novo sistema `ordem2`, a partir dos dois PDFs dos playtests (Alpha e Beta). O que foi feito:

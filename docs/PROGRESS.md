@@ -1,6 +1,8 @@
 # Progresso do Codexveil
 
-> Documento de retomada. Última atualização: **2026-11-16 (auras):** Tarrasque e Deus do Sol (Gear 5) refeitos no crítico; corrigida a falha do Vazio Roxo, que mostrava dois "CRÍTICO!" em vez de um cortado ao meio. Typecheck e lint passaram; falta conferir no navegador.
+> Documento de retomada. Última atualização: **2026-11-16 (auras novas):** seis temas: Cerejeira, Fênix, Kitsune, Espelho Partido, Aurora Boreal e Horda Zumbi. Cada um tem partículas no dado, cena de crítico, falha cômica, som e ícone. A migração `20261116130000_dice_auras_six.sql` foi aplicada em produção depois do dry-run. `pnpm check` passou nas 20 tarefas; falta ver no navegador.
+
+**2026-11-16 (auras):** Tarrasque e Deus do Sol (Gear 5) refeitos no crítico; corrigida a falha do Vazio Roxo, que mostrava dois "CRÍTICO!" em vez de um cortado ao meio. Typecheck e lint passaram; falta conferir no navegador.
 
 **2026-11-03**. Para retomar o trabalho em andamento, veja primeiro a seção "Continuidade" de [`PROXIMOS_PASSOS.md`](PROXIMOS_PASSOS.md#continuidade-parada-em-2026-10-19-retomar-em-outra-máquina).
 
