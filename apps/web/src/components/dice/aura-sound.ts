@@ -211,6 +211,89 @@ function sung(
   lfo.stop(end);
 }
 
+const impulses = new Map<number, AudioBuffer>();
+
+/** Eco de sala grande (reverberação) por cima do som seco. */
+function withReverb(kit: Kit, seconds = 2.5, wet = 0.35): Kit {
+  const { ctx } = kit;
+  let buffer = impulses.get(seconds);
+  if (!buffer) {
+    const length = Math.floor(ctx.sampleRate * seconds);
+    buffer = ctx.createBuffer(2, length, ctx.sampleRate);
+    for (let channel = 0; channel < 2; channel++) {
+      const data = buffer.getChannelData(channel);
+      for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / length) ** 3;
+    }
+    impulses.set(seconds, buffer);
+  }
+  const convolver = ctx.createConvolver();
+  convolver.buffer = buffer;
+  const input = ctx.createGain();
+  const wetGain = ctx.createGain();
+  wetGain.gain.value = wet;
+  input.connect(kit.out);
+  input.connect(convolver).connect(wetGain).connect(kit.out);
+  return { ...kit, out: input };
+}
+
+/** Voz (coro, uivo): serra com vibrato passando por formantes (as "vogais"). */
+function voice(
+  kit: Kit,
+  at: number,
+  points: [number, number][],
+  options: {
+    peak: number;
+    attack: number;
+    decay: number;
+    formants: [number, number, number][];
+    vibrato?: number;
+    depth?: number;
+    type?: OscillatorType;
+  },
+) {
+  const { ctx, out } = kit;
+  const t = kit.now + at;
+  const osc = ctx.createOscillator();
+  osc.type = options.type ?? 'sawtooth';
+  osc.frequency.setValueAtTime(points[0]![1], t);
+  for (const [dt, freq] of points.slice(1))
+    osc.frequency.exponentialRampToValueAtTime(freq, t + dt);
+  const lfo = ctx.createOscillator();
+  const depth = ctx.createGain();
+  lfo.frequency.value = options.vibrato ?? 5;
+  depth.gain.value = options.depth ?? 6;
+  lfo.connect(depth).connect(osc.frequency);
+  const gain = ctx.createGain();
+  envelope(gain, t, options.attack, options.peak, options.decay);
+  for (const [freq, q, level] of options.formants) {
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = freq;
+    filter.Q.value = q;
+    const mix = ctx.createGain();
+    mix.gain.value = level;
+    osc.connect(filter).connect(mix).connect(gain);
+  }
+  gain.connect(out);
+  const end = t + options.attack + options.decay + 0.1;
+  osc.start(t);
+  lfo.start(t);
+  osc.stop(end);
+  lfo.stop(end);
+}
+
+/** Vogais (formantes aproximados). */
+const OOH: [number, number, number][] = [
+  [350, 6, 1],
+  [700, 8, 0.5],
+  [2400, 10, 0.12],
+];
+const AAH: [number, number, number][] = [
+  [750, 6, 1],
+  [1150, 8, 0.6],
+  [2600, 10, 0.2],
+];
+
 /** Rugido grave e áspero (kaiju). */
 function growl(kit: Kit, at: number, base: number, length: number) {
   const { ctx, out } = kit;
@@ -1118,28 +1201,37 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
       });
   },
   necro: (kit) => {
-    // Gemidos de zumbis e um coro grave.
-    for (let i = 0; i < 5; i++) {
-      const base = 95 + Math.random() * 50;
-      sung(
-        kit,
-        0.4 + i * 0.35,
+    // Coro grave de mortos ("ooh"), ossos chacoalhando e almas sussurrando, com eco.
+    const hall = withReverb(kit, 3, 0.45);
+    for (const freq of [73.42, 87.31, 110, 146.83])
+      voice(
+        hall,
+        0.1,
         [
-          [0, base],
-          [0.9, base * 0.7],
+          [0, freq],
+          [2.6, freq * 0.98],
         ],
-        {
-          type: 'sawtooth',
-          peak: 0.15,
-          attack: 0.15,
-          decay: 0.9,
-          vibrato: 4,
-          depth: 4,
-          filter: 600,
-        },
+        { peak: 0.09, attack: 0.6, decay: 2.4, formants: OOH, vibrato: 4.5, depth: 2 },
       );
-    }
-    tone(kit, 0, { type: 'sawtooth', freq: 55, attack: 0.6, decay: 2.5, peak: 0.2, filter: 250 });
+    for (let i = 0; i < 18; i++)
+      noiseBurst(kit, 0.5 + Math.random() * 1.8, {
+        type: 'bandpass',
+        freq: 2200 + Math.random() * 1500,
+        q: 8,
+        attack: 0.002,
+        decay: 0.05,
+        peak: 0.25,
+      });
+    for (let i = 0; i < 6; i++)
+      noiseBurst(hall, 0.8 + Math.random() * 1.6, {
+        type: 'bandpass',
+        freq: 900 + Math.random() * 1200,
+        q: 9,
+        attack: 0.15,
+        decay: 0.3,
+        peak: 0.12,
+      });
+    tone(kit, 0, { type: 'sine', freq: 45, attack: 0.8, decay: 2.4, peak: 0.35 });
   },
   pirate: (kit) => {
     // Ondas, três canhonaços e o baú abrindo.
@@ -1168,42 +1260,67 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
     );
   },
   samurai: (kit) => {
-    // Espada saindo da bainha, o corte e tambores taiko.
+    // Espada saindo da bainha, quatro cortes rápidos, o corte final e um taiko com eco.
+    const hall = withReverb(kit, 2.2, 0.35);
     noiseBurst(kit, 0, {
       type: 'highpass',
       freq: 2000,
-      toFreq: 8000,
-      attack: 0.2,
-      decay: 0.15,
+      toFreq: 9000,
+      attack: 0.18,
+      decay: 0.12,
       peak: 0.25,
     });
-    tone(kit, 0.2, { type: 'sine', freq: 3200, attack: 0.003, decay: 1.4, peak: 0.08 });
-    noiseBurst(kit, 0.3, {
+    tone(hall, 0.18, { type: 'sine', freq: 3400, attack: 0.003, decay: 1.6, peak: 0.07 });
+    for (const at of [0.35, 0.48, 0.6, 0.72])
+      noiseBurst(kit, at, {
+        type: 'bandpass',
+        freq: 7000,
+        toFreq: 1500,
+        q: 2,
+        attack: 0.003,
+        decay: 0.09,
+        peak: 0.45,
+      });
+    noiseBurst(kit, 0.9, {
       type: 'bandpass',
-      freq: 6000,
-      toFreq: 900,
-      q: 1.5,
-      attack: 0.005,
-      decay: 0.2,
-      peak: 0.6,
+      freq: 8000,
+      toFreq: 600,
+      q: 1.2,
+      attack: 0.003,
+      decay: 0.3,
+      peak: 0.7,
     });
-    for (const at of [0.5, 0.9, 1.15]) {
-      tone(kit, at, { type: 'sine', freq: 75, toFreq: 40, attack: 0.003, decay: 0.5, peak: 0.7 });
-      noiseBurst(kit, at, { type: 'lowpass', freq: 600, attack: 0.003, decay: 0.15, peak: 0.3 });
+    tone(hall, 0.9, { type: 'sine', freq: 2600, attack: 0.002, decay: 1.8, peak: 0.08 });
+    for (const at of [1.1, 1.45]) {
+      tone(hall, at, { type: 'sine', freq: 72, toFreq: 38, attack: 0.003, decay: 0.7, peak: 0.85 });
+      noiseBurst(hall, at, { type: 'lowpass', freq: 500, attack: 0.003, decay: 0.12, peak: 0.35 });
     }
   },
   kaiju: (kit) => {
-    // A pisada que treme tudo e o rugido.
-    tone(kit, 0.8, { type: 'sine', freq: 50, toFreq: 24, attack: 0.005, decay: 1.6, peak: 1 });
-    noiseBurst(kit, 0.8, {
-      type: 'lowpass',
-      freq: 400,
-      toFreq: 60,
-      attack: 0.005,
-      decay: 1.1,
-      peak: 0.8,
+    // Dois passos que fazem tudo tremer e o rugido monstruoso, com eco.
+    const hall = withReverb(kit, 3, 0.4);
+    for (const at of [0.1, 0.5]) {
+      tone(hall, at, { type: 'sine', freq: 48, toFreq: 26, attack: 0.005, decay: 0.9, peak: 0.95 });
+      noiseBurst(hall, at, {
+        type: 'lowpass',
+        freq: 300,
+        toFreq: 60,
+        attack: 0.005,
+        decay: 0.6,
+        peak: 0.6,
+      });
+    }
+    growl(hall, 1.35, 55, 2.1);
+    growl(hall, 1.4, 110, 1.9);
+    noiseBurst(hall, 1.35, {
+      type: 'bandpass',
+      freq: 300,
+      toFreq: 1400,
+      q: 1.2,
+      attack: 0.4,
+      decay: 1.6,
+      peak: 0.45,
     });
-    growl(kit, 1.3, 70, 1.8);
   },
   cyber: (kit) => {
     // Arpejo de sintetizador, grave pulsando e lasers.
@@ -1237,65 +1354,80 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
       });
   },
   werewolf: (kit) => {
-    // Vento e o uivo longo.
+    // Vento frio e dois lobos uivando em harmonia, longe, com eco de vale.
+    const valley = withReverb(kit, 3.5, 0.55);
     noiseBurst(kit, 0, {
       type: 'bandpass',
-      freq: 400,
+      freq: 500,
       toFreq: 900,
       q: 1,
-      attack: 0.6,
+      attack: 0.8,
       decay: 2.4,
-      peak: 0.2,
+      peak: 0.12,
     });
-    sung(
-      kit,
-      0.6,
-      [
-        [0, 320],
-        [0.6, 620],
-        [2, 470],
-      ],
-      { type: 'triangle', peak: 0.28, attack: 0.2, decay: 2, vibrato: 5, depth: 10, filter: 2000 },
-    );
-    sung(
-      kit,
-      0.6,
-      [
-        [0, 640],
-        [0.6, 1240],
-        [2, 940],
-      ],
-      { type: 'sine', peak: 0.06, attack: 0.2, decay: 2, vibrato: 5, depth: 18 },
-    );
+    const howl = (at: number, k: number) =>
+      voice(
+        valley,
+        at,
+        [
+          [0, 260 * k],
+          [0.7, 540 * k],
+          [1.7, 520 * k],
+          [2.3, 400 * k],
+        ],
+        {
+          peak: 0.22,
+          attack: 0.35,
+          decay: 1.95,
+          formants: [
+            [900 * k, 4, 1],
+            [1500 * k, 6, 0.35],
+          ],
+          vibrato: 4.5,
+          depth: 5,
+          type: 'triangle',
+        },
+      );
+    howl(0.6, 1);
+    howl(1.1, 1.26);
   },
   siren: (kit) => {
-    // Canto: "aah" em acorde, com vibrato, e sininhos.
-    for (const freq of [440, 523.25, 659.25])
-      sung(
-        kit,
+    // Canto da sereia: coro "ooh" em lá menor e uma melodia por cima, debaixo d'água (muito eco).
+    const deep = withReverb(kit, 3.5, 0.6);
+    for (const freq of [220, 261.63, 329.63])
+      voice(
+        deep,
         0.1,
         [
           [0, freq],
-          [2.5, freq],
+          [2.8, freq],
+        ],
+        { peak: 0.06, attack: 0.8, decay: 2.2, formants: OOH, vibrato: 5, depth: 3 },
+      );
+    const melody: [number, number][] = [
+      [0.3, 659.25],
+      [0.9, 783.99],
+      [1.5, 880],
+      [2.1, 783.99],
+    ];
+    for (const [at, freq] of melody)
+      voice(
+        deep,
+        at,
+        [
+          [0, freq],
+          [0.6, freq],
         ],
         {
-          type: 'triangle',
           peak: 0.1,
-          attack: 0.5,
-          decay: 2.4,
+          attack: 0.15,
+          decay: 0.75,
+          formants: AAH,
           vibrato: 5.5,
-          depth: 6,
-          filter: 1800,
+          depth: 7,
+          type: 'triangle',
         },
       );
-    for (let i = 0; i < 8; i++)
-      tone(kit, 0.4 + i * 0.28, {
-        type: 'sine',
-        freq: 1800 + Math.random() * 1600,
-        attack: 0.005,
-        decay: 0.7,
-        peak: 0.05,
-      });
   },
   alchemy: (kit) => {
     // Borbulhar dos frascos, brilho mágico e o "plim" do ouro.
@@ -1327,35 +1459,38 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
       tone(kit, 1.4, { type: 'sine', freq, attack: 0.003, decay: 1.6, peak });
   },
   ghost: (kit) => {
-    // Teremim fantasmagórico, sopro e um rangido.
-    sung(
-      kit,
-      0.1,
-      [
-        [0, 400],
-        [0.8, 720],
-        [2.2, 360],
-      ],
-      { type: 'sine', peak: 0.2, attack: 0.3, decay: 2.2, vibrato: 6, depth: 22 },
-    );
-    noiseBurst(kit, 0, {
+    // Um vulto passa voando (sopro subindo e um grito curto), o teremim e a mão batendo no vidro.
+    const hall = withReverb(kit, 3, 0.5);
+    noiseBurst(hall, 0.1, {
       type: 'bandpass',
-      freq: 600,
-      toFreq: 1500,
-      q: 1.5,
-      attack: 0.8,
-      decay: 1.6,
-      peak: 0.15,
+      freq: 400,
+      toFreq: 2600,
+      q: 2,
+      attack: 0.6,
+      decay: 0.25,
+      peak: 0.45,
     });
-    tone(kit, 1.9, {
-      type: 'sawtooth',
-      freq: 70,
-      toFreq: 50,
-      attack: 0.05,
-      decay: 0.5,
-      peak: 0.12,
-      filter: 500,
-    });
+    sung(
+      hall,
+      0.7,
+      [
+        [0, 1100],
+        [0.25, 1900],
+      ],
+      { type: 'sine', peak: 0.12, attack: 0.02, decay: 0.35, vibrato: 9, depth: 40 },
+    );
+    sung(
+      hall,
+      1,
+      [
+        [0, 420],
+        [0.9, 700],
+        [1.8, 380],
+      ],
+      { type: 'sine', peak: 0.14, attack: 0.3, decay: 1.7, vibrato: 6, depth: 20 },
+    );
+    noiseBurst(hall, 2, { type: 'lowpass', freq: 1500, attack: 0.003, decay: 0.15, peak: 0.6 });
+    tone(hall, 2, { type: 'sine', freq: 140, toFreq: 70, attack: 0.003, decay: 0.2, peak: 0.4 });
   },
   bees: (kit) => {
     // Zumbido do enxame.

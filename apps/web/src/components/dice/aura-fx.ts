@@ -3021,8 +3021,8 @@ function fogGlass(durationMs: number) {
     inset: '0',
     zIndex: '119',
     pointerEvents: 'none',
-    backdropFilter: 'blur(7px) saturate(0.5) brightness(1.1)',
-    background: 'rgba(200, 210, 225, 0.28)',
+    backdropFilter: 'blur(3px) saturate(0.6)',
+    background: 'rgba(120, 135, 165, 0.12)',
   });
   document.body.appendChild(element);
   element.animate(
@@ -3035,75 +3035,85 @@ function fogGlass(durationMs: number) {
   window.setTimeout(() => element.remove(), durationMs + 100);
 }
 
-/** Zumbi (de pé no chão em y = 0; altura ~ 2,2 × `s`). */
-function drawZombie(ctx: CanvasRenderingContext2D, s: number, t: number, phase: number) {
-  const sway = Math.sin(t * 3 + phase) * 0.08;
-  ctx.rotate(sway);
-  ctx.strokeStyle = '#3a4a2e';
+/** Braço de esqueleto saindo do chão (base em y = 0, apontando para cima). */
+function drawBoneArm(ctx: CanvasRenderingContext2D, length: number, t: number, phase: number) {
+  ctx.strokeStyle = '#ece4cd';
+  ctx.fillStyle = '#ece4cd';
   ctx.lineCap = 'round';
-  ctx.lineWidth = s * 0.28;
-  ctx.beginPath();
-  ctx.moveTo(-s * 0.18, 0);
-  ctx.lineTo(-s * 0.12, -s * 0.8);
-  ctx.moveTo(s * 0.18, 0);
-  ctx.lineTo(s * 0.12, -s * 0.8);
-  ctx.stroke();
-  ctx.fillStyle = '#4c5c3a';
-  ctx.fillRect(-s * 0.35, -s * 1.65, s * 0.7, s * 0.9);
-  ctx.strokeStyle = '#7a9a6a';
-  ctx.lineWidth = s * 0.16;
-  for (const side of [-1, 1]) {
+  const bend = Math.sin(t * 3 + phase) * 0.25;
+  const elbow = { x: Math.sin(bend) * length * 0.5, y: -length * 0.5 };
+  const wrist = { x: elbow.x + Math.sin(bend * 2.2) * length * 0.45, y: elbow.y - length * 0.45 };
+  ctx.lineWidth = length * 0.06;
+  for (const offset of [-length * 0.025, length * 0.025]) {
     ctx.beginPath();
-    ctx.moveTo(side * s * 0.3, -s * 1.5);
-    ctx.lineTo(side * s * 0.25 + s * 0.75, -s * 1.45 + Math.sin(t * 4 + phase + side) * s * 0.08);
+    ctx.moveTo(offset, 0);
+    ctx.lineTo(elbow.x + offset, elbow.y);
+    ctx.lineTo(wrist.x + offset, wrist.y);
     ctx.stroke();
   }
-  ctx.fillStyle = '#7a9a6a';
   ctx.beginPath();
-  ctx.arc(0, -s * 1.95, s * 0.32, 0, Math.PI * 2);
+  ctx.arc(elbow.x, elbow.y, length * 0.05, 0, Math.PI * 2);
   ctx.fill();
-  ctx.globalCompositeOperation = 'lighter';
-  for (const x of [-0.12, 0.12])
-    blit(ctx, glowSprite('120, 255, 140'), x * s + s * 0.05, -s * 2, s * 0.12, 1);
-  ctx.globalCompositeOperation = 'source-over';
+  ctx.beginPath();
+  ctx.ellipse(wrist.x, wrist.y - length * 0.04, length * 0.08, length * 0.07, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Dedos se fechando e abrindo.
+  ctx.lineWidth = length * 0.035;
+  const grip = 0.5 + Math.sin(t * 5 + phase) * 0.5;
+  for (let k = 0; k < 4; k++) {
+    const base = { x: wrist.x - length * 0.07 + k * length * 0.047, y: wrist.y - length * 0.09 };
+    const a = -Math.PI / 2 + (k - 1.5) * 0.25;
+    const mid = {
+      x: base.x + Math.cos(a) * length * 0.11,
+      y: base.y + Math.sin(a) * length * 0.11,
+    };
+    const curl = a + grip * 1.2 * (k < 2 ? -1 : 1) * 0.6;
+    ctx.beginPath();
+    ctx.moveTo(base.x, base.y);
+    ctx.lineTo(mid.x, mid.y);
+    ctx.lineTo(mid.x + Math.cos(curl) * length * 0.09, mid.y + Math.sin(curl) * length * 0.09);
+    ctx.stroke();
+  }
 }
 
-/** Silhueta de lobo uivando (pés em y = 0). */
-function drawWolf(ctx: CanvasRenderingContext2D, scale: number) {
+/** Olho reptiliano/de lobo (centro na origem): íris quente, pupila em fenda e brilho. */
+function drawBeastEye(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  open: number,
+  tilt: number,
+  colors: [string, string, string],
+  pupil: number,
+) {
+  const h = w * 0.42 * open;
+  if (h < 1) return;
   ctx.save();
-  ctx.scale(scale, scale);
-  ctx.fillStyle = '#0b0c14';
+  ctx.rotate(tilt);
   ctx.beginPath();
-  for (const [x, y] of [
-    [-70, -10],
-    [-50, -28],
-    [-35, -32],
-    [10, -36],
-    [25, -50],
-    [30, -82],
-    [35, -96],
-    [44, -90],
-    [40, -74],
-    [46, -66],
-    [38, -62],
-    [36, -44],
-    [30, -14],
-    [34, 0],
-    [26, 0],
-    [20, -10],
-    [-20, -10],
-    [-24, 0],
-    [-32, 0],
-    [-34, -14],
-  ] as const)
-    ctx.lineTo(x, y);
+  ctx.moveTo(-w, 0);
+  ctx.quadraticCurveTo(0, -h * 2, w, 0);
+  ctx.quadraticCurveTo(0, h * 2, -w, 0);
   ctx.closePath();
-  ctx.fill();
+  ctx.save();
+  ctx.clip();
+  const iris = ctx.createRadialGradient(0, 0, 0, 0, 0, w);
+  iris.addColorStop(0, colors[0]);
+  iris.addColorStop(0.45, colors[1]);
+  iris.addColorStop(1, colors[2]);
+  ctx.fillStyle = iris;
+  ctx.fillRect(-w, -h * 2, w * 2, h * 4);
+  ctx.fillStyle = '#050202';
   ctx.beginPath();
-  ctx.moveTo(28, -80);
-  ctx.lineTo(23, -97);
-  ctx.lineTo(33, -86);
+  ctx.ellipse(0, 0, w * pupil, h * 1.6, 0, 0, Math.PI * 2);
   ctx.fill();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+  ctx.beginPath();
+  ctx.ellipse(-w * 0.3, -h * 0.45, w * 0.06, h * 0.18, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+  ctx.lineWidth = Math.max(2, w * 0.04);
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -3658,45 +3668,100 @@ const SCENES: Partial<
     };
   },
   necro: (width, height) => {
-    // Mortos-vivos brotam da terra e cambaleiam em direção ao texto, com névoa verde.
-    const ground = height - 30;
-    const zombies = Array.from({ length: 7 }, (_, i) => ({
-      x: width * (0.06 + i * 0.145) + rand(-20, 20),
-      delay: 0.15 + i * 0.1,
+    // Um círculo necromântico se acende no chão, braços de esqueleto rompem dele agarrando o ar e
+    // almas sobem em espiral até sumir acima do texto.
+    const cx = width / 2;
+    const cy = height * 0.84;
+    const rx = Math.min(width * 0.4, height * 0.7);
+    const ry = rx * 0.22;
+    const arms = Array.from({ length: 9 }, (_, i) => ({
+      angle: (i / 9) * Math.PI * 2 + rand(-0.15, 0.15),
+      k: rand(0.45, 0.9),
+      delay: 0.5 + i * 0.07,
       phase: rand(0, 6),
-      size: Math.min(width, height) * rand(0.06, 0.075),
+      length: Math.min(width, height) * rand(0.16, 0.24),
     }));
     return {
       frame(ctx, f) {
+        const draw = clamp01(f.time / 0.6);
         ctx.save();
         ctx.globalAlpha = f.presence;
-        ctx.fillStyle = '#1c140e';
-        ctx.fillRect(0, ground, width, height - ground);
-        for (const z of zombies) {
-          const rise = easeOut((f.time - z.delay) / 0.6);
-          if (rise <= 0) continue;
-          const walk = Math.max(0, f.time - z.delay - 0.6);
-          const x = z.x + (width / 2 - z.x) * Math.min(0.45, walk * 0.12);
-          ctx.save();
+        ctx.fillStyle = `rgba(4, 12, 8, ${0.55 * clamp01(f.time / 0.5)})`;
+        ctx.fillRect(0, 0, width, height);
+        ctx.globalCompositeOperation = 'lighter';
+        // Coluna de luz verde subindo do círculo.
+        const column = ctx.createLinearGradient(0, cy, 0, 0);
+        column.addColorStop(0, `rgba(80, 230, 150, ${0.3 * draw})`);
+        column.addColorStop(1, 'rgba(80, 230, 150, 0)');
+        ctx.fillStyle = column;
+        ctx.fillRect(cx - rx * 0.8, 0, rx * 1.6, cy);
+        ctx.strokeStyle = 'rgba(90, 255, 160, 0.85)';
+        for (const [k, w] of [
+          [1, 4],
+          [0.82, 2],
+        ] as const) {
+          ctx.lineWidth = w;
           ctx.beginPath();
-          ctx.rect(0, 0, width, ground + 2);
-          ctx.clip();
-          ctx.translate(x, ground + (1 - rise) * z.size * 2.4);
-          if (x > width / 2) ctx.scale(-1, 1);
-          drawZombie(ctx, z.size, f.time, z.phase);
+          ctx.ellipse(cx, cy, rx * k, ry * k, 0, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * draw);
+          ctx.stroke();
+        }
+        if (draw >= 1) {
+          ctx.beginPath();
+          for (let i = 0; i <= 5; i++) {
+            const a = -Math.PI / 2 + f.time * 0.3 + ((i * 2) % 5) * ((Math.PI * 2) / 5);
+            const x = cx + Math.cos(a) * rx * 0.8;
+            const y = cy + Math.sin(a) * ry * 0.8;
+            if (i) ctx.lineTo(x, y);
+            else ctx.moveTo(x, y);
+          }
+          ctx.stroke();
+          for (let i = 0; i < 16; i++) {
+            const a = (i / 16) * Math.PI * 2 - f.time * 0.4;
+            blit(
+              ctx,
+              runeSprite(RUNES[(i * 3) % RUNES.length]!, '80, 230, 150'),
+              cx + Math.cos(a) * rx * 0.91,
+              cy + Math.sin(a) * ry * 0.91,
+              12,
+              0.9,
+            );
+          }
+        }
+        ctx.globalCompositeOperation = 'source-over';
+        // Braços rompendo do círculo (os de trás primeiro).
+        const order = [...arms].sort((a, b) => Math.sin(a.angle) - Math.sin(b.angle));
+        for (const arm of order) {
+          const rise = easeOut((f.time - arm.delay) / 0.45);
+          if (rise <= 0) continue;
+          const x = cx + Math.cos(arm.angle) * rx * arm.k;
+          const y = cy + Math.sin(arm.angle) * ry * arm.k;
+          const depth = 0.7 + 0.3 * ((Math.sin(arm.angle) + 1) / 2);
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.scale(depth, depth * rise);
+          ctx.rotate(Math.cos(arm.angle) * 0.25);
+          drawBoneArm(ctx, arm.length, f.time, arm.phase);
           ctx.restore();
         }
         ctx.restore();
-        if (f.emitting && f.particles.length < MAX_PARTICLES && Math.random() < 0.5)
+        // Almas em espiral.
+        if (f.emitting && f.particles.length < MAX_PARTICLES && f.time > 0.6) {
+          const a = rand(0, Math.PI * 2);
           f.particles.push(
-            particle('wisp', rand(0, width), ground, {
-              vy: -rand(0.5, 1.5),
-              vx: rand(-0.4, 0.4),
-              max: 120,
-              size: rand(40, 80),
-              color: pick(['80, 230, 150', '120, 90, 200']),
-            }),
+            particle(
+              Math.random() < 0.25 ? 'skull' : 'wisp',
+              cx + Math.cos(a) * rx * 0.6,
+              cy + Math.sin(a) * ry * 0.6,
+              {
+                vx: -Math.sin(a) * 2.5 + (cx - (cx + Math.cos(a) * rx * 0.6)) * 0.004,
+                vy: -rand(2.5, 4),
+                max: rand(70, 100),
+                size: rand(14, 30),
+                color: pick(['80, 230, 150', '140, 255, 190']),
+              },
+            ),
           );
+        }
       },
     };
   },
@@ -3799,57 +3864,102 @@ const SCENES: Partial<
     };
   },
   samurai: (width, height) => {
-    // Escurece, um corte limpo atravessa a tela inteira e a abre por um instante; o kanji 斬
-    // aparece e pétalas de cerejeira passam.
-    const from = { x: width * 0.05, y: height * 0.15 };
-    const to = { x: width * 0.95, y: height * 0.85 };
-    const length = Math.hypot(to.x - from.x, to.y - from.y);
-    const nx = -(to.y - from.y) / length;
-    const ny = (to.x - from.x) / length;
+    // Sol vermelho, pincelada de nanquim, quatro cortes relâmpago cruzando a tela e o corte final
+    // que parte o sol ao meio; pétalas de cerejeira o tempo todo.
+    const cx = width / 2;
+    const cy = height * 0.45;
+    const sunR = Math.min(width, height) * 0.3;
+    const slashes = [0.35, 0.48, 0.6, 0.72].map((at) => {
+      const a = rand(0, Math.PI);
+      const reach = Math.hypot(width, height);
+      const ox = cx + rand(-width * 0.2, width * 0.2);
+      const oy = cy + rand(-height * 0.2, height * 0.2);
+      return {
+        at,
+        x1: ox - Math.cos(a) * reach,
+        y1: oy - Math.sin(a) * reach,
+        x2: ox + Math.cos(a) * reach,
+        y2: oy + Math.sin(a) * reach,
+      };
+    });
+    const final = { at: 0.9, x1: -50, y1: cy + 30, x2: width + 50, y2: cy - 30 };
+    const brush = Array.from({ length: 40 }, (_, i) => ({ u: i / 39, w: rand(0.7, 1.15) }));
     return {
       frame(ctx, f) {
         ctx.save();
         ctx.globalAlpha = f.presence;
-        const cut = clamp01((f.time - 0.3) / 0.1);
-        const gap = 14 * Math.sin(clamp01((f.time - 0.4) / 1.2) * Math.PI);
-        if (cut > 0) {
-          const ex = from.x + (to.x - from.x) * cut;
-          const ey = from.y + (to.y - from.y) * cut;
-          if (gap > 0.5) {
-            ctx.fillStyle = '#050005';
-            ctx.beginPath();
-            ctx.moveTo(from.x + nx * gap, from.y + ny * gap);
-            ctx.lineTo(to.x + nx * gap, to.y + ny * gap);
-            ctx.lineTo(to.x - nx * gap, to.y - ny * gap);
-            ctx.lineTo(from.x - nx * gap, from.y - ny * gap);
+        ctx.fillStyle = `rgba(14, 4, 8, ${0.6 * clamp01(f.time / 0.3)})`;
+        ctx.fillRect(0, 0, width, height);
+        // Sol (parte em dois depois do corte final).
+        const split = f.time > final.at ? easeOut((f.time - final.at) / 0.3) * 14 : 0;
+        const sunIn = easeOut(f.time / 0.4);
+        for (const side of split > 0 ? [-1, 1] : [0]) {
+          ctx.save();
+          ctx.beginPath();
+          if (side === -1) {
+            ctx.moveTo(-50, -height);
+            ctx.lineTo(width + 50, -height);
+            ctx.lineTo(final.x2, final.y2);
+            ctx.lineTo(final.x1, final.y1);
             ctx.closePath();
-            ctx.fill();
-          }
-          ctx.globalCompositeOperation = 'lighter';
-          ctx.lineCap = 'round';
+          } else if (side === 1) {
+            ctx.moveTo(final.x1, final.y1);
+            ctx.lineTo(final.x2, final.y2);
+            ctx.lineTo(width + 50, height * 2);
+            ctx.lineTo(-50, height * 2);
+            ctx.closePath();
+          } else ctx.rect(0, 0, width, height);
+          ctx.clip();
+          ctx.translate(side * split * 0.6, side * split);
+          ctx.fillStyle = '#c4161c';
+          ctx.shadowColor = 'rgba(255, 60, 60, 0.6)';
+          ctx.shadowBlur = 40;
+          ctx.beginPath();
+          ctx.arc(cx, cy, sunR * (0.7 + 0.3 * sunIn), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+        // Pincelada de nanquim sob o texto.
+        const stroke = clamp01((f.time - 0.15) / 0.25);
+        if (stroke > 0) {
+          ctx.fillStyle = 'rgba(10, 8, 10, 0.92)';
+          ctx.beginPath();
+          const left = width * 0.12;
+          const span = width * 0.76 * stroke;
+          brush.forEach(({ u, w }) =>
+            ctx.lineTo(left + span * u, height * 0.62 - 22 * Math.sin(u * Math.PI) * w),
+          );
+          [...brush]
+            .reverse()
+            .forEach(({ u, w }) =>
+              ctx.lineTo(left + span * u, height * 0.62 + 16 * Math.sin(u * Math.PI) ** 0.6 * w),
+            );
+          ctx.closePath();
+          ctx.fill();
+        }
+        // Cortes.
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineCap = 'round';
+        for (const sl of [...slashes, final]) {
+          const age = f.time - sl.at;
+          if (age < 0 || age > 0.6) continue;
+          const fade = 1 - age / 0.6;
           for (const [w, style] of [
-            [10, 'rgba(255, 170, 200, 0.35)'],
-            [2.5, 'rgba(255, 255, 255, 1)'],
+            [sl === final ? 22 : 12, `rgba(255, 150, 190, ${0.35 * fade})`],
+            [sl === final ? 4 : 2, `rgba(255, 255, 255, ${fade})`],
           ] as const) {
             ctx.strokeStyle = style;
             ctx.lineWidth = w;
-            for (const side of gap > 0.5 ? [-1, 1] : [0]) {
-              ctx.beginPath();
-              ctx.moveTo(from.x + nx * gap * side, from.y + ny * gap * side);
-              ctx.lineTo(ex + nx * gap * side, ey + ny * gap * side);
-              ctx.stroke();
-            }
+            ctx.beginPath();
+            ctx.moveTo(sl.x1, sl.y1);
+            ctx.lineTo(sl.x2, sl.y2);
+            ctx.stroke();
           }
-          ctx.globalCompositeOperation = 'source-over';
         }
-        const kanji = clamp01((f.time - 0.5) / 0.2) * (1 - clamp01((f.time - 2.4) / 0.5));
-        if (kanji > 0) {
-          ctx.globalAlpha = f.presence * kanji * 0.85;
-          ctx.fillStyle = '#c4161c';
-          ctx.font = `bold ${Math.min(width, height) * 0.38}px "Yu Mincho", "MS Mincho", serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText('斬', width * 0.78, height * 0.4);
+        const flash = 1 - Math.abs(f.time - final.at) / 0.1;
+        if (flash > 0) {
+          ctx.fillStyle = `rgba(255, 245, 250, ${flash * 0.6})`;
+          ctx.fillRect(0, 0, width, height);
         }
         ctx.restore();
         if (f.emitting && f.particles.length < MAX_PARTICLES)
@@ -3867,94 +3977,105 @@ const SCENES: Partial<
       },
     };
   },
-  kaiju: (width, height) => {
-    // Uma sombra cresce, um pé gigante pisa (tremor, rachaduras e poeira) e sobe deixando a pegada.
-    const ground = height * 0.96;
-    const fw = Math.min(width * 0.5, height * 0.6);
-    const fx = width * 0.55;
-    let stomped = false;
-    const cracks: Point[][] = [];
-    const foot = (ctx: CanvasRenderingContext2D) => {
-      ctx.fillStyle = '#3f5a2a';
-      ctx.beginPath();
-      ctx.ellipse(0, -fw * 0.35, fw * 0.42, fw * 0.4, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillRect(-fw * 0.3, -fw * 1.6, fw * 0.6, fw * 1.25);
-      ctx.fillStyle = '#e8e0c8';
-      for (const x of [-0.3, -0.1, 0.1, 0.3]) {
-        ctx.beginPath();
-        ctx.moveTo(x * fw - fw * 0.05, -fw * 0.05);
-        ctx.lineTo(x * fw, fw * 0.08);
-        ctx.lineTo(x * fw + fw * 0.05, -fw * 0.05);
-        ctx.fill();
-      }
-      ctx.fillStyle = 'rgba(30, 45, 20, 0.6)';
-      for (let i = 0; i < 12; i++) {
-        ctx.beginPath();
-        ctx.arc(
-          (((i * 37) % 60) / 100) * fw - fw * 0.3,
-          (-((i * 53) % 140) / 100) * fw,
-          fw * 0.035,
-          0,
-          Math.PI * 2,
-        );
-        ctx.fill();
-      }
-    };
+  kaiju: (width, height, durationMs) => {
+    // Tudo escurece; dois passos fazem a tela tremer e cair poeira; olhos de réptil gigantes se
+    // abrem no escuro, cheios de raiva, e o rugido sai em ondas de choque.
+    const eyeW = Math.min(width * 0.15, 170);
+    const gap = Math.min(width * 0.2, 250);
+    const eyeY = height * 0.3;
+    const mouth = { x: width / 2, y: eyeY + eyeW * 1.6 };
+    const steps = [0.1, 0.5].map((at) => ({ at, done: false }));
+    let roared = false;
     return {
       frame(ctx, f) {
-        const down = clamp01((f.time - 0.3) / 0.5) ** 3;
-        const up = easeOut((f.time - 1.7) / 0.6);
-        const y = ground - (1 - down) * height * 1.2 - up * height * 1.2;
-        if (!stomped && down >= 1) {
-          stomped = true;
-          screenShake(500, 16);
-          for (let k = 0; k < 9; k++) {
-            const a = Math.PI + rand(-0.1, Math.PI + 0.1);
-            const l = rand(fw * 0.5, fw * 1.4);
-            cracks.push(
-              bolt(
-                { x: fx, y: ground },
-                { x: fx + Math.cos(a) * l, y: ground + Math.sin(a) * l * 0.25 },
-                14,
-                7,
-              ),
-            );
-          }
-          for (let k = 0; k < 24; k++)
+        const end = durationMs / 1000;
+        for (const step of steps) {
+          if (step.done || f.time < step.at) continue;
+          step.done = true;
+          screenShake(260, 10);
+          for (let k = 0; k < 14; k++)
             f.particles.push(
-              particle('smoke', fx + rand(-fw * 0.6, fw * 0.6), ground, {
-                vx: rand(-3, 3),
-                vy: -rand(0.5, 2),
-                max: 100,
-                size: rand(30, 60),
-                color: '120, 100, 70',
+              particle(k % 3 ? 'smoke' : 'rock', rand(0, width), -10, {
+                vy: rand(1, 3),
+                gravity: 0.15,
+                vr: 0.2,
+                max: 120,
+                size: k % 3 ? rand(10, 22) : rand(3, 6),
+                color: '110, 90, 60',
               }),
             );
         }
         ctx.save();
         ctx.globalAlpha = f.presence;
-        // Sombra (cresce enquanto o pé desce) e, depois, a pegada.
-        ctx.fillStyle = `rgba(0, 0, 0, ${0.25 + down * 0.35})`;
-        ctx.beginPath();
-        ctx.ellipse(fx, ground, fw * 0.5 * (0.4 + 0.6 * down), fw * 0.08, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.lineJoin = 'round';
-        for (const crack of cracks)
-          for (const [w, style] of [
-            [6, 'rgba(0, 0, 0, 0.7)'],
-            [1.5, 'rgba(255, 200, 120, 0.7)'],
-          ] as const) {
-            ctx.lineWidth = w;
-            ctx.strokeStyle = style;
-            ctx.beginPath();
-            crack.forEach((point, i) =>
-              i ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y),
+        ctx.fillStyle = `rgba(6, 3, 1, ${0.82 * clamp01(f.time / 0.6)})`;
+        ctx.fillRect(0, 0, width, height);
+        const open = easeOut((f.time - 0.7) / 0.45) * clamp01((end - 0.3 - f.time) / 0.4);
+        if (open > 0) {
+          ctx.globalCompositeOperation = 'lighter';
+          blit(ctx, softSprite('255, 120, 20'), width / 2, eyeY, gap * 2.4, 0.35 * open);
+          ctx.globalCompositeOperation = 'source-over';
+          for (const side of [-1, 1]) {
+            ctx.save();
+            ctx.translate(width / 2 + side * gap, eyeY + (f.time > 1.35 ? rand(-2, 2) : 0));
+            drawBeastEye(
+              ctx,
+              eyeW,
+              open,
+              side * 0.12,
+              ['#fff6b0', '#ff9a1a', '#7a1a00'],
+              f.time > 1.35 ? 0.05 : 0.09,
             );
+            // Sobrancelha de escamas, franzida.
+            ctx.fillStyle = '#0a0502';
+            ctx.beginPath();
+            ctx.moveTo(-eyeW * 1.2, -eyeW * 0.25 - side * eyeW * 0.25);
+            ctx.lineTo(eyeW * 1.2, -eyeW * 0.25 + side * eyeW * 0.25);
+            ctx.lineTo(eyeW * 1.2, -eyeW * 1.2);
+            ctx.lineTo(-eyeW * 1.2, -eyeW * 1.2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+        // Rugido: ondas de choque saindo da "boca", tremor forte e destroços.
+        if (!roared && f.time >= 1.4) {
+          roared = true;
+          screenShake(800, 18);
+          for (let k = 0; k < 30; k++) {
+            const a = rand(0, Math.PI * 2);
+            f.particles.push(
+              particle(k % 2 ? 'rock' : 'smoke', mouth.x, mouth.y, {
+                vx: Math.cos(a) * rand(5, 14),
+                vy: Math.sin(a) * rand(5, 14),
+                drag: 0.97,
+                vr: 0.2,
+                max: 80,
+                size: k % 2 ? rand(4, 9) : rand(30, 60),
+                color: '120, 90, 60',
+              }),
+            );
+          }
+        }
+        if (f.time > 1.4) {
+          ctx.globalCompositeOperation = 'lighter';
+          blit(
+            ctx,
+            softSprite('255, 110, 30'),
+            mouth.x,
+            mouth.y,
+            eyeW * 2.2,
+            0.5 * (0.7 + 0.3 * Math.sin(f.time * 30)) * clamp01((end - 0.5 - f.time) / 0.5),
+          );
+          for (let k = 0; k < 4; k++) {
+            const age = f.time - 1.4 - k * 0.15;
+            if (age <= 0 || age > 1.1) continue;
+            ctx.strokeStyle = `rgba(255, 170, 90, ${(1 - age / 1.1) * 0.8})`;
+            ctx.lineWidth = 8 * (1 - age / 1.1) + 1;
+            ctx.beginPath();
+            ctx.arc(mouth.x, mouth.y, age * Math.max(width, height) * 1.1, 0, Math.PI * 2);
             ctx.stroke();
           }
-        ctx.translate(fx, y);
-        foot(ctx);
+        }
         ctx.restore();
       },
     };
@@ -4036,9 +4157,10 @@ const SCENES: Partial<
       },
     };
   },
-  werewolf: (width, height) => {
-    // Lua cheia nasce, nuvens passam, um lobo uiva no morro e olhos vermelhos acendem no escuro.
-    const moonR = Math.min(width, height) * 0.2;
+  werewolf: (width, height, durationMs) => {
+    // Noite fria: a lua cheia nasce enorme, olhos vermelhos de uma matilha acendem em volta e se
+    // aproximam; o uivo sai da lua em ondas e, no fim, os olhos do alfa se abrem no centro.
+    const moonR = Math.min(width, height) * 0.24;
     const moon = sprite(`full-moon:${Math.round(moonR)}`, Math.ceil(moonR * 3), (c, size) => {
       c.translate(size / 2, size / 2);
       const glow = c.createRadialGradient(0, 0, moonR * 0.9, 0, 0, moonR * 1.5);
@@ -4065,116 +4187,188 @@ const SCENES: Partial<
         c.fill();
       }
     });
-    const eyes = Array.from({ length: 6 }, (_, i) => ({
-      x: i % 2 ? rand(width * 0.05, width * 0.25) : rand(width * 0.75, width * 0.95),
-      y: rand(height * 0.45, height * 0.8),
-      phase: rand(0, 6),
-    }));
+    const mx = width / 2;
+    const my = height * 0.32;
+    const pack = Array.from({ length: 12 }, (_, i) => {
+      const side = i % 2 ? 1 : -1;
+      return {
+        x: side > 0 ? rand(width * 0.72, width * 0.96) : rand(width * 0.04, width * 0.28),
+        y: rand(height * 0.35, height * 0.92),
+        delay: 0.5 + i * 0.09,
+        phase: rand(0, 6),
+        size: rand(6, 11),
+      };
+    });
     return {
       frame(ctx, f) {
+        const end = durationMs / 1000;
         const rise = easeOut(f.time / 0.9);
         ctx.save();
         ctx.globalAlpha = f.presence;
-        ctx.drawImage(
-          moon,
-          width * 0.62 - moon.width / 2,
-          height * 0.3 + (1 - rise) * height * 0.4 - moon.height / 2,
-        );
-        ctx.globalAlpha = f.presence * 0.75;
-        drawCloud(ctx, -200 + f.time * 160, height * 0.25, 70, 'rgba(30, 32, 45, 0.85)');
-        drawCloud(ctx, width + 100 - f.time * 120, height * 0.38, 55, 'rgba(30, 32, 45, 0.8)');
+        ctx.fillStyle = `rgba(4, 6, 16, ${0.78 * clamp01(f.time / 0.4)})`;
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(moon, mx - moon.width / 2, my + (1 - rise) * height * 0.5 - moon.height / 2);
+        // Nuvens cruzando a lua.
+        ctx.globalAlpha = f.presence * 0.8;
+        drawCloud(ctx, -240 + f.time * 170, my + moonR * 0.4, 75, 'rgba(14, 16, 28, 0.9)');
+        drawCloud(ctx, width + 160 - f.time * 130, my - moonR * 0.5, 60, 'rgba(14, 16, 28, 0.85)');
         ctx.globalAlpha = f.presence;
-        ctx.fillStyle = '#0b0c14';
-        ctx.beginPath();
-        ctx.ellipse(width * 0.3, height + height * 0.05, width * 0.45, height * 0.2, 0, Math.PI, 0);
-        ctx.fill();
-        ctx.save();
-        ctx.translate(width * 0.3, height * 0.86);
-        drawWolf(ctx, Math.min(width, height) / 300);
-        ctx.restore();
+        // Uivo: ondas prateadas saindo da lua.
         ctx.globalCompositeOperation = 'lighter';
-        for (const e of eyes) {
-          if (f.time < 0.9 || Math.sin(f.time * 2 + e.phase) < -0.6) continue;
-          blit(ctx, glowSprite('255, 40, 40'), e.x - 8, e.y, 7, f.presence);
-          blit(ctx, glowSprite('255, 40, 40'), e.x + 8, e.y, 7, f.presence);
+        for (let k = 0; k < 4; k++) {
+          const age = f.time - 0.8 - k * 0.35;
+          if (age <= 0 || age > 1.6) continue;
+          ctx.strokeStyle = `rgba(210, 220, 255, ${(1 - age / 1.6) * 0.45})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(mx, my, moonR * 1.1 + age * Math.max(width, height) * 0.5, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        // Matilha: olhos acendendo e se aproximando.
+        for (const wolf of pack) {
+          const on = clamp01((f.time - wolf.delay) / 0.15);
+          if (on <= 0 || Math.sin(f.time * 1.7 + wolf.phase) < -0.85) continue;
+          const near = 1 + Math.max(0, f.time - wolf.delay) * 0.15;
+          const glow = glowSprite('255, 40, 30');
+          blit(
+            ctx,
+            glow,
+            wolf.x - wolf.size * 1.4 * near,
+            wolf.y,
+            wolf.size * near,
+            on * f.presence,
+          );
+          blit(
+            ctx,
+            glow,
+            wolf.x + wolf.size * 1.4 * near,
+            wolf.y,
+            wolf.size * near,
+            on * f.presence,
+          );
+        }
+        ctx.globalCompositeOperation = 'source-over';
+        // O alfa: olhos grandes e inclinados no centro.
+        const alpha = easeOut((f.time - 1.9) / 0.35) * clamp01((end - 0.3 - f.time) / 0.4);
+        if (alpha > 0) {
+          const w = Math.min(width, height) * 0.08;
+          for (const side of [-1, 1]) {
+            ctx.save();
+            ctx.translate(width / 2 + side * w * 1.8, height * 0.62);
+            drawBeastEye(ctx, w, alpha, side * 0.3, ['#fff0c0', '#ffb020', '#8a2a00'], 0.08);
+            ctx.restore();
+          }
         }
         ctx.restore();
+        if (f.emitting && f.particles.length < MAX_PARTICLES && Math.random() < 0.3)
+          f.particles.push(
+            particle('mote', rand(0, width), -10, {
+              vy: rand(0.5, 1.5),
+              vx: rand(-0.3, 0.3),
+              max: 200,
+              size: rand(1, 2),
+              color: '220, 230, 255',
+            }),
+          );
       },
     };
   },
   siren: (width, height) => {
-    // A tela ondula como água; uma sereia canta numa pedra e ondas de som coloridas cruzam a tela.
-    const colors = ['80, 225, 200', '255, 150, 220', '170, 140, 255'];
+    // Fundo do mar: a tela afunda em azul, raios de luz balançam, águas-vivas brilhantes sobem e
+    // anéis perolados hipnóticos pulsam em volta do texto.
+    const cx = width / 2;
+    const cy = height * 0.42;
+    const rays = Array.from({ length: 7 }, (_, i) => ({
+      x: width * (0.08 + i * 0.14),
+      phase: rand(0, 6),
+      w: rand(40, 110),
+    }));
+    const jellies = Array.from({ length: 4 }, (_, i) => ({
+      x: width * (0.15 + i * 0.23) + rand(-30, 30),
+      y: height + 60 + i * 50,
+      size: rand(26, 44),
+      rgb: pick(['255, 140, 220', '120, 220, 255', '190, 150, 255']),
+      phase: rand(0, 6),
+    }));
+    const maxR = Math.hypot(width, height) * 0.6;
     return {
       frame(ctx, f) {
         ctx.save();
         ctx.globalAlpha = f.presence;
+        const water = ctx.createLinearGradient(0, 0, 0, height);
+        water.addColorStop(0, `rgba(20, 110, 140, ${0.45 * clamp01(f.time / 0.5)})`);
+        water.addColorStop(1, `rgba(2, 18, 40, ${0.8 * clamp01(f.time / 0.5)})`);
+        ctx.fillStyle = water;
+        ctx.fillRect(0, 0, width, height);
         ctx.globalCompositeOperation = 'lighter';
-        ctx.lineWidth = 2;
-        for (let y = 0; y < height; y += 34) {
-          ctx.strokeStyle = 'rgba(120, 220, 230, 0.12)';
+        // Raios de luz vindos da superfície.
+        for (const ray of rays) {
+          const sway = Math.sin(f.time * 0.8 + ray.phase) * 60;
+          const g = ctx.createLinearGradient(0, 0, 0, height * 0.9);
+          g.addColorStop(0, 'rgba(180, 255, 240, 0.18)');
+          g.addColorStop(1, 'rgba(180, 255, 240, 0)');
+          ctx.fillStyle = g;
           ctx.beginPath();
-          for (let x = 0; x <= width + 30; x += 30)
-            ctx.lineTo(x, y + Math.sin(x * 0.015 + f.time * 2 + y) * 6);
-          ctx.stroke();
+          ctx.moveTo(ray.x - ray.w / 2, 0);
+          ctx.lineTo(ray.x + ray.w / 2, 0);
+          ctx.lineTo(ray.x + sway + ray.w * 1.4, height * 0.9);
+          ctx.lineTo(ray.x + sway - ray.w * 0.4, height * 0.9);
+          ctx.closePath();
+          ctx.fill();
         }
-        const rx = width * 0.14;
-        const ry = height * 0.82;
-        colors.forEach((rgb, i) => {
-          ctx.strokeStyle = `rgba(${rgb}, 0.6)`;
+        // Anéis perolados pulsando para fora do texto.
+        for (let k = 0; k < 7; k++) {
+          const r = ((f.time * 90 + k * (maxR / 7)) % maxR) + 20;
+          const a = (1 - r / maxR) * 0.5;
+          ctx.strokeStyle = `hsla(${(f.time * 60 + k * 40) % 360}, 80%, 80%, ${a})`;
           ctx.lineWidth = 3;
           ctx.beginPath();
-          const reach = width * clamp01((f.time - 0.3 - i * 0.15) / 1.2);
-          for (let x = 0; x <= reach; x += 12)
-            ctx.lineTo(
-              rx + x,
-              ry - 80 - x * 0.35 + Math.sin(x * 0.03 - f.time * 6 + i) * (14 + i * 6),
-            );
-          ctx.stroke();
-        });
-        ctx.globalCompositeOperation = 'source-over';
-        // Pedra e silhueta da sereia.
-        ctx.fillStyle = '#1a2a30';
-        ctx.beginPath();
-        ctx.ellipse(rx, ry + 40, 120, 50, 0, Math.PI, 0);
-        ctx.fill();
-        ctx.fillStyle = '#0e1a20';
-        ctx.beginPath();
-        ctx.moveTo(rx - 20, ry);
-        ctx.quadraticCurveTo(rx - 90, ry + 10, rx - 110, ry - 10 + Math.sin(f.time * 3) * 6);
-        ctx.lineTo(rx - 125, ry - 30);
-        ctx.lineTo(rx - 100, ry - 15);
-        ctx.quadraticCurveTo(rx - 60, ry - 20, rx, ry - 30);
-        ctx.closePath();
-        ctx.fill();
-        ctx.beginPath();
-        ctx.ellipse(rx + 5, ry - 55, 18, 32, 0.15, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(rx + 14, ry - 98, 15, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#0e1a20';
-        ctx.lineWidth = 4;
-        for (let k = 0; k < 4; k++) {
-          ctx.beginPath();
-          ctx.moveTo(rx + 8, ry - 105);
-          ctx.quadraticCurveTo(
-            rx - 20 - k * 6,
-            ry - 80 + Math.sin(f.time * 2 + k) * 8,
-            rx - 30 - k * 8,
-            ry - 40,
-          );
+          ctx.ellipse(cx, cy, r * 1.4, r * 0.7, 0, 0, Math.PI * 2);
           ctx.stroke();
         }
+        // Águas-vivas subindo, pulsando.
+        for (const j of jellies) {
+          j.y -= 1.6 + Math.max(0, Math.sin(f.time * 3 + j.phase)) * 2.2;
+          const pulse = 1 + Math.sin(f.time * 3 + j.phase) * 0.12;
+          blit(ctx, softSprite(j.rgb), j.x, j.y, j.size * 2.2, 0.45);
+          ctx.fillStyle = `rgba(${j.rgb}, 0.55)`;
+          ctx.beginPath();
+          ctx.ellipse(j.x, j.y, j.size * pulse, (j.size * 0.7) / pulse, 0, Math.PI, 0);
+          ctx.fill();
+          ctx.strokeStyle = `rgba(${j.rgb}, 0.5)`;
+          ctx.lineWidth = 2;
+          for (let t = 0; t < 5; t++) {
+            const tx = j.x - j.size * 0.7 + t * j.size * 0.35;
+            ctx.beginPath();
+            ctx.moveTo(tx, j.y);
+            for (let k = 1; k <= 6; k++)
+              ctx.lineTo(tx + Math.sin(f.time * 4 + k + t) * 5, j.y + k * j.size * 0.25);
+            ctx.stroke();
+          }
+        }
         ctx.restore();
-        if (f.emitting && f.particles.length < MAX_PARTICLES && Math.random() < 0.4)
-          f.particles.push(
-            particle('spark', rand(0, width), rand(0, height), {
-              max: rand(30, 60),
-              size: rand(1.5, 3),
-              color: pick(['255, 190, 230', '170, 255, 235', '255, 255, 255']),
-            }),
-          );
+        if (f.emitting && f.particles.length < MAX_PARTICLES) {
+          if (Math.random() < 0.5)
+            f.particles.push(
+              particle('bubble', rand(0, width), height + 10, {
+                vy: -rand(1.5, 3.5),
+                max: 180,
+                size: rand(3, 9),
+                color: '190, 245, 255',
+              }),
+            );
+          if (Math.random() < 0.08)
+            f.particles.push(
+              particle('rune', rand(width * 0.2, width * 0.8), height * 0.8, {
+                vy: -rand(1, 2),
+                vx: rand(-0.4, 0.4),
+                max: 140,
+                size: rand(22, 32),
+                glyph: pick(['♪', '♫']),
+                color: pick(['255, 170, 230', '150, 240, 255']),
+              }),
+            );
+        }
       },
     };
   },
@@ -4286,9 +4480,10 @@ const SCENES: Partial<
       },
     };
   },
-  ghost: (width, height, durationMs) => {
-    // O vidro embaça e um dedo invisível escreve "CRÍTICO!"; as letras escorrem e fantasmas passam.
-    fogGlass(durationMs);
+  ghost: (width, height) => {
+    // A tela esfria e escurece; um rosto fantasma avança contra a tela e some num clarão; o vidro
+    // embaça em volta do texto e "CRÍTICO!" é escrito com o dedo (as letras escorrem); no fim, uma
+    // mão bate no vidro.
     const font =
       getComputedStyle(document.body).getPropertyValue('--font-display').trim() || 'serif';
     const size = Math.min(width * 0.1, 130);
@@ -4296,38 +4491,104 @@ const SCENES: Partial<
     const cy = height * 0.42;
     let dripped = false;
     let textWidth = 0;
+    const hand = { x: width * 0.68, y: height * 0.3 };
     return {
       frame(ctx, f) {
         ctx.save();
-        ctx.font = `${size}px ${font}`;
-        textWidth ||= ctx.measureText('CRÍTICO!').width;
-        const write = clamp01((f.time - 0.4) / 1.3);
-        const left = cx - textWidth / 2;
         ctx.globalAlpha = f.presence;
-        ctx.beginPath();
-        ctx.rect(left - 20, cy - size, (textWidth + 40) * write, size * 2);
-        ctx.clip();
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.shadowColor = 'rgba(200, 220, 255, 0.9)';
-        ctx.shadowBlur = 14;
-        ctx.fillText('CRÍTICO!', cx, cy);
-        ctx.restore();
-        if (write > 0 && write < 1) {
+        ctx.fillStyle = `rgba(6, 10, 24, ${0.7 * clamp01(f.time / 0.3)})`;
+        ctx.fillRect(0, 0, width, height);
+        // Rosto avançando (0,15 s a 0,9 s).
+        const rush = clamp01((f.time - 0.15) / 0.75);
+        if (rush > 0 && rush < 1) {
+          const scale = 0.2 + rush * rush * 3.2;
           ctx.save();
-          ctx.globalAlpha = f.presence * 0.8;
-          ctx.globalCompositeOperation = 'lighter';
-          blit(
-            ctx,
-            softSprite('230, 240, 255'),
-            left + textWidth * write,
-            cy + Math.sin(f.time * 18) * size * 0.25,
-            18,
-            0.9,
-          );
+          ctx.globalAlpha = f.presence * Math.sin(rush * Math.PI) * 0.85;
+          ctx.translate(cx, cy);
+          ctx.scale(scale, scale);
+          const head = ctx.createRadialGradient(0, -10, 10, 0, 0, 120);
+          head.addColorStop(0, 'rgba(235, 245, 255, 0.95)');
+          head.addColorStop(1, 'rgba(235, 245, 255, 0)');
+          ctx.fillStyle = head;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 100, 130, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(4, 6, 14, 0.95)';
+          for (const side of [-1, 1]) {
+            ctx.beginPath();
+            ctx.ellipse(side * 34, -22, 18, 28, side * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.beginPath();
+          ctx.ellipse(0, 50, 22, 40 + Math.sin(f.time * 20) * 5, 0, 0, Math.PI * 2);
+          ctx.fill();
           ctx.restore();
         }
+        const flash = 1 - Math.abs(f.time - 0.9) / 0.08;
+        if (flash > 0) {
+          ctx.fillStyle = `rgba(220, 235, 255, ${flash * 0.5})`;
+          ctx.fillRect(0, 0, width, height);
+        }
+        // Mancha de neblina no vidro.
+        const fog = clamp01((f.time - 0.8) / 0.4);
+        if (fog > 0) {
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.min(width * 0.45, 520));
+          g.addColorStop(0, `rgba(205, 215, 230, ${0.55 * fog})`);
+          g.addColorStop(0.7, `rgba(205, 215, 230, ${0.35 * fog})`);
+          g.addColorStop(1, 'rgba(205, 215, 230, 0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.ellipse(
+            cx,
+            cy,
+            Math.min(width * 0.45, 520),
+            Math.min(height * 0.32, 260),
+            0,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+        }
+        // Escrita com o dedo: letras "limpas" (escuras) na neblina.
+        ctx.font = `${size}px ${font}`;
+        textWidth ||= ctx.measureText('CRÍTICO!').width;
+        const write = clamp01((f.time - 1) / 1);
+        const left = cx - textWidth / 2;
+        if (write > 0) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(left - 20, cy - size, (textWidth + 40) * write, size * 2);
+          ctx.clip();
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = 'rgba(10, 16, 32, 0.85)';
+          ctx.fillText('CRÍTICO!', cx, cy);
+          ctx.restore();
+        }
+        // Mão batendo no vidro.
+        const slap = clamp01((f.time - 2) / 0.08);
+        if (slap > 0) {
+          const slide = Math.max(0, f.time - 2.1) * 40;
+          ctx.fillStyle = `rgba(200, 212, 230, ${0.55 * slap})`;
+          ctx.beginPath();
+          ctx.ellipse(hand.x, hand.y + slide, 46, 56, 0, 0, Math.PI * 2);
+          for (let k = 0; k < 4; k++) {
+            ctx.moveTo(hand.x - 36 + k * 24 + 10, hand.y - 70 + slide);
+            ctx.ellipse(
+              hand.x - 36 + k * 24,
+              hand.y - 70 + slide - (k === 1 || k === 2 ? 14 : 0),
+              9,
+              34,
+              0,
+              0,
+              Math.PI * 2,
+            );
+          }
+          ctx.moveTo(hand.x + 70, hand.y + slide);
+          ctx.ellipse(hand.x + 58, hand.y - 6 + slide, 10, 30, -0.7, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
         if (!dripped && write >= 1) {
           dripped = true;
           for (let k = 0; k < 9; k++)
@@ -4337,11 +4598,11 @@ const SCENES: Partial<
                 gravity: 0.03,
                 max: 160,
                 size: rand(2, 3),
-                color: '225, 235, 255',
+                color: '30, 40, 60',
               }),
             );
         }
-        if (f.emitting && f.particles.length < MAX_PARTICLES && Math.random() < 0.04)
+        if (f.emitting && f.particles.length < MAX_PARTICLES && Math.random() < 0.03)
           f.particles.push(
             particle('ghost', -40, rand(height * 0.15, height * 0.85), {
               vx: rand(2, 4),

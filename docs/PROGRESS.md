@@ -1191,3 +1191,10 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto ne
 - Migração `20261115190000_dice_auras_ten.sql` (aplicada).
 
 Verificações: `pnpm check` (20 tarefas; banco 256 testes) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.
+
+### 2026-11-16 — seis críticos refeitos
+
+- Silhuetas desenhadas à mão (lobo, zumbis, pé, sereia) ficaram ruins; os críticos foram refeitos com clima, luz e olhares: **Kaiju** (escuridão, passos que tremem, olhos de réptil gigantes e rugido em ondas de choque), **Lobisomem** (lua cheia enorme, matilha de olhos vermelhos se aproximando, uivo em ondas e os olhos do alfa), **Sereia** (fundo do mar com raios de luz, águas-vivas e anéis perolados), **Fantasma** (tela fria, rosto avançando, neblina em volta do texto com "CRÍTICO!" escrito com o dedo e mão batendo no vidro — antes a tela só ficava branca), **Necromante** (círculo necromântico, braços de esqueleto rompendo do chão e almas em espiral) e **Samurai** (sol vermelho, pincelada de nanquim, quatro cortes e o corte final que parte o sol).
+- Sons novos com eco (`withReverb`) e vozes por formantes (`voice`): uivo de dois lobos em harmonia, coro da sereia, coro dos mortos, rugido do kaiju, cortes e taiko do samurai, vulto e teremim do fantasma.
+
+Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.
