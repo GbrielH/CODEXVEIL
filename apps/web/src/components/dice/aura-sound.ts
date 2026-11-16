@@ -1323,35 +1323,49 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
     });
   },
   cyber: (kit) => {
-    // Arpejo de sintetizador, grave pulsando e lasers.
-    const notes = [220, 261.63, 329.63, 392, 440, 392, 329.63, 261.63];
-    for (let i = 0; i < 24; i++)
-      tone(kit, i * 0.1, {
-        type: 'sawtooth',
-        freq: notes[i % notes.length]! * 2,
-        attack: 0.005,
-        decay: 0.09,
-        peak: 0.08,
-        filter: 2400,
-      });
-    for (let i = 0; i < 12; i++)
-      tone(kit, i * 0.2, {
-        type: 'square',
-        freq: 55,
-        attack: 0.005,
-        decay: 0.15,
-        peak: 0.12,
-        filter: 300,
-      });
-    for (const at of [1, 1.4])
-      tone(kit, at, {
+    // Sandevistan: o tempo desacelera (tudo desce de tom e abafa), coração lento e, no fim, o
+    // tempo volta de uma vez.
+    const hall = withReverb(kit, 2.5, 0.4);
+    noiseBurst(kit, 0, {
+      type: 'bandpass',
+      freq: 3000,
+      toFreq: 200,
+      q: 1.5,
+      attack: 0.05,
+      decay: 0.6,
+      peak: 0.45,
+    });
+    tone(hall, 0, {
+      type: 'sawtooth',
+      freq: 880,
+      toFreq: 70,
+      attack: 0.02,
+      decay: 0.8,
+      peak: 0.18,
+      filter: 2500,
+    });
+    tone(hall, 0.3, { type: 'sine', freq: 55, attack: 0.6, decay: 2, peak: 0.3 });
+    for (const at of [0.6, 1.4, 2.2]) {
+      tone(kit, at, { type: 'sine', freq: 60, toFreq: 35, attack: 0.01, decay: 0.35, peak: 0.7 });
+      tone(kit, at + 0.22, {
         type: 'sine',
-        freq: 2000,
-        toFreq: 200,
-        attack: 0.003,
-        decay: 0.25,
-        peak: 0.2,
+        freq: 52,
+        toFreq: 32,
+        attack: 0.01,
+        decay: 0.3,
+        peak: 0.5,
       });
+    }
+    noiseBurst(kit, 2.7, {
+      type: 'bandpass',
+      freq: 200,
+      toFreq: 4000,
+      q: 1.5,
+      attack: 0.15,
+      decay: 0.1,
+      peak: 0.5,
+    });
+    tone(kit, 2.75, { type: 'sine', freq: 90, toFreq: 40, attack: 0.003, decay: 0.4, peak: 0.6 });
   },
   werewolf: (kit) => {
     // Vento frio e dois lobos uivando em harmonia, longe, com eco de vale.
@@ -1522,7 +1536,72 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
 };
 
 /** Falha crítica: trombone triste ("uón, uón, uón, uóóóón"). */
-export function playFailSound() {
+/** Sons extras de algumas falhas (por cima do trombone). */
+const FAIL_EXTRAS: Partial<Record<DiceAura, (kit: Kit) => void>> = {
+  shadow: (kit) => {
+    // Flashbang: estouro e o zumbido no ouvido.
+    noiseBurst(kit, 0.7, {
+      type: 'lowpass',
+      freq: 4000,
+      toFreq: 300,
+      attack: 0.002,
+      decay: 0.4,
+      peak: 0.9,
+    });
+    tone(kit, 0.7, { type: 'sine', freq: 90, toFreq: 40, attack: 0.002, decay: 0.3, peak: 0.6 });
+    tone(kit, 0.75, { type: 'sine', freq: 4200, attack: 0.05, decay: 2.4, peak: 0.08 });
+  },
+  holy: (kit) => {
+    // O diabinho dá risada.
+    for (let i = 0; i < 6; i++)
+      tone(kit, 0.6 + i * 0.12, {
+        type: 'square',
+        freq: 520 - i * 25,
+        toFreq: 440 - i * 25,
+        attack: 0.01,
+        decay: 0.09,
+        peak: 0.08,
+        filter: 2200,
+      });
+  },
+  cosmic: (kit) => {
+    // Cutucada e o "ai!" do olho.
+    tone(kit, 1, { type: 'sine', freq: 300, toFreq: 120, attack: 0.003, decay: 0.1, peak: 0.4 });
+    sung(
+      kit,
+      1.05,
+      [
+        [0, 900],
+        [0.25, 500],
+      ],
+      { type: 'triangle', peak: 0.15, attack: 0.01, decay: 0.3, vibrato: 12, depth: 30 },
+    );
+  },
+  cyber: (kit) => {
+    // Ciberpsicose: chiado, coração disparado e um grito distorcido.
+    for (let i = 0; i < 10; i++)
+      tone(kit, 0.2 + i * 0.22, {
+        type: 'sine',
+        freq: 70,
+        toFreq: 40,
+        attack: 0.005,
+        decay: 0.12,
+        peak: 0.5,
+      });
+    noiseBurst(kit, 0.3, { type: 'highpass', freq: 2500, attack: 0.05, decay: 2, peak: 0.18 });
+    tone(kit, 0.9, {
+      type: 'sawtooth',
+      freq: 300,
+      toFreq: 900,
+      attack: 0.05,
+      decay: 0.8,
+      peak: 0.12,
+      filter: 3000,
+    });
+  },
+};
+
+export function playFailSound(aura?: DiceAura) {
   if (!auraSoundEnabled()) return;
   const ctx = audio();
   if (!ctx) return;
@@ -1531,6 +1610,7 @@ export function playFailSound() {
     master.gain.value = VOLUME;
     master.connect(ctx.destination);
     const kit = { ctx, out: master, now: ctx.currentTime + 0.02 };
+    if (aura) FAIL_EXTRAS[aura]?.(kit);
     const notes: [number, number, number][] = [
       [0.25, 293.66, 0.35],
       [0.7, 277.18, 0.35],

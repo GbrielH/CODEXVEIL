@@ -26,9 +26,13 @@ export function characterSkillBonuses(
     }
     if (systemId === 'tormenta20') {
       const derived = computeT20Derived(parseT20Sheet(sheet));
-      return Object.values(derived.skills)
-        .filter((value) => value.usable)
-        .map((value) => ({ label: value.label, bonus: value.total, attribute: t20AttributeLabels[value.attribute].name }));
+      // Todas as perícias, inclusive as que exigem treino (Adestramento, Atuação…): antes as não
+      // treinadas sumiam do painel de rolagem, e o mestre pode pedir o teste mesmo assim.
+      return Object.values(derived.skills).map((value) => ({
+        label: value.label,
+        bonus: value.total,
+        attribute: t20AttributeLabels[value.attribute].name,
+      }));
     }
   } catch {
     return [];
@@ -40,15 +44,24 @@ export function characterSkillBonuses(
  * Atributos da ficha com o modificador que entra na rolagem (D&D: modificador do valor;
  * Tormenta20: o próprio atributo), para o painel de rolagem montar "1d20+mod".
  */
-export function characterAttributeBonuses(systemId: string, sheet: unknown): { label: string; bonus: number }[] {
+export function characterAttributeBonuses(
+  systemId: string,
+  sheet: unknown,
+): { label: string; bonus: number }[] {
   try {
     if (systemId === 'dnd5e') {
       const parsed = parseDnd5eSheet(sheet);
-      return ABILITIES.map((ability) => ({ label: abilityLabels[ability].name, bonus: abilityModifier(parsed.abilities[ability]) }));
+      return ABILITIES.map((ability) => ({
+        label: abilityLabels[ability].name,
+        bonus: abilityModifier(parsed.abilities[ability]),
+      }));
     }
     if (systemId === 'tormenta20') {
       const derived = computeT20Derived(parseT20Sheet(sheet));
-      return T20_ATTRIBUTES.map((attribute) => ({ label: t20AttributeLabels[attribute].name, bonus: derived.attributes[attribute] }));
+      return T20_ATTRIBUTES.map((attribute) => ({
+        label: t20AttributeLabels[attribute].name,
+        bonus: derived.attributes[attribute],
+      }));
     }
   } catch {
     return [];

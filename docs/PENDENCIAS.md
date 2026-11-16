@@ -1077,3 +1077,11 @@ Verificações: `pnpm check` (20 tarefas; banco 256 testes) e `pnpm build` passa
 - Sons novos com eco (`withReverb`) e vozes por formantes (`voice`): uivo de dois lobos em harmonia, coro da sereia, coro dos mortos, rugido do kaiju, cortes e taiko do samurai, vulto e teremim do fantasma.
 
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.
+
+### 2026-11-16 — Adestramento no painel de rolagem e pedidos de auras dos amigos
+
+- **Adestramento sumia (Tormenta20):** o painel de rolagem (aba Jogo/Dados, site e app) só listava as perícias utilizáveis, então as que exigem treino (Adestramento, Atuação, Conhecimento, Misticismo…) sumiam para quem não era treinado. `characterSkillBonuses` agora lista todas (a aba Atributos já mostrava, com "*").
+- **Cyberpunk:** crítico virou o **Sandevistan** (tela verde, HUD, chuva e cacos parados no ar, "CRÍTICO!" atravessando a tela com rastros coloridos e o tempo voltando de uma vez); falha virou **ciberpsicose** (tela vermelha instável, HUD de erro, humanidade caindo, texto tremendo).
+- **Falhas novas:** Sombra = flashbang (granada quica e estoura num clarão com zumbido); Sagrada = diabinho que ri e cutuca o texto com o tridente; Olho Cósmico = dedo no olho (fecha, fica vermelho e lacrimeja). Sons extras de falha em `FAIL_EXTRAS` (`aura-sound.ts`).
+
+Verificações: `pnpm check` (20 tarefas; rpg-systems 295 testes) e `pnpm build` passaram. Não visto no navegador por mim.
