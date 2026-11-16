@@ -2,6 +2,14 @@ import { diceAuraLabels, type DiceAura } from '@codexveil/validation';
 import {
   Anchor,
   Binary,
+  CircleDot,
+  FastForward,
+  Mountain,
+  NotebookPen,
+  Orbit,
+  ShipWheel,
+  Sparkle,
+  SunMedium,
   Crown,
   Cpu,
   FlaskRound,
@@ -175,6 +183,26 @@ function TentaclesIcon({ className, ...props }: LucideProps) {
   );
 }
 
+/** Lâmina de energia com empunhadura. */
+function SaberIcon({ className, ...props }: LucideProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      {...props}
+    >
+      <path d="M17 3 8.5 14.5" />
+      <path d="m7 13 4 3-2.5 3.5-4-3z" />
+      <path d="M6 19.5 4 22" />
+    </svg>
+  );
+}
+
 const ICONS: Record<DiceAura, ComponentType<LucideProps>> = {
   blood: Droplet,
   storm: CloudLightning,
@@ -215,6 +243,15 @@ const ICONS: Record<DiceAura, ComponentType<LucideProps>> = {
   ghost: GhostIcon,
   haki: Crown,
   cthulhu: TentaclesIcon,
+  sungod: SunMedium,
+  heaven: FastForward,
+  tarrasque: Mountain,
+  purple: Orbit,
+  wheel: ShipWheel,
+  capture: CircleDot,
+  darklord: SaberIcon,
+  notebook: NotebookPen,
+  orbs: Sparkle,
 };
 
 /** Ícone da aura, na cor dela e com um leve brilho. */

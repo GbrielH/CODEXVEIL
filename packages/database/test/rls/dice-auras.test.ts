@@ -81,6 +81,15 @@ describe('auras dos dados (somente criadores)', () => {
       'ghost',
       'haki',
       'cthulhu',
+      'sungod',
+      'heaven',
+      'tarrasque',
+      'purple',
+      'wheel',
+      'capture',
+      'darklord',
+      'notebook',
+      'orbs',
     ]) {
       const row = await db.as(creator, (s) =>
         s.one<{ aura: string }>(

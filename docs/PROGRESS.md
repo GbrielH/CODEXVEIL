@@ -1219,3 +1219,11 @@ Verificações: `pnpm check` (20 tarefas; rpg-systems 295 testes) e `pnpm build`
 - Migração `20261116100000_dice_aura_haki.sql` (aplicada).
 
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.
+
+### 2026-11-16 — nove temas inspirados em animes, filmes e D&D
+
+- Pedidos inspirados em obras conhecidas viraram temas próprios (sem desenhar os personagens nem usar o áudio original; sons sintetizados que lembram): **Deus do Sol** (desenho animado em preto e branco, sol gargalhando, tambores; falha: soberano oculto num trono), **Aceleração do Tempo** (dias e noites cada vez mais rápidos, estrelas riscando, relógio disparando; falha: relógio trava e passa um caracol), **Tarrasque** (do SRD de D&D: fenda de lava, dorso de espinhos, chifres e urro; falha: dormindo e roncando), **Vazio Roxo** (azul puxa, vermelho empurra, fundem no roxo que apaga uma faixa da tela; falha: "CRÍTICO!" cortado ao meio), **Roda da Adaptação** (roda de oito raios girando em estalos e luz dourada; falha: milhares de cortes), **Esfera de Captura** (captura o "CRÍTICO!" e balança três vezes; falha: estoura e ele foge), **Lorde Sombrio** (respiração mecânica, lâmina vermelha retalhando a tela; falha: lâmina engasga e desliga), **Caderno Sombrio** (caneta escreve "CRÍTICO" à mão e a palavra arde; falha: maçã mordida) e **Sete Esferas** (esferas formam um círculo e um dragão de luz sobe; falha: esferas racham).
+- **Haki do Rei:** som refeito (pulso grave que infla e explode, estática e vento de choque) e falha mais visível (tela escurece, anel murcha, raiozinhos, suor e a mosca desmaiando). **Cthulhu:** falha mais caprichada (polvinho pula e solta uma nuvem enorme de tinta).
+- Migração `20261116110000_dice_auras_nine.sql` (aplicada).
+
+Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.

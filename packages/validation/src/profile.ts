@@ -115,6 +115,15 @@ export const DICE_AURAS = [
   'ghost',
   'haki',
   'cthulhu',
+  'sungod',
+  'heaven',
+  'tarrasque',
+  'purple',
+  'wheel',
+  'capture',
+  'darklord',
+  'notebook',
+  'orbs',
 ] as const;
 export type DiceAura = (typeof DICE_AURAS)[number];
 export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> = {
@@ -157,6 +166,15 @@ export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> =
   ghost: { name: 'Fantasma', color: '#dfe9ff' },
   haki: { name: 'Haki do Rei', color: '#e0102e' },
   cthulhu: { name: 'Cthulhu', color: '#3fbf8a' },
+  sungod: { name: 'Deus do Sol', color: '#fff1b8' },
+  heaven: { name: 'Aceleração do Tempo', color: '#9ad7ff' },
+  tarrasque: { name: 'Tarrasque', color: '#c0703a' },
+  purple: { name: 'Vazio Roxo', color: '#a24bff' },
+  wheel: { name: 'Roda da Adaptação', color: '#d4b25a' },
+  capture: { name: 'Esfera de Captura', color: '#f0c040' },
+  darklord: { name: 'Lorde Sombrio', color: '#ff2424' },
+  notebook: { name: 'Caderno Sombrio', color: '#b8b8c8' },
+  orbs: { name: 'Sete Esferas', color: '#ffa31a' },
 };
 
 export const diceFontLabels: Record<DiceFont, { name: string; family: string }> = {
