@@ -342,3 +342,7 @@ limites (`null` = ilimitado), e não há cobrança, preço nem assinatura simula
 
 Terceiro sistema, em implantação por etapas (`docs/ASSIMILACAO.md`). O livro não tem licença
 aberta: o código guarda só mecânicas e números, e os textos do livro não são reproduzidos.
+
+### Call persistente (2026-11-15)
+
+`components/call/active-call.tsx` (`ActiveCallProvider`, no layout autenticado) mantém a sala do LiveKit, a presença e a transcrição vivas enquanto a pessoa navega pelo app. A página da call só cede um elemento ("palco") onde o vídeo é desenhado por portal; fora dela aparece uma barrinha flutuante (microfone, voltar, sair). Desconexões que não foram pedidas (aba em segundo plano, rede) reconectam com token novo (até 3 tentativas); só registra a saída quando a pessoa sai, é removida ou a sala acaba.

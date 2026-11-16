@@ -1043,3 +1043,15 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto ne
 - O mural de rolagens e o cartão da última rolagem mostravam o número antes de os dados 3D pararem. Novo `components/dice/roll-reveal.ts`: a caixinha marca a rolagem como "rolando" ao começar e libera quando os dados param (ou quando a mesa grande avisa). O mural esconde a linha nova (e o total da ação ligada a ela) até lá, e `useDice().roll` só devolve o resultado depois disso. Sem dados 3D na página nada é segurado; há limites de 2 s (mural esperando a caixinha) e 9 s (animação).
 
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto no navegador por mim.
+
+### 2026-11-15 — call que não cai, transcrição completa e na ordem, Garras
+
+- **Call caía ao trocar de aba:** a página da call desmontava o LiveKit e o fim da conexão era tratado como "sair" (marcava a saída e redirecionava). A call agora vive no layout (`ActiveCallProvider`): continua ao navegar, com barrinha flutuante fora da página, e reconecta sozinha em quedas.
+- **Transcrição incompleta:** depois de cada silêncio o navegador encerra a escuta e o código esperava cada vez mais para voltar (até 15 s), perdendo falas; agora volta em 150 ms (espera crescente só em falha de rede) e retoma quando a aba volta ao primeiro plano. Também continua ao trocar de página.
+- **Transcrição fora de ordem:** o horário vinha do relógio de cada computador; o banco agora usa o próprio relógio. O início da fala é o primeiro resultado parcial (antes era o fim da fala anterior). Teste novo em `calls.test.ts`.
+- **Garras** (pedido de um amigo): arranhões verdes no dado; no crítico dois golpes rasgam a tela com cortes verdes, tremor e rugido de urso.
+- **Arco-íris:** pote de ouro na ponta, com moedas pulando. **Cartas do Destino:** três cartas sorteadas entre os 22 arcanos maiores.
+- **Tremor dos críticos** (Abissal, Meteoro, Vento, Gato, Garras): mexia no `transform` do `<body>` e fazia a tela "bugar"; agora só o efeito treme.
+- Migrações `20261115170000_transcript_server_clock.sql` e `20261115180000_dice_aura_claw.sql` (aplicadas).
+
+Verificações: `pnpm check` (20 tarefas; banco 256 testes) e `pnpm build` passaram. A call e a transcrição não foram testadas ao vivo por mim (precisam de mais de uma pessoa).

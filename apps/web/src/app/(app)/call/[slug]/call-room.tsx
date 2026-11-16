@@ -1,41 +1,17 @@
 'use client';
 
-import '@livekit/components-styles';
-import { RnnoiseProcessor, supportsRnnoise } from '@/lib/rnnoise-processor';
 import {
   decideCallParticipant,
-  endCallPresence,
   endCallRoom,
-  heartbeatCallPresence,
   inviteToCall,
-  leaveCallRoom,
   listCallParticipants,
-  startCallPresence,
   type CallParticipant,
   type CallRoomSummary,
 } from '@codexveil/database';
-import {
-  LiveKitRoom,
-  RoomAudioRenderer,
-  VideoConference,
-  useLocalParticipant,
-  useTracks,
-} from '@livekit/components-react';
-import { formatCallDuration } from '@codexveil/domain';
-import { LocalAudioTrack, Track } from 'livekit-client';
-import {
-  Check,
-  Copy,
-  Crown,
-  Hourglass,
-  PhoneOff,
-  UserPlus,
-  Volume2,
-  VolumeX,
-  X,
-} from 'lucide-react';
+import { Check, Copy, Crown, Hourglass, PhoneOff, UserPlus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useActiveCall } from '@/components/call/active-call';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -53,129 +29,8 @@ import { useRealtimeRefresh } from '@/lib/use-realtime';
 type Entry =
   | { state: 'loading' }
   | { state: 'waiting' }
-  | { state: 'ready'; token: string; url: string }
+  | { state: 'ready' }
   | { state: 'error'; message: string };
-
-/**
- * Redução de ruído do microfone (preferência local, não afeta os outros). Ligada por padrão com o
- * RNNoise, que remove teclado, ventilador e barulho de fundo. Sem suporte no navegador, usa o
- * filtro embutido do WebRTC, reabrindo o microfone (`restartTrack`): o `applyConstraints` usado
- * antes não religava a supressão num microfone já aberto, e o botão não fazia efeito.
- */
-function NoiseReductionControl({ onError }: { onError: (message: string) => void }) {
-  const { microphoneTrack } = useLocalParticipant();
-  const [enabled, setEnabled] = useState(true);
-  const [changing, setChanging] = useState(false);
-  const track = microphoneTrack?.audioTrack;
-  const ready = track instanceof LocalAudioTrack;
-  const appliedTo = useRef<LocalAudioTrack | null>(null);
-
-  const apply = useCallback(
-    async (target: LocalAudioTrack, next: boolean) => {
-      if (next && supportsRnnoise()) {
-        try {
-          await target.setProcessor(new RnnoiseProcessor());
-          return;
-        } catch {
-          // Sem o RNNoise (navegador antigo ou bloqueio de áudio): cai para o filtro embutido.
-          await target.stopProcessor().catch(() => undefined);
-        }
-      } else if (!next) {
-        await target.stopProcessor().catch(() => undefined);
-      }
-      await target.restartTrack({ echoCancellation: true, noiseSuppression: next, autoGainControl: true });
-    },
-    [],
-  );
-
-  // Liga a redução forte assim que o microfone é publicado (e de novo se ele for trocado).
-  useEffect(() => {
-    if (!ready || appliedTo.current === track) return;
-    appliedTo.current = track;
-    if (!enabled) return;
-    void apply(track, true).catch(() => onError('Não foi possível ligar a redução de ruído neste navegador.'));
-  }, [apply, enabled, onError, ready, track]);
-
-  if (!ready) return null;
-
-  const toggle = async () => {
-    const next = !enabled;
-    setChanging(true);
-    try {
-      await apply(track, next);
-      setEnabled(next);
-    } catch {
-      onError('O navegador não conseguiu alterar a redução de ruído deste microfone.');
-    } finally {
-      setChanging(false);
-    }
-  };
-
-  return (
-    <div className="absolute top-3 right-3 z-20">
-      <Button
-        size="sm"
-        variant={enabled ? 'secondary' : 'ghost'}
-        icon={enabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-        disabled={changing}
-        onClick={() => void toggle()}
-      >
-        Reduzir ruído: {enabled ? 'ligado' : 'desligado'}
-      </Button>
-    </div>
-  );
-}
-
-function useCallPresence(roomId: string, connected: boolean): void {
-  useEffect(() => {
-    if (!connected) return;
-    let active = true;
-    let presenceId: string | null = null;
-    let timer: number | null = null;
-    void startCallPresence(getSupabaseBrowserClient(), roomId)
-      .then((id) => {
-        if (!active) {
-          void endCallPresence(getSupabaseBrowserClient(), id).catch(() => undefined);
-          return;
-        }
-        presenceId = id;
-        timer = window.setInterval(
-          () => void heartbeatCallPresence(getSupabaseBrowserClient(), id).catch(() => undefined),
-          60_000,
-        );
-      })
-      .catch(() => undefined);
-    return () => {
-      active = false;
-      if (timer !== null) window.clearInterval(timer);
-      if (presenceId) {
-        void endCallPresence(getSupabaseBrowserClient(), presenceId).catch(() => undefined);
-      }
-    };
-  }, [connected, roomId]);
-}
-
-function CallLiveStatus({ startedAt }: { startedAt: Date | null }) {
-  const [now, setNow] = useState(() => new Date());
-  const cameras = useTracks([{ source: Track.Source.Camera, withPlaceholder: false }], {
-    onlySubscribed: false,
-  }).filter((track) => track.publication && !track.publication.isMuted).length;
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 60_000);
-    return () => window.clearInterval(timer);
-  }, []);
-  return (
-    <div className="absolute top-3 left-3 z-20 max-w-[65%] rounded-md bg-black/75 px-3 py-2 text-xs text-white">
-      <p className="font-medium">
-        {startedAt ? formatCallDuration(startedAt, now) : 'Conectando…'}
-      </p>
-      <p>
-        {cameras} {cameras === 1 ? 'pessoa está' : 'pessoas estão'} com a câmera ligada
-      </p>
-      <p className="text-white/70">Vídeo gasta mais; desligue a câmera para economizar.</p>
-    </div>
-  );
-}
 
 /**
  * Sala de call: pede o token ao servidor (que confere as regras da sala), mostra a espera de
@@ -197,17 +52,19 @@ export function CallRoomView({
   const router = useRouter();
   const { toast } = useToast();
   const [confirm, confirmDialog] = useConfirm();
+  const active = useActiveCall();
+  // A call vive no layout (continua ao trocar de página); aqui só a página dela.
+  const inThisCall = active?.call?.roomId === room.id;
   const [entry, setEntry] = useState<Entry>(
     room.status === 'ended'
       ? { state: 'error', message: 'Esta call já foi encerrada.' }
-      : { state: 'loading' },
+      : inThisCall
+        ? { state: 'ready' }
+        : { state: 'loading' },
   );
   const [participants, setParticipants] = useState<CallParticipant[]>([]);
   const [invited, setInvited] = useState<string[]>([]);
-  const [connected, setConnected] = useState(false);
-  const [connectedAt, setConnectedAt] = useState<Date | null>(null);
-  useCallPresence(room.id, connected);
-  const usage = useCallUsage(room.id, entry.state === 'ready');
+  const usage = useCallUsage(room.id, entry.state === 'ready' && inThisCall);
 
   const requestToken = useCallback(async () => {
     try {
@@ -222,15 +79,24 @@ export function CallRoomView({
         url?: string;
         error?: string;
       };
-      if (body.token && body.url) setEntry({ state: 'ready', token: body.token, url: body.url });
-      else if (body.status === 'waiting') setEntry({ state: 'waiting' });
+      if (body.token && body.url) {
+        active?.join({
+          roomId: room.id,
+          slug: room.slug,
+          title: room.title || 'Call',
+          token: body.token,
+          url: body.url,
+          transcriptionEnabled,
+        });
+        setEntry({ state: 'ready' });
+      } else if (body.status === 'waiting') setEntry({ state: 'waiting' });
       else if (body.status === 'denied')
         setEntry({ state: 'error', message: 'Quem criou a sala recusou a sua entrada.' });
       else setEntry({ state: 'error', message: body.error ?? 'Não foi possível entrar na call.' });
     } catch {
       setEntry({ state: 'error', message: 'Sem conexão com o servidor. Tente de novo.' });
     }
-  }, [room.id]);
+  }, [active, room.id, room.slug, room.title, transcriptionEnabled]);
 
   const reloadParticipants = useCallback(() => {
     listCallParticipants(getSupabaseBrowserClient(), room.id)
@@ -239,11 +105,11 @@ export function CallRoomView({
   }, [room.id]);
 
   useEffect(() => {
-    if (room.status === 'ended') return;
+    if (room.status === 'ended' || entry.state !== 'loading') return;
     // Fora do ciclo do efeito: o pedido de token atualiza o estado só quando responde.
     const timer = window.setTimeout(() => void requestToken(), 0);
     return () => window.clearTimeout(timer);
-  }, [requestToken, room.status]);
+  }, [requestToken, room.status, entry.state]);
 
   // Sala de espera e lista: atualizam sozinhas quando alguém entra, sai ou é aprovado.
   useRealtimeRefresh(
@@ -258,11 +124,6 @@ export function CallRoomView({
     reloadParticipants();
   }, [reloadParticipants]);
 
-  const leave = async () => {
-    await leaveCallRoom(getSupabaseBrowserClient(), room.id).catch(() => undefined);
-    router.push(routes.call);
-  };
-
   const end = async () => {
     const ok = await confirm({
       title: 'Encerrar a call para todos?',
@@ -272,6 +133,7 @@ export function CallRoomView({
     if (!ok) return;
     try {
       await endCallRoom(getSupabaseBrowserClient(), room.id);
+      await active?.leave();
       router.push(routes.call);
     } catch (error) {
       toast({ tone: 'danger', title: failureMessage(error, 'A call não foi encerrada.') });
@@ -318,54 +180,13 @@ export function CallRoomView({
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="relative min-h-[60vh] overflow-hidden rounded-xl border border-line bg-black">
-          {entry.state === 'ready' ? (
-            <LiveKitRoom
-              token={entry.token}
-              serverUrl={entry.url}
-              connect
-              audio
-              video={false}
-              data-lk-theme="default"
-              style={{ height: '70vh' }}
-              onConnected={() => {
-                setConnected(true);
-                setConnectedAt(new Date());
-              }}
-              onDisconnected={() => {
-                setConnected(false);
-                setConnectedAt(null);
-                void leave();
-              }}
-              onError={(error) =>
-                toast({ tone: 'danger', title: 'Problema na call', description: error.message })
-              }
-              onMediaDeviceFailure={() =>
-                toast({
-                  tone: 'warning',
-                  title: 'Microfone ou câmera bloqueados',
-                  description: 'Libere o acesso no cadeado da barra de endereço e tente de novo.',
-                })
-              }
-              options={{
-                adaptiveStream: true,
-                dynacast: true,
-                audioCaptureDefaults: {
-                  echoCancellation: true,
-                  noiseSuppression: true,
-                  autoGainControl: true,
-                },
-                publishDefaults: { simulcast: true, red: true, dtx: true },
-              }}
-            >
-              <VideoConference />
-              <RoomAudioRenderer />
-              <NoiseReductionControl
-                onError={(message) =>
-                  toast({ tone: 'warning', title: 'Redução de ruído', description: message })
-                }
-              />
-              <CallLiveStatus startedAt={connectedAt} />
-            </LiveKitRoom>
+          {entry.state === 'ready' && inThisCall ? (
+            <div ref={active?.setStage} style={{ height: '70vh' }} />
+          ) : entry.state === 'ready' ? (
+            <div className="flex h-[60vh] flex-col items-center justify-center gap-3 p-6 text-center">
+              <p className="text-fg">Você saiu da call.</p>
+              <Button onClick={() => setEntry({ state: 'loading' })}>Entrar de novo</Button>
+            </div>
           ) : (
             <div className="flex h-[60vh] flex-col items-center justify-center gap-3 p-6 text-center">
               {entry.state === 'loading' ? (
@@ -480,7 +301,6 @@ export function CallRoomView({
               isOwner ||
               participants.some((person) => person.userId === userId && person.role === 'master')
             }
-            inCall={connected}
             header={{ campaign: room.campaignName, title: room.title || 'Call' }}
           />
 

@@ -454,6 +454,27 @@ describe('call', () => {
     expect((await say(gm, 'Rolem iniciativa.')).speaker_label).toBe('Mestre');
   });
 
+  it('usa o relógio do servidor na transcrição (relógios dos navegadores divergem)', async () => {
+    const { gm, campaign } = await createTable(db);
+    const room = await createRoom(gm, 'open', campaign.id);
+    await join(gm, room.id);
+    await db.as(gm, (s) =>
+      s.query(`update public.call_rooms set transcription_enabled = true where id = $1`, [room.id]),
+    );
+    // Navegador com o relógio 10 minutos adiantado, fala de 3 segundos.
+    const row = await db.as(gm, (s) =>
+      s.one<{ early: boolean; span: number; fresh: boolean }>(
+        `insert into public.transcript_segments (room_id, text, started_at, ended_at)
+         values ($1, 'Fala', now() + interval '10 minutes', now() + interval '10 minutes 3 seconds')
+         returning started_at < now() as early,
+                   extract(epoch from ended_at - started_at)::int as span,
+                   ended_at = now() as fresh`,
+        [room.id],
+      ),
+    );
+    expect(row).toEqual({ early: true, span: 3, fresh: true });
+  });
+
   it('encerra a sala esquecida há mais de 6 horas e mantém a recente', async () => {
     const { gm, campaign } = await createTable(db);
     const old = await createRoom(gm, 'open', campaign.id);

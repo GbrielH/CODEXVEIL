@@ -824,6 +824,56 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
     osc.start(t);
     osc.stop(t + 0.7);
   },
+  claw: (kit) => {
+    // Dois golpes de garra (três rasgos cada) e um rugido de urso.
+    for (const swipe of [0.3, 0.9])
+      for (let i = 0; i < 3; i++)
+        noiseBurst(kit, swipe + i * 0.035, {
+          type: 'bandpass',
+          freq: 4500,
+          toFreq: 700,
+          q: 2,
+          attack: 0.005,
+          decay: 0.18,
+          peak: 0.55,
+        });
+    const { ctx, out } = kit;
+    const t = kit.now + 1.15;
+    const shaper = ctx.createWaveShaper();
+    const curve = new Float32Array(1024);
+    for (let i = 0; i < curve.length; i++) curve[i] = Math.tanh(((i / curve.length) * 2 - 1) * 3.5);
+    shaper.curve = curve;
+    const growl = ctx.createGain();
+    const lfo = ctx.createOscillator();
+    const depth = ctx.createGain();
+    lfo.frequency.value = 22;
+    depth.gain.value = 0.45;
+    lfo.connect(depth).connect(growl.gain);
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(350, t);
+    filter.frequency.linearRampToValueAtTime(1100, t + 0.35);
+    filter.frequency.exponentialRampToValueAtTime(220, t + 1.6);
+    const gain = ctx.createGain();
+    envelope(gain, t, 0.15, 0.55, 1.5);
+    for (const [freq, detune] of [
+      [85, 0],
+      [87, 12],
+      [43, 0],
+    ] as const) {
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq * 1.25, t);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.75, t + 1.6);
+      osc.detune.value = detune;
+      osc.connect(growl);
+      osc.start(t);
+      osc.stop(t + 1.8);
+    }
+    growl.connect(shaper).connect(filter).connect(gain).connect(out);
+    lfo.start(t);
+    lfo.stop(t + 1.8);
+  },
   meteor: (kit) => {
     // Rasantes e um impacto enorme.
     for (const at of [0, 0.4, 0.8, 1.3])

@@ -44,7 +44,8 @@ type Kind =
   | 'paw'
   | 'confetti'
   | 'rock'
-  | 'shard';
+  | 'shard'
+  | 'scratch';
 
 interface Particle {
   kind: Kind;
@@ -158,6 +159,32 @@ function runeSprite(glyph: string, rgb: string) {
     ctx.fillText(glyph, size / 2, size / 2);
   });
 }
+
+/** Os 22 arcanos maiores (as cartas do crítico do tarô são sorteadas entre eles). */
+const MAJOR_ARCANA = [
+  { numeral: '0', title: 'O LOUCO', symbol: '✧' },
+  { numeral: 'I', title: 'O MAGO', symbol: '∞' },
+  { numeral: 'II', title: 'A SACERDOTISA', symbol: '☽' },
+  { numeral: 'III', title: 'A IMPERATRIZ', symbol: '♀' },
+  { numeral: 'IV', title: 'O IMPERADOR', symbol: '♔' },
+  { numeral: 'V', title: 'O HIEROFANTE', symbol: '✠' },
+  { numeral: 'VI', title: 'OS ENAMORADOS', symbol: '♡' },
+  { numeral: 'VII', title: 'O CARRO', symbol: '⚔' },
+  { numeral: 'VIII', title: 'A FORÇA', symbol: '♌' },
+  { numeral: 'IX', title: 'O EREMITA', symbol: '✶' },
+  { numeral: 'X', title: 'A RODA', symbol: '☸' },
+  { numeral: 'XI', title: 'A JUSTIÇA', symbol: '⚖' },
+  { numeral: 'XII', title: 'O ENFORCADO', symbol: '☥' },
+  { numeral: 'XIII', title: 'A MORTE', symbol: '☠' },
+  { numeral: 'XIV', title: 'A TEMPERANÇA', symbol: '♒' },
+  { numeral: 'XV', title: 'O DIABO', symbol: '♄' },
+  { numeral: 'XVI', title: 'A TORRE', symbol: '⚡' },
+  { numeral: 'XVII', title: 'A ESTRELA', symbol: '★' },
+  { numeral: 'XVIII', title: 'A LUA', symbol: '☾' },
+  { numeral: 'XIX', title: 'O SOL', symbol: '☀' },
+  { numeral: 'XX', title: 'O JULGAMENTO', symbol: '✝' },
+  { numeral: 'XXI', title: 'O MUNDO', symbol: '❂' },
+] as const;
 
 /** Verso da carta de tarô (a carta ocupa o meio do quadrado). */
 function cardBackSprite() {
@@ -298,6 +325,7 @@ const RGB: Record<DiceAura, string> = {
   party: '255, 106, 213',
   wind: '210, 240, 245',
   ritual: '255, 40, 40',
+  claw: '60, 255, 120',
 };
 
 function reducedMotion(): boolean {
@@ -733,6 +761,32 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
+      break;
+    }
+    case 'scratch': {
+      // Três arranhões verdes paralelos.
+      ctx.globalAlpha = Math.sin(Math.PI * t);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.lineCap = 'round';
+      for (const [w, style] of [
+        [p.size * 0.35, `rgba(${p.color}, 0.35)`],
+        [p.size * 0.12, 'rgba(230, 255, 235, 1)'],
+      ] as const) {
+        ctx.lineWidth = w;
+        ctx.strokeStyle = style;
+        for (let k = -1; k <= 1; k++) {
+          ctx.beginPath();
+          ctx.moveTo(-p.size, k * p.size * 0.45 - p.size * 0.2);
+          ctx.quadraticCurveTo(
+            0,
+            k * p.size * 0.45 + p.size * 0.15,
+            p.size,
+            k * p.size * 0.45 - p.size * 0.1,
+          );
+          ctx.stroke();
+        }
+      }
       break;
     }
     case 'shard': {
@@ -1333,6 +1387,24 @@ function emitAround(aura: DiceAura, o: AuraPoint, out: Particle[], power: number
             max: rand(40, 60),
             size: rand(2, 3) * s,
             color: pick(CONFETTI),
+          }),
+        );
+      break;
+    case 'claw':
+      if (chance(0.05)) {
+        const at = edge(o, a, 1.4);
+        out.push(
+          particle('scratch', at.x, at.y, { rot: rand(-0.8, 0.8), max: 30, size: 6 * s, color }),
+        );
+      }
+      if (chance(0.4))
+        out.push(
+          particle('spark', from.x, from.y, {
+            vx: Math.cos(a) * rand(0.8, 1.6) * s,
+            vy: Math.sin(a) * rand(0.8, 1.6) * s,
+            max: rand(20, 35),
+            size: rand(1, 1.6) * s,
+            color: '120, 255, 160',
           }),
         );
       break;
@@ -1973,6 +2045,8 @@ function criticalText(aura: DiceAura, durationMs: number, top = '50%') {
       WebkitTextStroke: '1px #f2ead8',
     });
   document.body.appendChild(element);
+  shakeTargets.add(element);
+  window.setTimeout(() => shakeTargets.delete(element), durationMs + 100);
   const shake = aura === 'storm' || aura === 'blood' || aura === 'glitch';
   element.animate(
     [
@@ -2090,6 +2164,8 @@ export function criticalAuraBurst(
   if (options.sound !== false) playCriticalSound(aura);
   if (aura === 'frost') frozenGlass(durationMs);
   const canvas = overlay(null);
+  shakeTargets.add(canvas);
+  window.setTimeout(() => shakeTargets.delete(canvas), durationMs + 5000);
   const ctx = canvas.getContext('2d');
   const particles: Particle[] = [];
   const width = window.innerWidth;
@@ -2574,14 +2650,17 @@ function drawPaw(
 }
 
 /** Tremor da página (impacto do meteoro, patada do gato). */
+/**
+ * Tremor do crítico. Só o efeito (canvas e "CRÍTICO!") treme: mexer no `transform` do `<body>`
+ * fazia tudo que é fixo na tela pular de lugar (o "bug" do Abissal, do Meteoro e do Vento).
+ * Usa a propriedade `translate`, separada do `transform` que o texto já anima.
+ */
+const shakeTargets = new Set<HTMLElement>();
 function screenShake(ms: number, strength = 8) {
   const frames = Array.from({ length: 8 }, (_, i) => ({
-    transform:
-      i === 7
-        ? 'translate(0, 0)'
-        : `translate(${rand(-strength, strength)}px, ${rand(-strength, strength)}px)`,
+    translate: i === 7 ? '0 0' : `${rand(-strength, strength)}px ${rand(-strength, strength)}px`,
   }));
-  document.body.animate(frames, { duration: ms });
+  for (const target of shakeTargets) target.animate(frames, { duration: ms });
 }
 
 /** Símbolo grande com brilho (o ☣ do veneno). */
@@ -2836,11 +2915,11 @@ const SCENES: Partial<
     const cardH = Math.min(height * 0.5, width * 0.42);
     const cardW = cardH / 1.6;
     const gap = cardW * 0.25;
-    const faces = [
-      { symbol: '☾', title: 'A LUA', numeral: 'XVIII' },
-      { symbol: '✦', title: 'O CRÍTICO', numeral: 'XX' },
-      { symbol: '☀', title: 'O SOL', numeral: 'XIX' },
-    ].map(cardFaceSprite);
+    // Três cartas diferentes, sorteadas entre os 22 arcanos maiores.
+    const faces = [...MAJOR_ARCANA]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 3)
+      .map(cardFaceSprite);
     const back = cardBackSprite();
     return {
       frame(ctx, f) {
@@ -3058,6 +3137,117 @@ const SCENES: Partial<
           ctx.restore();
         }
         ctx.globalAlpha = 1;
+      },
+    };
+  },
+  claw: (width, height) => {
+    // Garras de urso: dois golpes rasgam a tela com três (depois quatro) cortes verdes brilhantes.
+    const tear = (from: Point, to: Point, maxWidth: number, curve: number) => {
+      const steps = 18;
+      const top: Point[] = [];
+      const bottom: Point[] = [];
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const length = Math.hypot(dx, dy);
+      const nx = -dy / length;
+      const ny = dx / length;
+      for (let i = 0; i <= steps; i++) {
+        const u = i / steps;
+        const bend = Math.sin(u * Math.PI) * curve;
+        const cx = from.x + dx * u + nx * bend;
+        const cy = from.y + dy * u + ny * bend;
+        const w = maxWidth * Math.sin(u * Math.PI) ** 0.7;
+        top.push({
+          x: cx + nx * (w / 2) * rand(0.7, 1.15),
+          y: cy + ny * (w / 2) * rand(0.7, 1.15),
+        });
+        bottom.push({
+          x: cx - nx * (w / 2) * rand(0.7, 1.15),
+          y: cy - ny * (w / 2) * rand(0.7, 1.15),
+        });
+      }
+      return { top, bottom };
+    };
+    const swipe = (at: number, count: number, ax: number, ay: number, bx: number, by: number) => {
+      const gap = Math.min(width, height) * 0.08;
+      const dx = bx - ax;
+      const dy = by - ay;
+      const length = Math.hypot(dx, dy);
+      const nx = -dy / length;
+      const ny = dx / length;
+      return {
+        at,
+        done: false,
+        tears: Array.from({ length: count }, (_, i) => {
+          const offset = (i - (count - 1) / 2) * gap;
+          return tear(
+            { x: ax + nx * offset, y: ay + ny * offset },
+            { x: bx + nx * offset, y: by + ny * offset },
+            Math.min(width, height) * 0.045,
+            Math.min(width, height) * 0.05,
+          );
+        }),
+      };
+    };
+    const swipes = [
+      swipe(0.3, 3, width * 0.12, height * 0.08, width * 0.78, height * 0.92),
+      swipe(0.9, 4, width * 0.9, height * 0.12, width * 0.2, height * 0.88),
+    ];
+    return {
+      frame(ctx, f) {
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        for (const s of swipes) {
+          const p = clamp01((f.time - s.at) / 0.14);
+          if (p <= 0) continue;
+          if (!s.done) {
+            s.done = true;
+            screenShake(300, 12);
+            for (const t of s.tears)
+              for (let k = 0; k < 12; k++) {
+                const point = t.top[Math.floor(rand(0, t.top.length))]!;
+                f.particles.push(
+                  particle('spark', point.x, point.y, {
+                    vx: rand(-4, 4),
+                    vy: rand(-4, 4),
+                    gravity: 0.1,
+                    max: rand(30, 50),
+                    size: rand(1.5, 2.5),
+                    color: '120, 255, 160',
+                  }),
+                );
+              }
+          }
+          for (const t of s.tears) {
+            const n = Math.max(2, Math.round(t.top.length * p));
+            const top = t.top.slice(0, n);
+            const bottom = t.bottom.slice(0, n).reverse();
+            const shape = () => {
+              ctx.beginPath();
+              top.forEach((point, i) =>
+                i ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y),
+              );
+              for (const point of bottom) ctx.lineTo(point.x, point.y);
+              ctx.closePath();
+            };
+            // Brilho verde em volta do rasgo, interior escuro e borda clara.
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.strokeStyle = 'rgba(60, 255, 120, 0.35)';
+            ctx.lineWidth = 16;
+            ctx.lineJoin = 'round';
+            shape();
+            ctx.stroke();
+            ctx.restore();
+            ctx.fillStyle = '#021208';
+            shape();
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(190, 255, 205, 0.95)';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
       },
     };
   },
@@ -4198,6 +4388,7 @@ const SCENES: Partial<
     const cy = height * 0.95;
     const radius = Math.min(width * 0.48, height * 0.85);
     const band = radius * 0.035;
+    let potBurst = false;
     return {
       frame(ctx, f) {
         const grow = easeOut(f.time / 0.9);
@@ -4227,6 +4418,60 @@ const SCENES: Partial<
               0.35 * f.presence * show,
             );
         ctx.restore();
+        // Pote de ouro na ponta do arco-íris.
+        const pot = clamp01((f.time - 0.85) / 0.25);
+        if (pot > 0) {
+          const w = Math.max(42, radius * 0.13);
+          const px = cx + radius - band * 3.5;
+          const py = Math.min(height - 12, cy);
+          if (!potBurst) {
+            potBurst = true;
+            for (let k = 0; k < 22; k++)
+              f.particles.push(
+                particle('coin', px, py - w, {
+                  vx: rand(-4, 4),
+                  vy: -rand(5, 10),
+                  gravity: 0.35,
+                  vr: 0.25,
+                  max: 70,
+                  size: rand(6, 10),
+                }),
+              );
+          }
+          ctx.save();
+          ctx.globalAlpha = f.presence;
+          ctx.translate(px, py);
+          ctx.scale(pot, pot);
+          ctx.globalCompositeOperation = 'lighter';
+          blit(ctx, softSprite('255, 210, 80'), 0, -w * 0.9, w * 1.8, 0.7);
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.fillStyle = '#1d1a1f';
+          for (const side of [-1, 1]) ctx.fillRect(side * w * 0.45 - 4, -w * 0.05, 8, w * 0.18);
+          ctx.beginPath();
+          ctx.ellipse(0, -w * 0.4, w * 0.75, w * 0.58, 0, 0, Math.PI * 2);
+          ctx.fill();
+          const coin = coinSprite();
+          for (const [x, y] of [
+            [-0.5, -0.92],
+            [-0.2, -1.08],
+            [0.15, -1.04],
+            [0.45, -0.92],
+            [0, -1.22],
+            [-0.32, -1.0],
+            [0.3, -1.14],
+          ] as const)
+            ctx.drawImage(coin, x * w - w * 0.17, y * w - w * 0.17, w * 0.34, w * 0.34);
+          ctx.fillStyle = '#2e2a31';
+          ctx.beginPath();
+          ctx.ellipse(0, -w * 0.88, w * 0.82, w * 0.15, 0, 0, Math.PI);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(-w * 0.25, -w * 0.45, w * 0.35, Math.PI * 0.9, Math.PI * 1.3);
+          ctx.stroke();
+          ctx.restore();
+        }
         if (f.emitting && f.particles.length < MAX_PARTICLES)
           for (let i = 0; i < 3; i++)
             f.particles.push(

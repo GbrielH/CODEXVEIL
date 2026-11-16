@@ -1,5 +1,6 @@
 import { getProfile } from '@codexveil/database';
 import type { ReactNode } from 'react';
+import { ActiveCallProvider } from '@/components/call/active-call';
 import { AppShell } from '@/components/layout/app-shell';
 import { requireSessionUser } from '@/lib/auth';
 import { assistantEnabled } from '@/lib/env';
@@ -21,7 +22,7 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
       assistant={assistantEnabled()}
       motion={profile?.preferences.motion ?? 'system'}
     >
-      {children}
+      <ActiveCallProvider>{children}</ActiveCallProvider>
     </AppShell>
   );
 }

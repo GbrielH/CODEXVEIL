@@ -2,24 +2,21 @@
 
 import {
   listTranscript,
-  saveTranscriptSegment,
   setCallTranscription,
   updateTranscriptSegment,
   type TranscriptSegment,
 } from '@codexveil/database';
 import { formatTranscript } from '@codexveil/domain';
 import { Copy, Download, Mic, MicOff, Pencil, ScrollText } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useActiveCall } from './active-call';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { useToast } from '@/components/ui/toast';
-import { createBrowserTranscription } from '@/lib/browser-transcription';
 import { failureMessage } from '@/lib/client-errors';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
-
-const noSubscribe = () => () => undefined;
 
 const time = (value: string) =>
   new Date(value).toLocaleTimeString('pt-BR', {
@@ -179,37 +176,30 @@ export function TranscriptList({
 
 /**
  * Transcrição dentro da call: o dono liga "Gravar transcrição"; cada pessoa transcreve a própria
- * voz no navegador (grátis) e pode pausar; todos veem o aviso e as falas chegando ao vivo.
+ * voz no navegador (grátis) e pode pausar; todos veem o aviso e as falas chegando ao vivo. A escuta
+ * fica na call ativa (layout), então continua ao trocar de página.
  */
 export function TranscriptPanel({
   roomId,
   initialEnabled,
   isOwner,
   canEdit,
-  inCall,
   header,
 }: {
   roomId: string;
   initialEnabled: boolean;
   isOwner: boolean;
   canEdit: boolean;
-  /** Só transcreve com a pessoa dentro da call. */
-  inCall: boolean;
   header: { campaign?: string | null; session?: string | null; title: string };
 }) {
   const { toast } = useToast();
   const [enabled, setEnabled] = useState(initialEnabled);
-  const [paused, setPaused] = useState(false);
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
-  const [problem, setProblem] = useState<string | null>(null);
-  // Criado uma vez (o navegador decide se suporta).
-  const [provider] = useState(() => createBrowserTranscription());
-  // No servidor não há reconhecimento de fala: o suporte só é lido no navegador.
-  const supported = useSyncExternalStore(
-    noSubscribe,
-    () => provider.supported,
-    () => false,
-  );
+  const active = useActiveCall();
+  const supported = active?.transcription.supported ?? false;
+  const paused = active?.transcription.paused ?? false;
+  const problem = active?.transcription.problem ?? null;
+  const setPaused = (next: boolean) => active?.transcription.setPaused(next);
   const list = useRef<HTMLDivElement>(null);
 
   const reload = useCallback(() => {
@@ -245,22 +235,6 @@ export function TranscriptPanel({
         });
     },
   );
-
-  // Ouve a própria voz enquanto a gravação está ligada, sem pausa e dentro da call.
-  useEffect(() => {
-    const current = provider;
-    if (!enabled || paused || !inCall || !current.supported) return;
-    current.start(
-      (speech) => {
-        setProblem(null);
-        void saveTranscriptSegment(getSupabaseBrowserClient(), roomId, speech).catch(
-          (error: unknown) => setProblem(failureMessage(error, 'Um trecho não foi salvo.')),
-        );
-      },
-      (message) => setProblem(message),
-    );
-    return () => current.stop();
-  }, [enabled, paused, inCall, roomId, provider]);
 
   const toggle = async () => {
     try {
@@ -304,7 +278,7 @@ export function TranscriptPanel({
             size="sm"
             variant="ghost"
             icon={paused ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-            onClick={() => setPaused((value) => !value)}
+            onClick={() => setPaused(!paused)}
           >
             {paused ? 'Retomar minha transcrição' : 'Pausar minha transcrição'}
           </Button>

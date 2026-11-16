@@ -106,6 +106,24 @@ function PentagramIcon({ className, ...props }: LucideProps) {
   );
 }
 
+/** Três arranhões de garra. */
+function ClawIcon({ className, ...props }: LucideProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      {...props}
+    >
+      <path d="M5 3c3 4 5 9 5 16M10 2c3 4 5 9 5 17M15 3c3 4 4 9 4 15" />
+    </svg>
+  );
+}
+
 const ICONS: Record<DiceAura, ComponentType<LucideProps>> = {
   blood: Droplet,
   storm: CloudLightning,
@@ -134,6 +152,7 @@ const ICONS: Record<DiceAura, ComponentType<LucideProps>> = {
   party: PartyPopper,
   wind: Wind,
   ritual: PentagramIcon,
+  claw: ClawIcon,
 };
 
 /** Ícone da aura, na cor dela e com um leve brilho. */
