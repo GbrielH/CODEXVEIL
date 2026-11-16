@@ -443,3 +443,5 @@ Migração `20261115150000_dice_auras_seven.sql`: auras `vampire`, `bard`, `rain
 Migração `20261115160000_dice_aura_wind.sql`: auras `wind` (vento) e `ritual` aceitas em `user_dice.aura` e `dice_aura_grants.aura`.
 
 Migração `20261115170000_transcript_server_clock.sql`: `private.fill_transcript_segment` passa a usar o relógio do servidor (`ended_at = now()`, `started_at = now() - duração medida no navegador`, até 2 min), para as falas de pessoas com relógios diferentes ficarem na ordem. Migração `20261115180000_dice_aura_claw.sql`: aura `claw` (garras).
+
+Migração `20261115190000_dice_auras_ten.sql`: auras `necro`, `pirate`, `samurai`, `kaiju`, `cyber`, `werewolf`, `siren`, `alchemy`, `ghost` e `bees`.

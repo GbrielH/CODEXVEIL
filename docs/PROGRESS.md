@@ -1183,3 +1183,11 @@ Verificações: `pnpm check` (20 tarefas; banco 256 testes) e `pnpm build` passa
 - `throwDice` recebe `fumble`; caixinha e mesa disparam no 1 natural (o aviso padrão de falha some quando há aura). Mesa de teste ganhou "Rolar um 1".
 
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.
+
+### 2026-11-15 — Engrenagens reformuladas e dez auras novas
+
+- **Engrenagens (de novo):** uma máquina se monta em volta do texto — engrenagens chegam voando e engatam na central, manômetro sobe até o vermelho, pistões bombeiam e, quando a pressão estoura, apito a vapor, jatos de vapor e tudo acelera. Som novo (clangs, catraca acelerando, apito e chiado).
+- **Novas (crítico / falha):** Necromante (zumbis brotam e cambaleiam / só uma mão sai e cai), Pirata (navio disparando canhões e baú abrindo / barquinho de papel afundando), Samurai (corte que abre a tela, kanji 斬 e pétalas / katana quebra), Kaiju (pisada gigante com rachaduras e rugido / lagartixa), Cyberpunk (grade neon, sol sintético, letreiros e drone / letreiro queimando e caindo), Lobisomem (lua cheia, lobo uivando, olhos vermelhos / nuvem na lua e cachorrinho latindo), Sereia (canto em ondas coloridas e tela ondulando / canto desafinado que trinca o vidro), Alquimia (círculo de transmutação, frascos e clarão dourado; texto dourado / frasco explode e chamusca o texto), Fantasma (vidro embaça e "CRÍTICO!" é escrito com o dedo / escreve errado e apaga) e Abelhas (enxame forma a palavra "CRÍTICO!" / uma abelha pica e o texto incha). Cada uma com aura no dado, som e ícone; a Sombra passou a usar o ícone de lua.
+- Migração `20261115190000_dice_auras_ten.sql` (aplicada).
+
+Verificações: `pnpm check` (20 tarefas; banco 256 testes) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.

@@ -45,7 +45,9 @@ type Kind =
   | 'confetti'
   | 'rock'
   | 'shard'
-  | 'scratch';
+  | 'scratch'
+  | 'bee'
+  | 'ghost';
 
 interface Particle {
   kind: Kind;
@@ -326,6 +328,16 @@ const RGB: Record<DiceAura, string> = {
   wind: '210, 240, 245',
   ritual: '255, 40, 40',
   claw: '60, 255, 120',
+  necro: '80, 230, 150',
+  pirate: '220, 120, 70',
+  samurai: '255, 160, 190',
+  kaiju: '150, 200, 70',
+  cyber: '252, 238, 10',
+  werewolf: '200, 210, 235',
+  siren: '80, 225, 200',
+  alchemy: '235, 200, 110',
+  ghost: '225, 235, 255',
+  bees: '255, 210, 0',
 };
 
 function reducedMotion(): boolean {
@@ -763,6 +775,17 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
       ctx.stroke();
       break;
     }
+    case 'bee':
+      ctx.globalAlpha = Math.min(1, fade * 3);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(Math.atan2(p.vy, p.vx));
+      ctx.drawImage(beeSprite(), -p.size, -p.size, p.size * 2, p.size * 2);
+      break;
+    case 'ghost':
+      ctx.globalAlpha = Math.sin(Math.PI * t) * 0.8;
+      ctx.translate(p.x + Math.sin(p.life * 0.08 + p.rot) * p.size * 0.5, p.y);
+      ctx.drawImage(ghostSprite(), -p.size, -p.size, p.size * 2, p.size * 2);
+      break;
     case 'scratch': {
       // Três arranhões verdes paralelos.
       ctx.globalAlpha = Math.sin(Math.PI * t);
@@ -846,7 +869,7 @@ function stepParticles(ctx: CanvasRenderingContext2D, particles: Particle[], hei
     p.y += p.vy;
     p.rot += p.vr;
     if (p.kind === 'bat') p.vy += Math.sin(p.life * 0.3) * 0.3;
-    if (p.kind === 'fly') {
+    if (p.kind === 'fly' || p.kind === 'bee') {
       // Voo errático.
       p.vx += rand(-0.7, 0.7);
       p.vy += rand(-0.7, 0.7);
@@ -870,7 +893,9 @@ function stepParticles(ctx: CanvasRenderingContext2D, particles: Particle[], hei
       p.kind === 'paw' ||
       p.kind === 'confetti' ||
       p.kind === 'rock' ||
-      p.kind === 'shard';
+      p.kind === 'shard' ||
+      p.kind === 'bee' ||
+      p.kind === 'ghost';
     ctx.globalCompositeOperation = dark ? 'source-over' : 'lighter';
     drawParticle(ctx, p);
   }
@@ -1387,6 +1412,186 @@ function emitAround(aura: DiceAura, o: AuraPoint, out: Particle[], power: number
             max: rand(40, 60),
             size: rand(2, 3) * s,
             color: pick(CONFETTI),
+          }),
+        );
+      break;
+    case 'necro':
+      if (chance(0.5))
+        out.push(
+          particle('mote', from.x, from.y, {
+            vy: -rand(0.6, 1.4) * s,
+            max: rand(30, 45),
+            size: rand(1, 1.8) * s,
+            color: pick(['80, 230, 150', '160, 90, 230']),
+          }),
+        );
+      if (chance(0.04))
+        out.push(
+          particle('bone', from.x, from.y, {
+            vx: Math.cos(a) * s,
+            vy: -s,
+            gravity: 0.06 * s,
+            vr: 0.2,
+            max: 40,
+            size: 4 * s,
+          }),
+        );
+      break;
+    case 'pirate':
+      if (chance(0.15))
+        out.push(
+          particle('smoke', from.x, from.y, {
+            vy: -rand(0.4, 1) * s,
+            max: rand(30, 45),
+            size: rand(6, 10) * s,
+            color: '120, 115, 110',
+          }),
+        );
+      if (chance(0.06))
+        out.push(
+          particle('coin', from.x, from.y, {
+            vx: Math.cos(a) * 1.5 * s,
+            vy: -rand(1.5, 2.5) * s,
+            gravity: 0.12 * s,
+            vr: 0.25,
+            max: 40,
+            size: 3.5 * s,
+          }),
+        );
+      break;
+    case 'samurai':
+      if (chance(0.35))
+        out.push(
+          particle('leaf', from.x, from.y, {
+            vx: Math.cos(a + 1.2) * 1.2 * s,
+            vy: Math.sin(a + 1.2) * 1.2 * s,
+            vr: 0.08,
+            max: rand(40, 60),
+            size: rand(2.5, 4) * s,
+            color: pick(['255, 180, 205', '255, 210, 225', '250, 150, 185']),
+          }),
+        );
+      break;
+    case 'kaiju':
+      if (chance(0.12))
+        out.push(
+          particle('rock', from.x, from.y, {
+            vx: Math.cos(a) * s,
+            vy: -rand(1, 2) * s,
+            gravity: 0.12 * s,
+            vr: 0.15,
+            max: 35,
+            size: rand(1.5, 2.5) * s,
+          }),
+        );
+      if (chance(0.2))
+        out.push(
+          particle('smoke', from.x, o.y + o.r, {
+            vx: rand(-0.6, 0.6),
+            vy: -rand(0.2, 0.5),
+            max: 40,
+            size: rand(6, 10) * s,
+            color: '120, 100, 70',
+          }),
+        );
+      break;
+    case 'cyber':
+      for (let i = 0; i < 2; i++)
+        if (chance(0.6)) {
+          const at = edge(o, rand(0, Math.PI * 2), rand(1, 1.5));
+          out.push(
+            particle('pixel', at.x, at.y, {
+              vx: (Math.random() < 0.5 ? -1 : 1) * rand(1, 3) * s,
+              max: rand(10, 20),
+              size: rand(1.5, 2.5) * s,
+              color: pick(['252, 238, 10', '0, 240, 255', '255, 43, 214']),
+              glyph: Math.random() < 0.4 ? 'bar' : undefined,
+            }),
+          );
+        }
+      break;
+    case 'werewolf':
+      if (chance(0.4))
+        out.push(
+          particle('mote', from.x, from.y, {
+            vy: -rand(0.4, 1) * s,
+            max: rand(30, 45),
+            size: rand(1, 1.6) * s,
+            color: '220, 230, 250',
+          }),
+        );
+      if (chance(0.03)) {
+        const at = edge(o, a, 1.4);
+        out.push(
+          particle('scratch', at.x, at.y, {
+            rot: rand(-0.8, 0.8),
+            max: 30,
+            size: 5 * s,
+            color: '200, 210, 235',
+          }),
+        );
+      }
+      break;
+    case 'siren':
+      if (chance(0.35))
+        out.push(
+          particle('bubble', from.x, from.y, {
+            vy: -rand(0.5, 1.1) * s,
+            max: rand(35, 50),
+            size: rand(1.8, 3.5) * s,
+            color: '170, 255, 235',
+          }),
+        );
+      if (chance(0.3))
+        out.push(
+          particle('spark', from.x, from.y, {
+            vy: -rand(0.3, 0.8) * s,
+            max: rand(25, 40),
+            size: rand(1, 1.6) * s,
+            color: pick(['255, 190, 230', '170, 255, 235']),
+          }),
+        );
+      break;
+    case 'alchemy':
+      if (chance(0.4))
+        out.push(
+          particle('bubble', from.x, from.y, {
+            vy: -rand(0.5, 1.2) * s,
+            max: rand(30, 45),
+            size: rand(1.8, 3) * s,
+            color: pick(['255, 120, 200', '120, 220, 255', '255, 220, 110', '160, 255, 140']),
+          }),
+        );
+      if (chance(0.08))
+        out.push(
+          particle('rune', from.x, from.y, {
+            vy: -rand(0.5, 1) * s,
+            max: 45,
+            size: rand(10, 13) * s,
+            glyph: pick(['☿', '☉', '☽', '♄', '♃', '♂', '♀']),
+            color: '235, 200, 110',
+          }),
+        );
+      break;
+    case 'ghost':
+      if (chance(0.06))
+        out.push(
+          particle('ghost', from.x, from.y, {
+            vy: -rand(0.6, 1.2) * s,
+            max: rand(50, 70),
+            size: rand(6, 9) * s,
+          }),
+        );
+      break;
+    case 'bees':
+      if (chance(0.12))
+        out.push(
+          particle('bee', from.x, from.y, {
+            vx: rand(-1.5, 1.5) * s,
+            vy: rand(-1.5, 1.5) * s,
+            drag: 0.92,
+            max: rand(60, 90),
+            size: rand(3, 4) * s,
           }),
         );
       break;
@@ -2038,6 +2243,12 @@ function criticalText(aura: DiceAura, durationMs: number, top = '50%') {
       textShadow: '-5px 0 rgba(0, 255, 255, 0.9), 5px 0 rgba(255, 0, 200, 0.9), 0 0 24px #22ff99',
       WebkitTextStroke: '0',
     });
+  if (aura === 'alchemy')
+    Object.assign(element.style, {
+      color: '#ffe9a8',
+      textShadow: '0 0 10px #ffd34a, 0 0 30px #e8a020, 0 4px 0 rgba(90, 50, 0, 0.7)',
+      WebkitTextStroke: '2px #b07a10',
+    });
   if (aura === 'ink')
     Object.assign(element.style, {
       color: '#101014',
@@ -2159,7 +2370,13 @@ export function criticalAuraBurst(
 ): void {
   if (reducedMotion()) return;
   const durationMs = options.durationMs ?? 3600;
-  if (options.text !== false && aura !== 'frog' && aura !== 'cat')
+  if (
+    options.text !== false &&
+    aura !== 'frog' &&
+    aura !== 'cat' &&
+    aura !== 'ghost' &&
+    aura !== 'bees'
+  )
     criticalText(aura, durationMs - 400, TEXT_TOP[aura] ?? '50%');
   if (options.sound !== false) playCriticalSound(aura);
   if (aura === 'frost') frozenGlass(durationMs);
@@ -2750,6 +2967,195 @@ function canvasCritText(ctx: CanvasRenderingContext2D, size: number, rgb: string
   ctx.fillText('CRÍTICO!', 0, 0);
 }
 
+/** Abelha (sprite). */
+function beeSprite() {
+  return sprite('bee', 32, (ctx, size) => {
+    const c = size / 2;
+    ctx.fillStyle = 'rgba(230, 245, 255, 0.7)';
+    ctx.beginPath();
+    ctx.ellipse(c - 2, c - 7, 6, 4, -0.4, 0, Math.PI * 2);
+    ctx.ellipse(c + 3, c - 7, 6, 4, 0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffcf1a';
+    ctx.beginPath();
+    ctx.ellipse(c, c, 10, 6.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#1a1408';
+    for (const x of [-3, 2]) ctx.fillRect(c + x, c - 6, 2.5, 12);
+    ctx.beginPath();
+    ctx.arc(c + 9, c, 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+/** Fantasminha de lençol (sprite). */
+function ghostSprite() {
+  return sprite('ghost', 64, (ctx, size) => {
+    const c = size / 2;
+    ctx.fillStyle = 'rgba(240, 245, 255, 0.9)';
+    ctx.beginPath();
+    ctx.arc(c, c - 6, 18, Math.PI, 0);
+    ctx.lineTo(c + 18, c + 20);
+    for (let i = 0; i < 4; i++)
+      ctx.quadraticCurveTo(c + 13.5 - i * 9, c + 26, c + 9 - i * 9, c + 20);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#1a1c28';
+    for (const x of [-6, 6]) {
+      ctx.beginPath();
+      ctx.ellipse(c + x, c - 6, 3, 4.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.ellipse(c, c + 4, 3, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+/** Neblina no vidro (fantasma): borra a página por trás do efeito. */
+function fogGlass(durationMs: number) {
+  const element = document.createElement('div');
+  element.setAttribute('aria-hidden', 'true');
+  Object.assign(element.style, {
+    position: 'fixed',
+    inset: '0',
+    zIndex: '119',
+    pointerEvents: 'none',
+    backdropFilter: 'blur(7px) saturate(0.5) brightness(1.1)',
+    background: 'rgba(200, 210, 225, 0.28)',
+  });
+  document.body.appendChild(element);
+  element.animate(
+    [{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 1, offset: 0.82 }, { opacity: 0 }],
+    {
+      duration: durationMs,
+      fill: 'forwards',
+    },
+  );
+  window.setTimeout(() => element.remove(), durationMs + 100);
+}
+
+/** Zumbi (de pé no chão em y = 0; altura ~ 2,2 × `s`). */
+function drawZombie(ctx: CanvasRenderingContext2D, s: number, t: number, phase: number) {
+  const sway = Math.sin(t * 3 + phase) * 0.08;
+  ctx.rotate(sway);
+  ctx.strokeStyle = '#3a4a2e';
+  ctx.lineCap = 'round';
+  ctx.lineWidth = s * 0.28;
+  ctx.beginPath();
+  ctx.moveTo(-s * 0.18, 0);
+  ctx.lineTo(-s * 0.12, -s * 0.8);
+  ctx.moveTo(s * 0.18, 0);
+  ctx.lineTo(s * 0.12, -s * 0.8);
+  ctx.stroke();
+  ctx.fillStyle = '#4c5c3a';
+  ctx.fillRect(-s * 0.35, -s * 1.65, s * 0.7, s * 0.9);
+  ctx.strokeStyle = '#7a9a6a';
+  ctx.lineWidth = s * 0.16;
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(side * s * 0.3, -s * 1.5);
+    ctx.lineTo(side * s * 0.25 + s * 0.75, -s * 1.45 + Math.sin(t * 4 + phase + side) * s * 0.08);
+    ctx.stroke();
+  }
+  ctx.fillStyle = '#7a9a6a';
+  ctx.beginPath();
+  ctx.arc(0, -s * 1.95, s * 0.32, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const x of [-0.12, 0.12])
+    blit(ctx, glowSprite('120, 255, 140'), x * s + s * 0.05, -s * 2, s * 0.12, 1);
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+/** Silhueta de lobo uivando (pés em y = 0). */
+function drawWolf(ctx: CanvasRenderingContext2D, scale: number) {
+  ctx.save();
+  ctx.scale(scale, scale);
+  ctx.fillStyle = '#0b0c14';
+  ctx.beginPath();
+  for (const [x, y] of [
+    [-70, -10],
+    [-50, -28],
+    [-35, -32],
+    [10, -36],
+    [25, -50],
+    [30, -82],
+    [35, -96],
+    [44, -90],
+    [40, -74],
+    [46, -66],
+    [38, -62],
+    [36, -44],
+    [30, -14],
+    [34, 0],
+    [26, 0],
+    [20, -10],
+    [-20, -10],
+    [-24, 0],
+    [-32, 0],
+    [-34, -14],
+  ] as const)
+    ctx.lineTo(x, y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(28, -80);
+  ctx.lineTo(23, -97);
+  ctx.lineTo(33, -86);
+  ctx.fill();
+  ctx.restore();
+}
+
+/** Navio pirata (linha d'água em y = 0). */
+function drawShip(ctx: CanvasRenderingContext2D, s: number, t: number) {
+  ctx.save();
+  ctx.rotate(Math.sin(t * 2) * 0.04);
+  ctx.fillStyle = '#4a2c16';
+  ctx.beginPath();
+  ctx.moveTo(-s * 1.4, -s * 0.35);
+  ctx.lineTo(s * 1.5, -s * 0.35);
+  ctx.lineTo(s * 1.1, s * 0.25);
+  ctx.lineTo(-s * 1.1, s * 0.25);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#2a180a';
+  ctx.lineWidth = s * 0.06;
+  for (const x of [-0.7, 0, 0.7]) {
+    ctx.beginPath();
+    ctx.moveTo(x * s, -s * 0.35);
+    ctx.lineTo(x * s, -s * 1.7);
+    ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(235, 225, 200, 0.95)';
+  for (const [x, h] of [
+    [-0.7, 0.9],
+    [0, 1.1],
+    [0.7, 0.85],
+  ] as const) {
+    ctx.beginPath();
+    ctx.moveTo(x * s - s * 0.35, -s * 0.5);
+    ctx.quadraticCurveTo(
+      x * s,
+      -s * 0.5 - s * h * 0.5 + Math.sin(t * 3) * s * 0.05,
+      x * s - s * 0.35,
+      -s * 0.5 - s * h,
+    );
+    ctx.lineTo(x * s + s * 0.35, -s * 0.5 - s * h);
+    ctx.quadraticCurveTo(x * s + s * 0.2, -s * 0.5 - s * h * 0.5, x * s + s * 0.35, -s * 0.5);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.fillStyle = '#0d0d10';
+  ctx.fillRect(0, -s * 1.75, s * 0.45, s * 0.28);
+  ctx.fillStyle = '#f0f0f0';
+  ctx.font = `${s * 0.24}px "Segoe UI Symbol", serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('☠', s * 0.22, -s * 1.61);
+  ctx.restore();
+}
+
 const SCENES: Partial<
   Record<DiceAura, (width: number, height: number, durationMs: number) => Scene>
 > = {
@@ -3251,6 +3657,773 @@ const SCENES: Partial<
       },
     };
   },
+  necro: (width, height) => {
+    // Mortos-vivos brotam da terra e cambaleiam em direção ao texto, com névoa verde.
+    const ground = height - 30;
+    const zombies = Array.from({ length: 7 }, (_, i) => ({
+      x: width * (0.06 + i * 0.145) + rand(-20, 20),
+      delay: 0.15 + i * 0.1,
+      phase: rand(0, 6),
+      size: Math.min(width, height) * rand(0.06, 0.075),
+    }));
+    return {
+      frame(ctx, f) {
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.fillStyle = '#1c140e';
+        ctx.fillRect(0, ground, width, height - ground);
+        for (const z of zombies) {
+          const rise = easeOut((f.time - z.delay) / 0.6);
+          if (rise <= 0) continue;
+          const walk = Math.max(0, f.time - z.delay - 0.6);
+          const x = z.x + (width / 2 - z.x) * Math.min(0.45, walk * 0.12);
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(0, 0, width, ground + 2);
+          ctx.clip();
+          ctx.translate(x, ground + (1 - rise) * z.size * 2.4);
+          if (x > width / 2) ctx.scale(-1, 1);
+          drawZombie(ctx, z.size, f.time, z.phase);
+          ctx.restore();
+        }
+        ctx.restore();
+        if (f.emitting && f.particles.length < MAX_PARTICLES && Math.random() < 0.5)
+          f.particles.push(
+            particle('wisp', rand(0, width), ground, {
+              vy: -rand(0.5, 1.5),
+              vx: rand(-0.4, 0.4),
+              max: 120,
+              size: rand(40, 80),
+              color: pick(['80, 230, 150', '120, 90, 200']),
+            }),
+          );
+      },
+    };
+  },
+  pirate: (width, height) => {
+    // Um navio cruza o mar disparando canhões; no fim, o baú do tesouro abre.
+    const sea = height * 0.8;
+    const s = Math.min(width, height) * 0.11;
+    const shots = [0.8, 1.3, 1.8].map((at) => ({ at, done: false }));
+    let opened = false;
+    return {
+      frame(ctx, f) {
+        const shipX = -s * 2 + (width + s * 4) * (f.time / 3.4);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.translate(shipX, sea + Math.sin(f.time * 2) * 4);
+        drawShip(ctx, s, f.time);
+        ctx.restore();
+        for (const shot of shots) {
+          if (shot.done || f.time < shot.at) continue;
+          shot.done = true;
+          screenShake(150, 5);
+          const mx = shipX + s * 1.2;
+          const my = sea - s * 0.15;
+          for (let k = 0; k < 8; k++)
+            f.particles.push(
+              particle('smoke', mx, my, {
+                vx: rand(1, 4),
+                vy: -rand(0.5, 1.5),
+                max: 70,
+                size: rand(20, 40),
+                color: '160, 155, 150',
+              }),
+            );
+          f.particles.push(
+            particle('rock', mx, my, {
+              vx: rand(9, 13),
+              vy: -rand(9, 12),
+              gravity: 0.25,
+              max: 120,
+              size: 7,
+            }),
+          );
+          f.particles.push(
+            particle('spark', mx, my, { max: 10, size: 14, color: '255, 200, 120' }),
+          );
+        }
+        ctx.save();
+        ctx.globalAlpha = f.presence * 0.85;
+        ctx.fillStyle = 'rgba(20, 70, 120, 0.8)';
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+        for (let x = 0; x <= width + 30; x += 30)
+          ctx.lineTo(x, sea + Math.sin(x * 0.02 + f.time * 2.5) * 10);
+        ctx.lineTo(width, height);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        // Baú do tesouro.
+        const show = easeOut((f.time - 1.9) / 0.3);
+        if (show <= 0) return;
+        const bx = width * 0.85;
+        const by = height - 30;
+        const bw = s * 1.3;
+        const lid = clamp01((f.time - 2.1) / 0.3);
+        if (!opened && lid > 0) {
+          opened = true;
+          for (let k = 0; k < 20; k++)
+            f.particles.push(
+              particle('coin', bx, by - bw * 0.5, {
+                vx: rand(-4, 4),
+                vy: -rand(5, 10),
+                gravity: 0.35,
+                vr: 0.25,
+                max: 70,
+                size: rand(6, 10),
+              }),
+            );
+        }
+        ctx.save();
+        ctx.globalAlpha = f.presence * show;
+        if (lid > 0) {
+          ctx.globalCompositeOperation = 'lighter';
+          blit(ctx, softSprite('255, 210, 80'), bx, by - bw * 0.6, bw * 1.4, 0.8 * lid);
+          ctx.globalCompositeOperation = 'source-over';
+        }
+        ctx.fillStyle = '#6b3d16';
+        ctx.fillRect(bx - bw / 2, by - bw * 0.55, bw, bw * 0.55);
+        ctx.fillStyle = '#d9a441';
+        ctx.fillRect(bx - bw / 2, by - bw * 0.3, bw, bw * 0.06);
+        ctx.save();
+        ctx.translate(bx - bw / 2, by - bw * 0.55);
+        ctx.rotate(-lid * 1.2);
+        ctx.fillStyle = '#7a4a1e';
+        ctx.fillRect(0, -bw * 0.3, bw, bw * 0.3);
+        ctx.fillStyle = '#d9a441';
+        ctx.fillRect(0, -bw * 0.06, bw, bw * 0.06);
+        ctx.restore();
+        ctx.restore();
+      },
+    };
+  },
+  samurai: (width, height) => {
+    // Escurece, um corte limpo atravessa a tela inteira e a abre por um instante; o kanji 斬
+    // aparece e pétalas de cerejeira passam.
+    const from = { x: width * 0.05, y: height * 0.15 };
+    const to = { x: width * 0.95, y: height * 0.85 };
+    const length = Math.hypot(to.x - from.x, to.y - from.y);
+    const nx = -(to.y - from.y) / length;
+    const ny = (to.x - from.x) / length;
+    return {
+      frame(ctx, f) {
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        const cut = clamp01((f.time - 0.3) / 0.1);
+        const gap = 14 * Math.sin(clamp01((f.time - 0.4) / 1.2) * Math.PI);
+        if (cut > 0) {
+          const ex = from.x + (to.x - from.x) * cut;
+          const ey = from.y + (to.y - from.y) * cut;
+          if (gap > 0.5) {
+            ctx.fillStyle = '#050005';
+            ctx.beginPath();
+            ctx.moveTo(from.x + nx * gap, from.y + ny * gap);
+            ctx.lineTo(to.x + nx * gap, to.y + ny * gap);
+            ctx.lineTo(to.x - nx * gap, to.y - ny * gap);
+            ctx.lineTo(from.x - nx * gap, from.y - ny * gap);
+            ctx.closePath();
+            ctx.fill();
+          }
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.lineCap = 'round';
+          for (const [w, style] of [
+            [10, 'rgba(255, 170, 200, 0.35)'],
+            [2.5, 'rgba(255, 255, 255, 1)'],
+          ] as const) {
+            ctx.strokeStyle = style;
+            ctx.lineWidth = w;
+            for (const side of gap > 0.5 ? [-1, 1] : [0]) {
+              ctx.beginPath();
+              ctx.moveTo(from.x + nx * gap * side, from.y + ny * gap * side);
+              ctx.lineTo(ex + nx * gap * side, ey + ny * gap * side);
+              ctx.stroke();
+            }
+          }
+          ctx.globalCompositeOperation = 'source-over';
+        }
+        const kanji = clamp01((f.time - 0.5) / 0.2) * (1 - clamp01((f.time - 2.4) / 0.5));
+        if (kanji > 0) {
+          ctx.globalAlpha = f.presence * kanji * 0.85;
+          ctx.fillStyle = '#c4161c';
+          ctx.font = `bold ${Math.min(width, height) * 0.38}px "Yu Mincho", "MS Mincho", serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('斬', width * 0.78, height * 0.4);
+        }
+        ctx.restore();
+        if (f.emitting && f.particles.length < MAX_PARTICLES)
+          for (let i = 0; i < 2; i++)
+            f.particles.push(
+              particle('leaf', -20, rand(0, height), {
+                vx: rand(4, 8),
+                vy: rand(-0.5, 1.5),
+                vr: rand(-0.1, 0.1),
+                max: 220,
+                size: rand(6, 10),
+                color: pick(['255, 180, 205', '255, 210, 225', '250, 150, 185']),
+              }),
+            );
+      },
+    };
+  },
+  kaiju: (width, height) => {
+    // Uma sombra cresce, um pé gigante pisa (tremor, rachaduras e poeira) e sobe deixando a pegada.
+    const ground = height * 0.96;
+    const fw = Math.min(width * 0.5, height * 0.6);
+    const fx = width * 0.55;
+    let stomped = false;
+    const cracks: Point[][] = [];
+    const foot = (ctx: CanvasRenderingContext2D) => {
+      ctx.fillStyle = '#3f5a2a';
+      ctx.beginPath();
+      ctx.ellipse(0, -fw * 0.35, fw * 0.42, fw * 0.4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillRect(-fw * 0.3, -fw * 1.6, fw * 0.6, fw * 1.25);
+      ctx.fillStyle = '#e8e0c8';
+      for (const x of [-0.3, -0.1, 0.1, 0.3]) {
+        ctx.beginPath();
+        ctx.moveTo(x * fw - fw * 0.05, -fw * 0.05);
+        ctx.lineTo(x * fw, fw * 0.08);
+        ctx.lineTo(x * fw + fw * 0.05, -fw * 0.05);
+        ctx.fill();
+      }
+      ctx.fillStyle = 'rgba(30, 45, 20, 0.6)';
+      for (let i = 0; i < 12; i++) {
+        ctx.beginPath();
+        ctx.arc(
+          (((i * 37) % 60) / 100) * fw - fw * 0.3,
+          (-((i * 53) % 140) / 100) * fw,
+          fw * 0.035,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+      }
+    };
+    return {
+      frame(ctx, f) {
+        const down = clamp01((f.time - 0.3) / 0.5) ** 3;
+        const up = easeOut((f.time - 1.7) / 0.6);
+        const y = ground - (1 - down) * height * 1.2 - up * height * 1.2;
+        if (!stomped && down >= 1) {
+          stomped = true;
+          screenShake(500, 16);
+          for (let k = 0; k < 9; k++) {
+            const a = Math.PI + rand(-0.1, Math.PI + 0.1);
+            const l = rand(fw * 0.5, fw * 1.4);
+            cracks.push(
+              bolt(
+                { x: fx, y: ground },
+                { x: fx + Math.cos(a) * l, y: ground + Math.sin(a) * l * 0.25 },
+                14,
+                7,
+              ),
+            );
+          }
+          for (let k = 0; k < 24; k++)
+            f.particles.push(
+              particle('smoke', fx + rand(-fw * 0.6, fw * 0.6), ground, {
+                vx: rand(-3, 3),
+                vy: -rand(0.5, 2),
+                max: 100,
+                size: rand(30, 60),
+                color: '120, 100, 70',
+              }),
+            );
+        }
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        // Sombra (cresce enquanto o pé desce) e, depois, a pegada.
+        ctx.fillStyle = `rgba(0, 0, 0, ${0.25 + down * 0.35})`;
+        ctx.beginPath();
+        ctx.ellipse(fx, ground, fw * 0.5 * (0.4 + 0.6 * down), fw * 0.08, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.lineJoin = 'round';
+        for (const crack of cracks)
+          for (const [w, style] of [
+            [6, 'rgba(0, 0, 0, 0.7)'],
+            [1.5, 'rgba(255, 200, 120, 0.7)'],
+          ] as const) {
+            ctx.lineWidth = w;
+            ctx.strokeStyle = style;
+            ctx.beginPath();
+            crack.forEach((point, i) =>
+              i ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y),
+            );
+            ctx.stroke();
+          }
+        ctx.translate(fx, y);
+        foot(ctx);
+        ctx.restore();
+      },
+    };
+  },
+  cyber: (width, height) => {
+    // Cidade neon: chão em grade correndo, sol sintético, letreiros acendendo e um drone escaneando.
+    const horizon = height * 0.62;
+    const signs = [
+      { x: width * 0.05, y: height * 0.08, text: 'クリティカル', rgb: '255, 43, 214', at: 0.2 },
+      { x: width * 0.66, y: height * 0.12, text: 'CRIT//OK', rgb: '0, 240, 255', at: 0.45 },
+      { x: width * 0.12, y: height * 0.32, text: 'NEON 20', rgb: '252, 238, 10', at: 0.7 },
+    ];
+    return {
+      frame(ctx, f) {
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        // Sol listrado.
+        const sun = ctx.createLinearGradient(0, horizon - 180, 0, horizon);
+        sun.addColorStop(0, '#fcee0a');
+        sun.addColorStop(1, '#ff2bd6');
+        ctx.fillStyle = sun;
+        ctx.beginPath();
+        ctx.arc(width / 2, horizon, 170, Math.PI, 0);
+        ctx.fill();
+        ctx.fillStyle = '#0a0612';
+        for (let i = 0; i < 6; i++)
+          ctx.fillRect(width / 2 - 180, horizon - 20 - i * 26, 360, 4 + i);
+        ctx.fillStyle = 'rgba(10, 6, 18, 0.85)';
+        ctx.fillRect(0, horizon, width, height - horizon);
+        // Grade em perspectiva.
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = 'rgba(255, 43, 214, 0.7)';
+        ctx.lineWidth = 2;
+        for (let i = -12; i <= 12; i++) {
+          ctx.beginPath();
+          ctx.moveTo(width / 2 + i * 12, horizon);
+          ctx.lineTo(width / 2 + i * width * 0.12, height);
+          ctx.stroke();
+        }
+        for (let i = 0; i < 10; i++) {
+          const k = ((i + ((f.time * 1.5) % 1)) / 10) ** 2;
+          const y = horizon + (height - horizon) * k;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+        // Letreiros piscando ao acender.
+        for (const sign of signs) {
+          const on = f.time > sign.at && (f.time > sign.at + 0.3 || Math.random() < 0.5);
+          if (!on) continue;
+          ctx.font = `bold ${Math.min(width, height) * 0.05}px "Segoe UI", sans-serif`;
+          const w = ctx.measureText(sign.text).width + 30;
+          const h = Math.min(width, height) * 0.08;
+          ctx.strokeStyle = `rgba(${sign.rgb}, 0.9)`;
+          ctx.lineWidth = 4;
+          ctx.strokeRect(sign.x, sign.y, w, h);
+          ctx.fillStyle = `rgba(${sign.rgb}, 1)`;
+          ctx.textBaseline = 'middle';
+          ctx.fillText(sign.text, sign.x + 15, sign.y + h / 2);
+          blit(ctx, softSprite(sign.rgb), sign.x + w / 2, sign.y + h / 2, w * 0.7, 0.3);
+        }
+        // Drone escaneando o texto.
+        const scan = clamp01((f.time - 1) / 1.2);
+        if (scan > 0 && scan < 1) {
+          const y = height * 0.3 + scan * height * 0.4;
+          ctx.fillStyle = 'rgba(0, 240, 255, 0.25)';
+          ctx.fillRect(width * 0.2, y - 2, width * 0.6, 4);
+          blit(
+            ctx,
+            glowSprite('0, 240, 255'),
+            width / 2 + Math.sin(f.time * 3) * 40,
+            height * 0.22,
+            14,
+            1,
+          );
+        }
+        ctx.restore();
+      },
+    };
+  },
+  werewolf: (width, height) => {
+    // Lua cheia nasce, nuvens passam, um lobo uiva no morro e olhos vermelhos acendem no escuro.
+    const moonR = Math.min(width, height) * 0.2;
+    const moon = sprite(`full-moon:${Math.round(moonR)}`, Math.ceil(moonR * 3), (c, size) => {
+      c.translate(size / 2, size / 2);
+      const glow = c.createRadialGradient(0, 0, moonR * 0.9, 0, 0, moonR * 1.5);
+      glow.addColorStop(0, 'rgba(220, 230, 255, 0.45)');
+      glow.addColorStop(1, 'rgba(220, 230, 255, 0)');
+      c.fillStyle = glow;
+      c.fillRect(-size / 2, -size / 2, size, size);
+      const g = c.createRadialGradient(-moonR * 0.3, -moonR * 0.3, moonR * 0.1, 0, 0, moonR);
+      g.addColorStop(0, '#ffffff');
+      g.addColorStop(1, '#b8c2dc');
+      c.fillStyle = g;
+      c.beginPath();
+      c.arc(0, 0, moonR, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = 'rgba(140, 150, 175, 0.4)';
+      for (const [x, y, r] of [
+        [-0.3, -0.2, 0.18],
+        [0.25, 0.15, 0.12],
+        [0.1, -0.4, 0.08],
+        [-0.1, 0.35, 0.1],
+      ] as const) {
+        c.beginPath();
+        c.arc(x * moonR, y * moonR, r * moonR, 0, Math.PI * 2);
+        c.fill();
+      }
+    });
+    const eyes = Array.from({ length: 6 }, (_, i) => ({
+      x: i % 2 ? rand(width * 0.05, width * 0.25) : rand(width * 0.75, width * 0.95),
+      y: rand(height * 0.45, height * 0.8),
+      phase: rand(0, 6),
+    }));
+    return {
+      frame(ctx, f) {
+        const rise = easeOut(f.time / 0.9);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.drawImage(
+          moon,
+          width * 0.62 - moon.width / 2,
+          height * 0.3 + (1 - rise) * height * 0.4 - moon.height / 2,
+        );
+        ctx.globalAlpha = f.presence * 0.75;
+        drawCloud(ctx, -200 + f.time * 160, height * 0.25, 70, 'rgba(30, 32, 45, 0.85)');
+        drawCloud(ctx, width + 100 - f.time * 120, height * 0.38, 55, 'rgba(30, 32, 45, 0.8)');
+        ctx.globalAlpha = f.presence;
+        ctx.fillStyle = '#0b0c14';
+        ctx.beginPath();
+        ctx.ellipse(width * 0.3, height + height * 0.05, width * 0.45, height * 0.2, 0, Math.PI, 0);
+        ctx.fill();
+        ctx.save();
+        ctx.translate(width * 0.3, height * 0.86);
+        drawWolf(ctx, Math.min(width, height) / 300);
+        ctx.restore();
+        ctx.globalCompositeOperation = 'lighter';
+        for (const e of eyes) {
+          if (f.time < 0.9 || Math.sin(f.time * 2 + e.phase) < -0.6) continue;
+          blit(ctx, glowSprite('255, 40, 40'), e.x - 8, e.y, 7, f.presence);
+          blit(ctx, glowSprite('255, 40, 40'), e.x + 8, e.y, 7, f.presence);
+        }
+        ctx.restore();
+      },
+    };
+  },
+  siren: (width, height) => {
+    // A tela ondula como água; uma sereia canta numa pedra e ondas de som coloridas cruzam a tela.
+    const colors = ['80, 225, 200', '255, 150, 220', '170, 140, 255'];
+    return {
+      frame(ctx, f) {
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineWidth = 2;
+        for (let y = 0; y < height; y += 34) {
+          ctx.strokeStyle = 'rgba(120, 220, 230, 0.12)';
+          ctx.beginPath();
+          for (let x = 0; x <= width + 30; x += 30)
+            ctx.lineTo(x, y + Math.sin(x * 0.015 + f.time * 2 + y) * 6);
+          ctx.stroke();
+        }
+        const rx = width * 0.14;
+        const ry = height * 0.82;
+        colors.forEach((rgb, i) => {
+          ctx.strokeStyle = `rgba(${rgb}, 0.6)`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          const reach = width * clamp01((f.time - 0.3 - i * 0.15) / 1.2);
+          for (let x = 0; x <= reach; x += 12)
+            ctx.lineTo(
+              rx + x,
+              ry - 80 - x * 0.35 + Math.sin(x * 0.03 - f.time * 6 + i) * (14 + i * 6),
+            );
+          ctx.stroke();
+        });
+        ctx.globalCompositeOperation = 'source-over';
+        // Pedra e silhueta da sereia.
+        ctx.fillStyle = '#1a2a30';
+        ctx.beginPath();
+        ctx.ellipse(rx, ry + 40, 120, 50, 0, Math.PI, 0);
+        ctx.fill();
+        ctx.fillStyle = '#0e1a20';
+        ctx.beginPath();
+        ctx.moveTo(rx - 20, ry);
+        ctx.quadraticCurveTo(rx - 90, ry + 10, rx - 110, ry - 10 + Math.sin(f.time * 3) * 6);
+        ctx.lineTo(rx - 125, ry - 30);
+        ctx.lineTo(rx - 100, ry - 15);
+        ctx.quadraticCurveTo(rx - 60, ry - 20, rx, ry - 30);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(rx + 5, ry - 55, 18, 32, 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(rx + 14, ry - 98, 15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#0e1a20';
+        ctx.lineWidth = 4;
+        for (let k = 0; k < 4; k++) {
+          ctx.beginPath();
+          ctx.moveTo(rx + 8, ry - 105);
+          ctx.quadraticCurveTo(
+            rx - 20 - k * 6,
+            ry - 80 + Math.sin(f.time * 2 + k) * 8,
+            rx - 30 - k * 8,
+            ry - 40,
+          );
+          ctx.stroke();
+        }
+        ctx.restore();
+        if (f.emitting && f.particles.length < MAX_PARTICLES && Math.random() < 0.4)
+          f.particles.push(
+            particle('spark', rand(0, width), rand(0, height), {
+              max: rand(30, 60),
+              size: rand(1.5, 3),
+              color: pick(['255, 190, 230', '170, 255, 235', '255, 255, 255']),
+            }),
+          );
+      },
+    };
+  },
+  alchemy: (width, height) => {
+    // Círculo de transmutação se desenha, frascos borbulham e um clarão dourado transforma tudo.
+    const cx = width / 2;
+    const cy = height / 2;
+    const R = Math.min(width, height) * 0.34;
+    const symbols = ['☿', '☉', '☽', '♄', '♃', '♂', '♀'];
+    const flasks = [
+      { x: width * 0.2, rgb: '255, 90, 180' },
+      { x: width * 0.5, rgb: '90, 200, 255' },
+      { x: width * 0.8, rgb: '140, 255, 120' },
+    ];
+    let flashed = false;
+    return {
+      frame(ctx, f) {
+        const draw = clamp01(f.time / 1);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = 'rgba(235, 200, 110, 0.85)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * draw);
+        ctx.stroke();
+        if (draw > 0.3) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, R * 0.82, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(f.time * 0.4);
+          for (const offset of [0, Math.PI]) {
+            ctx.beginPath();
+            for (let i = 0; i <= 3; i++) {
+              const a = offset + (i / 3) * Math.PI * 2 - Math.PI / 2;
+              ctx.lineTo(Math.cos(a) * R * 0.78, Math.sin(a) * R * 0.78);
+            }
+            ctx.stroke();
+          }
+          ctx.strokeRect(-R * 0.38, -R * 0.38, R * 0.76, R * 0.76);
+          ctx.restore();
+          symbols.forEach((glyph, i) => {
+            const a = (i / symbols.length) * Math.PI * 2 - f.time * 0.3;
+            blit(
+              ctx,
+              runeSprite(glyph, '235, 200, 110'),
+              cx + Math.cos(a) * R * 0.91,
+              cy + Math.sin(a) * R * 0.91,
+              R * 0.08,
+              clamp01((draw - 0.3) * 3),
+            );
+          });
+        }
+        ctx.globalCompositeOperation = 'source-over';
+        // Frascos borbulhando.
+        for (const flask of flasks) {
+          const fy = height - 40;
+          ctx.fillStyle = `rgba(${flask.rgb}, 0.75)`;
+          ctx.beginPath();
+          ctx.arc(flask.x, fy - 30, 30, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(230, 240, 255, 0.8)';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(flask.x, fy - 30, 32, Math.PI * 0.3 - Math.PI * 1.6, Math.PI * 0.3);
+          ctx.moveTo(flask.x - 9, fy - 61);
+          ctx.lineTo(flask.x - 9, fy - 95);
+          ctx.moveTo(flask.x + 9, fy - 61);
+          ctx.lineTo(flask.x + 9, fy - 95);
+          ctx.stroke();
+          if (f.emitting && Math.random() < 0.3)
+            f.particles.push(
+              particle('bubble', flask.x + rand(-5, 5), fy - 95, {
+                vy: -rand(1, 2.5),
+                vx: rand(-0.3, 0.3),
+                max: 60,
+                size: rand(3, 6),
+                color: flask.rgb,
+              }),
+            );
+        }
+        const flash = 1 - Math.abs(f.time - 1.4) / 0.25;
+        if (flash > 0) {
+          ctx.fillStyle = `rgba(255, 235, 170, ${flash * 0.7})`;
+          ctx.fillRect(0, 0, width, height);
+        }
+        ctx.restore();
+        if (!flashed && f.time >= 1.4) {
+          flashed = true;
+          for (let k = 0; k < 50; k++) {
+            const a = rand(0, Math.PI * 2);
+            f.particles.push(
+              particle(
+                'spark',
+                cx + Math.cos(a) * R * rand(0.2, 1),
+                cy + Math.sin(a) * R * rand(0.2, 1),
+                {
+                  vy: -rand(0.5, 2),
+                  max: rand(50, 90),
+                  size: rand(1.5, 3),
+                  color: '255, 215, 110',
+                },
+              ),
+            );
+          }
+        }
+      },
+    };
+  },
+  ghost: (width, height, durationMs) => {
+    // O vidro embaça e um dedo invisível escreve "CRÍTICO!"; as letras escorrem e fantasmas passam.
+    fogGlass(durationMs);
+    const font =
+      getComputedStyle(document.body).getPropertyValue('--font-display').trim() || 'serif';
+    const size = Math.min(width * 0.1, 130);
+    const cx = width / 2;
+    const cy = height * 0.42;
+    let dripped = false;
+    let textWidth = 0;
+    return {
+      frame(ctx, f) {
+        ctx.save();
+        ctx.font = `${size}px ${font}`;
+        textWidth ||= ctx.measureText('CRÍTICO!').width;
+        const write = clamp01((f.time - 0.4) / 1.3);
+        const left = cx - textWidth / 2;
+        ctx.globalAlpha = f.presence;
+        ctx.beginPath();
+        ctx.rect(left - 20, cy - size, (textWidth + 40) * write, size * 2);
+        ctx.clip();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.shadowColor = 'rgba(200, 220, 255, 0.9)';
+        ctx.shadowBlur = 14;
+        ctx.fillText('CRÍTICO!', cx, cy);
+        ctx.restore();
+        if (write > 0 && write < 1) {
+          ctx.save();
+          ctx.globalAlpha = f.presence * 0.8;
+          ctx.globalCompositeOperation = 'lighter';
+          blit(
+            ctx,
+            softSprite('230, 240, 255'),
+            left + textWidth * write,
+            cy + Math.sin(f.time * 18) * size * 0.25,
+            18,
+            0.9,
+          );
+          ctx.restore();
+        }
+        if (!dripped && write >= 1) {
+          dripped = true;
+          for (let k = 0; k < 9; k++)
+            f.particles.push(
+              particle('drop', left + rand(0, textWidth), cy + size * 0.35, {
+                vy: 0.3,
+                gravity: 0.03,
+                max: 160,
+                size: rand(2, 3),
+                color: '225, 235, 255',
+              }),
+            );
+        }
+        if (f.emitting && f.particles.length < MAX_PARTICLES && Math.random() < 0.04)
+          f.particles.push(
+            particle('ghost', -40, rand(height * 0.15, height * 0.85), {
+              vx: rand(2, 4),
+              vy: rand(-0.5, 0.5),
+              max: 260,
+              size: rand(22, 36),
+            }),
+          );
+      },
+    };
+  },
+  bees: (width, height) => {
+    // Um enxame chega de todos os lados e forma a palavra "CRÍTICO!" no ar; no fim, dispersa.
+    const font =
+      getComputedStyle(document.body).getPropertyValue('--font-display').trim() || 'serif';
+    const size = Math.min(width * 0.11, 140);
+    const off = document.createElement('canvas');
+    off.width = Math.ceil(width);
+    off.height = Math.ceil(size * 1.6);
+    const octx = off.getContext('2d', { willReadFrequently: true });
+    const targets: Point[] = [];
+    if (octx) {
+      octx.font = `${size}px ${font}`;
+      octx.textAlign = 'center';
+      octx.textBaseline = 'middle';
+      octx.fillText('CRÍTICO!', off.width / 2, off.height / 2);
+      const data = octx.getImageData(0, 0, off.width, off.height).data;
+      for (let y = 0; y < off.height; y += 7)
+        for (let x = 0; x < off.width; x += 7)
+          if ((data[(y * off.width + x) * 4 + 3] ?? 0) > 128)
+            targets.push({ x, y: y - off.height / 2 + height * 0.42 });
+    }
+    const chosen = targets.sort(() => Math.random() - 0.5).slice(0, 420);
+    const bees = chosen.map((target) => {
+      const side = Math.floor(rand(0, 4));
+      return {
+        x: side === 0 ? -20 : side === 1 ? width + 20 : rand(0, width),
+        y: side === 2 ? -20 : side === 3 ? height + 20 : rand(0, height),
+        tx: target.x,
+        ty: target.y,
+        delay: rand(0, 0.6),
+        out: rand(0, Math.PI * 2),
+      };
+    });
+    const image = beeSprite();
+    return {
+      frame(ctx, f) {
+        ctx.save();
+        ctx.globalAlpha = f.presence * 0.25;
+        ctx.strokeStyle = '#ffd000';
+        ctx.lineWidth = 1.5;
+        const hex = 40;
+        for (let y = 0; y < height + hex; y += hex * 0.86)
+          for (let x = 0; x < width + hex; x += hex * 1.5) {
+            const ox = (Math.round(y / (hex * 0.86)) % 2) * hex * 0.75;
+            ctx.beginPath();
+            for (let k = 0; k < 6; k++)
+              ctx.lineTo(
+                x + ox + Math.cos((k * Math.PI) / 3) * hex * 0.5,
+                y + Math.sin((k * Math.PI) / 3) * hex * 0.5,
+              );
+            ctx.closePath();
+            ctx.stroke();
+          }
+        ctx.restore();
+        const leaving = f.time > 2.6;
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        for (const bee of bees) {
+          if (leaving) {
+            bee.x += Math.cos(bee.out) * 12;
+            bee.y += Math.sin(bee.out) * 12;
+          } else if (f.time > bee.delay) {
+            bee.x += (bee.tx - bee.x) * 0.08 + rand(-1.5, 1.5);
+            bee.y += (bee.ty - bee.y) * 0.08 + rand(-1.5, 1.5);
+          }
+          ctx.drawImage(image, bee.x - 5, bee.y - 5, 10, 10);
+        }
+        ctx.restore();
+      },
+    };
+  },
   ritual: (width, height) => {
     // Um pentagrama demoníaco se desenha sozinho: o círculo, depois a estrela; velas acendem nas
     // pontas, runas giram entre os círculos e labaredas sobem das linhas.
@@ -3583,97 +4756,144 @@ const SCENES: Partial<
       },
     };
   },
-  gears: (width, height) => {
-    // Uma máquina: trens de engrenagens engatadas no alto e embaixo, uma engrenagem enorme atrás
-    // do texto, vapor escapando, faíscas nos encaixes e arcos elétricos.
-    const train = (edge: 'top' | 'bottom') => {
-      const gears: { x: number; y: number; r: number; dir: number; steel: boolean }[] = [];
-      const sizes = [70, 46, 92, 54, 78, 40, 86, 60];
-      let x = -30;
-      let i = 0;
-      while (x < width + 120) {
-        const r = sizes[i % sizes.length]!;
-        if (gears.length) {
-          const prev = gears[gears.length - 1]!;
-          x = prev.x + (prev.r + r) * 0.9;
-        }
-        gears.push({
-          x,
-          y: edge === 'top' ? r * 0.45 : height - r * 0.45,
-          r,
-          dir: i % 2 ? -1 : 1,
-          steel: i % 3 === 1,
-        });
-        i += 1;
-      }
-      return gears;
-    };
-    const trains = [train('top'), train('bottom')];
-    const big = Math.min(width, height) * 0.32;
-    const bigImage = gearSprite(big, false);
+  gears: (width, height, durationMs) => {
+    // Uma máquina se monta em volta do texto: engrenagens chegam voando de todos os lados e
+    // engatam na engrenagem central; o manômetro sobe até o vermelho, os pistões bombeiam e, quando
+    // a pressão estoura, apita o apito a vapor, jatos de vapor saem e tudo dispara a girar.
+    const cx = width / 2;
+    const cy = height / 2;
+    const big = Math.min(width, height) * 0.2;
+    const small = big * 0.46;
+    const distance = (big + small) * 0.9;
+    const planets = Array.from({ length: 6 }, (_, i) => ({
+      angle: (i / 6) * Math.PI * 2 + Math.PI / 6,
+      delay: 0.35 + i * 0.12,
+      steel: i % 2 === 1,
+    }));
+    const outer = big * 0.32;
+    const outerDistance = distance + (small + outer) * 0.9;
+    const outers = planets
+      .filter((_, i) => i % 2 === 0)
+      .map((p, i) => ({ angle: p.angle, delay: 0.9 + i * 0.1 }));
+    let spin = 0;
+    let lastTime = 0;
+    let blown = false;
     return {
       frame(ctx, f) {
-        const slide = easeOut(f.time / 0.6);
+        const end = durationMs / 1000;
+        const dt = Math.max(0, f.time - lastTime);
+        lastTime = f.time;
+        // Gira devagar enquanto monta, acelera quando a pressão estoura.
+        const speed = f.time < 1.5 ? 0.6 : 0.6 + (f.time - 1.5) * 5;
+        spin += speed * dt;
+        const pressure = clamp01(f.time / 1.5);
+        if (!blown && f.time >= 1.5) {
+          blown = true;
+          screenShake(300, 6);
+          for (const side of [-1, 1])
+            for (let k = 0; k < 14; k++)
+              f.particles.push(
+                particle('wisp', side < 0 ? 40 : width - 40, cy + rand(-30, 30), {
+                  vx: -side * rand(6, 12),
+                  vy: rand(-1.5, 1.5),
+                  drag: 0.96,
+                  max: rand(50, 80),
+                  size: rand(40, 80),
+                  color: '235, 235, 240',
+                }),
+              );
+        }
         ctx.save();
-        ctx.globalAlpha = f.presence * 0.35;
-        ctx.translate(width / 2, height / 2);
-        ctx.rotate(f.time * 0.3);
-        ctx.drawImage(bigImage, -bigImage.width / 2, -bigImage.height / 2);
+        ctx.globalAlpha = f.presence;
+        // Pistões nas laterais.
+        const pump = Math.sin(f.time * (f.time < 1.5 ? 8 : 22));
+        for (const side of [-1, 1]) {
+          const x = side < 0 ? 0 : width;
+          ctx.fillStyle = '#5e3c12';
+          ctx.fillRect(side < 0 ? x : x - 90, cy - 40, 90, 80);
+          ctx.fillStyle = '#c8ccd6';
+          const rod = 60 + pump * 30;
+          ctx.fillRect(side < 0 ? x + 90 : x - 90 - rod, cy - 10, rod, 20);
+          ctx.fillStyle = '#b07a2a';
+          ctx.fillRect(side < 0 ? x + 90 + rod - 12 : x - 90 - rod, cy - 22, 12, 44);
+        }
+        // Engrenagem central (atrás do texto).
+        const center = gearSprite(big, false);
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(spin);
+        ctx.drawImage(center, -center.width / 2, -center.height / 2);
         ctx.restore();
-        trains.forEach((gears, row) => {
-          for (const g of gears) {
-            const image = gearSprite(g.r, g.steel);
-            const offset = (1 - slide) * g.r * 2.2 * (row === 0 ? -1 : 1);
-            ctx.save();
-            ctx.globalAlpha = f.presence;
-            ctx.translate(g.x, g.y + offset);
-            // Velocidade inversa ao raio: as engrenagens engatadas giram juntas.
-            ctx.rotate((f.time * 60 * g.dir) / g.r);
-            ctx.drawImage(image, -image.width / 2, -image.height / 2);
-            ctx.restore();
-          }
-        });
-        if (!f.emitting || f.particles.length > MAX_PARTICLES) return;
-        const gears = pick(trains);
-        const index = Math.floor(rand(0, gears.length - 1));
-        const a = gears[index]!;
-        const b = gears[index + 1]!;
-        const contact = { x: a.x + (b.x - a.x) * (a.r / (a.r + b.r)), y: a.y + (b.y - a.y) * 0.5 };
-        if (Math.random() < 0.6)
-          for (let k = 0; k < 3; k++)
+        // Engrenagens chegando e engatando.
+        for (const p of planets) {
+          const arrive = easeOut((f.time - p.delay) / 0.4);
+          if (arrive <= 0) continue;
+          const d = distance + (1 - arrive) * Math.max(width, height);
+          const image = gearSprite(small, p.steel);
+          ctx.save();
+          ctx.translate(cx + Math.cos(p.angle) * d, cy + Math.sin(p.angle) * d);
+          ctx.rotate(-spin * (big / small) + (1 - arrive) * 6);
+          ctx.drawImage(image, -image.width / 2, -image.height / 2);
+          ctx.restore();
+          if (arrive >= 1 && f.emitting && Math.random() < 0.15) {
+            const mx = cx + Math.cos(p.angle) * big;
+            const my = cy + Math.sin(p.angle) * big;
             f.particles.push(
-              particle('spark', contact.x, contact.y, {
-                vx: rand(-4, 4),
-                vy: gears === trains[0] ? rand(1, 5) : rand(-6, -1),
-                gravity: 0.3,
-                max: 40,
+              particle('spark', mx, my, {
+                vx: rand(-3, 3),
+                vy: rand(-4, 0),
+                gravity: 0.25,
+                max: 30,
                 size: rand(1, 2),
                 color: '255, 190, 80',
               }),
             );
-        if (Math.random() < 0.12)
-          for (let k = 0; k < 5; k++)
-            f.particles.push(
-              particle('wisp', a.x, a.y, {
-                vx: rand(-1, 1),
-                vy: gears === trains[0] ? rand(1, 3) : -rand(1, 3),
-                max: rand(50, 80),
-                size: rand(30, 60),
-                color: '235, 235, 240',
-              }),
-            );
-        if (Math.random() < 0.06)
+          }
+        }
+        for (const o of outers) {
+          const arrive = easeOut((f.time - o.delay) / 0.4);
+          if (arrive <= 0) continue;
+          const d = outerDistance + (1 - arrive) * Math.max(width, height);
+          const image = gearSprite(outer, true);
+          ctx.save();
+          ctx.translate(cx + Math.cos(o.angle) * d, cy + Math.sin(o.angle) * d);
+          ctx.rotate(spin * (big / outer));
+          ctx.drawImage(image, -image.width / 2, -image.height / 2);
+          ctx.restore();
+        }
+        // Manômetro no alto: o ponteiro sobe até o vermelho e treme.
+        const gx = cx;
+        const gy = Math.max(70, cy - distance - small - 50);
+        const gr = 46;
+        ctx.fillStyle = '#efe4c8';
+        ctx.strokeStyle = '#7a5418';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.arc(gx, gy, gr, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.strokeStyle = '#c0392b';
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.arc(gx, gy, gr - 10, -Math.PI * 0.05, Math.PI * 0.25);
+        ctx.stroke();
+        const needle =
+          -Math.PI * 1.15 + pressure * Math.PI * 1.35 + (pressure >= 1 ? rand(-0.08, 0.08) : 0);
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(gx, gy);
+        ctx.lineTo(gx + Math.cos(needle) * (gr - 8), gy + Math.sin(needle) * (gr - 8));
+        ctx.stroke();
+        ctx.restore();
+        if (f.time > 1.5 && f.time < end - 0.8 && Math.random() < 0.3)
           f.particles.push(
-            particle('bolt', 0, 0, {
-              path: bolt(
-                { x: a.x, y: a.y },
-                { x: width / 2 + rand(-big, big), y: height / 2 + rand(-big, big) * 0.5 },
-                30,
-                10,
-              ),
-              max: 8,
-              size: 3,
-              color: '80, 230, 255',
+            particle('wisp', gx + rand(-10, 10), gy - gr, {
+              vy: -rand(2, 4),
+              vx: rand(-1, 1),
+              max: 50,
+              size: rand(20, 40),
+              color: '235, 235, 240',
             }),
           );
       },
@@ -5029,6 +6249,8 @@ interface FailText {
   falling: boolean;
   /** Cor do texto (o veneno deixa o texto verde de enjoo). */
   tint: string | null;
+  /** Tamanho (a picada de abelha faz o texto inchar). */
+  scale: number;
 }
 
 type FailScene = (width: number, height: number, durationMs: number, text: FailText) => Scene;
@@ -6017,6 +7239,380 @@ const FAILS: Record<DiceAura, FailScene> = {
       },
     };
   },
+  necro: (width, height) => {
+    // Só uma mão de zumbi sai da terra, acena... e cai.
+    const ground = height - 30;
+    return {
+      frame(ctx, f) {
+        const rise = easeOut((f.time - 0.3) / 0.5);
+        const drop = Math.max(0, f.time - 1.6);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.fillStyle = '#1c140e';
+        ctx.fillRect(0, ground, width, height - ground);
+        ctx.beginPath();
+        ctx.rect(0, 0, width, ground + 2);
+        ctx.clip();
+        ctx.translate(width / 2, ground + (1 - rise) * 120 + drop * drop * 900);
+        ctx.rotate(Math.sin(f.time * 6) * 0.25 + drop * 3);
+        ctx.fillStyle = '#7a9a6a';
+        ctx.fillRect(-8, -70, 16, 70);
+        ctx.beginPath();
+        ctx.ellipse(0, -80, 16, 14, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#7a9a6a';
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        for (let k = 0; k < 4; k++) {
+          ctx.beginPath();
+          ctx.moveTo(-10 + k * 7, -90);
+          ctx.lineTo(-12 + k * 8, -110);
+          ctx.stroke();
+        }
+        ctx.restore();
+      },
+    };
+  },
+  pirate: (width, height) => ({
+    // Um barquinho de papel afunda numa poça.
+    frame(ctx, f) {
+      const level = height - 50;
+      const sink = clamp01((f.time - 1) / 1.2);
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.translate(width / 2 + f.time * 30, level + sink * 50);
+      ctx.rotate(sink * 0.6);
+      ctx.fillStyle = '#f2f2ee';
+      ctx.beginPath();
+      ctx.moveTo(-40, 0);
+      ctx.lineTo(40, 0);
+      ctx.lineTo(28, 16);
+      ctx.lineTo(-28, 16);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-20, 0);
+      ctx.lineTo(0, -38);
+      ctx.lineTo(20, 0);
+      ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = f.presence * 0.8;
+      ctx.fillStyle = 'rgba(40, 110, 170, 0.7)';
+      ctx.fillRect(0, level + 10, width, height - level);
+      ctx.restore();
+      if (f.emitting && sink > 0 && Math.random() < 0.3)
+        f.particles.push(
+          particle('bubble', width / 2 + f.time * 30 + rand(-20, 20), level + 20, {
+            vy: -rand(0.5, 1),
+            max: 30,
+            size: rand(2, 4),
+            color: '200, 240, 255',
+          }),
+        );
+    },
+  }),
+  samurai: (_width, _height, _durationMs, text) => {
+    // A katana sai da bainha e a ponta quebra.
+    let broke = false;
+    return {
+      frame(ctx, f) {
+        const out = clamp01(f.time / 0.5);
+        const x = text.x - 200;
+        const y = text.y + 110;
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.strokeStyle = '#2a1a10';
+        ctx.lineWidth = 12;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x - 60, y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.strokeStyle = '#dfe4ec';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + out * (broke ? 260 : 400), y - out * 10);
+        ctx.stroke();
+        ctx.restore();
+        if (!broke && f.time > 0.9) {
+          broke = true;
+          f.particles.push(
+            particle('shard', x + 330, y - 8, {
+              vx: 2,
+              vy: -3,
+              gravity: 0.4,
+              vr: 0.3,
+              max: 100,
+              size: 14,
+            }),
+          );
+        }
+      },
+    };
+  },
+  kaiju: (width, height) => ({
+    // Em vez do monstro, uma lagartixa atravessa a tela.
+    frame(ctx, f) {
+      const x = -60 + (width + 120) * (f.time / 3);
+      const y = height - 40;
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.translate(x, y);
+      ctx.fillStyle = '#8fbf3f';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 26, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(26, -2, 10, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#8fbf3f';
+      ctx.lineWidth = 5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-24, 0);
+      ctx.quadraticCurveTo(-50, Math.sin(f.time * 12) * 10, -64, 0);
+      for (const lx of [-12, 12]) {
+        const step = Math.sin(f.time * 14 + lx) * 6;
+        ctx.moveTo(lx, 4);
+        ctx.lineTo(lx + step, 16);
+        ctx.moveTo(lx, -4);
+        ctx.lineTo(lx - step, -16);
+      }
+      ctx.stroke();
+      ctx.fillStyle = '#111';
+      ctx.beginPath();
+      ctx.arc(31, -5, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    },
+  }),
+  cyber: (width, _height, _durationMs, text) => {
+    // O letreiro neon pisca, as letras morrem, solta faísca e despenca.
+    let fell = false;
+    const sign = { y: text.y - 170, vy: 0, rot: 0 };
+    return {
+      frame(ctx, f) {
+        const word = 'CRÍTICO';
+        const dead = Math.floor(clamp01((f.time - 0.4) / 1.2) * word.length);
+        if (f.time > 1.7) {
+          if (!fell) {
+            fell = true;
+            for (let k = 0; k < 14; k++)
+              f.particles.push(
+                particle('spark', width / 2 + rand(-140, 140), sign.y, {
+                  vx: rand(-3, 3),
+                  vy: rand(-4, 1),
+                  gravity: 0.3,
+                  max: 40,
+                  size: rand(1, 2),
+                  color: '252, 238, 10',
+                }),
+              );
+          }
+          sign.vy += 0.6;
+          sign.y += sign.vy;
+          sign.rot += 0.03;
+        }
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.translate(width / 2, sign.y);
+        ctx.rotate(sign.rot);
+        ctx.font = `bold 54px "Segoe UI", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.strokeStyle = 'rgba(255, 43, 214, 0.8)';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(-170, -40, 340, 80);
+        const letters = [...word]
+          .map((ch, i) => (i < dead && (i * 7) % 3 !== 1 ? ' ' : ch))
+          .join('');
+        ctx.fillStyle = Math.random() < 0.2 ? 'rgba(252, 238, 10, 0.2)' : 'rgba(252, 238, 10, 1)';
+        ctx.fillText(letters, 0, 0);
+        ctx.restore();
+      },
+    };
+  },
+  werewolf: (width, height) => ({
+    // A lua fica atrás de uma nuvem e, no morro, um cachorrinho late.
+    frame(ctx, f) {
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.fillStyle = '#e8ecf6';
+      ctx.beginPath();
+      ctx.arc(width * 0.62, height * 0.28, Math.min(width, height) * 0.12, 0, Math.PI * 2);
+      ctx.fill();
+      drawCloud(
+        ctx,
+        width * 0.62 - 20 + Math.sin(f.time) * 10,
+        height * 0.3,
+        80,
+        'rgba(60, 62, 75, 0.97)',
+      );
+      ctx.fillStyle = '#0b0c14';
+      ctx.beginPath();
+      ctx.ellipse(width * 0.3, height + height * 0.05, width * 0.45, height * 0.2, 0, Math.PI, 0);
+      ctx.fill();
+      ctx.translate(width * 0.3, height * 0.86 - Math.abs(Math.sin(f.time * 10)) * 6);
+      ctx.fillStyle = '#0b0c14';
+      ctx.beginPath();
+      ctx.ellipse(0, -14, 20, 10, 0, 0, Math.PI * 2);
+      ctx.ellipse(20, -26, 9, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillRect(-14, -8, 4, 10);
+      ctx.fillRect(10, -8, 4, 10);
+      ctx.restore();
+      if (f.emitting && Math.random() < 0.04)
+        f.particles.push(
+          particle('rune', width * 0.3 + 40, height * 0.86 - 50, {
+            vy: -1,
+            vx: 0.8,
+            max: 50,
+            size: 22,
+            glyph: 'au!',
+            color: '230, 230, 240',
+          }),
+        );
+    },
+  }),
+  siren: (width, _height, _durationMs, text) => {
+    // O canto sai desafinado: ondas tortas e vermelhas, e um vidro trinca.
+    let cracked = false;
+    const cracks: Point[][] = [];
+    return {
+      frame(ctx, f) {
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.strokeStyle = 'rgba(255, 90, 90, 0.7)';
+        ctx.lineWidth = 3;
+        for (let i = 0; i < 2; i++) {
+          ctx.beginPath();
+          for (let x = 0; x <= width * clamp01(f.time / 1); x += 16)
+            ctx.lineTo(x, text.y + 130 + i * 30 + (Math.random() - 0.5) * 30);
+          ctx.stroke();
+        }
+        if (!cracked && f.time > 1) {
+          cracked = true;
+          for (let k = 0; k < 8; k++) {
+            const a = rand(0, Math.PI * 2);
+            cracks.push(
+              bolt(
+                { x: text.x, y: text.y },
+                {
+                  x: text.x + Math.cos(a) * rand(80, 220),
+                  y: text.y + Math.sin(a) * rand(80, 220),
+                },
+                12,
+                6,
+              ),
+            );
+          }
+        }
+        ctx.strokeStyle = 'rgba(235, 245, 255, 0.85)';
+        ctx.lineWidth = 1.5;
+        for (const crack of cracks) {
+          ctx.beginPath();
+          crack.forEach((point, i) =>
+            i ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y),
+          );
+          ctx.stroke();
+        }
+        ctx.restore();
+      },
+    };
+  },
+  alchemy: (_width, _height, _durationMs, text) => {
+    // O frasco explode: fumaça preta e o texto fica todo chamuscado.
+    let boom = false;
+    return {
+      frame(ctx, f) {
+        const x = text.x;
+        const y = text.y + 120;
+        if (f.time < 0.9) {
+          ctx.save();
+          ctx.globalAlpha = f.presence;
+          ctx.fillStyle = `rgba(160, 255, 120, 0.8)`;
+          ctx.beginPath();
+          ctx.arc(x + Math.sin(f.time * 40) * 3, y, 26 + f.time * 14, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        } else if (!boom) {
+          boom = true;
+          screenShake(200, 8);
+          text.tint = '70, 70, 70';
+          for (let k = 0; k < 20; k++) {
+            const a = rand(0, Math.PI * 2);
+            f.particles.push(
+              particle('smoke', x, y, {
+                vx: Math.cos(a) * rand(1, 4),
+                vy: Math.sin(a) * rand(1, 4) - 1,
+                max: 100,
+                size: rand(30, 60),
+                color: '30, 30, 30',
+              }),
+            );
+          }
+        }
+      },
+    };
+  },
+  ghost: (width, height, durationMs) => {
+    // O fantasma escreve errado ("CRÍITCO"), percebe e apaga com a mão.
+    fogGlass(durationMs);
+    const font =
+      getComputedStyle(document.body).getPropertyValue('--font-display').trim() || 'serif';
+    const size = Math.min(width * 0.08, 100);
+    return {
+      frame(ctx, f) {
+        const write = clamp01((f.time - 0.3) / 1);
+        const wipe = clamp01((f.time - 1.6) / 0.5);
+        ctx.save();
+        ctx.font = `${size}px ${font}`;
+        const w = ctx.measureText('CRÍITCO').width;
+        ctx.globalAlpha = f.presence;
+        ctx.beginPath();
+        ctx.rect(
+          width / 2 - w / 2 - 10 + (w + 20) * wipe,
+          height * 0.2 - size,
+          (w + 20) * (write - wipe),
+          size * 2,
+        );
+        ctx.clip();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fillText('CRÍITCO', width / 2, height * 0.2);
+        ctx.restore();
+      },
+    };
+  },
+  bees: (_width, _height, _durationMs, text) => {
+    // Uma abelha só pica o texto: ele incha e fica vermelho.
+    const bee = { x: -20, y: text.y - 100 };
+    let stung = false;
+    return {
+      frame(ctx, f) {
+        if (!stung) {
+          bee.x += (text.x - bee.x) * 0.06 + rand(-2, 2);
+          bee.y += (text.y - 30 - bee.y) * 0.06 + rand(-2, 2);
+          if (Math.abs(bee.x - text.x) < 20) {
+            stung = true;
+            text.tint = '255, 120, 110';
+            text.scale = 1.35;
+            screenShake(120, 4);
+          }
+        } else {
+          bee.x += 6;
+          bee.y -= 3;
+        }
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.drawImage(beeSprite(), bee.x - 12, bee.y - 12, 24, 24);
+        ctx.restore();
+      },
+    };
+  },
   claw: (_width, _height, _durationMs, text) => {
     // Um arranhão fraquinho e uma unha quebrada caindo.
     let done = false;
@@ -6058,7 +7654,16 @@ export function criticalFailBurst(
   const width = window.innerWidth;
   const height = window.innerHeight;
   const home = { x: width / 2, y: height * 0.42 };
-  const text: FailText = { ...home, vx: 0, vy: 0, rot: 0, vr: 0, falling: false, tint: null };
+  const text: FailText = {
+    ...home,
+    vx: 0,
+    vy: 0,
+    rot: 0,
+    vr: 0,
+    falling: false,
+    tint: null,
+    scale: 1,
+  };
   const scene = FAILS[aura](width, height, durationMs, text);
   const font = getComputedStyle(document.body).getPropertyValue('--font-display').trim() || 'serif';
   const size = Math.min(width * 0.085, 104);
@@ -6110,7 +7715,7 @@ export function criticalFailBurst(
       ctx.globalAlpha = presence;
       ctx.translate(text.x, text.y);
       ctx.rotate(text.rot + Math.sin(time * 2.5) * 0.03);
-      ctx.scale(pop, pop);
+      ctx.scale(pop * text.scale, pop * text.scale);
       ctx.font = `${size}px ${font}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';

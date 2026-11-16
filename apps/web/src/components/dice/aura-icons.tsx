@@ -1,6 +1,14 @@
 import { diceAuraLabels, type DiceAura } from '@codexveil/validation';
 import {
+  Anchor,
   Binary,
+  Cpu,
+  FlaskRound,
+  Footprints,
+  Hand,
+  Moon,
+  Shell,
+  Sword,
   Wind,
   Cat,
   FlaskConical,
@@ -124,12 +132,52 @@ function ClawIcon({ className, ...props }: LucideProps) {
   );
 }
 
+const GhostIcon = Ghost;
+
+/** Lobo uivando. */
+function WolfIcon({ className, ...props }: LucideProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      {...props}
+    >
+      <path d="M4 20h14M7 20l1-6 4-2 2-5 1-4 2 3-1 3 2 2-2 1-2 4v4" />
+      <circle cx="19" cy="5" r="2" />
+    </svg>
+  );
+}
+
+/** Abelha. */
+function BeeIcon({ className, ...props }: LucideProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      {...props}
+    >
+      <ellipse cx="12" cy="14" rx="5" ry="6" />
+      <path d="M7.5 12h9M7.5 16h9M10 8.5C8 5 5 5 4 7s1 4 4 3M14 8.5C16 5 19 5 20 7s-1 4-4 3" />
+    </svg>
+  );
+}
+
 const ICONS: Record<DiceAura, ComponentType<LucideProps>> = {
   blood: Droplet,
   storm: CloudLightning,
   frost: Snowflake,
   arcane: Sparkles,
-  shadow: Ghost,
+  shadow: Moon,
   holy: Sun,
   gears: Cog,
   forest: Trees,
@@ -153,6 +201,16 @@ const ICONS: Record<DiceAura, ComponentType<LucideProps>> = {
   wind: Wind,
   ritual: PentagramIcon,
   claw: ClawIcon,
+  necro: Hand,
+  pirate: Anchor,
+  samurai: Sword,
+  kaiju: Footprints,
+  cyber: Cpu,
+  werewolf: WolfIcon,
+  siren: Shell,
+  alchemy: FlaskRound,
+  ghost: GhostIcon,
+  bees: BeeIcon,
 };
 
 /** Ícone da aura, na cor dela e com um leve brilho. */
