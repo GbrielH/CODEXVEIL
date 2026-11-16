@@ -1158,3 +1158,9 @@ Verificações: `pnpm check` (20 tarefas; banco 255 testes) e `pnpm build` passa
 - Momentos compartilhados entre cena e som em `AURA_TIMINGS` (`aura-sound.ts`). Migração `20261115160000_dice_aura_wind.sql` (aplicada).
 
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.
+
+### 2026-11-15 — resultado só depois do dado cair
+
+- O mural de rolagens e o cartão da última rolagem mostravam o número antes de os dados 3D pararem. Novo `components/dice/roll-reveal.ts`: a caixinha marca a rolagem como "rolando" ao começar e libera quando os dados param (ou quando a mesa grande avisa). O mural esconde a linha nova (e o total da ação ligada a ela) até lá, e `useDice().roll` só devolve o resultado depois disso. Sem dados 3D na página nada é segurado; há limites de 2 s (mural esperando a caixinha) e 9 s (animação).
+
+Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto no navegador por mim.

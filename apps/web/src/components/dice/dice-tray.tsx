@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { routes } from '@/lib/routes';
 import { DICE_COLORS, DieIcon, useCampaignColors } from './campaign-colors';
 import { TABLE_SETTLED_EVENT, throwDice } from './dice-scene';
+import { revealRoll, rollingRoll } from './roll-reveal';
 import { applyDiceLook, loadCharacterLook, useMyDiceLook } from './dice-look';
 import type { ShownRoll } from './dice-roller';
 
@@ -130,6 +131,14 @@ export function DiceTray({
   const [ready, setReady] = useState(false);
   const [last, setLast] = useState<TrayRoll | null>(null);
   const [mountedAt] = useState(() => Date.now());
+
+  // Marca a página: o mural e o cartão de resultado esperam os dados desta caixinha pararem.
+  useEffect(() => {
+    document.documentElement.dataset.diceTray = 'on';
+    return () => {
+      delete document.documentElement.dataset.diceTray;
+    };
+  }, []);
   const [rolling, setRolling] = useState<TrayRoll | null>(null);
   // A caixinha vai para o <body> (portal): dentro do <main>, a animação de entrada (transform) fazia o
   // "fixed" valer em relação ao conteúdo, e ela aparecia no fim da página em vez de presa à tela.
@@ -217,6 +226,7 @@ export function DiceTray({
       if (!next.secret && document.documentElement.dataset.diceTable === 'on')
         await tableSettled(next.key);
       setLast({ ...next, aura });
+      revealRoll(next.key);
     }
     running.current = false;
   }, [palette, myColor, myLook]);
@@ -225,6 +235,7 @@ export function DiceTray({
     (roll: TrayRoll) => {
       if (seen.current.has(roll.key)) return;
       seen.current.add(roll.key);
+      rollingRoll(roll.key);
       // Fila curta: se chegarem muitas rolagens juntas, as mais antigas só aparecem no texto.
       queue.current = [...queue.current, roll].slice(-6);
       void play();

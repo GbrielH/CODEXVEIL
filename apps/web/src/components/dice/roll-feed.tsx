@@ -9,11 +9,7 @@ import {
   type DiceRoll,
   type TurnAction,
 } from '@codexveil/database';
-import {
-  diceRollModeLabels,
-  naturalD20,
-  turnActionKindLabels,
-} from '@codexveil/domain';
+import { diceRollModeLabels, naturalD20, turnActionKindLabels } from '@codexveil/domain';
 import { EyeOff, Radio, Trash2 } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +19,7 @@ import { cx } from '@/lib/cx';
 import { failureMessage } from '@/lib/client-errors';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
+import { expectRoll, useHiddenRolls } from './roll-reveal';
 
 function timeLabel(iso: string): string {
   return new Date(iso).toLocaleTimeString('pt-BR', {
@@ -61,6 +58,10 @@ export function RollFeed({
         listDiceRolls(client, campaignId, limit),
         listTurnActions(client, campaignId, limit),
       ]);
+      // Rolagem recém-chegada: espera os dados 3D pararem antes de mostrar o número.
+      const now = Date.now();
+      for (const roll of nextRolls)
+        if (now - new Date(roll.createdAt).getTime() < 3_000) expectRoll(roll.id);
       setRolls(nextRolls);
       setActions(nextActions);
       setError(null);
@@ -79,11 +80,13 @@ export function RollFeed({
   );
 
   // Ações do turno e rolagens soltas, na ordem em que aconteceram (a rolagem de uma ação aparece nela).
-  const rollsById = new Map(rolls.map((roll) => [roll.id, roll]));
+  const isHidden = useHiddenRolls();
+  const visibleRolls = rolls.filter((roll) => !isHidden(roll.id));
+  const rollsById = new Map(visibleRolls.map((roll) => [roll.id, roll]));
   const linked = new Set(actions.map((action) => action.rollId).filter(Boolean));
   const entries = [
     ...actions.map((action) => ({ type: 'action' as const, at: action.createdAt, action })),
-    ...rolls
+    ...visibleRolls
       .filter((roll) => !linked.has(roll.id))
       .map((roll) => ({ type: 'roll' as const, at: roll.createdAt, roll })),
   ].sort((a, b) => b.at.localeCompare(a.at));
@@ -147,7 +150,7 @@ export function RollFeed({
                   className="flex items-start gap-3 rounded-md border border-parchment-400/30 bg-sunken px-3 py-2"
                 >
                   <span className="tabular w-12 shrink-0 text-center font-display text-2xl text-fg-accent">
-                    {action.rollTotal ?? '·'}
+                    {action.rollId && isHidden(action.rollId) ? '…' : (action.rollTotal ?? '·')}
                   </span>
                   <span className="min-w-0 flex-1 text-sm">
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">

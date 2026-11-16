@@ -30,6 +30,7 @@ import { failureMessage } from '@/lib/client-errors';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
 import { CampaignColorsProvider, useCampaignColors } from './campaign-colors';
+import { waitRevealed } from './roll-reveal';
 import { DiceTray, type TrayRoll } from './dice-tray';
 
 export interface RollRequest {
@@ -139,6 +140,7 @@ function DiceProviderInner({
     async (request: RollRequest): Promise<ShownRoll | null> => {
       const mode = request.mode ?? 'normal';
       let shown: ShownRoll | null = null;
+      let serverId: string | null = null;
       if (needsColor) {
         toast({
           tone: 'warning',
@@ -163,16 +165,16 @@ function DiceProviderInner({
           }
         }
         if (campaignId) {
-          shown = fromServer(
-            await rollDice(getSupabaseBrowserClient(), {
-              campaignId,
-              expression: request.expression,
-              label: request.label ?? '',
-              mode,
-              visibility: request.secret ? 'gm' : 'members',
-              characterId,
-            }),
-          );
+          const row = await rollDice(getSupabaseBrowserClient(), {
+            campaignId,
+            expression: request.expression,
+            label: request.label ?? '',
+            mode,
+            visibility: request.secret ? 'gm' : 'members',
+            characterId,
+          });
+          serverId = row.id;
+          shown = fromServer(row);
         } else {
           const local = rollDiceLocally(request.expression, mode);
           if (!local) throw new Error('Expressão de dados inválida.');
@@ -187,8 +189,10 @@ function DiceProviderInner({
         return null;
       }
       // Vai para a caixinha de dados 3D no canto (com fila curta se chegarem várias).
+      // A chave é o id da rolagem: o mural esconde o resultado até os dados pararem.
+      const key = serverId ?? `local-${Date.now()}`;
       setPending({
-        key: `local-${Date.now()}`,
+        key,
         roll: shown,
         rollerName: 'Você',
         userId: null,
@@ -196,7 +200,8 @@ function DiceProviderInner({
         secret: shown.secret,
         critRange: request.critRange ?? 20,
       });
-      // O resultado aparece no balão acima da caixinha de dados (sem aviso no topo da tela).
+      // O resultado (balão, cartão e mural) só aparece quando os dados 3D param.
+      await waitRevealed(key);
       return shown;
     },
     [campaignId, characterId, sessionGate, toast, needsColor],
@@ -315,7 +320,9 @@ export function DicePanel({
   const compose = (sides: number, attributeLabel: string, skillLabel: string) => {
     const skill = skills.find((entry) => entry.label === skillLabel);
     const chosen = attributes.find((entry) => entry.label === attributeLabel);
-    const standard = skill?.attribute ? attributes.find((entry) => entry.label === skill.attribute) : undefined;
+    const standard = skill?.attribute
+      ? attributes.find((entry) => entry.label === skill.attribute)
+      : undefined;
     const bonus = skill
       ? chosen && standard && chosen.label !== standard.label
         ? skill.bonus - standard.bonus + chosen.bonus
@@ -357,7 +364,9 @@ export function DicePanel({
             title={`Usar 1d${sides} na expressão`}
             className={cx(
               'tabular flex h-11 items-center justify-center rounded-lg border font-display text-sm transition-colors hover:border-parchment-300/60 hover:bg-hover hover:text-fg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-parchment-300 disabled:opacity-60',
-              die === sides ? 'border-parchment-300/70 bg-parchment-200/15 text-fg-accent' : 'border-line bg-raised text-fg',
+              die === sides
+                ? 'border-parchment-300/70 bg-parchment-200/15 text-fg-accent'
+                : 'border-line bg-raised text-fg',
             )}
           >
             d{sides}
@@ -374,7 +383,10 @@ export function DicePanel({
         <div className="flex flex-col gap-3">
           {attributes.length ? (
             <div className="flex flex-col gap-1.5">
-              <span id={`${id}-attribute`} className="flex items-baseline justify-between text-sm font-medium">
+              <span
+                id={`${id}-attribute`}
+                className="flex items-baseline justify-between text-sm font-medium"
+              >
                 <span>
                   Atributo <span className="font-normal text-fg-muted">(opcional)</span>
                 </span>
@@ -391,7 +403,11 @@ export function DicePanel({
                   </button>
                 ) : null}
               </span>
-              <div role="radiogroup" aria-labelledby={`${id}-attribute`} className="grid grid-cols-3 gap-1 rounded-lg border border-line p-1">
+              <div
+                role="radiogroup"
+                aria-labelledby={`${id}-attribute`}
+                className="grid grid-cols-3 gap-1 rounded-lg border border-line p-1"
+              >
                 {attributes.map((entry) => {
                   const selected = entry.label === attribute;
                   return (
@@ -407,7 +423,9 @@ export function DicePanel({
                       }}
                       className={cx(
                         'flex min-w-0 items-center justify-between gap-1 rounded-md px-2 py-1.5 text-left text-xs transition-colors',
-                        selected ? 'bg-parchment-200/10 text-fg-accent ring-1 ring-parchment-300/60' : 'text-fg-secondary hover:bg-hover hover:text-fg',
+                        selected
+                          ? 'bg-parchment-200/10 text-fg-accent ring-1 ring-parchment-300/60'
+                          : 'text-fg-secondary hover:bg-hover hover:text-fg',
                       )}
                     >
                       <span className="truncate">{entry.label}</span>
@@ -526,25 +544,25 @@ export function DicePanel({
           ))}
         </div>
         <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${id}-expression`} className="text-sm font-medium">
-              Expressão
-            </label>
-            <input
-              id={`${id}-expression`}
-              value={expression}
-              onChange={(event) => setExpression(event.target.value)}
-              placeholder="Ex.: 2d6+3"
-              autoComplete="off"
-              aria-invalid={valid ? undefined : true}
-              aria-describedby={`${id}-expression-hint`}
-              className={controlClasses(!valid, 'h-11 font-mono text-sm')}
-            />
-            <p id={`${id}-expression-hint`} className="text-xs text-fg-muted">
-              {valid
-                ? 'Some dados e bônus: 1d20+5, 2d6+1d4+3, d100.'
-                : 'Use dados como 1d20+5 (até 100 dados).'}
-            </p>
-          </div>
+          <label htmlFor={`${id}-expression`} className="text-sm font-medium">
+            Expressão
+          </label>
+          <input
+            id={`${id}-expression`}
+            value={expression}
+            onChange={(event) => setExpression(event.target.value)}
+            placeholder="Ex.: 2d6+3"
+            autoComplete="off"
+            aria-invalid={valid ? undefined : true}
+            aria-describedby={`${id}-expression-hint`}
+            className={controlClasses(!valid, 'h-11 font-mono text-sm')}
+          />
+          <p id={`${id}-expression-hint`} className="text-xs text-fg-muted">
+            {valid
+              ? 'Some dados e bônus: 1d20+5, 2d6+1d4+3, d100.'
+              : 'Use dados como 1d20+5 (até 100 dados).'}
+          </p>
+        </div>
         <div className="flex flex-col gap-3">
           {inCampaign ? (
             <label className="flex items-center gap-2 text-sm text-fg-secondary">
