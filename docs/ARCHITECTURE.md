@@ -1,5 +1,12 @@
 # Arquitetura e decisões
 
+## Arte raster nas auras complexas (2026-11-17)
+
+As cenas continuam animadas pelo canvas 2D em `aura-fx.ts`, mas personagens e criaturas que
+dependem de uma silhueta reconhecível podem usar recortes PNG transparentes em
+`apps/web/public/efeitos/auras/`. O canvas aplica entrada, escala, tremor, partículas e luz sobre
+o recorte, sem redesenhar a arte a cada quadro.
+
 ## Composição da central Jogo (2026-11-11)
 
 A rota web `campanhas/[campaignId]/jogo` é uma composição dos componentes já usados por Mapa,

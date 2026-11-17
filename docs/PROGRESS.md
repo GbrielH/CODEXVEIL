@@ -1,5 +1,40 @@
 # Progresso do Codexveil
 
+## 2026-11-17 — Auras com arte gerada e tema Sans
+
+- **Deus do Sol:** Gear 5 em primeiro plano, com arte transparente gerada para o projeto,
+  entrada elástica, fumaça branca, tambores e texto quicando.
+- **Tarrasque:** criatura completa, com anatomia, carapaça e chifres legíveis, entrando em carga
+  sobre o cenário de lava, tremores e ondas do urro.
+- **Sans:** ossos e magia azul no dado; crítico com arena escura, ossos, olho aceso e disparo de
+  energia; falha-meme em que ele dorme e deixa a tentativa passar. O áudio é uma composição
+  chiptune original de batalha, sem copiar a melodia de uma música existente.
+- **Hollow Knight:** duelo do Cavaleiro contra Nightmare King Grimm no crítico; máscara vazia e
+  silenciosa após a Radiância na falha.
+- **Doutor Destino:** trono, runas verdes e tecnologia arcana no crítico; Doombot de lata dando
+  curto e perdendo a máscara na falha.
+- **Zoro:** Santoryu com três cortes e Haki do Rei no crítico; na falha, perde-se com o mapa de
+  cabeça para baixo e sai pelo lado errado.
+- **Buraco Negro:** disco de acreção, lente gravitacional e estrelas engolidas no crítico; na
+  falha, um microburaco negro só consegue roubar uma bolacha antes de evaporar.
+- **Fullmetal Alchemist:** transmutação dourada, automail, mãos e lanças de pedra no crítico; na
+  falha, a troca equivalente produz uma estátua minúscula ao lado de uma régua.
+- **Tung Tung Tung Sahur:** três pancadas de bastão com “TUNG!” e ondas de choque crescentes no
+  crítico; na falha, acorda atrasado, quebra o bastão e bate numa panela minúscula.
+- Assets: `public/efeitos/auras/deus-do-sol.png`, `tarrasque.png`, `sans.png`,
+  `hollow-knight.png`, `doutor-destino.png`, `zoro.png`, `fullmetal.png` e
+  `tung-tung-sahur.png`.
+- Banco: migração `20261117100000_dice_aura_sans.sql` conferida em dry-run (era a única pendente)
+  e aplicada no projeto CODEXVEIL.
+- Verificações: `pnpm check` concluiu as 20 tarefas (banco: 256 testes aprovados e 11 testes ao
+  vivo pulados); `pnpm build` passou nas 2 tarefas (web e Android); typecheck web e
+  `git diff --check` passaram.
+- Inspeção visual: não executada. O helper nativo da skill de controle do Windows estava
+  indisponível mesmo após reinicialização; as cenas e os sons precisam ser vistos em “Meus
+  dados” depois da publicação.
+
+Próximo passo exato: conferir as novas cenas e sons em “Meus dados” na produção.
+
 > Documento de retomada. Última atualização: **2026-11-16 (auras novas):** seis temas: Cerejeira, Fênix, Kitsune, Espelho Partido, Aurora Boreal e Horda Zumbi. Cada um tem partículas no dado, cena de crítico, falha cômica, som e ícone. A migração `20261116130000_dice_auras_six.sql` foi aplicada em produção depois do dry-run. `pnpm check` passou nas 20 tarefas; falta ver no navegador.
 
 **2026-11-16 (auras):** Tarrasque e Deus do Sol (Gear 5) refeitos no crítico; corrigida a falha do Vazio Roxo, que mostrava dois "CRÍTICO!" em vez de um cortado ao meio. Typecheck e lint passaram; falta conferir no navegador.

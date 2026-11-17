@@ -1,5 +1,25 @@
 # Próximos passos
 
+## 2026-11-17 — Gear 5, Tarrasque e Sans
+
+- [x] Gerar e integrar recortes transparentes de Gear 5, Tarrasque e Sans.
+- [x] Animar Gear 5 e Tarrasque dentro das cenas existentes, mantendo canvas responsivo.
+- [x] Criar o tema Sans completo: aura no dado, crítico épico, falha-meme, ícone e áudio
+      chiptune original.
+- [x] Criar migração e ampliar o teste RLS das auras.
+- [x] Criar os temas Hollow Knight e Doutor Destino, com crítico épico e falha de referência.
+- [x] Criar os temas Zoro e Buraco Negro, com crítico épico e falha cômica.
+- [x] Criar o tema Fullmetal Alchemist, com transmutação épica e falha cômica.
+- [x] Criar o tema Tung Tung Tung Sahur, com três impactos e falha-meme.
+- [x] Rodar `pnpm check` e `pnpm build`.
+- [x] Conferir a migração com `supabase db push --dry-run --workdir deploy` e aplicá-la no
+      projeto CODEXVEIL.
+- [ ] Conferir visualmente em “Meus dados”; o helper nativo do navegador ficou indisponível.
+- [ ] Publicar em `origin main`.
+
+Histórico: em 2026-11-17, implementação, assets, verificações e banco foram concluídos; a
+inspeção visual ficou pendente por indisponibilidade do helper nativo.
+
 > Relatório atualizado em **2026-11-03** (veja [Continuidade](#continuidade-parada-em-2026-10-26-retomar-daqui)). Mantenha este arquivo em dia a cada etapa concluída
 > (veja [Como manter a documentação](#como-manter-a-documentação)). O inventário completo do
 > que falta em relação ao escopo inicial está em [`PENDENCIAS.md`](PENDENCIAS.md), e os

@@ -79,6 +79,20 @@ const MAX_PARTICLES = 450;
 // ---------------------------------------------------------------------------------------------
 
 const spriteCache = new Map<string, HTMLCanvasElement>();
+const imageCache = new Map<string, HTMLImageElement>();
+
+/** Arte gerada para cenas complexas; carrega uma vez e o canvas anima o recorte. */
+function auraImage(path: string): HTMLImageElement | null {
+  if (typeof Image === 'undefined') return null;
+  let image = imageCache.get(path);
+  if (!image) {
+    image = new Image();
+    image.decoding = 'async';
+    image.src = path;
+    imageCache.set(path, image);
+  }
+  return image.complete && image.naturalWidth > 0 ? image : null;
+}
 
 function sprite(
   key: string,
@@ -354,6 +368,13 @@ const RGB: Record<DiceAura, string> = {
   mirror: '216, 236, 248',
   aurora: '92, 255, 176',
   zombie: '143, 191, 106',
+  sans: '53, 217, 255',
+  hollow: '239, 51, 79',
+  doom: '84, 227, 111',
+  zoro: '215, 25, 63',
+  blackhole: '184, 124, 255',
+  fullmetal: '243, 180, 63',
+  sahur: '240, 163, 74',
 };
 
 function reducedMotion(): boolean {
@@ -1671,6 +1692,160 @@ function emitAround(aura: DiceAura, o: AuraPoint, out: Particle[], power: number
             max: 40,
             size: rand(6, 10) * s,
             color: '130, 90, 60',
+          }),
+        );
+      break;
+    case 'sans':
+      if (chance(0.32))
+        out.push(
+          particle('bone', from.x, from.y, {
+            vx: Math.cos(a) * rand(0.8, 1.8) * s,
+            vy: Math.sin(a) * rand(0.8, 1.8) * s,
+            vr: rand(-0.18, 0.18),
+            max: rand(30, 50),
+            size: rand(2, 4) * s,
+            color: '235, 250, 255',
+          }),
+        );
+      if (chance(0.2))
+        out.push(
+          particle('spark', from.x, from.y, {
+            vx: rand(-1, 1) * s,
+            vy: -rand(0.5, 1.5) * s,
+            max: 30,
+            size: 1.8 * s,
+            color: RGB.sans,
+          }),
+        );
+      break;
+    case 'hollow':
+      if (chance(0.32))
+        out.push(
+          particle('flame', from.x, from.y, {
+            vx: rand(-1, 1) * s,
+            vy: -rand(0.8, 1.8) * s,
+            max: rand(28, 42),
+            size: rand(3, 6) * s,
+            color: RGB.hollow,
+          }),
+        );
+      if (chance(0.12))
+        out.push(
+          particle('mote', from.x, from.y, {
+            vy: -rand(0.5, 1.2) * s,
+            max: 36,
+            size: 2 * s,
+            color: '245, 245, 255',
+          }),
+        );
+      break;
+    case 'doom':
+      if (chance(0.3))
+        out.push(
+          particle('rune', from.x, from.y, {
+            vx: Math.cos(a) * 0.5 * s,
+            vy: Math.sin(a) * 0.5 * s,
+            vr: 0.08,
+            max: 45,
+            size: rand(9, 14) * s,
+            glyph: rune(),
+            color: RGB.doom,
+          }),
+        );
+      if (chance(0.18))
+        out.push(
+          particle('spark', from.x, from.y, {
+            vx: rand(-1.5, 1.5) * s,
+            vy: -rand(0.8, 1.8) * s,
+            max: 30,
+            size: 1.8 * s,
+            color: RGB.doom,
+          }),
+        );
+      break;
+    case 'zoro':
+      if (chance(0.3))
+        out.push(
+          particle('scratch', from.x, from.y, {
+            vr: rand(-0.08, 0.08),
+            max: 24,
+            size: rand(4, 7) * s,
+            color: RGB.zoro,
+          }),
+        );
+      if (chance(0.18))
+        out.push(
+          particle('bolt', from.x, from.y, {
+            path: bolt(
+              from,
+              { x: from.x + rand(-18, 18) * s, y: from.y + rand(-18, 18) * s },
+              4,
+              4,
+            ),
+            max: 12,
+            size: 1.5 * s,
+            color: 'haki',
+          }),
+        );
+      break;
+    case 'blackhole':
+      if (chance(0.6))
+        out.push(
+          particle('mote', from.x, from.y, {
+            vx: -Math.cos(a) * rand(1.2, 2.8) * s,
+            vy: -Math.sin(a) * rand(1.2, 2.8) * s,
+            drag: 0.96,
+            max: rand(20, 34),
+            size: rand(1.2, 2.2) * s,
+            color: pick(['255, 170, 80', '184, 124, 255', '100, 170, 255']),
+          }),
+        );
+      break;
+    case 'fullmetal':
+      if (chance(0.3))
+        out.push(
+          particle('rune', from.x, from.y, {
+            vx: Math.cos(a) * 0.6 * s,
+            vy: Math.sin(a) * 0.6 * s,
+            vr: -0.08,
+            max: 42,
+            size: rand(8, 13) * s,
+            glyph: pick(['☿', '⊙', '△', '◯']),
+            color: RGB.fullmetal,
+          }),
+        );
+      if (chance(0.2))
+        out.push(
+          particle('spark', from.x, from.y, {
+            vx: rand(-1.2, 1.2) * s,
+            vy: -rand(0.8, 1.8) * s,
+            max: 28,
+            size: 1.7 * s,
+            color: '120, 190, 255',
+          }),
+        );
+      break;
+    case 'sahur':
+      if (chance(0.28))
+        out.push(
+          particle('rock', from.x, from.y, {
+            vx: rand(-1.4, 1.4) * s,
+            vy: -rand(0.6, 1.7) * s,
+            gravity: 0.12,
+            vr: 0.15,
+            max: 36,
+            size: rand(2, 4) * s,
+            color: '145, 88, 42',
+          }),
+        );
+      if (chance(0.22))
+        out.push(
+          particle('spark', from.x, from.y, {
+            vx: rand(-1.2, 1.2) * s,
+            vy: -rand(0.7, 1.6) * s,
+            max: 30,
+            size: 1.8 * s,
+            color: RGB.sahur,
           }),
         );
       break;
@@ -3684,6 +3859,7 @@ const SCENES: Partial<
         if (eyeH < 1) return;
         ctx.save();
         ctx.globalAlpha = f.presence;
+        ctx.save();
         ctx.translate(cx, cy);
         const almond = () => {
           ctx.beginPath();
@@ -5532,6 +5708,20 @@ const SCENES: Partial<
         }
 
         // "CRÍTICO!" de borracha: estica para os lados e volta quicando.
+        const gearFive = auraImage('/efeitos/auras/deus-do-sol.png');
+        if (gearFive) {
+          const entrance = easeOut((t - 0.15) / 0.45);
+          const artH = Math.min(height * 0.92, width * 0.74);
+          const artW = artH * (gearFive.naturalWidth / gearFive.naturalHeight);
+          ctx.save();
+          ctx.translate(width * 0.55, height * 0.5);
+          ctx.rotate(-0.05 + Math.sin(t * 8) * 0.012);
+          ctx.scale(entrance * (1 + bounce * 0.035), entrance * (1 - bounce * 0.025));
+          ctx.globalAlpha = f.presence;
+          ctx.drawImage(gearFive, -artW / 2, -artH / 2, artW, artH);
+          ctx.restore();
+        }
+
         const pop = easeOut(t / 0.25);
         const wobble = Math.max(0, 1 - t / 2.8);
         const stretch = 1 + Math.sin(t * 10) * 0.28 * wobble;
@@ -5912,6 +6102,19 @@ const SCENES: Partial<
         }
 
         // Montanhas na frente (dão a escala do monstro).
+        const tarrasqueArt = auraImage('/efeitos/auras/tarrasque.png');
+        if (tarrasqueArt) {
+          const charge = easeOut((t - 0.35) / 0.85);
+          const artW = Math.min(width * 1.04, height * 1.75);
+          const artH = artW * (tarrasqueArt.naturalHeight / tarrasqueArt.naturalWidth);
+          ctx.save();
+          ctx.translate(width * 0.55 + (1 - charge) * width * 0.5, ground - artH * 0.42);
+          ctx.scale(charge * (1 + Math.sin(t * 24) * 0.008), charge);
+          ctx.globalAlpha = f.presence * clamp01((t - 0.25) / 0.35);
+          ctx.drawImage(tarrasqueArt, -artW / 2, -artH / 2, artW, artH);
+          ctx.restore();
+        }
+
         ctx.fillStyle = '#0b0603';
         ctx.beginPath();
         ctx.moveTo(0, height);
@@ -8898,6 +9101,358 @@ const SCENES: Partial<
       },
     };
   },
+  sahur: (width, height) => {
+    const hits = [0.45, 0.95, 1.45].map((at) => ({ at, done: false }));
+    return {
+      frame(ctx, f) {
+        const t = f.time;
+        for (let i = 0; i < hits.length; i++) {
+          const hit = hits[i]!;
+          if (!hit.done && t >= hit.at) {
+            hit.done = true;
+            screenShake(180 + i * 140, 7 + i * 6);
+          }
+        }
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        const dawn = ctx.createLinearGradient(0, 0, 0, height);
+        dawn.addColorStop(0, '#07162d');
+        dawn.addColorStop(1, '#7a3515');
+        ctx.fillStyle = dawn;
+        ctx.fillRect(0, 0, width, height);
+        const art = auraImage('/efeitos/auras/tung-tung-sahur.png');
+        if (art) {
+          const enter = easeOut((t - 0.05) / 0.45);
+          const artH = Math.min(height * 0.95, width * 0.8);
+          const artW = artH * (art.naturalWidth / art.naturalHeight);
+          ctx.save();
+          ctx.translate(width / 2, height * 0.52);
+          ctx.scale(enter, enter);
+          ctx.drawImage(art, -artW / 2, -artH / 2, artW, artH);
+          ctx.restore();
+        }
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        for (let i = 0; i < hits.length; i++) {
+          const age = t - hits[i]!.at;
+          if (age < 0 || age > 0.48) continue;
+          const radius = age * width * (0.35 + i * 0.12);
+          ctx.strokeStyle = `rgba(255, 185, 75, ${1 - age / 0.48})`;
+          ctx.lineWidth = 12 - i * 2;
+          ctx.beginPath();
+          ctx.arc(width / 2, height * 0.72, radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = '#fff2c8';
+          ctx.font = `bold ${Math.min(110, width * 0.11)}px ui-monospace, monospace`;
+          ctx.fillText('TUNG!', width / 2, height * (0.2 + i * 0.13));
+        }
+        ctx.restore();
+      },
+    };
+  },
+  fullmetal: (width, height) => ({
+    frame(ctx, f) {
+      const t = f.time;
+      if (t > 0.65 && t < 0.69) screenShake(260, 8);
+      if (t > 1.35 && t < 1.39) screenShake(550, 15);
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.fillStyle = '#120c05';
+      ctx.fillRect(0, 0, width, height);
+      const art = auraImage('/efeitos/auras/fullmetal.png');
+      if (art) {
+        const zoom = 1.02 + easeOut(t / 2.4) * 0.1;
+        const scale = Math.max(width / art.naturalWidth, height / art.naturalHeight) * zoom;
+        const dw = art.naturalWidth * scale;
+        const dh = art.naturalHeight * scale;
+        ctx.drawImage(art, (width - dw) / 2, (height - dh) / 2, dw, dh);
+      }
+      const ring = Math.min(width, height) * (0.12 + easeOut(t / 1.2) * 0.27);
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = `rgba(255, 205, 80, ${0.85 * (1 - clamp01((t - 2.2) / 0.6))})`;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(width / 2, height * 0.7, ring, 0, Math.PI * 2);
+      ctx.stroke();
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 + t * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(width / 2, height * 0.7);
+        ctx.lineTo(width / 2 + Math.cos(a) * ring, height * 0.7 + Math.sin(a) * ring * 0.35);
+        ctx.stroke();
+      }
+      ctx.restore();
+    },
+  }),
+  zoro: (width, height) => ({
+    frame(ctx, f) {
+      const t = f.time;
+      if (t > 1.2 && t < 1.24) screenShake(500, 17);
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.fillStyle = 'rgba(3, 8, 5, 0.94)';
+      ctx.fillRect(0, 0, width, height);
+      const zoro = auraImage('/efeitos/auras/zoro.png');
+      if (zoro) {
+        const enter = easeOut((t - 0.1) / 0.45);
+        const artH = Math.min(height * 0.94, width * 0.8);
+        const artW = artH * (zoro.naturalWidth / zoro.naturalHeight);
+        ctx.save();
+        ctx.translate(width * 0.5, height * 0.52);
+        ctx.scale(enter, enter);
+        ctx.drawImage(zoro, -artW / 2, -artH / 2, artW, artH);
+        ctx.restore();
+      }
+      const cut = easeOut((t - 1.08) / 0.16);
+      if (cut > 0) {
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineCap = 'round';
+        for (const [angle, offset] of [
+          [-0.58, -24],
+          [0.58, 24],
+          [0, 0],
+        ] as const) {
+          ctx.save();
+          ctx.translate(width / 2, height / 2 + offset);
+          ctx.rotate(angle);
+          ctx.strokeStyle = `rgba(255, 245, 245, ${1 - cut * 0.35})`;
+          ctx.lineWidth = 7;
+          ctx.beginPath();
+          ctx.moveTo(-width * cut, 0);
+          ctx.lineTo(width * cut, 0);
+          ctx.stroke();
+          ctx.strokeStyle = `rgba(210, 0, 45, ${0.85 - cut * 0.25})`;
+          ctx.lineWidth = 18;
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+      ctx.restore();
+    },
+  }),
+  blackhole: (width, height) => {
+    const stars = Array.from({ length: 110 }, () => ({
+      x: rand(0, width),
+      y: rand(0, height),
+      r: rand(0.5, 2.2),
+    }));
+    return {
+      frame(ctx, f) {
+        const t = f.time;
+        const cx = width / 2;
+        const cy = height * 0.45;
+        const grow = easeOut(t / 1.5);
+        const radius = Math.min(width, height) * (0.07 + grow * 0.2);
+        if (t > 1.55 && t < 1.59) screenShake(700, 13);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.fillStyle = `rgba(0, 0, 7, ${0.9 * clamp01(t / 0.5)})`;
+        ctx.fillRect(0, 0, width, height);
+        for (const star of stars) {
+          const dx = star.x - cx;
+          const dy = star.y - cy;
+          const a = Math.atan2(dy, dx) + t * 0.25;
+          const d = Math.max(radius * 0.9, Math.hypot(dx, dy) * (1 - grow * 0.42));
+          ctx.strokeStyle = `rgba(220, 230, 255, ${0.65 * (1 - grow * 0.4)})`;
+          ctx.lineWidth = star.r;
+          ctx.beginPath();
+          ctx.moveTo(cx + Math.cos(a) * d, cy + Math.sin(a) * d);
+          ctx.lineTo(
+            cx + Math.cos(a - 0.08 * grow) * (d + 24 * grow),
+            cy + Math.sin(a - 0.08 * grow) * (d + 24 * grow),
+          );
+          ctx.stroke();
+        }
+        ctx.translate(cx, cy);
+        ctx.rotate(t * 0.75);
+        const disk = ctx.createRadialGradient(0, 0, radius * 0.7, 0, 0, radius * 2.1);
+        disk.addColorStop(0, 'rgba(0,0,0,1)');
+        disk.addColorStop(0.48, 'rgba(0,0,0,1)');
+        disk.addColorStop(0.58, 'rgba(255,245,220,0.95)');
+        disk.addColorStop(0.7, 'rgba(255,120,35,0.85)');
+        disk.addColorStop(0.84, 'rgba(150,70,255,0.45)');
+        disk.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = disk;
+        ctx.scale(1.75, 0.58);
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 2.1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fill();
+        const swallow = clamp01((t - 1.7) / 0.9);
+        if (swallow > 0) {
+          ctx.fillStyle = `rgba(0, 0, 0, ${swallow})`;
+          ctx.fillRect(0, 0, width, height);
+        }
+        ctx.restore();
+      },
+    };
+  },
+  hollow: (width, height) => ({
+    frame(ctx, f) {
+      const t = f.time;
+      if (t > 0.75 && t < 0.79) screenShake(240, 9);
+      if (t > 1.5 && t < 1.54) screenShake(520, 18);
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.fillStyle = '#08030a';
+      ctx.fillRect(0, 0, width, height);
+      const duel = auraImage('/efeitos/auras/hollow-knight.png');
+      if (duel) {
+        const zoom = 1.03 + easeOut(t / 2.5) * 0.12;
+        const scale = Math.max(width / duel.naturalWidth, height / duel.naturalHeight) * zoom;
+        const dw = duel.naturalWidth * scale;
+        const dh = duel.naturalHeight * scale;
+        ctx.drawImage(duel, (width - dw) / 2, (height - dh) / 2, dw, dh);
+      }
+      const pulse = Math.max(0, 1 - Math.abs(t - 1.5) / 0.22);
+      if (pulse > 0) {
+        ctx.globalCompositeOperation = 'lighter';
+        blit(
+          ctx,
+          softSprite('255, 245, 255'),
+          width * 0.48,
+          height * 0.5,
+          Math.min(width, height) * 0.5,
+          pulse,
+        );
+      }
+      if (f.emitting && Math.random() < 0.55)
+        f.particles.push(
+          particle('ember', rand(0, width), height + 10, {
+            vy: -rand(3, 8),
+            vx: rand(-1.5, 1.5),
+            max: 80,
+            size: rand(1.5, 3.5),
+            color: Math.random() < 0.65 ? RGB.hollow : '245, 245, 255',
+          }),
+        );
+      ctx.restore();
+    },
+  }),
+  doom: (width, height) => ({
+    frame(ctx, f) {
+      const t = f.time;
+      if (t > 1.65 && t < 1.69) screenShake(650, 16);
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      const bg = ctx.createRadialGradient(
+        width / 2,
+        height * 0.45,
+        0,
+        width / 2,
+        height * 0.45,
+        width * 0.7,
+      );
+      bg.addColorStop(0, 'rgba(20, 72, 35, 0.94)');
+      bg.addColorStop(1, 'rgba(1, 8, 4, 0.98)');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, width, height);
+      ctx.strokeStyle = 'rgba(84, 227, 111, 0.35)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.arc(
+          width / 2,
+          height * 0.48,
+          Math.min(width, height) * (0.12 + i * 0.09),
+          t * (i % 2 ? -0.5 : 0.5),
+          t * (i % 2 ? -0.5 : 0.5) + Math.PI * 1.45,
+        );
+        ctx.stroke();
+      }
+      const doom = auraImage('/efeitos/auras/doutor-destino.png');
+      if (doom) {
+        const enter = easeOut((t - 0.1) / 0.55);
+        const artH = Math.min(height * 0.96, width * 0.72);
+        const artW = artH * (doom.naturalWidth / doom.naturalHeight);
+        ctx.save();
+        ctx.translate(width / 2, height * 0.52);
+        ctx.scale(enter, enter);
+        ctx.drawImage(doom, -artW / 2, -artH / 2, artW, artH);
+        ctx.restore();
+      }
+      const verdict = easeOut((t - 1.55) / 0.18);
+      if (verdict > 0) {
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 7; i++) {
+          ctx.strokeStyle = `rgba(110, 255, 135, ${0.75 * (1 - verdict * 0.35)})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          const x = (i / 6) * width;
+          ctx.moveTo(x, 0);
+          ctx.lineTo(width / 2 + rand(-80, 80), height * 0.5);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    },
+  }),
+  sans: (width, height) => {
+    const bones = Array.from({ length: 18 }, (_, i) => ({
+      x: (i / 17) * width,
+      delay: 0.35 + (i % 3) * 0.08,
+      h: rand(height * 0.18, height * 0.52),
+    }));
+    return {
+      frame(ctx, f) {
+        const t = f.time;
+        if (t > 0.7 && t < 0.74) screenShake(260, 10);
+        if (t > 1.55 && t < 1.59) screenShake(520, 18);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.fillStyle = `rgba(0, 2, 12, ${0.92 * clamp01(t / 0.3)})`;
+        ctx.fillRect(0, 0, width, height);
+        ctx.strokeStyle = 'rgba(35, 190, 255, 0.32)';
+        ctx.lineWidth = 1;
+        for (let y = 0; y < height; y += 28) {
+          ctx.beginPath();
+          ctx.moveTo(0, y + ((t * 90) % 28));
+          ctx.lineTo(width, y + ((t * 90) % 28));
+          ctx.stroke();
+        }
+        for (const bone of bones) {
+          const rise = easeOut((t - bone.delay) / 0.22);
+          if (rise <= 0) continue;
+          const h = bone.h * rise;
+          ctx.fillStyle = '#f3fbff';
+          ctx.strokeStyle = '#35d9ff';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.roundRect(bone.x - 8, height - h, 16, h + 20, 8);
+          ctx.fill();
+          ctx.stroke();
+        }
+        const beam = clamp01((t - 1.45) / 0.16) * (1 - clamp01((t - 2.25) / 0.45));
+        if (beam > 0) {
+          ctx.globalCompositeOperation = 'lighter';
+          const g = ctx.createLinearGradient(0, 0, width, 0);
+          g.addColorStop(0, 'rgba(30, 140, 255, 0)');
+          g.addColorStop(0.48, `rgba(120, 235, 255, ${beam})`);
+          g.addColorStop(0.52, `rgba(255, 255, 255, ${beam})`);
+          g.addColorStop(1, 'rgba(30, 140, 255, 0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(0, height * 0.38, width, height * 0.18);
+          ctx.globalCompositeOperation = 'source-over';
+        }
+        const sans = auraImage('/efeitos/auras/sans.png');
+        if (sans) {
+          const enter = easeOut((t - 0.1) / 0.45);
+          const artH = Math.min(height * 0.86, width * 0.66);
+          const artW = artH * (sans.naturalWidth / sans.naturalHeight);
+          ctx.save();
+          ctx.translate(width / 2, height * 0.51);
+          ctx.scale(enter, enter);
+          ctx.drawImage(sans, -artW / 2, -artH / 2, artW, artH);
+          ctx.restore();
+        }
+        ctx.restore();
+      },
+    };
+  },
   zombie: (width, height) => {
     // O chão racha e mãos podres saem da terra, uma após a outra, se debatendo; névoa verde.
     const ground = height * 0.88;
@@ -11150,6 +11705,258 @@ const FAILS: Record<DiceAura, FailScene> = {
       g.addColorStop(1, 'rgba(80, 255, 160, 0)');
       ctx.fillStyle = g;
       ctx.fillRect(0, text.y - 260, width, 140);
+      ctx.restore();
+    },
+  }),
+  sahur: (width, height, _durationMs, text) => ({
+    // Acordou tarde: panela minúscula, bastão quebrado e o despertador já passou da hora.
+    frame(ctx, f) {
+      const t = f.time;
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.fillStyle = 'rgba(8, 15, 28, 0.72)';
+      ctx.fillRect(0, 0, width, height);
+      const cx = width / 2;
+      const cy = height * 0.3;
+      ctx.fillStyle = '#8a8f96';
+      ctx.strokeStyle = '#d8dde2';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 46, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = '#81502b';
+      ctx.lineWidth = 13;
+      ctx.beginPath();
+      ctx.moveTo(cx - 80, cy - 90);
+      ctx.lineTo(cx - 12, cy - 18);
+      ctx.moveTo(cx + 5, cy - 2);
+      ctx.lineTo(cx + 52, cy + 48);
+      ctx.stroke();
+      ctx.fillStyle = '#ef5a4d';
+      ctx.beginPath();
+      ctx.roundRect(cx + 85, cy - 65, 105, 70, 12);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 24px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('05:47', cx + 137, cy - 27);
+      if (t > 1.1) {
+        ctx.font = 'bold 28px ui-monospace, monospace';
+        ctx.fillText('atrasado!', cx, cy + 100);
+        text.rot = Math.sin(t * 14) * 0.04;
+      }
+      ctx.restore();
+    },
+  }),
+  fullmetal: (width, height, _durationMs, text) => ({
+    // Troca equivalente decepcionante: sai uma estátua minúscula e a régua piora tudo.
+    frame(ctx, f) {
+      const t = f.time;
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.fillStyle = 'rgba(22, 12, 5, 0.65)';
+      ctx.fillRect(0, 0, width, height);
+      const cx = width / 2;
+      const cy = height * 0.32;
+      ctx.strokeStyle = '#f3b43f';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(cx, cy + 50, 75, 0, Math.PI * 2);
+      ctx.stroke();
+      const rise = easeOut((t - 0.45) / 0.4);
+      ctx.fillStyle = '#9b8265';
+      ctx.fillRect(cx - 18, cy + 45 - 42 * rise, 36, 42 * rise);
+      ctx.beginPath();
+      ctx.arc(cx, cy - 5 * rise, 16 * rise, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#e8d29a';
+      ctx.fillRect(cx + 48, cy - 65, 14, 120);
+      ctx.strokeStyle = '#6f5730';
+      for (let i = 0; i < 6; i++) {
+        ctx.beginPath();
+        ctx.moveTo(cx + 48, cy - 55 + i * 20);
+        ctx.lineTo(cx + 58, cy - 55 + i * 20);
+        ctx.stroke();
+      }
+      if (t > 1.1) {
+        text.scale = 0.82 + Math.sin(t * 16) * 0.04;
+        text.rot = Math.sin(t * 20) * 0.04;
+      }
+      ctx.restore();
+    },
+  }),
+  zoro: (width, height, _durationMs, text) => ({
+    // Ele se perdeu: mapa de cabeça para baixo e o golpe sai pela direção errada.
+    frame(ctx, f) {
+      const t = f.time;
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.fillStyle = 'rgba(5, 12, 7, 0.7)';
+      ctx.fillRect(0, 0, width, height);
+      ctx.translate(width / 2, height * 0.28);
+      ctx.rotate(Math.PI + Math.sin(t * 3) * 0.08);
+      ctx.fillStyle = '#ead9aa';
+      ctx.strokeStyle = '#6f5730';
+      ctx.lineWidth = 3;
+      ctx.fillRect(-90, -60, 180, 120);
+      ctx.strokeRect(-90, -60, 180, 120);
+      ctx.strokeStyle = '#a33';
+      ctx.beginPath();
+      ctx.moveTo(-55, -25);
+      ctx.lineTo(45, 25);
+      ctx.moveTo(45, -25);
+      ctx.lineTo(-55, 25);
+      ctx.stroke();
+      ctx.restore();
+      if (t > 1.1) {
+        text.vx = -5;
+        text.rot = -0.15;
+      }
+    },
+  }),
+  blackhole: (width, height, _durationMs, text) => ({
+    // Um microburaco negro só consegue roubar uma bolacha e evapora de vergonha.
+    frame(ctx, f) {
+      const t = f.time;
+      const cx = width / 2;
+      const cy = height * 0.25;
+      const r = 16 + Math.sin(t * 7) * 2;
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.fillStyle = '#020006';
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#b87cff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      const progress = clamp01((t - 0.35) / 1.3);
+      const cookieX = width * 0.15 + (cx - width * 0.15) * progress;
+      const cookieY = cy + Math.sin(progress * Math.PI * 4) * 35;
+      ctx.fillStyle = '#c98b42';
+      ctx.beginPath();
+      ctx.arc(cookieX, cookieY, 22 * (1 - progress * 0.75), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#5b3318';
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.arc(cookieX + Math.cos(a) * 9, cookieY + Math.sin(a) * 9, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (t > 1.75) {
+        ctx.fillStyle = `rgba(220, 190, 255, ${clamp01((t - 1.75) / 0.2)})`;
+        ctx.font = 'bold 38px ui-monospace, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('puf', cx, cy - 55);
+        text.scale = 0.92;
+      }
+      ctx.restore();
+    },
+  }),
+  hollow: (width, height) => ({
+    // Depois da Radiância: só a máscara vazia cai, sem olhos nem sombra dentro dela.
+    frame(ctx, f) {
+      const t = f.time;
+      const y = Math.min(height * 0.42, -90 + t * 190);
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.fillStyle = 'rgba(4, 4, 10, 0.75)';
+      ctx.fillRect(0, 0, width, height);
+      ctx.translate(width / 2, y);
+      ctx.rotate(Math.sin(t * 3) * 0.08);
+      ctx.fillStyle = '#f1f0e8';
+      ctx.strokeStyle = '#171722';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 72, 62, 0, 0, Math.PI * 2);
+      ctx.moveTo(-50, -42);
+      ctx.quadraticCurveTo(-92, -130, -32, -72);
+      ctx.moveTo(50, -42);
+      ctx.quadraticCurveTo(92, -130, 32, -72);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#07070b';
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.ellipse(side * 25, -2, 14, 22, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    },
+  }),
+  doom: (width, height, _durationMs, text) => ({
+    // O grande Doutor Destino era um Doombot de lata: entra, dá curto e perde a máscara.
+    frame(ctx, f) {
+      const t = f.time;
+      const x = width / 2;
+      const y = height * 0.34;
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.fillStyle = 'rgba(8, 18, 10, 0.6)';
+      ctx.fillRect(0, 0, width, height);
+      ctx.translate(x, y);
+      ctx.fillStyle = '#778078';
+      ctx.strokeStyle = '#b9c2bb';
+      ctx.lineWidth = 4;
+      ctx.fillRect(-42, -58, 84, 116);
+      ctx.strokeRect(-42, -58, 84, 116);
+      ctx.fillStyle = '#233d28';
+      ctx.beginPath();
+      ctx.moveTo(-52, -48);
+      ctx.lineTo(0, -90);
+      ctx.lineTo(52, -48);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#ff4747';
+      ctx.font = 'bold 20px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(t < 0.9 ? 'DOOM' : 'ERRO', 0, 8);
+      if (t > 0.7 && f.emitting && Math.random() < 0.3)
+        f.particles.push(
+          particle('spark', x + rand(-35, 35), y + rand(-50, 45), {
+            vx: rand(-2, 2),
+            vy: rand(-2, 1),
+            max: 28,
+            size: 2,
+            color: '255, 210, 80',
+          }),
+        );
+      if (t > 1.15) {
+        text.rot = Math.sin(t * 18) * 0.04;
+        ctx.fillStyle = '#b9c2bb';
+        ctx.beginPath();
+        ctx.ellipse(85, 95 + (t - 1.15) * 90, 30, 38, t, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    },
+  }),
+  sans: (width, height, _durationMs, text) => ({
+    // Meme: ele tenta o atalho preguiçoso, dorme em pé e o ataque passa por cima.
+    frame(ctx, f) {
+      const t = f.time;
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.fillStyle = 'rgba(0, 5, 18, 0.55)';
+      ctx.fillRect(0, 0, width, height);
+      const sans = auraImage('/efeitos/auras/sans.png');
+      if (sans) {
+        const artH = Math.min(height * 0.42, width * 0.32);
+        const artW = artH * (sans.naturalWidth / sans.naturalHeight);
+        ctx.globalAlpha = f.presence * 0.65;
+        ctx.drawImage(sans, width / 2 - artW / 2, height * 0.42 - artH / 2, artW, artH);
+      }
+      ctx.globalAlpha = f.presence;
+      ctx.fillStyle = '#fff';
+      ctx.font = `bold ${Math.min(52, width * 0.06)}px ui-monospace, monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillText(t < 1.1 ? 'zzZ...' : '* talvez na próxima.', width / 2, height * 0.22);
+      if (t > 1.05) {
+        text.vx += 0.08;
+        text.rot = Math.sin(t * 8) * 0.03;
+      }
       ctx.restore();
     },
   }),

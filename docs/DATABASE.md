@@ -1,5 +1,12 @@
 # Modelo de dados e migrações
 
+## Aura Sans (2026-11-17)
+
+A migração `20261117100000_dice_aura_sans.sql` recria as constraints de `user_dice.aura` e
+`dice_aura_grants.aura` incluindo as chaves `sans`, `hollow`, `doom`, `zoro`, `blackhole` e
+`fullmetal` e `sahur`. Ela não altera dados existentes nem concede a
+aura automaticamente: segue as mesmas regras de conta de criador e liberação para amigos.
+
 **2026-11-16:** `20261116130000_dice_auras_six.sql` amplia `user_dice_aura_check` e `dice_aura_grants_aura_check` com `sakura`, `phoenix`, `kitsune`, `mirror`, `aurora` e `zombie` (aplicada em produção).
 
 ## Ordem Paranormal RPG 2 (2026-11-12)

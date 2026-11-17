@@ -130,6 +130,13 @@ export const DICE_AURAS = [
   'mirror',
   'aurora',
   'zombie',
+  'sans',
+  'hollow',
+  'doom',
+  'zoro',
+  'blackhole',
+  'fullmetal',
+  'sahur',
 ] as const;
 export type DiceAura = (typeof DICE_AURAS)[number];
 export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> = {
@@ -187,6 +194,13 @@ export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> =
   mirror: { name: 'Espelho Partido', color: '#d8ecf8' },
   aurora: { name: 'Aurora Boreal', color: '#5cffb0' },
   zombie: { name: 'Horda Zumbi', color: '#8fbf6a' },
+  sans: { name: 'Sans', color: '#35d9ff' },
+  hollow: { name: 'Hollow Knight', color: '#ef334f' },
+  doom: { name: 'Doutor Destino', color: '#54e36f' },
+  zoro: { name: 'Zoro', color: '#d7193f' },
+  blackhole: { name: 'Buraco Negro', color: '#b87cff' },
+  fullmetal: { name: 'Fullmetal Alchemist', color: '#f3b43f' },
+  sahur: { name: 'Tung Tung Tung Sahur', color: '#f0a34a' },
 };
 
 export const diceFontLabels: Record<DiceFont, { name: string; family: string }> = {

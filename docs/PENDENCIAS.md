@@ -1,5 +1,18 @@
 # Pendências em relação ao prompt inicial
 
+## 2026-11-17 — Auras com arte gerada e Sans
+
+- [x] Substituir a leitura visual genérica do Deus do Sol por Gear 5 reconhecível.
+- [x] Substituir o desenho manual fraco do Tarrasque por uma criatura completa e ameaçadora.
+- [x] Adicionar Sans à validação, seletor, aura no dado, crítico, falha, som, banco e teste RLS.
+- [x] Adicionar Hollow Knight e Doutor Destino à mesma cadeia completa.
+- [x] Adicionar Zoro e Buraco Negro à mesma cadeia completa.
+- [x] Adicionar Fullmetal Alchemist à mesma cadeia completa.
+- [x] Adicionar Tung Tung Tung Sahur à mesma cadeia completa.
+- [x] Aplicar `20261117100000_dice_aura_sans.sql` em produção.
+- [ ] Conferir todas as animações e sons novos no navegador; a automação visual ficou
+      indisponível nesta rodada.
+
 > Auditoria feita em 2026-10-16 comparando o código do repositório com o "Prompt Master de
 > desenvolvimento" do Codexveil. Para o estado geral do projeto, veja
 > [`PROGRESS.md`](PROGRESS.md).

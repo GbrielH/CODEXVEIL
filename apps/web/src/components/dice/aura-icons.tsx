@@ -262,6 +262,13 @@ const ICONS: Record<DiceAura, ComponentType<LucideProps>> = {
   mirror: Gem,
   aurora: Waves,
   zombie: Hand,
+  sans: Skull,
+  hollow: Sword,
+  doom: Crown,
+  zoro: Sword,
+  blackhole: Orbit,
+  fullmetal: FlaskRound,
+  sahur: Cog,
 };
 
 /** Ícone da aura, na cor dela e com um leve brilho. */
