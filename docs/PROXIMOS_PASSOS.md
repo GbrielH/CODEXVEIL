@@ -10,10 +10,10 @@
 - [x] Rodar `pnpm check` e `pnpm build`.
 - [x] Conferir a migração com dry-run e aplicá-la no projeto CODEXVEIL antes da publicação.
 - [ ] Conferir visualmente as doze cenas em “Meus dados”.
-- [ ] Publicar somente quando o responsável pedir novo push para `origin main`.
+- [x] Publicar em `origin main` após pedido do responsável (`260a0fb`).
 
-Histórico: em 2026-11-17, implementação, assets, verificações e banco foram concluídos; validação
-visual e publicação ainda estavam em andamento.
+Histórico: em 2026-11-17, implementação, assets, verificações, banco e publicação foram concluídos
+no commit `260a0fb`; a validação visual continua pendente.
 
 ## 2026-11-17 — Gear 5, Tarrasque e Sans
 

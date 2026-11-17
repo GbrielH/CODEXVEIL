@@ -25,6 +25,7 @@
   do sandbox do Windows e a repetição autorizada passou.
 - Inspeção visual: não executada; as cenas e os sons ainda precisam ser conferidos em “Meus
   dados” depois da publicação.
+- Publicação: commit `260a0fb` enviado a `origin/main`; o push acionou Vercel, CI e OTA.
 
 Próximo passo exato: conferir as doze cenas e seus sons em “Meus dados” na produção.
 

@@ -10,7 +10,7 @@
 - [x] Validar `20261117110000_dice_auras_six_more.sql` em dry-run e aplicá-la no CODEXVEIL.
 - [x] Rodar a suíte completa e os builds.
 - [ ] Conferir as animações e sons manualmente no navegador.
-- [ ] Publicar em produção após o pedido explícito de 2026-11-17.
+- [x] Publicar em produção após o pedido explícito de 2026-11-17 (`260a0fb`).
 
 ## 2026-11-17 — Auras com arte gerada e Sans
 
