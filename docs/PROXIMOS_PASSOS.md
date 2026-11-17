@@ -15,10 +15,10 @@
 - [x] Conferir a migração com `supabase db push --dry-run --workdir deploy` e aplicá-la no
       projeto CODEXVEIL.
 - [ ] Conferir visualmente em “Meus dados”; o helper nativo do navegador ficou indisponível.
-- [ ] Publicar em `origin main`.
+- [x] Publicar em `origin main` (`45736ce`).
 
-Histórico: em 2026-11-17, implementação, assets, verificações e banco foram concluídos; a
-inspeção visual ficou pendente por indisponibilidade do helper nativo.
+Histórico: em 2026-11-17, implementação, assets, verificações, banco e publicação foram
+concluídos; a inspeção visual ficou pendente por indisponibilidade do helper nativo.
 
 > Relatório atualizado em **2026-11-03** (veja [Continuidade](#continuidade-parada-em-2026-10-26-retomar-daqui)). Mantenha este arquivo em dia a cada etapa concluída
 > (veja [Como manter a documentação](#como-manter-a-documentação)). O inventário completo do
