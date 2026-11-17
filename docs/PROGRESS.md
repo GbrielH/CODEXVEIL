@@ -19,9 +19,10 @@
   testes ao vivo pulados); `pnpm build` passou nas 2 tarefas (web e Android/Hermes); typecheck web
   e `git diff --check` passaram. A inspeção no navegador não pôde ser executada porque o host de
   automação visual estava indisponível.
+- Publicação: revisão enviada a `origin/main` no commit `1f3f1c1`; o push acionou Vercel, CI e OTA.
 
-Próximo passo exato: conferir as quinze animações em “Meus dados” quando o navegador de automação
-estiver disponível e publicar somente depois dessa revisão visual ou de um novo pedido explícito.
+Próximo passo exato: conferir as quinze animações em “Meus dados” na produção e ajustar qualquer
+problema visual encontrado.
 
 ## 2026-11-17 — Seis novas auras temáticas
 

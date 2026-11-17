@@ -8,7 +8,7 @@
 - [x] Alinhar os efeitos sonoros dos seis temas novos à nova coreografia.
 - [ ] Validar visualmente em “Meus dados”; a automação do navegador ficou indisponível.
 - [x] Rodar a suíte completa e os builds antes de uma nova publicação.
-- [ ] Publicar a correção somente após pedido explícito.
+- [x] Publicar a correção após pedido explícito (`1f3f1c1`).
 
 ## 2026-11-17 — Seis novas auras
 

@@ -11,10 +11,11 @@
 - [x] Rodar o typecheck web.
 - [x] Rodar `pnpm check` e `pnpm build`.
 - [ ] Conferir visualmente as quinze animações; o host do navegador estava indisponível.
-- [ ] Publicar somente após pedido explícito do responsável.
+- [x] Publicar em `origin main` após pedido explícito do responsável (`1f3f1c1`).
 
-Histórico: em 2026-11-17, revisão estrutural, novos assets, suíte e build foram concluídos; a
-inspeção visual continuou pendente porque o host do navegador estava indisponível.
+Histórico: em 2026-11-17, revisão estrutural, novos assets, suíte, build e publicação foram
+concluídos no commit `1f3f1c1`; a inspeção visual continuou pendente porque o host do navegador
+estava indisponível.
 
 ## 2026-11-17 — Homem-Aranha, Akatsuki, Hisoka, Valorant, League e Mario
 
