@@ -2335,6 +2335,7 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
     }
   },
   spider: (kit) => {
+    // Balanço, quatro disparos de teia e impacto sincronizado com a teia que cobre a tela.
     const hall = withReverb(kit, 1.7, 0.25);
     for (const at of [0.12, 0.42, 0.78, 1.18])
       noiseBurst(hall, at, {
@@ -2357,12 +2358,13 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
     tone(hall, 1.25, { type: 'sine', freq: 82, toFreq: 38, attack: 0.002, decay: 0.7, peak: 0.65 });
   },
   akatsuki: (kit) => {
+    // Corvos convergem, o grave cresce e a pressão gravitacional explode aos 1,2 s.
     const hall = withReverb(kit, 3.4, 0.55);
     growl(hall, 0.1, 62, 1.9);
     for (let i = 0; i < 12; i++)
       noiseBurst(hall, 0.35 + i * 0.075, {
         type: 'bandpass',
-        freq: 1500 + Math.random() * 2300,
+        freq: 1500 + i * 190,
         q: 7,
         attack: 0.001,
         decay: 0.08,
@@ -2371,6 +2373,7 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
     tone(hall, 1.2, { type: 'sine', freq: 95, toFreq: 32, attack: 0.08, decay: 1.2, peak: 0.7 });
   },
   hisoka: (kit) => {
+    // Cartas em sequência, tensão elástica e liberação teatral.
     const hall = withReverb(kit, 2.2, 0.4);
     for (let i = 0; i < 10; i++)
       noiseBurst(hall, 0.2 + i * 0.12, {
@@ -2409,6 +2412,7 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
     );
   },
   valorant: (kit) => {
+    // Confirmações táticas, cinco lâminas e detonação do ponto de impacto.
     const hall = withReverb(kit, 1.4, 0.2);
     for (const [at, freq] of [
       [0.2, 900],
@@ -2435,6 +2439,7 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
     });
   },
   league: (kit) => {
+    // Entrada do monstro, disputa do objetivo e colisão dos dois feitiços.
     const hall = withReverb(kit, 4.2, 0.6);
     [110, 164.81, 220, 329.63].forEach((freq, i) =>
       tone(hall, i * 0.16, {
@@ -2458,6 +2463,7 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
     tone(hall, 1.18, { type: 'sine', freq: 88, toFreq: 35, attack: 0.002, decay: 0.85, peak: 0.7 });
   },
   mario: (kit) => {
+    // Corrida de plataforma e coleta da estrela; motivo original, sem reproduzir música do jogo.
     const hall = withReverb(kit, 1.25, 0.18);
     const notes = [261.63, 329.63, 392, 523.25, 659.25, 783.99, 1046.5];
     notes.forEach((freq, i) => {

@@ -1,5 +1,16 @@
 # Arquitetura e decisões
 
+## Auras cinematográficas em atos (2026-11-17)
+
+Uma arte raster não constitui a animação da aura. Os temas complexos seguem quatro atos no canvas:
+entrada, preparação, impacto e dissipação. Personagem/monstro deve ser um recorte transparente e
+independente; cenário, projéteis, partículas, tremor e reação permanecem code-native. A arte pode
+se mover, inclinar e reagir, mas não deve ser usada como fundo opaco com apenas zoom lento.
+
+`REVISED_SCENES` sobrepõe cenas que precisam dessa direção sem apagar a implementação anterior;
+isso permite reaproveitar efeitos bons e adicionar golpes independentes. Assets corrigidos são
+versionados com `-v2` até a validação visual, evitando sobrescrever a versão publicada.
+
 ## Arte raster nas auras complexas (2026-11-17)
 
 As cenas continuam animadas pelo canvas 2D em `aura-fx.ts`, mas personagens e criaturas que

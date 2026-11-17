@@ -1,5 +1,28 @@
 # Progresso do Codexveil
 
+## 2026-11-17 — Revisão cinematográfica das auras
+
+- Auditoria visual e de código comparou as auras recentes com Olho Cósmico, Cthulhu, Glitch,
+  Tarrasque e Deus do Sol. O defeito confirmado era estrutural: quatro assets novos eram fundos
+  opacos e as cenas dependiam principalmente de zoom sobre uma imagem pronta.
+- Akatsuki, Hisoka, Valorant e League ganharam novos recortes PNG com transparência real. As artes
+  anteriores foram preservadas e os novos arquivos usam o sufixo `-v2`.
+- Homem-Aranha, Akatsuki, Hisoka, Valorant, League e Mario foram reconstruídos como animações em
+  atos: cenário, entrada do personagem, preparação do golpe, impacto e dissipação são camadas
+  independentes executadas no canvas.
+- Deus do Sol, Tarrasque, Sans, Hollow Knight, Doutor Destino, Zoro, Buraco Negro, Fullmetal e
+  Tung Tung Tung Sahur preservam a base anterior, mas agora recebem ações adicionais realmente
+  animadas, como golpes, projéteis, escudos, cortes e ondas de choque.
+- O desenho sonoro dos seis temas novos foi sincronizado com os novos marcos temporais; frequências
+  aleatórias na sequência Akatsuki foram substituídas por uma progressão determinística.
+- Verificações desta revisão: `pnpm check` passou nas 20 tarefas (banco: 256 testes aprovados e 11
+  testes ao vivo pulados); `pnpm build` passou nas 2 tarefas (web e Android/Hermes); typecheck web
+  e `git diff --check` passaram. A inspeção no navegador não pôde ser executada porque o host de
+  automação visual estava indisponível.
+
+Próximo passo exato: conferir as quinze animações em “Meus dados” quando o navegador de automação
+estiver disponível e publicar somente depois dessa revisão visual ou de um novo pedido explícito.
+
 ## 2026-11-17 — Seis novas auras temáticas
 
 - **Homem-Aranha:** crítico com balanço, teias e sentido de perigo; falha-meme dos dois heróis

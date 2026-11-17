@@ -1,5 +1,15 @@
 # Pendências em relação ao prompt inicial
 
+## 2026-11-17 — Correção das auras recentes
+
+- [x] Corrigir o uso excessivo de imagens estáticas com zoom nas auras criadas pelo Codex.
+- [x] Separar personagens e monstros opacos do cenário para permitir animação por camadas.
+- [x] Dar às quinze cenas recentes ações temporais comparáveis às melhores cenas code-native.
+- [x] Alinhar os efeitos sonoros dos seis temas novos à nova coreografia.
+- [ ] Validar visualmente em “Meus dados”; a automação do navegador ficou indisponível.
+- [x] Rodar a suíte completa e os builds antes de uma nova publicação.
+- [ ] Publicar a correção somente após pedido explícito.
+
 ## 2026-11-17 — Seis novas auras
 
 - [x] Adicionar Homem-Aranha, Akatsuki, Hisoka, Valorant, League of Legends e Mario Bros. à

@@ -108,6 +108,20 @@ function drawCoverImage(
   ctx.drawImage(image, (width - w) / 2, (height - h) / 2, w, h);
 }
 
+/** Desenha um recorte inteiro sem cortar extremidades, útil para animar personagem e cenário separados. */
+function drawContainImage(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  width: number,
+  height: number,
+  scale = 1,
+) {
+  const fit = Math.min(width / image.naturalWidth, height / image.naturalHeight) * scale;
+  const w = image.naturalWidth * fit;
+  const h = image.naturalHeight * fit;
+  ctx.drawImage(image, -w / 2, -h / 2, w, h);
+}
+
 function sprite(
   key: string,
   size: number,
@@ -3055,7 +3069,10 @@ export function criticalAuraBurst(
       : [];
   // Sagrada: leque de raios e auréola desenhados uma vez (em meia resolução).
   const holy = aura === 'holy' ? holyLayers(width, height) : null;
-  const scene = SCENES[aura]?.(width, height, durationMs) ?? null;
+  const scene =
+    REVISED_SCENES[aura]?.(width, height, durationMs) ??
+    SCENES[aura]?.(width, height, durationMs) ??
+    null;
   let last = 0;
 
   const tick = (now: number) => {
@@ -9910,6 +9927,745 @@ const SCENES: Partial<
               color: '90, 160, 80',
             }),
           );
+        ctx.restore();
+      },
+    };
+  },
+};
+
+// --------------------------------------------------------------------------------------------
+// Revisão cinematográfica: as auras abaixo têm direção em atos (entrada, preparação, impacto e
+// dissipação). A arte raster funciona como recorte móvel; cenário, golpes e reação são animação.
+// --------------------------------------------------------------------------------------------
+
+function reviseScene(
+  aura: DiceAura,
+  width: number,
+  height: number,
+  durationMs: number,
+  overlay: (ctx: CanvasRenderingContext2D, frame: SceneFrame) => void,
+): Scene {
+  const base = SCENES[aura]?.(width, height, durationMs);
+  return {
+    frame(ctx, frame) {
+      base?.frame(ctx, frame);
+      overlay(ctx, frame);
+    },
+  };
+}
+
+const REVISED_SCENES: Partial<
+  Record<DiceAura, (width: number, height: number, durationMs: number) => Scene>
+> = {
+  // Os nove temas da primeira rodada preservam a cena existente, mas ganham golpes e estados
+  // independentes — nada aqui é apenas zoom de uma ilustração.
+  sungod: (width, height, durationMs) =>
+    reviseScene('sungod', width, height, durationMs, (ctx, f) => {
+      const t = f.time;
+      const windup = easeOut((t - 0.45) / 0.35);
+      const punch = easeOut((t - 1.15) / 0.16);
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 5; i++) {
+        const a = i * 1.27 + t * (i % 2 ? -1.4 : 1.4);
+        const r = Math.min(width, height) * (0.15 + i * 0.045) * windup;
+        ctx.strokeStyle = `rgba(255,255,255,${0.18 + i * 0.06})`;
+        ctx.lineWidth = 7 - i;
+        ctx.beginPath();
+        ctx.arc(width / 2, height * 0.48, r, a, a + Math.PI * 1.25);
+        ctx.stroke();
+      }
+      if (punch > 0) {
+        const fistX = width * (0.08 + punch * 0.42);
+        const fistR = Math.min(width, height) * (0.08 + punch * 0.2);
+        blit(ctx, softSprite('255, 245, 220'), fistX, height * 0.5, fistR * 2, 0.85);
+        ctx.strokeStyle = `rgba(255,255,255,${1 - punch * 0.25})`;
+        ctx.lineWidth = 16;
+        ctx.beginPath();
+        ctx.moveTo(-40, height * 0.5);
+        ctx.bezierCurveTo(
+          width * 0.1,
+          height * 0.15,
+          fistX - fistR,
+          height * 0.8,
+          fistX,
+          height * 0.5,
+        );
+        ctx.stroke();
+      }
+      ctx.restore();
+    }),
+  tarrasque: (width, height, durationMs) =>
+    reviseScene('tarrasque', width, height, durationMs, (ctx, f) => {
+      const t = f.time;
+      const charge = easeOut((t - 0.35) / 0.9);
+      const slam = clamp01((t - 1.35) / 0.12) * (1 - clamp01((t - 1.75) / 0.35));
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.strokeStyle = `rgba(255,190,90,${0.65 * charge})`;
+      ctx.lineWidth = 6;
+      for (let i = 0; i < 10; i++) {
+        const y = height * (0.18 + i * 0.075);
+        ctx.beginPath();
+        ctx.moveTo(width, y);
+        ctx.lineTo(width * (0.62 - charge * 0.25), y + Math.sin(i + t * 8) * 16);
+        ctx.stroke();
+      }
+      if (slam > 0) {
+        ctx.fillStyle = `rgba(255,235,190,${slam * 0.22})`;
+        ctx.fillRect(0, 0, width, height);
+        for (let i = 0; i < 18; i++) {
+          const a = (i / 18) * Math.PI * 2;
+          const r = slam * Math.max(width, height) * 0.75;
+          ctx.fillStyle = '#6b4328';
+          ctx.beginPath();
+          ctx.arc(
+            width / 2 + Math.cos(a) * r,
+            height * 0.68 + Math.sin(a) * r * 0.35,
+            5 + (i % 4),
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }),
+  sans: (width, height, durationMs) =>
+    reviseScene('sans', width, height, durationMs, (ctx, f) => {
+      const t = f.time;
+      const summon = easeOut((t - 0.65) / 0.28);
+      const fire = clamp01((t - 1.45) / 0.1) * (1 - clamp01((t - 2.15) / 0.28));
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      for (const side of [-1, 1]) {
+        ctx.save();
+        ctx.translate(width / 2 + side * width * 0.34, height * 0.32);
+        ctx.scale(side, 1);
+        ctx.rotate(side * (0.35 - summon * 0.35));
+        ctx.fillStyle = '#eafaff';
+        ctx.strokeStyle = '#35d9ff';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 86 * summon, 58 * summon, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#06111f';
+        ctx.beginPath();
+        ctx.ellipse(28 * summon, 0, 24 * summon, 12 * summon, 0, 0, Math.PI * 2);
+        ctx.fill();
+        if (fire > 0) {
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.fillStyle = `rgba(120,235,255,${fire})`;
+          ctx.fillRect(25, -15, width * 0.55, 30);
+        }
+        ctx.restore();
+      }
+      ctx.restore();
+    }),
+  hollow: (width, height, durationMs) =>
+    reviseScene('hollow', width, height, durationMs, (ctx, f) => {
+      const t = f.time;
+      const clash = clamp01((t - 1.35) / 0.12) * (1 - clamp01((t - 1.75) / 0.3));
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.globalCompositeOperation = 'lighter';
+      for (const side of [-1, 1]) {
+        ctx.strokeStyle = side < 0 ? `rgba(245,245,255,${clash})` : `rgba(255,45,70,${clash})`;
+        ctx.lineWidth = 14;
+        ctx.beginPath();
+        ctx.moveTo(side < 0 ? 0 : width, side < 0 ? height : 0);
+        ctx.lineTo(width / 2, height * 0.5);
+        ctx.stroke();
+      }
+      blit(ctx, softSprite('255, 245, 250'), width / 2, height * 0.5, 240 * clash, 0.9);
+      ctx.restore();
+    }),
+  doom: (width, height, durationMs) =>
+    reviseScene('doom', width, height, durationMs, (ctx, f) => {
+      const t = f.time;
+      const shield = easeOut((t - 0.4) / 0.45);
+      const blast = clamp01((t - 1.55) / 0.1) * (1 - clamp01((t - 2.1) / 0.3));
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.strokeStyle = `rgba(90,255,125,${0.8 * shield})`;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.ellipse(
+        width / 2,
+        height * 0.51,
+        width * 0.28 * shield,
+        height * 0.43 * shield,
+        0,
+        0,
+        Math.PI * 2,
+      );
+      ctx.stroke();
+      ctx.globalCompositeOperation = 'lighter';
+      if (blast > 0)
+        for (const side of [-1, 1]) {
+          ctx.strokeStyle = `rgba(150,255,170,${blast})`;
+          ctx.lineWidth = 24;
+          ctx.beginPath();
+          ctx.moveTo(width / 2 + side * width * 0.07, height * 0.5);
+          ctx.lineTo(width / 2 + side * width * 0.55, height * 0.15);
+          ctx.stroke();
+        }
+      ctx.restore();
+    }),
+  zoro: (width, height, durationMs) =>
+    reviseScene('zoro', width, height, durationMs, (ctx, f) => {
+      const t = f.time;
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.globalCompositeOperation = 'lighter';
+      const cuts = [0.72, 1.02, 1.32];
+      cuts.forEach((at, i) => {
+        const cut = clamp01((t - at) / 0.09) * (1 - clamp01((t - at - 0.45) / 0.25));
+        if (cut <= 0) return;
+        ctx.strokeStyle = i === 2 ? `rgba(215,25,63,${cut})` : `rgba(235,255,245,${cut})`;
+        ctx.lineWidth = 13 - i * 2;
+        ctx.beginPath();
+        if (i === 0) {
+          ctx.moveTo(0, height * 0.78);
+          ctx.lineTo(width, height * 0.18);
+        } else if (i === 1) {
+          ctx.moveTo(0, height * 0.18);
+          ctx.lineTo(width, height * 0.78);
+        } else {
+          ctx.arc(width / 2, height * 0.48, Math.min(width, height) * 0.35, -2.6, 0.55);
+        }
+        ctx.stroke();
+      });
+      ctx.restore();
+    }),
+  blackhole: (width, height, durationMs) =>
+    reviseScene('blackhole', width, height, durationMs, (ctx, f) => {
+      const t = f.time;
+      const swallow = easeOut((t - 0.5) / 1.2);
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.translate(width / 2, height * 0.5);
+      for (let i = 0; i < 36; i++) {
+        const a = i * 0.73 + t * (1.5 + (i % 5) * 0.08);
+        const r = Math.min(width, height) * (0.48 - swallow * 0.4) * (0.35 + (i % 9) / 12);
+        ctx.fillStyle = i % 3 ? '#ba7cff' : '#ffb15a';
+        ctx.beginPath();
+        ctx.arc(Math.cos(a) * r, Math.sin(a) * r * 0.42, 2 + (i % 4), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }),
+  fullmetal: (width, height, durationMs) =>
+    reviseScene('fullmetal', width, height, durationMs, (ctx, f) => {
+      const t = f.time;
+      const clap = clamp01((t - 0.55) / 0.12);
+      const transmute = easeOut((t - 0.78) / 0.5);
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.strokeStyle = `rgba(255,205,90,${0.8 * transmute})`;
+      ctx.lineWidth = 5;
+      for (let i = 0; i < 4; i++) {
+        ctx.beginPath();
+        ctx.arc(
+          width / 2,
+          height * 0.66,
+          transmute * Math.min(width, height) * (0.12 + i * 0.12),
+          0,
+          Math.PI * 2,
+        );
+        ctx.stroke();
+      }
+      if (clap > 0 && f.emitting && Math.random() < 0.2)
+        for (let i = 0; i < 4; i++)
+          f.particles.push(
+            particle('rock', width * (0.25 + i * 0.17), height, {
+              vy: -rand(4, 8),
+              vx: rand(-2, 2),
+              gravity: 0.3,
+              max: 70,
+              size: rand(5, 11),
+              color: '115, 92, 62',
+            }),
+          );
+      ctx.restore();
+    }),
+  sahur: (width, height, durationMs) =>
+    reviseScene('sahur', width, height, durationMs, (ctx, f) => {
+      const t = f.time;
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      [0.48, 0.98, 1.48].forEach((at, i) => {
+        const hit = clamp01((t - at) / 0.08) * (1 - clamp01((t - at - 0.38) / 0.25));
+        if (hit <= 0) return;
+        ctx.strokeStyle = `rgba(255,205,125,${hit})`;
+        ctx.lineWidth = 9 - i * 2;
+        ctx.beginPath();
+        ctx.arc(
+          width / 2,
+          height * 0.62,
+          hit * Math.max(width, height) * (0.25 + i * 0.12),
+          0,
+          Math.PI * 2,
+        );
+        ctx.stroke();
+        ctx.fillStyle = `rgba(255,245,215,${hit * 0.13})`;
+        ctx.fillRect(0, 0, width, height);
+      });
+      ctx.restore();
+    }),
+
+  // Novos temas: personagens, cenários e ataques agora são camadas independentes.
+  spider: (width, height) => {
+    const webNodes = Array.from({ length: 28 }, (_, i) => ({
+      a: (i / 28) * Math.PI * 2,
+      r: rand(0.18, 0.62),
+    }));
+    return {
+      frame(ctx, f) {
+        const t = f.time;
+        const art = auraImage('/efeitos/auras/homem-aranha.png');
+        const swing = easeOut(t / 0.75);
+        const impact = clamp01((t - 1.28) / 0.12) * (1 - clamp01((t - 1.82) / 0.3));
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        const city = ctx.createLinearGradient(0, 0, 0, height);
+        city.addColorStop(0, '#081225');
+        city.addColorStop(1, '#250713');
+        ctx.fillStyle = city;
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = '#030712';
+        for (let i = 0; i < 16; i++) {
+          const w = width / 14;
+          const h = height * (0.18 + (i % 5) * 0.08);
+          ctx.fillRect(i * w - ((t * 110) % w), height - h, w * 0.76, h);
+        }
+        ctx.strokeStyle = 'rgba(235,250,255,0.78)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(
+          width * 0.22,
+          height * 0.05,
+          width * (0.15 + swing * 0.35),
+          height * (0.1 + swing * 0.32),
+        );
+        ctx.stroke();
+        if (art) {
+          ctx.save();
+          const x = width * (-0.18 + swing * 0.68);
+          const y = height * (0.72 - Math.sin(swing * Math.PI) * 0.48);
+          ctx.translate(x, y);
+          ctx.rotate(-0.8 + swing * 0.72 + Math.sin(t * 4) * 0.04);
+          drawContainImage(ctx, art, width * 0.56, height * 0.72, 1 + impact * 0.12);
+          ctx.restore();
+        }
+        if (t > 0.62) {
+          ctx.translate(width / 2, height * 0.5);
+          ctx.strokeStyle = `rgba(245,252,255,${0.3 + impact * 0.7})`;
+          ctx.lineWidth = 2;
+          for (const node of webNodes) {
+            const r = node.r * Math.max(width, height) * clamp01((t - 0.62) / 0.7);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(Math.cos(node.a) * r, Math.sin(node.a) * r);
+            ctx.stroke();
+          }
+          for (let i = 1; i < 7; i++) {
+            ctx.beginPath();
+            ctx.arc(0, 0, i * Math.min(width, height) * 0.08, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      },
+    };
+  },
+  akatsuki: (width, height) => {
+    const crows = Array.from({ length: 42 }, (_, i) => ({
+      a: rand(0, Math.PI * 2),
+      r: rand(0.2, 0.8),
+      phase: i * 0.7,
+    }));
+    return {
+      frame(ctx, f) {
+        const t = f.time;
+        const art = auraImage('/efeitos/auras/akatsuki-v2.png');
+        const reveal = easeOut((t - 0.2) / 0.75);
+        const gravity = easeOut((t - 0.95) / 0.45);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.fillStyle = '#060207';
+        ctx.fillRect(0, 0, width, height);
+        const moonR = Math.min(width, height) * 0.32 * reveal;
+        const moon = ctx.createRadialGradient(
+          width / 2,
+          height * 0.34,
+          0,
+          width / 2,
+          height * 0.34,
+          moonR,
+        );
+        moon.addColorStop(0, '#ff414d');
+        moon.addColorStop(0.7, '#a90020');
+        moon.addColorStop(1, 'rgba(80,0,15,0)');
+        ctx.fillStyle = moon;
+        ctx.beginPath();
+        ctx.arc(width / 2, height * 0.34, moonR, 0, Math.PI * 2);
+        ctx.fill();
+        for (const crow of crows) {
+          const r = crow.r * Math.max(width, height) * (1 - reveal * 0.58);
+          const a = crow.a + t * 1.4;
+          const x = width / 2 + Math.cos(a) * r;
+          const y = height * 0.46 + Math.sin(a) * r * 0.5;
+          ctx.strokeStyle = '#020204';
+          ctx.lineWidth = 5;
+          ctx.beginPath();
+          ctx.moveTo(x - 13, y + Math.sin(t * 12 + crow.phase) * 6);
+          ctx.quadraticCurveTo(x, y - 8, x + 13, y - Math.sin(t * 12 + crow.phase) * 6);
+          ctx.stroke();
+        }
+        if (art) {
+          ctx.save();
+          ctx.translate(width / 2, height * (0.58 + (1 - reveal) * 0.35));
+          ctx.globalAlpha *= reveal;
+          drawContainImage(ctx, art, width * 0.9, height * 0.9, 1);
+          ctx.restore();
+        }
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 7; i++) {
+          ctx.strokeStyle = `rgba(175,80,255,${gravity * (0.65 - i * 0.06)})`;
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.ellipse(
+            width * 0.69,
+            height * 0.48,
+            gravity * (35 + i * 55),
+            gravity * (14 + i * 22),
+            t * 0.4,
+            0,
+            Math.PI * 2,
+          );
+          ctx.stroke();
+        }
+        if (gravity > 0.7 && f.emitting && Math.random() < 0.32)
+          f.particles.push(
+            particle('rock', rand(0, width), height + 20, {
+              vy: -rand(3, 7),
+              vx: (width / 2 - rand(0, width)) * 0.006,
+              max: 100,
+              size: rand(5, 12),
+              color: '75, 55, 70',
+            }),
+          );
+        ctx.restore();
+      },
+    };
+  },
+  hisoka: (width, height) => {
+    const cards = Array.from({ length: 24 }, (_, i) => ({
+      a: (i / 24) * Math.PI * 2,
+      r: rand(0.22, 0.5),
+      spin: rand(-2, 2),
+    }));
+    return {
+      frame(ctx, f) {
+        const t = f.time;
+        const art = auraImage('/efeitos/auras/hisoka-v2.png');
+        const stretch = easeOut(t / 0.7);
+        const release = easeOut((t - 1.1) / 0.18);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        const bg = ctx.createRadialGradient(
+          width / 2,
+          height / 2,
+          0,
+          width / 2,
+          height / 2,
+          width * 0.75,
+        );
+        bg.addColorStop(0, '#4c0c55');
+        bg.addColorStop(1, '#09000d');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, width, height);
+        ctx.strokeStyle = 'rgba(255,70,190,0.72)';
+        ctx.lineWidth = 5;
+        for (let i = 0; i < 8; i++) {
+          ctx.beginPath();
+          ctx.moveTo(i % 2 ? 0 : width, height * (0.15 + i * 0.1));
+          ctx.quadraticCurveTo(
+            width / 2,
+            height * (0.5 + Math.sin(t * 4 + i) * 0.18),
+            width / 2,
+            height * 0.5,
+          );
+          ctx.stroke();
+        }
+        if (art) {
+          const recoil = Math.sin(Math.min(1, release) * Math.PI) * 0.14;
+          ctx.save();
+          ctx.translate(
+            width * (0.76 - stretch * 0.26 - release * 0.08),
+            height * (0.68 - stretch * 0.18),
+          );
+          ctx.rotate(0.35 - stretch * 0.32 - recoil);
+          ctx.scale(0.65 + stretch * 0.35 + recoil, 0.65 + stretch * 0.35 + recoil);
+          drawContainImage(ctx, art, width * 0.72, height * 0.78);
+          ctx.restore();
+        }
+        for (const [i, card] of cards.entries()) {
+          const a = card.a + t * card.spin;
+          const radius = release
+            ? card.r * Math.max(width, height) * (1 + release * 1.8)
+            : card.r * Math.min(width, height);
+          const x = width / 2 + Math.cos(a) * radius;
+          const y = height / 2 + Math.sin(a) * radius * 0.55;
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(a + t * 4);
+          ctx.fillStyle = '#fffaf5';
+          ctx.strokeStyle = '#ff4fa3';
+          ctx.lineWidth = 2;
+          ctx.fillRect(-10, -16, 20, 32);
+          ctx.strokeRect(-10, -16, 20, 32);
+          ctx.fillStyle = i % 2 ? '#7a24bb' : '#df235f';
+          ctx.font = '14px serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(i % 2 ? '♠' : '♥', 0, 5);
+          ctx.restore();
+        }
+        ctx.restore();
+      },
+    };
+  },
+  valorant: (width, height) => {
+    const knifeAngles = [-1.9, -1.2, -0.5, 0.2, 0.9];
+    return {
+      frame(ctx, f) {
+        const t = f.time;
+        const art = auraImage('/efeitos/auras/valorant-v2.png');
+        const dash = easeOut(t / 0.55);
+        const volley = easeOut((t - 1.0) / 0.28);
+        const boom = clamp01((t - 1.45) / 0.1) * (1 - clamp01((t - 1.85) / 0.25));
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.fillStyle = '#07131b';
+        ctx.fillRect(0, 0, width, height);
+        ctx.strokeStyle = 'rgba(70,220,255,0.25)';
+        ctx.lineWidth = 2;
+        for (let x = -height; x < width; x += 90) {
+          ctx.beginPath();
+          ctx.moveTo(x + ((t * 160) % 90), height);
+          ctx.lineTo(x + height + ((t * 160) % 90), 0);
+          ctx.stroke();
+        }
+        if (art) {
+          for (let ghost = 3; ghost >= 0; ghost--) {
+            const local = clamp01(dash - ghost * 0.08);
+            ctx.save();
+            ctx.globalAlpha *= ghost ? 0.1 : 1;
+            ctx.translate(
+              width * (-0.18 + local * 0.72),
+              height * (0.72 - Math.sin(local * Math.PI) * 0.4),
+            );
+            ctx.rotate(-0.28 + local * 0.25);
+            drawContainImage(ctx, art, width * 0.55, height * 0.72);
+            ctx.restore();
+          }
+        }
+        ctx.globalCompositeOperation = 'lighter';
+        for (const [i, a] of knifeAngles.entries()) {
+          const startX = width / 2 + Math.cos(a + t * 1.4) * width * 0.28;
+          const startY = height * 0.48 + Math.sin(a + t * 1.4) * height * 0.25;
+          const x = startX + (width / 2 - startX) * volley;
+          const y = startY + (height * 0.62 - startY) * volley;
+          ctx.strokeStyle = `rgba(90,235,255,${0.35 + volley * 0.65})`;
+          ctx.lineWidth = 5;
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+          ctx.fillStyle = '#d9fbff';
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(a + Math.PI / 2);
+          ctx.fillRect(-3, -22, 6, 44);
+          ctx.restore();
+          if (i === 4 && boom > 0)
+            blit(
+              ctx,
+              softSprite('255, 70, 85'),
+              width / 2,
+              height * 0.62,
+              width * 0.65 * boom,
+              0.9,
+            );
+        }
+        ctx.restore();
+      },
+    };
+  },
+  league: (width, height) => {
+    const shards = Array.from({ length: 22 }, (_, i) => ({
+      a: (i / 22) * Math.PI * 2,
+      r: rand(0.2, 0.55),
+    }));
+    return {
+      frame(ctx, f) {
+        const t = f.time;
+        const art = auraImage('/efeitos/auras/league-of-legends-v2.png');
+        const rise = easeOut((t - 0.15) / 0.8);
+        const smite = clamp01((t - 1.25) / 0.1);
+        const breakAt = easeOut((t - 1.48) / 0.22);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        const bg = ctx.createLinearGradient(0, 0, 0, height);
+        bg.addColorStop(0, '#13062c');
+        bg.addColorStop(1, '#061522');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = '#162d32';
+        ctx.beginPath();
+        ctx.ellipse(width / 2, height * 0.82, width * 0.46, height * 0.18, 0, 0, Math.PI * 2);
+        ctx.fill();
+        if (art) {
+          ctx.save();
+          ctx.translate(width / 2, height * (0.62 + (1 - rise) * 0.5));
+          ctx.scale(1 + breakAt * 0.08, 1 + breakAt * 0.08);
+          drawContainImage(ctx, art, width * 0.9, height * 0.88);
+          ctx.restore();
+        }
+        if (smite > 0) {
+          ctx.globalCompositeOperation = 'lighter';
+          for (const side of [-1, 1]) {
+            ctx.strokeStyle = side < 0 ? `rgba(70,165,255,${smite})` : `rgba(255,55,80,${smite})`;
+            ctx.lineWidth = 24;
+            ctx.beginPath();
+            ctx.moveTo(side < 0 ? 0 : width, height * 0.15);
+            ctx.lineTo(width / 2, height * 0.7);
+            ctx.stroke();
+          }
+          blit(ctx, softSprite('255,245,190'), width / 2, height * 0.7, 210 * smite, 0.9);
+        }
+        if (breakAt > 0)
+          for (const shard of shards) {
+            const r = shard.r * Math.max(width, height) * breakAt;
+            ctx.fillStyle = shard.a % 0.4 > 0.2 ? '#59ddff' : '#ad62ff';
+            ctx.save();
+            ctx.translate(
+              width / 2 + Math.cos(shard.a) * r,
+              height * 0.7 + Math.sin(shard.a) * r * 0.55,
+            );
+            ctx.rotate(shard.a + t * 3);
+            ctx.fillRect(-5, -12, 10, 24);
+            ctx.restore();
+          }
+        ctx.restore();
+      },
+    };
+  },
+  mario: (width, height) => {
+    const coins = Array.from({ length: 16 }, (_, i) => ({
+      x: width * (0.08 + (i % 8) * 0.12),
+      y: height * (0.22 + Math.floor(i / 8) * 0.16),
+      phase: i * 0.4,
+    }));
+    const drawRunner = (
+      ctx: CanvasRenderingContext2D,
+      x: number,
+      y: number,
+      jump: number,
+      star: number,
+    ) => {
+      ctx.save();
+      ctx.translate(x, y - jump);
+      ctx.scale(1 + star * 0.12, 1 + star * 0.12);
+      if (star > 0) {
+        ctx.globalCompositeOperation = 'lighter';
+        blit(ctx, softSprite('255,225,70'), 0, 0, 90, 0.8);
+        ctx.globalCompositeOperation = 'source-over';
+      }
+      ctx.fillStyle = '#df2738';
+      ctx.beginPath();
+      ctx.arc(0, -46, 23, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillRect(-26, -58, 45, 12);
+      ctx.fillStyle = '#f2b47e';
+      ctx.beginPath();
+      ctx.arc(5, -40, 17, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#1659b7';
+      ctx.fillRect(-20, -22, 40, 42);
+      ctx.fillStyle = '#df2738';
+      ctx.fillRect(-27, -18, 14, 35);
+      ctx.fillRect(13, -18, 14, 35);
+      const stride = Math.sin(x * 0.04) * 18;
+      ctx.fillStyle = '#172036';
+      ctx.fillRect(-18, 18, 12, 28 + stride);
+      ctx.fillRect(6, 18, 12, 28 - stride);
+      ctx.restore();
+    };
+    return {
+      frame(ctx, f) {
+        const t = f.time;
+        const run = easeOut(t / 2.1);
+        const x = width * (-0.08 + run * 1.05);
+        const jump = Math.max(0, Math.sin(run * Math.PI * 3)) * height * 0.22;
+        const star = clamp01((t - 1.1) / 0.22);
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        const sky = ctx.createLinearGradient(0, 0, 0, height);
+        sky.addColorStop(0, '#198ee9');
+        sky.addColorStop(1, '#d8f4ff');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = '#38a83c';
+        ctx.fillRect(0, height * 0.82, width, height * 0.18);
+        for (let i = 0; i < 7; i++) {
+          const bx = width * (0.12 + i * 0.13);
+          const hit = Math.max(0, 1 - Math.abs(t - (0.35 + i * 0.18)) / 0.12);
+          ctx.fillStyle = i % 2 ? '#c66b2b' : '#f6a51b';
+          ctx.strokeStyle = '#7d3f13';
+          ctx.lineWidth = 4;
+          ctx.fillRect(bx - 24, height * 0.42 - hit * 24, 48, 48);
+          ctx.strokeRect(bx - 24, height * 0.42 - hit * 24, 48, 48);
+        }
+        for (const coin of coins) {
+          const taken = x > coin.x;
+          if (taken) continue;
+          const squish = 0.35 + Math.abs(Math.sin(t * 8 + coin.phase)) * 0.65;
+          ctx.save();
+          ctx.translate(coin.x, coin.y);
+          ctx.scale(squish, 1);
+          ctx.fillStyle = '#ffd634';
+          ctx.strokeStyle = '#b8780a';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(0, 0, 13, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
+        ctx.fillStyle = '#15963b';
+        ctx.fillRect(width * 0.02, height * 0.62, width * 0.13, height * 0.2);
+        ctx.fillStyle = '#25c650';
+        ctx.fillRect(0, height * 0.58, width * 0.18, height * 0.06);
+        drawRunner(ctx, x, height * 0.8, jump, star);
+        if (star > 0) {
+          ctx.globalCompositeOperation = 'lighter';
+          for (let i = 0; i < 12; i++) {
+            const a = i * 0.52 + t * 3;
+            blit(
+              ctx,
+              glowSprite(i % 2 ? '255,90,90' : '255,230,70'),
+              x + Math.cos(a) * 75,
+              height * 0.62 - jump + Math.sin(a) * 75,
+              8,
+              0.9,
+            );
+          }
+        }
         ctx.restore();
       },
     };

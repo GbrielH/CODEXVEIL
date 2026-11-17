@@ -1,5 +1,21 @@
 # Próximos passos
 
+## 2026-11-17 — Revisão das animações de aura
+
+- [x] Comparar as cenas recentes com Olho Cósmico, Cthulhu, Glitch, Tarrasque e Deus do Sol.
+- [x] Identificar e eliminar o padrão de splash art estática com zoom.
+- [x] Gerar recortes transparentes separados para Akatsuki, Hisoka, Valorant e League.
+- [x] Reconstruir os seis temas novos com entrada, preparação, impacto e dissipação animados.
+- [x] Reforçar os nove temas anteriores com ações animadas independentes da arte raster.
+- [x] Sincronizar o desenho sonoro dos seis temas novos com os impactos visuais.
+- [x] Rodar o typecheck web.
+- [x] Rodar `pnpm check` e `pnpm build`.
+- [ ] Conferir visualmente as quinze animações; o host do navegador estava indisponível.
+- [ ] Publicar somente após pedido explícito do responsável.
+
+Histórico: em 2026-11-17, revisão estrutural, novos assets, suíte e build foram concluídos; a
+inspeção visual continuou pendente porque o host do navegador estava indisponível.
+
 ## 2026-11-17 — Homem-Aranha, Akatsuki, Hisoka, Valorant, League e Mario
 
 - [x] Adicionar os seis temas à validação, ao seletor, aos ícones e às partículas do dado.
