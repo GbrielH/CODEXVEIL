@@ -2334,6 +2334,159 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
       tone(hall, at, { type: 'sine', freq: 70, toFreq: 32, attack: 0.002, decay: 0.35, peak: 0.5 });
     }
   },
+  spider: (kit) => {
+    const hall = withReverb(kit, 1.7, 0.25);
+    for (const at of [0.12, 0.42, 0.78, 1.18])
+      noiseBurst(hall, at, {
+        type: 'highpass',
+        freq: 2800 + at * 900,
+        toFreq: 7000,
+        attack: 0.002,
+        decay: 0.16,
+        peak: 0.28,
+      });
+    [392, 523.25, 659.25, 783.99].forEach((freq, i) =>
+      tone(hall, 0.55 + i * 0.13, {
+        type: 'triangle',
+        freq,
+        attack: 0.004,
+        decay: 0.5,
+        peak: 0.1,
+      }),
+    );
+    tone(hall, 1.25, { type: 'sine', freq: 82, toFreq: 38, attack: 0.002, decay: 0.7, peak: 0.65 });
+  },
+  akatsuki: (kit) => {
+    const hall = withReverb(kit, 3.4, 0.55);
+    growl(hall, 0.1, 62, 1.9);
+    for (let i = 0; i < 12; i++)
+      noiseBurst(hall, 0.35 + i * 0.075, {
+        type: 'bandpass',
+        freq: 1500 + Math.random() * 2300,
+        q: 7,
+        attack: 0.001,
+        decay: 0.08,
+        peak: 0.12,
+      });
+    tone(hall, 1.2, { type: 'sine', freq: 95, toFreq: 32, attack: 0.08, decay: 1.2, peak: 0.7 });
+  },
+  hisoka: (kit) => {
+    const hall = withReverb(kit, 2.2, 0.4);
+    for (let i = 0; i < 10; i++)
+      noiseBurst(hall, 0.2 + i * 0.12, {
+        type: 'highpass',
+        freq: 3600 + i * 180,
+        attack: 0.001,
+        decay: 0.07,
+        peak: 0.18,
+      });
+    [329.63, 392, 466.16, 587.33].forEach((freq, i) =>
+      tone(hall, 0.55 + i * 0.19, {
+        type: i % 2 ? 'triangle' : 'sine',
+        freq,
+        attack: 0.003,
+        decay: 0.7,
+        peak: 0.09,
+      }),
+    );
+    sung(
+      hall,
+      1.25,
+      [
+        [0, 420],
+        [0.25, 700],
+        [0.7, 330],
+      ],
+      {
+        type: 'sawtooth',
+        peak: 0.05,
+        attack: 0.03,
+        decay: 0.7,
+        vibrato: 7,
+        depth: 18,
+        filter: 1700,
+      },
+    );
+  },
+  valorant: (kit) => {
+    const hall = withReverb(kit, 1.4, 0.2);
+    for (const [at, freq] of [
+      [0.2, 900],
+      [0.48, 1120],
+      [0.76, 1360],
+      [1.04, 1640],
+    ] as const)
+      tone(hall, at, { type: 'square', freq, attack: 0.002, decay: 0.09, peak: 0.14 });
+    for (let i = 0; i < 5; i++)
+      noiseBurst(hall, 0.35 + i * 0.16, {
+        type: 'highpass',
+        freq: 4800,
+        attack: 0.001,
+        decay: 0.1,
+        peak: 0.24,
+      });
+    tone(hall, 1.22, {
+      type: 'sine',
+      freq: 72,
+      toFreq: 28,
+      attack: 0.002,
+      decay: 0.85,
+      peak: 0.75,
+    });
+  },
+  league: (kit) => {
+    const hall = withReverb(kit, 4.2, 0.6);
+    [110, 164.81, 220, 329.63].forEach((freq, i) =>
+      tone(hall, i * 0.16, {
+        type: 'sawtooth',
+        freq,
+        attack: 0.06,
+        decay: 1.6,
+        peak: 0.08,
+        filter: 1400,
+      }),
+    );
+    growl(hall, 0.4, 52, 1.4);
+    noiseBurst(hall, 1.15, {
+      type: 'bandpass',
+      freq: 1200,
+      toFreq: 4200,
+      attack: 0.02,
+      decay: 0.9,
+      peak: 0.55,
+    });
+    tone(hall, 1.18, { type: 'sine', freq: 88, toFreq: 35, attack: 0.002, decay: 0.85, peak: 0.7 });
+  },
+  mario: (kit) => {
+    const hall = withReverb(kit, 1.25, 0.18);
+    const notes = [261.63, 329.63, 392, 523.25, 659.25, 783.99, 1046.5];
+    notes.forEach((freq, i) => {
+      tone(hall, i * 0.11, {
+        type: 'square',
+        freq,
+        attack: 0.002,
+        decay: 0.12,
+        peak: 0.12,
+        filter: 2600,
+      });
+      if (i % 2 === 0)
+        tone(kit, i * 0.11, {
+          type: 'triangle',
+          freq: freq / 2,
+          attack: 0.002,
+          decay: 0.14,
+          peak: 0.1,
+        });
+    });
+    for (const at of [0.9, 1.12, 1.34])
+      tone(hall, at, {
+        type: 'sine',
+        freq: 1200 + at * 300,
+        attack: 0.001,
+        decay: 0.18,
+        peak: 0.09,
+      });
+  },
   zombie: (kit) => {
     // Terra remexida e gemidos da horda.
     noiseBurst(kit, 0.3, {
@@ -2661,6 +2814,82 @@ const FAIL_EXTRAS: Partial<Record<DiceAura, (kit: Kit) => void>> = {
       attack: 0.002,
       decay: 0.22,
       peak: 0.12,
+    });
+  },
+  spider: (kit) => {
+    noiseBurst(kit, 0.55, { type: 'highpass', freq: 3200, attack: 0.001, decay: 0.16, peak: 0.16 });
+    noiseBurst(kit, 0.82, { type: 'bandpass', freq: 850, attack: 0.01, decay: 0.3, peak: 0.12 });
+  },
+  akatsuki: (kit) => {
+    for (let i = 0; i < 5; i++)
+      noiseBurst(kit, 0.55 + i * 0.08, {
+        type: 'bandpass',
+        freq: 1800 + i * 260,
+        q: 6,
+        attack: 0.001,
+        decay: 0.06,
+        peak: 0.08,
+      });
+    tone(kit, 1.05, { type: 'sine', freq: 220, toFreq: 80, attack: 0.002, decay: 0.35, peak: 0.1 });
+  },
+  hisoka: (kit) => {
+    for (let i = 0; i < 8; i++)
+      noiseBurst(kit, 0.62 + i * 0.055, {
+        type: 'highpass',
+        freq: 2800,
+        attack: 0.001,
+        decay: 0.045,
+        peak: 0.09,
+      });
+    tone(kit, 1.1, {
+      type: 'triangle',
+      freq: 520,
+      toFreq: 145,
+      attack: 0.002,
+      decay: 0.4,
+      peak: 0.08,
+    });
+  },
+  valorant: (kit) => {
+    tone(kit, 0.45, { type: 'square', freq: 980, attack: 0.002, decay: 0.06, peak: 0.12 });
+    tone(kit, 0.72, { type: 'square', freq: 620, attack: 0.002, decay: 0.08, peak: 0.1 });
+    noiseBurst(kit, 0.86, { type: 'highpass', freq: 5500, attack: 0.001, decay: 0.24, peak: 0.16 });
+  },
+  league: (kit) => {
+    tone(kit, 0.62, {
+      type: 'sine',
+      freq: 520,
+      toFreq: 900,
+      attack: 0.002,
+      decay: 0.12,
+      peak: 0.1,
+    });
+    tone(kit, 0.82, { type: 'sine', freq: 90, toFreq: 34, attack: 0.002, decay: 0.5, peak: 0.18 });
+  },
+  mario: (kit) => {
+    tone(kit, 0.35, {
+      type: 'sine',
+      freq: 1200,
+      toFreq: 1600,
+      attack: 0.002,
+      decay: 0.3,
+      peak: 0.1,
+    });
+    noiseBurst(kit, 1.0, {
+      type: 'bandpass',
+      freq: 1000,
+      toFreq: 250,
+      attack: 0.002,
+      decay: 0.35,
+      peak: 0.18,
+    });
+    tone(kit, 1.0, {
+      type: 'square',
+      freq: 180,
+      toFreq: 70,
+      attack: 0.002,
+      decay: 0.38,
+      peak: 0.1,
     });
   },
   zombie: (kit) => {

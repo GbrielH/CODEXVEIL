@@ -269,6 +269,12 @@ const ICONS: Record<DiceAura, ComponentType<LucideProps>> = {
   blackhole: Orbit,
   fullmetal: FlaskRound,
   sahur: Cog,
+  spider: Orbit,
+  akatsuki: Moon,
+  hisoka: Spade,
+  valorant: CircleDot,
+  league: Crown,
+  mario: Sparkle,
 };
 
 /** Ícone da aura, na cor dela e com um leve brilho. */

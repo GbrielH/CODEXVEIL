@@ -1,5 +1,20 @@
 # Próximos passos
 
+## 2026-11-17 — Homem-Aranha, Akatsuki, Hisoka, Valorant, League e Mario
+
+- [x] Adicionar os seis temas à validação, ao seletor, aos ícones e às partículas do dado.
+- [x] Criar um crítico cinematográfico e uma falha de referência/meme para cada tema.
+- [x] Integrar cinco artes raster geradas e criar a cena do Mario integralmente em canvas.
+- [x] Criar sons sintetizados próprios para críticos e falhas, sem dependência ou arquivo de áudio.
+- [x] Criar a migração e ampliar o teste RLS com as seis novas chaves.
+- [x] Rodar `pnpm check` e `pnpm build`.
+- [x] Conferir a migração com dry-run e aplicá-la no projeto CODEXVEIL antes da publicação.
+- [ ] Conferir visualmente as doze cenas em “Meus dados”.
+- [ ] Publicar somente quando o responsável pedir novo push para `origin main`.
+
+Histórico: em 2026-11-17, implementação, assets, verificações e banco foram concluídos; validação
+visual e publicação ainda estavam em andamento.
+
 ## 2026-11-17 — Gear 5, Tarrasque e Sans
 
 - [x] Gerar e integrar recortes transparentes de Gear 5, Tarrasque e Sans.

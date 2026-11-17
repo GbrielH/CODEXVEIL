@@ -1,5 +1,33 @@
 # Progresso do Codexveil
 
+## 2026-11-17 — Seis novas auras temáticas
+
+- **Homem-Aranha:** crítico com balanço, teias e sentido de perigo; falha-meme dos dois heróis
+  apontando um para o outro e presos na própria teia.
+- **Akatsuki:** lua vermelha, corvos, genjutsu e ondas gravitacionais; falha com a máscara espiral
+  tonta depois de tropeçar na capa.
+- **Hisoka:** cartas cortantes e fios elásticos de aura; falha com castelo de cartas desabando e o
+  texto preso no chiclete.
+- **Valorant:** ataque aéreo com cinco lâminas e detonação; falha por flash própria e desarme
+  perdido em `0.01`.
+- **League of Legends:** Barão, Nexus e disputa de objetivo; falha em que o objetivo fica com um
+  ponto de vida e é roubado.
+- **Mario Bros.:** cena original em canvas com blocos, cano, moedas e estrela; falha-meme com
+  carapaça azul antes da bandeira.
+- As cinco artes raster ficam em `apps/web/public/efeitos/auras/`; Mario usa apenas canvas para
+  evitar um asset incompleto após a geração ter sido recusada.
+- Banco: `20261117110000_dice_auras_six_more.sql` amplia as duas constraints de aura sem alterar
+  as regras de criador/concessão. O dry-run listou somente essa migração, que foi aplicada no
+  projeto CODEXVEIL.
+- Verificações: `pnpm check` passou nas 20 tarefas (banco: 256 testes aprovados e 11 testes ao vivo
+  pulados); `pnpm build` passou nas 2 tarefas (web e Android/Hermes); typecheck web e
+  `git diff --check` passaram. A primeira execução de check/build foi bloqueada pelas permissões
+  do sandbox do Windows e a repetição autorizada passou.
+- Inspeção visual: não executada; as cenas e os sons ainda precisam ser conferidos em “Meus
+  dados” depois da publicação.
+
+Próximo passo exato: conferir as doze cenas e seus sons em “Meus dados” na produção.
+
 ## 2026-11-17 — Auras com arte gerada e tema Sans
 
 - **Deus do Sol:** Gear 5 em primeiro plano, com arte transparente gerada para o projeto,

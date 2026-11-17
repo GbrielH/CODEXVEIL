@@ -1,5 +1,17 @@
 # Pendências em relação ao prompt inicial
 
+## 2026-11-17 — Seis novas auras
+
+- [x] Adicionar Homem-Aranha, Akatsuki, Hisoka, Valorant, League of Legends e Mario Bros. à
+      cadeia completa de validação, seletor, aura do dado, crítico, falha, som, banco e teste RLS.
+- [x] Manter críticos épicos e falhas como referência ou meme do tema.
+- [x] Usar arte raster gerada nas cinco cenas em que ela melhora a leitura e canvas responsivo no
+      tema Mario.
+- [x] Validar `20261117110000_dice_auras_six_more.sql` em dry-run e aplicá-la no CODEXVEIL.
+- [x] Rodar a suíte completa e os builds.
+- [ ] Conferir as animações e sons manualmente no navegador.
+- [ ] Publicar em produção após o pedido explícito de 2026-11-17.
+
 ## 2026-11-17 — Auras com arte gerada e Sans
 
 - [x] Substituir a leitura visual genérica do Deus do Sol por Gear 5 reconhecível.

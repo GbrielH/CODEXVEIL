@@ -1,5 +1,13 @@
 # Modelo de dados e migrações
 
+## Seis novas auras (2026-11-17)
+
+A migração `20261117110000_dice_auras_six_more.sql` recria as constraints de
+`user_dice.aura` e `dice_aura_grants.aura` incluindo `spider`, `akatsuki`, `hisoka`, `valorant`,
+`league` e `mario`. Ela não altera dados, políticas RLS ou concessões existentes; contas comuns
+continuam impedidas de salvar uma aura e amigos dependem da concessão do criador. O dry-run listou
+somente essa migração, aplicada em produção no projeto CODEXVEIL em 2026-11-17.
+
 ## Aura Sans (2026-11-17)
 
 A migração `20261117100000_dice_aura_sans.sql` recria as constraints de `user_dice.aura` e

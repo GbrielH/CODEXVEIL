@@ -7,6 +7,11 @@ dependem de uma silhueta reconhecível podem usar recortes PNG transparentes em
 `apps/web/public/efeitos/auras/`. O canvas aplica entrada, escala, tremor, partículas e luz sobre
 o recorte, sem redesenhar a arte a cada quadro.
 
+As auras Homem-Aranha, Akatsuki, Hisoka, Valorant e League usam arte de tela cheia com recorte
+responsivo (`cover`), zoom lento e camadas de canvas. O tema Mario documenta o fallback: quando a
+geração raster não produz um asset utilizável, a cena continua code-native com formas, partículas
+e sprites já existentes, sem introduzir placeholder ou dependência externa.
+
 ## Composição da central Jogo (2026-11-11)
 
 A rota web `campanhas/[campaignId]/jogo` é uma composição dos componentes já usados por Mapa,
