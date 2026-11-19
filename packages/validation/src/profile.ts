@@ -145,6 +145,27 @@ export const DICE_AURAS = [
   'mario',
 ] as const;
 export type DiceAura = (typeof DICE_AURAS)[number];
+/** Temas preservados no catálogo, mas indisponíveis até uma nova implementação. */
+export const INACTIVE_DICE_AURAS = [
+  'sungod',
+  'tarrasque',
+  'sans',
+  'hollow',
+  'doom',
+  'zoro',
+  'blackhole',
+  'fullmetal',
+  'sahur',
+  'spider',
+  'akatsuki',
+  'hisoka',
+  'valorant',
+  'league',
+  'mario',
+] as const satisfies readonly DiceAura[];
+export const ACTIVE_DICE_AURAS = DICE_AURAS.filter(
+  (aura) => !(INACTIVE_DICE_AURAS as readonly DiceAura[]).includes(aura),
+);
 export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> = {
   blood: { name: 'Sangue', color: '#d6283c' },
   storm: { name: 'Tempestade', color: '#7fd4ff' },

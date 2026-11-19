@@ -1,5 +1,19 @@
 # Próximos passos
 
+## 2026-11-19 — Inativação das auras recentes
+
+- [x] Identificar a leva de quinze temas criada ou editada em 2026-11-17.
+- [x] Manter os temas visíveis, apagados, desabilitados e identificados como “Em breve”.
+- [x] Impedir novas seleções e concessões na aplicação e no banco.
+- [x] Limpar os quinze temas de dados padrão, dados salvos e concessões existentes.
+- [x] Conferir a migração em dry-run e aplicá-la somente no projeto CODEXVEIL.
+- [x] Rodar `pnpm check` e `pnpm build`.
+- [ ] Recriar os quinze temas antes de reativá-los.
+- [ ] Conferir no navegador o estado visual “Em breve” depois da publicação.
+
+Histórico: em 2026-11-19, os quinze temas recentes foram inativados na interface e no banco; a
+migração foi validada e aplicada, e a suíte e os builds passaram.
+
 ## 2026-11-17 — Revisão das animações de aura
 
 - [x] Comparar as cenas recentes com Olho Cósmico, Cthulhu, Glitch, Tarrasque e Deus do Sol.

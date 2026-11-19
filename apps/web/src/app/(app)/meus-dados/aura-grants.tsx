@@ -1,6 +1,11 @@
 'use client';
 
-import { DICE_AURAS, diceAuraLabels, type AvatarIcon, type DiceAura } from '@codexveil/validation';
+import {
+  ACTIVE_DICE_AURAS,
+  diceAuraLabels,
+  type AvatarIcon,
+  type DiceAura,
+} from '@codexveil/validation';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { useOptimistic, useState, useTransition } from 'react';
 import { Alert } from '@/components/ui/alert';
@@ -86,7 +91,7 @@ export function AuraGrants({ friends }: { friends: FriendGrants[] }) {
                   <span className="flex items-center gap-1 text-xs text-fg-muted">
                     {mine.length === 0
                       ? 'Nenhuma aura liberada'
-                      : `${mine.length} de ${DICE_AURAS.length} auras`}
+                      : `${mine.length} de ${ACTIVE_DICE_AURAS.length} auras`}
                     {mine.map((aura) => (
                       <AuraIcon key={aura} aura={aura} className="h-3 w-3" />
                     ))}
@@ -101,7 +106,7 @@ export function AuraGrants({ friends }: { friends: FriendGrants[] }) {
               {expanded ? (
                 <div className="flex flex-col gap-2 border-t border-line p-3">
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-                    {DICE_AURAS.map((aura) => {
+                    {ACTIVE_DICE_AURAS.map((aura) => {
                       const allowed = mine.includes(aura);
                       return (
                         <button
@@ -136,7 +141,7 @@ export function AuraGrants({ friends }: { friends: FriendGrants[] }) {
                       type="button"
                       className="text-fg-brand hover:underline"
                       onClick={() =>
-                        DICE_AURAS.filter((aura) => !mine.includes(aura)).forEach((aura) =>
+                        ACTIVE_DICE_AURAS.filter((aura) => !mine.includes(aura)).forEach((aura) =>
                           toggle(friend.userId, aura, true),
                         )
                       }

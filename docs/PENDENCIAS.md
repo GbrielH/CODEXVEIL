@@ -1,5 +1,13 @@
 # Pendências em relação ao prompt inicial
 
+## 2026-11-19 — Auras recentes pausadas
+
+- [x] Inativar Deus do Sol, Tarrasque e os treze temas novos da leva de 2026-11-17.
+- [x] Exibir os quinze temas apagados e marcados como “Em breve”, sem permitir seleção.
+- [x] Remover seleções e concessões existentes e bloquear novos usos no banco.
+- [ ] Recriar os quinze temas antes da reativação.
+- [ ] Validar visualmente o catálogo publicado em “Meus dados”.
+
 ## 2026-11-17 — Correção das auras recentes
 
 - [x] Corrigir o uso excessivo de imagens estáticas com zoom nas auras criadas pelo Codex.

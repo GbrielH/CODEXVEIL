@@ -1,5 +1,21 @@
 # Progresso do Codexveil
 
+## 2026-11-19 — Quinze auras recentes inativadas
+
+- Deus do Sol, Tarrasque, Sans, Hollow Knight, Doutor Destino, Zoro, Buraco Negro, Fullmetal
+  Alchemist, Tung Tung Tung Sahur, Homem-Aranha, Akatsuki, Hisoka, Valorant, League of Legends e
+  Mario Bros. permanecem visíveis no seletor, apagadas, desabilitadas e marcadas como “Em breve”.
+- A lista ativa compartilhada impede novas seleções e concessões. A migração
+  `20261119100000_inactivate_recent_dice_auras.sql` removeu essas auras dos dados padrão, dados
+  salvos e concessões existentes, e passou a recusá-las no banco inclusive para criadores.
+- O dry-run listou somente essa migração; ela foi aplicada no projeto CODEXVEIL.
+- Verificações: `pnpm check` passou nas 20 tarefas (banco: 256 testes aprovados e 11 testes ao
+  vivo pulados; warnings preexistentes no lint); `pnpm build` passou nas 2 tarefas (web e
+  Android/Hermes); `git diff --check` passou. A primeira execução de `pnpm check` foi bloqueada
+  pelo sandbox do Windows ao varrer o perfil; a repetição autorizada passou.
+
+Próximo passo exato: recriar esses quinze temas antes de removê-los da lista “Em breve”.
+
 ## 2026-11-17 — Revisão cinematográfica das auras
 
 - Auditoria visual e de código comparou as auras recentes com Olho Cósmico, Cthulhu, Glitch,

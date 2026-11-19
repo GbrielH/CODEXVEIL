@@ -7,7 +7,7 @@ import {
   signedMediaUrls,
   type Friend,
 } from '@codexveil/database';
-import { DICE_AURAS, type DiceAura } from '@codexveil/validation';
+import { ACTIVE_DICE_AURAS, type DiceAura } from '@codexveil/validation';
 import { Dices, Plus, Sparkles, Users } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
@@ -49,7 +49,7 @@ export default async function MyDicePage({ searchParams }: PageProps<'/meus-dado
   const empty: Record<string, DiceAura[]> = {};
   const [auras, friends, given]: [DiceAura[], Friend[], Record<string, DiceAura[]>] = creator
     ? await Promise.all([
-        Promise.resolve([...DICE_AURAS]),
+        Promise.resolve([...ACTIVE_DICE_AURAS]),
         listFriends(supabase, user.id),
         listAuraGrantsGiven(supabase, user.id),
       ])

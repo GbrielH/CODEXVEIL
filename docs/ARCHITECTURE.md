@@ -1,5 +1,13 @@
 # Arquitetura e decisões
 
+## Catálogo de auras ativas e inativas (2026-11-19)
+
+`DICE_AURAS` continua sendo o catálogo completo, necessário para mostrar temas planejados.
+`INACTIVE_DICE_AURAS` identifica os botões desabilitados com “Em breve”, e
+`ACTIVE_DICE_AURAS` é a fonte usada para seleção e concessão. A separação preserva nome, cor e
+ícone dos temas pausados sem deixá-los utilizáveis. A mesma indisponibilidade é aplicada no
+banco para que a interface não seja a barreira de autorização.
+
 ## Auras cinematográficas em atos (2026-11-17)
 
 Uma arte raster não constitui a animação da aura. Os temas complexos seguem quatro atos no canvas:

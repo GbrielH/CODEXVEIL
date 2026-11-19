@@ -81,9 +81,7 @@ describe('auras dos dados (somente criadores)', () => {
       'ghost',
       'haki',
       'cthulhu',
-      'sungod',
       'heaven',
-      'tarrasque',
       'purple',
       'wheel',
       'capture',
@@ -96,19 +94,6 @@ describe('auras dos dados (somente criadores)', () => {
       'mirror',
       'aurora',
       'zombie',
-      'sans',
-      'hollow',
-      'doom',
-      'zoro',
-      'blackhole',
-      'fullmetal',
-      'sahur',
-      'spider',
-      'akatsuki',
-      'hisoka',
-      'valorant',
-      'league',
-      'mario',
     ]) {
       const row = await db.as(creator, (s) =>
         s.one<{ aura: string }>(
@@ -122,6 +107,13 @@ describe('auras dos dados (somente criadores)', () => {
         s.query(`delete from public.user_dice where id = $1`, [(row as { id?: string }).id]),
       );
     }
+
+    await expectSqlError(
+      db.as(creator, (s) =>
+        s.query(`insert into public.user_dice (name, aura) values ('Em breve', 'sungod')`),
+      ),
+      '42501',
+    );
 
     // Preferências: a aura some para quem não é criador e fica para o criador.
     const prefs = JSON.stringify({ dice: { color: '#112233', aura: 'holy' } });

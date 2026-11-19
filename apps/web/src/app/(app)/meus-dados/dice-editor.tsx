@@ -3,6 +3,7 @@
 import { CAMPAIGN_MEDIA_BUCKET, saveDice } from '@codexveil/database';
 import {
   DICE_AURAS,
+  INACTIVE_DICE_AURAS,
   DICE_FONTS,
   diceAuraLabels,
   diceFontLabels,
@@ -543,23 +544,35 @@ export function DiceEditor({
                 </span>
               </p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 2xl:grid-cols-6">
-                {[null, ...DICE_AURAS.filter((key) => auras.includes(key))].map((key) => (
-                  <button
-                    key={key ?? 'sem'}
-                    type="button"
-                    aria-pressed={aura === key}
-                    onClick={() => setAura(key)}
-                    className={cx(
-                      'flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-md border px-2 text-sm transition-colors',
-                      aura === key
-                        ? 'border-fg-brand bg-hover text-fg'
-                        : 'border-line text-fg-secondary hover:bg-hover',
-                    )}
-                  >
-                    {key ? <AuraIcon aura={key} /> : null}
-                    <span className="truncate">{key ? diceAuraLabels[key].name : 'Sem aura'}</span>
-                  </button>
-                ))}
+                {[null, ...DICE_AURAS].map((key) => {
+                  const inactive =
+                    key !== null &&
+                    INACTIVE_DICE_AURAS.some((inactiveAura) => inactiveAura === key);
+                  const unavailable = key !== null && !auras.includes(key);
+                  if (unavailable && !inactive) return null;
+                  return (
+                    <button
+                      key={key ?? 'sem'}
+                      type="button"
+                      aria-pressed={aura === key}
+                      disabled={inactive}
+                      onClick={() => setAura(key)}
+                      className={cx(
+                        'flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-md border px-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-35',
+                        aura === key
+                          ? 'border-fg-brand bg-hover text-fg'
+                          : 'border-line text-fg-secondary hover:bg-hover',
+                      )}
+                    >
+                      {key ? <AuraIcon aura={key} /> : null}
+                      <span className="truncate">
+                        {key
+                          ? `${diceAuraLabels[key].name}${inactive ? ' · Em breve' : ''}`
+                          : 'Sem aura'}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ) : null}

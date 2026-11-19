@@ -1,5 +1,15 @@
 # Modelo de dados e migrações
 
+## Inativação das auras recentes (2026-11-19)
+
+A migração `20261119100000_inactivate_recent_dice_auras.sql` inativa `sungod`, `tarrasque`,
+`sans`, `hollow`, `doom`, `zoro`, `blackhole`, `fullmetal`, `sahur`, `spider`, `akatsuki`,
+`hisoka`, `valorant`, `league` e `mario`. Ela limpa essas chaves de `user_dice.aura`,
+`profiles.preferences.dice.aura` e `dice_aura_grants`, retira-as das duas constraints e faz
+`private.can_use_aura` recusá-las inclusive para contas de criador. Os identificadores continuam
+no catálogo da aplicação exclusivamente para exibição como “Em breve”. O dry-run listou somente
+essa migração, aplicada no projeto CODEXVEIL em 2026-11-19.
+
 ## Seis novas auras (2026-11-17)
 
 A migração `20261117110000_dice_auras_six_more.sql` recria as constraints de
