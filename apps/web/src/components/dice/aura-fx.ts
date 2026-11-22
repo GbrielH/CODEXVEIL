@@ -3056,6 +3056,7 @@ export function criticalAuraBurst(
     REVISED_SCENES[aura]?.(width, height, durationMs) ??
     SCENES[aura]?.(width, height, durationMs, options.art ?? null) ??
     null;
+  const art = artOverlay(options.art, durationMs);
   let last = 0;
 
   const tick = (now: number) => {
@@ -3353,7 +3354,9 @@ export function criticalAuraBurst(
       drawSkull(ctx, jaw, true);
       ctx.restore();
     }
+    art.before();
     scene?.frame(ctx, { time, elapsed, presence, emitting, particles });
+    art.after();
     stepParticles(ctx, particles, height);
     if (elapsed < durationMs || particles.length) requestAnimationFrame(tick);
     else canvas.remove();
@@ -3978,7 +3981,44 @@ function drawSkullBlaster(ctx: CanvasRenderingContext2D, open: number, t: number
   ctx.globalCompositeOperation = 'source-over';
 }
 
-/** Imagem própria desenhada inteira (sem cortar) dentro de uma caixa de altura `h`. */
+/**
+ * Imagem própria do criador por cima do efeito. Um GIF desenhado no canvas fica parado no primeiro
+ * quadro, então a imagem vira um elemento `<img>` posicionado (e girado) a cada quadro onde a cena
+ * a "desenharia" — assim GIFs animam de verdade.
+ */
+const artElements = new WeakMap<HTMLImageElement, HTMLImageElement>();
+const artUsed = new Set<HTMLImageElement>();
+
+function artOverlay(art: HTMLImageElement | null | undefined, durationMs: number) {
+  if (!art) return { before: () => undefined, after: () => undefined };
+  const element = document.createElement('img');
+  element.src = art.src;
+  element.alt = '';
+  element.setAttribute('aria-hidden', 'true');
+  Object.assign(element.style, {
+    position: 'fixed',
+    left: '0',
+    top: '0',
+    zIndex: '122',
+    pointerEvents: 'none',
+    display: 'none',
+    width: 'auto',
+  });
+  document.body.appendChild(element);
+  artElements.set(art, element);
+  window.setTimeout(() => {
+    element.remove();
+    artElements.delete(art);
+  }, durationMs + 1500);
+  return {
+    before: () => artUsed.delete(art),
+    after: () => {
+      if (!artUsed.has(art)) element.style.display = 'none';
+    },
+  };
+}
+
+/** Imagem própria inteira (sem cortar) numa caixa de altura `h`, centrada em (x, y). */
 function drawArt(
   ctx: CanvasRenderingContext2D,
   art: HTMLImageElement,
@@ -3986,8 +4026,22 @@ function drawArt(
   y: number,
   h: number,
 ) {
-  const w = (art.naturalWidth / Math.max(1, art.naturalHeight)) * h;
-  ctx.drawImage(art, x - w / 2, y - h / 2, w, h);
+  const element = artElements.get(art);
+  if (!element) {
+    const w = (art.naturalWidth / Math.max(1, art.naturalHeight)) * h;
+    ctx.drawImage(art, x - w / 2, y - h / 2, w, h);
+    return;
+  }
+  const m = ctx.getTransform();
+  const ratio = ctx.canvas.width / Math.max(1, ctx.canvas.clientWidth);
+  const point = m.transformPoint(new DOMPoint(x, y));
+  const scale = Math.hypot(m.a, m.b) / ratio;
+  const angle = Math.atan2(m.b, m.a);
+  element.style.display = 'block';
+  element.style.height = `${h * scale}px`;
+  element.style.opacity = String(ctx.globalAlpha);
+  element.style.transform = `translate(${point.x / ratio}px, ${point.y / ratio}px) translate(-50%, -50%) rotate(${angle}rad)`;
+  artUsed.add(art);
 }
 
 /** Janela no estilo dos sistemas antigos (barra de título azul, botão X e mensagem). */
@@ -13236,6 +13290,7 @@ export function criticalFailBurst(
     scale: 1,
   };
   const scene = FAILS[aura](width, height, durationMs, text, options.art ?? null);
+  const art = artOverlay(options.art, durationMs);
   const font = getComputedStyle(document.body).getPropertyValue('--font-display').trim() || 'serif';
   const size = Math.min(width * 0.085, 104);
   const started = performance.now();
@@ -13265,7 +13320,9 @@ export function criticalFailBurst(
     vignette.addColorStop(1, `rgba(20, 20, 28, ${0.55 * presence})`);
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, width, height);
+    art.before();
     scene.frame(ctx, { time, elapsed, presence, emitting, particles });
+    art.after();
     // O texto balança e, aos 1,9 s, despenca.
     if (!text.falling && time > 1.9) {
       text.falling = true;

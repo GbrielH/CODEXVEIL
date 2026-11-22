@@ -65,6 +65,7 @@ describe('buckets', () => {
           'image/png',
           'image/jpeg',
           'image/webp',
+          'image/gif',
           'audio/mpeg',
           'audio/ogg',
           'audio/wav',

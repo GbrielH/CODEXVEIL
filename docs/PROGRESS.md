@@ -1359,3 +1359,5 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto no
 - Migrações `20261122140000_dice_aura_retro.sql` e `20261122150000_move_my_token_null_fix.sql` (aplicadas).
 
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Envio e efeito não testados no navegador por mim.
+
+- 2026-11-22: imagem própria do crítico aceita GIF (pasta `users/<conta>/auras/`, migração `20261122160000_aura_art_gif.sql`); o GIF anima por cima do efeito como elemento `<img>` posicionado a cada quadro. `pnpm check` (20/20) e `pnpm build` passaram; animação no navegador não verificada à mão.

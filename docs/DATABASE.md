@@ -480,3 +480,5 @@ Migração `20261116110000_dice_auras_nine.sql`: auras `sungod`, `heaven`, `tarr
 Migração `20261121100000_reactivate_dice_auras.sql`: as 15 auras "Em breve" voltam (lista aceita completa e `private.can_use_aura` sem a lista de exceções).
 
 Migração `20261122140000_dice_aura_retro.sql`: aura `retro`; `preferences.auraArt` e `preferences.auraSound` (imagem e som próprios do crítico, conta de criador); bucket `campaign-media` aceita MP3/OGG/WAV/M4A; pasta `users/{conta}/sounds/` com políticas (dono envia e apaga, colegas de campanha leem); `list_orphan_media` conta essas imagens e sons. Migração `20261122150000_move_my_token_null_fix.sql`: corrige `move_my_token`.
+
+- `20261122160000_aura_art_gif.sql`: bucket `campaign-media` aceita `image/gif`; `private.aura_art_owner` e regras para `users/<conta>/auras/` (dono envia/apaga, colegas de campanha leem).

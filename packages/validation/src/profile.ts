@@ -265,7 +265,8 @@ export const AURA_SOUND_PATH =
   /^users\/[0-9a-f-]{36}\/sounds\/[A-Za-z0-9_-]{1,80}\.(mp3|ogg|wav|m4a)$/;
 
 /** Caminho aceito para a imagem própria do crítico de uma aura. */
-export const AURA_ART_PATH = /^users\/[0-9a-f-]{36}\/dice\/[A-Za-z0-9_-]{1,80}\.(png|jpe?g|webp)$/;
+export const AURA_ART_PATH =
+  /^users\/[0-9a-f-]{36}\/(dice|auras)\/[A-Za-z0-9_-]{1,80}\.(png|jpe?g|webp|gif)$/;
 
 export const preferencesSchema = z
   .object({

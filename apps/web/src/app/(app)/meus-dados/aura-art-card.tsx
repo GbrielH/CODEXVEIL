@@ -26,6 +26,7 @@ const TYPES: Record<string, string> = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
   'image/webp': 'webp',
+  'image/gif': 'gif',
 };
 
 /**
@@ -59,11 +60,11 @@ export function AuraArtCard({
     startTransition(async () => {
       setMessage(null);
       const extension = TYPES[file.type];
-      if (!extension) return setMessage({ ok: false, text: 'Use PNG, JPG ou WebP.' });
+      if (!extension) return setMessage({ ok: false, text: 'Use PNG, JPG, WebP ou GIF.' });
       if (file.size > MAX_BYTES)
         return setMessage({ ok: false, text: 'A imagem pode ter até 2 MB.' });
       const bucket = getSupabaseBrowserClient().storage.from(CAMPAIGN_MEDIA_BUCKET);
-      const path = `users/${userId}/dice/aura-${aura}-${Date.now()}.${extension}`;
+      const path = `users/${userId}/auras/aura-${aura}-${Date.now()}.${extension}`;
       const { error } = await bucket.upload(path, file, { contentType: file.type, upsert: false });
       if (error) return setMessage({ ok: false, text: 'Não foi possível enviar a imagem.' });
       const result = await setAuraArtAction(aura, path);
@@ -167,7 +168,7 @@ export function AuraArtCard({
         <input
           ref={fileRef}
           type="file"
-          accept="image/png,image/jpeg,image/webp"
+          accept="image/png,image/jpeg,image/webp,image/gif"
           className="hidden"
           onChange={(event) => {
             const file = event.target.files?.[0];
@@ -187,8 +188,9 @@ export function AuraArtCard({
         </div>
       ) : (
         <p className="text-sm text-fg-muted">
-          Nenhuma imagem para esta aura. PNG sem fundo fica melhor. Hoje o Vírus Retrô usa a imagem
-          como o assistente que pula pela tela no crítico e é sugado pelo antivírus na falha.
+          Nenhuma imagem para esta aura. PNG sem fundo ou GIF animado ficam melhores. Hoje o Vírus
+          Retrô usa a imagem como o assistente que pula pela tela no crítico e é sugado pelo
+          antivírus na falha.
         </p>
       )}
       <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">

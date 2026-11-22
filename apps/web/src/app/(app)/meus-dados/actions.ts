@@ -40,7 +40,7 @@ export async function setAuraGrantAction(
 export async function setAuraArtAction(aura: DiceAura, path: string | null): Promise<ActionResult> {
   const user = await requireSessionUser(routes.myDice);
   if (!DICE_AURAS.includes(aura)) return { ok: false, message: 'Aura desconhecida.' };
-  if (path && (!AURA_ART_PATH.test(path) || !path.startsWith(`users/${user.id}/dice/`)))
+  if (path && (!AURA_ART_PATH.test(path) || !path.startsWith(`users/${user.id}/`)))
     return { ok: false, message: 'Imagem inválida.' };
   try {
     const supabase = await createSupabaseServerClient();
