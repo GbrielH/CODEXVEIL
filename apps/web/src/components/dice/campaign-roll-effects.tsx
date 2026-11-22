@@ -55,7 +55,9 @@ export function CampaignRollEffects({ campaignId }: { campaignId: string }) {
             if (known.has(row.id)) continue;
             known.add(row.id);
             // Com a caixinha na página, o efeito já sai por ela.
-            if (document.documentElement.dataset.diceTray === 'on') continue;
+            // Com a caixinha ou a mesa grande na página, o efeito já sai por elas (senão sairia duas vezes).
+            const page = document.documentElement.dataset;
+            if (page.diceTray === 'on' || page.diceTable === 'on') continue;
             const natural = naturalD20({ dice: row.dice as unknown as DiceRoll['dice'] });
             if (natural !== 20 && natural !== 1) continue;
             const look =

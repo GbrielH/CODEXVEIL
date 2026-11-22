@@ -201,10 +201,11 @@ function DiceProviderInner({
         critRange: request.critRange ?? 20,
       });
       // O resultado (balão, cartão e mural) só aparece quando os dados 3D param.
-      await waitRevealed(key);
+      // Sem a caixinha, só a mesa grande mostra os dados, e ela não mostra as rolagens secretas.
+      if (tray || !shown.secret) await waitRevealed(key);
       return shown;
     },
-    [campaignId, characterId, sessionGate, toast, needsColor],
+    [campaignId, characterId, sessionGate, toast, needsColor, tray],
   );
 
   const value = useMemo(

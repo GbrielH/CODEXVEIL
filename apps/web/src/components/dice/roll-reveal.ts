@@ -32,7 +32,8 @@ function hold(key: string, ms: number) {
 
 /** Há dados 3D na página (a caixinha marca o documento)? Sem eles, nada é segurado. */
 function diceOnPage(): boolean {
-  return document.documentElement.dataset.diceTray === 'on';
+  const page = document.documentElement.dataset;
+  return page.diceTray === 'on' || page.diceTable === 'on';
 }
 
 export function expectRoll(key: string) {

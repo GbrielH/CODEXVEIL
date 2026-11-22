@@ -9,6 +9,7 @@ import { useRealtimeRefresh } from '@/lib/use-realtime';
 import { DICE_COLORS, useCampaignColors } from './campaign-colors';
 import { TABLE_SETTLED_EVENT, throwDice } from './dice-scene';
 import { applyDiceLook, loadCharacterLook } from './dice-look';
+import { revealRoll } from './roll-reveal';
 import { diceNotation, textColorFor, type TrayRoll } from './dice-tray';
 
 const DEFAULT_COLOR = DICE_COLORS[0]!.hex;
@@ -106,6 +107,8 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
       }
       setCurrent(null);
       setLast(next);
+      // Libera o cartão de resultado e o mural (página sem a caixinha, como a do jogo).
+      revealRoll(next.key);
       document.dispatchEvent(new CustomEvent(TABLE_SETTLED_EVENT, { detail: next.key }));
     }
     running.current = false;
