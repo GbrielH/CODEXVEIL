@@ -10322,7 +10322,9 @@ const rainOn = (particles: Particle[], x: number, y: number) =>
     particle('drop', x + rand(-60, 60), y, { vy: 6, max: 22, size: 1.6, color: '150, 190, 255' }),
   );
 
-const FAILS: Record<Exclude<DiceAura, 'foxy'>, FailScene> = {
+const FAILS: Record<DiceAura, FailScene> = {
+  // Foxy: a falha da raposa é a chama que se apaga (mesma cena da aura de fogo, na cor dela).
+  foxy: (width, height, durationMs, text) => FAILS.fire(width, height, durationMs, text),
   blood: (width, height, durationMs, text) => {
     // Uma gotinha cai do alto e pinga no texto.
     const frames = Math.sqrt((2 * (text.y + 10)) / 0.45);
@@ -12879,8 +12881,6 @@ export function criticalFailBurst(
   options: { durationMs?: number; sound?: boolean } = {},
 ): void {
   if (reducedMotion()) return;
-  // Foxy não tem efeito de falha.
-  if (aura === 'foxy') return;
   const durationMs = options.durationMs ?? 3200;
   if (options.sound !== false) playFailSound(aura);
   const canvas = overlay(null);
