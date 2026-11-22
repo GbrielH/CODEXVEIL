@@ -3858,6 +3858,101 @@ function drawOrb(ctx: CanvasRenderingContext2D, r: number, pips: number, gray: n
   }
 }
 
+/**
+ * Canhão-caveira (Sans): crânio alongado de dragão virado para +x, com chifres, duas órbitas (a
+ * da frente brilha em azul), narina, dentes e a mandíbula que abre na dobradiça (`open` 0 a 1).
+ */
+function drawSkullBlaster(ctx: CanvasRenderingContext2D, open: number, t: number) {
+  const bone = '#f4f4f0';
+  const line = '#1a1a1e';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = line;
+  // Chifres para trás.
+  ctx.fillStyle = bone;
+  for (const [y, len] of [
+    [-34, 1],
+    [-18, 0.75],
+  ] as const) {
+    ctx.beginPath();
+    ctx.moveTo(-36, y);
+    ctx.quadraticCurveTo(-80 * len, y - 30 * len, -112 * len, y - 14 * len);
+    ctx.quadraticCurveTo(-78 * len, y - 6, -30, y + 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+  // Mandíbula (atrás do crânio), girando na dobradiça.
+  ctx.save();
+  ctx.translate(-18, 12);
+  ctx.rotate(open * 0.55);
+  ctx.beginPath();
+  ctx.moveTo(0, -2);
+  ctx.lineTo(96, 0);
+  ctx.quadraticCurveTo(104, 8, 92, 16);
+  ctx.quadraticCurveTo(40, 26, -10, 18);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = bone;
+  for (let x = 30; x <= 88; x += 11) {
+    ctx.beginPath();
+    ctx.moveTo(x - 4, 0);
+    ctx.lineTo(x, -9);
+    ctx.lineTo(x + 4, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+  ctx.restore();
+  // Crânio e focinho.
+  ctx.fillStyle = bone;
+  ctx.beginPath();
+  ctx.moveTo(-58, 4);
+  ctx.quadraticCurveTo(-62, -46, -10, -50);
+  ctx.quadraticCurveTo(30, -50, 60, -30);
+  ctx.lineTo(96, -14);
+  ctx.quadraticCurveTo(108, -6, 100, 6);
+  ctx.lineTo(60, 12);
+  ctx.lineTo(-18, 14);
+  ctx.quadraticCurveTo(-52, 18, -58, 4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // Dentes de cima.
+  for (let x = 24; x <= 92; x += 11) {
+    ctx.beginPath();
+    ctx.moveTo(x - 4, 11);
+    ctx.lineTo(x, 22);
+    ctx.lineTo(x + 4, 11);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+  // Maçã do rosto e arcada.
+  ctx.beginPath();
+  ctx.moveTo(-30, -6);
+  ctx.quadraticCurveTo(0, 4, 26, -4);
+  ctx.stroke();
+  // Órbitas e narina.
+  ctx.fillStyle = '#050508';
+  ctx.beginPath();
+  ctx.ellipse(2, -24, 15, 12, -0.25, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(32, -28, 10, 8, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(90, -8, 5, 2.5, -0.4, 0, Math.PI * 2);
+  ctx.fill();
+  // Olho azul aceso (pulsa quando carrega).
+  ctx.globalCompositeOperation = 'lighter';
+  const pulse = 0.6 + 0.4 * Math.sin(t * 30);
+  blit(ctx, softSprite('60, 200, 255'), 2, -24, 20 + open * 14, (0.5 + open * 0.5) * pulse);
+  blit(ctx, glowSprite('200, 245, 255'), 2, -24, 6 + open * 3, 1);
+  ctx.globalCompositeOperation = 'source-over';
+}
+
 const SCENES: Partial<
   Record<DiceAura, (width: number, height: number, durationMs: number) => Scene>
 > = {
@@ -9069,32 +9164,13 @@ const SCENES: Partial<
           ctx.translate(bl.x, bl.y);
           ctx.rotate(bl.dir > 0 ? 0.6 : Math.PI + 0.6);
           ctx.scale(appear, appear);
-          ctx.fillStyle = '#f4f4f4';
-          ctx.beginPath();
-          ctx.ellipse(0, 0, 60, 46, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.moveTo(30, 20);
-          ctx.lineTo(95, 30 + open * 30);
-          ctx.lineTo(40, 46);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.moveTo(30, -10);
-          ctx.lineTo(95, -10 - open * 10);
-          ctx.lineTo(40, 14);
-          ctx.fill();
-          ctx.fillStyle = '#000';
-          ctx.beginPath();
-          ctx.ellipse(10, -12, 12, 16, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.globalCompositeOperation = 'lighter';
-          blit(ctx, glowSprite('120, 220, 255'), 10, -12, 9, open);
+          drawSkullBlaster(ctx, open, t);
           if (beam) {
             const w = 70 * (1 - (t - bl.at) / 0.45) + 20;
             ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-            ctx.fillRect(90, 10 - w / 2, Math.hypot(width, height), w);
+            ctx.fillRect(96, 14 - w / 2, Math.hypot(width, height), w);
             ctx.fillStyle = 'rgba(160, 220, 255, 0.35)';
-            ctx.fillRect(90, 10 - w, Math.hypot(width, height), w * 2);
+            ctx.fillRect(96, 14 - w, Math.hypot(width, height), w * 2);
           }
           ctx.restore();
         }
@@ -9579,6 +9655,88 @@ const SCENES: Partial<
         ctx.fill();
         ctx.fillStyle = '#fff';
         for (const st of stars) ctx.fillRect(st.x, st.y, st.s, st.s);
+        // O próprio: um tronco de madeira com cara, bracinhos e pernas, que pula a cada batida.
+        const beat = hits.reduce(
+          (best, hit) => (t >= hit.at - 0.18 && t < hit.at + 0.25 ? hit.at : best),
+          -1,
+        );
+        const lift = beat > 0 ? Math.sin(clamp01((t - beat + 0.18) / 0.43) * Math.PI) : 0;
+        const s = Math.min(width, height) / 600;
+        ctx.save();
+        ctx.translate(width * 0.12, height - 30 * s - lift * 30 * s);
+        ctx.scale(s, s);
+        ctx.strokeStyle = '#3a2410';
+        ctx.lineCap = 'round';
+        ctx.lineWidth = 9;
+        for (const side of [-1, 1]) {
+          ctx.beginPath();
+          ctx.moveTo(side * 26, -10);
+          ctx.lineTo(side * 34, 30 - lift * 10);
+          ctx.stroke();
+        }
+        const wood = ctx.createLinearGradient(-60, 0, 60, 0);
+        wood.addColorStop(0, '#7a4a20');
+        wood.addColorStop(0.5, '#c08850');
+        wood.addColorStop(1, '#7a4a20');
+        ctx.fillStyle = wood;
+        ctx.beginPath();
+        ctx.roundRect(-60, -250, 120, 240, 30);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(60, 35, 15, 0.5)';
+        ctx.lineWidth = 3;
+        for (const x of [-32, 0, 30]) {
+          ctx.beginPath();
+          ctx.moveTo(x, -230);
+          ctx.quadraticCurveTo(x + 8, -130, x - 4, -30);
+          ctx.stroke();
+        }
+        ctx.fillStyle = '#d8a870';
+        ctx.beginPath();
+        ctx.ellipse(0, -250, 60, 14, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#8a5a2a';
+        for (const r of [10, 24, 40]) {
+          ctx.beginPath();
+          ctx.ellipse(0, -250, r, r * 0.23, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        // Olhões e boca aberta.
+        for (const side of [-1, 1]) {
+          ctx.fillStyle = '#fff';
+          ctx.beginPath();
+          ctx.ellipse(side * 24, -175, 18, 22, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#111';
+          ctx.beginPath();
+          ctx.arc(side * 24 + 4, -172, 8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.fillStyle = '#2a1008';
+        ctx.beginPath();
+        ctx.ellipse(0, -118, 26, 12 + lift * 14, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Bracinho levantando o taco.
+        ctx.strokeStyle = '#3a2410';
+        ctx.lineWidth = 9;
+        ctx.beginPath();
+        ctx.moveTo(-58, -120);
+        ctx.lineTo(-90, -100);
+        ctx.moveTo(58, -120);
+        ctx.lineTo(92, -150 - lift * 40);
+        ctx.stroke();
+        ctx.save();
+        ctx.translate(92, -150 - lift * 40);
+        ctx.rotate(-0.4 - lift * 1.1);
+        ctx.fillStyle = '#a06a34';
+        ctx.beginPath();
+        ctx.moveTo(-6, 0);
+        ctx.lineTo(6, 0);
+        ctx.lineTo(16, -130);
+        ctx.quadraticCurveTo(0, -145, -16, -130);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        ctx.restore();
         for (const hit of hits) {
           const age = t - hit.at;
           if (age < -0.18) continue;

@@ -1160,3 +1160,10 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto ne
 - Imagens em `public/efeitos/auras` removidas, junto com os auxiliares de imagem. `INACTIVE_DICE_AURAS` ficou vazia (mecanismo mantido). Migração `20261121100000_reactivate_dice_auras.sql` (aplicada).
 
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.
+
+### 2026-11-21 — caveiras do Sans e o próprio Sahur
+
+- **Sans:** os canhões-caveira foram redesenhados (`drawSkullBlaster`): crânio alongado de dragão com chifres, duas órbitas com o olho azul pulsando, narina, dentes e mandíbula que abre na dobradiça antes do raio.
+- **Sahur:** o tronco de madeira com cara, bracinhos e pernas aparece na cena, pulando e levantando o taco a cada "TUNG!".
+
+Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto no navegador por mim.
