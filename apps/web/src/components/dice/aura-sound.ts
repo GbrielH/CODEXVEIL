@@ -2636,6 +2636,8 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
         { peak: 0.06, attack: 0.3, decay: 1.2, formants: AAH, vibrato: 5, depth: 4 },
       );
   },
+  // Foxy: o som vem do próprio vídeo do crítico.
+  foxy: () => {},
   mario: (kit) => {
     // Blocos batendo, moedinhas, um "boing" de pulo e uma fanfarra 8-bit.
     for (let i = 0; i < 5; i++) {

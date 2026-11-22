@@ -7,7 +7,7 @@
  * Respeita "movimento reduzido": nesse caso não desenha nada (o som também não toca).
  */
 import { diceAuraLabels, type DiceAura } from '@codexveil/validation';
-import { AURA_TIMINGS, playCriticalSound, playFailSound } from './aura-sound';
+import { AURA_TIMINGS, auraSoundEnabled, playCriticalSound, playFailSound } from './aura-sound';
 
 type Point = { x: number; y: number };
 /** Dado na tela: centro e raio aproximado (em pixels). */
@@ -367,6 +367,7 @@ const RGB: Record<DiceAura, string> = {
   valorant: '255, 70, 85',
   league: '200, 155, 60',
   mario: '255, 204, 51',
+  foxy: '194, 85, 43',
 };
 
 function reducedMotion(): boolean {
@@ -2209,6 +2210,7 @@ function emitAround(aura: DiceAura, o: AuraPoint, out: Particle[], power: number
           }),
         );
       break;
+    case 'foxy':
     case 'fire':
       for (let i = 0; i < 3; i++) {
         const b = rand(0, Math.PI * 2);
@@ -2950,6 +2952,8 @@ export function criticalAuraBurst(
   options: { durationMs?: number; sound?: boolean; text?: boolean } = {},
 ): void {
   if (reducedMotion()) return;
+  // Foxy: o crítico é um vídeo (fundo verde removido na hora), com o som do próprio vídeo.
+  if (aura === 'foxy') return foxyCritical(options.sound !== false);
   const durationMs = options.durationMs ?? 3600;
   if (
     options.text !== false &&
@@ -10318,7 +10322,7 @@ const rainOn = (particles: Particle[], x: number, y: number) =>
     particle('drop', x + rand(-60, 60), y, { vy: 6, max: 22, size: 1.6, color: '150, 190, 255' }),
   );
 
-const FAILS: Record<DiceAura, FailScene> = {
+const FAILS: Record<Exclude<DiceAura, 'foxy'>, FailScene> = {
   blood: (width, height, durationMs, text) => {
     // Uma gotinha cai do alto e pinga no texto.
     const frames = Math.sqrt((2 * (text.y + 10)) / 0.45);
@@ -12875,6 +12879,8 @@ export function criticalFailBurst(
   options: { durationMs?: number; sound?: boolean } = {},
 ): void {
   if (reducedMotion()) return;
+  // Foxy não tem efeito de falha.
+  if (aura === 'foxy') return;
   const durationMs = options.durationMs ?? 3200;
   if (options.sound !== false) playFailSound(aura);
   const canvas = overlay(null);
@@ -13009,4 +13015,81 @@ export function diceScreenPositions(box: unknown, dice: readonly unknown[]): Aur
     out.push({ x, y, r: Math.max(10, Math.min(140, r)) });
   }
   return out;
+}
+
+/**
+ * Crítico da Foxy: toca /efeitos/foxy.mp4 (gravado em fundo verde) por cima da tela, tirando o
+ * verde quadro a quadro num canvas (chroma key com borda suave e sem o reflexo verde no contorno).
+ */
+function foxyCritical(sound: boolean): void {
+  const video = document.createElement('video');
+  video.src = '/efeitos/foxy.mp4';
+  video.playsInline = true;
+  video.muted = !sound || !auraSoundEnabled();
+  video.preload = 'auto';
+  const canvas = document.createElement('canvas');
+  canvas.setAttribute('aria-hidden', 'true');
+  Object.assign(canvas.style, {
+    position: 'fixed',
+    left: '50%',
+    top: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: 'min(100vw, calc(100vh * 16 / 9))',
+    height: 'auto',
+    zIndex: '95',
+    pointerEvents: 'none',
+  });
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return;
+  let frame = 0;
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    cancelAnimationFrame(frame);
+    canvas.remove();
+    video.removeAttribute('src');
+    video.load();
+  };
+  const draw = () => {
+    if (done) return;
+    if (video.readyState >= 2) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const px = image.data;
+      for (let i = 0; i < px.length; i += 4) {
+        const r = px[i]!;
+        const g = px[i + 1]!;
+        const b = px[i + 2]!;
+        const other = r > b ? r : b;
+        // Quanto o verde domina o pixel: 0 = nada de verde, acima de ~70 = fundo.
+        const key = g - other;
+        if (key > 20) {
+          const alpha = key >= 70 ? 0 : 1 - (key - 20) / 50;
+          px[i + 3] = Math.round(px[i + 3]! * alpha);
+        }
+        // Tira o reflexo verde do contorno.
+        if (g > other) px[i + 1] = other;
+      }
+      ctx.putImageData(image, 0, 0);
+    }
+    frame = requestAnimationFrame(draw);
+  };
+  video.addEventListener('loadedmetadata', () => {
+    // Resolução de trabalho menor: o recorte roda a cada quadro.
+    const scale = Math.min(1, 960 / (video.videoWidth || 960));
+    canvas.width = Math.round((video.videoWidth || 960) * scale);
+    canvas.height = Math.round((video.videoHeight || 540) * scale);
+    document.body.appendChild(canvas);
+    frame = requestAnimationFrame(draw);
+  });
+  video.addEventListener('ended', finish);
+  video.addEventListener('error', finish);
+  // Segurança: some em até 15 s mesmo se o vídeo travar.
+  window.setTimeout(finish, 15_000);
+  void video.play().catch(() => {
+    // Navegador bloqueou o som sem interação: toca sem som.
+    video.muted = true;
+    void video.play().catch(finish);
+  });
 }

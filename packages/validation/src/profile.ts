@@ -143,6 +143,7 @@ export const DICE_AURAS = [
   'valorant',
   'league',
   'mario',
+  'foxy',
 ] as const;
 export type DiceAura = (typeof DICE_AURAS)[number];
 /** Auras catalogadas mas ainda indisponíveis ("Em breve"); vazia quando todas estão prontas. */
@@ -214,6 +215,7 @@ export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> =
   akatsuki: { name: 'Akatsuki', color: '#d7193f' },
   hisoka: { name: 'Hisoka', color: '#ff4fa3' },
   valorant: { name: 'Valorant', color: '#ff4655' },
+  foxy: { name: 'Foxy', color: '#c2552b' },
   league: { name: 'League of Legends', color: '#c89b3c' },
   mario: { name: 'Mario Bros.', color: '#ffcc33' },
 };

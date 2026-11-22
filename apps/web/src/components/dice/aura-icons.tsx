@@ -275,6 +275,7 @@ const ICONS: Record<DiceAura, ComponentType<LucideProps>> = {
   valorant: CircleDot,
   league: Crown,
   mario: Sparkle,
+  foxy: Flame,
 };
 
 /** Ícone da aura, na cor dela e com um leve brilho. */
