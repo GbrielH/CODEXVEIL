@@ -157,6 +157,9 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
   const [tokenConditionRounds, setTokenConditionRounds] = useState<number | null>(null);
   const [tokenConditionLevel, setTokenConditionLevel] = useState(1);
   const [markerLabel, setMarkerLabel] = useState('');
+  // Token rápido: nome + imagem num passo só.
+  const [markerImage, setMarkerImage] = useState<File | null>(null);
+  const markerImageRef = useRef<HTMLInputElement>(null);
   const [wallStyle, setWallStyle] = useState<WallStyle>('stone');
   const [areaKind, setAreaKind] = useState<MapArea['kind']>('circle');
   const [drawColor, setDrawColor] = useState<string>(DRAWING_COLORS[0]);
@@ -654,7 +657,7 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
 
   // Evita o mesmo token entrar duas vezes num clique só (a lista pode avisar a escolha duas vezes).
   const adding = useRef<string | null>(null);
-  const addToken = async ({ copyImage, ...input }: { kind: MapToken['kind']; characterId?: string; creatureId?: string; label: string; size: TokenSize; isHidden?: boolean; copyImage?: string | null }) => {
+  const addToken = async ({ copyImage, imageFile, ...input }: { kind: MapToken['kind']; characterId?: string; creatureId?: string; label: string; size: TokenSize; isHidden?: boolean; copyImage?: string | null; imageFile?: File | null }) => {
     if (!map) return;
     const key = `${input.kind}:${input.characterId ?? input.creatureId ?? input.label}`;
     if (adding.current === key) return;
@@ -673,6 +676,8 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
         const { error } = await client.storage.from(CAMPAIGN_MEDIA_BUCKET).copy(copyImage, path);
         if (!error) await updateMapToken(client, tokenId, { imagePath: path });
       }
+      // Token rápido: a imagem escolhida já vai junto.
+      if (imageFile) await uploadTokenImage({ id: tokenId, imagePath: null } as MapToken, imageFile);
       reload();
     } catch (error) {
       fail('O token não foi adicionado', error);
@@ -1301,19 +1306,33 @@ export function MapManager({ campaignId, sessions, sessionId, systemId, characte
                     }
                   />
                   <div className="flex items-end gap-2">
-                    <TextField id={`${id}-marcador`} label="Marcador" placeholder="Ex.: Baú" maxLength={80} value={markerLabel} onChange={(event) => setMarkerLabel(event.target.value)} />
+                    <TextField id={`${id}-marcador`} label="Token rápido" placeholder="Ex.: Baú, Guarda" maxLength={80} value={markerLabel} onChange={(event) => setMarkerLabel(event.target.value)} />
+                    <input
+                      ref={markerImageRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="sr-only"
+                      aria-label="Imagem do token rápido"
+                      onChange={(event) => setMarkerImage(event.target.files?.[0] ?? null)}
+                    />
+                    <Button size="sm" variant="ghost" icon={<ImageUp className="h-4 w-4" aria-hidden="true" />} onClick={() => markerImageRef.current?.click()}>
+                      {markerImage ? 'Trocar imagem' : 'Imagem'}
+                    </Button>
                     <Button
                       size="sm"
                       variant="secondary"
                       disabled={!markerLabel.trim()}
                       onClick={() => {
-                        void addToken({ kind: 'marker', label: markerLabel.trim(), size: 'medium' });
+                        void addToken({ kind: 'marker', label: markerLabel.trim(), size: 'medium', imageFile: markerImage });
                         setMarkerLabel('');
+                        setMarkerImage(null);
+                        if (markerImageRef.current) markerImageRef.current.value = '';
                       }}
                     >
                       Pôr
                     </Button>
                   </div>
+                  {markerImage ? <p className="text-xs text-fg-muted">Imagem: {markerImage.name}</p> : null}
                 </section>
                 <CheckboxField
                   id={`${id}-segue-turno`}

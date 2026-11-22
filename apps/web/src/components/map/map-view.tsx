@@ -1,8 +1,9 @@
 'use client';
 
-import { addMyMapArea, clearMyMapAreas, moveMyToken } from '@codexveil/database';
+import { CAMPAIGN_MEDIA_BUCKET, addMyMapArea, addMyQuickToken, clearMyMapAreas, moveMyToken, quickTokenImagePath, removeMyQuickToken, setMyQuickTokenImage } from '@codexveil/database';
+import { IMAGE_EXTENSIONS } from '@codexveil/validation';
 import { MAP_AREA_KINDS, activeTurnTokenId, type MapArea } from '@codexveil/domain';
-import { CircleDot, Expand, Map as MapIcon, MousePointer2, Ruler, Shrink, ZoomIn, ZoomOut } from 'lucide-react';
+import { CircleDot, Expand, ImageUp, Map as MapIcon, MousePointer2, Plus, Ruler, Shrink, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useCampaignColors } from '@/components/dice/campaign-colors';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,8 @@ import { LiveBadge } from '@/components/ui/save-status';
 import { EmptyState } from '@/components/ui/states';
 import { useToast } from '@/components/ui/toast';
 import { failureMessage } from '@/lib/client-errors';
+import { prepareImage } from '@/lib/images';
+import { TextField } from '@/components/ui/field';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { MapBoard, type MapTool } from './map-board';
 import { useBoardViewport } from './use-board-viewport';
@@ -89,6 +92,7 @@ export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: s
           </Button>
         ) : null}
       </div>
+      {userId ? <QuickTokens mapId={map.id} campaignId={campaignId} userId={userId} mine={tokens.filter((token) => token.ownerId === userId)} onChanged={reload} /> : null}
       {tool === 'ruler' ? <p className="mb-2 text-xs text-fg-muted">Arraste de um quadrado a outro para medir.</p> : null}
       {tool === 'area' ? <p className="mb-2 text-xs text-fg-muted">Arraste a partir de um canto de quadrado (círculo: comece no meio do quadrado para centrá-lo ali, como no do seu token). Todos na mesa veem as áreas que você coloca.</p> : null}
       <div ref={boardAreaRef} className={fullscreen ? 'relative bg-canvas p-2' : 'relative'}>
@@ -116,6 +120,7 @@ export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: s
                 activeTokenId={activeTokenId}
           isGm={false}
           myCharacterId={myCharacterId}
+          myUserId={userId}
           zoom={zoom}
           tool={tool}
           areaKind={areaKind}
@@ -141,5 +146,95 @@ export function MapView({ campaignId, systemId, myCharacterId }: { campaignId: s
       </div>
       </div>
     </Card>
+  );
+}
+
+/** Token rápido do jogador: nome e imagem, entra no centro do mapa e ele arrasta para o lugar. */
+function QuickTokens({ mapId, campaignId, userId, mine, onChanged }: { mapId: string; campaignId: string; userId: string; mine: { id: string; label: string; imagePath: string | null }[]; onChanged: () => void }) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [label, setLabel] = useState('');
+  const [image, setImage] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const add = async () => {
+    const client = getSupabaseBrowserClient();
+    setBusy(true);
+    let uploaded: string | null = null;
+    try {
+      let path: string | null = null;
+      if (image) {
+        const prepared = await prepareImage(image, 'portrait');
+        if (!prepared.ok) {
+          toast({ tone: 'danger', title: 'Imagem recusada', description: prepared.message });
+          return;
+        }
+        path = quickTokenImagePath(campaignId, userId, IMAGE_EXTENSIONS[prepared.mimeType]);
+        const { error } = await client.storage.from(CAMPAIGN_MEDIA_BUCKET).upload(path, prepared.file, { contentType: prepared.mimeType, upsert: false });
+        if (error) throw error;
+        uploaded = path;
+      }
+      const tokenId = await addMyQuickToken(client, mapId, label.trim());
+      if (path) await setMyQuickTokenImage(client, tokenId, path);
+      uploaded = null;
+      setLabel('');
+      setImage(null);
+      if (fileRef.current) fileRef.current.value = '';
+      onChanged();
+    } catch (error) {
+      if (uploaded) await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([uploaded]);
+      toast({ tone: 'danger', title: 'O token não foi colocado', description: failureMessage(error, 'Tente novamente.') });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (tokenId: string) => {
+    const client = getSupabaseBrowserClient();
+    try {
+      const path = await removeMyQuickToken(client, tokenId);
+      if (path) await client.storage.from(CAMPAIGN_MEDIA_BUCKET).remove([path]);
+      onChanged();
+    } catch (error) {
+      toast({ tone: 'danger', title: 'O token não foi tirado', description: failureMessage(error, 'Tente novamente.') });
+    }
+  };
+
+  if (!open)
+    return (
+      <div className="mb-2">
+        <Button size="sm" variant="secondary" icon={<Plus className="h-4 w-4" aria-hidden="true" />} onClick={() => setOpen(true)}>
+          Token rápido{mine.length ? ` (${mine.length})` : ''}
+        </Button>
+      </div>
+    );
+  return (
+    <div className="mb-2 rounded-md border border-line p-2">
+      <div className="flex flex-wrap items-end gap-2">
+        <TextField id={`token-rapido-${mapId}`} label="Token rápido" placeholder="Ex.: Familiar, Invocação" maxLength={80} value={label} onChange={(event) => setLabel(event.target.value)} />
+        <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" aria-label="Imagem do token" onChange={(event) => setImage(event.target.files?.[0] ?? null)} />
+        <Button size="sm" variant="ghost" icon={<ImageUp className="h-4 w-4" aria-hidden="true" />} onClick={() => fileRef.current?.click()}>
+          {image ? 'Trocar imagem' : 'Imagem'}
+        </Button>
+        <Button size="sm" variant="primary" disabled={!label.trim() || busy || mine.length >= 6} onClick={() => void add()}>
+          {busy ? 'Colocando…' : 'Pôr no mapa'}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+          Fechar
+        </Button>
+      </div>
+      {image ? <p className="mt-1 text-xs text-fg-muted">Imagem: {image.name}</p> : null}
+      <p className="mt-1 text-xs text-fg-muted">Entra no centro do mapa; arraste para o lugar. Até 6 por mapa.</p>
+      {mine.length ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {mine.map((token) => (
+            <Button key={token.id} size="sm" variant="ghost" icon={<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />} aria-label={`Tirar ${token.label}`} onClick={() => void remove(token.id)}>
+              {token.label}
+            </Button>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }

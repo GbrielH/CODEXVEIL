@@ -78,14 +78,16 @@ export interface MapToken {
   darkvisionRadius: number;
   lightBrightRadius: number;
   lightDimRadius: number;
+  /** Token rápido de um jogador: quem o colocou (ele move, troca a imagem e tira). */
+  ownerId: string | null;
 }
 
 const MAP_COLUMNS =
   'id, campaign_id, session_id, name, image_path, image_scale, image_offset_x, image_offset_y, cols, rows, show_grid, fog_enabled, fog_revealed, line_of_sight, walls, is_active, fog_auto_reveal, areas, drawings, images, illumination, lights' as const;
-const TOKEN_COLUMNS = 'id, map_id, campaign_id, kind, character_id, creature_id, label, x, y, size, is_hidden, vision_radius, image_path, conditions, darkvision_radius, light_bright_radius, light_dim_radius' as const;
+const TOKEN_COLUMNS = 'id, map_id, campaign_id, kind, character_id, creature_id, label, x, y, size, is_hidden, vision_radius, image_path, conditions, darkvision_radius, light_bright_radius, light_dim_radius, owner_id' as const;
 
 type MapRow = Pick<Tables<'session_maps'>, 'id' | 'campaign_id' | 'session_id' | 'name' | 'image_path' | 'image_scale' | 'image_offset_x' | 'image_offset_y' | 'cols' | 'rows' | 'show_grid' | 'fog_enabled' | 'fog_revealed' | 'line_of_sight' | 'walls' | 'is_active' | 'fog_auto_reveal' | 'areas' | 'drawings' | 'images' | 'illumination' | 'lights'>;
-type TokenRow = Pick<Tables<'map_tokens'>, 'id' | 'map_id' | 'campaign_id' | 'kind' | 'character_id' | 'creature_id' | 'label' | 'x' | 'y' | 'size' | 'is_hidden' | 'vision_radius' | 'image_path' | 'conditions' | 'darkvision_radius' | 'light_bright_radius' | 'light_dim_radius'>;
+type TokenRow = Pick<Tables<'map_tokens'>, 'id' | 'map_id' | 'campaign_id' | 'kind' | 'character_id' | 'creature_id' | 'label' | 'x' | 'y' | 'size' | 'is_hidden' | 'vision_radius' | 'image_path' | 'conditions' | 'darkvision_radius' | 'light_bright_radius' | 'light_dim_radius' | 'owner_id'>;
 
 function quads(value: Json): [number, number, number, number][] {
   if (!Array.isArray(value)) return [];
@@ -161,6 +163,7 @@ function toToken(row: TokenRow): MapToken {
     darkvisionRadius: row.darkvision_radius,
     lightBrightRadius: row.light_bright_radius,
     lightDimRadius: row.light_dim_radius,
+    ownerId: row.owner_id,
   };
 }
 
@@ -314,7 +317,8 @@ export async function tokenImagePaths(client: CodexveilClient, tokens: readonly 
     characterIds.length
       ? client.rpc('list_character_token_images', { p_character_ids: characterIds })
       : Promise.resolve({ data: [] as { id: string; image_path: string | null }[], error: null }),
-    creatureIds.length ? client.from('creatures').select('id, image_path').in('id', creatureIds) : Promise.resolve({ data: [] as { id: string; image_path: string | null }[], error: null }),
+    // Também pela função: criatura só do mestre não é lida pelo jogador, mas a imagem do token sim.
+    creatureIds.length ? client.rpc('list_creature_token_images', { p_creature_ids: creatureIds }) : Promise.resolve({ data: [] as { id: string; image_path: string | null }[], error: null }),
   ]);
   if (characters.error) throw toAppError(characters.error);
   if (creatures.error) throw toAppError(creatures.error);
@@ -322,7 +326,7 @@ export async function tokenImagePaths(client: CodexveilClient, tokens: readonly 
   // O gerador de tipos não descreve funções RETURNS TABLE: a linha é conferida aqui.
   const characterRows = (characters.data ?? []) as { id: string; image_path: string | null }[];
   const portraits = new Map(characterRows.map((row) => [row.id, row.image_path]));
-  const images = new Map((creatures.data ?? []).map((row) => [row.id, row.image_path]));
+  const images = new Map(((creatures.data ?? []) as { id: string; image_path: string | null }[]).map((row) => [row.id, row.image_path]));
   const result: Record<string, string> = {};
   for (const token of tokens) {
     const path = token.imagePath ?? (token.characterId ? portraits.get(token.characterId) : null) ?? (token.creatureId ? images.get(token.creatureId) : null) ?? null;
@@ -359,6 +363,30 @@ export async function saveMapSecrets(client: CodexveilClient, mapId: string, cam
 export async function moveMyToken(client: CodexveilClient, tokenId: string, x: number, y: number): Promise<void> {
   const { error } = await client.rpc('move_my_token', { p_token_id: tokenId, p_x: x, p_y: y });
   if (error) throw toAppError(error);
+}
+
+/** Token rápido do jogador: cria no centro do mapa ativo e devolve o id. */
+export async function addMyQuickToken(client: CodexveilClient, mapId: string, label: string, size: TokenSize = 'medium'): Promise<string> {
+  const { data, error } = await client.rpc('add_my_quick_token', { p_map_id: mapId, p_label: label, p_size: size });
+  if (error) throw toAppError(error);
+  return data;
+}
+
+/** Caminho da imagem do token rápido do jogador (a política do Storage só aceita este formato). */
+export function quickTokenImagePath(campaignId: string, userId: string, extension: string): string {
+  return `campaigns/${campaignId}/maps/quick-${userId}-${crypto.randomUUID()}.${extension}`;
+}
+
+export async function setMyQuickTokenImage(client: CodexveilClient, tokenId: string, path: string | null): Promise<void> {
+  const { error } = await client.rpc('set_my_quick_token_image', { p_token_id: tokenId, p_path: path });
+  if (error) throw toAppError(error);
+}
+
+/** Tira o token rápido do jogador; devolve o caminho da imagem (para apagar o arquivo). */
+export async function removeMyQuickToken(client: CodexveilClient, tokenId: string): Promise<string | null> {
+  const { data, error } = await client.rpc('remove_my_quick_token', { p_token_id: tokenId });
+  if (error) throw toAppError(error);
+  return data ?? null;
 }
 
 /** Jogador: coloca uma área de magia no mapa ativo, vista por todos (marcada com o autor). */

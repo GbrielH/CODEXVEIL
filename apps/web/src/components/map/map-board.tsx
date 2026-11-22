@@ -77,6 +77,8 @@ interface MapBoardProps {
   selectedTokenId?: string | null;
   /** Token do combatente da vez, vindo do resumo público da iniciativa. */
   activeTokenId?: string | null;
+  /** Jogador: quem está vendo (move também os próprios tokens rápidos). */
+  myUserId?: string | null;
   onSelectToken?: (tokenId: string | null) => void;
   onMoveToken?: (token: MapToken, x: number, y: number) => void;
   onPaintFog?: (area: GridRect, reveal: boolean) => void;
@@ -118,6 +120,7 @@ export function MapBoard({
   tokenImages = {},
   layerUrls = {},
   tokenSpeeds = {},
+  myUserId = null,
   freeMovement = false,
   selectedLayer = null,
   onSelectLayer,
@@ -241,7 +244,8 @@ export function MapBoard({
     return null;
   };
 
-  const canDrag = (token: MapToken) => tool === 'move' && (isGm || (token.kind === 'character' && token.characterId !== null && token.characterId === myCharacterId));
+  const canDrag = (token: MapToken) =>
+    tool === 'move' && (isGm || (token.ownerId !== null && token.ownerId === myUserId) || (token.kind === 'character' && token.characterId !== null && token.characterId === myCharacterId));
 
   const unrevealedPath = useMemo(() => {
     if (!map.fogEnabled) return '';
