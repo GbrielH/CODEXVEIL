@@ -1153,3 +1153,10 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto ne
 - Migração `20261116110000_dice_auras_nine.sql` (aplicada).
 
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.
+
+### 2026-11-21 — 15 auras refeitas e reativadas
+
+- As auras feitas pelo Codex com ilustrações geradas coladas na tela (e depois desativadas como "Em breve") foram reescritas como animação própria, sem imagem de personagem, com som sintetizado e falha nova: Deus do Sol (soco de borracha e POW!), Tarrasque (espinhos rompendo o chão), Sans (caixa de batalha, ossos e canhões-caveira; falha "* Mas nada aconteceu."), Hollow Knight (golpes em crescente e explosão de alma com vazio), Doutor Destino (placas de armadura e runas esmeralda), Zoro (três cortes e redemoinho de lâminas; falha: perdido com a bússola), Buraco Negro (disco de acreção e colapso), Fullmetal (palmas, círculo e pontas de pedra; falha: rebote), Sahur (taco batendo "TUNG!" e "SAHUR!"), Homem-Aranha (teias dos cantos e teia gigante), Akatsuki (lua vermelha, nuvens vermelhas e corvos), Hisoka (cartas cravando e fios elásticos), Valorant (mira, fumaça e artefato detonando), League (subida de nível e cinco espadas; falha: cristal partindo) e Mario (blocos, moedas, canos e estrela; falha: buraco).
+- Imagens em `public/efeitos/auras` removidas, junto com os auxiliares de imagem. `INACTIVE_DICE_AURAS` ficou vazia (mecanismo mantido). Migração `20261121100000_reactivate_dice_auras.sql` (aplicada).
+
+Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto nem ouvido no navegador por mim.

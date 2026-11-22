@@ -476,3 +476,5 @@ Migração `20261115190000_dice_auras_ten.sql`: auras `necro`, `pirate`, `samura
 Migração `20261116100000_dice_aura_haki.sql`: auras `haki` e `cthulhu`; a aura `bees` sai (dados, preferências e liberações que a usavam ficam sem aura).
 
 Migração `20261116110000_dice_auras_nine.sql`: auras `sungod`, `heaven`, `tarrasque`, `purple`, `wheel`, `capture`, `darklord`, `notebook` e `orbs`.
+
+Migração `20261121100000_reactivate_dice_auras.sql`: as 15 auras "Em breve" voltam (lista aceita completa e `private.can_use_aura` sem a lista de exceções).
