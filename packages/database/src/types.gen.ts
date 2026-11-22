@@ -1964,8 +1964,8 @@ export type Database = {
           label: string;
           light_bright_radius: number;
           light_dim_radius: number;
-          owner_id: string | null;
           map_id: string;
+          owner_id: string | null;
           size: string;
           updated_at: string;
           vision_radius: number;
@@ -1986,8 +1986,8 @@ export type Database = {
           label?: string;
           light_bright_radius?: number;
           light_dim_radius?: number;
-          owner_id?: string | null;
           map_id: string;
+          owner_id?: string | null;
           size?: string;
           updated_at?: string;
           vision_radius?: number;
@@ -2008,8 +2008,8 @@ export type Database = {
           label?: string;
           light_bright_radius?: number;
           light_dim_radius?: number;
-          owner_id?: string | null;
           map_id?: string;
+          owner_id?: string | null;
           size?: string;
           updated_at?: string;
           vision_radius?: number;
@@ -3159,6 +3159,14 @@ export type Database = {
         };
         Returns: undefined;
       };
+      add_my_quick_token: {
+        Args: {
+          p_map_id: string;
+          p_label: string;
+          p_size?: string;
+        };
+        Returns: string;
+      };
       adjust_character_resource: {
         Args: {
           p_resource_id: string;
@@ -3402,13 +3410,15 @@ export type Database = {
         };
         Returns: undefined;
       };
-      list_creature_token_images: {
-        Args: { p_creature_ids: string[] };
-        Returns: { id: string; image_path: string }[];
-      };
       list_character_token_images: {
         Args: {
           p_character_ids: string[];
+        };
+        Returns: unknown[];
+      };
+      list_creature_token_images: {
+        Args: {
+          p_creature_ids: string[];
         };
         Returns: unknown[];
       };
@@ -3428,18 +3438,6 @@ export type Database = {
       list_recent_ended_calls: {
         Args: never;
         Returns: unknown[];
-      };
-      add_my_quick_token: {
-        Args: { p_map_id: string; p_label: string; p_size?: string };
-        Returns: string;
-      };
-      remove_my_quick_token: {
-        Args: { p_token_id: string };
-        Returns: string;
-      };
-      set_my_quick_token_image: {
-        Args: { p_token_id: string; p_path: string | null };
-        Returns: undefined;
       };
       move_my_token: {
         Args: {
@@ -3500,6 +3498,12 @@ export type Database = {
           p_user_id: string;
         };
         Returns: undefined;
+      };
+      remove_my_quick_token: {
+        Args: {
+          p_token_id: string;
+        };
+        Returns: string;
       };
       reorder_session_blocks: {
         Args: {
@@ -3606,6 +3610,13 @@ export type Database = {
         Args: {
           p_campaign_id: string;
           p_color: string;
+        };
+        Returns: undefined;
+      };
+      set_my_quick_token_image: {
+        Args: {
+          p_token_id: string;
+          p_path: string;
         };
         Returns: undefined;
       };

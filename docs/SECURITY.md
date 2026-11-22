@@ -355,3 +355,5 @@ ficha: as fichas ocultas continuam inacessíveis.
 `profiles.creator_features` libera as auras dos dados. A coluna não está entre as que o usuário pode alterar no próprio perfil; só a administração do banco a liga, por comando avulso (sem e-mail em arquivo). Gatilhos recusam a aura em dados salvos e a removem das preferências de quem não é criador.
 
 `dice_aura_grants`: só uma conta de criador libera auras, só para amigos aceitos (`private.are_friends`), e só quem liberou retira. O amigo lê apenas as próprias liberações. Os gatilhos de aura passam a aceitar a aura liberada (`private.can_use_aura`); ao retirar a liberação, a aura sai dos dados salvos e do dado padrão do amigo.
+
+**Correção (2026-11-22):** `move_my_token` deixava qualquer jogador mover o token de personagem de outro: `owner_id = auth.uid()` vira nulo em tokens sem dono e `not (nulo or falso)` não dispara a recusa. Agora a comparação nula conta como falsa (`20261122150000_move_my_token_null_fix.sql`). **Sons do crítico:** a pasta `users/{conta}/sounds/` aceita só áudio pelo nome do arquivo; o dono envia e apaga, quem divide campanha lê.

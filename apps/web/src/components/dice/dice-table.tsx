@@ -100,6 +100,7 @@ export function DiceTable({ campaignId }: { campaignId: string }) {
             aura: look?.aura ?? null,
             critical: natural !== null && natural >= (next.critRange ?? 20),
             fumble: natural === 1,
+            owner: next.userId,
           });
         } catch (error) {
           console.error('[codexveil] falha ao rolar na mesa', error);

@@ -3,7 +3,22 @@
  * jogadores recebem do banco só o mapa ativo e os tokens visíveis, e movem o próprio token por
  * `move_my_token`.
  */
-import { AppError, isMapArea, isMapDrawing, isTokenSize, isWallStyle, parseMapLights, parseMapTokenConditions, type MapArea, type MapDrawing, type MapIllumination, type MapLight, type MapTokenCondition, type TokenSize, type WallStyle } from '@codexveil/domain';
+import {
+  AppError,
+  isMapArea,
+  isMapDrawing,
+  isTokenSize,
+  isWallStyle,
+  parseMapLights,
+  parseMapTokenConditions,
+  type MapArea,
+  type MapDrawing,
+  type MapIllumination,
+  type MapLight,
+  type MapTokenCondition,
+  type TokenSize,
+  type WallStyle,
+} from '@codexveil/domain';
 import type { CodexveilClient } from '../client';
 import { toAppError } from '../errors';
 import type { Json, Tables } from '../types.gen';
@@ -84,15 +99,62 @@ export interface MapToken {
 
 const MAP_COLUMNS =
   'id, campaign_id, session_id, name, image_path, image_scale, image_offset_x, image_offset_y, cols, rows, show_grid, fog_enabled, fog_revealed, line_of_sight, walls, is_active, fog_auto_reveal, areas, drawings, images, illumination, lights' as const;
-const TOKEN_COLUMNS = 'id, map_id, campaign_id, kind, character_id, creature_id, label, x, y, size, is_hidden, vision_radius, image_path, conditions, darkvision_radius, light_bright_radius, light_dim_radius, owner_id' as const;
+const TOKEN_COLUMNS =
+  'id, map_id, campaign_id, kind, character_id, creature_id, label, x, y, size, is_hidden, vision_radius, image_path, conditions, darkvision_radius, light_bright_radius, light_dim_radius, owner_id' as const;
 
-type MapRow = Pick<Tables<'session_maps'>, 'id' | 'campaign_id' | 'session_id' | 'name' | 'image_path' | 'image_scale' | 'image_offset_x' | 'image_offset_y' | 'cols' | 'rows' | 'show_grid' | 'fog_enabled' | 'fog_revealed' | 'line_of_sight' | 'walls' | 'is_active' | 'fog_auto_reveal' | 'areas' | 'drawings' | 'images' | 'illumination' | 'lights'>;
-type TokenRow = Pick<Tables<'map_tokens'>, 'id' | 'map_id' | 'campaign_id' | 'kind' | 'character_id' | 'creature_id' | 'label' | 'x' | 'y' | 'size' | 'is_hidden' | 'vision_radius' | 'image_path' | 'conditions' | 'darkvision_radius' | 'light_bright_radius' | 'light_dim_radius' | 'owner_id'>;
+type MapRow = Pick<
+  Tables<'session_maps'>,
+  | 'id'
+  | 'campaign_id'
+  | 'session_id'
+  | 'name'
+  | 'image_path'
+  | 'image_scale'
+  | 'image_offset_x'
+  | 'image_offset_y'
+  | 'cols'
+  | 'rows'
+  | 'show_grid'
+  | 'fog_enabled'
+  | 'fog_revealed'
+  | 'line_of_sight'
+  | 'walls'
+  | 'is_active'
+  | 'fog_auto_reveal'
+  | 'areas'
+  | 'drawings'
+  | 'images'
+  | 'illumination'
+  | 'lights'
+>;
+type TokenRow = Pick<
+  Tables<'map_tokens'>,
+  | 'id'
+  | 'map_id'
+  | 'campaign_id'
+  | 'kind'
+  | 'character_id'
+  | 'creature_id'
+  | 'label'
+  | 'x'
+  | 'y'
+  | 'size'
+  | 'is_hidden'
+  | 'vision_radius'
+  | 'image_path'
+  | 'conditions'
+  | 'darkvision_radius'
+  | 'light_bright_radius'
+  | 'light_dim_radius'
+  | 'owner_id'
+>;
 
 function quads(value: Json): [number, number, number, number][] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((entry) =>
-    Array.isArray(entry) && entry.length === 4 && entry.every((n) => typeof n === 'number') ? [entry as [number, number, number, number]] : [],
+    Array.isArray(entry) && entry.length === 4 && entry.every((n) => typeof n === 'number')
+      ? [entry as [number, number, number, number]]
+      : [],
   );
 }
 
@@ -102,7 +164,13 @@ function walls(value: Json): Wall[] {
   return value.flatMap((entry): Wall[] => {
     if (!Array.isArray(entry) || entry.length < 4) return [];
     const [x1, y1, x2, y2, style] = entry;
-    if (typeof x1 !== 'number' || typeof y1 !== 'number' || typeof x2 !== 'number' || typeof y2 !== 'number') return [];
+    if (
+      typeof x1 !== 'number' ||
+      typeof y1 !== 'number' ||
+      typeof x2 !== 'number' ||
+      typeof y2 !== 'number'
+    )
+      return [];
     return [[x1, y1, x2, y2, isWallStyle(style) ? style : 'stone']];
   });
 }
@@ -112,8 +180,18 @@ function mapImages(value: Json): MapImage[] {
   return value.flatMap((entry): MapImage[] => {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return [];
     const { path, x, y, width, rotation } = entry as Record<string, unknown>;
-    if (typeof path !== 'string' || typeof x !== 'number' || typeof y !== 'number' || typeof width !== 'number') return [];
-    return [rotation === 90 || rotation === 180 || rotation === 270 ? { path, x, y, width, rotation } : { path, x, y, width }];
+    if (
+      typeof path !== 'string' ||
+      typeof x !== 'number' ||
+      typeof y !== 'number' ||
+      typeof width !== 'number'
+    )
+      return [];
+    return [
+      rotation === 90 || rotation === 180 || rotation === 270
+        ? { path, x, y, width, rotation }
+        : { path, x, y, width },
+    ];
   });
 }
 
@@ -139,7 +217,8 @@ function toMap(row: MapRow): SessionMap {
     areas: Array.isArray(row.areas) ? row.areas.filter(isMapArea) : [],
     drawings: Array.isArray(row.drawings) ? row.drawings.filter(isMapDrawing) : [],
     images: mapImages(row.images),
-    illumination: row.illumination === 'dim' || row.illumination === 'dark' ? row.illumination : 'bright',
+    illumination:
+      row.illumination === 'dim' || row.illumination === 'dark' ? row.illumination : 'bright',
     lights: parseMapLights(row.lights),
   };
 }
@@ -173,45 +252,109 @@ export function campaignMapPath(campaignId: string, fileName: string): string {
 }
 
 /** Todos os mapas da campanha (mestre), por sessão e data de criação. */
-export async function listCampaignMaps(client: CodexveilClient, campaignId: string): Promise<SessionMap[]> {
-  const { data, error } = await client.from('session_maps').select(MAP_COLUMNS).eq('campaign_id', campaignId).order('created_at');
+export async function listCampaignMaps(
+  client: CodexveilClient,
+  campaignId: string,
+): Promise<SessionMap[]> {
+  const { data, error } = await client
+    .from('session_maps')
+    .select(MAP_COLUMNS)
+    .eq('campaign_id', campaignId)
+    .order('created_at');
   if (error) throw toAppError(error);
   return (data ?? []).map(toMap);
 }
 
 /** Mapas de uma sessão (mestre). */
-export async function listSessionMaps(client: CodexveilClient, sessionId: string): Promise<SessionMap[]> {
-  const { data, error } = await client.from('session_maps').select(MAP_COLUMNS).eq('session_id', sessionId).order('created_at');
+export async function listSessionMaps(
+  client: CodexveilClient,
+  sessionId: string,
+): Promise<SessionMap[]> {
+  const { data, error } = await client
+    .from('session_maps')
+    .select(MAP_COLUMNS)
+    .eq('session_id', sessionId)
+    .order('created_at');
   if (error) throw toAppError(error);
   return (data ?? []).map(toMap);
 }
 
 /** Mapa ativo da campanha (o que os jogadores veem), ou null. */
-export async function getActiveMap(client: CodexveilClient, campaignId: string): Promise<SessionMap | null> {
-  const { data, error } = await client.from('session_maps').select(MAP_COLUMNS).eq('campaign_id', campaignId).eq('is_active', true).maybeSingle();
-  if (error) throw toAppError(error);
-  return data ? toMap(data) : null;
-}
-
-export async function getSessionMap(client: CodexveilClient, mapId: string): Promise<SessionMap | null> {
-  const { data, error } = await client.from('session_maps').select(MAP_COLUMNS).eq('id', mapId).maybeSingle();
-  if (error) throw toAppError(error);
-  return data ? toMap(data) : null;
-}
-
-export async function createSessionMap(client: CodexveilClient, input: { campaignId: string; sessionId: string; name: string; cols?: number; rows?: number }): Promise<string> {
+export async function getActiveMap(
+  client: CodexveilClient,
+  campaignId: string,
+): Promise<SessionMap | null> {
   const { data, error } = await client
     .from('session_maps')
-    .insert({ campaign_id: input.campaignId, session_id: input.sessionId, name: input.name, cols: input.cols ?? 30, rows: input.rows ?? 20 })
+    .select(MAP_COLUMNS)
+    .eq('campaign_id', campaignId)
+    .eq('is_active', true)
+    .maybeSingle();
+  if (error) throw toAppError(error);
+  return data ? toMap(data) : null;
+}
+
+export async function getSessionMap(
+  client: CodexveilClient,
+  mapId: string,
+): Promise<SessionMap | null> {
+  const { data, error } = await client
+    .from('session_maps')
+    .select(MAP_COLUMNS)
+    .eq('id', mapId)
+    .maybeSingle();
+  if (error) throw toAppError(error);
+  return data ? toMap(data) : null;
+}
+
+export async function createSessionMap(
+  client: CodexveilClient,
+  input: { campaignId: string; sessionId: string; name: string; cols?: number; rows?: number },
+): Promise<string> {
+  const { data, error } = await client
+    .from('session_maps')
+    .insert({
+      campaign_id: input.campaignId,
+      session_id: input.sessionId,
+      name: input.name,
+      cols: input.cols ?? 30,
+      rows: input.rows ?? 20,
+    })
     .select('id')
     .single();
   if (error) throw toAppError(error);
   return data.id;
 }
 
-export type SessionMapPatch = Partial<Pick<SessionMap, 'name' | 'imagePath' | 'imageScale' | 'imageOffsetX' | 'imageOffsetY' | 'cols' | 'rows' | 'showGrid' | 'fogEnabled' | 'fogRevealed' | 'lineOfSight' | 'walls' | 'fogAutoReveal' | 'areas' | 'drawings' | 'images' | 'illumination' | 'lights'>>;
+export type SessionMapPatch = Partial<
+  Pick<
+    SessionMap,
+    | 'name'
+    | 'imagePath'
+    | 'imageScale'
+    | 'imageOffsetX'
+    | 'imageOffsetY'
+    | 'cols'
+    | 'rows'
+    | 'showGrid'
+    | 'fogEnabled'
+    | 'fogRevealed'
+    | 'lineOfSight'
+    | 'walls'
+    | 'fogAutoReveal'
+    | 'areas'
+    | 'drawings'
+    | 'images'
+    | 'illumination'
+    | 'lights'
+  >
+>;
 
-export async function updateSessionMap(client: CodexveilClient, mapId: string, patch: SessionMapPatch): Promise<void> {
+export async function updateSessionMap(
+  client: CodexveilClient,
+  mapId: string,
+  patch: SessionMapPatch,
+): Promise<void> {
   const update: Partial<Tables<'session_maps'>> = {};
   if (patch.name !== undefined) update.name = patch.name;
   if (patch.imagePath !== undefined) update.image_path = patch.imagePath;
@@ -231,17 +374,33 @@ export async function updateSessionMap(client: CodexveilClient, mapId: string, p
   if (patch.drawings !== undefined) update.drawings = patch.drawings;
   if (patch.illumination !== undefined) update.illumination = patch.illumination;
   if (patch.lights !== undefined) update.lights = patch.lights as unknown as Json;
-  const { data, error } = await client.from('session_maps').update(update).eq('id', mapId).select('id');
+  const { data, error } = await client
+    .from('session_maps')
+    .update(update)
+    .eq('id', mapId)
+    .select('id');
   if (error) throw toAppError(error);
   if (data.length === 0) throw new AppError('forbidden');
 }
 
 /** Ativa um mapa (desativa o que estava ativo na campanha) ou desativa todos (`mapId` null). */
-export async function setActiveMap(client: CodexveilClient, campaignId: string, mapId: string | null): Promise<void> {
-  const off = await client.from('session_maps').update({ is_active: false }).eq('campaign_id', campaignId).eq('is_active', true);
+export async function setActiveMap(
+  client: CodexveilClient,
+  campaignId: string,
+  mapId: string | null,
+): Promise<void> {
+  const off = await client
+    .from('session_maps')
+    .update({ is_active: false })
+    .eq('campaign_id', campaignId)
+    .eq('is_active', true);
   if (off.error) throw toAppError(off.error);
   if (!mapId) return;
-  const { data, error } = await client.from('session_maps').update({ is_active: true }).eq('id', mapId).select('id');
+  const { data, error } = await client
+    .from('session_maps')
+    .update({ is_active: true })
+    .eq('id', mapId)
+    .select('id');
   if (error) throw toAppError(error);
   if (data.length === 0) throw new AppError('forbidden');
 }
@@ -252,14 +411,29 @@ export async function deleteSessionMap(client: CodexveilClient, mapId: string): 
 }
 
 export async function listMapTokens(client: CodexveilClient, mapId: string): Promise<MapToken[]> {
-  const { data, error } = await client.from('map_tokens').select(TOKEN_COLUMNS).eq('map_id', mapId).order('created_at');
+  const { data, error } = await client
+    .from('map_tokens')
+    .select(TOKEN_COLUMNS)
+    .eq('map_id', mapId)
+    .order('created_at');
   if (error) throw toAppError(error);
   return (data ?? []).map(toToken);
 }
 
 export async function addMapToken(
   client: CodexveilClient,
-  input: { mapId: string; campaignId: string; kind: MapTokenKind; characterId?: string | null; creatureId?: string | null; label: string; x: number; y: number; size: TokenSize; isHidden?: boolean },
+  input: {
+    mapId: string;
+    campaignId: string;
+    kind: MapTokenKind;
+    characterId?: string | null;
+    creatureId?: string | null;
+    label: string;
+    x: number;
+    y: number;
+    size: TokenSize;
+    isHidden?: boolean;
+  },
 ): Promise<string> {
   const { data, error } = await client
     .from('map_tokens')
@@ -281,7 +455,26 @@ export async function addMapToken(
   return data.id;
 }
 
-export async function updateMapToken(client: CodexveilClient, tokenId: string, patch: Partial<Pick<MapToken, 'label' | 'x' | 'y' | 'size' | 'isHidden' | 'visionRadius' | 'imagePath' | 'conditions' | 'darkvisionRadius' | 'lightBrightRadius' | 'lightDimRadius'>>): Promise<void> {
+export async function updateMapToken(
+  client: CodexveilClient,
+  tokenId: string,
+  patch: Partial<
+    Pick<
+      MapToken,
+      | 'label'
+      | 'x'
+      | 'y'
+      | 'size'
+      | 'isHidden'
+      | 'visionRadius'
+      | 'imagePath'
+      | 'conditions'
+      | 'darkvisionRadius'
+      | 'lightBrightRadius'
+      | 'lightDimRadius'
+    >
+  >,
+): Promise<void> {
   const update: Partial<Tables<'map_tokens'>> = {};
   if (patch.label !== undefined) update.label = patch.label;
   if (patch.x !== undefined) update.x = patch.x;
@@ -294,7 +487,11 @@ export async function updateMapToken(client: CodexveilClient, tokenId: string, p
   if (patch.darkvisionRadius !== undefined) update.darkvision_radius = patch.darkvisionRadius;
   if (patch.lightBrightRadius !== undefined) update.light_bright_radius = patch.lightBrightRadius;
   if (patch.lightDimRadius !== undefined) update.light_dim_radius = patch.lightDimRadius;
-  const { data, error } = await client.from('map_tokens').update(update).eq('id', tokenId).select('id');
+  const { data, error } = await client
+    .from('map_tokens')
+    .update(update)
+    .eq('id', tokenId)
+    .select('id');
   if (error) throw toAppError(error);
   if (data.length === 0) throw new AppError('forbidden');
 }
@@ -308,9 +505,24 @@ export async function deleteMapToken(client: CodexveilClient, tokenId: string): 
  * Caminho da imagem de cada token: a enviada pelo mestre, a foto do personagem ou a imagem da
  * criatura (para jogadores, só de criaturas reveladas: o RLS não entrega as outras).
  */
-export async function tokenImagePaths(client: CodexveilClient, tokens: readonly MapToken[]): Promise<Record<string, string>> {
-  const characterIds = [...new Set(tokens.filter((token) => !token.imagePath && token.characterId).map((token) => token.characterId!))];
-  const creatureIds = [...new Set(tokens.filter((token) => !token.imagePath && token.creatureId).map((token) => token.creatureId!))];
+export async function tokenImagePaths(
+  client: CodexveilClient,
+  tokens: readonly MapToken[],
+): Promise<Record<string, string>> {
+  const characterIds = [
+    ...new Set(
+      tokens
+        .filter((token) => !token.imagePath && token.characterId)
+        .map((token) => token.characterId!),
+    ),
+  ];
+  const creatureIds = [
+    ...new Set(
+      tokens
+        .filter((token) => !token.imagePath && token.creatureId)
+        .map((token) => token.creatureId!),
+    ),
+  ];
   const [characters, creatures] = await Promise.all([
     // Pela função do banco: com as fichas do grupo ocultas, o jogador não lê a linha dos outros
     // personagens, mas ainda vê a imagem do token (ou o retrato compartilhado).
@@ -318,7 +530,9 @@ export async function tokenImagePaths(client: CodexveilClient, tokens: readonly 
       ? client.rpc('list_character_token_images', { p_character_ids: characterIds })
       : Promise.resolve({ data: [] as { id: string; image_path: string | null }[], error: null }),
     // Também pela função: criatura só do mestre não é lida pelo jogador, mas a imagem do token sim.
-    creatureIds.length ? client.rpc('list_creature_token_images', { p_creature_ids: creatureIds }) : Promise.resolve({ data: [] as { id: string; image_path: string | null }[], error: null }),
+    creatureIds.length
+      ? client.rpc('list_creature_token_images', { p_creature_ids: creatureIds })
+      : Promise.resolve({ data: [] as { id: string; image_path: string | null }[], error: null }),
   ]);
   if (characters.error) throw toAppError(characters.error);
   if (creatures.error) throw toAppError(creatures.error);
@@ -326,10 +540,19 @@ export async function tokenImagePaths(client: CodexveilClient, tokens: readonly 
   // O gerador de tipos não descreve funções RETURNS TABLE: a linha é conferida aqui.
   const characterRows = (characters.data ?? []) as { id: string; image_path: string | null }[];
   const portraits = new Map(characterRows.map((row) => [row.id, row.image_path]));
-  const images = new Map(((creatures.data ?? []) as { id: string; image_path: string | null }[]).map((row) => [row.id, row.image_path]));
+  const images = new Map(
+    ((creatures.data ?? []) as { id: string; image_path: string | null }[]).map((row) => [
+      row.id,
+      row.image_path,
+    ]),
+  );
   const result: Record<string, string> = {};
   for (const token of tokens) {
-    const path = token.imagePath ?? (token.characterId ? portraits.get(token.characterId) : null) ?? (token.creatureId ? images.get(token.creatureId) : null) ?? null;
+    const path =
+      token.imagePath ??
+      (token.characterId ? portraits.get(token.characterId) : null) ??
+      (token.creatureId ? images.get(token.creatureId) : null) ??
+      null;
     if (path) result[token.id] = path;
   }
   return result;
@@ -337,12 +560,21 @@ export async function tokenImagePaths(client: CodexveilClient, tokens: readonly 
 
 /** Desenhos e anotações só do mestre (o banco não entrega aos jogadores). */
 export async function getMapSecrets(client: CodexveilClient, mapId: string): Promise<MapDrawing[]> {
-  const { data, error } = await client.from('session_map_secrets').select('drawings').eq('map_id', mapId).maybeSingle();
+  const { data, error } = await client
+    .from('session_map_secrets')
+    .select('drawings')
+    .eq('map_id', mapId)
+    .maybeSingle();
   if (error) throw toAppError(error);
   return data && Array.isArray(data.drawings) ? data.drawings.filter(isMapDrawing) : [];
 }
 
-export async function saveMapSecrets(client: CodexveilClient, mapId: string, campaignId: string, drawings: MapDrawing[]): Promise<void> {
+export async function saveMapSecrets(
+  client: CodexveilClient,
+  mapId: string,
+  campaignId: string,
+  drawings: MapDrawing[],
+): Promise<void> {
   // Atualiza a linha do mapa e só cria quando ainda não existe. Não usar `upsert`: ele reescreve
   // `map_id` e `campaign_id`, e o mestre só tem permissão de atualizar `drawings` (o banco recusava
   // sempre, e as anotações secretas nunca eram salvas).
@@ -360,14 +592,28 @@ export async function saveMapSecrets(client: CodexveilClient, mapId: string, cam
 }
 
 /** Jogador move o token do próprio personagem (validado no banco). */
-export async function moveMyToken(client: CodexveilClient, tokenId: string, x: number, y: number): Promise<void> {
+export async function moveMyToken(
+  client: CodexveilClient,
+  tokenId: string,
+  x: number,
+  y: number,
+): Promise<void> {
   const { error } = await client.rpc('move_my_token', { p_token_id: tokenId, p_x: x, p_y: y });
   if (error) throw toAppError(error);
 }
 
 /** Token rápido do jogador: cria no centro do mapa ativo e devolve o id. */
-export async function addMyQuickToken(client: CodexveilClient, mapId: string, label: string, size: TokenSize = 'medium'): Promise<string> {
-  const { data, error } = await client.rpc('add_my_quick_token', { p_map_id: mapId, p_label: label, p_size: size });
+export async function addMyQuickToken(
+  client: CodexveilClient,
+  mapId: string,
+  label: string,
+  size: TokenSize = 'medium',
+): Promise<string> {
+  const { data, error } = await client.rpc('add_my_quick_token', {
+    p_map_id: mapId,
+    p_label: label,
+    p_size: size,
+  });
   if (error) throw toAppError(error);
   return data;
 }
@@ -377,21 +623,39 @@ export function quickTokenImagePath(campaignId: string, userId: string, extensio
   return `campaigns/${campaignId}/maps/quick-${userId}-${crypto.randomUUID()}.${extension}`;
 }
 
-export async function setMyQuickTokenImage(client: CodexveilClient, tokenId: string, path: string | null): Promise<void> {
-  const { error } = await client.rpc('set_my_quick_token_image', { p_token_id: tokenId, p_path: path });
+export async function setMyQuickTokenImage(
+  client: CodexveilClient,
+  tokenId: string,
+  path: string | null,
+): Promise<void> {
+  const { error } = await client.rpc('set_my_quick_token_image', {
+    p_token_id: tokenId,
+    // O banco aceita nulo (tira a imagem); o gerador de tipos não marca parâmetros como opcionais.
+    p_path: path as string,
+  });
   if (error) throw toAppError(error);
 }
 
 /** Tira o token rápido do jogador; devolve o caminho da imagem (para apagar o arquivo). */
-export async function removeMyQuickToken(client: CodexveilClient, tokenId: string): Promise<string | null> {
+export async function removeMyQuickToken(
+  client: CodexveilClient,
+  tokenId: string,
+): Promise<string | null> {
   const { data, error } = await client.rpc('remove_my_quick_token', { p_token_id: tokenId });
   if (error) throw toAppError(error);
   return data ?? null;
 }
 
 /** Jogador: coloca uma área de magia no mapa ativo, vista por todos (marcada com o autor). */
-export async function addMyMapArea(client: CodexveilClient, mapId: string, area: MapArea): Promise<void> {
-  const { error } = await client.rpc('add_my_map_area', { p_map_id: mapId, p_area: area as unknown as Json });
+export async function addMyMapArea(
+  client: CodexveilClient,
+  mapId: string,
+  area: MapArea,
+): Promise<void> {
+  const { error } = await client.rpc('add_my_map_area', {
+    p_map_id: mapId,
+    p_area: area as unknown as Json,
+  });
   if (error) throw toAppError(error);
 }
 
@@ -402,21 +666,44 @@ export async function clearMyMapAreas(client: CodexveilClient, mapId: string): P
 }
 
 /** Em combate, o mapa mostrado acompanha de quem é a vez? (opção da campanha) */
-export async function getMapFollowsTurn(client: CodexveilClient, campaignId: string): Promise<boolean> {
-  const { data, error } = await client.from('campaigns').select('map_follows_turn').eq('id', campaignId).maybeSingle();
+export async function getMapFollowsTurn(
+  client: CodexveilClient,
+  campaignId: string,
+): Promise<boolean> {
+  const { data, error } = await client
+    .from('campaigns')
+    .select('map_follows_turn')
+    .eq('id', campaignId)
+    .maybeSingle();
   if (error) throw toAppError(error);
   return data?.map_follows_turn ?? true;
 }
 
-export async function setMapFollowsTurn(client: CodexveilClient, campaignId: string, value: boolean): Promise<void> {
-  const { data, error } = await client.from('campaigns').update({ map_follows_turn: value }).eq('id', campaignId).select('id');
+export async function setMapFollowsTurn(
+  client: CodexveilClient,
+  campaignId: string,
+  value: boolean,
+): Promise<void> {
+  const { data, error } = await client
+    .from('campaigns')
+    .update({ map_follows_turn: value })
+    .eq('id', campaignId)
+    .select('id');
   if (error) throw toAppError(error);
   if (data.length === 0) throw new AppError('forbidden');
 }
 
 /** Mapas (da campanha) em que o personagem tem token: para seguir o turno no combate. */
-export async function mapsWithCharacter(client: CodexveilClient, campaignId: string, characterId: string): Promise<string[]> {
-  const { data, error } = await client.from('map_tokens').select('map_id').eq('campaign_id', campaignId).eq('character_id', characterId);
+export async function mapsWithCharacter(
+  client: CodexveilClient,
+  campaignId: string,
+  characterId: string,
+): Promise<string[]> {
+  const { data, error } = await client
+    .from('map_tokens')
+    .select('map_id')
+    .eq('campaign_id', campaignId)
+    .eq('character_id', characterId);
   if (error) throw toAppError(error);
   return [...new Set((data ?? []).map((row) => row.map_id))];
 }
@@ -428,16 +715,31 @@ export async function mapsWithCharacter(client: CodexveilClient, campaignId: str
 export async function tokenSpeedSources(
   client: CodexveilClient,
   tokens: readonly MapToken[],
-): Promise<{ characters: Record<string, { systemId: string; sheet: Json }>; creatures: Record<string, Json> }> {
-  const characterIds = [...new Set(tokens.map((token) => token.characterId).filter((id): id is string => Boolean(id)))];
-  const creatureIds = [...new Set(tokens.map((token) => token.creatureId).filter((id): id is string => Boolean(id)))];
+): Promise<{
+  characters: Record<string, { systemId: string; sheet: Json }>;
+  creatures: Record<string, Json>;
+}> {
+  const characterIds = [
+    ...new Set(tokens.map((token) => token.characterId).filter((id): id is string => Boolean(id))),
+  ];
+  const creatureIds = [
+    ...new Set(tokens.map((token) => token.creatureId).filter((id): id is string => Boolean(id))),
+  ];
   const [characters, creatures] = await Promise.all([
-    characterIds.length ? client.from('characters').select('id, system_id, sheet').in('id', characterIds) : Promise.resolve({ data: [], error: null }),
-    creatureIds.length ? client.from('creature_gm_data').select('creature_id, stats').in('creature_id', creatureIds) : Promise.resolve({ data: [], error: null }),
+    characterIds.length
+      ? client.from('characters').select('id, system_id, sheet').in('id', characterIds)
+      : Promise.resolve({ data: [], error: null }),
+    creatureIds.length
+      ? client.from('creature_gm_data').select('creature_id, stats').in('creature_id', creatureIds)
+      : Promise.resolve({ data: [], error: null }),
   ]);
   return {
-    characters: Object.fromEntries((characters.data ?? []).map((row) => [row.id, { systemId: row.system_id, sheet: row.sheet }])),
-    creatures: Object.fromEntries((creatures.data ?? []).map((row) => [row.creature_id, row.stats])),
+    characters: Object.fromEntries(
+      (characters.data ?? []).map((row) => [row.id, { systemId: row.system_id, sheet: row.sheet }]),
+    ),
+    creatures: Object.fromEntries(
+      (creatures.data ?? []).map((row) => [row.creature_id, row.stats]),
+    ),
   };
 }
 
@@ -447,8 +749,14 @@ export interface SessionCast {
   characterIds: string[];
 }
 
-export async function getSessionCast(client: CodexveilClient, sessionId: string): Promise<SessionCast> {
-  const { data, error } = await client.from('session_cast').select('creature_id, character_id').eq('session_id', sessionId);
+export async function getSessionCast(
+  client: CodexveilClient,
+  sessionId: string,
+): Promise<SessionCast> {
+  const { data, error } = await client
+    .from('session_cast')
+    .select('creature_id, character_id')
+    .eq('session_id', sessionId);
   if (error) throw toAppError(error);
   return {
     creatureIds: data.flatMap((row) => (row.creature_id ? [row.creature_id] : [])),
@@ -459,7 +767,13 @@ export async function getSessionCast(client: CodexveilClient, sessionId: string)
 /** Põe ou tira um NPC/monstro (ou ficha de NPC) do elenco da sessão. */
 export async function setSessionCastMember(
   client: CodexveilClient,
-  input: { sessionId: string; campaignId: string; creatureId?: string; characterId?: string; included: boolean },
+  input: {
+    sessionId: string;
+    campaignId: string;
+    creatureId?: string;
+    characterId?: string;
+    included: boolean;
+  },
 ): Promise<void> {
   if (input.included) {
     const { error } = await client.from('session_cast').insert({
@@ -472,7 +786,9 @@ export async function setSessionCastMember(
     return;
   }
   let query = client.from('session_cast').delete().eq('session_id', input.sessionId);
-  query = input.creatureId ? query.eq('creature_id', input.creatureId) : query.eq('character_id', input.characterId ?? '');
+  query = input.creatureId
+    ? query.eq('creature_id', input.creatureId)
+    : query.eq('character_id', input.characterId ?? '');
   const { error } = await query;
   if (error) throw toAppError(error);
 }

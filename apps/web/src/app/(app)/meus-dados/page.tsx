@@ -20,6 +20,7 @@ import { requireSessionUser } from '@/lib/auth';
 import { cx } from '@/lib/cx';
 import { routes } from '@/lib/routes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { AuraArtCard } from './aura-art-card';
 import { AuraGrants } from './aura-grants';
 import { DeleteDiceButton } from './delete-dice-button';
 import { DiceEditor } from './dice-editor';
@@ -59,6 +60,27 @@ export default async function MyDicePage({ searchParams }: PageProps<'/meus-dado
     defaultLook.image,
     ...saved.map((entry) => entry.look.image),
   ]);
+  // Imagens próprias do crítico (conta de criador), com link assinado para a prévia.
+  const artPaths = Object.entries(profile.preferences.auraArt) as [DiceAura, string][];
+  const artUrls = creator
+    ? await signedMediaUrls(
+        supabase,
+        artPaths.map(([, path]) => path),
+      )
+    : {};
+  const auraArt = Object.fromEntries(
+    artPaths.map(([key, path]) => [key, { path, url: artUrls[path] ?? null }]),
+  ) as Partial<Record<DiceAura, { path: string; url: string | null }>>;
+  const soundPaths = Object.entries(profile.preferences.auraSound) as [DiceAura, string][];
+  const soundUrls = creator
+    ? await signedMediaUrls(
+        supabase,
+        soundPaths.map(([, path]) => path),
+      )
+    : {};
+  const auraSound = Object.fromEntries(
+    soundPaths.map(([key, path]) => [key, { path, url: soundUrls[path] ?? null }]),
+  ) as Partial<Record<DiceAura, { path: string; url: string | null }>>;
   const editing =
     selected && selected !== 'novo' ? saved.find((entry) => entry.id === selected) : null;
   const look = selected === 'novo' ? EMPTY_LOOK : (editing?.look ?? defaultLook);
@@ -149,6 +171,16 @@ export default async function MyDicePage({ searchParams }: PageProps<'/meus-dado
           creator={creator}
         />
       </Card>
+      {creator ? (
+        <Card>
+          <CardHeader
+            icon={<Sparkles className="h-5 w-5" aria-hidden="true" />}
+            title="Imagem e som do crítico"
+            description="Uma imagem e um som seus para o crítico de uma aura. Ficam guardados na sua conta, fora do código; quem divide campanha com você vê e ouve no crítico."
+          />
+          <AuraArtCard userId={user.id} auras={auras} art={auraArt} sounds={auraSound} />
+        </Card>
+      ) : null}
       {creator ? (
         <Card>
           <CardHeader

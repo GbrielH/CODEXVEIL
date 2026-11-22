@@ -6,6 +6,7 @@ import {
   Gem,
   Waves,
   Binary,
+  Monitor,
   CircleDot,
   FastForward,
   Mountain,
@@ -276,6 +277,7 @@ const ICONS: Record<DiceAura, ComponentType<LucideProps>> = {
   league: Crown,
   mario: Sparkle,
   foxy: Flame,
+  retro: Monitor,
 };
 
 /** Ícone da aura, na cor dela e com um leve brilho. */

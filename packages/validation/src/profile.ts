@@ -144,6 +144,7 @@ export const DICE_AURAS = [
   'league',
   'mario',
   'foxy',
+  'retro',
 ] as const;
 export type DiceAura = (typeof DICE_AURAS)[number];
 /** Auras catalogadas mas ainda indisponíveis ("Em breve"); vazia quando todas estão prontas. */
@@ -216,6 +217,7 @@ export const diceAuraLabels: Record<DiceAura, { name: string; color: string }> =
   hisoka: { name: 'Hisoka', color: '#ff4fa3' },
   valorant: { name: 'Valorant', color: '#ff4655' },
   foxy: { name: 'Foxy', color: '#c2552b' },
+  retro: { name: 'Vírus Retrô', color: '#20b2aa' },
   league: { name: 'League of Legends', color: '#c89b3c' },
   mario: { name: 'Mario Bros.', color: '#ffcc33' },
 };
@@ -258,12 +260,26 @@ export const diceLookSchema = z
   .prefault({});
 export type DiceLook = z.output<typeof diceLookSchema>;
 
+/** Caminho aceito para o som próprio do crítico de uma aura. */
+export const AURA_SOUND_PATH =
+  /^users\/[0-9a-f-]{36}\/sounds\/[A-Za-z0-9_-]{1,80}\.(mp3|ogg|wav|m4a)$/;
+
+/** Caminho aceito para a imagem própria do crítico de uma aura. */
+export const AURA_ART_PATH = /^users\/[0-9a-f-]{36}\/dice\/[A-Za-z0-9_-]{1,80}\.(png|jpe?g|webp)$/;
+
 export const preferencesSchema = z
   .object({
     density: z.enum(DENSITIES).default('comfortable'),
     motion: z.enum(MOTION_PREFERENCES).default('system'),
     avatar: avatarSchema.nullable().default(null).catch(null),
     dice: diceLookSchema,
+    /**
+     * Imagem própria que a conta de criador enviou para o crítico de uma aura (caminho em
+     * `users/{conta}/dice/`, só leitura de quem divide campanha). Fica fora do código.
+     */
+    auraArt: z.record(z.string(), z.string().regex(AURA_ART_PATH)).default({}).catch({}),
+    /** Som próprio do crítico de uma aura (caminho em `users/{conta}/sounds/`). */
+    auraSound: z.record(z.string(), z.string().regex(AURA_SOUND_PATH)).default({}).catch({}),
   })
   .prefault({});
 export type Preferences = z.output<typeof preferencesSchema>;

@@ -216,6 +216,7 @@ export function DiceTray({
             aura: look?.aura ?? null,
             critical: !tableShows && natural !== null && natural >= (next.critRange ?? 20),
             fumble: !tableShows && natural === 1,
+            owner: next.userId,
           });
         } catch (error) {
           console.error('[codexveil] falha ao rolar os dados 3D', error);

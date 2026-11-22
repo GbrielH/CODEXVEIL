@@ -5,7 +5,7 @@ import { naturalD20 } from '@codexveil/domain';
 import { useEffect, useRef } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useRealtimeRefresh } from '@/lib/use-realtime';
-import { criticalAuraBurst, criticalFailBurst } from './aura-fx';
+import { playAuraBurst } from './aura-media';
 import { useCampaignColors } from './campaign-colors';
 import { loadCharacterLook } from './dice-look';
 
@@ -68,7 +68,7 @@ export function CampaignRollEffects({ campaignId }: { campaignId: string }) {
             const aura = look?.aura;
             if (!aura) continue;
             window.setTimeout(
-              () => (natural === 20 ? criticalAuraBurst(aura) : criticalFailBurst(aura)),
+              () => void playAuraBurst(aura, natural === 20 ? 'critical' : 'fumble', row.user_id),
               LANDING_DELAY_MS,
             );
           }

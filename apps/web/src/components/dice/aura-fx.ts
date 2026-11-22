@@ -367,6 +367,7 @@ const RGB: Record<DiceAura, string> = {
   valorant: '255, 70, 85',
   league: '200, 155, 60',
   mario: '255, 204, 51',
+  retro: '32, 178, 170',
   foxy: '194, 85, 43',
 };
 
@@ -2099,6 +2100,19 @@ function emitAround(aura: DiceAura, o: AuraPoint, out: Particle[], power: number
           }),
         );
       break;
+    case 'retro':
+      for (let i = 0; i < 2; i++)
+        if (chance(0.5))
+          out.push(
+            particle('pixel', from.x, from.y, {
+              vx: rand(-1.5, 1.5) * s,
+              vy: rand(-1.5, 1.5) * s,
+              max: rand(12, 22),
+              size: rand(2, 4) * s,
+              color: pick(['0, 0, 128', '192, 192, 192', '16, 132, 208', '0, 128, 128']),
+            }),
+          );
+      break;
     case 'cthulhu':
       if (chance(0.4))
         out.push(
@@ -2949,7 +2963,13 @@ function frozenGlass(durationMs: number) {
  */
 export function criticalAuraBurst(
   aura: DiceAura,
-  options: { durationMs?: number; sound?: boolean; text?: boolean } = {},
+  options: {
+    durationMs?: number;
+    sound?: boolean;
+    text?: boolean;
+    /** Imagem própria do criador para esta aura (já carregada). */
+    art?: HTMLImageElement | null;
+  } = {},
 ): void {
   if (reducedMotion()) return;
   // Foxy: o crítico é um vídeo (fundo verde removido na hora), com o som do próprio vídeo.
@@ -2963,7 +2983,8 @@ export function criticalAuraBurst(
     aura !== 'cyber' &&
     aura !== 'sungod' &&
     aura !== 'capture' &&
-    aura !== 'notebook'
+    aura !== 'notebook' &&
+    aura !== 'retro'
   )
     criticalText(aura, durationMs - 400, TEXT_TOP[aura] ?? '50%');
   if (options.sound !== false) playCriticalSound(aura);
@@ -3033,7 +3054,7 @@ export function criticalAuraBurst(
   const holy = aura === 'holy' ? holyLayers(width, height) : null;
   const scene =
     REVISED_SCENES[aura]?.(width, height, durationMs) ??
-    SCENES[aura]?.(width, height, durationMs) ??
+    SCENES[aura]?.(width, height, durationMs, options.art ?? null) ??
     null;
   let last = 0;
 
@@ -3957,8 +3978,110 @@ function drawSkullBlaster(ctx: CanvasRenderingContext2D, open: number, t: number
   ctx.globalCompositeOperation = 'source-over';
 }
 
+/** Imagem própria desenhada inteira (sem cortar) dentro de uma caixa de altura `h`. */
+function drawArt(
+  ctx: CanvasRenderingContext2D,
+  art: HTMLImageElement,
+  x: number,
+  y: number,
+  h: number,
+) {
+  const w = (art.naturalWidth / Math.max(1, art.naturalHeight)) * h;
+  ctx.drawImage(art, x - w / 2, y - h / 2, w, h);
+}
+
+/** Janela no estilo dos sistemas antigos (barra de título azul, botão X e mensagem). */
+function drawRetroWindow(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  title: string,
+  lines: string[],
+  button = 'OK',
+) {
+  ctx.fillStyle = '#c0c0c0';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x, y + h);
+  ctx.lineTo(x, y);
+  ctx.lineTo(x + w, y);
+  ctx.stroke();
+  ctx.strokeStyle = '#404040';
+  ctx.beginPath();
+  ctx.moveTo(x + w, y);
+  ctx.lineTo(x + w, y + h);
+  ctx.lineTo(x, y + h);
+  ctx.stroke();
+  const bar = ctx.createLinearGradient(x, 0, x + w, 0);
+  bar.addColorStop(0, '#000080');
+  bar.addColorStop(1, '#1084d0');
+  ctx.fillStyle = bar;
+  ctx.fillRect(x + 3, y + 3, w - 6, 22);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 13px Tahoma, "Segoe UI", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(title, x + 9, y + 14);
+  ctx.fillStyle = '#c0c0c0';
+  ctx.fillRect(x + w - 23, y + 6, 17, 15);
+  ctx.fillStyle = '#000';
+  ctx.font = 'bold 12px Tahoma, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('×', x + w - 14.5, y + 13.5);
+  ctx.textAlign = 'left';
+  ctx.font = '13px Tahoma, "Segoe UI", sans-serif';
+  lines.forEach((line, i) => ctx.fillText(line, x + 14, y + 44 + i * 18));
+  const bw = 70;
+  ctx.fillStyle = '#c0c0c0';
+  ctx.fillRect(x + w / 2 - bw / 2, y + h - 34, bw, 24);
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + w / 2 - bw / 2, y + h - 34, bw, 24);
+  ctx.textAlign = 'center';
+  ctx.fillText(button, x + w / 2, y + h - 22);
+}
+
+/** Assistente virtual próprio (quando o criador não enviou imagem): um balão de ajuda com olhos. */
+function drawRetroHelper(ctx: CanvasRenderingContext2D, t: number) {
+  ctx.fillStyle = '#ffffe1';
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.roundRect(-55, -60, 110, 100, 26);
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-10, 40);
+  ctx.lineTo(-24, 62);
+  ctx.lineTo(10, 40);
+  ctx.fill();
+  ctx.stroke();
+  const blink = Math.sin(t * 3) > 0.95 ? 0.15 : 1;
+  for (const side of [-1, 1]) {
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.ellipse(side * 20, -18, 14, 16 * blink, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(side * 20 + Math.sin(t * 2) * 4, -16, 6 * blink, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.arc(0, 8, 18, 0.15, Math.PI - 0.15);
+  ctx.stroke();
+}
+
 const SCENES: Partial<
-  Record<DiceAura, (width: number, height: number, durationMs: number) => Scene>
+  Record<
+    DiceAura,
+    (width: number, height: number, durationMs: number, art: HTMLImageElement | null) => Scene
+  >
 > = {
   cosmic: (width, height, durationMs) => {
     // A tela racha e um olho gigante e hostil abre: injetado, íris em brasa, pupila em fenda e
@@ -10260,6 +10383,160 @@ const SCENES: Partial<
       },
     };
   },
+  retro: (width, height, durationMs, art) => {
+    // Vírus de computador antigo: a tela vira um desktop dos anos 2000, pop-ups pipocam sem parar,
+    // o assistente virtual (a imagem do criador, se ele enviou uma) pula de janela em janela falando,
+    // o cursor corre sozinho e tudo termina numa janela de erro gigante: CRÍTICO!
+    const messages: [string, string[]][] = [
+      ['Parabéns!!!', ['Você é o visitante 1.000.000!', 'Clique para receber seu prêmio.']],
+      ['Aviso do sistema', ['Seu PC está lento?', 'Baixe mais memória RAM agora!']],
+      ['Oferta imperdível', ['Instale 47 barras de ferramentas', 'e ganhe um cursor animado!']],
+      ['Alerta', ['9.999 vírus encontrados.', 'Deseja instalar mais?']],
+      ['Novo amigo!', ['Seu assistente quer conversar.', 'Ele sabe piadas e cantar!']],
+      ['Atualização', ['Reiniciando em 3... 2... 1...', '(não desligue o computador)']],
+    ];
+    const lines = [
+      'Olá! Posso ajudar?',
+      'Encontrei 9.999 vírus!',
+      'Vou cuidar de tudo!',
+      'Quer ouvir uma piada?',
+      'Instalando amigos...',
+    ];
+    const popups: { x: number; y: number; at: number; msg: [string, string[]] }[] = [];
+    for (let i = 0; i < 22; i++)
+      popups.push({
+        x: rand(-40, width - 260),
+        y: rand(-10, height - 200),
+        at: 0.2 + i * 0.09,
+        msg: pick(messages),
+      });
+    const icons = ['Meu computador', 'Lixeira', 'Internet', 'GANHE $$$', 'Amigo.exe'];
+    return {
+      frame(ctx, f) {
+        const end = durationMs / 1000;
+        const t = f.time;
+        ctx.save();
+        ctx.globalAlpha = f.presence;
+        ctx.fillStyle = `rgba(0, 128, 128, ${0.95 * clamp01(t / 0.25)})`;
+        ctx.fillRect(0, 0, width, height);
+        // Ícones da área de trabalho e barra de tarefas.
+        ctx.font = '12px Tahoma, "Segoe UI", sans-serif';
+        ctx.textAlign = 'center';
+        icons.forEach((name, i) => {
+          const y = 30 + i * 84;
+          ctx.fillStyle = '#e8e8e8';
+          ctx.fillRect(30, y, 36, 30);
+          ctx.fillStyle = '#1084d0';
+          ctx.fillRect(34, y + 4, 28, 18);
+          ctx.fillStyle = '#fff';
+          ctx.fillText(name, 48, y + 48);
+        });
+        ctx.fillStyle = '#c0c0c0';
+        ctx.fillRect(0, height - 34, width, 34);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, height - 34, width, 2);
+        ctx.fillStyle = '#c0c0c0';
+        ctx.strokeStyle = '#000';
+        ctx.strokeRect(4, height - 30, 80, 26);
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 13px Tahoma, sans-serif';
+        ctx.fillText('Iniciar', 44, height - 16);
+        const tasks = Math.min(12, Math.floor(clamp01((t - 0.2) / 2) * 12));
+        for (let i = 0; i < tasks; i++) {
+          ctx.strokeRect(92 + i * 96, height - 30, 90, 26);
+          ctx.font = '11px Tahoma, sans-serif';
+          ctx.fillText('Oferta!!!', 137 + i * 96, height - 16);
+        }
+        // Pop-ups pipocando.
+        for (const p of popups) {
+          const age = t - p.at;
+          if (age < 0 || t > end - 0.9) continue;
+          const pop = Math.min(1, age / 0.08);
+          ctx.save();
+          ctx.translate(p.x + 130, p.y + 70);
+          ctx.scale(pop, pop);
+          drawRetroWindow(ctx, -130, -70, 260, 140, p.msg[0], p.msg[1]);
+          ctx.restore();
+        }
+        // O assistente pulando de janela em janela.
+        const hop = Math.floor(t / 0.45);
+        const target = popups[(hop * 5) % popups.length]!;
+        const prev = popups[((hop - 1) * 5 + popups.length * 10) % popups.length]!;
+        const u = (t % 0.45) / 0.45;
+        const ax = prev.x + 130 + (target.x + 130 - prev.x - 130) * u;
+        const ay = prev.y + 10 + (target.y + 10 - prev.y - 10) * u - Math.sin(u * Math.PI) * 120;
+        if (t > 0.3 && t < end - 0.9) {
+          const h = Math.min(width, height) * 0.3;
+          ctx.save();
+          ctx.translate(ax, ay - h * 0.3);
+          if (art) drawArt(ctx, art, 0, 0, h);
+          else {
+            ctx.scale(h / 140, h / 140);
+            drawRetroHelper(ctx, t);
+          }
+          ctx.restore();
+          // Balão de fala.
+          const line = lines[hop % lines.length]!;
+          ctx.font = '14px Tahoma, "Segoe UI", sans-serif';
+          const bw = ctx.measureText(line).width + 24;
+          const bx = Math.min(width - bw - 10, ax + h * 0.3);
+          const by = Math.max(10, ay - h * 0.85);
+          ctx.fillStyle = '#ffffe1';
+          ctx.strokeStyle = '#000';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.roundRect(bx, by, bw, 34, 8);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = '#000';
+          ctx.textAlign = 'left';
+          ctx.fillText(line, bx + 12, by + 18);
+        }
+        // Cursor sequestrado.
+        const cx = width * (0.5 + 0.4 * Math.sin(t * 2.3));
+        const cy = height * (0.5 + 0.35 * Math.sin(t * 3.1 + 1));
+        ctx.fillStyle = '#fff';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx, cy + 26);
+        ctx.lineTo(cx + 7, cy + 20);
+        ctx.lineTo(cx + 12, cy + 30);
+        ctx.lineTo(cx + 16, cy + 28);
+        ctx.lineTo(cx + 11, cy + 18);
+        ctx.lineTo(cx + 19, cy + 18);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        // Final: janela de erro gigante com o CRÍTICO!
+        const fin = easeOut((t - (end - 1)) / 0.2);
+        if (fin > 0) {
+          const w = Math.min(width * 0.7, 640);
+          const h = 260;
+          ctx.save();
+          ctx.translate(width / 2, height / 2);
+          ctx.scale(fin, fin);
+          drawRetroWindow(ctx, -w / 2, -h / 2, w, h, 'Erro fatal', [], 'OK');
+          ctx.fillStyle = '#d4183a';
+          ctx.beginPath();
+          ctx.arc(-w / 2 + 60, -10, 30, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 34px Tahoma, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('×', -w / 2 + 60, -8);
+          ctx.fillStyle = '#000';
+          ctx.font = `bold ${Math.min(64, w * 0.1)}px Tahoma, "Segoe UI", sans-serif`;
+          ctx.fillText('CRÍTICO!', 40, -14);
+          ctx.font = '15px Tahoma, sans-serif';
+          ctx.fillText('O dado executou uma operação extremamente boa.', 40, 34);
+          ctx.restore();
+        }
+        ctx.restore();
+      },
+    };
+  },
 };
 
 // --------------------------------------------------------------------------------------------
@@ -10294,7 +10571,13 @@ interface FailText {
   scale: number;
 }
 
-type FailScene = (width: number, height: number, durationMs: number, text: FailText) => Scene;
+type FailScene = (
+  width: number,
+  height: number,
+  durationMs: number,
+  text: FailText,
+  art?: HTMLImageElement | null,
+) => Scene;
 
 function drawCloud(
   ctx: CanvasRenderingContext2D,
@@ -12873,12 +13156,63 @@ const FAILS: Record<DiceAura, FailScene> = {
       if (f.time > 0.7) text.falling = true;
     },
   }),
+  retro: (width, height, _durationMs, text, art) => ({
+    // O antivírus acorda: põe o assistente (e o crítico) em quarentena com uma barra de progresso
+    // lenta e avisa "Ameaça removida".
+    frame(ctx, f) {
+      const t = f.time;
+      const w = Math.min(width * 0.6, 520);
+      const h = 220;
+      const x = (width - w) / 2;
+      const y = Math.max(20, text.y - 330);
+      ctx.save();
+      ctx.globalAlpha = f.presence;
+      ctx.fillStyle = `rgba(0, 128, 128, ${0.6 * clamp01(t / 0.3)})`;
+      ctx.fillRect(0, 0, width, height);
+      const progress = clamp01((t - 0.3) / 1.4);
+      drawRetroWindow(
+        ctx,
+        x,
+        y,
+        w,
+        h,
+        'Antivírus',
+        [progress < 1 ? 'Colocando "CRÍTICO" em quarentena...' : 'Ameaça removida com sucesso. ✓'],
+        progress < 1 ? 'Cancelar' : 'OK',
+      );
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(x + 20, y + 80, w - 40, 22);
+      ctx.strokeStyle = '#404040';
+      ctx.strokeRect(x + 20, y + 80, w - 40, 22);
+      ctx.fillStyle = '#000080';
+      const blocks = Math.floor(progress * 20);
+      for (let i = 0; i < blocks; i++)
+        ctx.fillRect(x + 24 + i * ((w - 48) / 20), y + 84, (w - 48) / 20 - 3, 14);
+      // O assistente sendo puxado para dentro da janela.
+      const suck = clamp01((t - 0.3) / 1.2);
+      if (suck < 1) {
+        const hgt = Math.min(width, height) * 0.22 * (1 - suck);
+        const ax = width * 0.75 + (width / 2 - width * 0.75) * suck;
+        const ay = y + h + 120 - (120 + h / 2) * suck;
+        ctx.save();
+        ctx.translate(ax, ay);
+        ctx.rotate(suck * 6);
+        if (art) drawArt(ctx, art, 0, 0, Math.max(1, hgt));
+        else {
+          ctx.scale(Math.max(0.01, hgt / 140), Math.max(0.01, hgt / 140));
+          drawRetroHelper(ctx, t);
+        }
+        ctx.restore();
+      }
+      ctx.restore();
+    },
+  }),
 };
 
 /** Falha crítica (1 natural) com aura: a versão fracassada do efeito, para todos da mesa. */
 export function criticalFailBurst(
   aura: DiceAura,
-  options: { durationMs?: number; sound?: boolean } = {},
+  options: { durationMs?: number; sound?: boolean; art?: HTMLImageElement | null } = {},
 ): void {
   if (reducedMotion()) return;
   const durationMs = options.durationMs ?? 3200;
@@ -12901,7 +13235,7 @@ export function criticalFailBurst(
     tint: null,
     scale: 1,
   };
-  const scene = FAILS[aura](width, height, durationMs, text);
+  const scene = FAILS[aura](width, height, durationMs, text, options.art ?? null);
   const font = getComputedStyle(document.body).getPropertyValue('--font-display').trim() || 'serif';
   const size = Math.min(width * 0.085, 104);
   const started = performance.now();

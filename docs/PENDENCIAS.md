@@ -1167,3 +1167,12 @@ Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto ne
 - **Sahur:** o tronco de madeira com cara, bracinhos e pernas aparece na cena, pulando e levantando o taco a cada "TUNG!".
 
 Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Não visto no navegador por mim.
+
+### 2026-11-22 — Vírus Retrô, imagem e som próprios no crítico e correção nos tokens
+
+- **Vírus Retrô** (nova aura): desktop antigo, pop-ups pipocando, cursor sequestrado, assistente pulando de janela em janela e janela de erro "CRÍTICO!"; falha: antivírus põe tudo em quarentena. Usa a imagem própria do criador como o assistente, se houver.
+- **Imagem e som do crítico** (conta de criador, em "Meus dados"): envio privado por aura (PNG/JPG/WebP e MP3/OGG/WAV/M4A, até 2 MB) para o armazenamento da conta, fora do código. No crítico, a imagem entra na cena e o som toca no lugar do sintetizado (até 8 s), para quem divide campanha. `components/dice/aura-media.ts` busca, assina e carrega antes do efeito (`throwDice` recebe `owner`).
+- **Segurança:** jogador conseguia mover o token de personagem de outro jogador (bug de nulo em `move_my_token`); corrigido e o teste `maps.test.ts` voltou a passar. Tipos do banco regenerados (estavam fora de sincronia).
+- Migrações `20261122140000_dice_aura_retro.sql` e `20261122150000_move_my_token_null_fix.sql` (aplicadas).
+
+Verificações: `pnpm check` (20 tarefas) e `pnpm build` passaram. Envio e efeito não testados no navegador por mim.

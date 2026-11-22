@@ -2679,6 +2679,67 @@ const SOUNDS: Record<DiceAura, (kit: Kit) => void> = {
       }),
     );
   },
+  retro: (kit) => {
+    // Modem discando, "plim" de janela abrindo sem parar, uma voz robótica e o erro final.
+    for (const [at, freq] of [
+      [0, 697],
+      [0.08, 1209],
+      [0.16, 770],
+      [0.24, 1336],
+      [0.32, 852],
+    ] as const)
+      tone(kit, at, { type: 'sine', freq, attack: 0.005, decay: 0.07, peak: 0.12 });
+    noiseBurst(kit, 0.45, {
+      type: 'bandpass',
+      freq: 1800,
+      toFreq: 2400,
+      q: 6,
+      attack: 0.02,
+      decay: 0.5,
+      peak: 0.25,
+    });
+    tone(kit, 0.5, {
+      type: 'square',
+      freq: 2100,
+      toFreq: 980,
+      attack: 0.02,
+      decay: 0.45,
+      peak: 0.06,
+      filter: 4000,
+    });
+    for (let i = 0; i < 14; i++) {
+      const at = 0.2 + i * 0.15;
+      tone(kit, at, { type: 'sine', freq: 1319, attack: 0.003, decay: 0.12, peak: 0.07 });
+      tone(kit, at + 0.06, { type: 'sine', freq: 988, attack: 0.003, decay: 0.18, peak: 0.07 });
+    }
+    for (let i = 0; i < 6; i++)
+      voice(
+        kit,
+        1 + i * 0.14,
+        [
+          [0, 150],
+          [0.12, 150],
+        ],
+        {
+          peak: 0.18,
+          attack: 0.01,
+          decay: 0.12,
+          formants: i % 2 ? OOH : AAH,
+          vibrato: 0,
+          depth: 0,
+          type: 'square',
+        },
+      );
+    tone(withReverb(kit, 2, 0.3), 2.4, {
+      type: 'square',
+      freq: 220,
+      toFreq: 110,
+      attack: 0.005,
+      decay: 0.6,
+      peak: 0.15,
+      filter: 1500,
+    });
+  },
 };
 
 /** Falha crítica: trombone triste ("uón, uón, uón, uóóóón"). */
@@ -3074,6 +3135,20 @@ const FAIL_EXTRAS: Partial<Record<DiceAura, (kit: Kit) => void>> = {
         filter: 3000,
       }),
     );
+  },
+  retro: (kit) => {
+    // Varredura do antivírus (bipes) e o "ameaça removida".
+    for (let i = 0; i < 10; i++)
+      tone(kit, 0.3 + i * 0.12, {
+        type: 'square',
+        freq: 1500,
+        attack: 0.002,
+        decay: 0.03,
+        peak: 0.05,
+        filter: 4000,
+      });
+    tone(kit, 1.8, { type: 'sine', freq: 880, attack: 0.005, decay: 0.2, peak: 0.12 });
+    tone(kit, 1.95, { type: 'sine', freq: 1320, attack: 0.005, decay: 0.4, peak: 0.12 });
   },
 };
 

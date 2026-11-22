@@ -60,7 +60,18 @@ describe('buckets', () => {
         id: 'campaign-media',
         public: false,
         file_size_limit: '2097152',
-        allowed_mime_types: ['image/png', 'image/jpeg', 'image/webp'],
+        // Imagens e, desde 2026-11-22, o som próprio do crítico das auras (pasta `users/{conta}/sounds/`).
+        allowed_mime_types: [
+          'image/png',
+          'image/jpeg',
+          'image/webp',
+          'audio/mpeg',
+          'audio/ogg',
+          'audio/wav',
+          'audio/x-wav',
+          'audio/mp4',
+          'audio/x-m4a',
+        ],
       },
     ]);
   });
